@@ -25,25 +25,38 @@
 
 ## 1. 기술 스택
 
+> **이 절은 두 부분이다** — 아래 표는 **지금 `package.json` 에 있는 것**이고, 그 다음 표는 **아직 없는 것**이다.
+> 섞어 적으면 새로 온 사람이 `import { useQuery }` 를 쓰고 나서야 없다는 걸 안다.
+
+### 지금 쓰는 것 (M0 기준)
+
 | 영역 | 선택 | 이유 |
 |---|---|---|
-| 런타임 | **Expo (최신 안정 SDK) + Dev Client + CNG** | 카카오/애플/구글 로그인·캘린더·알림·생체인증이 전부 config plugin으로 해결된다. `ios/` `android/` 는 커밋하지 않고 `expo prebuild` 로 생성(CNG) — 네이티브 수정은 plugin 으로만 |
-| 언어 | TypeScript `strict` | 상류 스키마를 타입으로 고정 |
-| 네비게이션 | **expo-router** (파일 기반) | `states.mvp.json` 의 machine → 라우트 그룹이 1:1. 푸시 알림 → 회고 딥링크가 공짜 |
-| 서버 상태 | **TanStack Query v5** + MMKV persister | 오프라인 캐시·재시도·offline mutation 큐가 스키마의 local-first 규칙과 맞음 |
-| 클라이언트 상태 | **Zustand** (작게) | 온보딩 답안 초안, 진행 중 회고 세션 정도만 |
-| 로컬 저장 | **react-native-mmkv** | 비민감 데이터만 — 온보딩 초안·쿼리 캐시·아웃박스 큐. **인증 판정에 쓰지 않는다**(§3) |
-| 보안 저장 | expo-secure-store | 액세스/리프레시 토큰. 읽기가 **비동기**라는 점이 진입 라우팅 설계를 규정한다(§3) |
+| 런타임 | **Expo SDK 57** + Dev Client + CNG | 카카오/애플/구글 로그인·캘린더·알림·생체인증이 전부 config plugin으로 해결된다. `ios/` `android/` 는 커밋하지 않고 `expo prebuild` 로 생성(CNG) — 네이티브 수정은 plugin 으로만 |
+| 언어 | TypeScript 6 `strict` + `noUncheckedIndexedAccess` | 상류 스키마를 타입으로 고정 |
+| 네비게이션 | **expo-router** (파일 기반) | `states.mvp.json` 의 machine → 라우트 그룹이 1:1. 회고 알림 → 딥링크가 공짜 |
 | 스타일 | **StyleSheet + `theme` 객체** | 다크모드 없음(RULES: 크림 배경 유지), 토큰이 고정 상수 — 런타임 테마 엔진이 필요 없다. NativeWind/Tamagui 는 12.5px·자간 .145em 같은 값을 우회하게 만들어 오히려 손해 |
 | 그라디언트 | **react-native-svg** `RadialGradient` | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다 |
-| 애니메이션 | **react-native-reanimated** | `theme.motion.spec.*` 만 사용. Reduce Motion 시 opacity 120ms |
-| 폰트 | expo-font + Pretendard | 4종 weight (400/500/600/700) |
-| 이미지 | expo-image | 바바 캐릭터 이미지 캐싱 |
-| 목 서버 | **MSW (react-native)** | BE 미확정 구간을 화면 개발이 기다리지 않게 |
-| 계측 | 얇은 `track()` 파사드 | `06_운영문서/ANALYTICS.md` 이름 규칙이 이미 확정 — 어댑터는 나중에 갈아끼움 |
-| 테스트 | Jest + @testing-library/react-native, Maestro(E2E) | `states.mvp.json` 의 `invariants` 한 문장 = 테스트 하나 |
-| 품질 | ESLint + Prettier + lint-staged + GitHub Actions | typecheck · lint · test |
-| 배포 | EAS Build / Update | 맥이 있어도 CI 빌드가 팀 작업엔 낫다 |
+| 폰트 | expo-font + Pretendard 4 weight | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다) |
+| 품질 | ESLint 9 + Prettier + GitHub Actions | **현재 CI = `check:theme` · `typecheck` · `lint` · 시크릿 추적 검사.** 테스트는 아직 없다 |
+
+### 도입 예정 — 필요해지는 마일스톤에
+
+아직 설치하지 않았다. **쓸 화면이 생길 때 넣는다** — 미리 깔면 쓰지도 않는 의존성이 락파일에 굳는다.
+
+| 영역 | 선택 | 언제 | 왜 그때인가 |
+|---|---|---|---|
+| 테스트 | Jest + @testing-library/react-native | **M1** | 첫 공용 컴포넌트와 함께. 뒤로 미루면 테스트하기 어려운 구조가 먼저 굳는다 |
+| 애니메이션 | react-native-reanimated | M1 | `theme.motion.spec.*` 를 쓰는 첫 컴포넌트(`AppButton` press)부터 |
+| 보안 저장 | expo-secure-store | M2 | 로그인 토큰이 처음 생기는 시점. 읽기가 **비동기**라는 점이 진입 라우팅을 규정한다(§3) |
+| 서버 상태 | TanStack Query v5 | M2 | 첫 API 호출. **OpenAPI 계약 합의가 선행**(§4) |
+| 클라이언트 상태 | Zustand (작게) | M2 | 온보딩 답안 초안 |
+| 목 서버 | MSW | M2 | BE 미확정 구간을 화면 개발이 기다리지 않게 |
+| 로컬 저장 | react-native-mmkv | M3 | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4) |
+| 계측 | 얇은 `track()` 파사드 | M3 | `06_운영문서/ANALYTICS.md` 이름 규칙은 이미 확정 |
+| 이미지 | expo-image | M2 | 바바 아바타가 처음 나오는 온보딩 |
+| E2E | Maestro | M6 | 흐름이 다 연결된 뒤 |
+| 배포 | EAS Build / Update | M6 | |
 
 ### 네이티브 기능
 
@@ -60,9 +73,30 @@
 
 ## 2. 폴더 구조
 
+**`app/` 은 저장소 루트다** — `src/app/` 이 아니다. expo-router 가 루트 `app/` 을 라우트 트리로 잡고,
+`src/` 는 라우트가 아닌 코드만 담는다. 경계가 이름으로 드러난다.
+
+### 지금 있는 것
+
 ```
+app/
+  _layout.tsx                # 폰트 로딩 · SafeAreaProvider · Stack
+  index.tsx                  # M0 검수 화면 (M2 에서 S0 스플래시가 된다)
 src/
-  app/                       # expo-router — 라우트만, 로직 없음
+  design/
+    theme.ts                 # 생성물 — 직접 수정 금지 (§5)
+    tokens.mvp.ts            # 상류 반영 전까지의 이름 매핑 (§5)
+  components/primitives/
+    ScreenBackground.tsx
+```
+
+### 목표 구조
+
+**빈 폴더를 미리 만들지 않는다.** 아래는 화면이 생길 때 도달할 모양이지 지금 만들 것이 아니다 —
+빈 껍데기가 먼저 있으면 어디에 뭐가 있는지가 아니라 어디가 비었는지를 먼저 읽게 된다.
+
+```
+app/                         # expo-router — 라우트만, 로직 없음
     _layout.tsx              # Provider 스택 (Query · 폰트 · SafeArea · 테마)
     index.tsx                # S0 스플래시 = entry machine 의 route 판정
     (auth)/login.tsx         # S1
@@ -94,9 +128,10 @@ src/
       profile.tsx            # M2
       notify.tsx             # M3
 
+src/
   design/
     theme.ts                 # 생성물 — 02_디자인시스템/theme.ts 를 복사 (직접 수정 금지)
-    tokens.mvp.ts            # MVP 전용 오버라이드 (배경 그라디언트 등) — §5 참조
+    tokens.mvp.ts            # MVP 전용 이름 매핑 — §5 참조
   components/                # COMPONENTS.md 인벤토리와 1:1
     primitives/              # AppText AppButton Card ScreenBackground InputRow ...
     chat/                    # ChatLayout BabaBubble AnswerBubble Avatar TypingDots ChipFlow
@@ -236,13 +271,17 @@ track('home_memo_add', { char_bucket: bucket(text.length) })
 
 | # | 내용 | 산출 |
 |---|---|---|
-| **M0** | 프로젝트 셋업 — Expo + TS strict + expo-router + lint/CI + `sync:theme` + Pretendard | 빈 앱이 뜨고 폰트·배경 그라디언트가 시안과 같음 |
-| **M1** | **P0 컴포넌트 12종** + 데모 화면 | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` |
-| **M2** | 진입 + 온보딩 9화면 (`S0` `S1` `03`~`10`) | 소셜 로그인 3종 · 알림/캘린더 권한 · 온보딩 완주 |
-| **M3** | 공용 컴포넌트(P1.5) + 홈 5화면 | `TabBar` `ScrollArea` `EmotionPill` `EmotionGrid` `Sheet` `ScheduleRow` — 일정/순간 CRUD + 아웃박스 |
+| **M0** ✅ | 프로젝트 셋업 — Expo + TS strict + expo-router + lint/CI + `sync:theme` + Pretendard | 앱이 뜨고 폰트·배경 그라디언트가 시안과 같음 |
+| **M1** | **P0 컴포넌트 12종** + **테스트 기반** | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가 |
+| **M2** | 진입 + 온보딩 9화면 (`S0` `S1` `03`~`10`) | 소셜 로그인 3종 · 알림/캘린더 권한 · 온보딩 완주 · **인증 부트스트랩 테스트**(§3 5경로) |
+| **M3** | 공용 컴포넌트(P1.5) + 홈 5화면 | `TabBar` `ScrollArea` `EmotionPill` `EmotionGrid` `Sheet` `ScheduleRow` — 일정/순간 CRUD + 아웃박스 · **아웃박스 테스트**(§4 5경로) |
 | **M4** | 회고 7화면 | 채팅(스트리밍 포함) · 감정 필수 · 일기 생성 |
 | **M5** | 보관함 5 + 리포트 1 + 마이 3 + **앱 잠금 게이트** | 캘린더/목록/일기 두 면/수정 · 주간 리포트 · 설정 · 토글과 잠금이 같은 마일스톤(§8) |
-| **M6** | invariants 테스트 · Maestro E2E · EAS 내부 배포 | |
+| **M6** | `invariants` 전수 테스트 · Maestro E2E · EAS 내부 배포 | |
+
+**테스트는 M6 에 몰지 않는다.** 기반은 M1 에 세우고, 인증 부트스트랩·아웃박스처럼 **틀리면 조용히 데이터가 깨지는 것**은 그 기능을 만드는 마일스톤에서 함께 쓴다. M6 에 남는 것은 `states.mvp.json` 의 `invariants` 전수 검사와 E2E 뿐이다.
+
+> 왜 그런가 — 아웃박스 중복 생성과 인증 폴백은 **화면에 오류를 띄우지 않는 설계**다(규칙 5). 테스트가 없으면 잘못돼도 아무도 모른다. 나중에 붙이려면 그때는 테스트하기 어려운 구조가 이미 굳어 있다.
 
 M1 이 병목이자 지렛대다 — 여기서 만든 채팅 컴포넌트군이 온보딩과 회고를 동시에 덮는다.
 
