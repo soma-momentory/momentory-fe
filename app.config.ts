@@ -17,9 +17,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // (09_MVP/docs/S0.md · 01_화면설계/1. SPLASH/docs/RULES.md)
   userInterfaceStyle: "light",
 
+  // 앱 식별자 — 2026-08-05 확정. 카카오·구글·애플과 스토어에 이 값으로 등록한다.
+  // 등록 뒤에는 바꿀 수 없다(스토어는 같은 ID 를 재사용할 수 없다).
+  // 등록 절차와 키 해시·SHA-1 은 docs/SETUP.md 「앱 식별자와 외부 등록」 참조.
   ios: {
     supportsTablet: false,
-    // ⚠ 첫 EAS 빌드·스토어 등록 전에 팀이 확정해야 한다. 등록 후에는 바꿀 수 없다.
     bundleIdentifier: "com.momentory.app",
   },
   android: {
