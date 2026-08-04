@@ -38,7 +38,7 @@
 | 스타일 | **StyleSheet + `theme` 객체** | 다크모드 없음(RULES: 크림 배경 유지), 토큰이 고정 상수 — 런타임 테마 엔진이 필요 없다. NativeWind/Tamagui 는 12.5px·자간 .145em 같은 값을 우회하게 만들어 오히려 손해 |
 | 그라디언트 | **react-native-svg** `RadialGradient` | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다 |
 | 폰트 | expo-font + Pretendard 4 weight | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다) |
-| 품질 | ESLint 9 + Prettier + GitHub Actions | **현재 CI = `check:theme` · `typecheck` · `lint` · 시크릿 추적 검사.** 테스트는 아직 없다 |
+| 품질 | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions | **현재 CI = `check:theme` · `typecheck` · `lint` · `test` · 시크릿 추적 검사.** |
 
 ### 도입 예정 — 필요해지는 마일스톤에
 
@@ -46,7 +46,6 @@
 
 | 영역 | 선택 | 언제 | 왜 그때인가 |
 |---|---|---|---|
-| 테스트 | Jest + @testing-library/react-native | **M1** | 첫 공용 컴포넌트와 함께. 뒤로 미루면 테스트하기 어려운 구조가 먼저 굳는다 |
 | 애니메이션 | react-native-reanimated | M1 | `theme.motion.spec.*` 를 쓰는 첫 컴포넌트(`AppButton` press)부터 |
 | 보안 저장 | expo-secure-store | M2 | 로그인 토큰이 처음 생기는 시점. 읽기가 **비동기**라는 점이 진입 라우팅을 규정한다(§3) |
 | 서버 상태 | TanStack Query v5 | M2 | 첫 API 호출. **OpenAPI 계약 합의가 선행**(§4) |

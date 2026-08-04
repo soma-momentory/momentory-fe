@@ -6,6 +6,7 @@ import {
   StyleSheet,
   View,
   type PressableProps,
+  type GestureResponderEvent,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
@@ -33,6 +34,8 @@ type Props = Omit<PressableProps, "style" | "children"> & {
   label: string;
   variant?: ButtonVariant;
   disabled?: boolean;
+  /** 비동기 처리 중. 버튼을 잠그고 라벨 옆에 진행점을 보인다 */
+  loading?: boolean;
   /** 아이콘 등 라벨 왼쪽에 놓을 것 */
   leading?: ReactNode;
   style?: ViewStyle;
@@ -42,20 +45,32 @@ export function AppButton({
   label,
   variant = "primary",
   disabled = false,
+  loading = false,
   leading,
   style,
+  onPressIn,
+  onPressOut,
   ...rest
 }: Props) {
   const reduceMotion = useReduceMotion();
   // state 초기화 함수로 만든다 — useRef(...).current 는 렌더 중 ref 접근이라
   // react-hooks/refs 에 걸리고, Animated.Value 를 매 렌더 새로 만들면 애니메이션이 끊긴다.
   const [scale] = useState(() => new Animated.Value(1));
+  const [opacity] = useState(() => new Animated.Value(1));
   const [pressed, setPressed] = useState(false);
+  const effectiveDisabled = disabled || loading;
 
   // Reduce Motion 이면 이동·스케일을 끄고 **색만** 바꾼다 (theme.motion.reduceMotion).
   // primaryDeepPress 가 필요한 이유가 이것이다 — 누름 피드백이 색뿐인 사용자가 있다.
   const animate = (to: number) => {
-    if (reduceMotion) return;
+    if (reduceMotion) {
+      Animated.timing(opacity, {
+        toValue: to < 1 ? 0.88 : 1,
+        duration: theme.motion.reduceMotion.duration,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
     Animated.timing(scale, {
       toValue: to,
       duration: press.duration,
@@ -65,25 +80,31 @@ export function AppButton({
 
   const v = VARIANTS[variant];
 
+  const handlePressIn = (event: GestureResponderEvent) => {
+    setPressed(true);
+    animate(press.scale);
+    onPressIn?.(event);
+  };
+
+  const handlePressOut = (event: GestureResponderEvent) => {
+    setPressed(false);
+    animate(1);
+    onPressOut?.(event);
+  };
+
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={{ opacity, transform: [{ scale }] }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled }}
-        disabled={disabled}
-        onPressIn={() => {
-          setPressed(true);
-          animate(press.scale);
-        }}
-        onPressOut={() => {
-          setPressed(false);
-          animate(1);
-        }}
+        accessibilityState={{ disabled: effectiveDisabled, busy: loading }}
+        disabled={effectiveDisabled}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         style={[
           styles.base,
           v.container,
-          pressed && !disabled ? v.pressed : null,
-          disabled ? styles.disabled : null,
+          pressed && !effectiveDisabled && !reduceMotion ? v.pressed : null,
+          effectiveDisabled ? styles.disabled : null,
           style,
         ]}
         {...rest}
@@ -92,6 +113,7 @@ export function AppButton({
         <AppText variant="bodyLg" tone={v.tone} weight="700" style={v.labelStyle}>
           {label}
         </AppText>
+        {loading ? <LoadingDots color={progressColorOf(variant)} reduceMotion={reduceMotion} /> : null}
       </Pressable>
     </Animated.View>
   );
@@ -123,6 +145,50 @@ type Variant = {
 };
 
 const { semantic } = theme.colors;
+
+const progressColorOf = (variant: ButtonVariant) =>
+  variant === "primary" || variant === "apple" ? semantic.textOnDark : semantic.textPrimary;
+
+function LoadingDots({ color, reduceMotion }: { color: string; reduceMotion: boolean }) {
+  const [opacity] = useState(() => new Animated.Value(1));
+
+  useEffect(() => {
+    if (reduceMotion) {
+      opacity.setValue(1);
+      return;
+    }
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.35,
+          duration: theme.motion.duration.slow,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: theme.motion.duration.slow,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [opacity, reduceMotion]);
+
+  return (
+    <Animated.View
+      testID="button-progress"
+      style={[styles.progress, { opacity }]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <View style={[styles.progressDot, { backgroundColor: color }]} />
+      <View style={[styles.progressDot, { backgroundColor: color }]} />
+      <View style={[styles.progressDot, { backgroundColor: color }]} />
+    </Animated.View>
+  );
+}
 
 const VARIANTS: Record<ButtonVariant, Variant> = {
   primary: {
@@ -172,4 +238,6 @@ const styles = StyleSheet.create({
   // 비활성은 흐리게만 한다. 경고색·아이콘을 붙이지 않는다 (RULES 4)
   disabled: { opacity: 0.75 },
   leading: { width: 20, alignItems: "center" },
+  progress: { flexDirection: "row", gap: 3 },
+  progressDot: { width: 4, height: 4, borderRadius: theme.radius.pill },
 });
