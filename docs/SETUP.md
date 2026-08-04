@@ -180,7 +180,75 @@ npm run sync:theme    # 상류에서 다시 가져온다
 
 ---
 
-## 6. 에디터
+## 6. 앱 식별자와 외부 등록
+
+### 식별자 — 2026-08-05 확정
+
+```
+com.momentory.app        # iOS bundleIdentifier · Android package 동일
+momentory                # URL scheme (회고 알림 딥링크)
+```
+
+**등록한 뒤에는 바꿀 수 없다.** 스토어는 한 번 쓴 ID 를 재사용하지 못하고,
+카카오·구글 콘솔의 플랫폼 설정도 이 값에 묶인다.
+
+### 지문 — 개발용(debug)
+
+Android 는 **서명 인증서 지문**으로 앱을 식별한다. 아래는 이 PC 의 `~/.android/debug.keystore`
+값이라 **개발자마다 다르다** — 팀원이 합류하면 각자 값을 뽑아 콘솔에 추가해야 한다.
+
+```
+SHA-1        1C:5A:28:E1:EF:71:55:46:46:E9:8A:8D:68:10:B5:2A:EC:C6:4C:36
+카카오 키해시  gxDkdXL/O47xlt46W77iUmR7EmY=
+```
+
+<details>
+<summary>직접 뽑는 법 (Windows PowerShell)</summary>
+
+```powershell
+$kt = "C:\Program Files\Java\jdk-21\bin\keytool.exe"   # 또는 Android Studio\jbr\bin
+$ks = "$env:USERPROFILE\.android\debug.keystore"
+
+# SHA-1 — 구글 OAuth 용
+& $kt -list -v -keystore $ks -alias androiddebugkey -storepass android | Select-String "SHA1:"
+
+# 카카오 키 해시 — SHA-1 을 base64 로
+$tmp = "$env:TEMP\dbg.der"
+& $kt -exportcert -alias androiddebugkey -keystore $ks -storepass android -file $tmp
+[Convert]::ToBase64String([System.Security.Cryptography.SHA1]::Create().ComputeHash([IO.File]::ReadAllBytes($tmp)))
+```
+
+macOS / Linux:
+
+```bash
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android | grep SHA1
+keytool -exportcert -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android \
+  | openssl sha1 -binary | openssl base64
+```
+</details>
+
+> ⚠ **출시용(release) 지문은 이것과 다르다.** EAS 가 서명 키를 관리하므로
+> `eas credentials` 로 릴리스 SHA-1 을 확인해 콘솔에 **따로 추가**한다.
+> 이걸 빼먹으면 개발 중엔 되던 로그인이 스토어 빌드에서만 실패한다.
+
+### 등록 체크리스트
+
+| 공급자 | 해야 할 것 | 얻는 값 | 비고 |
+|---|---|---|---|
+| **카카오** | 앱 등록 → 플랫폼에 패키지명 + 키 해시 → 카카오 로그인 ON → 동의항목 설정 | 네이티브 앱 키 → `EXPO_PUBLIC_KAKAO_APP_KEY` | 당일·무료 |
+| **구글** | Cloud Console OAuth 클라이언트 — Android(패키지명 + SHA-1) · iOS(번들 ID) · **Web** | Web/iOS 클라이언트 ID → `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | 당일·무료. `idToken` 검증에 **Web 클라이언트 ID 가 필요**하다 |
+| **애플** | Developer Program 가입 → Sign in with Apple 활성화 | — | **$99/년 · 심사 1~2일** |
+
+**애플은 지금 미룰 수 있다.** iOS 전용이고 Android 빌드에는 필요 없다.
+다만 App Store 심사 규정(4.8)상 다른 소셜 로그인을 제공하는 iOS 앱은 Sign in with Apple 이
+**필수**이므로, iOS 빌드를 만들기 전에는 반드시 끝나 있어야 한다.
+
+받은 값은 `.env` 에 넣는다 — 커밋하지 않는다.
+성격은 [`CONTRIBUTING.md` 「값을 다루는 세 등급」](CONTRIBUTING.md) 참조(이 값들은 ①번, 공개 식별자다).
+
+---
+
+## 7. 에디터
 
 VS Code 기준 권장 확장:
 
