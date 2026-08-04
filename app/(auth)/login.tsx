@@ -41,9 +41,9 @@ export default function Login() {
         </View>
 
         <View style={styles.actions}>
-          <AppButton label="카카오로 시작하기" variant="kakao" onPress={notImplemented} />
-          <AppButton label="Apple로 시작하기" variant="apple" onPress={notImplemented} />
-          <AppButton label="Google로 시작하기" variant="google" onPress={notImplemented} />
+          <AppButton label="카카오로 시작하기" variant="kakao" disabled />
+          <AppButton label="Apple로 시작하기" variant="apple" disabled />
+          <AppButton label="Google로 시작하기" variant="google" disabled />
 
           {/*
             동의 체크박스를 두지 않는다 — 로그인 행위가 동의다.
@@ -72,16 +72,17 @@ export default function Login() {
  */
 function LegalLink({ label }: { label: string }) {
   return (
-    <AppText variant="footnote" tone="accent" style={styles.link}>
+    <AppText
+      variant="footnote"
+      tone="accent"
+      style={styles.link}
+      accessibilityRole="link"
+      accessibilityState={{ disabled: true }}
+    >
       {label}
     </AppText>
   );
 }
-
-const notImplemented = () => {
-  // TODO M2 — 카카오/애플/구글 SDK 연결 후 POST /auth/social 로 세션 교환.
-  //   실패·오프라인은 MVP 화면이 없으므로 원본 X1·X2 규칙을 쓴다 (한 줄 안내로 흡수).
-};
 
 const styles = StyleSheet.create({
   root: {

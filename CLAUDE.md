@@ -45,19 +45,20 @@
 
 ## 지금 어디까지 왔나
 
-**M0 완료.** 지금 있는 것은 이게 전부다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
+**M0 완료, M1 진행 중.** 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
 ```
-app/_layout.tsx  app/index.tsx
+app/_layout.tsx  app/index.tsx  app/(auth)/login.tsx
 src/design/{theme.ts, tokens.mvp.ts}
-src/components/primitives/ScreenBackground.tsx
+src/components/primitives/{ScreenBackground.tsx, AppText.tsx, AppButton.tsx}
+src/components/primitives/__tests__/
 ```
 
 설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context.
-**아직 없는 것: TanStack Query · Zustand · MMKV · Reanimated · MSW · Jest.**
+**아직 없는 것: TanStack Query · Zustand · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
-CI 는 `check:theme` · `typecheck` · `lint` · 시크릿 검사를 돈다 (테스트는 M1 에 추가).
+CI 는 `check:theme` · `typecheck` · `lint` · `test` · 시크릿 검사를 돈다.
 
 다음으로 넘어가기 전에 닫혀야 하는 것:
 

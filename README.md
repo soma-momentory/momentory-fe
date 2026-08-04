@@ -67,5 +67,5 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 **M0 완료** — 셋업 · git 위생 · Pretendard · 테마 동기화 · `ScreenBackground`.
 Android 에뮬레이터에서 배경 그라디언트·주 버튼·감정 9종 색이 토큰과 픽셀 일치하는 것을 확인했다.
 
-**M1 다음** — P0 컴포넌트 13종 + 테스트 기반(Jest + RNTL).
+**M1 진행 중** — 테스트 기반과 `AppText` · `AppButton` 완료. 다음은 `Card`와 채팅 컴포넌트군.
 마일스톤과 각 단계의 선행 조건은 [`docs/ARCHITECTURE.md §7`](docs/ARCHITECTURE.md) 에 있다.

@@ -27,7 +27,7 @@ describe("AppButton", () => {
   });
 
   it("Reduce Motion 이면 스케일을 쓰지 않는다", async () => {
-    // theme.motion.reduceMotion — 이동·스케일·루프를 끄고 색·opacity 만 남긴다.
+    // theme.motion.reduceMotion — 이동·스케일·루프를 끄고 opacity 만 남긴다.
     jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(true);
     const timing = jest.spyOn(Animated, "timing");
 
@@ -35,9 +35,14 @@ describe("AppButton", () => {
     await waitFor(() => expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalled());
     await fireEvent(getByRole("button"), "pressIn");
 
-    expect(timing).not.toHaveBeenCalled();
-    // 색은 여전히 바뀌어야 한다 — 피드백이 통째로 사라지면 안 된다
-    expect(flatten(getByRole("button").props.style).backgroundColor).toBe(fill.primaryDeepPress);
+    expect(timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        toValue: 0.88,
+        duration: theme.motion.reduceMotion.duration,
+      }),
+    );
+    expect(flatten(getByRole("button").props.style).backgroundColor).toBe(fill.primaryDeep);
 
     timing.mockRestore();
   });
@@ -66,6 +71,36 @@ describe("AppButton", () => {
 
     expect(flatten(btn.props.style).opacity).toBe(0.75);
     expect(btn.props.accessibilityState.disabled).toBe(true);
+  });
+
+  it("loading은 버튼을 잠그고 진행점을 표시한다", async () => {
+    const { getByRole, getByText, getByTestId } = await render(<AppButton label="로그인 중" loading />);
+
+    expect(getByRole("button").props.accessibilityState).toMatchObject({
+      disabled: true,
+      busy: true,
+    });
+    expect(getByText("로그인 중")).toBeTruthy();
+    expect(getByTestId("button-progress", { includeHiddenElements: true }).children).toHaveLength(3);
+  });
+
+  it("호출자가 준 press 콜백과 내부 피드백을 함께 실행한다", async () => {
+    jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(false);
+    const timing = jest.spyOn(Animated, "timing");
+    const onPressIn = jest.fn();
+    const onPressOut = jest.fn();
+    const { getByRole } = await render(
+      <AppButton label="시작하기" onPressIn={onPressIn} onPressOut={onPressOut} />,
+    );
+    await waitFor(() => expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalled());
+
+    await fireEvent(getByRole("button"), "pressIn");
+    await fireEvent(getByRole("button"), "pressOut");
+
+    expect(onPressIn).toHaveBeenCalledTimes(1);
+    expect(onPressOut).toHaveBeenCalledTimes(1);
+    expect(timing).toHaveBeenCalledTimes(2);
+    timing.mockRestore();
   });
 
   // S1.md — 카카오 #FEE500 · Apple #1A1A1A · Google card+테두리.
