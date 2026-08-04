@@ -8,7 +8,7 @@
 ```bash
 nvm use              # .nvmrc — Node 22.14
 npm ci
-cp .env.example .env # 값은 팀 시크릿(EAS Secrets)에서 받는다
+cp .env.example .env # 값은 팀의 빌드 환경 변수에서 받는다 (비밀이 아니다 — CONTRIBUTING §값 3등급)
 npm start
 ```
 
