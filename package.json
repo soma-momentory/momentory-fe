@@ -14,7 +14,9 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "sync:theme": "node scripts/sync-theme.mjs",
-    "check:theme": "node scripts/sync-theme.mjs --verify"
+    "check:theme": "node scripts/sync-theme.mjs --verify",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "expo": "~57.0.10",
@@ -32,11 +34,17 @@
     "react-native-svg": "15.15.4"
   },
   "devDependencies": {
+    "@react-native/jest-preset": "^0.86.2",
+    "@testing-library/react-native": "^14.0.1",
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.2.2",
     "eslint": "^9.39.5",
     "eslint-config-expo": "^57.0.1",
     "eslint-config-prettier": "^10.1.8",
+    "jest": "~29.7.0",
+    "jest-expo": "~57.0.3",
     "prettier": "^3.9.6",
+    "test-renderer": "^1.2.0",
     "typescript": "~6.0.3"
   }
 }
