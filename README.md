@@ -53,6 +53,10 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 
 ## 문서
 
+**처음이면 [`docs/SETUP.md`](docs/SETUP.md) → [`docs/TASKS.md`](docs/TASKS.md) 순서로 읽는다.**
+
+- [`docs/SETUP.md`](docs/SETUP.md) — 개발 환경. Android/iOS 빌드 · 자주 막히는 곳 6개
+- [`docs/TASKS.md`](docs/TASKS.md) — 작업 분해와 분담. 둘이 부딪히는 파일까지
 - [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — **작업 규칙의 정본.** 커밋 · 값 3등급 · 의존성 · 생성물
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — 기술 설계 · 데이터 레이어 · 아웃박스 계약 · 마일스톤
 - [`assets/fonts/README.md`](assets/fonts/README.md) — Pretendard 출처·해시·라이선스
@@ -63,5 +67,5 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 **M0 완료** — 셋업 · git 위생 · Pretendard · 테마 동기화 · `ScreenBackground`.
 Android 에뮬레이터에서 배경 그라디언트·주 버튼·감정 9종 색이 토큰과 픽셀 일치하는 것을 확인했다.
 
-**M1 다음** — P0 컴포넌트 12종 + 테스트 기반(Jest + RNTL).
+**M1 다음** — P0 컴포넌트 13종 + 테스트 기반(Jest + RNTL).
 마일스톤과 각 단계의 선행 조건은 [`docs/ARCHITECTURE.md §7`](docs/ARCHITECTURE.md) 에 있다.

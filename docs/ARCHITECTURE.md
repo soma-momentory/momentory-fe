@@ -275,7 +275,7 @@ track('home_memo_add', { char_bucket: bucket(text.length) })
 | # | 내용 | 산출 |
 |---|---|---|
 | **M0** ✅ | 프로젝트 셋업 — Expo + TS strict + expo-router + lint/CI + `sync:theme` + Pretendard | 앱이 뜨고 폰트·배경 그라디언트가 시안과 같음 |
-| **M1** | **P0 컴포넌트 12종** + **테스트 기반** | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가 |
+| **M1** | **P0 컴포넌트 13종** + **테스트 기반** | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가 |
 | **M2** | 진입 + 온보딩 9화면 (`S0` `S1` `03`~`10`) | 소셜 로그인 3종 · 알림/캘린더 권한 · 온보딩 완주 · **인증 부트스트랩 테스트**(§3 5경로) |
 | **M3** | 공용 컴포넌트(P1.5) + 홈 5화면 | `TabBar` `ScrollArea` `EmotionPill` `EmotionGrid` `Sheet` `ScheduleRow` — 일정/순간 CRUD + 아웃박스 · **아웃박스 테스트**(§4 5경로) |
 | **M4** | 회고 7화면 | 채팅(스트리밍 포함) · 감정 필수 · 일기 생성 |
