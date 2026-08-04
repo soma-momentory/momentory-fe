@@ -9,8 +9,9 @@
 // 여기를 지우고 화면 코드가 theme 을 직접 읽게 바꾼다. 그때까지 오버라이드는
 // 화면 코드에 흩지 않고 이 한 곳에만 둔다.
 //
-// 값은 최대한 theme 에서 끌어온다 — 이름만 다르고 값이 같은 것을 다시 타이핑하면
-// 상류가 값을 고쳤을 때 여기만 옛 값으로 남는다. 리터럴은 theme 에 아예 없는 둘뿐이다.
+// 2026-08-05 — 상류가 `textOnDark` 와 `primaryDeepPress` 를 흡수해서 **리터럴이 0개가 됐다.**
+// 이제 이 파일은 순수한 이름 매핑이라 값이 어긋날 수 없다. 남은 일은 상류가 semantic 별칭을
+// 6종 이름(textStrong·textCaption…)으로 바꾸는 것뿐이고, 그때 이 파일을 지운다.
 
 import theme from "./theme";
 
@@ -31,8 +32,10 @@ export const text = {
   legal: semantic.textLegalInk,
   /** 강조 라벨·알림 제목·활성 탭 · 최소 4.5:1 — css `--textAccent` */
   accent: semantic.accentInk,
-  /** 채운 버튼·잉크 면 위 — css `--textOnDark`. ⚠ theme 에 아직 없다 */
-  onDark: "#FBF4E7",
+  /** 채운 버튼·잉크 면 위 — css `--textOnDark` */
+  onDark: semantic.textOnDark,
+  /** 삭제 등 되돌릴 수 없는 동작의 글자·테두리 — css `--dangerInk`. 면을 채우지 않는다 */
+  danger: semantic.textDanger,
 } as const;
 
 /**
@@ -42,8 +45,8 @@ export const text = {
 export const fill = {
   /** 주 버튼·체크의 면 — theme 의 accentFill 과 같은 값 */
   primaryDeep: palette.primaryDeep,
-  /** 눌린 상태 — css `--primaryDeepPress`. ⚠ theme 에 아직 없다 */
-  primaryDeepPress: "#9E5626",
+  /** 눌린 상태 — css `--primaryDeepPress` */
+  primaryDeepPress: semantic.accentFillPress,
 } as const;
 
 /**
