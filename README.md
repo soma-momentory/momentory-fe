@@ -8,7 +8,7 @@
 ```bash
 nvm use              # .nvmrc — Node 22.14
 npm ci
-cp .env.example .env # 값은 팀 시크릿(EAS Secrets)에서 받는다
+cp .env.example .env # 값은 팀의 빌드 환경 변수에서 받는다 (비밀이 아니다 — CONTRIBUTING §값 3등급)
 npm start
 ```
 
@@ -32,16 +32,36 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 | 눈으로 보기 | `../03_미리보기/MVP.html` |
 | 토큰 정본 | `../02_디자인시스템/theme.ts` → `npm run sync:theme` |
 
-**이 저장소는 부모 없이도 빌드된다** — 테마와 폰트를 커밋해뒀다. 부모는 설계를 고칠 때만 필요하다.
+### 빌드는 독립, 개발은 아니다
+
+**빌드는 부모 없이 된다** — 테마와 폰트를 커밋해뒀으니 `npm ci && npm start` 가 그대로 돈다.
+**하지만 화면을 만들려면 부모가 있어야 한다.** 위 표의 스펙·상태 기계·계측 규칙이 전부 저쪽에 있다.
+
+지금 이 저장소가 맞춰져 있는 설계 기준:
+
+| | |
+|---|---|
+| 범위 | `09_MVP` — MVP 30화면 (노드 1,151개) |
+| 상류 번들 | `07_반입/UXUI 리팩토링 의뢰 모멘토리/export/mvp/` · 2026-08-05 반입 |
+| 토큰 | `src/design/theme.ts` 헤더의 `@generated-from` 이 원본 커밋 SHA 를 들고 있다 |
+
+> **커밋 SHA 를 여기 박지 않는 이유** — 부모 저장소에는 아직 리모트가 없다(로컬 전용).
+> 가져올 수 없는 SHA 를 적으면 정확해 보이지만 아무도 그 커밋을 체크아웃할 수 없다.
+> 부모에 리모트가 붙으면 그때 이 표에 `momentory@<sha>` 를 추가하고,
+> CI 가 `theme.ts` 의 `@generated-from` 과 대조하게 만든다.
+> 지금 유효한 대조 수단은 `npm run check:theme` 하나다 — 생성물이 손대졌는지까지만 본다.
 
 ## 문서
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — 기술 설계 · 데이터 레이어 · 아웃박스 계약
-- [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — 커밋 · 브랜치 · 시크릿 · 생성물
-- [`CLAUDE.md`](CLAUDE.md) — 절대 어기지 않는 규칙 11개
+- [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — **작업 규칙의 정본.** 커밋 · 값 3등급 · 의존성 · 생성물
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — 기술 설계 · 데이터 레이어 · 아웃박스 계약 · 마일스톤
 - [`assets/fonts/README.md`](assets/fonts/README.md) — Pretendard 출처·해시·라이선스
+- [`CLAUDE.md`](CLAUDE.md) — AI 도구용 길잡이. 규칙을 소유하지 않고 위 문서를 가리킨다
 
 ## 진행
 
 **M0 완료** — 셋업 · git 위생 · Pretendard · 테마 동기화 · `ScreenBackground`.
-다음 단계의 선행 조건은 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) 말미에 있다.
+Android 에뮬레이터에서 배경 그라디언트·주 버튼·감정 9종 색이 토큰과 픽셀 일치하는 것을 확인했다.
+
+**M1 다음** — P0 컴포넌트 12종 + 테스트 기반(Jest + RNTL).
+마일스톤과 각 단계의 선행 조건은 [`docs/ARCHITECTURE.md §7`](docs/ARCHITECTURE.md) 에 있다.
