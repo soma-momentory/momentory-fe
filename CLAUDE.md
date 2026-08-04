@@ -53,7 +53,7 @@ src/design/{theme.ts, tokens.mvp.ts}
 src/components/primitives/ScreenBackground.tsx
 ```
 
-설치된 것: expo-router · expo-font · react-native-svg · safe-area-context.
+설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context.
 **아직 없는 것: TanStack Query · Zustand · MMKV · Reanimated · MSW · Jest.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
@@ -71,5 +71,5 @@ CI 는 `check:theme` · `typecheck` · `lint` · 시크릿 검사를 돈다 (테
 ```bash
 npm start            npm run typecheck    npm run lint
 npm run sync:theme   npm run check:theme
-npm run android      # dev client 빌드 — Expo Go 는 SDK 54 라 못 쓴다
+npm run android      # 공식 개발 환경인 dev client 빌드 — Expo Go 는 지원하지 않는다
 ```

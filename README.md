@@ -12,8 +12,8 @@ cp .env.example .env # 값은 팀의 빌드 환경 변수에서 받는다 (비�
 npm start
 ```
 
-네이티브 모듈(카카오 로그인·캘린더·알림·생체인증)이 들어가면 Expo Go 로는 못 돌린다.
-그때부터는 dev client 를 쓴다 — `npx expo prebuild` 후 `npm run ios` / `npm run android`.
+공식 개발 환경은 **dev client** 다. 처음 한 번 `npm run ios` / `npm run android` 로
+네이티브 앱을 설치하고, 이후 JS 작업은 `npm start` 로 진행한다. Expo Go 는 지원하지 않는다.
 
 ## 스택
 
