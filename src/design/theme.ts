@@ -8,7 +8,7 @@
 // 돌린 뒤 여기로 다시 동기화한다. 이 파일을 고치면 다음 동기화에 덮인다.
 //
 // @generated-from  momentory@111e8368c372b329f59e61ebeb46cda57bcabbe6 (미커밋 변경 있음)
-// @generated-sha256 095a8130c63dea1cbcc42a091ac81b7f5aa9322dd50620432ca028bf7b682c7e
+// @generated-sha256 62243d0f6b5dc205f4e5d80392ff22fbad94013fd704e48336169e0ad842ab29
 // ─── 여기부터 상류 원본 ───
 // 자동 생성 파일 — 직접 수정하지 말 것.
 //   재생성: node 05_도구/export-theme.mjs   (소스: 05_도구/lib.mjs)
@@ -29,8 +29,10 @@ export const colors = {
     legalInk: "#71583C",
     dangerInk: "#9B3B2F",
     mute: "#B0A08A",
+    textOnDark: "#FBF4E7",
     primary: "#C2703D",
     primaryDeep: "#A25B2C",
+    primaryDeepPress: "#9E5626",
     primarySoft: "#B06C4E",
     accentInk: "#8E4E23",
     accentWash: "#F6E7DA",
@@ -51,8 +53,11 @@ export const colors = {
     textLegal: "#9A7B57", //     분위기용 각주·라벨 — AA 미달, 필수 문구 금지
     textLegalInk: "#71583C", // 약관·안전 등 읽혀야 하는 문구 (AA ≥4.5:1)
     textSlogan: "#8B7355",
+    textOnDark: "#FBF4E7", // 채운 면 위 글자 — primaryDeep 위 4.72:1 · ink 위 14.9:1
+    textDanger: "#9B3B2F", //  삭제 등 되돌릴 수 없는 동작의 글자·테두리. 면을 채우지 말 것
     accent: "#C2703D", //    장식 전용 — 점·바·테두리·커서·토글 트랙 (3:1 티어). 글자를 얹지 말 것
     accentFill: "#A25B2C", // 주 버튼·체크의 면 — 흰 라벨 기준 4.79:1 (2026-08-01 ISS-03)
+    accentFillPress: "#9E5626", // 〃 눌림 — Reduce Motion 이면 이 색만 남는다
     accentSoft: "#B06C4E",
     accentInk: "#8E4E23", //  primary 계열 진한 텍스트/아이콘 (상류 채택 2026-07-31)
     accentWash: "#F6E7DA", // 은은한 강조 배경 워시
