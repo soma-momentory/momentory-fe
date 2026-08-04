@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # .npmrc 의 legacy-peer-deps 를 그대로 쓴다 — 로컬과 같은 트리가 나와야 한다.
+      - run: npm ci
+
+      # 생성물이 손으로 수정됐는지 본다.
+      # 상류 저장소 없이 도는 검사다 — 커밋된 파일의 자기 일관성만 확인한다.
+      - run: npm run check:theme
+
+      - run: npm run typecheck
+      - run: npm run lint
+
+      # 시크릿이 이력에 들어갔는지 — .gitignore 를 우회해 강제 추가한 경우를 잡는다.
+      - name: 시크릿 추적 여부
+        run: |
+          hits=$(git ls-files | grep -iE '(^|/)\.env($|\.)|google-services\.json|GoogleService-Info\.plist|\.(jks|p8|p12|keystore|mobileprovision)$' || true)
+          if [ -n "$hits" ]; then
+            echo "시크릿으로 보이는 파일이 추적되고 있다:"
+            echo "$hits"
+            exit 1
+          fi
+          echo "OK — 추적된 시크릿 없음"
