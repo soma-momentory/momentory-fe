@@ -1,0 +1,14 @@
+# 부모 저장소(C:\SWM\momentory)와 같은 규칙.
+# Windows 에서 작업하고 CI 는 Linux 라 이게 없으면 CRLF 가 섞여
+# diff 가 통째로 바뀐 것처럼 보인다.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.PNG binary
+*.JPG binary
+*.otf binary
+*.ttf binary
+*.woff2 binary
+*.jks binary
+*.p12 binary

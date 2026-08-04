@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+android/
+ios/
+expo-env.d.ts
+package-lock.json
+
+# 생성물 — 포맷하면 sha256 검증(npm run check:theme)이 깨진다.
+# 이 파일의 서식은 상류 05_도구/export-theme.mjs 가 정한다.
+src/design/theme.ts
