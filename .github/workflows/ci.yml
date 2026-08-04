@@ -25,6 +25,7 @@ jobs:
 
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm run test -- --ci
 
       # 시크릿이 이력에 들어갔는지 — .gitignore 를 우회해 강제 추가한 경우를 잡는다.
       - name: 시크릿 추적 여부
