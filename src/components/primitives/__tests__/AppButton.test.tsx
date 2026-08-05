@@ -1,4 +1,4 @@
-import { AccessibilityInfo, Animated } from "react-native";
+import { AccessibilityInfo, Animated, StyleSheet } from "react-native";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import theme from "@/design/theme";
@@ -8,6 +8,11 @@ import { AppButton, type ButtonVariant } from "../AppButton";
 
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
+
+const sheet = StyleSheet.create({
+  gap: { marginTop: 12 },
+  wide: { paddingHorizontal: 40 },
+});
 
 describe("AppButton", () => {
   it("탭 대상이 44pt 이상이다", async () => {
@@ -154,6 +159,20 @@ describe("AppButton", () => {
   it.each(brands)("%s 는 브랜드 색을 쓴다", async (variant, expected) => {
     const { getByRole } = await render(<AppButton label={variant} variant={variant} />);
     expect(flatten(getByRole("button").props.style).backgroundColor).toBe(expected);
+  });
+
+  // style 을 ViewStyle 로 좁히면 Pressable 이 받는 값을 우리만 거부한다.
+  // 컴파일이 곧 검증이다 — 타입이 좁아지면 typecheck 에서 먼저 깨진다.
+  it("배열·조건부 스타일을 받는다", async () => {
+    const wide = false;
+    const { getByRole } = await render(
+      <AppButton label="시작하기" style={[sheet.gap, wide && sheet.wide, null]} />,
+    );
+
+    const s = flatten(getByRole("button").props.style);
+    expect(s.marginTop).toBe(12); //           배열 안의 값이 닿는다
+    expect(s.paddingHorizontal).toBe(16); //   조건이 거짓이라 기본값이 남는다
+    expect(s.height).toBe(theme.touch.buttonHeight);
   });
 
   it("google 만 테두리를 갖는다 — 세 버튼의 무게를 맞추기 위해", async () => {

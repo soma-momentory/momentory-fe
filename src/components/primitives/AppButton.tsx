@@ -7,6 +7,7 @@ import {
   View,
   type PressableProps,
   type GestureResponderEvent,
+  type StyleProp,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
@@ -38,7 +39,11 @@ type Props = Omit<PressableProps, "style" | "children"> & {
   loading?: boolean;
   /** 아이콘 등 라벨 왼쪽에 놓을 것 */
   leading?: ReactNode;
-  style?: ViewStyle;
+  /**
+   * `StyleProp` 을 유지한다 — `[a, cond && b]` · null 이 전부 들어와야 한다.
+   * Pressable 의 함수형 style 만 뺐다(내부에서 pressed 스타일을 이미 합성한다).
+   */
+  style?: StyleProp<ViewStyle>;
 };
 
 export function AppButton({
