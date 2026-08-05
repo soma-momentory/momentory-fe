@@ -84,6 +84,46 @@ describe("AppButton", () => {
     expect(getByTestId("button-progress", { includeHiddenElements: true }).children).toHaveLength(3);
   });
 
+  // 호출자 props 를 rest 로 마지막에 펼치면 accessibilityState 가 통째로 교체된다.
+  // 아래 둘이 그걸 잡는다 — 유실되는 것은 `busy` 와 호출자 자신의 상태다.
+  it("호출자 accessibilityState 를 살리면서 loading 잠금은 지킨다", async () => {
+    const { getByRole } = await render(
+      <AppButton label="불러오는 중" loading accessibilityState={{ expanded: false }} />,
+    );
+
+    expect(getByRole("button").props.accessibilityState).toMatchObject({
+      expanded: false,
+      disabled: true,
+      busy: true,
+    });
+  });
+
+  // 이건 병합 순서와 무관하게 Pressable 이 disabled prop 으로 다시 덮어써서 지켜진다.
+  // 그래도 남겨 둔다 — 우리가 의존하는 RN 동작이라 바뀌면 여기서 알아야 한다.
+  it("호출자가 disabled 를 뒤집어도 잠금이 풀리지 않는다", async () => {
+    const onPress = jest.fn();
+    const { getByRole } = await render(
+      <AppButton label="다음" disabled accessibilityState={{ disabled: false }} onPress={onPress} />,
+    );
+    const btn = getByRole("button");
+
+    expect(btn.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(btn);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it("잠기지 않은 버튼은 호출자 상태를 그대로 통과시킨다", async () => {
+    const { getByRole } = await render(
+      <AppButton label="펼치기" accessibilityState={{ expanded: true }} />,
+    );
+
+    expect(getByRole("button").props.accessibilityState).toMatchObject({
+      expanded: true,
+      disabled: false,
+      busy: false,
+    });
+  });
+
   it("호출자가 준 press 콜백과 내부 피드백을 함께 실행한다", async () => {
     jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(false);
     const timing = jest.spyOn(Animated, "timing");
