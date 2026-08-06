@@ -50,8 +50,8 @@
 ```
 app/_layout.tsx  app/index.tsx  app/(auth)/login.tsx
 src/design/{theme.ts, tokens.mvp.ts}
-src/components/primitives/{ScreenBackground.tsx, AppText.tsx, AppButton.tsx, Card.tsx,
-                           ProgressDots.tsx, BackChevron.tsx}
+src/components/primitives/{ScreenBackground.tsx, AppText.tsx, AppButton.tsx, Card.tsx}
+src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
 src/components/primitives/__tests__/
 ```
 

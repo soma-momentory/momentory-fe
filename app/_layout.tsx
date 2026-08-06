@@ -1,33 +1,16 @@
-import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import theme from "@/design/theme";
+import { AppProviders } from "@/lib/providers";
 
-// 폰트가 준비되기 전에 화면을 보이지 않는다 — 서체가 바뀌며 깜빡이지 않게.
-void SplashScreen.preventAutoHideAsync();
-
+/**
+ * 라우트 설정만 둔다. **Provider 는 여기가 아니라 `src/lib/providers.tsx` 다** —
+ * 축 A·B 두 사람이 이 파일에서 부딪히지 않게 (`docs/TASKS.md` 「둘이 부딪히는 곳」).
+ */
 export default function RootLayout() {
-  // 위계는 굵기·크기·자간으로만 만든다. 서체는 Pretendard 하나다.
-  const [fontsLoaded, fontError] = useFonts({
-    "Pretendard-Regular": require("../assets/fonts/Pretendard-Regular.otf"),
-    "Pretendard-Medium": require("../assets/fonts/Pretendard-Medium.otf"),
-    "Pretendard-SemiBold": require("../assets/fonts/Pretendard-SemiBold.otf"),
-    "Pretendard-Bold": require("../assets/fonts/Pretendard-Bold.otf"),
-  });
-
-  useEffect(() => {
-    // 폰트 로딩이 실패해도 앱을 붙잡아두지 않는다 — 시스템 서체로라도 뜬다.
-    if (fontsLoaded || fontError) void SplashScreen.hideAsync();
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) return null;
-
   return (
-    <SafeAreaProvider>
+    <AppProviders>
       {/* 배경이 크림이라 상태바 글자는 항상 어둡다 (다크모드에서도 반전 없음) */}
       <StatusBar style="dark" />
       <Stack
@@ -39,6 +22,6 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: theme.colors.semantic.background },
         }}
       />
-    </SafeAreaProvider>
+    </AppProviders>
   );
 }
