@@ -3,12 +3,14 @@ import { render, fireEvent } from "@testing-library/react-native";
 import Interests from "../interests";
 import Nickname from "../nickname";
 import Profile from "../profile";
+import CalendarLink from "../calendar";
+import Done from "../done";
 import RetroTime from "../retro-time";
 
 import { useDraft } from "@/features/onboarding/model/draft";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), back: jest.fn() },
+  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
 }));
 
 // 초안은 모듈 store 라 테스트 사이에 값이 샌다 — 각 테스트가 빈 상태에서 시작해야
@@ -232,7 +234,13 @@ describe("08 · 회고 시간", () => {
     const { getByPlaceholderText } = await render(<RetroTime />);
 
     expect(getByPlaceholderText("시간 선택").props.editable).toBe(false);
-    expect(useDraft.getState().retroTime).toBeNull();
+  });
+
+  it("고르지 않아도 시각은 정해져 있다 — 스키마 기본값 21:30", async () => {
+    // 값이 없으면 10 의 요약 카드와 홈의 「밤 9:30」 문구가 할 말을 잃는다.
+    await render(<RetroTime />);
+
+    expect(useDraft.getState().retroTime).toBe("21:30");
   });
 
   it("「알림 없이 쓸게요」 도 회고 시각을 지우지 않는다", async () => {
@@ -243,5 +251,65 @@ describe("08 · 회고 시간", () => {
     await fireEvent.press(getByText("알림 없이 쓸게요"));
 
     expect(useDraft.getState().retroTime).toBe("21:30");
+  });
+});
+
+describe("09 · 캘린더", () => {
+  it("무엇을 가져가지 않는지를 카드로 못박는다", async () => {
+    // 권한 요청에서 가장 알고 싶은 것은 "무엇을 읽는가" 다 (09.md)
+    const { getByText } = await render(<CalendarLink />);
+
+    expect(getByText("일정 제목만 참고하며, 내용은 저장하거나 공유하지 않아요.")).toBeTruthy();
+  });
+
+  it("거절 경로를 숨기지 않는다 — 보이지 않으면 허용이 강요가 된다", async () => {
+    const { getByText } = await render(<CalendarLink />);
+
+    expect(getByText("캘린더 연결하기")).toBeTruthy();
+    expect(getByText("나중에 할게요")).toBeTruthy();
+  });
+
+  it("연결하든 미루든 온보딩은 이어진다 — 실패가 막지 않는다", async () => {
+    const a = await render(<CalendarLink />);
+    await fireEvent.press(a.getByText("나중에 할게요"));
+    expect(useDraft.getState().calendarLinked).toBe(false);
+
+    const b = await render(<CalendarLink />);
+    await fireEvent.press(b.getByText("캘린더 연결하기"));
+    expect(useDraft.getState().calendarLinked).toBe(true);
+  });
+});
+
+describe("10 · 완료", () => {
+  it("받은 답을 그대로 돌려준다", async () => {
+    useDraft.getState().set("calendarLinked", true);
+    const { getByText } = await render(<Done />);
+
+    expect(getByText("캘린더 연결 완료")).toBeTruthy();
+    expect(getByText("밤 9:30")).toBeTruthy(); // 21:30 을 홈과 같은 말투로
+  });
+
+  it("연결하지 않았으면 그 줄을 지운다 — 회색 처리하지 않는다", async () => {
+    // 있지도 않은 것을 흐리게 남기면 "뭔가 실패했다" 로 읽힌다 (10.md)
+    useDraft.getState().set("calendarLinked", false);
+    const { queryByText, getByText } = await render(<Done />);
+
+    expect(queryByText("캘린더 연결 완료")).toBeNull();
+    expect(getByText("돌아보는 시간")).toBeTruthy(); // 남은 줄은 회고 시각 하나
+  });
+
+  it("쉬는 방법 줄이 없다 — 07 을 묻지 않았으므로 돌려줄 답도 없다", async () => {
+    const { queryByText } = await render(<Done />);
+
+    expect(queryByText(/쉬는/)).toBeNull();
+  });
+
+  it("시작하면 초안을 비운다 — 다음 사람에게 앞 답이 남지 않게", async () => {
+    useDraft.getState().set("nickname", "지현");
+    const { getByText } = await render(<Done />);
+
+    await fireEvent.press(getByText("모멘토리 시작하기"));
+
+    expect(useDraft.getState().nickname).toBe("");
   });
 });

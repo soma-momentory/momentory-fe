@@ -31,12 +31,21 @@ export type OnboardingDraft = {
   /** `06` · 필수 · 최대 3 */
   interests: string[];
   /**
-   * `08` · 회고 시각. `null` 이면 아직 고르지 않았다 — 그래도 넘어갈 수 있다.
+   * `08` · 회고 시각. **기본 `21:30`** — 스키마가 정한 값이다
+   * (`momentory.schema.mvp.json` — "time · 기본 21:30 (08 · M3에서 수정)").
    *
-   * 시간 선택 모달(`08-b`)이 MVP 밖이라 지금은 채울 길이 없다. `[알림 없이
-   * 쓸게요]` 를 골라도 **이 값은 저장된다** — 알림만 끄고 홈 문구는 시각을 쓴다.
+   * 비워두지 않는 이유: 홈이 "밤 9:30엔 제가 먼저 말 걸어요" 라고 말하고
+   * `10` 이 그 시각을 요약 카드에 되돌려준다. 값이 없으면 두 화면이 할 말을 잃는다.
+   * 시간 선택 모달(`08-b`)이 MVP 밖이라 아직 바꿀 길만 없다.
+   *
+   * `[알림 없이 쓸게요]` 를 골라도 **이 값은 남는다** — 알림만 끈다(`08.md`).
    */
-  retroTime: string | null;
+  retroTime: string;
+  /**
+   * `09` · 캘린더 연결 여부. `10` 이 이 값으로 요약 줄을 **지운다**
+   * (회색 처리하지 않는다 — `10.md`).
+   */
+  calendarLinked: boolean;
 };
 
 type DraftStore = OnboardingDraft & {
@@ -50,7 +59,8 @@ const EMPTY: OnboardingDraft = {
   age: "",
   gender: null,
   interests: [],
-  retroTime: null,
+  retroTime: "21:30",
+  calendarLinked: false,
 };
 
 export const useDraft = create<DraftStore>((setState) => ({

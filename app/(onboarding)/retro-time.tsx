@@ -9,7 +9,6 @@ import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
-import { useDraft } from "@/features/onboarding/model/draft";
 
 /**
  * `08` · 회고 시간 (온보딩 4/6 · 필수)
@@ -29,8 +28,6 @@ import { useDraft } from "@/features/onboarding/model/draft";
  * 않아도 넘어간다.
  */
 export default function RetroTime() {
-  const time = useDraft((s) => s.retroTime);
-
   return (
     <ScreenBackground>
       <OnboardingTopBar step={3} onBack={() => router.back()} />
@@ -45,12 +42,18 @@ export default function RetroTime() {
 
       <View style={styles.bottom}>
         {/*
-          시간 선택은 08-b 가 하는데 MVP 밖이라 아직 열지 않는다. 값이 없으면
-          "시간 선택" 을 placeholder 로 보이고, 편집은 막아 둔다 — 키보드로 아무
-          문자열이나 받으면 시각이 아닌 값이 초안에 들어간다.
+          MVP 가 가진 상태는 「선택 전」 하나뿐이라 placeholder 를 그대로 보인다.
+          선택은 08-b 가 하는데 범위 밖이라 아직 열지 않는다.
+
+          **고르지 않아도 시각은 정해져 있다** — 초안이 스키마 기본값 21:30 을 들고
+          있고 `10` 이 "밤 9:30" 으로 되돌려준다. 그래서 비어 보여도 다음 화면이
+          할 말을 잃지 않는다.
+
+          editable={false} — 키보드로 아무 문자열이나 받으면 시각이 아닌 값이
+          초안에 들어가고 09·10 에서 걸러낼 방법이 없다.
         */}
         <View style={styles.timeRow}>
-          <InputRow value={time ?? ""} placeholder="시간 선택" editable={false} />
+          <InputRow value="" placeholder="시간 선택" editable={false} />
           <AppText variant="caption" tone="caption" style={styles.caret}>
             ▾
           </AppText>
@@ -70,12 +73,7 @@ export default function RetroTime() {
   );
 }
 
-/**
- * ⚠ **여기가 지금 구현의 끝이다.** 다음은 `09`(캘린더)이고 아직 없다.
- */
-const goNext = () => {
-  // TODO 09 — app/(onboarding)/calendar.tsx 가 생기면 router.push("/calendar")
-};
+const goNext = () => router.push("/calendar");
 
 const styles = StyleSheet.create({
   bottom: { gap: 11 },
