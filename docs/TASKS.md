@@ -176,7 +176,8 @@ v2 `momentory.css` 가 `.tfield` 를 정의해 추측이 필요 없어졌다 —
 - **OS 알림 권한 요청** — M2 `expo-notifications` 도입과 함께 (`08` 저장 직후)
 - **⚠ dev client 재빌드 필요** — `@react-native-community/datetimepicker`(08 OS
   피커)가 네이티브 모듈이라 `npm run android` 를 다시 돌려야 기기에서 열린다
-- **상류 확인 2건** (`06_운영문서/OPEN-ISSUES.md` 제기 후보):
+- **상류 확인 2건** (`06_운영문서/OPEN-ISSUES.md` 제기 후보 — 팀 상의 안건
+  전체를 모은 회의용 문서는 [`DISCUSSION.md`](DISCUSSION.md)):
   - `04.md` 상태 표가 「뒤로」를 두는 것으로 읽힌다 — 첫 질문인데 03 으로
     돌아갈 수 있어야 하나? 구현은 자리만 예약하고 비워 둔다
   - `05-b` 나이의 **입력 전** 상태가 스펙에 없다 — 구현은 입력줄 + 지우기 × 로
