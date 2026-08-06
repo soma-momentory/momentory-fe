@@ -121,6 +121,40 @@ describe("C6-b · 바바가 함께 본 오늘 + 행동 카드", () => {
 
     expect(useDiary.getState().diaries).toHaveLength(0);
   });
+
+  it("두 면을 오갈 수 있고 한 번에 한 면만 보인다", async () => {
+    // 두 면을 한 화면에 섞지 않는다 (RULES.md 「보관함」)
+    const r = await render(<RetroDraft />);
+
+    // 첫 면 — 본문은 편집칸이고 바바의 각주는 없다
+    expect(r.getByLabelText("일기 본문")).toBeTruthy();
+    expect(r.queryByText("바바의 관점은 제안일 뿐이에요 · 내 문장이 우선이에요")).toBeNull();
+
+    await fireEvent.press(r.getByText("바바가 함께 본 오늘"));
+    expect(r.queryByLabelText("일기 본문")).toBeNull();
+    expect(r.getByText("바바의 관점은 제안일 뿐이에요 · 내 문장이 우선이에요")).toBeTruthy();
+
+    // 되돌아오면 내가 고치던 자리가 그대로다
+    await fireEvent.press(r.getByText("내가 남긴 오늘"));
+    expect(r.getByLabelText("일기 본문")).toBeTruthy();
+    expect(r.queryByText("오늘 만든 행동 카드")).toBeNull();
+  });
+
+  it("면을 오가도 고치던 본문이 남는다", async () => {
+    const r = await render(<RetroDraft />);
+    await fireEvent.changeText(r.getByLabelText("일기 본문"), "내가 다시 쓴 오늘.");
+
+    await fireEvent.press(r.getByText("바바가 함께 본 오늘"));
+    await fireEvent.press(r.getByText("내가 남긴 오늘"));
+
+    expect(r.getByLabelText("일기 본문").props.value).toBe("내가 다시 쓴 오늘.");
+  });
+
+  it("점수·배지·연속 기록을 두지 않는다", async () => {
+    const r = await openBabaFace();
+
+    expect(r.queryByText(/\d+일째|연속|점수|배지|축하/)).toBeNull();
+  });
 });
 
 describe("저장 — 일기 한 장 + 행동 카드 한 장", () => {
@@ -186,6 +220,32 @@ describe("저장 — 일기 한 장 + 행동 카드 한 장", () => {
     expect(useRetro.getState().startEmotion).toBeNull();
     expect(useRetro.getState().nextAction).toBeNull();
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/retro/done");
+  });
+
+  it("두 번 눌러도 일기가 두 장 생기지 않는다", async () => {
+    // 회고 한 번에 일기 한 장 — 빠른 연타로 조용히 깨지면 안 된다
+    const r = await render(<RetroDraft />);
+    await fireEvent.press(r.getByText("바바가 함께 본 오늘"));
+    const button = r.getByText("오늘 일기 저장하기");
+
+    await act(async () => {
+      await fireEvent.press(button);
+      await fireEvent.press(button);
+      await fireEvent.press(button);
+    });
+
+    expect(useDiary.getState().diaries).toHaveLength(1);
+    expect(useDiary.getState().actionCards).toHaveLength(1);
+  });
+
+  it("바바의 관점과 행동 카드는 저장 시점의 값으로 굳는다", async () => {
+    // 저장 이후에는 다시 만들지 않는다 — 사용자가 일기를 고쳐도 그대로다 (C6-b.md)
+    await save("내가 다시 쓴 오늘.");
+
+    const d = useDiary.getState().diaries[0];
+    expect(d?.body).toBe("내가 다시 쓴 오늘."); //          내 면은 내가 고친 값
+    expect(d?.babaView).toBe(DRAFT_DEMO.babaView); //       바바 면은 그대로
+    expect(useDiary.getState().actionCards[0]?.situation).toBe(DRAFT_DEMO.situation);
   });
 });
 

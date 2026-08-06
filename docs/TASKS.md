@@ -250,7 +250,7 @@ v2 `momentory.css` 가 `.tfield` 를 정의해 추측이 필요 없어졌다 —
 
 | # | 내용 | 비고 |
 |---|---|---|
-| M3-0 | **P1.5 공용 15종** — ✅ `TabBar` `TabScreen` `EmotionPill` `LineIcons`(해·종·달·연필·체크) `Sheet`+`SheetHeader` `EmotionGrid`(기본·big) `Toggle` `RetroNav` / 남은 것 `SegBar` `RowCard` `ScrollArea` … | **M2 와 병렬 가능.** M1-1 만 끝나면 시작. 쓰는 화면이 생길 때 하나씩 |
+| M3-0 | **P1.5 공용** — ✅ `TabBar` `TabScreen` `EmotionPill` `LineIcons`(해·종·달·연필·체크) `Sheet`+`SheetHeader` `EmotionGrid`(기본·big) `Toggle` `RetroNav` `SegBar` `DirectionChip` `ChatInput` / 남은 것 `RowCard` `ScrollArea`(M5 에서) | **M2 와 병렬 가능.** M1-1 만 끝나면 시작. 쓰는 화면이 생길 때 하나씩 |
 | M3-1 ✅ | 홈 `12` `12-b` (2026-08-07) | 세 칸 한 템플릿. 빈 상태는 별도 레이아웃이 아니라 같은 카드의 변형 — 한 파일이 두 상태를 그린다 |
 | M3-2 ✅ | 시트 3종 `12-c` `12-d` `12-e` (2026-08-07) | 일정 상세·순간 입력·일정 추가. **투명 모달 라우트** — 뒤의 홈이 스크림 너머로 보인다. `Sheet`·`EmotionGrid`·`Toggle` 이 여기서 생겼다 |
 | M3-3 | **오프라인 아웃박스** | 멱등 키 · 엔티티별 직렬 처리 · 409 처리 |

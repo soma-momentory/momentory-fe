@@ -82,7 +82,9 @@
 
 ## 지금 어디까지 왔나
 
-**M0·M1 완료, M2 화면 정렬·인증 부트스트랩 완료, 외부 연동 대기. M3 홈 진행 중.**
+**M0·M1 완료. M2(진입·온보딩)·M3(홈)·M4(회고) 화면 완료 — 40장 중 30장.**
+남은 화면은 M5 뿐이다(보관함 6 · 리포트 1 · 마이 3). 외부 연동(소셜 SDK · OS 권한 ·
+BE · 영속 저장 · 계측)은 별개로 남아 있다.
 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
 ```
@@ -112,7 +114,7 @@ src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이
 src/features/home/{model/day.ts, ui/ScheduleRow.tsx}
 src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData)
 src/lib/day.ts                            ← 날짜. 하루 경계 04:00 은 M3 에 들어온다
-src/features/onboarding/model/draft.ts   ← 온보딩 답안 초안 (Zustand)
+src/features/onboarding/model/{draft, completion}.ts ← 답안 초안 · 완료 플래그(진입 분기)
 src/features/auth/model/auth.ts          ← M2-0 인증 부트스트랩 — hydrate·가드·fail-closed
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
 src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳은 전부 이걸 쓴다
@@ -125,7 +127,10 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
 > 진입·온보딩 13장은 **v2 기준으로 맞춰져 있다**(2026-08-07 따라잡기 완료).
-> 남은 것(브랜드 마크 · 계측 · 홈 연결 등)은 `docs/TASKS.md` 「잔여」 절에 있다.
+> 남은 것(브랜드 마크 · 계측 · **앱을 다시 열었을 때의 홈 분기 영속화** 등)은
+> `docs/TASKS.md` 「잔여」 절에 있다. 진입 분기 자체는 `app/index.tsx` 에 있고
+> (세션 없음 → 로그인 · 온보딩 전 → 온보딩 · 완료 → 홈), **완료 플래그가 아직
+> 메모리라 앱을 껐다 켜면 온보딩을 다시 본다**(`features/onboarding/model/completion.ts`).
 
 CI 는 `check:theme` · `typecheck` · `lint` · `test` · 시크릿 검사를 돈다.
 

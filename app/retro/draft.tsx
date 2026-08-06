@@ -1,5 +1,5 @@
 import { Redirect, router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { EmotionPill } from "@/components/common/EmotionPill";
@@ -52,6 +52,13 @@ export default function RetroDraft() {
   const [face, setFace] = useState<0 | 1>(0);
   // `DRAFT_DEMO` 가 `as const` 라 명시하지 않으면 리터럴 타입으로 좁혀져 못 고친다
   const [body, setBody] = useState<string>(DRAFT_DEMO.body);
+  /**
+   * 저장은 **한 번뿐**이다. 버튼을 빠르게 두 번 누르면 `router.replace` 가 돌기
+   * 전에 `save` 가 두 번 들어와 **일기가 두 장 생긴다** — 회고 한 번에 일기 한
+   * 장이라는 규칙이 조용히 깨진다. state 가 아니라 ref 인 이유는 같은 틱 안에서
+   * 막아야 하기 때문이다(state 는 다음 렌더에야 반영된다).
+   */
+  const saving = useRef(false);
 
   // 감정 없이 들어올 수 없다 — C3 이 필수이기 때문이다
   if (startEmotion == null) return <Redirect href="/retro/emotion" />;
@@ -62,6 +69,8 @@ export default function RetroDraft() {
   const targetAction = nextAction ?? DRAFT_DEMO.targetAction;
 
   const save = () => {
+    if (saving.current) return;
+    saving.current = true;
     saveDiary({
       date: SAMPLE_TODAY,
       body,

@@ -9,6 +9,7 @@ import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import { babaShadow } from "@/design/tokens.mvp";
 import { useAuth } from "@/features/auth/model/auth";
+import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 
 /**
  * `S0` · 스플래시 = `entry` 상태 기계의 `route` 판정 자리.
@@ -26,13 +27,17 @@ import { useAuth } from "@/features/auth/model/auth";
  * - **최소 0.8초**를 보장하고 준비되면 즉시 넘어간다. 진행 바·퍼센트 없음.
  *   1.5초 지연 상태(`S0-b`)는 MVP 범위 밖이다
  * - **`max(0.8s, 준비완료)`** — 그 사이 SecureStore 세션을 비동기로 복원한다
- *   (`hydrating` 동안 보이는 것이 곧 S0 다, §3). 판정: 세션 없음 → 로그인 ·
- *   세션 있음 → 온보딩
+ *   (`hydrating` 동안 보이는 것이 곧 S0 다, §3). 판정 셋:
  *
- * ⚠ **온보딩 완료 여부를 아직 모른다.** 그 플래그는 비민감이라 MMKV 가 들
- * 자리인데(§3-2) MMKV 도입이 M3 다. 그래서 세션이 있으면 일단 온보딩으로
- * 보내고, 온보딩을 마치면 `10` 이 홈으로 `replace` 한다 — 앱을 껐다 켜면
- * 온보딩을 다시 본다. 플래그가 생기면 이 한 줄이 홈으로 갈린다.
+ * ```
+ * 세션 없음                    → (auth)/login
+ * 세션 있음 · 온보딩 미완료     → (onboarding)/welcome
+ * 세션 있음 · 온보딩 완료       → (tabs)/home
+ * ```
+ *
+ * ⚠ **온보딩 완료 플래그가 아직 기기에 남지 않는다**(`completion.ts`) — MMKV
+ * 도입이 M3 라서 메모리다. **앱을 껐다 켜면 온보딩을 다시 본다.** 분기 자체는
+ * 여기 있고, 영속이 붙으면 이 파일은 바뀌지 않는다.
  */
 const MIN_SPLASH_MS = 800;
 const BABA = 147;
@@ -41,6 +46,7 @@ const GLOW = 176;
 export default function Splash() {
   const reduceMotion = useReduceMotion();
   const status = useAuth((s) => s.status);
+  const completed = useOnboardingCompletion((s) => s.completed);
   const [minDone, setMinDone] = useState(false);
   const [breathe] = useState(() => new Animated.Value(1));
   const [glow] = useState(() => new Animated.Value(0.62));
@@ -54,9 +60,14 @@ export default function Splash() {
   useEffect(() => {
     // 0.8초 하한과 hydration 둘 다 끝나야 넘어간다 — 먼저 끝난 쪽이 기다린다
     if (!minDone || status === "hydrating") return;
-    // TODO M3: authenticated + 온보딩 완료 → (tabs)/home. 지금은 홈이 없다
-    router.replace(status === "authenticated" ? "/welcome" : "/login");
-  }, [minDone, status]);
+    if (status !== "authenticated") {
+      router.replace("/login");
+      return;
+    }
+    // 온보딩을 마친 사람은 홈으로 — 매번 온보딩을 다시 보게 하지 않는다.
+    // 이 플래그는 아직 메모리라 앱을 껐다 켜면 온보딩으로 간다(위 주석).
+    router.replace(completed ? "/home" : "/welcome");
+  }, [minDone, status, completed]);
 
   useEffect(() => {
     if (reduceMotion) {
