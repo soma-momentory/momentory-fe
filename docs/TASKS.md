@@ -133,7 +133,8 @@ Reduce Motion 이면 이동/스케일 없이 색만 바뀌는가.
 
 | 파일 | 왜 겹치나 | 어떻게 |
 |---|---|---|
-| `app/_layout.tsx` | 둘 다 Provider 를 추가한다 | **한 사람이 Provider 스택을 먼저 완성**하고 그 뒤엔 건드리지 않는다 |
+| ~~`app/_layout.tsx`~~ | ~~둘 다 Provider 를 추가한다~~ | ✅ **닫힘 (2026-08-06)** — Provider 를 `src/lib/providers.tsx` 로 옮겼다. `_layout.tsx` 는 라우트 설정만 남았고 더 건드릴 일이 없다 |
+| `src/lib/providers.tsx` | Provider 를 늘리는 곳이 여기가 됐다 | 삽입 **순서가 정해져 있다**(파일 주석). 자기 자리에 넣고, 넣기 전에 알린다 |
 | `package.json` | 둘 다 의존성을 넣는다 | 넣기 전에 알린다. 락파일 충돌은 `npm ci` 후 재생성이 제일 빠르다 |
 | `src/components/primitives/` | M1 공용 | M1 이 끝날 때까지 **한 사람 소유**. 그 뒤엔 변경 시 알린다 |
 | `src/design/theme.ts` | — | **아무도 안 고친다.** 생성물이고 CI 가 검사한다 |

@@ -81,16 +81,25 @@
 ### 지금 있는 것
 
 ```
-app/
-  _layout.tsx                # 폰트 로딩 · SafeAreaProvider · Stack
-  index.tsx                  # M0 검수 화면 (M2 에서 S0 스플래시가 된다)
+app/                         # 라우트만 — 로직을 두지 않는다
+  _layout.tsx                # Stack · StatusBar (Provider 는 여기가 아니다)
+  index.tsx                  # 진입 판정 (M2 에서 S0 스플래시가 된다)
+  (auth)/login.tsx           # S1
 src/
   design/
     theme.ts                 # 생성물 — 직접 수정 금지 (§5)
     tokens.mvp.ts            # 상류 반영 전까지의 이름 매핑 (§5)
   components/primitives/
-    ScreenBackground.tsx
+    ScreenBackground.tsx  AppText.tsx  AppButton.tsx  Card.tsx
+  lib/
+    providers.tsx            # Provider 스택 — 늘릴 때 여기만 고친다
 ```
+
+**Provider 를 `app/_layout.tsx` 에 두지 않는다.** 축 A·B 두 사람이 같은 줄에서
+부딪히기 때문이다(`TASKS.md` 「둘이 부딪히는 곳」). 삽입 순서와 그 이유는
+`src/lib/providers.tsx` 주석에 있다 — **`GestureHandlerRootView` 가 최상단**이어야
+하고(RNGH 요구), **`AuthGate` 가 최하단**이어야 한다(갱신에 Query 가 필요하고
+라우트를 막아야 하므로).
 
 ### 목표 구조
 
@@ -99,7 +108,7 @@ src/
 
 ```
 app/                         # expo-router — 라우트만, 로직 없음
-    _layout.tsx              # Provider 스택 (Query · 폰트 · SafeArea · 테마)
+    _layout.tsx              # Stack · StatusBar (Provider 는 src/lib/providers.tsx)
     index.tsx                # S0 스플래시 = entry machine 의 route 판정
     (auth)/login.tsx         # S1
     (onboarding)/
