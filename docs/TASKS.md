@@ -43,7 +43,7 @@ npm run test          CI 에 test 단계 추가
 |---|---|
 | `AppText` | `typography.styles` 8종 프리셋. `fontFamily` 로 굵기 지정 |
 | `AppButton` | h54 r14 · `motion.press`(scale .98) + `accentFillPress` · 변형 6종(primary/kakao/apple/google/ghost/disabled) |
-| `Card` | fill `card` · stroke primary 30% 1px · r14 |
+| `Card` | fill `card` · **r18 · 테두리 ink 10% · 여백 15/17** (`momentory.css` `.card`) |
 
 **테스트로 고정할 것**: 프리셋이 토큰 값을 그대로 쓰는가 · 탭 대상이 44pt 이상인가 ·
 Reduce Motion 이면 이동/스케일 없이 색만 바뀌는가.
@@ -61,8 +61,9 @@ Reduce Motion 이면 이동/스케일 없이 색만 바뀌는가.
 - `ProgressDots` 는 활성만 6→18px pill. **숫자·"4/6" 표기 금지**
 - `BackChevron` 은 첫 질문에서도 **자리를 예약**한다 (진행점 y 가 흔들리지 않게)
 
-> ⚠ **값은 `flows/9-mvp.mjs` 에서 가져온다.** `2-onboarding.mjs` 는 원본이라 어긋난다 —
-> 진행점 gap 8→**6**, ‹ 글리프 26→**19**, ‹ 색 ink→**body**. 다른 컴포넌트도 같을 것으로 본다.
+> ⚠ **값은 MVP 정본에서 가져온다** — `momentory.css` → `flows/9-mvp.mjs`.
+> `2-onboarding.mjs` 는 원본이라 어긋난다: 진행점 gap 8→**6**, ‹ 글리프 26→**19**, ‹ 색 ink→**body**.
+> 순서는 `CLAUDE.md` 「값을 찾는 순서」, 어긋난 목록은 아래 「값은 MVP 정본에서」.
 
 ### `InputRow` 는 M2 로 미뤘다 (2026-08-06)
 
@@ -74,9 +75,9 @@ MVP 화면 중 **지금 이걸 쓰는 것이 없다.** `04`(닉네임)·`08`(시
 만든다.**
 
 **그때 함께 정할 것 — `r16` 토큰이 없다.** `theme.radius` 는 `sm 6 · image 12 · control 14 ·
-sheet 22 · pill 999` 뿐인데 MVP 는 입력줄·말풍선·배너에 **16** 을 쓴다. 세 곳이 같은 값을
-쓰므로 하나로 정해야 한다. 상류 `05_도구/lib.mjs` 에 넣고 `npm run sync:theme` 이 정석이다 —
-`tokens.mvp.ts` 에 새 값을 넣지 않는다(리터럴이 0개인 상태를 깨뜨린다).
+sheet 22 · pill 999` 뿐인데 입력줄은 **16** 을 쓴다. `theme.ts` 가 MVP 값을 못 따라오는
+같은 문제이고, 카드(`r18`)는 이미 **`tokens.mvp.ts` 에 담는 쪽으로 갔다**(아래 「값은 MVP
+정본에서」 참조). 입력줄도 같은 자리에 넣고, 상류가 흡수하면 함께 지운다.
 
 ---
 
@@ -155,12 +156,29 @@ sheet 22 · pill 999` 뿐인데 MVP 는 입력줄·말풍선·배너에 **16** �
 | `package.json` | 둘 다 의존성을 넣는다 | 넣기 전에 알린다. 락파일 충돌은 `npm ci` 후 재생성이 제일 빠르다 |
 | `src/components/primitives/` | M1 공용 | M1 이 끝날 때까지 **한 사람 소유**. 그 뒤엔 변경 시 알린다 |
 | `src/design/theme.ts` | — | **아무도 안 고친다.** 생성물이고 CI 가 검사한다 |
-| `src/design/tokens.mvp.ts` | 상류가 흡수하면 사라진다 | 여기에 새 값을 추가하지 않는다. 필요하면 상류 `lib.mjs` 를 고친다 |
+| `src/design/tokens.mvp.ts` | 상류가 흡수하면 사라진다 | **MVP css 에는 있는데 `theme.ts` 에 없는 값만** 여기 담는다(카드 r18 등). 그 외에는 상류 `lib.mjs` 를 고친다. 화면 코드에 값을 흩지 않는 것이 이 파일의 목적이다 |
 
 **PR 은 작게.** 컴포넌트 2~3개 또는 화면 2~3장이 한 PR 이다.
 M1 전체를 한 PR 로 묶으면 리뷰가 불가능하고 충돌 범위도 커진다.
 
 ---
+
+## 값은 MVP 정본에서 가져온다
+
+**`COMPONENTS.md` 의 P0 스펙 표를 그대로 구현하지 않는다** — 그 표는 원본(`01_화면설계/`) 기준이다.
+순서는 `CLAUDE.md` 「값을 찾는 순서」에 있고, 요점은 **`momentory.css` 가 MVP 값 정본**이라는 것.
+
+M1 에서 실제로 셋이 어긋났다 — `Card`(r14→**18**, primary 30%→**ink 10%**) ·
+`ProgressDots`(gap 8→**6**) · `BackChevron`(글리프 26→**19**, ink→**body**).
+`Card` 는 원본 값으로 만들어져 한 번 머지됐다가 되돌렸다(`OPEN-ISSUES.md` `R-42`).
+
+**`S0`·`S1` 만 예외** — MVP 리팩토링 대상이 아니라 원본 값을 쓴다(`9-mvp.mjs` 는 28화면뿐).
+
+### 아직 안 만든 것
+
+- **`AppButton` 알약 변형** — MVP 28화면의 CTA 는 `.pri{border-radius:999px}` 다.
+  지금 `AppButton` 은 r14 인데 **`S1` 기준으로는 맞다**(원본 `button()` r14). 쓸 화면이 M2 에 생긴다
+- **`InputRow`** — M2-2 에서 `04` 와 함께 (위 M1-3 절)
 
 ## 시작하기 전에 읽을 것
 

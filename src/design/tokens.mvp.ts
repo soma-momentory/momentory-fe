@@ -12,6 +12,12 @@
 // 2026-08-05 — 상류가 `textOnDark` 와 `primaryDeepPress` 를 흡수해서 **리터럴이 0개가 됐다.**
 // 이제 이 파일은 순수한 이름 매핑이라 값이 어긋날 수 없다. 남은 일은 상류가 semantic 별칭을
 // 6종 이름(textStrong·textCaption…)으로 바꾸는 것뿐이고, 그때 이 파일을 지운다.
+//
+// 2026-08-06 — **리터럴이 다시 생겼다.** MVP 값 정본은 `momentory.css` 인데 `theme.ts` 가
+// 아직 그걸 따라오지 못했다. `.card` 의 반경 18 · 테두리 ink 10% · 여백 15/17 은
+// `theme.radius`(sm 6 · image 12 · control 14 · sheet 22 · pill 999) 어디에도 없다.
+// 화면 코드에 18 을 흩어 적는 것보다 여기 한 곳에 모으는 편이 낫고, 상류가 흡수하면 지운다.
+// 근거는 `06_운영문서/OPEN-ISSUES.md` `R-42`.
 
 import theme from "./theme";
 
@@ -47,6 +53,27 @@ export const fill = {
   primaryDeep: palette.primaryDeep,
   /** 눌린 상태 — css `--primaryDeepPress` */
   primaryDeepPress: semantic.accentFillPress,
+} as const;
+
+/**
+ * 카드 — `momentory.css` `.card` 그대로.
+ *
+ * ```css
+ * .card{background:#FBF6EC;border:1px solid rgba(36,31,25,.1);
+ *       border-radius:18px;padding:15px 17px;gap:8px}
+ * ```
+ *
+ * ⚠ 원본 `05_도구/lib.mjs` `card()` 는 **r14 · 테두리 primary 30%** 로 다르다.
+ * MVP 를 만들 때 그쪽을 보면 어긋난다 — MVP 판은 `flows/ui.mjs` `card2()` 다.
+ */
+export const card = {
+  /** theme.radius 에 18 이 없다 */
+  radius: 18,
+  /** ink 10% — 0.1 × 255 = 25.5 → 1A */
+  border: `${semantic.textPrimary}1A`,
+  paddingVertical: 15,
+  paddingHorizontal: 17,
+  gap: 8,
 } as const;
 
 /**
