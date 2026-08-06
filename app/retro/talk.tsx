@@ -7,44 +7,52 @@ import { Avatar } from "@/components/chat/Avatar";
 import { BabaBubble } from "@/components/chat/BabaBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatLayout } from "@/components/chat/ChatLayout";
+import { DirectionChip } from "@/components/chat/DirectionChip";
 import { TypingDots } from "@/components/chat/TypingDots";
 import { DirectionSheet } from "@/components/common/DirectionSheet";
 import { RetroNav } from "@/components/common/RetroNav";
 import { AppButton } from "@/components/primitives/AppButton";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
-import { EMOTION_ADNOMINAL, useRetro } from "@/features/retro/model/retro";
+import {
+  ACTION_ANSWER_INDEX,
+  BALANCE_ANSWER_INDEX,
+  EMOTION_ADNOMINAL,
+  FOLLOW_UPS,
+  directionOf,
+  useRetro,
+  type RetroDirection,
+} from "@/features/retro/model/retro";
 import { SAMPLE_USER } from "@/mocks/sample";
 
 /**
- * `C4` 대화 · 첫 질문 + `C4-b` 첫 이야기와 되짚기 + `C4-c`/`C4-c2` 방향 시트
+ * 회고 대화 한 줄 — `C4` → `C4-b` → `C4-c`/`C4-c2` → `C4-d` → `C4-e`.
  *
- * **바바가 일정을 먼저 지목하지 않는다**(`C4.md`) — "면접 스터디는 어땠어요?"로
- * 열면 오늘의 화제를 바바가 정하는 것이 된다. 무엇을 이야기하고 싶은지부터 묻고,
- * 일정에 없던 일도 괜찮다고 먼저 말한다.
+ * 다섯 화면이 한 파일인 이유는 **같은 대화의 다른 순간**이기 때문이다. 라우트를
+ * 나누면 뒤로가기가 대화를 되감는 것처럼 보이는데, 회고는 되감는 흐름이 아니다.
  *
- * **되짚기까지만 하고 멈춘다**(`C4-b.md`) — 바바가 들은 것을 되돌려 말하는 데서
- * 끊고 다음 질문을 이어 붙이지 않는다. "그때 스스로에게 어떤 말을 했나요?"는
- * 이미 한 방향(다른 관점에서 보기)을 고른 질문이라, **묻기 전에 방향을 함께
- * 정한다**. 그래서 되짚기 뒤에 방향 시트가 열린다.
+ * - `C4` — **바바가 일정을 먼저 지목하지 않는다.** 무엇을 이야기하고 싶은지부터 묻는다
+ * - `C4-b` — **되짚기까지만 하고 멈춘다.** 다음 질문은 방향을 정한 뒤다
+ * - `C4-c`/`C4-c2` — 방향 시트(`DirectionSheet`)
+ * - `C4-d` — **시트가 닫히면 대화가 그 자리에서 이어진다.** 되짚은 말 아래에
+ *   방향 칩이 한 줄 남고 그다음이 그 방향의 첫 질문이다. 칩이 경계선 역할을 한다
+ * - `C4-e` — **입력칸을 내리고 `[일기 보러 가기]` 하나만** 두어 대화가 끝났다는
+ *   것을 자리로 알린다
  *
- * - 한 메시지는 **2~3문장**, 질문은 한 번에 **하나**
- * - 감정은 **단정하지 않고 확인한다**
- * - **빠른 답변 칩·예시 placeholder 를 두지 않는다**
- * - **지난 버블을 삭제하지 않는다** — 회고는 스스로 한 말을 되읽는 과정이라
- *   위로 스크롤하면 그대로 남아 있다
- * - **진행률·단계 번호를 노출하지 않는다**
+ * 공통으로 지키는 것:
+ * - 한 메시지는 2~3문장, 질문은 한 번에 하나. 기본 **3~5회 답변** 안에 마무리
+ * - **지난 버블을 삭제하지 않는다** — 위로 올리면 그대로 있다
+ * - 내부 흐름(감정 확인 → 관점 전환 → 균형 근거 → 사용자 문장 → 작은 행동)의
+ *   **단계 이름을 화면에 쓰지 않는다.** 진행률·단계 번호도 없다
+ * - **사용자가 말하지 않은 성공·교훈을 만들지 않는다**
  *
- * ⚠ **바바의 응답이 아직 고정 문장이다.** 실제 응답은 서버가 만드는데 BE 연결이
- * 마지막이라(2026-08-07 결정), 지금은 `9-mvp.mjs` 의 시안 문장을 그대로 쓴다.
- * 대화 흐름·상태·규칙은 진짜이고 문장을 만드는 곳만 나중에 갈린다.
+ * ⚠ **바바의 응답은 아직 고정 문장이다**(`FOLLOW_UPS` 주석) — 흐름·상태·규칙은
+ * 진짜이고 문장을 만드는 곳만 서버로 갈린다.
  */
-
-/** 시안(`9-mvp.mjs`)의 첫 질문. 일정에 없던 일도 괜찮다고 먼저 말한다 */
 const FIRST_QUESTION =
   "오늘은 어떤 이야기를 나누고 싶어요? 일정에 없던 일이나 지금 떠오른 생각도 괜찮아요.";
 
-/** 되짚기 — 들은 것만 다시 말한다. 사용자가 말하지 않은 성공·교훈을 만들지 않는다 */
+/** 되짚기 — 들은 것만 다시 말한다 */
 const MIRROR =
   "답이 막힌 순간이 계속 마음에 남았군요. 다른 사람들과 비교하면서 자신감도 많이 내려간 것 같아요.";
 
@@ -54,9 +62,10 @@ const TYPING_MS = 900;
 export default function RetroTalk() {
   const startEmotion = useRetro((s) => s.startEmotion);
   const turns = useRetro((s) => s.turns);
-  const direction = useRetro((s) => s.direction);
   const addTurn = useRetro((s) => s.addTurn);
   const setDirection = useRetro((s) => s.setDirection);
+  const setBalanceSentence = useRetro((s) => s.setBalanceSentence);
+  const setNextAction = useRetro((s) => s.setNextAction);
 
   const [typing, setTyping] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -67,19 +76,54 @@ export default function RetroTalk() {
   // 감정 없이 들어올 수 없다 — C3 이 필수이기 때문이다(C3.md)
   if (startEmotion == null) return <Redirect href="/retro/emotion" />;
 
-  // 되짚기가 나왔고 방향을 아직 안 골랐으면 다음은 방향이다
-  const mirrored = turns.some((t) => t.who === "baba" && t.text === MIRROR);
-  const awaitingDirection = mirrored && direction == null;
+  // 방향을 바꾸면 칩이 하나 더 붙는다 — 세는 기준은 **마지막** 칩이다
+  const chipAt = turns.map((t) => t.who).lastIndexOf("chip");
+  const answered = chipAt < 0 ? 0 : turns.slice(chipAt).filter((t) => t.who === "me").length;
 
-  const send = (text: string) => {
-    addTurn("me", text);
+  const mirrored = turns.some((t) => t.who === "baba" && t.text === MIRROR);
+  const awaitingDirection = mirrored && chipAt < 0;
+  // 마지막 묶음까지 나왔으면 대화가 끝났다
+  const finished = chipAt >= 0 && answered >= FOLLOW_UPS.length && !typing;
+
+  const reply = (lines: readonly string[]) => {
     setTyping(true);
     timer.current = setTimeout(() => {
       setTyping(false);
-      addTurn("baba", MIRROR);
-      // 되짚기 다음이 방향이다 — 바로 일기로 가면 행동 카드를 만들 재료가 없다
-      setSheetOpen(true);
+      lines.forEach((line) => addTurn("baba", line));
     }, TYPING_MS);
+  };
+
+  const send = (text: string) => {
+    addTurn("me", text);
+
+    if (chipAt < 0) {
+      // 첫 이야기 — 되짚고 멈춘다. 다음은 방향이다
+      setTyping(true);
+      timer.current = setTimeout(() => {
+        setTyping(false);
+        addTurn("baba", MIRROR);
+        setSheetOpen(true);
+      }, TYPING_MS);
+      return;
+    }
+
+    // 방향을 고른 뒤 — 이 답이 몇 번째인지가 무엇의 재료인지를 정한다
+    const n = answered + 1;
+    if (n === BALANCE_ANSWER_INDEX) setBalanceSentence(text); //  C6 일기
+    if (n === ACTION_ANSWER_INDEX) setNextAction(text); //        C6-b 행동 카드
+
+    const group = FOLLOW_UPS[n - 1];
+    if (group != null) reply(group);
+  };
+
+  const confirmDirection = (d: RetroDirection) => {
+    const picked = directionOf(d);
+    setDirection(d);
+    setSheetOpen(false);
+    if (picked == null) return;
+    // 칩이 경계선이고, 그다음 줄이 그 방향의 첫 질문이다
+    addTurn("chip", picked.chip);
+    reply([`좋아요. ${picked.question}`]);
   };
 
   return (
@@ -90,7 +134,7 @@ export default function RetroTalk() {
         style={styles.fill}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ChatLayout>
+        <ChatLayout stickToEnd>
           <Avatar />
 
           {/* 감정을 단정하지 않고 확인한다 — 상단 알약과 같은 감정을 말로도 한 번 */}
@@ -99,19 +143,28 @@ export default function RetroTalk() {
           </BabaBubble>
           <BabaBubble index={1}>{FIRST_QUESTION}</BabaBubble>
 
-          {turns.map((t) =>
-            t.who === "me" ? (
-              <AnswerBubble key={t.id}>{t.text}</AnswerBubble>
-            ) : (
-              <BabaBubble key={t.id}>{t.text}</BabaBubble>
-            ),
-          )}
+          {turns.map((t) => {
+            if (t.who === "me") return <AnswerBubble key={t.id}>{t.text}</AnswerBubble>;
+            if (t.who === "chip") {
+              return (
+                <DirectionChip key={t.id} label={t.text} onChange={() => setSheetOpen(true)} />
+              );
+            }
+            return <BabaBubble key={t.id}>{t.text}</BabaBubble>;
+          })}
 
           {typing ? <TypingDots /> : null}
         </ChatLayout>
 
         <View style={styles.bottom}>
-          {awaitingDirection && !sheetOpen ? (
+          {finished ? (
+            // 입력칸을 내리고 하나만 둔다 — 대화가 끝났다는 것을 자리로 알린다
+            <AppButton
+              label="일기 보러 가기"
+              // TODO C6 · C6-b 일기 두 면 (다음 PR). 재료는 store 에 남아 있다
+              onPress={() => {}}
+            />
+          ) : awaitingDirection && !sheetOpen ? (
             /*
               시트를 닫으면 아무것도 저장되지 않는다(`C4-c2.md`) — 그래서 다시
               여는 길이 필요하다. 시안에는 이 자리가 없다: 닫은 뒤의 상태가
@@ -127,12 +180,8 @@ export default function RetroTalk() {
       {sheetOpen ? (
         <DirectionSheet
           onDismiss={() => setSheetOpen(false)}
-          onConfirm={(d) => {
-            // 누른 순간이 아니라 여기서 확정된다
-            setDirection(d);
-            setSheetOpen(false);
-            // TODO C4-d — 고른 방향의 질문을 잇는다 (다음 PR)
-          }}
+          // 방향을 바꿔도 그때까지의 대화는 지워지지 않는다 (C4-d.md)
+          onConfirm={confirmDirection}
         />
       ) : null}
     </ScreenBackground>

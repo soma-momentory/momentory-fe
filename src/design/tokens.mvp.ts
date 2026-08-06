@@ -425,6 +425,19 @@ export const directionOption = {
 } as const;
 
 /**
+ * `.dirchip` · `.dirchipb` — 대화 가운데에 남는 방향 칩(`C4-d`).
+ *
+ * **칩이 경계선 역할을 한다** — 어디서부터 방향을 정하고 이야기한 것인지
+ * 나중에 다시 봐도 보인다. 가운데 정렬이라 좌우의 말풍선과 구분된다.
+ */
+export const directionChip = {
+  minHeight: 32,
+  paddingHorizontal: 12,
+  gap: 7,
+  fontSize: 11.5,
+} as const;
+
+/**
  * `.addemo` — 감정이 비어 있는 줄에 붙는 **점선 알약**(`C2`).
  * 마침과 감정은 서로를 요구하지 않으므로 마치기 전에도 감정을 남길 수 있다.
  */

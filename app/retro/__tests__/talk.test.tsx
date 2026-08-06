@@ -234,3 +234,218 @@ describe("C4-c2 · 하나를 누른 뒤", () => {
     expect(flatten(r.getByText("이 방향으로 이어가기").parent?.props.style).opacity).toBe(0.36);
   });
 });
+
+/** 첫 이야기 → 방향 확정까지. 이후 테스트의 공통 출발점이다 */
+const startWithDirection = async (label = "지금 상황을 다른 관점에서 바라보고 싶어요") => {
+  const r = await render(<RetroTalk />);
+  await answerAndWait(r, "오늘 발표가 잘 안 됐어요.");
+  await fireEvent.press(r.getByText(label));
+  await fireEvent.press(r.getByText("이 방향으로 이어가기"));
+  await act(async () => {
+    jest.advanceTimersByTime(1000);
+  });
+  return r;
+};
+
+describe("C4-d · 방향을 고른 직후", () => {
+  it("대화가 그 자리에서 이어진다 — 칩 한 줄과 그 방향의 첫 질문", async () => {
+    const r = await startWithDirection();
+
+    expect(r.getByText("다른 관점에서 바라보기")).toBeTruthy();
+    expect(r.getByText("좋아요. 그때 스스로에게 가장 먼저 어떤 말을 했나요?")).toBeTruthy();
+  });
+
+  it("칩에 쓰는 말은 사용자의 말이다 — 내부 분기명을 쓰지 않는다", async () => {
+    const r = await startWithDirection();
+
+    expect(r.queryByText(/reframe/)).toBeNull();
+    // 저장은 내부값으로 한다
+    expect(useRetro.getState().direction).toBe("reframe");
+  });
+
+  // 네 방향 전부 — 고른 줄과 이어지는 질문이 짝이 맞아야 한다 (C4-c.md 표)
+  it.each([
+    ["마음을 조금 더 이야기하며 정리하고 싶어요", "feelings", "그 순간 가장 크게 느껴진 마음은 무엇이었나요?", "마음 이야기하며 정리하기"],
+    ["지금 상황을 다른 관점에서 바라보고 싶어요", "reframe", "그때 스스로에게 가장 먼저 어떤 말을 했나요?", "다른 관점에서 바라보기"],
+    ["지금 할 수 있는 방법을 찾아보고 싶어요", "solve", "다음에는 무엇이 조금 달라졌으면 좋겠나요?", "지금 할 수 있는 방법 찾기"],
+    ["오늘 있었던 일을 짧게 기록하고 싶어요", "brief", "오늘 있었던 일과 그때의 마음을 한 문장으로 남겨볼까요?", "짧게 기록하기"],
+  ])("«%s» 를 고르면 그 방향의 칩과 첫 질문이 온다", async (option, id, question, chip) => {
+    const r = await startWithDirection(option);
+
+    expect(useRetro.getState().direction).toBe(id);
+    expect(r.getByText(chip)).toBeTruthy();
+    expect(r.getByText(`좋아요. ${question}`)).toBeTruthy();
+  });
+
+  it("되짚기 다음 답에는 관점 확인과 균형 근거 질문이 온다", async () => {
+    const r = await startWithDirection();
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+
+    expect(r.getByText("한 번 답이 막힌 일이 '나는 면접을 못한다'는 결론까지 커졌군요.")).toBeTruthy();
+    // 사용자가 말하지 않은 성공을 만들지 않는다 — 질문이지 단정이 아니다
+    expect(
+      r.getByText("오늘 완벽하지는 않았어도, 중간에 포기하지 않고 해낸 부분도 있었나요?"),
+    ).toBeTruthy();
+  });
+
+  it("[변경] 을 누르면 시트가 다시 열리고 대화가 지워지지 않는다", async () => {
+    const r = await startWithDirection();
+    const before = useRetro.getState().turns.length;
+
+    await fireEvent.press(r.getByText("변경"));
+
+    expect(r.getByText("지금은 어떻게 이야기를 이어가고 싶어요?")).toBeTruthy();
+    expect(useRetro.getState().turns).toHaveLength(before);
+    expect(r.getByText("오늘 발표가 잘 안 됐어요.")).toBeTruthy();
+  });
+
+  it("방향을 바꾸면 새 칩과 새 질문이 이어 붙는다", async () => {
+    const r = await startWithDirection();
+    await fireEvent.press(r.getByText("변경"));
+    await fireEvent.press(r.getByText("오늘 있었던 일을 짧게 기록하고 싶어요"));
+    await fireEvent.press(r.getByText("이 방향으로 이어가기"));
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(r.getByText("짧게 기록하기")).toBeTruthy();
+    expect(r.getByText("다른 관점에서 바라보기")).toBeTruthy(); // 앞 칩도 남는다
+    expect(useRetro.getState().direction).toBe("brief");
+  });
+
+  it("단계 이름과 진행률을 화면에 쓰지 않는다", async () => {
+    const r = await startWithDirection();
+
+    for (const internal of ["감정 확인", "관점 전환", "균형 근거", "작은 행동", "단계"]) {
+      expect(r.queryByText(new RegExp(internal))).toBeNull();
+    }
+  });
+});
+
+describe("C4-e · 내 문장과 다음 한 가지", () => {
+  /** 방향 확정 후 네 번 더 답해 대화를 끝까지 민다 */
+  const runToEnd = async () => {
+    const r = await startWithDirection();
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+    await answerAndWait(r, "오늘은 긴장해서 답이 막혔지만, 끝까지 답했어요.");
+    await answerAndWait(r, "예상 질문 하나를 골라 세 문장으로 말해보는 연습을 하고 싶어요.");
+    return r;
+  };
+
+  it("균형 문장과 다음 한 가지가 사용자의 말에서 나온다", async () => {
+    // 이 둘이 없으면 C6 일기와 C6-b 행동 카드를 만들 재료가 없다 (C4-e.md)
+    await runToEnd();
+
+    expect(useRetro.getState().balanceSentence).toBe(
+      "오늘은 긴장해서 답이 막혔지만, 끝까지 답했어요.",
+    );
+    expect(useRetro.getState().nextAction).toBe(
+      "예상 질문 하나를 골라 세 문장으로 말해보는 연습을 하고 싶어요.",
+    );
+  });
+
+  it("요약을 대화에 다시 쓰지 않는다 — 정리하겠다고만 말한다", async () => {
+    const r = await runToEnd();
+
+    expect(r.getByText("좋아요. 오늘의 이야기와 내일 해볼 행동을 함께 정리해볼게요.")).toBeTruthy();
+  });
+
+  it("입력칸을 내리고 [일기 보러 가기] 하나만 둔다", async () => {
+    // 대화가 끝났다는 것을 자리로 알린다 (C4-e.md)
+    const r = await runToEnd();
+
+    expect(r.getByText("일기 보러 가기")).toBeTruthy();
+    expect(r.queryByLabelText("답변")).toBeNull();
+    expect(r.queryByLabelText("보내기")).toBeNull();
+  });
+
+  it("앞 대화는 지우지 않는다 — 전부 남아 있다", async () => {
+    const r = await runToEnd();
+
+    expect(r.getByText("오늘 발표가 잘 안 됐어요.")).toBeTruthy();
+    expect(r.getByText("다른 관점에서 바라보기")).toBeTruthy();
+    expect(r.getByText(MIRROR)).toBeTruthy();
+  });
+
+  it("기본 3~5회 답변 안에 마무리한다", async () => {
+    const r = await runToEnd();
+
+    const answers = useRetro.getState().turns.filter((t) => t.who === "me");
+    expect(answers).toHaveLength(5);
+    expect(r.getByText("일기 보러 가기")).toBeTruthy();
+  });
+});
+
+describe("C6 · C6-b 의 재료 — 저장 시점과 출처", () => {
+  it("그 순서의 답을 하기 전에는 비어 있다", async () => {
+    const r = await startWithDirection();
+    expect(useRetro.getState().balanceSentence).toBeNull();
+    expect(useRetro.getState().nextAction).toBeNull();
+
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+
+    // 아직 균형 문장을 말하지 않았다
+    expect(useRetro.getState().balanceSentence).toBeNull();
+    expect(useRetro.getState().nextAction).toBeNull();
+  });
+
+  it("세 번째 답이 균형 문장, 네 번째가 다음 한 가지다", async () => {
+    const r = await startWithDirection();
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+
+    await answerAndWait(r, "오늘은 긴장했지만 끝까지 답했어요.");
+    expect(useRetro.getState().balanceSentence).toBe("오늘은 긴장했지만 끝까지 답했어요.");
+    expect(useRetro.getState().nextAction).toBeNull(); // 아직이다
+
+    await answerAndWait(r, "예상 질문 세 문장 연습을 하고 싶어요.");
+    expect(useRetro.getState().nextAction).toBe("예상 질문 세 문장 연습을 하고 싶어요.");
+    // 앞서 담은 값은 덮이지 않는다
+    expect(useRetro.getState().balanceSentence).toBe("오늘은 긴장했지만 끝까지 답했어요.");
+  });
+
+  it("바바가 만든 문장은 두 값에 들어가지 않는다", async () => {
+    // 행동은 반드시 사용자가 말한 내용에서 나온다 (C4-e.md)
+    const r = await startWithDirection();
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+    await answerAndWait(r, "오늘은 긴장했지만 끝까지 답했어요.");
+    await answerAndWait(r, "예상 질문 세 문장 연습을 하고 싶어요.");
+
+    const babaLines = useRetro
+      .getState()
+      .turns.filter((t) => t.who === "baba")
+      .map((t) => t.text);
+    const { balanceSentence, nextAction } = useRetro.getState();
+
+    expect(babaLines).not.toContain(balanceSentence);
+    expect(babaLines).not.toContain(nextAction);
+    // 둘 다 사용자가 한 말이다
+    const myLines = useRetro.getState().turns.filter((t) => t.who === "me").map((t) => t.text);
+    expect(myLines).toContain(balanceSentence);
+    expect(myLines).toContain(nextAction);
+  });
+
+  it("reset 은 회고 한 벌을 통째로 비운다 — 다음 회고에 앞 답이 섞이지 않게", async () => {
+    const r = await startWithDirection();
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+    await answerAndWait(r, "오늘은 긴장했지만 끝까지 답했어요.");
+    await answerAndWait(r, "예상 질문 세 문장 연습을 하고 싶어요.");
+
+    // 화면이 떠 있는 채로 store 를 비우므로 act 로 감싼다 — 안 그러면 리렌더가 밖에서 돈다
+    await act(async () => {
+      useRetro.getState().reset();
+    });
+
+    expect(useRetro.getState()).toMatchObject({
+      startEmotion: null,
+      turns: [],
+      direction: null,
+      balanceSentence: null,
+      nextAction: null,
+    });
+  });
+});
