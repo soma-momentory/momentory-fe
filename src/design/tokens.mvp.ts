@@ -381,6 +381,50 @@ export const retroNav = {
 } as const;
 
 /**
+ * `.inp` · `.inpt` · `.send` — 회고 대화의 답변 입력 알약.
+ *
+ * **빠른 답변 칩·예시 placeholder 를 두지 않는다**(`C4.md`) — 보기를 주면
+ * 사용자는 자기 말 대신 보기 중 하나를 고른다. 그래서 여기 있는 것은
+ * 입력 한 칸과 보내기 하나뿐이다.
+ */
+export const chatInput = {
+  radius: 999,
+  paddingVertical: 7,
+  paddingLeft: 16,
+  paddingRight: 7,
+  gap: 9,
+  fontSize: 14,
+  /** ink 12% — 0.12 × 255 = 30.6 → 1F */
+  border: `${semantic.textPrimary}1F`,
+  /** `.send` — 40 원형. 44 는 hitSlop 으로 채운다 */
+  send: { size: 40, hitSlop: 2 },
+} as const;
+
+/**
+ * `.dopt` — 회고 방향 4줄(`C4-c`). **네 줄의 무게가 모두 같다** — 추천 배지를
+ * 두지 않으므로 켜진 줄만 달라 보인다(`C4-c.md`).
+ *
+ * 선택 표시는 **테두리(1→1.5px) + 배경 + 체크** 셋을 함께 쓴다 — 색 하나에
+ * 기대지 않는다(`C4-c2.md`).
+ */
+export const directionOption = {
+  minHeight: 44,
+  radius: 14,
+  paddingVertical: 12,
+  paddingHorizontal: 15,
+  gap: 3,
+  titleSize: 13.5,
+  descSize: 11.5,
+  /** ink 16% — 0.16 × 255 = 40.8 → 29 */
+  border: `${semantic.textPrimary}29`,
+  onBorderWidth: 1.5,
+  /** `.dlistw` — 선택지 영역만 스크롤된다. 제목과 버튼은 고정 */
+  listGap: 6,
+  /** 시트 최대 높이 74% */
+  sheetMaxRatio: 0.74,
+} as const;
+
+/**
  * `.addemo` — 감정이 비어 있는 줄에 붙는 **점선 알약**(`C2`).
  * 마침과 감정은 서로를 요구하지 않으므로 마치기 전에도 감정을 남길 수 있다.
  */
