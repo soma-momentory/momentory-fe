@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
@@ -68,16 +69,7 @@ export default function Nickname() {
   );
 }
 
-/**
- * ⚠ **여기가 지금 구현의 끝이다.** 다음은 `05-b`(나이·성별)인데 아직 없다 —
- * 값 칩 + 지우기 × + 「선택」 태그가 붙어 이 화면보다 크고, MVP 는 **입력 후**
- * 상태만 스펙으로 갖는다(원본 `05` 는 잘렸다). 빈 상태를 추측으로 만들지 않는다.
- *
- * 없는 라우트로 push 하면 런타임에서 터지므로 그때까지 아무 데도 보내지 않는다.
- */
-const goNext = () => {
-  // TODO 05-b — app/(onboarding)/profile.tsx 가 생기면 router.push("/profile")
-};
+const goNext = () => router.push("/profile");
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
