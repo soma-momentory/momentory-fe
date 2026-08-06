@@ -14,7 +14,7 @@ import { actionCard, diaryBody, home } from "@/design/tokens.mvp";
 import { useDiary } from "@/features/diary/model/diary";
 import { DRAFT_DEMO, useRetro } from "@/features/retro/model/retro";
 import { formatKoreanDate } from "@/lib/day";
-import { SAMPLE_TODAY } from "@/mocks/sample";
+import { SAMPLE_TODAY, SAMPLE_WEATHER } from "@/mocks/sample";
 
 /**
  * `C6` 일기 초안 · 내 문장 + `C6-b` 바바가 함께 본 오늘 + 행동 카드
@@ -75,7 +75,12 @@ export default function RetroDraft() {
       date: SAMPLE_TODAY,
       body,
       babaView: DRAFT_DEMO.babaView,
+      babaViewBasis: DRAFT_DEMO.babaViewBasis,
       emotions,
+      // 그날의 기록 — `A3-b` 가 두 줄로 나눠 보여준다. 감정 태그와 달리 고칠 수 없다
+      storyEmotion: DRAFT_DEMO.storyEmotion,
+      startEmotion,
+      weather: `${SAMPLE_WEATHER.label} · ${SAMPLE_WEATHER.celsius}℃`,
       situation: DRAFT_DEMO.situation,
       targetAction,
       edited: body !== DRAFT_DEMO.body,
