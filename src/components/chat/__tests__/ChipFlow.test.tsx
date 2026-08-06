@@ -13,10 +13,12 @@ const ITEMS = [
   { id: "family", label: "가족" },
 ] as const;
 
-const setup = async (selected: string[] = []) => {
+const setup = async (selected: string[] = [], props: { showCheck?: boolean } = {}) => {
   const onToggle = jest.fn();
   // RNTL 14 부터 render 가 Promise 를 반환한다 — await 하지 않으면 쿼리가 undefined 다.
-  const view = await render(<ChipFlow items={ITEMS} selected={selected} onToggle={onToggle} />);
+  const view = await render(
+    <ChipFlow items={ITEMS} selected={selected} onToggle={onToggle} {...props} />,
+  );
   return { onToggle, ...view };
 };
 
@@ -83,5 +85,20 @@ describe("ChipFlow", () => {
 
     expect(flow.flexWrap).toBe("wrap");
     expect(flow.gap).toBe(8);
+  });
+
+  it("기본은 체크를 붙이지 않는다 — 온보딩(06·07)이 그대로다", async () => {
+    // 한 번에 하나를 고르는 흐름이라 체크 없이도 눈이 따라가고,
+    // 체크를 더하면 칩이 커져 07 의 15개가 안 들어간다
+    const { queryByTestId } = await setup(["work"]);
+
+    expect(queryByTestId("chip-check-work")).toBeNull();
+  });
+
+  it("showCheck 면 켜진 칩에만 체크가 붙는다 — M2 가 쓴다", async () => {
+    const { queryByTestId } = await setup(["work"], { showCheck: true });
+
+    expect(queryByTestId("chip-check-work")).not.toBeNull();
+    expect(queryByTestId("chip-check-family")).toBeNull();
   });
 });

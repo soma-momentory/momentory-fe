@@ -82,9 +82,16 @@
 
 ## 지금 어디까지 왔나
 
-**M0·M1 완료. M2(진입·온보딩)·M3(홈)·M4(회고)·M5-1·M5-2(보관함·일기 상세) 화면
-완료 — 40장 중 36장.** 남은 화면 4장: **리포트 `W1` · 마이 `M1` `M2` `M3`**.
-외부 연동(소셜 SDK · OS 권한 · BE · 영속 저장 · 계측)은 별개로 남아 있다.
+**정적 화면 40장이 전부 있다** (2026-08-07). 진입 2 · 온보딩 11 · 홈 5 · 회고 12 ·
+보관함 6 · 리포트 1 · 마이 3.
+
+⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 남은 것은 BE · 영속 저장(MMKV) ·
+소셜 SDK · OS 권한(알림·**캘린더 연결**) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
+M6(invariants 전수 테스트 · E2E · 배포). 목록은 `docs/TASKS.md`
+「화면 40장이 끝난 뒤 남은 것」에 있다.
+
+**아직 갈 곳이 없는 줄은 눌리지 않게 둔다** — 연결 관리 · 약관 · 문의 · 회원 탈퇴.
+눌리는데 아무 일도 없는 줄을 만들지 않는다(`TASKS.md` 「마이의 편집 경로」).
 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
 ```
@@ -101,6 +108,8 @@ src/components/common/{TabBar, TabScreen, EmotionPill}.tsx
 src/features/home/                               ← 홈 화면 상태·UI
 app/(tabs)/{_layout, home, archive}.tsx   = 12 · 12-b · A1 · A2 (한 파일이 두 상태씩)
 app/diary/{_layout, [id]/index, [id]/edit}.tsx = A3 · A3-b · A3-c · A4
+app/(tabs)/{report, my}.tsx  app/my/{_layout, profile, notify}.tsx = W1 · M1 · M2 · M3
+src/features/{report, my}/model/                ← 주간 집계 · 알림/프로필 설정
 src/components/archive/{CalendarMonth, DiaryPreviewCard, EmotionFilter}.tsx
 src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 세지 않는다
 app/home/{_layout, schedule/[id], schedule/new, moment/new}.tsx

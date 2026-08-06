@@ -235,26 +235,35 @@ describe("삭제 되돌리기 — 확인 모달 대신 되돌릴 길을 남긴�
   });
 });
 
-describe("하단 탭 — 만든 탭만 간다", () => {
+describe("하단 탭 — 네 칸이 전부 이어진다", () => {
+  const tabNamed = (r: Awaited<ReturnType<typeof render>>, name: string) =>
+    r.getAllByRole("tab").find((t) => within(t).queryByText(name) != null);
+
+
   it("보관함이 활성이고 홈으로 옮겨갈 수 있다", async () => {
     const r = await render(<Archive />);
-    const tabs = r.getAllByRole("tab");
-    const archiveTab = tabs.find((t) => within(t).queryByText("보관함") != null);
 
-    expect(archiveTab?.props.accessibilityState.selected).toBe(true);
+    expect(tabNamed(r, "보관함")?.props.accessibilityState.selected).toBe(true);
 
-    const homeTab = tabs.find((t) => within(t).queryByText("홈") != null);
-    await fireEvent.press(homeTab!);
+    await fireEvent.press(tabNamed(r, "홈")!);
 
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
   });
 
-  it("아직 없는 탭을 누르면 아무 일도 없다", async () => {
+  it("리포트·마이도 간다", async () => {
     const r = await render(<Archive />);
-    const tabs = r.getAllByRole("tab");
-    const reportTab = tabs.find((t) => within(t).queryByText("리포트") != null);
 
-    await fireEvent.press(reportTab!);
+    await fireEvent.press(tabNamed(r, "리포트")!);
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/report");
+
+    await fireEvent.press(tabNamed(r, "마이")!);
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/my");
+  });
+
+  it("자기 탭을 누르면 아무 일도 없다 — 같은 화면을 다시 열지 않는다", async () => {
+    const r = await render(<Archive />);
+
+    await fireEvent.press(tabNamed(r, "보관함")!);
 
     expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
   });
