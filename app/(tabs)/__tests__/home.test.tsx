@@ -1,4 +1,4 @@
-import { render, fireEvent, within } from "@testing-library/react-native";
+import { act, render, fireEvent, within } from "@testing-library/react-native";
 
 import Home from "../home";
 
@@ -104,10 +104,10 @@ describe("일정 행 — 터치가 둘이다", () => {
 });
 
 describe("12-b · 일정이 없는 경우", () => {
-  const emptyDay = () => useDay.setState({ schedules: [] });
+  const emptyDay = () => act(() => useDay.setState({ schedules: [] }));
 
   it("빈 상태 전용 레이아웃을 만들지 않는다 — 세 칸이 그대로 있다", async () => {
-    emptyDay();
+    await emptyDay();
     const { getByText } = await render(<Home />);
 
     expect(getByText("오늘 일정")).toBeTruthy();
@@ -117,7 +117,7 @@ describe("12-b · 일정이 없는 경우", () => {
   });
 
   it("목록 슬롯의 줄만 초대 문구로 바뀐다", async () => {
-    emptyDay();
+    await emptyDay();
     const { getByText, queryByText } = await render(<Home />);
 
     expect(getByText("오늘 하루를 차곡차곡 담아볼까요?")).toBeTruthy();
@@ -131,7 +131,7 @@ describe("12-b · 일정이 없는 경우", () => {
     const filled = await render(<Home />);
     const before = flatten(filled.getByText("＋ 일정 추가하기").parent?.props.style);
 
-    emptyDay();
+    await emptyDay();
     const empty = await render(<Home />);
     const after = flatten(empty.getByText("＋ 일정 추가하기").parent?.props.style);
 
