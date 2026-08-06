@@ -44,7 +44,7 @@ cp .env.example .env
 
 ```
 C:\SWM\momentory\          ← 설계 저장소
-  09_MVP/                  ← 우리가 만드는 30화면. 여기가 1순위
+  09_MVP/                  ← 우리가 만드는 40화면. 여기가 1순위
   momentory-fe/            ← 이 저장소
 ```
 
