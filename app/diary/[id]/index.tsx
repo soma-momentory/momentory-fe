@@ -13,7 +13,7 @@ import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import { actionCard, doneButton, home, warnRow } from "@/design/tokens.mvp";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
-import { formatKoreanDate } from "@/lib/day";
+import { formatKoreanDate, formatKoreanDateShort } from "@/lib/day";
 
 /**
  * `A3` 내가 남긴 오늘 + 행동 카드 · `A3-b` 바바가 함께 본 오늘 · `A3-c` 해본 뒤
@@ -76,8 +76,11 @@ export default function DiaryDetail() {
               <AppText tone="strong" style={styles.body}>
                 {diary.body}
               </AppText>
+              {/* 고친 뒤에는 언제 고쳤는지까지 말한다 — 「수정함」은 언제인지를 말하지 못한다 */}
               <AppText variant="caption" tone="caption">
-                {diary.editedAt != null ? "회고 대화에서 작성 · 수정함" : "회고 대화에서"}
+                {diary.editedAt != null
+                  ? `회고 대화에서 작성 · ${formatKoreanDateShort(diary.editedAt.slice(0, 10))} 수정`
+                  : "회고 대화에서"}
               </AppText>
             </Card>
 
@@ -101,7 +104,7 @@ export default function DiaryDetail() {
                     >
                       <CheckCircleIcon size={15} />
                       <AppText tone="onDark" weight="600" style={styles.doneLabel}>
-                        {`해봤어요 · ${card.doneAt == null ? "" : formatKoreanDate(card.doneAt.slice(0, 10))}`}
+                        {`해봤어요 · ${card.doneAt == null ? "" : formatKoreanDateShort(card.doneAt.slice(0, 10))}`}
                       </AppText>
                     </Pressable>
 
@@ -120,7 +123,7 @@ export default function DiaryDetail() {
                     </ActionRow>
 
                     <AppText variant="caption" tone="caption">
-                      {`${formatKoreanDate(diary.date)} 회고에서 만들어졌어요`}
+                      {`${formatKoreanDateShort(diary.date)} 회고에서 만들어졌어요`}
                     </AppText>
                   </>
                 ) : (
@@ -135,7 +138,7 @@ export default function DiaryDetail() {
                       </AppText>
                     </Pressable>
                     <AppText variant="caption" tone="caption">
-                      {`${formatKoreanDate(diary.date)} 회고에서 만들어졌어요 · 해본 뒤에 한 줄 남길 수 있어요`}
+                      {`${formatKoreanDateShort(diary.date)} 회고에서 만들어졌어요 · 해본 뒤에 한 줄 남길 수 있어요`}
                     </AppText>
                   </>
                 )}
@@ -206,7 +209,7 @@ function BabaFace({ diary }: { diary: NonNullable<ReturnType<typeof useDiary.get
         </View>
 
         <AppText variant="caption" tone="caption">
-          {`${formatKoreanDate(diary.date)} 회고를 마친 당시 작성된 기록이에요.`}
+          {`${formatKoreanDateShort(diary.date)} 회고를 마친 당시 작성된 기록이에요.`}
         </AppText>
       </Card>
 

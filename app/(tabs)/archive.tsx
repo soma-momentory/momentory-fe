@@ -1,6 +1,6 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { CalendarMonth } from "@/components/archive/CalendarMonth";
 import { DiaryPreviewCard } from "@/components/archive/DiaryPreviewCard";
@@ -46,8 +46,17 @@ import { SAMPLE_DIARY_MONTH, SAMPLE_TODAY } from "@/mocks/sample";
  */
 const FACES: readonly [string, string] = ["달력", "목록"];
 
+/**
+ * 되돌리기 줄이 머무는 시간. **"잠시"**(`A4.md`)를 숫자로 옮긴 것이고, 이 뒤에는
+ * 되돌릴 수 없다. 짧으면 놓치고 길면 지웠다는 사실이 안 믿긴다.
+ */
+const UNDO_MS = 6000;
+
 export default function Archive() {
   const diaries = useDiary((s) => s.diaries);
+  const recentlyDeleted = useDiary((s) => s.recentlyDeleted);
+  const undoRemove = useDiary((s) => s.undoRemove);
+  const clearRecentlyDeleted = useDiary((s) => s.clearRecentlyDeleted);
 
   const [face, setFace] = useState<0 | 1>(0);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -68,6 +77,13 @@ export default function Archive() {
   );
 
   const open = (id: string) => router.push(`/diary/${id}`);
+
+  // 잠시 뒤 스스로 사라진다 — 남겨두면 지운 것이 지워지지 않은 것처럼 보인다
+  useEffect(() => {
+    if (recentlyDeleted == null) return;
+    const t = setTimeout(clearRecentlyDeleted, UNDO_MS);
+    return () => clearTimeout(t);
+  }, [recentlyDeleted, clearRecentlyDeleted]);
 
   return (
     <TabScreen active="보관함">
@@ -138,6 +154,23 @@ export default function Archive() {
           </ScrollView>
         </>
       )}
+
+      {/*
+        지운 직후에만 잠시 뜬다(`A4.md`). 확인 모달을 두지 않는 대신 되돌릴 길을
+        남기는 쪽이다 — 되돌릴 수 있게 만든다는 규칙(`RULES.md`)이 여기까지 온다.
+      */}
+      {recentlyDeleted != null ? (
+        <View style={styles.undo}>
+          <AppText tone="onDark" weight="500" style={styles.undoLabel}>
+            삭제했어요
+          </AppText>
+          <Pressable accessibilityRole="button" hitSlop={10} onPress={undoRemove}>
+            <AppText tone="onDark" weight="700" style={styles.undoAction}>
+              되돌리기
+            </AppText>
+          </Pressable>
+        </View>
+      ) : null}
     </TabScreen>
   );
 }
@@ -215,4 +248,19 @@ const styles = StyleSheet.create({
 
   calendarCard: { gap: 11, borderRadius: tokens.calendar.radius, padding: tokens.calendar.padding },
   monthLabel: { fontSize: 14.5, lineHeight: 20, textAlign: "center" },
+
+  // 목록 위에 떠 있는 한 줄 — 탭바를 가리지 않게 그 위에 둔다
+  undo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minHeight: 48,
+    paddingHorizontal: 16,
+    marginBottom: theme.layout.gap.element,
+    borderRadius: theme.radius.control,
+    // 면이 잉크색이라 글자는 onDark 하나뿐이다
+    backgroundColor: theme.colors.semantic.textPrimary,
+  },
+  undoLabel: { flex: 1, fontSize: 13, lineHeight: 18 },
+  undoAction: { fontSize: 13, lineHeight: 18 },
 });
