@@ -105,13 +105,7 @@ function hintOf(count: number, overCap: boolean) {
   return `최대 ${MAX}개 · ${count}개 선택`;
 }
 
-/**
- * ⚠ **여기가 지금 구현의 끝이다.** 다음은 `08`(회고 시간)이고 아직 없다.
- * 없는 라우트로 push 하면 런타임에서 터진다.
- */
-const goNext = () => {
-  // TODO 08 — app/(onboarding)/retro-time.tsx 가 생기면 router.push("/retro-time")
-};
+const goNext = () => router.push("/retro-time");
 
 const styles = StyleSheet.create({
   // 칩 → 안내 → 버튼. 시안 간격 11

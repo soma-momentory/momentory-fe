@@ -3,6 +3,7 @@ import { render, fireEvent } from "@testing-library/react-native";
 import Interests from "../interests";
 import Nickname from "../nickname";
 import Profile from "../profile";
+import RetroTime from "../retro-time";
 
 import { useDraft } from "@/features/onboarding/model/draft";
 
@@ -208,5 +209,39 @@ describe("온보딩 초안 — 답이 화면을 넘어 남는가", () => {
     useDraft.getState().reset();
 
     expect(useDraft.getState()).toMatchObject({ nickname: "", gender: null, interests: [] });
+  });
+});
+
+describe("08 · 회고 시간", () => {
+  it("거절을 같은 화면에 둔다 — 막다른 길이 아니게", async () => {
+    // "알림 허용"은 앱의 요구, "편한 시간"은 사용자의 선택 (08.md)
+    const { getByText } = await render(<RetroTime />);
+
+    expect(getByText("다음")).toBeTruthy();
+    expect(getByText("알림 없이 쓸게요")).toBeTruthy();
+  });
+
+  it("고르지 않아도 넘어간다 — [다음] 이 잠기지 않는다", async () => {
+    const { getByText } = await render(<RetroTime />);
+
+    expect(flatten(getByText("다음").parent?.props.style).opacity).toBeUndefined();
+  });
+
+  it("시간 칸은 아직 편집할 수 없다 — 08-b 가 MVP 밖이다", async () => {
+    // 키보드로 아무 문자열이나 받으면 시각이 아닌 값이 초안에 들어간다.
+    const { getByPlaceholderText } = await render(<RetroTime />);
+
+    expect(getByPlaceholderText("시간 선택").props.editable).toBe(false);
+    expect(useDraft.getState().retroTime).toBeNull();
+  });
+
+  it("「알림 없이 쓸게요」 도 회고 시각을 지우지 않는다", async () => {
+    // 알림만 끄고 홈의 「밤 9:30엔 제가 먼저 말 걸어요」 는 시각을 계속 쓴다.
+    useDraft.getState().set("retroTime", "21:30");
+    const { getByText } = await render(<RetroTime />);
+
+    await fireEvent.press(getByText("알림 없이 쓸게요"));
+
+    expect(useDraft.getState().retroTime).toBe("21:30");
   });
 });

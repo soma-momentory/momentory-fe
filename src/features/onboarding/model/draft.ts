@@ -30,6 +30,13 @@ export type OnboardingDraft = {
   gender: Gender | null;
   /** `06` · 필수 · 최대 3 */
   interests: string[];
+  /**
+   * `08` · 회고 시각. `null` 이면 아직 고르지 않았다 — 그래도 넘어갈 수 있다.
+   *
+   * 시간 선택 모달(`08-b`)이 MVP 밖이라 지금은 채울 길이 없다. `[알림 없이
+   * 쓸게요]` 를 골라도 **이 값은 저장된다** — 알림만 끄고 홈 문구는 시각을 쓴다.
+   */
+  retroTime: string | null;
 };
 
 type DraftStore = OnboardingDraft & {
@@ -43,6 +50,7 @@ const EMPTY: OnboardingDraft = {
   age: "",
   gender: null,
   interests: [],
+  retroTime: null,
 };
 
 export const useDraft = create<DraftStore>((setState) => ({
