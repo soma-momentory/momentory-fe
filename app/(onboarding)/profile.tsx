@@ -96,13 +96,7 @@ function FieldLabel({ children }: { children: string }) {
   );
 }
 
-/**
- * ⚠ **여기가 지금 구현의 끝이다.** 다음은 `06`(관심 분야)이고 아직 없다.
- * 없는 라우트로 push 하면 런타임에서 터지므로 그때까지 아무 데도 보내지 않는다.
- */
-const goNext = () => {
-  // TODO 06 — app/(onboarding)/interests.tsx 가 생기면 router.push("/interests")
-};
+const goNext = () => router.push("/interests");
 
 const { semantic } = theme.colors;
 

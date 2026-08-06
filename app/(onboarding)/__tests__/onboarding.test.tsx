@@ -1,5 +1,6 @@
 import { render, fireEvent } from "@testing-library/react-native";
 
+import Interests from "../interests";
 import Nickname from "../nickname";
 import Profile from "../profile";
 
@@ -87,5 +88,61 @@ describe("05-b · 나이 · 성별", () => {
     await fireEvent.press(getByText("여성"));
 
     expect(getByText("여성").parent?.props.accessibilityState.selected).toBe(false);
+  });
+});
+
+describe("06 · 관심 분야", () => {
+  const pick = async (r: Awaited<ReturnType<typeof render>>, ...labels: string[]) => {
+    for (const l of labels) await fireEvent.press(r.getByText(l));
+  };
+
+  it("칩 8개를 한 화면에 다 보인다", async () => {
+    // 스크롤로 감추면 뒤쪽은 선택되지 않는다 (06.md)
+    const { getByText } = await render(<Interests />);
+
+    for (const label of ["학업", "취업·진로", "일·직장생활", "인간관계", "가족", "나 자신", "건강", "기타"]) {
+      expect(getByText(label)).toBeTruthy();
+    }
+  });
+
+  it("하나도 안 고르면 버튼이 열리지 않는다 — 필수 질문이다", async () => {
+    const r = await render(<Interests />);
+
+    expect(flatten(r.getByText("다음").parent?.props.style).opacity).toBe(0.36);
+    expect(r.getByText("하나 이상 골라주세요")).toBeTruthy();
+  });
+
+  it("고르면 열리고 개수를 한 줄이 말한다", async () => {
+    const r = await render(<Interests />);
+    await pick(r, "가족", "건강");
+
+    expect(flatten(r.getByText("다음").parent?.props.style).opacity).toBeUndefined();
+    expect(r.getByText("최대 3개 · 2개 선택")).toBeTruthy();
+  });
+
+  it("상한을 넘기면 새 선택이 들어가지 않는다 — 고른 것을 밀어내지 않는다", async () => {
+    // 무엇이 빠졌는지 모른 채 목록이 바뀌면 되돌릴 수가 없다.
+    const r = await render(<Interests />);
+    await pick(r, "학업", "가족", "건강", "인간관계");
+
+    expect(r.getByText("인간관계").parent?.props.accessibilityState.selected).toBe(false);
+    for (const kept of ["학업", "가족", "건강"]) {
+      expect(r.getByText(kept).parent?.props.accessibilityState.selected).toBe(true);
+    }
+  });
+
+  it("거부를 한 줄로 흡수한다 — 모달을 띄우지 않는다", async () => {
+    const r = await render(<Interests />);
+    await pick(r, "학업", "가족", "건강", "인간관계");
+
+    expect(r.getByText("최대 3개까지 고를 수 있어요")).toBeTruthy();
+  });
+
+  it("하나 빼면 안내가 원래대로 돌아온다", async () => {
+    const r = await render(<Interests />);
+    await pick(r, "학업", "가족", "건강", "인간관계"); // 거부됨
+    await pick(r, "학업"); //                            취소
+
+    expect(r.getByText("최대 3개 · 2개 선택")).toBeTruthy();
   });
 });
