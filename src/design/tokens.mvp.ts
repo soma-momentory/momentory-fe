@@ -425,6 +425,46 @@ export const directionOption = {
 } as const;
 
 /**
+ * 보관함(`A1`·`A2`) — 요약 3칸 · 달력 · 감정 필터.
+ *
+ * **요약 3칸은 기록 수치만** 쓴다(`A1.md`). 달력 점은 **일기가 있는 날에만**
+ * 찍히고 하루 최대 3개다.
+ */
+export const archive = {
+  /** `.stit` — 화면 제목 22 bold */
+  titleSize: 22,
+  /** `.cdCell` — 요약 한 칸 */
+  stat: { height: 59, radius: 16, gap: 7, valueSize: 16, labelSize: 11, dot: 6 },
+  calendar: {
+    radius: 18,
+    padding: 15,
+    /** `.cd{aspect-ratio:1}` — 칸은 정사각. 7열에 gap 2 */
+    cellGap: 2,
+    numberSize: 13,
+    weekdaySize: 11,
+    /** `.cdo` — 감정 점 6 · 사이 2.5 */
+    dot: 6,
+    dotGap: 2.5,
+    /** 선택된 날 — 테두리 2px + 면 */
+    selectedBorderWidth: 2,
+    selectedRadius: 12,
+  },
+  /** `.fchip` — 시각 34, **히트는 44**(hitSlop 5) */
+  filterChip: {
+    height: 34,
+    paddingHorizontal: 13,
+    gap: 6,
+    fontSize: 12.5,
+    dot: 6,
+    hitSlop: 5,
+    /** ink 12% */
+    border: `${semantic.textPrimary}1F`,
+  },
+  /** `.dprev` — 미리보기는 **두 줄 말줄임**. 길이가 들쭉날쭉하면 벽이 된다 */
+  preview: { lines: 2, fontSize: 13.5, lineHeight: 22.3, dateSize: 13, radius: 18, padding: 15 },
+} as const;
+
+/**
  * `.seg` · `.sg` · `.sgOn` — 두 칸 세그먼트. 일기의 **두 면**을 오간다
  * (`C6`·`C6-b` · `A3`·`A3-b`).
  *

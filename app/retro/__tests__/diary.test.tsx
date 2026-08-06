@@ -14,7 +14,9 @@ jest.mock("expo-router", () => ({
 
 beforeEach(() => {
   useRetro.getState().reset();
-  useDiary.getState().reset();
+  // 저장 자체를 보는 테스트라 보관함 샘플 12편은 치운다
+  // (`reset()` 은 데모 시작값으로 되돌린다 — 아래 「이어 붙는다」 테스트가 그걸 본다)
+  useDiary.setState({ diaries: [], actionCards: [] });
   useRetro.getState().setStartEmotion(2); // 우울함
   useRetro.getState().setNextAction("예상 질문 세 문장 연습하기");
   jest.clearAllMocks();
@@ -202,6 +204,16 @@ describe("저장 — 일기 한 장 + 행동 카드 한 장", () => {
   it("몇 번째 장인지만 센다 — 연속 일수가 아니다", async () => {
     await save();
     expect(useDiary.getState().diaries[0]?.ordinal).toBe(1);
+  });
+
+  it("이미 쌓인 일기 뒤에 이어 붙는다 — 13번째 장이 된다", async () => {
+    // 보관함이 보는 샘플 12편 위에 오늘 회고가 한 장 더 남는다
+    useDiary.getState().reset(); // 데모 시작값(12편)
+    await save();
+
+    const { diaries } = useDiary.getState();
+    expect(diaries).toHaveLength(13);
+    expect(diaries.at(-1)?.ordinal).toBe(13);
   });
 
   it("행동 카드는 아직 해보지 않은 상태로 시작한다", async () => {

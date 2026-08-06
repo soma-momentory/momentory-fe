@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { EmotionId } from "@/design/theme";
+import { SAMPLE_DIARIES, SAMPLE_DIARY_MONTH } from "@/mocks/sample";
 
 /**
  * 회고를 마치면 남는 것 — `Diary` 한 장 + `ActionCard` 한 장.
@@ -72,8 +73,26 @@ type DiaryStore = {
 let seq = 0;
 const nextId = (prefix: string) => `${prefix}-local-${++seq}`;
 
+/**
+ * 데모 시작값 — **서버가 이 사용자에 대해 갖고 있는 것**에 해당한다.
+ * 보관함(`A1`·`A2`)이 이걸 읽어 「12편」과 달력 점을 그린다.
+ * 회고를 마치면 이 뒤에 한 장이 더 붙는다.
+ */
+const seed = (): Diary[] =>
+  SAMPLE_DIARIES.map((d, i) => ({
+    id: `d-sample-${d.day}`,
+    date: `${SAMPLE_DIARY_MONTH}-${String(d.day).padStart(2, "0")}`,
+    body: d.body,
+    babaView: null,
+    babaViewBasis: null,
+    emotions: [...d.emotions],
+    authoredBy: "baba",
+    editedAt: null,
+    ordinal: i + 1,
+  }));
+
 export const useDiary = create<DiaryStore>((set) => ({
-  diaries: [],
+  diaries: seed(),
   actionCards: [],
 
   save: ({ date, body, babaView, emotions, situation, targetAction, edited }) =>
@@ -112,5 +131,9 @@ export const useDiary = create<DiaryStore>((set) => ({
       };
     }),
 
-  reset: () => set({ diaries: [], actionCards: [] }),
+  /**
+   * 데모 시작값으로 되돌린다 — 서버가 붙으면 「다시 불러온다」가 된다.
+   * 테스트에서 빈 상태가 필요하면 `setState({ diaries: [], actionCards: [] })`.
+   */
+  reset: () => set({ diaries: seed(), actionCards: [] }),
 }));
