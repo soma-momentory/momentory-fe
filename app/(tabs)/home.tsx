@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { TabScreen } from "@/components/common/TabScreen";
@@ -90,8 +91,7 @@ export default function Home() {
                     key={s.id}
                     schedule={s}
                     onToggleDone={toggleDone}
-                    // TODO 12-c 일정 상세 시트 (다음 PR)
-                    onOpen={() => {}}
+                    onOpen={(id) => router.push(`/home/schedule/${id}`)}
                   />
                 ))}
                 {shown.length > home.maxVisibleSchedules ? (
@@ -110,8 +110,7 @@ export default function Home() {
           <Pressable
             accessibilityRole="button"
             style={styles.addButton}
-            // TODO 12-e 일정 직접 추가 시트 (다음 PR)
-            onPress={() => {}}
+            onPress={() => router.push("/home/schedule/new")}
           >
             <AppText tone="onDark" weight="700" style={styles.addLabel}>
               ＋ 일정 추가하기
@@ -131,8 +130,7 @@ export default function Home() {
           <Pressable
             accessibilityRole="button"
             style={styles.momentButton}
-            // TODO 12-d 순간 입력 시트 (다음 PR)
-            onPress={() => {}}
+            onPress={() => router.push("/home/moment/new")}
           >
             <PencilIcon size={14} />
             <AppText tone="caption" weight="500" style={styles.momentLabel}>

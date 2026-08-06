@@ -304,6 +304,75 @@ export const home = {
 } as const;
 
 /**
+ * 하단 시트 — `momentory.css` `.sheet` · `.scrimS` · `.grab`.
+ *
+ * 스크림이 **.38** 이라 뒤의 홈이 계속 보인다 — 어디서 왔는지가 화면에 남아
+ * 있어야 닫고 나서 길을 잃지 않는다. (`.scrim` .62 는 코치마크용이고 MVP 밖)
+ */
+export const sheet = {
+  radius: 26,
+  paddingTop: 14,
+  paddingBottom: 22,
+  gap: 16,
+  /** ink 38% — 0.38 × 255 = 96.9 → 61 */
+  scrim: `${semantic.textPrimary}61`,
+  /** ink 16% — 0.16 × 255 = 40.8 → 29 */
+  grab: { width: 38, height: 4, color: `${semantic.textPrimary}29` },
+} as const;
+
+/**
+ * `.tonebox` · `.mkrow` — 시트 안의 톤 박스와 행. 면은 `surfaceTone` 이고
+ * 카드가 아니다 — 시트 위에 카드를 또 얹으면 위계가 한 겹 늘어난다.
+ */
+export const toneBox = {
+  radius: 16,
+  paddingVertical: 14,
+  paddingHorizontal: 16,
+  gap: 10,
+  /** `.mkrow` — 52 행 */
+  row: { minHeight: 52, paddingHorizontal: 18, gap: 11, radius: 16 },
+} as const;
+
+/**
+ * `.em` · `.emOn` · `.egrid` — 감정 9종 격자(3열).
+ *
+ * **선택을 색만으로 표시하지 않는다**(`RULES.md` 「접근성」) — 테두리 1→**2px** ·
+ * 글자 굵기 500→**600** · 면 색까지 함께 바뀐다. 테두리 색은 그 감정의 `ink`
+ * (`.emOn{border-color:currentColor}`).
+ */
+export const emotionGrid = {
+  columns: 3,
+  gap: 7,
+  cell: {
+    minHeight: 46,
+    radius: 14,
+    /** `rgba(251,246,236,.6)` — card 60% */
+    background: `${palette.card}99`,
+    /** ink 12% — 0.12 × 255 = 30.6 → 1F */
+    border: `${semantic.textPrimary}1F`,
+    fontSize: 13,
+    dot: 9,
+    gap: 6,
+  },
+  /** 켜진 칸의 면 — 감정색 22% */
+  onAlpha: "38",
+} as const;
+
+/**
+ * `.sw` · `.swk` — 토글 스위치. 48×28 트랙에 22 손잡이.
+ * 트랙 켜짐은 `primary` — **장식 전용 색이 맞는 자리**다(글자가 얹히지 않는다).
+ */
+export const toggle = {
+  width: 48,
+  height: 28,
+  knob: 22,
+  inset: 3,
+  /** ink 18% — 0.18 × 255 = 45.9 → 2E */
+  trackOff: `${semantic.textPrimary}2E`,
+  trackOn: palette.primary,
+} as const;
+
+/**
  * `.epill` — 감정 알약. 면은 감정색 22%, 점과 글자는 그 감정의 `ink`.
  * **색만으로 감정을 판단하게 하지 않는다** — 이름을 항상 함께 쓴다(`RULES.md`).
  */

@@ -82,7 +82,8 @@
 
 ## 지금 어디까지 왔나
 
-**M0·M1 완료, M2(온보딩) 진행 중.** 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
+**M0·M1 완료, M2 화면 정렬·인증 부트스트랩 완료, 외부 연동 대기. M3 홈 진행 중.**
+지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
 ```
 app/_layout.tsx  app/index.tsx (S0)  app/(auth)/login.tsx (S1)
@@ -92,9 +93,14 @@ src/design/{theme.ts, tokens.mvp.ts}
 src/components/primitives/{ScreenBackground, AppText, AppButton, Card,
                            InputRow, ProgressDots, BackChevron}.tsx
 src/components/chat/{ChatLayout, BabaBubble, AnswerBubble, Avatar, TypingDots, ChipFlow}.tsx
-src/components/onboarding/OnboardingTopBar.tsx   src/components/icons/Ico17.tsx
-app/(tabs)/{_layout, home}.tsx            = 12 · 12-b (한 파일이 두 상태)
+src/components/onboarding/OnboardingTopBar.tsx   src/components/icons/LineIcons.tsx
+app/(tabs)/{_layout, home}.tsx                    ← M3 `12`·`12-b`
 src/components/common/{TabBar, TabScreen, EmotionPill}.tsx
+src/features/home/                               ← 홈 화면 상태·UI
+app/(tabs)/{_layout, home}.tsx            = 12 · 12-b (한 파일이 두 상태)
+app/home/{_layout, schedule/[id], schedule/new, moment/new}.tsx
+                                          = 12-c · 12-e · 12-d — 투명 모달 시트
+src/components/common/{TabBar, TabScreen, EmotionPill, Sheet, EmotionGrid, Toggle}.tsx
 src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이모지 금지)
 src/features/home/{model/day.ts, ui/ScheduleRow.tsx}
 src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData)
@@ -106,7 +112,8 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 ```
 
 설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context ·
-**Zustand** · **@react-native-community/datetimepicker**(08 OS 피커 — 네이티브라 dev client 재빌드 필요).
+**Zustand** · **expo-secure-store** · **@react-native-community/datetimepicker**
+(08 OS 피커 — 네이티브라 dev client 재빌드 필요).
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 

@@ -28,7 +28,7 @@
 > **이 절은 두 부분이다** — 아래 표는 **지금 `package.json` 에 있는 것**이고, 그 다음 표는 **아직 없는 것**이다.
 > 섞어 적으면 새로 온 사람이 `import { useQuery }` 를 쓰고 나서야 없다는 걸 안다.
 
-### 지금 쓰는 것 (M0 기준)
+### 지금 쓰는 것
 
 | 영역 | 선택 | 이유 |
 |---|---|---|
@@ -39,17 +39,19 @@
 | 그라디언트 | **react-native-svg** `RadialGradient` | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다 |
 | 폰트 | expo-font + Pretendard 4 weight | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다) |
 | 품질 | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions | **현재 CI = `check:theme` · `typecheck` · `lint` · `test` · 시크릿 추적 검사.** |
+| 보안 저장 | expo-secure-store | M2-0 개발 세션과 인증 hydration. 읽기가 비동기라 진입 라우팅을 규정한다(§3) |
+| 클라이언트 상태 | Zustand (작게) | 온보딩 초안 · 인증 판정 · 화면용 로컬 상태 |
+| OS 시간 선택 | @react-native-community/datetimepicker | `08` 회고 시간. 네이티브 모듈이라 dev client 재빌드 필요 |
 
 ### 도입 예정 — 필요해지는 마일스톤에
 
-아직 설치하지 않았다. **쓸 화면이 생길 때 넣는다** — 미리 깔면 쓰지도 않는 의존성이 락파일에 굳는다.
+아래 항목은 아직 설치하지 않았다. **쓸 화면이 생길 때 넣는다** — 미리 깔면 쓰지도 않는
+의존성이 락파일에 굳는다.
 
 | 영역 | 선택 | 언제 | 왜 그때인가 |
 |---|---|---|---|
 | 애니메이션 | react-native-reanimated | M1 | `theme.motion.spec.*` 를 쓰는 첫 컴포넌트(`AppButton` press)부터 |
-| 보안 저장 | expo-secure-store | M2 | 로그인 토큰이 처음 생기는 시점. 읽기가 **비동기**라는 점이 진입 라우팅을 규정한다(§3) |
 | 서버 상태 | TanStack Query v5 | M2 | 첫 API 호출. **OpenAPI 계약 합의가 선행**(§4) |
-| 클라이언트 상태 | Zustand (작게) | M2 | 온보딩 답안 초안 |
 | 목 서버 | MSW | M2 | BE 미확정 구간을 화면 개발이 기다리지 않게 |
 | 로컬 저장 | react-native-mmkv | M3 | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4) |
 | 계측 | 얇은 `track()` 파사드 | M3 | `06_운영문서/ANALYTICS.md` 이름 규칙은 이미 확정 |
@@ -184,14 +186,19 @@ src/
 
   `hydrating` 동안 보이는 것이 곧 `S0` 다 — 스플래시의 0.8초 하한이 이 비동기 읽기를 이미 덮는다(하한이 있어서 깜빡임도 없다). 규칙:
 
-  1. SecureStore 에서 토큰을 읽고, **보호 라우트에 들어가기 전에 검증/갱신한다.** 만료된 토큰으로 `(tabs)` 에 들어가 첫 401 을 보고 튕겨 나오지 않는다.
+  1. SecureStore 에서 토큰을 읽는다. **현재 M2-0은 만료·손상 세션을 `anonymous`로 닫고
+     갱신하지 않는다.** 서버 계약 이후 검증/갱신을 붙여, 만료된 토큰으로 `(tabs)`에
+     들어가 첫 401을 보고 튕겨 나오지 않게 한다.
   2. **MMKV 에 로그인 여부를 미러링하지 않는다.** 미러 플래그는 로그아웃·만료·저장소 오류 뒤에 남아 인증되지 않은 사용자를 인증된 트리로 보낸다. MMKV 가 갖는 것은 `onboardingCompleted` 같은 비민감 플래그뿐이고, 그것도 인증 이후에만 읽는다.
-  3. **라우트 가드가 최종 권한을 갖는다.** `(tabs)`·`(onboarding)` 레이아웃이 `auth !== 'authenticated'` 이면 무조건 `(auth)/login` 으로 되돌린다 — 진입 판정 한 번으로 끝내지 않는다.
+  3. **라우트 가드가 최종 권한을 갖는다.** `(onboarding)`에는 구현됐다. 홈을 연결할 때
+     `(tabs)`에도 같은 가드를 두어 `auth !== 'authenticated'`이면 무조건 `(auth)/login`으로
+     되돌린다 — 진입 판정 한 번으로 끝내지 않는다.
   4. **실패는 닫는 쪽으로 넘어진다.** SecureStore 읽기 오류·복호화 실패·갱신 실패는 전부 `anonymous` 다. 판단이 안 서면 로그인 화면이다.
   5. 로그아웃·계정 삭제는 SecureStore 토큰 · MMKV 캐시 · Query 캐시 · **아웃박스 큐**를 함께 비운다. 큐를 남기면 다음 사용자의 세션으로 이전 사용자의 쓰기가 재생된다.
 
-  테스트로 고정할 경로: 만료 토큰 · 갱신 실패 · SecureStore 오류 · 로그아웃 후 재진입 · 앱 킬 후 콜드 스타트.
-- **onboarding** — 질문 여섯: 닉네임(`04`) · 기본 정보(`05-b`) · 관심 분야(`06`, 기타 입력 `06-b`/`06-c`) · 쉬는 방법(`07`, 필수·복수 — 답은 `User.restMethods` 로 **저장만**, MVP 에 보여주는 화면은 없음) · 회고 시간(`08`) · 캘린더(`09`). 진행 점 6칸이 이 여섯을 가리킨다. 완료는 `10`, 캘린더·알림을 건너뛰면 `10-b`. 답은 화면마다 서버로 보내지 않고 Zustand 초안에 쌓았다가 `09`/`10` 에서 한 번에 커밋한다(중간 이탈 시 초안은 MMKV 에 남음).
+  현재 테스트로 고정한 경로: 만료 토큰 · SecureStore 오류 · 로그아웃 후 재진입 · 앱 킬 후
+  콜드 스타트. 갱신 실패는 서버 갱신 계약과 구현이 생길 때 추가한다.
+- **onboarding** — 질문 여섯: 닉네임(`04`) · 기본 정보(`05-b`) · 관심 분야(`06`, 기타 입력 `06-b`/`06-c`) · 쉬는 방법(`07`, 필수·복수 — 답은 `User.restMethods` 로 **저장만**, MVP 에 보여주는 화면은 없음) · 회고 시간(`08`) · 캘린더(`09`). 진행 점 6칸이 이 여섯을 가리킨다. 완료는 `10`, 캘린더·알림을 건너뛰면 `10-b`. 답은 화면마다 서버로 보내지 않고 Zustand 초안에 쌓는다. **현재는 메모리 전용**이라 앱을 종료하면 사라지고, 데이터 보안 정책과 MMKV 도입 뒤 중간 이탈 복원을 붙인다.
 - **home** — 한 상태(`day`). `12-b`(빈 상태)는 별도 레이아웃이 아니라 **같은 카드가 초대로 바뀌는 변형**이므로 같은 컴포넌트의 prop.
 - **retro** — 전체화면 모달 스택. `C7` 에서 홈으로 pop, `Diary` 생성. `diaryCount >= 7` 이면 `Report.unlocked`.
 - **archive / report / my** — 탭 내부 스택.
@@ -292,9 +299,9 @@ track('home_memo_add', { char_bucket: bucket(text.length) })
 | # | 내용 | 산출 |
 |---|---|---|
 | **M0** ✅ | 프로젝트 셋업 — Expo + TS strict + expo-router + lint/CI + `sync:theme` + Pretendard | 앱이 뜨고 폰트·배경 그라디언트가 시안과 같음 |
-| **M1** | **P0 컴포넌트 13종** + **테스트 기반** | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가 |
-| **M2** | 진입 + 온보딩 13화면 (`S0` `S1` `03`~`10-b`) | 소셜 로그인 3종 · 알림/캘린더 권한 · 온보딩 완주 · **인증 부트스트랩 테스트**(§3 5경로) |
-| **M3** | 공용 컴포넌트(P1.5) + 홈 5화면 | `TabBar` `ScrollArea` `EmotionPill` `EmotionGrid` `Sheet` `ScheduleRow` — 일정/순간 CRUD + 아웃박스 · **아웃박스 테스트**(§4 5경로) |
+| **M1** ✅ | **P0 컴포넌트 13종** + **테스트 기반** | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가 |
+| **M2** △ | 진입 + 온보딩 13상태 (`S0` `S1` `03`~`10-b`) | 화면 정렬·인증 부트스트랩 완료. 소셜 로그인 3종 · 알림/캘린더 실제 권한은 대기 |
+| **M3** △ | 공용 컴포넌트(P1.5) + 홈 5화면 | `12`·`12-b`와 홈 공용 기반 진행 중. 시트 3종·일정/순간 CRUD·아웃박스는 후속 |
 | **M4** | 회고 12화면 | 채팅(스트리밍 포함) · 감정 필수 · 방향 선택 시트(`C4-c`·`C4-c2`) · 일기 두 면 + 행동 카드 생성 |
 | **M5** | 보관함 6 + 리포트 1 + 마이 3 + **앱 잠금 게이트** | 달력/목록/일기 두 면/행동 완료(`A3-c`)/수정 · 주간 리포트 · 설정 · 토글과 잠금이 같은 마일스톤(§8) |
 | **M6** | `invariants` 전수 테스트 · Maestro E2E · EAS 내부 배포 | |
