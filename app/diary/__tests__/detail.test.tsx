@@ -1,4 +1,4 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, act } from "@testing-library/react-native";
 import { Redirect, router } from "expo-router";
 
 import DiaryEdit from "../[id]/edit";
@@ -150,7 +150,10 @@ describe("A3-c · 행동을 해본 뒤", () => {
 
   it("되돌리면 완료 기록과 느낀 점이 함께 사라진다", async () => {
     const r = await markDone();
-    useDiary.getState().setReflection(cardId(), "한 줄 남김");
+    // 화면이 떠 있는 채로 store 를 바꾸므로 act 로 감싼다
+    await act(async () => {
+      useDiary.getState().setReflection(cardId(), "한 줄 남김");
+    });
 
     await fireEvent.press(r.getByLabelText("해봤어요 되돌리기"));
     await fireEvent.press(r.getByText("지우기"));
@@ -299,6 +302,54 @@ describe("A4 · 일기 수정", () => {
     expect(useDiary.getState().diaries.find((x) => x.id === ID)).toBeUndefined();
     expect(actionCardOf(useDiary.getState().actionCards, ID)).toBeNull();
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/archive");
+  });
+
+  it("지운 한 벌은 되돌릴 수 있게 잠시 남는다", async () => {
+    const r = await render(<DiaryEdit />);
+
+    await fireEvent.press(r.getByText("이 회고 삭제"));
+    await fireEvent.press(r.getByText("회고 삭제"));
+
+    const kept = useDiary.getState().recentlyDeleted;
+    expect(kept?.diary.id).toBe(ID);
+    expect(kept?.card).not.toBeNull(); // 행동 카드도 함께 들고 있는다
+  });
+
+  it("되돌리면 일기와 행동 카드가 원래 순서로 돌아온다", async () => {
+    const before = useDiary.getState().diaries.map((d) => d.id);
+    const r = await render(<DiaryEdit />);
+    await fireEvent.press(r.getByText("이 회고 삭제"));
+    await fireEvent.press(r.getByText("회고 삭제"));
+
+    await act(async () => {
+      useDiary.getState().undoRemove();
+    });
+
+    // 맨 뒤가 아니라 원래 자리다 — 끝에 가면 되돌린 게 아니라 새로 쓴 것처럼 보인다
+    expect(useDiary.getState().diaries.map((d) => d.id)).toEqual(before);
+    expect(actionCardOf(useDiary.getState().actionCards, ID)).not.toBeNull();
+    expect(useDiary.getState().recentlyDeleted).toBeNull();
+  });
+
+  it("고친 뒤에는 언제 고쳤는지까지 말한다", async () => {
+    // 「수정함」은 언제인지를 말하지 못한다 (A4.md)
+    const r = await render(<DiaryEdit />);
+    await fireEvent.changeText(r.getByLabelText("일기 내용"), "다시 쓴 오늘.");
+    await fireEvent.press(r.getByText("저장"));
+
+    const detail = await render(<DiaryDetail />);
+    const edited = useDiary.getState().diaries.find((x) => x.id === ID)?.editedAt ?? "";
+    const [, m = "", d = ""] = edited.slice(0, 10).split("-");
+
+    expect(
+      detail.getByText(`회고 대화에서 작성 · ${Number(m)}월 ${Number(d)}일 수정`),
+    ).toBeTruthy();
+  });
+
+  it("고치기 전에는 「회고 대화에서」다", async () => {
+    const detail = await render(<DiaryDetail />);
+
+    expect(detail.getByText("회고 대화에서")).toBeTruthy();
   });
 
   it("dangerInk 는 글자에만 얹는다 — 면도 테두리도 채우지 않는다 (R-40)", async () => {
