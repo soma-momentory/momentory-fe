@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { ScrollView, StyleSheet, type ViewProps } from "react-native";
 
 import { chat } from "@/design/tokens.mvp";
@@ -31,16 +31,28 @@ import { chat } from "@/design/tokens.mvp";
  */
 type Props = Omit<ViewProps, "children"> & {
   children: ReactNode;
+  /**
+   * 새 말이 들어오면 아래로 따라간다 — 회고처럼 대화가 길어지는 화면용.
+   * **지난 버블을 지우지는 않는다** — 위로 올리면 그대로 있다(`C4-b.md`).
+   * 온보딩은 질문마다 대화를 비우므로 필요 없다.
+   */
+  stickToEnd?: boolean;
 };
 
-export function ChatLayout({ children, style, ...rest }: Props) {
+export function ChatLayout({ children, stickToEnd = false, style, ...rest }: Props) {
+  const ref = useRef<ScrollView>(null);
+
   return (
     <ScrollView
+      ref={ref}
       {...rest}
       style={[styles.area, style]}
       contentContainerStyle={styles.conv}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      onContentSizeChange={() => {
+        if (stickToEnd) ref.current?.scrollToEnd({ animated: true });
+      }}
     >
       {children}
     </ScrollView>
