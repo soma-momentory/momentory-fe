@@ -1,6 +1,6 @@
 import type { EmotionId } from "@/design/theme";
 import { countEmotions } from "@/features/archive/model/archive";
-import type { Diary } from "@/features/diary/model/diary";
+import type { ActionCard, Diary } from "@/features/diary/model/diary";
 
 /**
  * 주간 리포트가 세는 것 — **관찰이지 평가가 아니다**(`W1.md`).
@@ -69,23 +69,48 @@ export const shiftWeek = (start: string, weeks: number) => addDays(start, weeks 
 export const weekEnd = (start: string) => addDays(start, 6);
 
 /**
- * 주차 이동 범위.
+ * 볼 수 있는 주 — **해석이 준비된 주만** 오름차순으로.
  *
- * - **이전**: 그 주 시작보다 앞선 일기가 하나라도 있으면 갈 수 있다
- * - **다음**: 최신 주가 마지막이다 — 그 뒤로는 볼 것이 없으므로 **비활성**이다
- *
- * 범위의 끝은 `report.pendingStates` 라 화면이 따로 없다 — 화살표를 흐리게 두고
- * 누르지 못하게 하는 것으로 끝을 말한다.
+ * 리포트는 수치만이 아니라 **그 주를 읽은 문장**이 함께 있어야 한다. 해석이
+ * 없는 주로 넘어가면 다른 주의 문장을 그대로 보여주게 되므로, 아예 **이동
+ * 범위에서 뺀다.** 「기록이 부족해 만들 수 없는 주」는 화면이 따로 없다
+ * (`report.pendingStates`) — 없는 화면을 새로 만들지 않는다.
  */
-export function weekRange(diaries: readonly Diary[], start: string, latestStart: string) {
-  const earliest = diaries.reduce<string | null>(
-    (min, d) => (min == null || d.date < min ? d.date : min),
-    null,
-  );
-  return {
-    hasPrev: earliest != null && earliest < start,
-    hasNext: start < latestStart,
-  };
+export const availableWeekStarts = (analysis: Record<string, unknown>) =>
+  Object.keys(analysis).sort();
+
+/**
+ * 주차 이동 범위. **다음 주가 있는 쪽이 최신**이다.
+ *
+ * 끝에서는 화살표를 흐리게 두고 누르지 못하게 하는 것으로 끝을 말한다 —
+ * 「범위의 끝」도 별도 화면이 없다.
+ */
+export function weekRange(starts: readonly string[], current: string) {
+  const i = starts.indexOf(current);
+  return { hasPrev: i > 0, hasNext: i >= 0 && i < starts.length - 1 };
+}
+
+/** 이웃한 주. 없으면 `null` — 화살표가 눌리지 않는 상태와 짝이다 */
+export function adjacentWeek(
+  starts: readonly string[],
+  current: string,
+  dir: -1 | 1,
+): string | null {
+  const i = starts.indexOf(current);
+  if (i < 0) return null;
+  return starts[i + dir] ?? null;
+}
+
+/**
+ * 그 주에 만든 행동 카드 — **만든 수와 해본 수만** 센다.
+ * **실행률·연속을 만들지 않는다**(`W1.md`) — 그래서 비율을 돌려주지 않는다.
+ */
+export function weekActions(cards: readonly ActionCard[], start: string, end: string) {
+  const made = cards.filter((c) => {
+    const day = c.createdAt.slice(0, 10);
+    return day >= start && day <= end;
+  });
+  return { made: made.length, done: made.filter((c) => c.done).length };
 }
 
 /** 그 주 감정 기록 수 — 「회고 5회」와 **다른 값**이라 라벨이 구분해야 한다 */
