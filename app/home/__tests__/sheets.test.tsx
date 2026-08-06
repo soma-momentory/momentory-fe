@@ -78,33 +78,48 @@ describe("12-c · 일정 상세 — 가져온 일정은 읽기 전용", () => {
 });
 
 describe("12-c · 마침과 감정은 서로를 요구하지 않는다", () => {
+  // 샘플의 「운동 가기」가 마침도 감정도 없는 줄이다 (「면접 스터디」는 감정만 있다)
+  const emptyRow = () => {
+    mockParams = { id: "s4" };
+  };
+
+  it("샘플이 이미 그것을 보인다 — 감정만 있고 마침은 없는 줄", async () => {
+    // 스키마 샘플 「면접 스터디 · 불안함」 — 마침 표시가 없다
+    const s = useDay.getState().schedules.find((x) => x.id === "s3");
+    expect(s?.emotions).toEqual([1]);
+    expect(s?.done).toBe(false);
+  });
+
   it("감정만 남길 수 있다 — 마침을 켜지 않아도", async () => {
+    emptyRow();
     const { getByLabelText } = await render(<ScheduleDetail />);
 
     await fireEvent.press(getByLabelText("불안함"));
 
-    const s = useDay.getState().schedules.find((x) => x.id === "s3");
+    const s = useDay.getState().schedules.find((x) => x.id === "s4");
     expect(s?.emotions).toEqual([1]);
     expect(s?.done).toBe(false); // 마침은 그대로다
   });
 
   it("마침만 켤 수 있다 — 감정을 고르지 않아도", async () => {
+    emptyRow();
     const { getByLabelText } = await render(<ScheduleDetail />);
 
     await fireEvent.press(getByLabelText("마침으로 표시"));
 
-    const s = useDay.getState().schedules.find((x) => x.id === "s3");
+    const s = useDay.getState().schedules.find((x) => x.id === "s4");
     expect(s?.done).toBe(true);
     expect(s?.emotions).toEqual([]);
   });
 
   it("감정은 다시 누르면 취소된다 — 확인 모달이 없다", async () => {
+    emptyRow();
     const { getByLabelText } = await render(<ScheduleDetail />);
 
     await fireEvent.press(getByLabelText("불안함"));
     await fireEvent.press(getByLabelText("불안함"));
 
-    expect(useDay.getState().schedules.find((x) => x.id === "s3")?.emotions).toEqual([]);
+    expect(useDay.getState().schedules.find((x) => x.id === "s4")?.emotions).toEqual([]);
   });
 
   it("감정 9종을 다 보인다 — 접지 않는다", async () => {
@@ -119,6 +134,7 @@ describe("12-c · 마침과 감정은 서로를 요구하지 않는다", () => {
   });
 
   it("선택을 색만으로 표시하지 않는다 — 테두리 2px + 굵기 600", async () => {
+    emptyRow();
     const { getByLabelText, getByText } = await render(<ScheduleDetail />);
 
     expect(flatten(getByLabelText("불안함").props.style).borderWidth).toBe(1);
