@@ -5,6 +5,7 @@ import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
+import { useAuth } from "@/features/auth/model/auth";
 
 /**
  * `S1` · 로그인 · 소셜 3종
@@ -16,14 +17,19 @@ import theme from "@/design/theme";
  * 규격은 `09_MVP/docs/S1.md`.
  */
 /**
- * M2-0 인증 부트스트랩이 붙기 전까지의 임시 통로. **개발 빌드에서만 열린다.**
+ * 소셜 SDK(M2-1)가 붙기 전까지의 개발 통로. **개발 빌드에서만 열린다.**
  *
- * 주석으로 "임시" 라고 적어두는 것은 빌드에서 걸러지지 않는다 — 이대로 배포되면
- * 세션 없이 누구나 보호 흐름에 들어간다. `__DEV__` 는 릴리스에서 false 이고
- * 그때 버튼은 비활성으로 남는다(온보딩 화면을 볼 수 없게 되는 것이 맞다).
+ * `router.push` 로 건너뛰지 않는다 — `(onboarding)` 레이아웃의 라우트 가드가
+ * 세션 없는 진입을 즉시 로그인으로 되돌린다(M2-0). 그래서 `signInDev` 가
+ * SecureStore 에 가짜 세션을 만들고 나서 이동한다. 릴리스에서는 `__DEV__` 가
+ * false 라 버튼이 비활성으로 남고 `signInDev` 도 아무것도 하지 않는다 —
+ * 두 겹 다 세션 없이 보호 흐름에 들어가지 않는 쪽으로 닫힌다.
  */
 const DEV_SKIP_AUTH = __DEV__;
-const skipAuth = () => router.push("/welcome");
+const skipAuth = async () => {
+  await useAuth.getState().signInDev();
+  router.replace("/welcome");
+};
 
 export default function Login() {
   return (

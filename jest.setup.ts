@@ -25,3 +25,22 @@ jest.mock("@react-native-community/datetimepicker", () => ({
   __esModule: true,
   default: () => null,
 }));
+
+// SecureStore(M2-0 세션)도 네이티브다. 인메모리 Map 으로 대신하고, 인증 테스트가
+// `jest.requireMock("expo-secure-store").__store` 로 직접 만료 토큰·오류를 심는다.
+jest.mock("expo-secure-store", () => {
+  const store = new Map<string, string>();
+  return {
+    __esModule: true,
+    __store: store,
+    getItemAsync: jest.fn((k: string) => Promise.resolve(store.get(k) ?? null)),
+    setItemAsync: jest.fn((k: string, v: string) => {
+      store.set(k, v);
+      return Promise.resolve();
+    }),
+    deleteItemAsync: jest.fn((k: string) => {
+      store.delete(k);
+      return Promise.resolve();
+    }),
+  };
+});
