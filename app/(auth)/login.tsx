@@ -15,7 +15,14 @@ import theme from "@/design/theme";
  *
  * 규격은 `09_MVP/docs/S1.md`.
  */
-/** M2-0 인증 부트스트랩이 붙기 전까지의 임시 통로. 세션을 만들지 않는다 */
+/**
+ * M2-0 인증 부트스트랩이 붙기 전까지의 임시 통로. **개발 빌드에서만 열린다.**
+ *
+ * 주석으로 "임시" 라고 적어두는 것은 빌드에서 걸러지지 않는다 — 이대로 배포되면
+ * 세션 없이 누구나 보호 흐름에 들어간다. `__DEV__` 는 릴리스에서 false 이고
+ * 그때 버튼은 비활성으로 남는다(온보딩 화면을 볼 수 없게 되는 것이 맞다).
+ */
+const DEV_SKIP_AUTH = __DEV__;
 const skipAuth = () => router.push("/welcome");
 
 export default function Login() {
@@ -49,14 +56,33 @@ export default function Login() {
             shape="rounded" — S1 은 MVP 리팩토링 대상이 아니라 원본 값을 쓴다
             (`9-mvp.mjs` 는 28화면뿐이고 진입 2장이 없다). MVP 화면의 CTA 는 알약이다.
 
-            ⚠ **인증을 건너뛰고 온보딩으로 바로 보낸다.** BE 연결 없이 화면만 만드는
-            동안의 임시 통로다 — 이게 없으면 온보딩 화면에 도달할 방법이 없다.
+            ⚠ **개발 빌드에서만 인증을 건너뛴다.** 화면만 만드는 동안 온보딩에
+            도달할 길이 필요해서인데, 릴리스에서는 `__DEV__` 가 false 라 비활성으로
+            남는다 — 세션 없이 보호 흐름에 들어가지 않는다.
             실제 흐름(소셜 SDK → 세션 교환 → 진입 판정)은 M2-0 에서 붙이고,
             그때 이 세 줄이 각자의 provider 를 부른다.
           */}
-          <AppButton label="카카오로 시작하기" variant="kakao" shape="rounded" onPress={skipAuth} />
-          <AppButton label="Apple로 시작하기" variant="apple" shape="rounded" onPress={skipAuth} />
-          <AppButton label="Google로 시작하기" variant="google" shape="rounded" onPress={skipAuth} />
+          <AppButton
+            label="카카오로 시작하기"
+            variant="kakao"
+            shape="rounded"
+            disabled={!DEV_SKIP_AUTH}
+            onPress={skipAuth}
+          />
+          <AppButton
+            label="Apple로 시작하기"
+            variant="apple"
+            shape="rounded"
+            disabled={!DEV_SKIP_AUTH}
+            onPress={skipAuth}
+          />
+          <AppButton
+            label="Google로 시작하기"
+            variant="google"
+            shape="rounded"
+            disabled={!DEV_SKIP_AUTH}
+            onPress={skipAuth}
+          />
 
           {/*
             동의 체크박스를 두지 않는다 — 로그인 행위가 동의다.

@@ -4,9 +4,15 @@ import Interests from "../interests";
 import Nickname from "../nickname";
 import Profile from "../profile";
 
+import { useDraft } from "@/features/onboarding/model/draft";
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn() },
 }));
+
+// 초안은 모듈 store 라 테스트 사이에 값이 샌다 — 각 테스트가 빈 상태에서 시작해야
+// "입력 전 버튼이 잠겨 있다" 같은 단언이 앞 테스트에 기대지 않는다.
+beforeEach(() => useDraft.getState().reset());
 
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
@@ -144,5 +150,63 @@ describe("06 · 관심 분야", () => {
     await pick(r, "학업"); //                            취소
 
     expect(r.getByText("최대 3개 · 2개 선택")).toBeTruthy();
+  });
+});
+
+// 화면 로컬 state 로 두면 04 → 05-b 로 넘어가는 순간 닉네임이 사라지고,
+// 10(완료)에서 제출할 데이터 자체가 남지 않는다. (ARCHITECTURE §3)
+describe("온보딩 초안 — 답이 화면을 넘어 남는가", () => {
+  it("04 에서 적은 닉네임이 초안에 쌓인다", async () => {
+    const r = await render(<Nickname />);
+    await fireEvent.changeText(r.getByPlaceholderText("실명도, 별명도 괜찮아요"), "지현");
+
+    expect(useDraft.getState().nickname).toBe("지현");
+  });
+
+  it("새로 그려도 적은 것이 남아 있다 — 뒤로 갔다 와도 같다", async () => {
+    // 수동 unmount 를 쓰지 않는다 — RNTL 의 자동 정리와 부딪혀 다음 테스트의
+    // render 까지 깨진다. 새 인스턴스가 값을 들고 뜨는 것이 곧 재진입 검증이다.
+    const first = await render(<Nickname />);
+    await fireEvent.changeText(first.getByPlaceholderText("실명도, 별명도 괜찮아요"), "지현");
+
+    const again = await render(<Nickname />);
+    expect(again.getAllByDisplayValue("지현").length).toBeGreaterThan(0);
+  });
+
+  it("세 화면의 답이 한 초안에 모인다", async () => {
+    const n = await render(<Nickname />);
+    await fireEvent.changeText(n.getByPlaceholderText("실명도, 별명도 괜찮아요"), "지현");
+
+    const p = await render(<Profile />);
+    await fireEvent.press(p.getByText("여성"));
+
+    const i = await render(<Interests />);
+    await fireEvent.press(i.getByText("가족"));
+
+    // 초안에는 라벨이 아니라 **id** 가 담긴다 — 문구가 바뀌어도 저장된 답은 그대로여야 한다
+    expect(useDraft.getState()).toMatchObject({
+      nickname: "지현",
+      gender: "female",
+      interests: ["family"],
+    });
+  });
+
+  it("미선택과 「선택 안 함」이 초안에서도 구별된다", async () => {
+    // null 은 묻지 않기를 고른 것, "none" 은 해당 없음을 고른 것이다.
+    expect(useDraft.getState().gender).toBeNull();
+
+    const p = await render(<Profile />);
+    await fireEvent.press(p.getByText("선택 안 함"));
+
+    expect(useDraft.getState().gender).toBe("none");
+  });
+
+  it("reset 은 앞 사람의 답을 남기지 않는다", async () => {
+    const n = await render(<Nickname />);
+    await fireEvent.changeText(n.getByPlaceholderText("실명도, 별명도 괜찮아요"), "지현");
+
+    useDraft.getState().reset();
+
+    expect(useDraft.getState()).toMatchObject({ nickname: "", gender: null, interests: [] });
   });
 });

@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
 import { Avatar } from "@/components/chat/Avatar";
@@ -12,6 +11,7 @@ import { AppText } from "@/components/primitives/AppText";
 import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
+import { useDraft, type Gender } from "@/features/onboarding/model/draft";
 
 /**
  * `05-b` · 나이 · 성별 (온보딩 2/6 · **선택**)
@@ -28,15 +28,16 @@ import theme from "@/design/theme";
  * 추측으로 그리지 않기 위한 결정이다. 값이 든 뒤의 칩 모양은 상류 확인 후에 붙인다.
  * 나이 placeholder 도 스펙에 없어 **비워 둔다** — 문안을 지어내지 않는다.
  */
-const GENDERS = [
+const GENDERS: readonly { id: Gender; label: string }[] = [
   { id: "male", label: "남성" },
   { id: "female", label: "여성" },
   { id: "none", label: "선택 안 함" },
-] as const;
+];
 
 export default function Profile() {
-  const [age, setAge] = useState("");
-  const [gender, setGender] = useState<string | null>(null);
+  const age = useDraft((s) => s.age);
+  const gender = useDraft((s) => s.gender);
+  const set = useDraft((s) => s.set);
 
   return (
     <ScreenBackground>
@@ -57,7 +58,12 @@ export default function Profile() {
         <View style={styles.bottom}>
           <View style={styles.field}>
             <FieldLabel>나이</FieldLabel>
-            <InputRow value={age} onChangeText={setAge} keyboardType="number-pad" maxLength={3} />
+            <InputRow
+              value={age}
+              onChangeText={(v) => set("age", v)}
+              keyboardType="number-pad"
+              maxLength={3}
+            />
           </View>
 
           <View style={styles.field}>
@@ -66,7 +72,7 @@ export default function Profile() {
               items={GENDERS}
               selected={gender == null ? [] : [gender]}
               // 같은 것을 다시 누르면 미선택으로 되돌린다 — 고른 뒤 무를 길이 있어야 한다
-              onToggle={(id) => setGender((cur) => (cur === id ? null : id))}
+              onToggle={(id) => set("gender", gender === id ? null : (id as Gender))}
             />
           </View>
 

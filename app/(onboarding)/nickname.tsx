@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
 import { Avatar } from "@/components/chat/Avatar";
@@ -10,6 +9,7 @@ import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { useDraft } from "@/features/onboarding/model/draft";
 
 /**
  * `04` · 닉네임 (온보딩 1/6 · 필수)
@@ -24,7 +24,9 @@ import { ScreenBackground } from "@/components/primitives/ScreenBackground";
  * - **뒤로가 없다.** 첫 질문이라 돌아갈 곳이 없다 — 자리는 예약한다
  */
 export default function Nickname() {
-  const [name, setName] = useState("");
+  // 화면 로컬 state 로 두면 다음 화면으로 넘어가는 순간 사라진다 — 초안에 쌓는다
+  const name = useDraft((s) => s.nickname);
+  const setName = useDraft((s) => s.set);
   const ready = name.trim().length > 0;
 
   return (
@@ -46,7 +48,7 @@ export default function Nickname() {
         <View style={styles.bottom}>
           <InputRow
             value={name}
-            onChangeText={setName}
+            onChangeText={(v) => setName("nickname", v)}
             placeholder="실명도, 별명도 괜찮아요"
             returnKeyType="done"
             onSubmitEditing={() => ready && goNext()}

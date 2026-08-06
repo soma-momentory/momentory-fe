@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
+
 import { Avatar } from "@/components/chat/Avatar";
 import { BabaBubble } from "@/components/chat/BabaBubble";
 import { ChatLayout } from "@/components/chat/ChatLayout";
@@ -10,6 +11,7 @@ import { OnboardingTopBar } from "@/components/onboarding/OnboardingTopBar";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { MAX_INTERESTS, useDraft } from "@/features/onboarding/model/draft";
 
 /**
  * `06` · 관심 분야 (온보딩 3/6 · 필수 · 복수)
@@ -26,7 +28,7 @@ import { ScreenBackground } from "@/components/primitives/ScreenBackground";
  * 원본 `07`(쉬는 방법)은 다음 질문이 아니다 — 그 답이 쓰이는 곳이 쉼터뿐이라
  * MVP 는 묻지 않는다. 진행점 4번째 자리는 `08` 이 가져간다.
  */
-const MAX = 3;
+const MAX = MAX_INTERESTS;
 
 const ITEMS = [
   { id: "study", label: "학업" },
@@ -40,24 +42,28 @@ const ITEMS = [
 ] as const;
 
 export default function Interests() {
-  const [picked, setPicked] = useState<string[]>([]);
+  const picked = useDraft((s) => s.interests);
+  const set = useDraft((s) => s.set);
+  // 상한 안내는 화면에 머무는 순간의 상태다 — 초안에 담지 않는다
   const [overCap, setOverCap] = useState(false);
 
   const toggle = (id: string) => {
-    setPicked((cur) => {
-      if (cur.includes(id)) {
-        setOverCap(false);
-        return cur.filter((x) => x !== id);
-      }
-      if (cur.length >= MAX) {
-        // 넘치는 선택은 **삼키고** 안내로만 알린다. 고른 것을 밀어내지 않는다 —
-        // 무엇이 빠졌는지 모른 채 목록이 바뀌면 되돌릴 수가 없다.
-        setOverCap(true);
-        return cur;
-      }
+    if (picked.includes(id)) {
       setOverCap(false);
-      return [...cur, id];
-    });
+      set(
+        "interests",
+        picked.filter((x) => x !== id),
+      );
+      return;
+    }
+    if (picked.length >= MAX) {
+      // 넘치는 선택은 **삼키고** 안내로만 알린다. 고른 것을 밀어내지 않는다 —
+      // 무엇이 빠졌는지 모른 채 목록이 바뀌면 되돌릴 수가 없다.
+      setOverCap(true);
+      return;
+    }
+    setOverCap(false);
+    set("interests", [...picked, id]);
   };
 
   return (
