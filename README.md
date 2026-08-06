@@ -66,7 +66,10 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 
 **M0·M1 완료** — 셋업 · git 위생 · Pretendard · 테마 동기화 · P0 컴포넌트(기본 3종 + 채팅 6종 + 진행 2종) · 테스트 기반.
 
-**M2 진행 중** — 로그인(`S1`)과 온보딩 7장이 있다. 단 **구판(30화면) 기준으로 만들어져
-상류 v2(2026-08-06 · 40화면) 따라잡기가 남아 있다** — 목록은
-[`docs/TASKS.md` 「상류 v2 따라잡기」](docs/TASKS.md). 마일스톤과 각 단계의 선행 조건은
-[`docs/ARCHITECTURE.md §7`](docs/ARCHITECTURE.md) 에 있다.
+**M2 화면 정렬 완료 · 외부 연동 대기** — 진입·온보딩 13상태는 상류
+v2(2026-08-06 · 40화면)에 맞췄고, M2-0 인증 부트스트랩도 완료했다. 소셜 SDK · 실제
+알림/캘린더 권한 · 계측은 후속 연동으로 남아 있다.
+
+**M3 홈 진행 중** — `12`·`12-b` 화면과 홈 공용 기반을 만들었다. 상세 시트
+`12-c`·`12-d`·`12-e`와 데이터 영속화는 뒤따른다. 세부 상태와 선행 조건은
+[`docs/TASKS.md`](docs/TASKS.md)와 [`docs/ARCHITECTURE.md §7`](docs/ARCHITECTURE.md)에 있다.

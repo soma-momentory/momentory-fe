@@ -21,7 +21,21 @@ export default function RootLayout() {
           animationDuration: theme.motion.spec.screen.duration,
           contentStyle: { backgroundColor: theme.colors.semantic.background },
         }}
-      />
+      >
+        {/*
+          홈의 시트 3종(`12-c`·`12-d`·`12-e`)은 **투명 모달**이다 — 뒤의 홈이
+          스크림 너머로 계속 보여야 어디서 왔는지를 잃지 않는다(`Sheet` 주석).
+          시트가 라우트라서 뒤로가기·스와이프백이 그대로 닫기가 된다.
+        */}
+        <Stack.Screen
+          name="home"
+          options={{
+            presentation: "transparentModal",
+            animation: "fade",
+            contentStyle: { backgroundColor: "transparent" },
+          }}
+        />
+      </Stack>
     </AppProviders>
   );
 }

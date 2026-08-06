@@ -1,8 +1,10 @@
 import { create } from "zustand";
 
+import type { EmotionId } from "@/design/theme";
 import {
   SAMPLE_MOMENTS,
   SAMPLE_SCHEDULES,
+  SAMPLE_TODAY,
   type Moment,
   type Schedule,
 } from "@/mocks/sample";
@@ -29,9 +31,23 @@ type DayStore = {
   moments: Moment[];
   /** 체크 원 — 즉시 마침/취소. 확인을 묻지 않는다 */
   toggleDone: (id: string) => void;
+  /** `12-c` 감정 — 다시 누르면 취소되는 토글. 마침과 서로를 요구하지 않는다 */
+  toggleEmotion: (id: string, emotion: EmotionId) => void;
   /** `12-c` 「홈에서 숨기기」 — 캘린더 원본은 그대로다 */
   hide: (id: string) => void;
+  /** `12-e` 직접 추가 — **제목 하나만** 받는다. `time` 은 항상 `null` */
+  addSchedule: (title: string) => void;
+  /** `12-d` 순간 — 한 줄이면 충분하다 */
+  addMoment: (text: string) => void;
 };
+
+/**
+ * 로컬 id — 서버가 붙으면 **클라이언트가 만드는 ULID** 가 이 자리에 온다
+ * (`ARCHITECTURE.md §4` — 생성 요청을 멱등하게 만드는 근거). 지금은 화면만
+ * 만드는 단계라 형식만 맞춘다.
+ */
+let seq = 0;
+const nextId = (prefix: string) => `${prefix}-local-${++seq}`;
 
 export const useDay = create<DayStore>((set) => ({
   schedules: SAMPLE_SCHEDULES,
@@ -46,9 +62,58 @@ export const useDay = create<DayStore>((set) => ({
       ),
     })),
 
+  toggleEmotion: (id, emotion) =>
+    set((s) => ({
+      schedules: s.schedules.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              emotions: x.emotions.includes(emotion)
+                ? x.emotions.filter((e) => e !== emotion)
+                : [...x.emotions, emotion],
+            }
+          : x,
+      ),
+    })),
+
   hide: (id) =>
     set((s) => ({
       schedules: s.schedules.map((x) => (x.id === id ? { ...x, hidden: true } : x)),
+    })),
+
+  addSchedule: (title) =>
+    set((s) => ({
+      schedules: [
+        ...s.schedules,
+        {
+          id: nextId("s"),
+          date: SAMPLE_TODAY,
+          title: title.trim(),
+          // 시간 입력이 없으므로 홈 목록도 시간순이 아니라 들어온 순서다 (12-e.md)
+          time: null,
+          source: "manual",
+          externalId: null,
+          done: false,
+          doneAt: null,
+          emotions: [],
+          hidden: false,
+        },
+      ],
+    })),
+
+  addMoment: (text) =>
+    set((s) => ({
+      moments: [
+        ...s.moments,
+        {
+          id: nextId("m"),
+          createdAt: new Date().toISOString(),
+          date: SAMPLE_TODAY,
+          text: text.trim(),
+          // 항상 기기에 먼저 저장하고 연결되면 올린다 — 실패로 표시하지 않는다
+          syncState: "local",
+        },
+      ],
     })),
 }));
 
