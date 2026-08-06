@@ -50,7 +50,7 @@
 ```
 app/_layout.tsx  app/index.tsx  app/(auth)/login.tsx
 src/design/{theme.ts, tokens.mvp.ts}
-src/components/primitives/{ScreenBackground.tsx, AppText.tsx, AppButton.tsx}
+src/components/primitives/{ScreenBackground.tsx, AppText.tsx, AppButton.tsx, Card.tsx}
 src/components/primitives/__tests__/
 ```
 

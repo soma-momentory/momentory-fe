@@ -7,6 +7,7 @@ import {
   View,
   type PressableProps,
   type GestureResponderEvent,
+  type StyleProp,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
@@ -38,7 +39,11 @@ type Props = Omit<PressableProps, "style" | "children"> & {
   loading?: boolean;
   /** 아이콘 등 라벨 왼쪽에 놓을 것 */
   leading?: ReactNode;
-  style?: ViewStyle;
+  /**
+   * `StyleProp` 을 유지한다 — `[a, cond && b]` · null 이 전부 들어와야 한다.
+   * Pressable 의 함수형 style 만 뺐다(내부에서 pressed 스타일을 이미 합성한다).
+   */
+  style?: StyleProp<ViewStyle>;
 };
 
 export function AppButton({
@@ -50,6 +55,8 @@ export function AppButton({
   style,
   onPressIn,
   onPressOut,
+  accessibilityRole = "button",
+  accessibilityState: callerState,
   ...rest
 }: Props) {
   const reduceMotion = useReduceMotion();
@@ -95,8 +102,13 @@ export function AppButton({
   return (
     <Animated.View style={{ opacity, transform: [{ scale }] }}>
       <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: effectiveDisabled, busy: loading }}
+        // rest 를 **먼저** 펼친다. 뒤에 두면 호출자가 accessibilityState 를 하나라도
+        // 주는 순간 우리가 넣은 값이 통째로 교체된다. `disabled` 는 Pressable 이
+        // disabled prop 으로 다시 덮어써서 살아남지만 **`busy` 는 그대로 사라진다** —
+        // 처리 중인 버튼이 보조기술에 조용해진다. 호출자 상태는 살리되 잠금은 우리가 쥔다.
+        {...rest}
+        accessibilityRole={accessibilityRole}
+        accessibilityState={{ ...callerState, disabled: effectiveDisabled, busy: loading }}
         disabled={effectiveDisabled}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -107,7 +119,6 @@ export function AppButton({
           effectiveDisabled ? styles.disabled : null,
           style,
         ]}
-        {...rest}
       >
         {leading ? <View style={styles.leading}>{leading}</View> : null}
         <AppText variant="bodyLg" tone={v.tone} weight="700" style={v.labelStyle}>
