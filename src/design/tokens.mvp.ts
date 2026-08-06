@@ -482,6 +482,45 @@ export const segBar = {
 } as const;
 
 /**
+ * 리포트(`W1`) — 요약 3칸(`.metric`)과 요일별 감정 칸(`.wdcol`).
+ *
+ * **감정은 막대가 아니라 점**이다 — 강도를 입력받지 않으므로 높이로 말할 수
+ * 있는 것이 없다. 그래서 여기 높이 관련 토큰이 없다.
+ */
+export const report = {
+  /** `.metric` — 값 · 비교 · 라벨 세 줄 */
+  metric: { radius: 16, paddingVertical: 14, paddingHorizontal: 8, gap: 5, valueSize: 19, deltaSize: 11, labelSize: 11 },
+  /** `.mtd` — 비교 줄. 초록은 「좋다」가 아니라 「달라졌다」를 가리킨다 */
+  deltaColor: "#5E8A6B",
+  /** `.wdcol` — 요일 한 칸. 기록 없는 날은 면이 없다(`.wdcolOff`) */
+  weekday: {
+    gap: 4,
+    radius: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 2,
+    labelSize: 10.5,
+    dot: 7,
+    /**
+     * 감정 이름 줄 — **상류는 9.5px 이지만 저장소는 접근성 하한 11px** 로 올렸다.
+     * 「화남/답답」 한 칸만 두 줄로 접힌다(`RULES.md` 「접근성」).
+     */
+    nameSize: 11,
+  },
+} as const;
+
+/**
+ * 마이(`M1`·`M2`·`M3`) — 프로필과 설정 줄.
+ * **하나의 설정을 두 줄로 나누지 않는다**(`M3.md`) — 한 행이 값과 켜짐을 함께 담는다.
+ */
+export const my = {
+  avatar: 60,
+  /** `.mrow` — 설정 한 줄. 52 라 히트 영역을 따로 깔지 않는다 */
+  row: { minHeight: 52, gap: 12, keySize: 14, valueSize: 12.5 },
+  /** `.sep` — ink 8% */
+  separator: `${semantic.textPrimary}14`,
+} as const;
+
+/**
  * `.dobtn` · `.dobtnOn` — `[해봤어요]`(`A3`·`A3-c`).
  *
  * **설정이 아니라 한 번의 기록이라 토글이 아니라 버튼이다**(`A3.md`) — 스위치는
