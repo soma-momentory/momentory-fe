@@ -120,6 +120,23 @@ export const chatColor = {
 } as const;
 
 /**
+ * 입력 줄 — `04` 닉네임 · `08` 시간. `flows/9-mvp.mjs` 의 raw rect 값이다.
+ *
+ * ⚠ `momentory.css` 에 대응 클래스가 **없다**. `.inp`(r999)는 홈의 순간 입력 알약이라
+ * 다른 것이다. 원본 `2-onboarding.mjs` `inputRow()` 와도 다르다 — 높이 52→**56**,
+ * 알약(r26)→**r16**, 테두리 primary 20%→**ink 14%**.
+ */
+export const inputRow = {
+  height: 56,
+  radius: 16,
+  paddingHorizontal: 18,
+  /** ink 14% — 0.14 × 255 = 35.7 → 24 */
+  border: `${semantic.textPrimary}24`,
+  /** placeholder 는 16px legal */
+  fontSize: 16,
+} as const;
+
+/**
  * 배경 그라디언트.
  * 상류 `momentory.css` 가 `.scr` 을 `120% 90% at 50% 18%` 로 개정했고,
  * **진입 2장(S0·S1)만** 구 값 `115% 75% at 50% 26%` 를 유지한다.

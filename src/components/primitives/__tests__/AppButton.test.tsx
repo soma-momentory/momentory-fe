@@ -74,8 +74,24 @@ describe("AppButton", () => {
     const { getByRole } = await render(<AppButton label="다음" disabled />);
     const btn = getByRole("button");
 
-    expect(flatten(btn.props.style).opacity).toBe(0.75);
+    // momentory.css `.off{opacity:.36;box-shadow:none}` — 그림자까지 지운다.
+    // 남기면 눌리는 것처럼 떠 보인다. 0.75 는 COMPONENTS.md 가 인용한 X1-b(원본) 값이었다.
+    const s = flatten(btn.props.style);
+    expect(s.opacity).toBe(0.36);
+    expect(s.shadowOpacity).toBe(0);
     expect(btn.props.accessibilityState.disabled).toBe(true);
+  });
+
+  it("기본은 알약이고 진입 2장만 rounded 다", async () => {
+    // MVP 28화면의 .pri .opt .quiet .ghost 는 전부 border-radius:999px.
+    // S0·S1 은 MVP 리팩토링 대상이 아니라 원본 button() r14 를 쓴다.
+    const pill = await render(<AppButton label="시작하기" />);
+    const rounded = await render(<AppButton label="카카오로 시작하기" shape="rounded" />);
+
+    expect(flatten(pill.getByRole("button").props.style).borderRadius).toBe(theme.radius.pill);
+    expect(flatten(rounded.getByRole("button").props.style).borderRadius).toBe(
+      theme.radius.control,
+    );
   });
 
   it("loading은 버튼을 잠그고 진행점을 표시한다", async () => {

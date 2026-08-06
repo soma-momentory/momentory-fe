@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { Image, StyleSheet, View } from "react-native";
 
 import { AppButton } from "@/components/primitives/AppButton";
@@ -14,6 +15,9 @@ import theme from "@/design/theme";
  *
  * 규격은 `09_MVP/docs/S1.md`.
  */
+/** M2-0 인증 부트스트랩이 붙기 전까지의 임시 통로. 세션을 만들지 않는다 */
+const skipAuth = () => router.push("/welcome");
+
 export default function Login() {
   return (
     <ScreenBackground variant="entry">
@@ -41,9 +45,18 @@ export default function Login() {
         </View>
 
         <View style={styles.actions}>
-          <AppButton label="카카오로 시작하기" variant="kakao" disabled />
-          <AppButton label="Apple로 시작하기" variant="apple" disabled />
-          <AppButton label="Google로 시작하기" variant="google" disabled />
+          {/*
+            shape="rounded" — S1 은 MVP 리팩토링 대상이 아니라 원본 값을 쓴다
+            (`9-mvp.mjs` 는 28화면뿐이고 진입 2장이 없다). MVP 화면의 CTA 는 알약이다.
+
+            ⚠ **인증을 건너뛰고 온보딩으로 바로 보낸다.** BE 연결 없이 화면만 만드는
+            동안의 임시 통로다 — 이게 없으면 온보딩 화면에 도달할 방법이 없다.
+            실제 흐름(소셜 SDK → 세션 교환 → 진입 판정)은 M2-0 에서 붙이고,
+            그때 이 세 줄이 각자의 provider 를 부른다.
+          */}
+          <AppButton label="카카오로 시작하기" variant="kakao" shape="rounded" onPress={skipAuth} />
+          <AppButton label="Apple로 시작하기" variant="apple" shape="rounded" onPress={skipAuth} />
+          <AppButton label="Google로 시작하기" variant="google" shape="rounded" onPress={skipAuth} />
 
           {/*
             동의 체크박스를 두지 않는다 — 로그인 행위가 동의다.

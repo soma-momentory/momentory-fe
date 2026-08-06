@@ -31,9 +31,19 @@ const { press } = theme.motion.spec;
  */
 export type ButtonVariant = "primary" | "kakao" | "apple" | "google" | "ghost";
 
+/**
+ * MVP 28화면의 버튼은 **알약**이다 — `.pri` `.opt` `.quiet` `.ghost` 전부
+ * `border-radius:999px`. `rounded`(r14)는 **`S0`·`S1` 전용**인데, 진입 2장은
+ * MVP 리팩토링 대상이 아니라 원본 `lib.mjs button()` 을 그대로 쓰기 때문이다.
+ * 그래서 기본이 `pill` 이고 로그인 화면만 `rounded` 를 명시한다.
+ */
+export type ButtonShape = "pill" | "rounded";
+
 type Props = Omit<PressableProps, "style" | "children"> & {
   label: string;
   variant?: ButtonVariant;
+  /** 기본 `pill`. `rounded` 는 진입 2장(`S0`·`S1`) 전용 */
+  shape?: ButtonShape;
   disabled?: boolean;
   /** 비동기 처리 중. 버튼을 잠그고 라벨 옆에 진행점을 보인다 */
   loading?: boolean;
@@ -49,6 +59,7 @@ type Props = Omit<PressableProps, "style" | "children"> & {
 export function AppButton({
   label,
   variant = "primary",
+  shape = "pill",
   disabled = false,
   loading = false,
   leading,
@@ -114,6 +125,7 @@ export function AppButton({
         onPressOut={handlePressOut}
         style={[
           styles.base,
+          shape === "pill" ? styles.pill : styles.rounded,
           v.container,
           pressed && !effectiveDisabled && !reduceMotion ? v.pressed : null,
           effectiveDisabled ? styles.disabled : null,
@@ -239,15 +251,17 @@ const VARIANTS: Record<ButtonVariant, Variant> = {
 const styles = StyleSheet.create({
   base: {
     height: theme.touch.buttonHeight,
-    borderRadius: theme.radius.control,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     paddingHorizontal: 16,
   },
-  // 비활성은 흐리게만 한다. 경고색·아이콘을 붙이지 않는다 (RULES 4)
-  disabled: { opacity: 0.75 },
+  pill: { borderRadius: theme.radius.pill }, //       MVP 28화면 (.pri .opt .quiet .ghost)
+  rounded: { borderRadius: theme.radius.control }, // 진입 2장 (원본 button() r14)
+  // 비활성은 흐리게만 한다. 경고색·아이콘을 붙이지 않는다 (RULES 4).
+  // `.off{opacity:.36;box-shadow:none}` — 그림자까지 지운다. 남기면 눌리는 것처럼 떠 보인다.
+  disabled: { opacity: 0.36, shadowOpacity: 0, elevation: 0 },
   leading: { width: 20, alignItems: "center" },
   progress: { flexDirection: "row", gap: 3 },
   progressDot: { width: 4, height: 4, borderRadius: theme.radius.pill },
