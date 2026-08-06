@@ -55,6 +55,15 @@ describe("12 · 홈 — 세 칸", () => {
     expect(getByText("행복함")).toBeTruthy();
   });
 
+  it("마침 2 · 감정 3 이 함께 있다 — 서로를 요구하지 않는다", async () => {
+    // 스키마 샘플 「면접 스터디 · 불안함」은 마침 없이 감정만 있다.
+    // C1 의 「감정 기록 3개」가 여기서 나온다
+    const { getByText } = await render(<Home />);
+
+    expect(getByText("2/4 마침")).toBeTruthy();
+    expect(getByText("불안함")).toBeTruthy();
+  });
+
   it("채운 버튼은 화면에 하나뿐이다 — 일정 추가", async () => {
     const { getByText } = await render(<Home />);
     const add = getByText("＋ 일정 추가하기").parent;

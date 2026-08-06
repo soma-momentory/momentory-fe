@@ -27,22 +27,23 @@ beforeEach(() => {
 
 describe("C1 · 회고 인트로 — 떠올리기가 아니라 고르기", () => {
   it("바바가 기억해둔 재료를 먼저 보여준다", async () => {
-    // 샘플 하루: 일정 4 · 순간 2 · 감정 기록 2(팀 회의·발표 준비)
+    // 샘플 하루 = 스키마 정본: 일정 4 · 순간 2 · 감정 기록 3
+    // (화남/답답 · 행복함 · 불안함 — 「면접 스터디 · 불안함」은 마침 없이 감정만 있다)
     const { getByText } = await render(<RetroIntro />);
 
     expect(getByText("오늘 바바가 기억해둔 것")).toBeTruthy();
-    expect(getByText("일정 4개 · 순간 2개 · 감정 기록 2개")).toBeTruthy();
-  });
-
-  it("재료는 홈과 같은 값을 본다 — 하드코딩하지 않는다", async () => {
-    useDay.getState().toggleEmotion("s3", 1); // 면접 스터디에 감정 하나 추가
-    const { getByText } = await render(<RetroIntro />);
-
     expect(getByText("일정 4개 · 순간 2개 · 감정 기록 3개")).toBeTruthy();
   });
 
-  it("숨긴 일정은 재료에서도 빠진다", async () => {
-    useDay.getState().hide("s4");
+  it("재료는 홈과 같은 값을 본다 — 하드코딩하지 않는다", async () => {
+    useDay.getState().toggleEmotion("s4", 9); // 운동 가기에 평온함 추가
+    const { getByText } = await render(<RetroIntro />);
+
+    expect(getByText("일정 4개 · 순간 2개 · 감정 기록 4개")).toBeTruthy();
+  });
+
+  it("숨긴 일정은 재료에서도 빠진다 — 그 줄의 감정까지", async () => {
+    useDay.getState().hide("s3"); // 면접 스터디 = 불안함
     const { getByText } = await render(<RetroIntro />);
 
     expect(getByText("일정 3개 · 순간 2개 · 감정 기록 2개")).toBeTruthy();
@@ -84,14 +85,24 @@ describe("C2 · 오늘 정리 확인 — 홈과 같은 카드", () => {
     expect(queryByText(/\d{1,2}:\d{2}/)).toBeNull();
   });
 
-  it("감정이 비어 있는 줄에 [감정 추가] 점선 칩이 붙는다", async () => {
+  it("감정이 비어 있는 줄에만 [감정 추가] 점선 칩이 붙는다", async () => {
     const { getByLabelText, queryByLabelText } = await render(<RetroConfirm />);
 
-    // 「운동 가기」는 아직 안 마쳤고 감정도 없다 — 마침을 요구하지 않는다
+    // 「운동 가기」는 아직 마치지 않았고 감정도 없다 — **마침을 요구하지 않는다** (C2.md)
     expect(getByLabelText("운동 가기 감정 추가")).toBeTruthy();
-    expect(getByLabelText("면접 스터디 감정 추가")).toBeTruthy();
-    // 감정이 있는 줄에는 붙지 않는다
+
+    // 감정이 있는 줄에는 붙지 않는다. 「면접 스터디」는 마치지 않았어도 감정이 있다
     expect(queryByLabelText("팀 회의 감정 추가")).toBeNull();
+    expect(queryByLabelText("면접 스터디 감정 추가")).toBeNull();
+  });
+
+  it("감정 3개를 모은다 — 화남/답답 · 행복함 · 불안함", async () => {
+    // C2.md 의 「감정 3개」. 마침 여부와 무관하게 줄에 달린 감정을 그대로 모은다
+    const { getAllByText } = await render(<RetroConfirm />);
+
+    for (const name of ["화남/답답", "행복함", "불안함"]) {
+      expect(getAllByText(name).length).toBeGreaterThanOrEqual(1);
+    }
   });
 
   it("여기서 고친 것은 곧바로 홈에도 반영된다 — 같은 Schedule 이다", async () => {
