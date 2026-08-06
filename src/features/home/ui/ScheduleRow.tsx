@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { EmotionPill } from "@/components/common/EmotionPill";
 import { CheckCircleIcon } from "@/components/icons/LineIcons";
 import { AppText } from "@/components/primitives/AppText";
-import { home } from "@/design/tokens.mvp";
+import theme from "@/design/theme";
+import { addEmotionChip, home } from "@/design/tokens.mvp";
 import type { Schedule } from "@/mocks/sample";
 
 /**
@@ -26,9 +27,18 @@ type Props = {
   schedule: Schedule;
   onToggleDone: (id: string) => void;
   onOpen: (id: string) => void;
+  /**
+   * 감정이 비어 있는 줄에 **`[감정 추가]` 점선 알약**을 붙인다(`.addemo` · `C2`).
+   * 홈(`12`)은 붙이지 않고 회고 확인(`C2`)만 붙인다 — 밤에 한 번 훑으며
+   * 비어 있는 줄을 채우는 자리이기 때문이다.
+   *
+   * ⚠ **마침 여부를 보지 않는다** — 마침과 감정은 서로를 요구하지 않는다
+   * (`12-c`). 「운동 가기」는 아직 안 마쳤지만 칩이 붙는다.
+   */
+  addEmotion?: boolean;
 };
 
-export function ScheduleRow({ schedule, onToggleDone, onOpen }: Props) {
+export function ScheduleRow({ schedule, onToggleDone, onOpen, addEmotion = false }: Props) {
   const { id, title, done, emotions } = schedule;
 
   return (
@@ -62,6 +72,21 @@ export function ScheduleRow({ schedule, onToggleDone, onOpen }: Props) {
       {emotions.map((e) => (
         <EmotionPill key={e} id={e} />
       ))}
+
+      {/* 비어 있는 줄에만 붙는다 — 감정이 하나라도 있으면 알약이 그 자리를 쓴다 */}
+      {addEmotion && emotions.length === 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${title} 감정 추가`}
+          hitSlop={10}
+          onPress={() => onOpen(id)}
+          style={styles.addEmotion}
+        >
+          <AppText tone="caption" weight="500" style={styles.addEmotionLabel}>
+            감정 추가
+          </AppText>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -79,4 +104,14 @@ const styles = StyleSheet.create({
   // 감정 알약이 먼저 자리를 잡고 제목이 남은 폭을 쓴다
   titleArea: { flex: 1, minWidth: 0 },
   title: { fontSize: home.itemTitle.fontSize, lineHeight: home.itemTitle.lineHeight },
+  // .addemo — 점선이라 「아직 없다」가 모양으로 읽힌다. 채운 알약과 헷갈리지 않는다
+  addEmotion: {
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: addEmotionChip.border,
+    borderRadius: theme.radius.pill,
+    paddingVertical: addEmotionChip.paddingVertical,
+    paddingHorizontal: addEmotionChip.paddingHorizontal,
+  },
+  addEmotionLabel: { fontSize: addEmotionChip.fontSize, lineHeight: addEmotionChip.fontSize },
 });

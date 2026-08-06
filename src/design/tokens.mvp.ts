@@ -354,8 +354,42 @@ export const emotionGrid = {
     dot: 9,
     gap: 6,
   },
+  /**
+   * `.emBig` — `C3` 시작 감정 고르기. 64 높이에 점이 이름 **위**로 간다.
+   * 아홉을 한 화면에 3×3 으로 다 보이므로 칸이 커도 접히지 않는다.
+   */
+  big: { minHeight: 64, gap: 7, dot: 14, flowGap: 8 },
   /** 켜진 칸의 면 — 감정색 22% */
   onAlpha: "38",
+} as const;
+
+/**
+ * 회고 상단 — `momentory.css` `.nav` · `.navb` · `.navbHit`.
+ *
+ * 왼쪽 `‹` · (제목) · (시작 감정 알약) · `[잠시 쉬기]`. 온보딩의
+ * `OnboardingTopBar` 와 다른 물건이다 — 저쪽은 진행 점을 들고 이쪽은 감정을 든다.
+ * **진행률·단계 번호를 노출하지 않는다**(`C1.md`).
+ */
+export const retroNav = {
+  height: 30,
+  gap: 10,
+  /** `.navb` — ‹ 글리프 19 · body */
+  chevron: 19,
+  /** `[잠시 쉬기]` — 12px caption */
+  restSize: 12,
+  titleSize: 15,
+} as const;
+
+/**
+ * `.addemo` — 감정이 비어 있는 줄에 붙는 **점선 알약**(`C2`).
+ * 마침과 감정은 서로를 요구하지 않으므로 마치기 전에도 감정을 남길 수 있다.
+ */
+export const addEmotionChip = {
+  fontSize: 11,
+  paddingVertical: 5,
+  paddingHorizontal: 9,
+  /** ink 22% — 0.22 × 255 = 56.1 → 38 */
+  border: `${semantic.textPrimary}38`,
 } as const;
 
 /**
