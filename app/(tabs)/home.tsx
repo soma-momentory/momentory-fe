@@ -143,8 +143,7 @@ export default function Home() {
         <Pressable
           accessibilityRole="button"
           style={styles.retroRow}
-          // TODO C1 회고 인트로 (M4)
-          onPress={() => {}}
+          onPress={() => router.push("/retro/intro")}
         >
           <MoonIcon />
           <View style={styles.retroCopy}>

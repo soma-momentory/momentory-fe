@@ -100,7 +100,8 @@ src/features/home/                               ← 홈 화면 상태·UI
 app/(tabs)/{_layout, home}.tsx            = 12 · 12-b (한 파일이 두 상태)
 app/home/{_layout, schedule/[id], schedule/new, moment/new}.tsx
                                           = 12-c · 12-e · 12-d — 투명 모달 시트
-src/components/common/{TabBar, TabScreen, EmotionPill, Sheet, EmotionGrid, Toggle}.tsx
+app/retro/{_layout, intro, confirm, emotion}.tsx = C1 · C2 · C3
+src/components/common/{TabBar, TabScreen, EmotionPill, Sheet, EmotionGrid, Toggle, RetroNav}.tsx
 src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이모지 금지)
 src/features/home/{model/day.ts, ui/ScheduleRow.tsx}
 src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData)

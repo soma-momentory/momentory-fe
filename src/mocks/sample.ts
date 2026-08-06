@@ -111,20 +111,26 @@ export const SAMPLE_SCHEDULES: Schedule[] = [
   },
 ];
 
-/** 순간 2개 — 「오늘의 순간」 라벨 아래 모으고 **개수를 세지 않는다** */
+/**
+ * 순간 2개 — 「오늘의 순간」 라벨 아래 모으고 **개수를 세지 않는다**.
+ * 본문은 `9-mvp.mjs` 의 `C2` 순간 카드 그대로다.
+ *
+ * ⚠ 홈(`12`)에는 순간 목록이 없고 `C2` 에서야 보인다 — 시안이 그렇다.
+ * 의도인지는 `TASKS.md` 「상류 확인」에 올려 뒀다.
+ */
 export const SAMPLE_MOMENTS: Moment[] = [
   {
     id: "m1",
     createdAt: `${SAMPLE_TODAY}T15:12:00`,
     date: SAMPLE_TODAY,
-    text: "면접 스터디 자료를 다 못 봤다. 그래도 질문 세 개는 정리했다.",
+    text: "발표 자료 피드백 정리하기",
     syncState: "synced",
   },
   {
     id: "m2",
     createdAt: `${SAMPLE_TODAY}T18:03:00`,
     date: SAMPLE_TODAY,
-    text: "발표 끝나고 팀원이 고생했다고 말해줬다.",
+    text: "생각보다 반응이 좋았다.",
     syncState: "synced",
   },
 ];
