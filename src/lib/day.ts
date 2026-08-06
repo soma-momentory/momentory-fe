@@ -14,3 +14,12 @@ export function formatKoreanDate(iso: string) {
   const weekday = WEEKDAYS[new Date(Number(y), Number(m) - 1, Number(d)).getDay()];
   return `${Number(m)}월 ${Number(d)}일 ${weekday}요일`;
 }
+
+/**
+ * `"2026-07-28"` → `"7월 28일"` — 문장 안에 들어가는 짧은 형태.
+ * 「회고 대화에서 작성 · **7월 28일** 수정」처럼 요일이 문장을 늘어뜨리는 자리에 쓴다.
+ */
+export function formatKoreanDateShort(iso: string) {
+  const [, m = "1", d = "1"] = iso.split("-");
+  return `${Number(m)}월 ${Number(d)}일`;
+}

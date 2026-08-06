@@ -1,4 +1,4 @@
-import { render, fireEvent, within } from "@testing-library/react-native";
+import { render, fireEvent, within, act } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import Archive from "../archive";
@@ -181,6 +181,57 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     const preview = r.getByText("회의는 답답했지만, 그 답답함은 내 의견을 전하고 싶다는 마음에서 왔다.");
 
     expect(preview.props.numberOfLines).toBe(2);
+  });
+});
+
+describe("삭제 되돌리기 — 확인 모달 대신 되돌릴 길을 남긴다", () => {
+  const ID = "d-sample-27";
+
+  it("지운 직후에만 [삭제했어요 · 되돌리기] 가 뜬다", async () => {
+    const before = await render(<Archive />);
+    expect(before.queryByText("되돌리기")).toBeNull();
+
+    await act(async () => {
+      useDiary.getState().remove(ID);
+    });
+
+    const after = await render(<Archive />);
+    expect(after.getByText("삭제했어요")).toBeTruthy();
+    expect(after.getByText("되돌리기")).toBeTruthy();
+  });
+
+  it("되돌리면 일기가 목록으로 돌아온다", async () => {
+    useDiary.getState().remove(ID);
+    const r = await render(<Archive />);
+    await fireEvent.press(r.getByText("목록"));
+    expect(r.queryByText("7월 27일 월요일")).toBeNull();
+
+    await fireEvent.press(r.getByText("되돌리기"));
+
+    expect(r.getByText("7월 27일 월요일")).toBeTruthy();
+    expect(r.queryByText("되돌리기")).toBeNull(); // 줄도 함께 사라진다
+  });
+
+  it("잠시 뒤 스스로 사라진다 — 그 뒤에는 되돌릴 수 없다", async () => {
+    jest.useFakeTimers();
+    useDiary.getState().remove(ID);
+    const r = await render(<Archive />);
+    expect(r.getByText("되돌리기")).toBeTruthy();
+
+    await act(async () => {
+      jest.advanceTimersByTime(7000);
+    });
+
+    expect(r.queryByText("되돌리기")).toBeNull();
+    expect(useDiary.getState().recentlyDeleted).toBeNull();
+    jest.useRealTimers();
+  });
+
+  it("삭제하면 12편이 11편이 된다 — 요약도 함께 준다", async () => {
+    useDiary.getState().remove(ID);
+    const r = await render(<Archive />);
+
+    expect(r.getByText("11편")).toBeTruthy();
   });
 });
 

@@ -97,8 +97,21 @@ type DiaryStore = {
   /**
    * `A4` 「이 회고 삭제」 — **지워지는 것은 일기 한 면이 아니라 회고 한 벌**이라
    * 붙어 있던 행동 카드도 함께 간다. 라벨이 「이 일기 삭제」가 아닌 이유다.
+   *
+   * 지운 것은 **`recentlyDeleted` 에 잠시 남는다** — `A4.md` 가 "지운 직후에는
+   * 하단에 `[삭제했어요 · 되돌리기]` 를 잠시 둔다"고 한다. 되돌릴 수 있게
+   * 만든다는 규칙이 여기까지 온다.
    */
   remove: (id: string) => void;
+  /**
+   * 지운 직후의 한 벌 — 되돌리기가 살아 있는 동안만 담긴다.
+   * **확인 모달 대신 되돌리기**다(`RULES.md` — 모달을 두지 않는다).
+   */
+  recentlyDeleted: { diary: Diary; card: ActionCard | null } | null;
+  /** `[되돌리기]` — 일기와 행동 카드를 **원래 자리(순서)** 로 되돌린다 */
+  undoRemove: () => void;
+  /** 되돌리기 줄이 사라질 때. 되돌릴 수 없게 된다 */
+  clearRecentlyDeleted: () => void;
   /**
    * `A3` `[해봤어요]` — **토글이 아니라 한 번의 기록**이다. 되돌리는 것은
    * `undoAction` 이고 확인을 묻는 것은 화면 쪽 몫이다(느낀 점이 함께 지워진다).
@@ -231,12 +244,35 @@ export const useDiary = create<DiaryStore>((set) => ({
       ),
     })),
 
+  recentlyDeleted: null,
+
   remove: (id) =>
-    set((s) => ({
-      diaries: s.diaries.filter((d) => d.id !== id),
-      // 회고 한 벌이 지워진다 — 붙어 있던 행동 카드도 함께
-      actionCards: s.actionCards.filter((c) => c.diaryId !== id),
-    })),
+    set((s) => {
+      const diary = s.diaries.find((d) => d.id === id);
+      if (diary == null) return s;
+      return {
+        diaries: s.diaries.filter((d) => d.id !== id),
+        // 회고 한 벌이 지워진다 — 붙어 있던 행동 카드도 함께
+        actionCards: s.actionCards.filter((c) => c.diaryId !== id),
+        // 잠시 들고 있는다 — 되돌리기가 이 값을 쓴다
+        recentlyDeleted: { diary, card: actionCardOf(s.actionCards, id) },
+      };
+    }),
+
+  undoRemove: () =>
+    set((s) => {
+      const kept = s.recentlyDeleted;
+      if (kept == null) return s;
+      return {
+        // 맨 뒤가 아니라 **원래 순서**로 돌린다 — 되돌린 일기가 목록 끝에 가면
+        // 되돌린 것이 아니라 새로 쓴 것처럼 보인다
+        diaries: [...s.diaries, kept.diary].sort((a, b) => a.ordinal - b.ordinal),
+        actionCards: kept.card == null ? s.actionCards : [...s.actionCards, kept.card],
+        recentlyDeleted: null,
+      };
+    }),
+
+  clearRecentlyDeleted: () => set({ recentlyDeleted: null }),
 
   markActionDone: (cardId) =>
     set((s) => ({
@@ -264,7 +300,7 @@ export const useDiary = create<DiaryStore>((set) => ({
    * 데모 시작값으로 되돌린다 — 서버가 붙으면 「다시 불러온다」가 된다.
    * 테스트에서 빈 상태가 필요하면 `setState({ diaries: [], actionCards: [] })`.
    */
-  reset: () => set(initial()),
+  reset: () => set({ ...initial(), recentlyDeleted: null }),
 }));
 
 /** 그 일기에 붙은 행동 카드 — **1:1** 이라 배열이 아니다 */
