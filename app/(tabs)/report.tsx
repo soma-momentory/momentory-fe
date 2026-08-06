@@ -42,7 +42,9 @@ import { SAMPLE_REPORT_ANALYSIS, SAMPLE_REPORT_WEEK } from "@/mocks/sample";
  *   수만 적는다 — 별도 `[행동 인사이트]` 탭을 만들지 않는다
  *
  * ⚠ 한 주 요약 문장·흐름 라벨·이어갈 한 가지는 **서버가 그 주 대화를 읽고
- * 만드는 값**이라 아직 데모 문장이다(`SAMPLE_REPORT_DEMO`).
+ * 만드는 값**이라 아직 데모 문장이다(`SAMPLE_REPORT_ANALYSIS`) — **주마다 다른
+ * 문장**이라 표로 들고 있고, 그 표의 키가 곧 넘겨볼 수 있는 주다.
+ * 수치(회고 수 · 감정 수 · 이전 주 N회 · 행동 만든/해본 수)는 전부 계산이다.
  */
 export default function Report() {
   const diaries = useDiary((s) => s.diaries);
