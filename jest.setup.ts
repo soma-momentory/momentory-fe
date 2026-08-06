@@ -18,3 +18,10 @@ jest.mock("react-native-safe-area-context", () =>
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("react-native-safe-area-context/jest/mock").default,
 );
+
+// OS 시간 피커(08)는 네이티브 모듈이라 테스트 환경에 없다. 화면 테스트가 보는 것은
+// "피커를 연다/닫는다"는 상태이지 피커 자체가 아니므로 빈 컴포넌트로 둔다.
+jest.mock("@react-native-community/datetimepicker", () => ({
+  __esModule: true,
+  default: () => null,
+}));

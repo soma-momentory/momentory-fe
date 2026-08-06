@@ -1,6 +1,6 @@
 # momentory-fe
 
-모멘토리 앱의 React Native 프론트엔드. **MVP 30화면** — 열고 → 다섯 가지 묻고 → 담고 →
+모멘토리 앱의 React Native 프론트엔드. **MVP 40화면** — 열고 → 여섯 가지 묻고 → 담고 →
 밤에 돌아보고 → 일기가 남고 → 다시 읽는다.
 
 ## 시작하기
@@ -26,8 +26,8 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 
 | 무엇 | 어디 |
 |---|---|
-| **MVP 30화면 규칙 · 구현 순서** | `../09_MVP/docs/RULES.md` ← 1순위 |
-| 상태 기계 6개 · 엔티티 6개 | `../09_MVP/스펙/` |
+| **MVP 40화면 규칙 · 구현 순서** | `../09_MVP/docs/RULES.md` ← 1순위 |
+| 상태 기계 7개 · 엔티티 7개 | `../09_MVP/스펙/` |
 | 화면별 스펙 | `../09_MVP/docs/<ID>.md` |
 | 눈으로 보기 | `../03_미리보기/MVP.html` |
 | 토큰 정본 | `../02_디자인시스템/theme.ts` → `npm run sync:theme` |
@@ -41,8 +41,8 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 
 | | |
 |---|---|
-| 범위 | `09_MVP` — MVP 30화면 (노드 1,151개) |
-| 상류 번들 | `07_반입/UXUI 리팩토링 의뢰 모멘토리/export/mvp/` · 2026-08-05 반입 |
+| 범위 | `09_MVP` — MVP 40화면 (노드 1,684개) |
+| 상류 번들 | `07_반입/_archive/UXUI리팩토링_MVP_v2_20260806_반입완료/export/mvp/` · 2026-08-06 반입 |
 | 토큰 | `src/design/theme.ts` 헤더의 `@generated-from` 이 원본 커밋 SHA 를 들고 있다 |
 
 > **커밋 SHA 를 여기 박지 않는 이유** — 부모 저장소에는 아직 리모트가 없다(로컬 전용).
@@ -64,8 +64,9 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 
 ## 진행
 
-**M0 완료** — 셋업 · git 위생 · Pretendard · 테마 동기화 · `ScreenBackground`.
-Android 에뮬레이터에서 배경 그라디언트·주 버튼·감정 9종 색이 토큰과 픽셀 일치하는 것을 확인했다.
+**M0·M1 완료** — 셋업 · git 위생 · Pretendard · 테마 동기화 · P0 컴포넌트(기본 3종 + 채팅 6종 + 진행 2종) · 테스트 기반.
 
-**M1 진행 중** — 테스트 기반과 `AppText` · `AppButton` 완료. 다음은 `Card`와 채팅 컴포넌트군.
-마일스톤과 각 단계의 선행 조건은 [`docs/ARCHITECTURE.md §7`](docs/ARCHITECTURE.md) 에 있다.
+**M2 진행 중** — 로그인(`S1`)과 온보딩 7장이 있다. 단 **구판(30화면) 기준으로 만들어져
+상류 v2(2026-08-06 · 40화면) 따라잡기가 남아 있다** — 목록은
+[`docs/TASKS.md` 「상류 v2 따라잡기」](docs/TASKS.md). 마일스톤과 각 단계의 선행 조건은
+[`docs/ARCHITECTURE.md §7`](docs/ARCHITECTURE.md) 에 있다.

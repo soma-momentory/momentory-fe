@@ -9,13 +9,16 @@ import theme from "@/design/theme";
 /**
  * `03` · 환영 (온보딩 0/6)
  *
- * **질문 전에 누가 묻는지 먼저 밝힌다.** 바바를 크게(196) 보여주고 무엇을 할지와
- * 얼마나 걸리는지를 말한 뒤 시작한다.
+ * **질문 전에 누가 묻는지 먼저 밝힌다.** 바바(136)가 자기를 밝히고 몇 가지만
+ * 묻겠다고 예고한 뒤 시작한다.
  *
+ * - **앱 이름과 캐릭터를 분리한다** — "모멘토리예요"가 아니라 "모멘토리의
+ *   바바예요"(`03.md`). 앱이 말을 거는 것과 캐릭터가 말을 거는 것은 다른 약속이다
  * - **진행점을 두지 않는다** — 아직 질문이 시작되지 않았다. 점은 `04` 부터
- * - **질문 개수를 숫자로 말하지 않는다**("6개 질문"). 남은 분량을 세게 만들고 그건 재촉이다
- * - "30초면 끝나요 · 언제든 바꿀 수 있어요" — **되돌릴 수 있다는 말**이 있어야
- *   답을 고민 없이 넘길 수 있다
+ * - **초 단위로 재촉하지 않는다** — "30초면 끝나요"가 아니라 "금방 끝나요".
+ *   숫자를 적으면 그 숫자가 지켜지지 않을 때 신뢰가 깎인다(`03.md`)
+ * - "마이에서 언제든 바꿀 수 있어요"는 **약속**이다 — 여섯 항목 전부가
+ *   마이에 편집 경로를 가져야 한다(`M1`·`M2`·`M3`)
  */
 export default function Welcome() {
   return (
@@ -32,13 +35,13 @@ export default function Welcome() {
             안녕하세요.
           </AppText>
           <AppText style={styles.body}>
-            저는 앞으로 당신과 하루를 함께 돌아볼 모멘토리예요. 몇 가지 질문만 하면 당신에게 맞는
-            공간을 준비할게요.
+            저는 앞으로 당신과 하루를 함께 돌아볼 모멘토리의 바바예요. 몇 가지 질문으로 당신에게
+            맞는 공간을 준비할게요.
           </AppText>
         </View>
 
         <AppText variant="caption" tone="legal" style={styles.center1}>
-          30초면 끝나요 · 언제든 바꿀 수 있어요
+          금방 끝나요 · 답변은 마이에서 언제든 바꿀 수 있어요
         </AppText>
       </View>
 
@@ -49,7 +52,7 @@ export default function Welcome() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 22 },
-  baba: { width: 196, height: 196 },
+  baba: { width: 136, height: 136 },
   copy: { alignItems: "center", gap: 12 },
   center1: { textAlign: "center" },
   // 제목 23 bold · 본문 15/1.8 폭 290 — 시안 값. typography 에 없는 조합이다.

@@ -1,7 +1,7 @@
 # momentory-fe 설계
 
-> 범위: **MVP 30화면** (`../09_MVP/json/`) · 기준 문서는 상류 3종
-> `momentory.states.mvp.json`(상태 기계 6개) · `momentory.schema.mvp.json`(엔티티 6개) · `momentory.css`(값)
+> 범위: **MVP 40화면** (`../09_MVP/json/` · 2026-08-06 상류 v2 개정) · 기준 문서는 상류 3종
+> `momentory.states.mvp.json`(상태 기계 7개) · `momentory.schema.mvp.json`(엔티티 7개) · `momentory.css`(값)
 > 전체 설계(136화면)는 `01_화면설계/`에 그대로 있고, 쉼터를 되살릴 때 돌아온다. **MVP가 원본을 대체하지 않는다.**
 
 ## 0. 무엇을 만드는가
@@ -9,10 +9,10 @@
 | 파트 | 화면 | 장수 |
 |---|---|---|
 | 진입 | `S0` `S1` | 2 |
-| 온보딩 | `03` `04` `05-b` `06` `08` `09` `10` | 7 |
-| 홈 | `12` `12-b` `12-c` `12-d` `12-e` | 5 |
-| 회고 | `C1` `C2` `C3` `C4` `C4-b` `C6` `C7` | 7 |
-| 보관함 | `A1` `A2` `A3` `A3-b` `A4` | 5 |
+| 온보딩 | `03` `04` `05-b` `06` `06-b` `06-c` `07` `08` `09` `10` `10-b` | 11 |
+| 홈 | `12-b` `12` `12-e` `12-c` `12-d` | 5 |
+| 회고 | `C1` `C2` `C3` `C4` `C4-b` `C4-c` `C4-c2` `C4-d` `C4-e` `C6` `C6-b` `C7` | 12 |
+| 보관함 | `A1` `A2` `A3` `A3-b` `A3-c` `A4` | 6 |
 | 리포트 | `W1` | 1 |
 | 마이 | `M1` `M2` `M3` | 3 |
 
@@ -85,12 +85,18 @@ app/                         # 라우트만 — 로직을 두지 않는다
   _layout.tsx                # Stack · StatusBar (Provider 는 여기가 아니다)
   index.tsx                  # 진입 판정 (M2 에서 S0 스플래시가 된다)
   (auth)/login.tsx           # S1
+  (onboarding)/              # 03 04 05-b 06(+06-b·06-c) 07 08 09 10(+10-b) — v2 기준 (2026-08-07)
+    _layout.tsx  welcome.tsx  nickname.tsx  profile.tsx
+    interests.tsx  rest.tsx  retro-time.tsx  calendar.tsx  done.tsx
 src/
   design/
     theme.ts                 # 생성물 — 직접 수정 금지 (§5)
     tokens.mvp.ts            # 상류 반영 전까지의 이름 매핑 (§5)
-  components/primitives/
-    ScreenBackground.tsx  AppText.tsx  AppButton.tsx  Card.tsx
+  components/
+    primitives/              # ScreenBackground AppText AppButton Card InputRow ProgressDots BackChevron
+    chat/                    # ChatLayout BabaBubble AnswerBubble Avatar TypingDots ChipFlow
+    onboarding/              # OnboardingTopBar (‹ + 진행점 6칸)
+  features/onboarding/model/draft.ts   # 온보딩 답안 초안 (Zustand)
   lib/
     providers.tsx            # Provider 스택 — 늘릴 때 여기만 고친다
 ```
@@ -116,10 +122,11 @@ app/                         # expo-router — 라우트만, 로직 없음
       welcome.tsx            # 03
       nickname.tsx           # 04
       profile.tsx            # 05-b
-      interests.tsx          # 06
+      interests.tsx          # 06 (+ 06-b·06-c 기타 입력은 같은 화면의 상태)
+      rest.tsx               # 07 쉬는 방법 (v2 복원 · 필수·복수)
       retro-time.tsx         # 08
       calendar.tsx           # 09
-      done.tsx               # 10
+      done.tsx               # 10 (+ 10-b 건너뛴 경우는 같은 화면의 변형)
     (tabs)/
       _layout.tsx            # TabBar 4칸
       home.tsx               # 12 / 12-b
@@ -132,8 +139,10 @@ app/                         # expo-router — 라우트만, 로직 없음
       moment/new.tsx         # 12-d  (bottom sheet)
     retro/                   # 전체화면 모달 스택 = retro machine
       intro.tsx  confirm.tsx  emotion.tsx  talk.tsx  draft.tsx  done.tsx
+                             # talk = C4~C4-e (방향 시트 C4-c·C4-c2 는 talk 위의 하단 시트)
+                             # draft = C6 / C6-b (일기 두 면)
     diary/[id]/
-      index.tsx              # A3 / A3-b (SegBar)
+      index.tsx              # A3 / A3-b (SegBar) · A3-c 는 A3 의 행동-완료 상태
       edit.tsx               # A4
     my/
       profile.tsx            # M2
@@ -182,7 +191,7 @@ src/
   5. 로그아웃·계정 삭제는 SecureStore 토큰 · MMKV 캐시 · Query 캐시 · **아웃박스 큐**를 함께 비운다. 큐를 남기면 다음 사용자의 세션으로 이전 사용자의 쓰기가 재생된다.
 
   테스트로 고정할 경로: 만료 토큰 · 갱신 실패 · SecureStore 오류 · 로그아웃 후 재진입 · 앱 킬 후 콜드 스타트.
-- **onboarding** — 질문 다섯. `05-b` 만 skip 가능, `06`·`08` 필수. 답은 화면마다 서버로 보내지 않고 Zustand 초안에 쌓았다가 `09`/`10` 에서 한 번에 커밋한다(중간 이탈 시 초안은 MMKV 에 남음).
+- **onboarding** — 질문 여섯: 닉네임(`04`) · 기본 정보(`05-b`) · 관심 분야(`06`, 기타 입력 `06-b`/`06-c`) · 쉬는 방법(`07`, 필수·복수 — 답은 `User.restMethods` 로 **저장만**, MVP 에 보여주는 화면은 없음) · 회고 시간(`08`) · 캘린더(`09`). 진행 점 6칸이 이 여섯을 가리킨다. 완료는 `10`, 캘린더·알림을 건너뛰면 `10-b`. 답은 화면마다 서버로 보내지 않고 Zustand 초안에 쌓았다가 `09`/`10` 에서 한 번에 커밋한다(중간 이탈 시 초안은 MMKV 에 남음).
 - **home** — 한 상태(`day`). `12-b`(빈 상태)는 별도 레이아웃이 아니라 **같은 카드가 초대로 바뀌는 변형**이므로 같은 컴포넌트의 prop.
 - **retro** — 전체화면 모달 스택. `C7` 에서 홈으로 pop, `Diary` 생성. `diaryCount >= 7` 이면 `Report.unlocked`.
 - **archive / report / my** — 탭 내부 스택.
@@ -196,7 +205,7 @@ src/
 
 BE 팀의 API 가 확정되지 않았으므로 **FE 가 계약을 먼저 제안한다.**
 
-1. `schema.mvp.json` 의 엔티티 6개 + `states.mvp.json` 의 `effect(s)` 를 그대로 옮겨 **OpenAPI 계약 초안**(`docs/api/openapi.yaml`)을 쓴다. 화면에 없는 필드는 만들지 않는다.
+1. `schema.mvp.json` 의 엔티티 7개 + `states.mvp.json` 의 `effect(s)` 를 그대로 옮겨 **OpenAPI 계약 초안**(`docs/api/openapi.yaml`)을 쓴다. 화면에 없는 필드는 만들지 않는다.
 2. `openapi-typescript` 로 타입을 생성 → `src/lib/api/schema.d.ts` (생성물).
 3. **MSW 핸들러**가 그 계약을 구현한다. 샘플 값은 `schema.mvp.json` 의 `meta.sampleData` 그대로 (오늘 2026-07-27 · 일기 12편 · 닉네임 지현 · 이번 주 회고 5회).
 4. BE 가 나오면 base URL 만 바꾼다. 계약이 어긋나면 그 차이가 곧 BE 팀과의 논의 항목이 된다.
@@ -284,10 +293,10 @@ track('home_memo_add', { char_bucket: bucket(text.length) })
 |---|---|---|
 | **M0** ✅ | 프로젝트 셋업 — Expo + TS strict + expo-router + lint/CI + `sync:theme` + Pretendard | 앱이 뜨고 폰트·배경 그라디언트가 시안과 같음 |
 | **M1** | **P0 컴포넌트 13종** + **테스트 기반** | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가 |
-| **M2** | 진입 + 온보딩 9화면 (`S0` `S1` `03`~`10`) | 소셜 로그인 3종 · 알림/캘린더 권한 · 온보딩 완주 · **인증 부트스트랩 테스트**(§3 5경로) |
+| **M2** | 진입 + 온보딩 13화면 (`S0` `S1` `03`~`10-b`) | 소셜 로그인 3종 · 알림/캘린더 권한 · 온보딩 완주 · **인증 부트스트랩 테스트**(§3 5경로) |
 | **M3** | 공용 컴포넌트(P1.5) + 홈 5화면 | `TabBar` `ScrollArea` `EmotionPill` `EmotionGrid` `Sheet` `ScheduleRow` — 일정/순간 CRUD + 아웃박스 · **아웃박스 테스트**(§4 5경로) |
-| **M4** | 회고 7화면 | 채팅(스트리밍 포함) · 감정 필수 · 일기 생성 |
-| **M5** | 보관함 5 + 리포트 1 + 마이 3 + **앱 잠금 게이트** | 캘린더/목록/일기 두 면/수정 · 주간 리포트 · 설정 · 토글과 잠금이 같은 마일스톤(§8) |
+| **M4** | 회고 12화면 | 채팅(스트리밍 포함) · 감정 필수 · 방향 선택 시트(`C4-c`·`C4-c2`) · 일기 두 면 + 행동 카드 생성 |
+| **M5** | 보관함 6 + 리포트 1 + 마이 3 + **앱 잠금 게이트** | 달력/목록/일기 두 면/행동 완료(`A3-c`)/수정 · 주간 리포트 · 설정 · 토글과 잠금이 같은 마일스톤(§8) |
 | **M6** | `invariants` 전수 테스트 · Maestro E2E · EAS 내부 배포 | |
 
 **테스트는 M6 에 몰지 않는다.** 기반은 M1 에 세우고, 인증 부트스트랩·아웃박스처럼 **틀리면 조용히 데이터가 깨지는 것**은 그 기능을 만드는 마일스톤에서 함께 쓴다. M6 에 남는 것은 `states.mvp.json` 의 `invariants` 전수 검사와 E2E 뿐이다.

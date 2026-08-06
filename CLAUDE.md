@@ -1,14 +1,14 @@
 # momentory-fe
 
-모멘토리 앱의 React Native 프론트. **MVP 30화면**을 만든다.
+모멘토리 앱의 React Native 프론트. **MVP 40화면**을 만든다 (2026-08-06 상류 v2 개정 — 30 → 40).
 
 ## 먼저 읽을 것 — 순서대로
 
 설계는 부모 저장소 `C:\SWM\momentory\` 에 있다. **화면을 만들기 전에 반드시 본다.**
 
 1. `../09_MVP/docs/RULES.md` — **1순위.** 범위 · 「원본과 다른 것」 표 · 불변 규칙 · 구현 순서
-2. `../09_MVP/스펙/momentory.states.mvp.json` — 상태 기계 6개. `states.<키>` 하나가 화면 하나
-3. `../09_MVP/스펙/momentory.schema.mvp.json` — 엔티티 6개. `guard` 문장이 여기 필드로 번역된다
+2. `../09_MVP/스펙/momentory.states.mvp.json` — 상태 기계 7개. `states.<키>` 하나가 화면 하나
+3. `../09_MVP/스펙/momentory.schema.mvp.json` — 엔티티 7개(`Report` 포함). `guard` 문장이 여기 필드로 번역된다
 4. `../09_MVP/docs/<ID>.md` — 화면별 스펙
 5. `docs/ARCHITECTURE.md` — 이 저장소의 기술 설계
 6. `docs/CONTRIBUTING.md` — 커밋 · 시크릿 · 생성물 규칙
@@ -24,8 +24,8 @@
 | | 어디 | 무엇 |
 |---|---|---|
 | 1 | `../09_MVP/docs/<ID>.md` | 그 화면의 규칙·문안 |
-| 2 | **`momentory.css`** | **MVP 값 정본** — 색·크기·반경·여백. `../07_반입/_archive/UXUI리팩토링_MVP_반입완료/export/mvp/` |
-| 3 | `../05_도구/flows/9-mvp.mjs` · `ui.mjs` | MVP 28화면 조립 (2번의 figma 번역) |
+| 2 | **`momentory.css`** | **MVP 값 정본** — 색·크기·반경·여백. `../07_반입/_archive/UXUI리팩토링_MVP_v2_20260806_반입완료/export/mvp/` (최신 반입 번들이 정본 — 새 반입이 오면 경로가 바뀐다) |
+| 3 | `../05_도구/flows/9-mvp.mjs` · `ui.mjs` | MVP 40화면 조립 (2번의 figma 번역) |
 | 4 | `../02_디자인시스템/COMPONENTS.md` · `../05_도구/lib.mjs` | ⚠ **원본 기준.** 위에 없을 때만 |
 
 **`COMPONENTS.md` 의 P0 스펙 표는 원본을 서술한다.** 그대로 만들면 어긋난다 — 실제로 셋이 어긋났다:
@@ -36,8 +36,10 @@
 | `ProgressDots` | gap 8 | **gap 6** |
 | `BackChevron` | 글리프 26 · ink | **19 · body** |
 
-> **`S0`·`S1` 은 예외다.** MVP 리팩토링 대상이 아니라서 `9-mvp.mjs` 에 없다(28화면뿐).
-> 진입 2장은 **원본 값을 그대로 쓴다** — 배경 그라디언트 구 값도, 버튼 r14 도 그래서 맞다.
+> **`S0`·`S1` 도 v2 부터 MVP 리팩토링 대상이다** — `9-mvp.mjs` 40화면에 들어 있다.
+> 원본 값 예외는 **배경 그라디언트 구 값**(`115% 75% at 50% 26%`) 하나뿐이다.
+> 워드마크 자간(.145→**.055em**)·소셜 버튼(54→**44 · r12 · 마크 왼쪽 16 절대 정렬**)은
+> MVP 값으로 바뀌었다 — 「진입 2장은 원본 그대로」라는 옛 전제로 구현하지 않는다.
 
 ## 규칙의 정본은 여기가 아니다
 
@@ -46,6 +48,8 @@
 
 - **제품·디자인 규칙** → `../09_MVP/docs/RULES.md` (상류 정본)
 - **저장소 작업 규칙** → [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) (커밋·시크릿·의존성·생성물)
+- **3단 파이프라인 동기화** (클로드 디자인 → 피그마 → 구현) → `docs/CONTRIBUTING.md` 「상류 동기화」.
+  구현이 스펙과 어긋나야 하면 상류 `06_운영문서/OPEN-ISSUES.md` 에 제기한다 — 코드에 조용히 반영하지 않는다
 
 아래는 **자주 어기게 되는 것 다섯 개**의 요약일 뿐이다. 판단이 갈리면 위 두 문서를 본다.
 
@@ -67,20 +71,29 @@
 
 ## 지금 어디까지 왔나
 
-**M0 완료, M1 진행 중.** 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
+**M0·M1 완료, M2(온보딩) 진행 중.** 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
 ```
-app/_layout.tsx  app/index.tsx  app/(auth)/login.tsx
+app/_layout.tsx  app/index.tsx (S0)  app/(auth)/login.tsx (S1)
+app/(onboarding)/{_layout, welcome, nickname, profile, interests, rest, retro-time, calendar, done}.tsx
+                  = 03 · 04 · 05-b · 06(+06-b·06-c) · 07 · 08 · 09 · 10(+10-b)
 src/design/{theme.ts, tokens.mvp.ts}
-src/components/primitives/{ScreenBackground.tsx, AppText.tsx, AppButton.tsx, Card.tsx,
-                           ProgressDots.tsx, BackChevron.tsx}
+src/components/primitives/{ScreenBackground, AppText, AppButton, Card,
+                           InputRow, ProgressDots, BackChevron}.tsx
+src/components/chat/{ChatLayout, BabaBubble, AnswerBubble, Avatar, TypingDots, ChipFlow}.tsx
+src/components/onboarding/OnboardingTopBar.tsx   src/components/icons/Ico17.tsx
+src/features/onboarding/model/draft.ts   ← 온보딩 답안 초안 (Zustand)
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
-src/components/primitives/__tests__/
+src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳은 전부 이걸 쓴다
 ```
 
-설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context.
-**아직 없는 것: TanStack Query · Zustand · MMKV · Reanimated · MSW.**
+설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context ·
+**Zustand** · **@react-native-community/datetimepicker**(08 OS 피커 — 네이티브라 dev client 재빌드 필요).
+**아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
+
+> 진입·온보딩 13장은 **v2 기준으로 맞춰져 있다**(2026-08-07 따라잡기 완료).
+> 남은 것(브랜드 마크 · 계측 · 홈 연결 등)은 `docs/TASKS.md` 「잔여」 절에 있다.
 
 CI 는 `check:theme` · `typecheck` · `lint` · `test` · 시크릿 검사를 돈다.
 

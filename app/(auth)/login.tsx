@@ -39,22 +39,22 @@ export default function Login() {
           />
 
           <AppText variant="title" tone="strong" style={styles.centered}>
-            하루를 함께 돌아보는{"\n"}작은 쉼터
+            하루를 함께{"\n"}돌아보는 작은 쉼터
           </AppText>
 
-          <AppText variant="body" tone="body" style={styles.centered}>
-            바바와 짧게 이야기하며 오늘을 천천히 돌아보는 공간
-          </AppText>
-
-          <AppText variant="bodySm" tone="caption" style={styles.centered}>
-            잘 해내지 않아도, 매일 쓰지 않아도 괜찮아요.
+          {/* 소개는 2덩어리다. "잘 해내지 않아도 괜찮아요"는 뺐다 —
+              같은 말을 세 번 하면 안심이 아니라 변명으로 읽힌다 (S1.md) */}
+          <AppText variant="body" tone="body" style={[styles.centered, styles.intro]}>
+            바바와 짧게 이야기하며{"\n"}오늘을 천천히 돌아보는 공간이에요.{"\n"}매일 쓰지 않아도
+            괜찮아요.
           </AppText>
         </View>
 
         <View style={styles.actions}>
           {/*
-            shape="rounded" — S1 은 MVP 리팩토링 대상이 아니라 원본 값을 쓴다
-            (`9-mvp.mjs` 는 28화면뿐이고 진입 2장이 없다). MVP 화면의 CTA 는 알약이다.
+            shape="oauth" — `.oauth` 44 · r12 (v2 에서 54 → 44). 공식 마크는
+            왼쪽 16 절대 정렬 자리(`leading`)가 예약돼 있고, 실제 브랜드 마크
+            SVG 는 M2-1 소셜 SDK 와 함께 넣는다.
 
             ⚠ **개발 빌드에서만 인증을 건너뛴다.** 화면만 만드는 동안 온보딩에
             도달할 길이 필요해서인데, 릴리스에서는 `__DEV__` 가 false 라 비활성으로
@@ -63,35 +63,36 @@ export default function Login() {
             그때 이 세 줄이 각자의 provider 를 부른다.
           */}
           <AppButton
-            label="카카오로 시작하기"
+            label="카카오로 계속하기"
             variant="kakao"
-            shape="rounded"
+            shape="oauth"
             disabled={!DEV_SKIP_AUTH}
             onPress={skipAuth}
           />
           <AppButton
-            label="Apple로 시작하기"
+            label="Apple로 계속하기"
             variant="apple"
-            shape="rounded"
+            shape="oauth"
             disabled={!DEV_SKIP_AUTH}
             onPress={skipAuth}
           />
           <AppButton
-            label="Google로 시작하기"
+            label="Google로 계속하기"
             variant="google"
-            shape="rounded"
+            shape="oauth"
             disabled={!DEV_SKIP_AUTH}
             onPress={skipAuth}
           />
 
           {/*
             동의 체크박스를 두지 않는다 — 로그인 행위가 동의다.
-            대신 무엇에 동의하는지 버튼 아래에 그대로 적는다.
             "시작하면"이 아니라 "로그인하면" — 동의가 걸리는 행위를 정확히 가리킨다.
+            **암호화 문구를 쓰지 않는다** — 전송·저장 암호화 범위가 확정되기
+            전에는 지킬 수 없는 약속이다 (S1.md · RULES "확정 범위가 아닌 약속").
           */}
           <AppText variant="footnote" tone="legal" style={styles.centered}>
             로그인하면 <LegalLink label="이용약관" />과 <LegalLink label="개인정보 처리방침" />에
-            동의하게 돼요. 기록은 안전하게 보호돼요. 약관은 마이에서 다시 볼 수 있어요.
+            동의하게 돼요. 마이에서 언제든 다시 확인할 수 있어요.
           </AppText>
         </View>
       </View>
@@ -102,7 +103,8 @@ export default function Login() {
 /**
  * ⚠ 현재는 눌리지 않는다.
  *
- * `L1`(이용약관)·`L2`(개인정보 처리방침)는 **MVP 30화면에 없다.** 문안도 법률 검토 중이라
+ * `L1`(이용약관)·`L2`(개인정보 처리방침)는 **MVP 40화면에 없다.** 문안도 법률 검토 중이라
+ * (`S1.md` 의 "링크로 연다"는 문안 확정 뒤에야 지킬 수 있다 — `TASKS.md` 참조)
  * (`06_운영문서/OPEN-ISSUES.md` R-10~R-15) 지금 링크를 살릴 근거가 없다.
  * 밑줄·색은 유지해 "여기에 원문이 있다"는 사실은 전한다.
  *
@@ -128,7 +130,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
     paddingTop: 48,
-    paddingBottom: 24,
+    // 약관 줄과 홈 인디케이터 사이 최소 20 — 하단 패딩 52 (S1.md)
+    paddingBottom: 52,
   },
   hero: {
     flex: 1,
@@ -136,8 +139,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: theme.layout.gap.element,
   },
-  baba: { width: 168, height: 168, marginBottom: 8 },
+  baba: { width: 117, height: 117, marginBottom: 8 },
   centered: { textAlign: "center" },
-  actions: { gap: theme.layout.gap.chip },
+  // 소개 2덩어리 — 14/1.7 · 폭 280 (9-mvp.mjs)
+  intro: { width: 280, fontSize: 14, lineHeight: 23.8 },
+  // .col10 — 버튼 사이 10
+  actions: { gap: 10 },
   link: { textDecorationLine: "underline" },
 });
