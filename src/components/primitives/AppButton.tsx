@@ -29,7 +29,7 @@ const { press } = theme.motion.spec;
  * 세 버튼은 **무게가 같아야** 한다. 브랜드 색이 없는 Google 만 가벼워 보이므로
  * 테두리를 1.5px 로 올리고 약한 그림자를 더해 삼단 스택의 리듬을 맞춘다.
  */
-export type ButtonVariant = "primary" | "kakao" | "apple" | "google" | "ghost";
+export type ButtonVariant = "primary" | "kakao" | "apple" | "google" | "quiet" | "ghost";
 
 /**
  * MVP 28화면의 버튼은 **알약**이다 — `.pri` `.opt` `.quiet` `.ghost` 전부
@@ -133,7 +133,10 @@ export function AppButton({
         ]}
       >
         {leading ? <View style={styles.leading}>{leading}</View> : null}
-        <AppText variant="bodyLg" tone={v.tone} weight="700" style={v.labelStyle}>
+        <AppText
+          tone={v.tone}
+          style={[shape === "pill" ? styles.labelPill : styles.labelRounded, v.labelStyle]}
+        >
           {label}
         </AppText>
         {loading ? <LoadingDots color={progressColorOf(variant)} reduceMotion={reduceMotion} /> : null}
@@ -163,7 +166,7 @@ type Variant = {
   container: ViewStyle;
   pressed: ViewStyle;
   tone: TextTone;
-  /** 브랜드 라벨색 — semantic 6종으로 표현되지 않는 예외에만 쓴다 */
+  /** 브랜드 라벨색·작은 라벨 등 프리셋을 덮어야 하는 예외 */
   labelStyle?: TextStyle;
 };
 
@@ -213,6 +216,13 @@ function LoadingDots({ color, reduceMotion }: { color: string; reduceMotion: boo
   );
 }
 
+/** `.quiet` · `.ghost` 공용 — 600 13.5px/1 */
+const SMALL_LABEL: TextStyle = {
+  fontFamily: "Pretendard-SemiBold",
+  fontSize: 13.5,
+  lineHeight: 13.5,
+};
+
 const VARIANTS: Record<ButtonVariant, Variant> = {
   primary: {
     container: { backgroundColor: fill.primaryDeep },
@@ -241,10 +251,27 @@ const VARIANTS: Record<ButtonVariant, Variant> = {
     pressed: { backgroundColor: semantic.surfaceTone },
     tone: "body",
   },
-  ghost: {
-    container: { backgroundColor: "transparent" },
+  // `.quiet{min-height:44px;background:transparent;border:none;font:600 13.5px/1}`
+  // 「알림 없이 쓸게요」처럼 **거절도 같은 화면에 두는** 자리다. 눈에 덜 띄되
+  // 찾기 어렵지 않아야 해서 면도 테두리도 없이 글자만 남긴다.
+  quiet: {
+    container: { backgroundColor: "transparent", height: 44 },
     pressed: { opacity: 0.6 },
     tone: "body",
+    labelStyle: SMALL_LABEL,
+  },
+  // `.ghost{min-height:48px;border:1px solid rgba(36,31,25,.18);font:600 13.5px/1}`
+  // quiet 와 달리 **테두리가 있다** — 둘은 다른 컴포넌트다.
+  ghost: {
+    container: {
+      backgroundColor: "transparent",
+      height: 48,
+      borderWidth: 1,
+      borderColor: `${semantic.textPrimary}2E`, // ink 18% — 0.18 × 255 = 45.9 → 2E
+    },
+    pressed: { opacity: 0.6 },
+    tone: "body",
+    labelStyle: SMALL_LABEL,
   },
 };
 
@@ -259,6 +286,9 @@ const styles = StyleSheet.create({
   },
   pill: { borderRadius: theme.radius.pill }, //       MVP 28화면 (.pri .opt .quiet .ghost)
   rounded: { borderRadius: theme.radius.control }, // 진입 2장 (원본 button() r14)
+  // 라벨 서체도 갈린다 — `.pri` 는 600 15.5px/1, 원본 `button()` 은 bold 15px.
+  labelPill: { fontFamily: "Pretendard-SemiBold", fontSize: 15.5, lineHeight: 15.5 },
+  labelRounded: { fontFamily: "Pretendard-Bold", fontSize: 15, lineHeight: 15 },
   // 비활성은 흐리게만 한다. 경고색·아이콘을 붙이지 않는다 (RULES 4).
   // `.off{opacity:.36;box-shadow:none}` — 그림자까지 지운다. 남기면 눌리는 것처럼 떠 보인다.
   disabled: { opacity: 0.36, shadowOpacity: 0, elevation: 0 },
