@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 import { EmotionGrid } from "@/components/common/EmotionGrid";
@@ -70,8 +71,7 @@ export default function RetroEmotion() {
       <AppButton
         label="회고 시작하기"
         disabled={startEmotion == null}
-        // TODO C4 대화 (다음 PR). 지금은 고른 감정이 store 에 남는 것까지다
-        onPress={() => {}}
+        onPress={() => router.push("/retro/talk")}
       />
     </ScreenBackground>
   );
