@@ -239,6 +239,7 @@ describe("하단 탭 — 네 칸이 전부 이어진다", () => {
   const tabNamed = (r: Awaited<ReturnType<typeof render>>, name: string) =>
     r.getAllByRole("tab").find((t) => within(t).queryByText(name) != null);
 
+
   it("보관함이 활성이고 홈으로 옮겨갈 수 있다", async () => {
     const r = await render(<Archive />);
 
