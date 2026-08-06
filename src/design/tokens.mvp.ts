@@ -235,6 +235,109 @@ export const oauth = {
 } as const;
 
 /**
+ * 홈(`12`·`12-b`) — `momentory.css` 의 카드·행·버튼 그대로.
+ *
+ * **세 칸의 순서는 어떤 상태에서도 바뀌지 않는다**(`RULES.md`) — 오늘 일정 →
+ * 오늘의 순간 → 돌아보기. 그래서 카드 셋의 값을 한자리에 모아 둔다.
+ *
+ * ⚠ **채운 버튼은 화면에 하나뿐**이다(`.addr`). 순간 추가(`.mbtnQ`)는 한 단계
+ * 연한 톤이고, 원본의 알약(`.mbtn` 50·r25)과 **다른 물건**이다(`RULES.md`
+ * 「원본과 다른 것」) — 여기서 `.mbtn` 을 쓰면 채운 버튼이 둘이 된다.
+ */
+export const home = {
+  /** `.top` — 날짜 + 날씨 + 종 */
+  top: { gap: 10, dateSize: 12, weatherGap: 4 },
+  /** `.hero` — 바바 64(`.baL`) + 인사 20(`.htit`) */
+  hero: { gap: 15, baba: 64, titleSize: 20, titleLineHeight: 28, letterSpacing: -0.4 },
+  /** `.stack` — 카드 셋이 쌓이는 스크롤 영역 */
+  stackGap: 12,
+  /** `.daycard` — 오늘 일정 (구 「오늘의 하루」) */
+  dayCard: {
+    radius: 20,
+    padding: 20,
+    gap: 13,
+    /** ink 16% — 0.16 × 255 = 40.8 → 29 */
+    border: `${semantic.textPrimary}29`,
+  },
+  /** `.mcard` — 순간 카드. **배경 투명 · 테두리만** (위계를 카드 수로 늘리지 않는다) */
+  momentCard: {
+    radius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 18,
+    gap: 9,
+    /** ink 13% — 0.13 × 255 = 33.2 → 21 */
+    border: `${semantic.textPrimary}21`,
+  },
+  /** `.rowc` — 회고 진입 줄 */
+  retroRow: { radius: 20, paddingVertical: 15, paddingHorizontal: 18, gap: 12 },
+  /** `.addr` — 일정 추가. **일정이 있든 없든 같은 크기·모양·색**(`12-b.md`) */
+  addButton: { minHeight: 44, radius: 12, fontSize: 13 },
+  /** `.mbtnQ` — 순간 추가. 왼쪽 정렬 사각 · 연필 · 테두리 primary 34% */
+  momentButton: {
+    minHeight: 46,
+    radius: 12,
+    paddingHorizontal: 14,
+    gap: 9,
+    fontSize: 13.5,
+    /** `#FDFAF4` — card 보다 한 톤 밝은 면. 팔레트에 이름이 없다 */
+    background: "#FDFAF4",
+    /** primary 34% — 0.34 × 255 = 86.7 → 57 */
+    border: `${palette.primary}57`,
+  },
+  /** `.sec` — 카드 안 섹션 라벨 (accent · 자간 .04em) */
+  sectionLabel: { fontSize: 11.5, letterSpacing: 0.46 },
+  /** `.dlist` · `.ir` — 일정 목록과 한 줄 */
+  list: { gap: 13, rowGap: 11 },
+  /** `.chk` / `.chkOff` — 마침 체크 원. 22 라서 hitSlop 으로 44 를 채운다 */
+  check: {
+    size: 22,
+    /** ink 24% */
+    borderOff: `${semantic.textPrimary}3D`,
+    borderWidth: 1.5,
+    /** (44 - 22) / 2 */
+    hitSlop: 11,
+  },
+  /** `.it` — 일정 제목. **긴 제목은 한 줄 말줄임** */
+  itemTitle: { fontSize: 14, lineHeight: 21 },
+  /** 목록이 5개를 넘으면 5까지 펼치고 `[n개 더 보기]` 로 접는다 (`12.md`) */
+  maxVisibleSchedules: 5,
+} as const;
+
+/**
+ * `.epill` — 감정 알약. 면은 감정색 22%, 점과 글자는 그 감정의 `ink`.
+ * **색만으로 감정을 판단하게 하지 않는다** — 이름을 항상 함께 쓴다(`RULES.md`).
+ */
+export const emotionPill = {
+  height: 22,
+  paddingVertical: 5,
+  paddingHorizontal: 10,
+  gap: 5,
+  dot: 7,
+  fontSize: 11.5,
+  /** 면 알파 22% — 0.22 × 255 = 56.1 → 38 */
+  fillAlpha: "38",
+} as const;
+
+/**
+ * `.tabs` · `.tb` · `.tbOn` — 하단 탭 **네 칸**(홈·보관함·리포트·마이).
+ * 쉼터가 MVP 밖이라 다섯이 아니라 넷이다(`RULES.md` 「자른 것」).
+ * **아이콘은 아직 없다** — 현재는 라벨만(`RULES.md` 「아이콘」).
+ */
+export const tabBar = {
+  paddingTop: 12,
+  paddingHorizontal: 8,
+  fontSize: 11.5,
+  /** ink 8% — 0.08 × 255 = 20.4 → 14 */
+  border: `${semantic.textPrimary}14`,
+} as const;
+
+/**
+ * `.icoi` — 선 아이콘 한 벌(해 · 종 · 달 · 연필). 이모지를 쓰지 않는다 —
+ * 기기마다 다르게 그려져 카드 안에서 크기가 튄다(`RULES.md` 「아이콘」).
+ */
+export const lineIcon = { strokeWidth: 1.5 } as const;
+
+/**
  * `S0`·`S1` — 바바 발밑 그림자 92×8 / 24% (`9-mvp.mjs`).
  * 150×16 / 30% 는 캐릭터가 떠 있는 것처럼 보였다(`S0.md`).
  */

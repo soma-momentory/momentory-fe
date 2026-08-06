@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { Image, StyleSheet, View } from "react-native";
 
-import { CheckCircleIcon, MoonIcon } from "@/components/icons/Ico17";
+import { CheckCircleIcon, MoonIcon } from "@/components/icons/LineIcons";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
@@ -39,10 +39,10 @@ export default function Done() {
 
   const start = () => {
     // 초안은 여기까지가 수명이다. 남기면 다음 사람의 온보딩에 앞 답이 섞인다.
-    // (서버 커밋은 M2-0 인증이 붙은 뒤)
+    // (서버 커밋은 인증·계약이 붙은 뒤)
     reset();
-    // TODO 홈(12)이 생기면 (tabs)/home 으로 — 10 은 온보딩의 끝이고 홈으로 나간다
-    router.replace("/login");
+    // 온보딩의 끝은 홈이다 — 완료 화면을 허브로 만들지 않는다
+    router.replace("/home");
   };
 
   return (

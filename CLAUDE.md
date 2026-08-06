@@ -69,6 +69,17 @@
 `src/design/tokens.mvp.ts` 는 **임시**다 — 상류가 semantic 6토큰을 `lib.mjs` 에
 흡수하면 지운다. 오버라이드를 화면 코드에 흩지 않는다.
 
+## BE 는 마지막에 붙인다 (2026-08-07 결정)
+
+**화면 40장을 먼저 만들고 서버 연결은 맨 끝에 한다.** 그동안 데이터는
+`src/mocks/sample.ts`(스키마 `meta.sampleData`)에서 오고, 화면은 그걸 직접
+읽지 않고 **`src/features/<도메인>/model/` store 를 지난다.**
+
+모양을 스키마(`momentory.schema.mvp.json`)대로 맞추는 것이 조건이다 — 그래야
+서버가 붙을 때 store 안쪽만 바뀌고 화면은 그대로다. 화면이 데이터를 직접 들면
+그때 컴포넌트를 다시 쓰게 된다. `Moment.syncState` 처럼 **스키마에 있는 필드는
+지금 안 써도 타입에 둔다.**
+
 ## 지금 어디까지 왔나
 
 **M0·M1 완료, M2(온보딩) 진행 중.** 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
@@ -82,6 +93,12 @@ src/components/primitives/{ScreenBackground, AppText, AppButton, Card,
                            InputRow, ProgressDots, BackChevron}.tsx
 src/components/chat/{ChatLayout, BabaBubble, AnswerBubble, Avatar, TypingDots, ChipFlow}.tsx
 src/components/onboarding/OnboardingTopBar.tsx   src/components/icons/Ico17.tsx
+app/(tabs)/{_layout, home}.tsx            = 12 · 12-b (한 파일이 두 상태)
+src/components/common/{TabBar, TabScreen, EmotionPill}.tsx
+src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이모지 금지)
+src/features/home/{model/day.ts, ui/ScheduleRow.tsx}
+src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData)
+src/lib/day.ts                            ← 날짜. 하루 경계 04:00 은 M3 에 들어온다
 src/features/onboarding/model/draft.ts   ← 온보딩 답안 초안 (Zustand)
 src/features/auth/model/auth.ts          ← M2-0 인증 부트스트랩 — hydrate·가드·fail-closed
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
