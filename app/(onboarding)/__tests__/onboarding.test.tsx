@@ -1,4 +1,4 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { act, render, fireEvent } from "@testing-library/react-native";
 
 import Interests from "../interests";
 import Nickname from "../nickname";
@@ -102,7 +102,7 @@ describe("05-b · 나이 · 성별", () => {
     const r = await render(<Profile />);
     expect(r.queryByLabelText("지우기")).toBeNull(); // 지울 것이 없는 자리에 지우기를 두지 않는다
 
-    useDraft.getState().set("age", "25");
+    await act(() => useDraft.getState().set("age", "25"));
     const filled = await render(<Profile />);
     await fireEvent.press(filled.getByLabelText("지우기"));
 
@@ -319,7 +319,7 @@ describe("온보딩 초안 — 답이 화면을 넘어 남는가", () => {
     const n = await render(<Nickname />);
     await fireEvent.changeText(n.getByPlaceholderText("이름 또는 별명"), "지현");
 
-    useDraft.getState().reset();
+    await act(() => useDraft.getState().reset());
 
     expect(useDraft.getState()).toMatchObject({
       nickname: "",
