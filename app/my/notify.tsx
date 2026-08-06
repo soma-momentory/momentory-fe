@@ -1,3 +1,5 @@
+import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { RetroNav } from "@/components/common/RetroNav";
@@ -9,7 +11,7 @@ import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import { warnRow } from "@/design/tokens.mvp";
 import { useSettings, type NotifyKey } from "@/features/my/model/settings";
-import { formatKoreanTime } from "@/lib/time";
+import { dateAtTime, formatKoreanTime, toHHMM } from "@/lib/time";
 
 /**
  * `M3` · 알림 설정
@@ -41,6 +43,16 @@ const ROWS: readonly { key: NotifyKey; label: string; note: (time: string | null
 export default function NotifySettings() {
   const notify = useSettings((s) => s.notify);
   const toggle = useSettings((s) => s.toggle);
+  const setTime = useSettings((s) => s.setTime);
+
+  /** 시각을 고치는 중인 줄. **행을 눌러야 열린다** — 스위치는 켜고 끄기만 한다 */
+  const [editing, setEditing] = useState<NotifyKey | null>(null);
+
+  const onPick = (key: NotifyKey) => (_e: DateTimePickerEvent, date?: Date) => {
+    setEditing(null);
+    // 껐다 켜도 이 값은 남는다 — enabled 와 따로 저장한다
+    if (date) setTime(key, toHHMM(date));
+  };
 
   return (
     <ScreenBackground>
@@ -58,8 +70,7 @@ export default function NotifySettings() {
                   label={row.label}
                   value={note.length > 0 ? note : undefined}
                   // 시각이 있는 줄만 눌러 고친다 — 없는 줄에는 표식도 두지 않는다
-                  // TODO OS 시간 피커 연결 (expo-notifications 도입과 함께)
-                  onPress={setting.time == null ? undefined : () => {}}
+                  onPress={setting.time == null ? undefined : () => setEditing(row.key)}
                   trailing={
                     <Toggle
                       value={setting.enabled}
@@ -68,6 +79,13 @@ export default function NotifySettings() {
                     />
                   }
                 />
+                {editing === row.key && setting.time != null ? (
+                  <DateTimePicker
+                    mode="time"
+                    value={dateAtTime(setting.time)}
+                    onChange={onPick(row.key)}
+                  />
+                ) : null}
               </View>
             );
           })}

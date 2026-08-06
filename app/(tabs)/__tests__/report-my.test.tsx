@@ -147,7 +147,38 @@ describe("M1 · 마이 홈", () => {
   it("캘린더는 [연결 관리] 한 곳뿐이다", async () => {
     const r = await render(<My />);
 
-    expect(r.getAllByText("캘린더")).toHaveLength(1);
+    expect(r.getByText("연결 관리")).toBeTruthy();
+    expect(r.getAllByText(/캘린더/)).toHaveLength(1);
+  });
+
+  it("눌러도 아무 일도 없는 줄을 두지 않는다", async () => {
+    // 갈 곳이 없는 줄은 표식(›)도 두지 않고 눌리지도 않는다 (M3.md 와 같은 이유)
+    const r = await render(<My />);
+    const rowOf = (label: string) => r.getByText(label).parent;
+
+    // 갈 곳이 있는 줄 — 눌린다
+    for (const label of ["회고 프로필", "기본 정보", "알림 설정", "로그아웃"]) {
+      expect(rowOf(label)?.parent?.props.accessibilityRole).toBe("button");
+    }
+    // 아직 갈 곳이 없는 줄 — 눌리지 않는다
+    for (const label of ["연결 관리", "약관 및 정책", "문의하기", "회원 탈퇴"]) {
+      expect(rowOf(label)?.parent?.props.accessibilityRole).not.toBe("button");
+    }
+  });
+
+  it("회원 탈퇴는 확인 화면이 없어 아직 실행되지 않는다", async () => {
+    // 되돌릴 수 없는 동작을 확인 없이 실행하지 않는다 (my.pendingStates)
+    const r = await render(<My />);
+
+    expect(r.getByText("회원 탈퇴")).toBeTruthy();
+    expect(r.getByText("회원 탈퇴").parent?.parent?.props.accessibilityRole).not.toBe("button");
+  });
+
+  it("기본 정보도 편집 화면으로 이어진다", async () => {
+    const r = await render(<My />);
+    await fireEvent.press(r.getByText("기본 정보"));
+
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/my/profile");
   });
 
   it("회원 탈퇴는 로그아웃과 줄을 나누고 dangerInk 글자를 쓴다", async () => {
@@ -170,6 +201,49 @@ describe("M1 · 마이 홈", () => {
     const r = await render(<My />);
 
     expect(r.getByText("꺼짐")).toBeTruthy();
+  });
+});
+
+describe("W1 · 주차 이동", () => {
+  it("이전 주로 옮기면 표시 데이터가 함께 바뀐다", async () => {
+    const r = await render(<Report />);
+    expect(r.getByText("7월 20일 – 7월 26일")).toBeTruthy();
+    expect(r.getByText("5회")).toBeTruthy();
+
+    await fireEvent.press(r.getByLabelText("이전 주"));
+
+    expect(r.getByText("7월 13일 – 7월 19일")).toBeTruthy();
+    // 7/13 · 7/15 · 7/17 세 편이다
+    expect(r.getByText("3회")).toBeTruthy();
+  });
+
+  it("최신 주에서는 다음 주가 비활성이다 — 범위의 끝", async () => {
+    const r = await render(<Report />);
+    const next = r.getByLabelText("다음 주");
+
+    expect(next.props.accessibilityState.disabled).toBe(true);
+
+    await fireEvent.press(next);
+    expect(r.getByText("7월 20일 – 7월 26일")).toBeTruthy(); // 그대로다
+  });
+
+  it("이전 주로 갔다가 다시 돌아올 수 있다", async () => {
+    const r = await render(<Report />);
+    await fireEvent.press(r.getByLabelText("이전 주"));
+
+    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(r.getByLabelText("다음 주"));
+
+    expect(r.getByText("7월 20일 – 7월 26일")).toBeTruthy();
+  });
+
+  it("더 앞선 기록이 없으면 이전 주도 비활성이다", async () => {
+    // 샘플의 가장 이른 일기는 7/1 — 그 주(6/29~7/5)보다 앞은 갈 곳이 없다
+    const r = await render(<Report />);
+    for (let i = 0; i < 3; i++) await fireEvent.press(r.getByLabelText("이전 주"));
+
+    expect(r.getByText("6월 29일 – 7월 5일")).toBeTruthy();
+    expect(r.getByLabelText("이전 주").props.accessibilityState.disabled).toBe(true);
   });
 });
 

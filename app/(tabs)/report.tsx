@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { TabScreen } from "@/components/common/TabScreen";
 import { AppText } from "@/components/primitives/AppText";
@@ -11,8 +12,11 @@ import {
   REPORT_UNLOCK_COUNT,
   isReportUnlocked,
   diariesInWeek,
+  shiftWeek,
   weekDays,
   weekEmotionCount,
+  weekEnd,
+  weekRange,
   weekTopEmotion,
 } from "@/features/report/model/report";
 import { formatKoreanDateShort } from "@/lib/day";
@@ -41,7 +45,13 @@ import { SAMPLE_REPORT_DEMO, SAMPLE_REPORT_WEEK } from "@/mocks/sample";
 export default function Report() {
   const diaries = useDiary((s) => s.diaries);
 
-  const { start, end } = SAMPLE_REPORT_WEEK;
+  // 최신 주가 마지막이다 — 그 뒤로는 볼 것이 없다
+  const latestStart = SAMPLE_REPORT_WEEK.start;
+  // `SAMPLE_REPORT_WEEK` 가 `as const` 라 명시하지 않으면 리터럴로 좁혀져 못 옮긴다
+  const [start, setStart] = useState<string>(latestStart);
+  const end = weekEnd(start);
+  const { hasPrev, hasNext } = weekRange(diaries, start, latestStart);
+
   const unlocked = isReportUnlocked(diaries);
   const weekly = diariesInWeek(diaries, start, end);
   const days = weekDays(diaries, start, end);
@@ -65,17 +75,26 @@ export default function Report() {
         </Card>
       ) : (
         <>
-          {/* 주차 이동 — 「이번 주」가 마지막이라 › 는 비활성이다 */}
+          {/*
+            주차 이동. 범위의 끝은 화면이 따로 없으므로(`report.pendingStates`)
+            **화살표를 흐리게 두고 누르지 못하게 하는 것**으로 끝을 말한다.
+          */}
           <View style={styles.weekNav}>
-            <AppText tone="body" style={styles.navArrow}>
-              ‹
-            </AppText>
-            <AppText tone="body" weight="600" style={styles.weekRange}>
+            <WeekArrow
+              glyph="‹"
+              label="이전 주"
+              enabled={hasPrev}
+              onPress={() => setStart(shiftWeek(start, -1))}
+            />
+            <AppText tone="body" weight="600" style={styles.weekRangeLabel}>
               {`${formatKoreanDateShort(start)} – ${formatKoreanDateShort(end)}`}
             </AppText>
-            <AppText tone="body" style={[styles.navArrow, styles.navArrowOff]}>
-              ›
-            </AppText>
+            <WeekArrow
+              glyph="›"
+              label="다음 주"
+              enabled={hasNext}
+              onPress={() => setStart(shiftWeek(start, 1))}
+            />
           </View>
 
           <ScrollView
@@ -192,6 +211,37 @@ export default function Report() {
   );
 }
 
+/**
+ * 주차 화살표. 갈 곳이 없으면 **흐려지고 눌리지 않는다** — 누를 곳이 없는 표식을
+ * 살려두지 않는다는 규칙(`M3.md`)과 같은 이유다.
+ */
+function WeekArrow({
+  glyph,
+  label,
+  enabled,
+  onPress,
+}: {
+  glyph: string;
+  label: string;
+  enabled: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !enabled }}
+      disabled={!enabled}
+      hitSlop={14}
+      onPress={onPress}
+    >
+      <AppText tone="body" style={[styles.navArrow, enabled ? null : styles.navArrowOff]}>
+        {glyph}
+      </AppText>
+    </Pressable>
+  );
+}
+
 /** `.metric` — 값 · 비교 · 라벨 세 줄. 비교는 기준을 밝혀 쓴다 */
 function Metric({
   value,
@@ -238,9 +288,9 @@ const styles = StyleSheet.create({
   },
 
   weekNav: { flexDirection: "row", alignItems: "center", paddingBottom: theme.layout.gap.element },
-  navArrow: { fontSize: 19, lineHeight: 21, width: 16 },
-  navArrowOff: { opacity: 0.35, textAlign: "right" },
-  weekRange: { flex: 1, fontSize: 13, lineHeight: 16, textAlign: "center" },
+  navArrow: { fontSize: 19, lineHeight: 21, width: 16, textAlign: "center" },
+  navArrowOff: { opacity: 0.35 },
+  weekRangeLabel: { flex: 1, fontSize: 13, lineHeight: 16, textAlign: "center" },
 
   stack: { flex: 1, marginHorizontal: -theme.layout.screenMargin },
   stackContent: {

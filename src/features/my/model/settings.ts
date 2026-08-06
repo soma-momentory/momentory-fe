@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import type { Gender } from "@/features/onboarding/model/draft";
+
 /**
  * 알림 설정(`M3`) — 스키마 `User.notify*` 넷.
  *
@@ -57,16 +59,29 @@ export const useSettings = create<SettingsStore>((set) => ({
 }));
 
 /**
- * 회고 프로필(`M2`) — 온보딩에서 답한 것 중 여기서 고치는 셋.
+ * 회고 프로필(`M2`) — 온보딩에서 답한 것을 고치는 자리.
  *
  * **온보딩에서 묻지 않은 것을 여기서 편집하게 두지 않는다**(`M2.md`).
- * 반대로 물은 것은 전부 여기 또는 `M1` 의 다른 줄에 있어야 한다 —
+ * 반대로 **물은 것은 전부 여기 또는 `M1` 의 다른 줄에 있어야 한다** —
  * 쉬는 방법(`07`) 섹션이 그래서 있다.
+ *
+ * ⚠ **나이·성별(`05-b`)도 여기 있다.** `M1` 은 「기본 정보」를 별도 줄로 두지만
+ * 상류 상태 기계(`momentory.states.mvp.json` `my`)의 전이는 `editProfile →
+ * profile` · `notify` · `lock` 셋뿐이라 **기본 정보만 가는 화면이 없다.**
+ * 화면을 새로 만들지 않고 `M2` 안에 섹션으로 두는 쪽을 골랐다 — 그래야
+ * "빠짐없이 편집 경로가 있다"는 invariant 를 지킬 수 있다.
+ * 시안(`M2`)에는 이 섹션이 없다 — 상류 확인 후보다(`TASKS.md`).
  */
 type ProfileStore = {
   nickname: string;
   interests: string[];
   restMethods: string[];
+  /**
+   * 온보딩 `05-b` 의 기본 정보 — **선택**이라 비어 있을 수 있다.
+   * `M1` 의 「기본 정보」 줄이 여기로 온다(아래 주석 참조).
+   */
+  age: string;
+  gender: Gender | null;
   set: (v: Partial<Omit<ProfileStore, "set" | "reset">>) => void;
   reset: () => void;
 };
@@ -75,6 +90,8 @@ const PROFILE = {
   nickname: "지현",
   interests: ["relations", "self"],
   restMethods: ["🎵 음악 듣기", "🚶 산책하기"],
+  age: "25",
+  gender: "female" as Gender | null,
 };
 
 export const useProfile = create<ProfileStore>((set) => ({

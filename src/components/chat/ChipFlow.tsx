@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View, type ViewProps } from "react-native";
 
+import { CheckCircleIcon } from "@/components/icons/LineIcons";
 import { AppText } from "@/components/primitives/AppText";
 import theme from "@/design/theme";
 import { chat, chatColor } from "@/design/tokens.mvp";
@@ -38,9 +39,24 @@ type Props = Omit<ViewProps, "children"> & {
    */
   chipSize?: number;
   gap?: number;
+  /**
+   * 고른 칩에 **체크를 더 붙인다** — `M2` 가 쓴다(`M2.md` · `my.invariants`).
+   * 온보딩(`06`·`07`)은 붙이지 않는다: 한 번에 하나를 고르는 흐름이라 방금 누른
+   * 것이 무엇인지 눈이 이미 따라가고, 체크를 더하면 칩이 커져 15개가 안 들어간다.
+   */
+  showCheck?: boolean;
 };
 
-export function ChipFlow({ items, selected, onToggle, chipSize, gap, style, ...rest }: Props) {
+export function ChipFlow({
+  items,
+  selected,
+  onToggle,
+  chipSize,
+  gap,
+  showCheck = false,
+  style,
+  ...rest
+}: Props) {
   return (
     <View {...rest} style={[styles.flow, gap != null ? { gap } : null, style]}>
       {items.map((item) => {
@@ -53,6 +69,12 @@ export function ChipFlow({ items, selected, onToggle, chipSize, gap, style, ...r
             onPress={() => onToggle(item.id)}
             style={[styles.chip, on ? styles.chipOn : null]}
           >
+            {/* 색·테두리·굵기만으로 표시하지 않는다 — 체크가 하나 더 말한다 */}
+            {showCheck && on ? (
+              <View testID={`chip-check-${item.id}`}>
+                <CheckCircleIcon size={13} />
+              </View>
+            ) : null}
             <AppText
               variant="body"
               tone={on ? "strong" : "body"}
@@ -82,7 +104,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: chatColor.chipBorder,
     backgroundColor: semantic.surface,
+    // 체크가 붙을 수 있어 가로 배치다 — 하나뿐이면 가운데로 놓인다
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "center",
+    gap: 6,
   },
   chipOn: {
     borderWidth: 2,

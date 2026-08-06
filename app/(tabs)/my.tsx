@@ -11,6 +11,7 @@ import { archive as archiveTokens, my as tokens } from "@/design/tokens.mvp";
 import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
+import { useDraft } from "@/features/onboarding/model/draft";
 import { formatKoreanTime } from "@/lib/time";
 import { SAMPLE_ALL_TIME_EMOTIONS } from "@/mocks/sample";
 
@@ -37,6 +38,8 @@ export default function My() {
   const nickname = useProfile((s) => s.nickname);
   const retro = useSettings((s) => s.notify.retro);
   const signOut = useAuth((s) => s.signOut);
+  // 온보딩 `09` 에서 정한 값 — 연결 관리 줄이 지금 상태를 읽기로 보인다
+  const calendarLinked = useDraft((s) => s.calendarLinked);
 
   // 세는 대상이 다르다 — 장수와 날수
   const diaryCount = diaries.length;
@@ -77,11 +80,15 @@ export default function My() {
           />
         </View>
 
-        {/* 온보딩 여섯 질문의 편집 경로 — 빠짐없이 있어야 한다 */}
+        {/*
+          온보딩 답변의 편집 경로. **회고 프로필과 기본 정보가 같은 화면으로 간다** —
+          상류 상태 기계(`my`)의 전이가 `editProfile → profile` 하나뿐이라 기본
+          정보만 가는 화면이 없다. 화면을 새로 만들지 않고 `M2` 안의 섹션으로 뒀다.
+        */}
         <Card style={styles.rows}>
           <SettingRow label="회고 프로필" onPress={() => router.push("/my/profile")} />
           <RowSeparator />
-          <SettingRow label="기본 정보" onPress={() => router.push("/my/profile")} />
+          <SettingRow label="기본 정보" value="나이 · 성별" onPress={() => router.push("/my/profile")} />
           <RowSeparator />
           <SettingRow
             label="알림 설정"
@@ -89,22 +96,36 @@ export default function My() {
             onPress={() => router.push("/my/notify")}
           />
           <RowSeparator />
-          {/* 캘린더는 여기 한 곳뿐이다 — 알림 화면에 두지 않는다 */}
-          <SettingRow label="연결 관리" value="캘린더" onPress={() => {}} />
+          {/*
+            캘린더는 여기 한 곳뿐이다 — 알림 화면에 두지 않는다.
+            ⚠ `expo-calendar` 미도입이라 **아직 누를 곳이 없다.** 「시간이 없는
+            알림에는 › 를 두지 않는다」(`M3.md`)와 같은 이유로 표식도 두지 않고
+            지금 상태만 읽기로 보인다 — 눌리는데 아무 일도 없는 줄을 만들지 않는다.
+          */}
+          <SettingRow label="연결 관리" value={calendarLinked ? "캘린더 연결됨" : "캘린더 연결 안 함"} />
         </Card>
 
+        {/*
+          ⚠ 약관·문의는 **갈 곳이 아직 없다.** 약관 문안은 법률 검토 중이고
+          (`OPEN-ISSUES.md` R-10~R-15) 문의 채널도 정해지지 않았다. 확정되면
+          `onPress` 가 붙는다 — 그때까지 표식을 두지 않는다.
+        */}
         <Card style={styles.rows}>
-          <SettingRow label="약관 및 정책" onPress={() => {}} />
+          <SettingRow label="약관 및 정책" value="준비 중" />
           <RowSeparator />
-          <SettingRow label="문의하기" onPress={() => {}} />
+          <SettingRow label="문의하기" value="준비 중" />
         </Card>
 
         {/* 위험 동작은 줄을 나눈다 — 로그아웃과 탈퇴가 같은 무게로 보이지 않게 */}
         <Card style={styles.rows}>
           <SettingRow label="로그아웃" onPress={() => void signOut()} />
           <RowSeparator />
-          {/* 회원 탈퇴 확인 화면은 아직 없다 (my.pendingStates) */}
-          <SettingRow label="회원 탈퇴" danger onPress={() => {}} />
+          {/*
+            ⚠ **회원 탈퇴 확인 화면이 아직 없다**(`my.pendingStates`).
+            되돌릴 수 없는 동작을 확인 없이 실행하지 않으므로 지금은 누르지
+            못한다 — 확인 화면이 생기면 그때 `onPress` 가 붙는다.
+          */}
+          <SettingRow label="회원 탈퇴" danger value="준비 중" />
         </Card>
       </ScrollView>
     </TabScreen>
