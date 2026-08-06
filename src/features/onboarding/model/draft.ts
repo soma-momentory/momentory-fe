@@ -31,6 +31,17 @@ export type OnboardingDraft = {
   /** `06` · 필수 · 최대 3 */
   interests: string[];
   /**
+   * `06-b`/`06-c` · 「기타」 직접 입력 값 (최대 12자, trim 저장).
+   * `interests` 에 `"etc"` 가 있을 때만 의미를 갖는다 — 기타를 끄면 함께 비운다.
+   */
+  interestOther: string;
+  /**
+   * `07` · 쉬는 방법 · 필수 · 복수 · 상한 없음.
+   * MVP 에서 이 값을 보여주는 화면은 없다 — **저장만** 한다
+   * (`momentory.schema.mvp.json` `User.restMethods` · `07.md`).
+   */
+  restMethods: string[];
+  /**
    * `08` · 회고 시각. **기본 `21:30`** — 스키마가 정한 값이다
    * (`momentory.schema.mvp.json` — "time · 기본 21:30 (08 · M3에서 수정)").
    *
@@ -41,6 +52,13 @@ export type OnboardingDraft = {
    * `[알림 없이 쓸게요]` 를 골라도 **이 값은 남는다** — 알림만 끈다(`08.md`).
    */
   retroTime: string;
+  /**
+   * `08` · 회고 알림 의도 — 스키마 `User.notifyRetro`.
+   * `[다음]` 은 켠 채 두고 `[알림 없이 쓸게요]` 만 끈다. `10-b` 의 부분 건너뜀
+   * 분기("알림만 끄면 캘린더 줄이 남는다")가 이 값을 본다.
+   * 실제 OS 권한 요청은 M2 에서 `expo-notifications` 와 함께 붙는다.
+   */
+  notifyRetro: boolean;
   /**
    * `09` · 캘린더 연결 여부. `10` 이 이 값으로 요약 줄을 **지운다**
    * (회색 처리하지 않는다 — `10.md`).
@@ -59,7 +77,10 @@ const EMPTY: OnboardingDraft = {
   age: "",
   gender: null,
   interests: [],
+  interestOther: "",
+  restMethods: [],
   retroTime: "21:30",
+  notifyRetro: true,
   calendarLinked: false,
 };
 

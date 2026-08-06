@@ -13,36 +13,34 @@ import {
 } from "react-native";
 
 import theme from "@/design/theme";
-import { fill } from "@/design/tokens.mvp";
+import { fill, oauth } from "@/design/tokens.mvp";
 
 import { AppText, type TextTone } from "./AppText";
 
 const { press } = theme.motion.spec;
 
 /**
- * 주 CTA. h54 r14, 라벨 15 bold. (`02_디자인시스템/COMPONENTS.md` P0)
+ * 주 CTA. `.pri` — h54 알약, 라벨 600 15.5.
  *
  * 소셜 3종의 브랜드 색은 **팔레트 규칙의 예외**다 — 카카오 `#FEE500` ·
- * Apple `#1A1A1A` · Google `card`+테두리. 브랜드가 고정한 값이라 토큰으로 바꾸지 않는다.
+ * Apple `#111` · Google `card`+테두리. 브랜드가 고정한 값이라 토큰으로 바꾸지 않는다.
  * (`09_MVP/docs/S1.md`)
- *
- * 세 버튼은 **무게가 같아야** 한다. 브랜드 색이 없는 Google 만 가벼워 보이므로
- * 테두리를 1.5px 로 올리고 약한 그림자를 더해 삼단 스택의 리듬을 맞춘다.
  */
 export type ButtonVariant = "primary" | "kakao" | "apple" | "google" | "quiet" | "ghost";
 
 /**
- * MVP 28화면의 버튼은 **알약**이다 — `.pri` `.opt` `.quiet` `.ghost` 전부
- * `border-radius:999px`. `rounded`(r14)는 **`S0`·`S1` 전용**인데, 진입 2장은
- * MVP 리팩토링 대상이 아니라 원본 `lib.mjs button()` 을 그대로 쓰기 때문이다.
- * 그래서 기본이 `pill` 이고 로그인 화면만 `rounded` 를 명시한다.
+ * MVP 40화면의 버튼은 **알약**이다 — `.pri` `.opt` `.quiet` `.ghost` 전부
+ * `border-radius:999px`. `oauth`(`.oauth` — **44 · r12**)는 `S1` 소셜 3종
+ * 전용이고, 공식 마크(`leading`)를 **왼쪽 16px 절대 정렬**한다 — 마크가 라벨과
+ * 함께 흐르면 세 버튼의 글자 시작점이 어긋난다(`S1.md`).
+ * v2(2026-08-06)가 진입 2장도 리팩토링해 원본 r14 는 이제 쓰는 화면이 없다.
  */
-export type ButtonShape = "pill" | "rounded";
+export type ButtonShape = "pill" | "oauth";
 
 type Props = Omit<PressableProps, "style" | "children"> & {
   label: string;
   variant?: ButtonVariant;
-  /** 기본 `pill`. `rounded` 는 진입 2장(`S0`·`S1`) 전용 */
+  /** 기본 `pill`. `oauth` 는 `S1` 소셜 3종 전용 (44 · r12 · 마크 절대 정렬) */
   shape?: ButtonShape;
   disabled?: boolean;
   /** 비동기 처리 중. 버튼을 잠그고 라벨 옆에 진행점을 보인다 */
@@ -125,17 +123,20 @@ export function AppButton({
         onPressOut={handlePressOut}
         style={[
           styles.base,
-          shape === "pill" ? styles.pill : styles.rounded,
+          shape === "pill" ? styles.pill : styles.oauth,
           v.container,
           pressed && !effectiveDisabled && !reduceMotion ? v.pressed : null,
           effectiveDisabled ? styles.disabled : null,
           style,
         ]}
       >
-        {leading ? <View style={styles.leading}>{leading}</View> : null}
+        {leading ? (
+          // oauth 는 마크를 왼쪽 16 절대 정렬 — 라벨은 그대로 가운데 (S1.md)
+          <View style={shape === "oauth" ? styles.leadingOauth : styles.leading}>{leading}</View>
+        ) : null}
         <AppText
           tone={v.tone}
-          style={[shape === "pill" ? styles.labelPill : styles.labelRounded, v.labelStyle]}
+          style={[shape === "pill" ? styles.labelPill : styles.labelOauth, v.labelStyle]}
         >
           {label}
         </AppText>
@@ -284,15 +285,23 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
   },
-  pill: { borderRadius: theme.radius.pill }, //       MVP 28화면 (.pri .opt .quiet .ghost)
-  rounded: { borderRadius: theme.radius.control }, // 진입 2장 (원본 button() r14)
-  // 라벨 서체도 갈린다 — `.pri` 는 600 15.5px/1, 원본 `button()` 은 bold 15px.
+  pill: { borderRadius: theme.radius.pill }, // MVP 40화면 (.pri .opt .quiet .ghost)
+  // `.oauth` — S1 소셜 3종. v2 에서 54 → 44 · r12
+  oauth: { height: oauth.height, borderRadius: oauth.radius },
+  // 라벨 서체도 갈린다 — `.pri` 는 600 15.5px/1, `.oauth` 는 600 15px/1.
   labelPill: { fontFamily: "Pretendard-SemiBold", fontSize: 15.5, lineHeight: 15.5 },
-  labelRounded: { fontFamily: "Pretendard-Bold", fontSize: 15, lineHeight: 15 },
+  labelOauth: { fontFamily: "Pretendard-SemiBold", fontSize: oauth.fontSize, lineHeight: oauth.fontSize },
   // 비활성은 흐리게만 한다. 경고색·아이콘을 붙이지 않는다 (RULES 4).
   // `.off{opacity:.36;box-shadow:none}` — 그림자까지 지운다. 남기면 눌리는 것처럼 떠 보인다.
   disabled: { opacity: 0.36, shadowOpacity: 0, elevation: 0 },
   leading: { width: 20, alignItems: "center" },
+  // `.oauth>svg{position:absolute;left:16px}` — 흐름 밖. 라벨 시작점을 흔들지 않는다
+  leadingOauth: {
+    position: "absolute",
+    left: oauth.markLeft,
+    width: oauth.markSize,
+    alignItems: "center",
+  },
   progress: { flexDirection: "row", gap: 3 },
   progressDot: { width: 4, height: 4, borderRadius: theme.radius.pill },
 });

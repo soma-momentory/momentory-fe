@@ -82,16 +82,16 @@ describe("AppButton", () => {
     expect(btn.props.accessibilityState.disabled).toBe(true);
   });
 
-  it("기본은 알약이고 진입 2장만 rounded 다", async () => {
-    // MVP 28화면의 .pri .opt .quiet .ghost 는 전부 border-radius:999px.
-    // S0·S1 은 MVP 리팩토링 대상이 아니라 원본 button() r14 를 쓴다.
+  it("기본은 알약이고 S1 소셜만 oauth(44·r12)다", async () => {
+    // MVP 40화면의 .pri .opt .quiet .ghost 는 전부 border-radius:999px.
+    // v2 가 진입 2장도 리팩토링해 원본 r14 는 쓰는 화면이 없다 — .oauth 는 44·r12.
     const pill = await render(<AppButton label="시작하기" />);
-    const rounded = await render(<AppButton label="카카오로 시작하기" shape="rounded" />);
+    const social = await render(<AppButton label="카카오로 계속하기" shape="oauth" />);
 
     expect(flatten(pill.getByRole("button").props.style).borderRadius).toBe(theme.radius.pill);
-    expect(flatten(rounded.getByRole("button").props.style).borderRadius).toBe(
-      theme.radius.control,
-    );
+    const s = flatten(social.getByRole("button").props.style);
+    expect(s.borderRadius).toBe(12);
+    expect(s.height).toBe(44);
   });
 
   it("loading은 버튼을 잠그고 진행점을 표시한다", async () => {

@@ -85,9 +85,9 @@ app/                         # 라우트만 — 로직을 두지 않는다
   _layout.tsx                # Stack · StatusBar (Provider 는 여기가 아니다)
   index.tsx                  # 진입 판정 (M2 에서 S0 스플래시가 된다)
   (auth)/login.tsx           # S1
-  (onboarding)/              # 03 04 05-b 06 08 09 10 — ⚠ 구판 기준. v2 따라잡기는 TASKS.md
+  (onboarding)/              # 03 04 05-b 06(+06-b·06-c) 07 08 09 10(+10-b) — v2 기준 (2026-08-07)
     _layout.tsx  welcome.tsx  nickname.tsx  profile.tsx
-    interests.tsx  retro-time.tsx  calendar.tsx  done.tsx
+    interests.tsx  rest.tsx  retro-time.tsx  calendar.tsx  done.tsx
 src/
   design/
     theme.ts                 # 생성물 — 직접 수정 금지 (§5)

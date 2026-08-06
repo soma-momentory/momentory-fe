@@ -39,6 +39,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     "expo-router",
     "expo-status-bar",
+    // 08 회고 시간 — OS 시간 피커. 커스텀 휠을 만들지 않는다 (08.md)
+    "@react-native-community/datetimepicker",
     [
       "expo-splash-screen",
       {

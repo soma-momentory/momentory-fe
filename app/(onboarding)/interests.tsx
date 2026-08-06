@@ -1,7 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { StyleSheet, View } from "react-native";
-
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { Avatar } from "@/components/chat/Avatar";
 import { BabaBubble } from "@/components/chat/BabaBubble";
@@ -11,22 +9,28 @@ import { OnboardingTopBar } from "@/components/onboarding/OnboardingTopBar";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import theme from "@/design/theme";
+import { clearButton, otherRow, warnRow } from "@/design/tokens.mvp";
 import { MAX_INTERESTS, useDraft } from "@/features/onboarding/model/draft";
 
 /**
- * `06` · 관심 분야 (온보딩 3/6 · 필수 · 복수)
+ * `06` · 관심 분야 (온보딩 3/6 · 필수 · 복수) + `06-b`/`06-c` 기타 입력
  *
- * **칩 8개를 한 화면에 다 보인다.** 스크롤로 감추면 뒤쪽은 선택되지 않는다 —
- * 「기타」까지 두 줄에 들어가도록 개수를 8로 고정한 이유다. 그래서 이 화면에는
- * `ScrollView` 를 두지 않는다.
+ * **칩 8개를 한 화면에 다 보인다.** 스크롤로 감추면 뒤쪽은 선택되지 않는다.
  *
- * **최대 3개.** 상한을 넘기면 새 선택이 **들어가지 않고 안내 한 줄로 알린다** —
- * 모달·경고 아이콘을 띄우지 않는다(`RULES.md` 「오류는 한 줄로 흡수」).
+ * **최대 3개.** 넷째부터는 눌러도 켜지지 않는다 — 다 고르면 아무것도 안 고른
+ * 것과 같다(`06.md`). 제한 경고를 미리 띄우지 않고 안내는 몇 개를 골랐는지
+ * **사실만** 말한다(`06-c.md`).
  *
- * 「기타」 직접 입력(원본 `06-b`~`06-d`)은 MVP 범위 밖이라 평범한 칩으로 둔다.
+ * **[기타]를 누르면 칩 바로 아래에 한 줄 입력이 열린다**(`06-b.md`) — 별도
+ * 화면·시트로 보내지 않는다. 고른 칩들을 보면서 적어야 무엇을 더할지 판단할
+ * 수 있다.
  *
- * 원본 `07`(쉬는 방법)은 다음 질문이 아니다 — 그 답이 쓰이는 곳이 쉼터뿐이라
- * MVP 는 묻지 않는다. 진행점 4번째 자리는 `08` 이 가져간다.
+ * - 기타를 켠 채 비워 두면 `[다음]` 이 잠긴다 — 켠 것은 "적을 게 있다"는 뜻
+ * - 빠져나가는 길은 둘뿐 — **적거나, 기타를 끄거나**
+ * - 확정 기준은 셋 — 키보드 `[완료]` · 입력 줄 밖 탭 · `[다음]`. 전부 trim 한
+ *   값을 쓰고, **공백뿐이면 확정하지 않고 기타 선택을 취소한다**(`06-c.md`)
+ * - 12자 상한 — 넘기면 더 입력되지 않고 오류 문구 없이 **카운터 색만** 바뀐다
  */
 const MAX = MAX_INTERESTS;
 
@@ -43,27 +47,49 @@ const ITEMS = [
 
 export default function Interests() {
   const picked = useDraft((s) => s.interests);
+  const other = useDraft((s) => s.interestOther);
   const set = useDraft((s) => s.set);
-  // 상한 안내는 화면에 머무는 순간의 상태다 — 초안에 담지 않는다
-  const [overCap, setOverCap] = useState(false);
+
+  const etcOn = picked.includes("etc");
+  const otherTrimmed = other.trim();
+  // 기타를 켠 채 비워 두면 잠긴다 (06-b.md)
+  const ready = picked.length > 0 && (!etcOn || otherTrimmed.length > 0);
 
   const toggle = (id: string) => {
     if (picked.includes(id)) {
-      setOverCap(false);
       set(
         "interests",
         picked.filter((x) => x !== id),
       );
+      // 기타를 끄면 적던 값도 함께 비운다 — 꺼진 답을 초안에 남기지 않는다
+      if (id === "etc") set("interestOther", "");
       return;
     }
-    if (picked.length >= MAX) {
-      // 넘치는 선택은 **삼키고** 안내로만 알린다. 고른 것을 밀어내지 않는다 —
-      // 무엇이 빠졌는지 모른 채 목록이 바뀌면 되돌릴 수가 없다.
-      setOverCap(true);
-      return;
-    }
-    setOverCap(false);
+    // 넷째부터는 눌러도 켜지지 않는다 — 경고를 미리 띄우지 않는다 (06.md · 06-c.md)
+    if (picked.length >= MAX) return;
     set("interests", [...picked, id]);
+  };
+
+  /**
+   * 기타 값 확정 — 키보드 완료 · 입력 줄 밖 탭(blur) · `[다음]` 세 경로가
+   * 전부 여기를 지난다. 공백뿐이면 확정하지 않고 기타 선택을 취소한다 —
+   * 빈 칩을 만들지 않는다(`06-c.md`).
+   */
+  const commitOther = () => {
+    if (otherTrimmed.length === 0) {
+      set(
+        "interests",
+        picked.filter((x) => x !== "etc"),
+      );
+      set("interestOther", "");
+      return;
+    }
+    set("interestOther", otherTrimmed);
+  };
+
+  const goNext = () => {
+    if (etcOn) commitOther();
+    router.push("/rest");
   };
 
   return (
@@ -81,33 +107,146 @@ export default function Interests() {
       <View style={styles.bottom}>
         <ChipFlow items={ITEMS} selected={picked} onToggle={toggle} />
 
+        {etcOn ? (
+          <OtherRow
+            value={other}
+            onChangeText={(v) => set("interestOther", v)}
+            onCommit={commitOther}
+          />
+        ) : null}
+
+        {/* 기타를 켠 채 비어 있을 때만 붙는 한 줄 경고 — 모달이 아니고 입력을 막지 않는다 */}
+        {etcOn && otherTrimmed.length === 0 ? (
+          <View style={styles.warn}>
+            <AppText tone="accent" style={styles.warnText}>
+              기타에 무엇을 적을지 알려주세요.
+            </AppText>
+          </View>
+        ) : null}
+
         <AppText variant="caption" tone="legal">
-          {hintOf(picked.length, overCap)}
+          {hintOf(picked.length, etcOn, otherTrimmed.length > 0)}
         </AppText>
 
-        <AppButton label="다음" disabled={picked.length === 0} onPress={goNext} />
+        <AppButton label="다음" disabled={!ready} onPress={goNext} />
       </View>
     </ScreenBackground>
   );
 }
 
 /**
- * 한 줄이 세 가지를 다 말한다 — 무엇을 해야 하는지 · 지금 몇 개인지 · 왜 안 들어갔는지.
- * 줄을 늘리지 않는 것이 「한 줄로 흡수」다.
- *
- * ⚠ 상한 초과 문구는 **MVP 스펙에 없다.** 규칙만 "안내 한 줄로 알린다" 이고 문안이
- * 없어서, 같은 칩을 쓰는 `M2` 의 "최대 3개 · N개 선택" 형식에 맞춰 지었다.
- * 상류가 문안을 정하면 그걸로 바꾼다.
+ * 안내는 몇 개를 골랐는지 **사실만** 말한다(`06-c.md`) — "3개까지예요" 같은
+ * 제한 경고를 미리 띄우지 않는다. 기타 입력 중에는 확정 방법을 말한다.
+ * 선택 후 문구는 `07` 과 같은 형식("N개 선택됨 · …")이다.
  */
-function hintOf(count: number, overCap: boolean) {
-  if (overCap) return `최대 ${MAX}개까지 고를 수 있어요`;
+function hintOf(count: number, etcOn: boolean, etcFilled: boolean) {
   if (count === 0) return "하나 이상 골라주세요";
-  return `최대 ${MAX}개 · ${count}개 선택`;
+  if (etcOn && etcFilled) return `${count}개 선택됨 · 완료를 누르면 칩이 됩니다`;
+  return `${count}개 선택됨 · 다시 누르면 취소돼요`;
 }
 
-const goNext = () => router.push("/retro-time");
+/**
+ * `.othr` — 기타 인라인 입력 줄. 밑줄만 강조한다 — 칩 줄 안에 사각 입력칸을
+ * 넣으면 칩과 같은 것으로 읽힌다(`06-b.md`). 12자 상한 · 카운터 · 값이 있을 때
+ * 지우기 ×(시각 19 · 히트 44).
+ */
+function OtherRow({
+  value,
+  onChangeText,
+  onCommit,
+}: {
+  value: string;
+  onChangeText: (v: string) => void;
+  onCommit: () => void;
+}) {
+  const atLimit = value.length >= otherRow.maxLength;
+
+  return (
+    <View style={styles.othr}>
+      <AppText tone="caption" style={styles.othLabel}>
+        기타
+      </AppText>
+      <View style={styles.othField}>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder="직접 입력"
+          placeholderTextColor={semantic.textSlogan}
+          maxLength={otherRow.maxLength}
+          returnKeyType="done"
+          onSubmitEditing={onCommit}
+          onBlur={onCommit}
+          selectionColor={semantic.accentFill}
+          style={styles.othInput}
+        />
+        <AppText
+          variant="footnote"
+          // 상한 도달은 색만 바뀐다 (06-c.md)
+          tone={atLimit ? "accent" : "caption"}
+          style={styles.othCounter}
+        >
+          {`${value.length}/${otherRow.maxLength}`}
+        </AppText>
+        {value.length > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="기타 지우기"
+            hitSlop={clearButton.hitSlop}
+            onPress={() => onChangeText("")}
+            style={styles.othClear}
+          >
+            <AppText tone="body" style={styles.othClearMark}>
+              ×
+            </AppText>
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+const { semantic } = theme.colors;
 
 const styles = StyleSheet.create({
-  // 칩 → 안내 → 버튼. 시안 간격 11
+  // 칩 → (기타 줄) → (경고) → 안내 → 버튼. 시안 간격 11
   bottom: { gap: 11 },
+  othr: { flexDirection: "row", alignItems: "center", gap: otherRow.gap },
+  othLabel: { fontSize: otherRow.labelSize, lineHeight: otherRow.labelSize },
+  othField: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: otherRow.field.gap,
+    minHeight: otherRow.field.minHeight,
+    paddingHorizontal: otherRow.field.paddingHorizontal,
+    backgroundColor: semantic.surface,
+    borderTopLeftRadius: otherRow.field.radiusTop,
+    borderTopRightRadius: otherRow.field.radiusTop,
+    borderBottomWidth: otherRow.field.underline,
+    borderBottomColor: semantic.accentFill, // primaryDeep 밑줄 (.othf)
+  },
+  othInput: {
+    flex: 1,
+    fontFamily: "Pretendard-Medium",
+    fontSize: otherRow.fontSize,
+    color: semantic.textPrimary,
+    padding: 0,
+  },
+  othCounter: { fontVariant: ["tabular-nums"] },
+  othClear: {
+    width: clearButton.size,
+    height: clearButton.size,
+    borderRadius: clearButton.size / 2,
+    backgroundColor: clearButton.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  othClearMark: { fontSize: 12, lineHeight: 14 },
+  warn: {
+    borderRadius: warnRow.radius,
+    paddingVertical: warnRow.paddingVertical,
+    paddingHorizontal: warnRow.paddingHorizontal,
+    backgroundColor: warnRow.background,
+  },
+  warnText: { fontSize: warnRow.fontSize, lineHeight: warnRow.fontSize * 1.55 },
 });

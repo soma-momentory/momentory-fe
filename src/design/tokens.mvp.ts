@@ -85,8 +85,17 @@ export const card = {
  * 모서리는 css 순서(TL TR BR BL)를 그대로 옮긴다 — 꼬리가 붙는 쪽만 6 이다.
  */
 export const chat = {
-  /** `.conv` — 아래에서 위로 쌓고 넘치면 위가 잘린다 */
+  /** `.conv` + `.convTop` — **위에서부터** 쌓는다. gap 11 · 위 8 · 아래 4 */
   gap: 11,
+  /**
+   * `.convTop{justify-content:flex-start;padding-top:8px;overflow-y:auto}`
+   *
+   * v2(2026-08-06)가 대화를 **상단 정렬**로 뒤집었다 — 아래로 몰면 키보드가
+   * 올라올 때 바바의 말이 가려진다(`RULES.md` 「원본과 다른 것」 `04`~`09`).
+   * 시안의 시작 높이 100px 통일은 절대좌표 이야기다 — RN 에서는 모든 질문
+   * 화면이 같은 `OnboardingTopBar` 아래에서 이 paddingTop 으로 시작하면 같다.
+   */
+  convTop: { paddingTop: 8, paddingBottom: 4 },
   /** `.bub` — 바바. 왼쪽 아래 꼬리 */
   baba: {
     maxWidth: 290,
@@ -120,20 +129,118 @@ export const chatColor = {
 } as const;
 
 /**
- * 입력 줄 — `04` 닉네임 · `08` 시간. `flows/9-mvp.mjs` 의 raw rect 값이다.
+ * 입력 줄 — `momentory.css` `.tfield` 그대로 (`04` 닉네임 · `05-b` 나이).
  *
- * ⚠ `momentory.css` 에 대응 클래스가 **없다**. `.inp`(r999)는 홈의 순간 입력 알약이라
- * 다른 것이다. 원본 `2-onboarding.mjs` `inputRow()` 와도 다르다 — 높이 52→**56**,
- * 알약(r26)→**r16**, 테두리 primary 20%→**ink 14%**.
+ * ```css
+ * .tfield{min-height:56px;padding:0 18px;background:#FBF6EC;
+ *         border:1.5px solid rgba(36,31,25,.24);border-radius:14px}
+ * .tfieldOn{border:1.5px solid var(--primaryDeep);
+ *           box-shadow:0 0 0 3px rgba(162,91,44,.12)}
+ * ```
+ *
+ * ⚠ `08` 의 시간 선택 칸은 **다른 물건**이다 — 아래 `timeField`.
  */
 export const inputRow = {
   height: 56,
-  radius: 16,
+  radius: 14,
   paddingHorizontal: 18,
+  borderWidth: 1.5,
+  /** ink 24% — 0.24 × 255 = 61.2 → 3D */
+  border: `${semantic.textPrimary}3D`,
+  /** placeholder 는 16px caption */
+  fontSize: 16,
+  /** `.tfieldOn` — 포커스. 테두리 primaryDeep + 3px 링 */
+  focus: {
+    border: palette.primaryDeep,
+    /** rgba(162,91,44,.12) — primaryDeep 12% */
+    ring: `${palette.primaryDeep}1F`,
+    ringWidth: 3,
+  },
+} as const;
+
+/**
+ * `08` 시간 선택 칸 — `9-mvp.mjs` 의 raw rect. `.tfield` 와 반경·테두리가 다르다.
+ * 탭하면 **OS 피커**가 열린다(`08.md` — 커스텀 휠 금지).
+ */
+export const timeField = {
+  height: 56,
+  radius: 16,
+  paddingHorizontal: 20,
+  borderWidth: 1,
   /** ink 14% — 0.14 × 255 = 35.7 → 24 */
   border: `${semantic.textPrimary}24`,
-  /** placeholder 는 16px legal */
-  fontSize: 16,
+  fontSize: 15,
+} as const;
+
+/**
+ * 지우기 × — `05-b` 나이 · `06-c` 기타. 시각 19px 원, **히트는 44**(hitSlop).
+ * `05-b.md` — "선택을 되돌릴 길이 없으면 선택이 아니다."
+ */
+export const clearButton = {
+  size: 19,
+  /** `.othxi` — ink 14% 판 위 body × */
+  background: `${semantic.textPrimary}24`,
+  /** (44 - 19) / 2 — hitSlop 으로 44pt 를 채운다 */
+  hitSlop: 12.5,
+} as const;
+
+/**
+ * `.othr` — `06-b`·`06-c` 기타 인라인 입력 줄. 칩 **바로 아래** 한 줄이고
+ * 별도 화면·시트로 보내지 않는다(`06-b.md`). 밑줄만 강조한다 — 칩 줄에
+ * 사각 입력칸을 넣으면 칩과 같은 것으로 읽힌다.
+ */
+export const otherRow = {
+  gap: 8,
+  /** `.othk` 라벨 13px caption */
+  labelSize: 13,
+  field: {
+    minHeight: 44,
+    paddingHorizontal: 15,
+    gap: 6,
+    /** 위쪽만 둥근 사각 — 12 12 0 0 */
+    radiusTop: 12,
+    underline: 1.5,
+  },
+  /** `.othv` 값 · `.othp` placeholder — 500 14px */
+  fontSize: 14,
+  /** `.othc` 카운터 — 11px caption */
+  counterSize: 11,
+  maxLength: 12,
+} as const;
+
+/**
+ * `.warn` — 한 줄 경고. 모달이 아니고 입력을 막지 않는다(`06-b.md`).
+ * 배지와 같은 accentWash 면 위에 accent 글자.
+ */
+export const warnRow = {
+  radius: 13,
+  paddingVertical: 12,
+  paddingHorizontal: 14,
+  gap: 9,
+  fontSize: 12,
+  background: semantic.accentWash,
+} as const;
+
+/**
+ * `.oauth` — `S1` 소셜 버튼. v2 에서 54 → **44 · r12** 로 바뀌었고
+ * 공식 마크는 **왼쪽 16px 절대 정렬**이다(`S1.md` — 마크가 라벨과 함께
+ * 흐르면 세 버튼의 글자 시작점이 어긋난다).
+ */
+export const oauth = {
+  height: 44,
+  radius: 12,
+  markLeft: 16,
+  markSize: 18,
+  fontSize: 15,
+} as const;
+
+/**
+ * `S0`·`S1` — 바바 발밑 그림자 92×8 / 24% (`9-mvp.mjs`).
+ * 150×16 / 30% 는 캐릭터가 떠 있는 것처럼 보였다(`S0.md`).
+ */
+export const babaShadow = {
+  color: "#8C6E4A",
+  opacity: 0.24,
 } as const;
 
 /**

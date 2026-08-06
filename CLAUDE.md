@@ -74,24 +74,26 @@
 **M0·M1 완료, M2(온보딩) 진행 중.** 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
 ```
-app/_layout.tsx  app/index.tsx  app/(auth)/login.tsx
-app/(onboarding)/{_layout, welcome, nickname, profile, interests, retro-time, calendar, done}.tsx
+app/_layout.tsx  app/index.tsx (S0)  app/(auth)/login.tsx (S1)
+app/(onboarding)/{_layout, welcome, nickname, profile, interests, rest, retro-time, calendar, done}.tsx
+                  = 03 · 04 · 05-b · 06(+06-b·06-c) · 07 · 08 · 09 · 10(+10-b)
 src/design/{theme.ts, tokens.mvp.ts}
 src/components/primitives/{ScreenBackground, AppText, AppButton, Card,
                            InputRow, ProgressDots, BackChevron}.tsx
 src/components/chat/{ChatLayout, BabaBubble, AnswerBubble, Avatar, TypingDots, ChipFlow}.tsx
-src/components/onboarding/OnboardingTopBar.tsx
+src/components/onboarding/OnboardingTopBar.tsx   src/components/icons/Ico17.tsx
 src/features/onboarding/model/draft.ts   ← 온보딩 답안 초안 (Zustand)
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
+src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳은 전부 이걸 쓴다
 ```
 
-설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context · **Zustand**.
+설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context ·
+**Zustand** · **@react-native-community/datetimepicker**(08 OS 피커 — 네이티브라 dev client 재빌드 필요).
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
-> ⚠ **지금 있는 온보딩 화면은 구판(30화면·질문 다섯) 기준으로 만들어졌다.**
-> v2 는 질문 여섯(`07` 쉬는 방법이 `06`↔`08` 사이에 끼고, `06-b`·`06-c`·`10-b` 신설)이다.
-> 따라잡기 목록은 `docs/TASKS.md` 「상류 v2 따라잡기」에 있다.
+> 진입·온보딩 13장은 **v2 기준으로 맞춰져 있다**(2026-08-07 따라잡기 완료).
+> 남은 것(브랜드 마크 · 계측 · 홈 연결 등)은 `docs/TASKS.md` 「잔여」 절에 있다.
 
 CI 는 `check:theme` · `typecheck` · `lint` · `test` · 시크릿 검사를 돈다.
 

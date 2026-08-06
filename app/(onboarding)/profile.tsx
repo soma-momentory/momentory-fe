@@ -16,17 +16,20 @@ import { useDraft, type Gender } from "@/features/onboarding/model/draft";
 /**
  * `05-b` · 나이 · 성별 (온보딩 2/6 · **선택**)
  *
- * **선택 질문이라는 것을 라벨 옆 태그로 밝힌다.** 나이·성별은 말 거는 방식에만
- * 쓰이므로 비워도 `[다음]` 이 열린다 — 그래서 버튼에 `disabled` 가 없다.
+ * **선택 항목이라는 것을 배지로 먼저 말한다.** 배지는 "선택"이 아니라
+ * **"선택사항"** — "선택"은 "고르라"는 뜻으로도 읽힌다(`05-b.md`).
+ * 나이·성별은 질문을 조금 더 잘 맞추는 데만 쓰이므로 비워도 넘어갈 수 있다.
  *
- * **비워둔 것과 「선택 안 함」을 구별한다.** 둘 다 답이지만 뜻이 다르다 —
- * 앞은 묻지 않기를 고른 것이고, 뒤는 해당 없음을 고른 것이다. 그래서 `gender` 는
- * `null`(미선택)과 `"none"`(선택 안 함)을 따로 들고 간다.
+ * - **미선택으로 넘어가면 CTA 라벨이 `[건너뛰기]`** 가 된다 — 같은 자리에서
+ *   같은 동작을 하되 무엇을 하는지 말이 달라진다(`05-b.md`)
+ * - **값이 들어간 나이에는 지우기 × 가 붙는다**(시각 19 · 히트 44) —
+ *   선택을 되돌릴 길이 없으면 선택이 아니다
+ * - **비워둔 것과 「선택 안 함」을 구별한다.** 앞은 묻지 않기를 고른 것이고,
+ *   뒤는 해당 없음을 고른 것이다 — `gender` 는 `null` 과 `"none"` 을 따로 든다
  *
- * ⚠ MVP 스펙은 **「입력 후」 상태만** 갖는다(원본 `05` 입력 전은 잘렸다).
- * 나이는 시안의 값 칩(104×44 · 지우기 ×) 대신 **`InputRow` 로 받는다** — 빈 상태를
- * 추측으로 그리지 않기 위한 결정이다. 값이 든 뒤의 칩 모양은 상류 확인 후에 붙인다.
- * 나이 placeholder 도 스펙에 없어 **비워 둔다** — 문안을 지어내지 않는다.
+ * ⚠ 스펙은 「입력 후」 상태(값 칩 104×44)만 그린다 — **입력 전 모양이 없어**
+ * 나이는 입력줄(`.tfield`)로 받고, 스펙의 핵심인 지우기 × 를 값이 있을 때
+ * 붙인다. 값 칩 형태로 바꿀지는 상류 확인 후보다(`TASKS.md`).
  */
 const GENDERS: readonly { id: Gender; label: string }[] = [
   { id: "male", label: "남성" },
@@ -38,6 +41,8 @@ export default function Profile() {
   const age = useDraft((s) => s.age);
   const gender = useDraft((s) => s.gender);
   const set = useDraft((s) => s.set);
+  // 미선택으로 넘어가면 라벨이 [건너뛰기] — 하나라도 답했으면 [다음] (05-b.md)
+  const answered = age.length > 0 || gender != null;
 
   return (
     <ScreenBackground>
@@ -63,6 +68,8 @@ export default function Profile() {
               onChangeText={(v) => set("age", v)}
               keyboardType="number-pad"
               maxLength={3}
+              // 값이 들어가면 지우기 × — 선택을 되돌릴 길 (05-b.md)
+              onClear={() => set("age", "")}
             />
           </View>
 
@@ -76,26 +83,31 @@ export default function Profile() {
             />
           </View>
 
+          {/* 개인정보 문구는 실제 처리와 같은 말이어야 한다 — 저장되고 질문
+              생성에만 쓰이므로 "사용하지 않아요"라고 쓸 수 없다 (05-b.md) */}
           <AppText variant="caption" tone="caption">
-            말을 거는 방식에만 활용되며, 다른 사람에게 보여지지 않아요.
+            답변은 질문을 조금 더 잘 맞추는 데만 사용하며, 다른 사람에게 공개되지 않아요.
           </AppText>
 
           {/* 선택 질문이라 비워도 열린다 — disabled 를 두지 않는다 */}
-          <AppButton label="다음" onPress={goNext} />
+          <AppButton label={answered ? "다음" : "건너뛰기"} onPress={goNext} />
         </View>
       </KeyboardAvoidingView>
     </ScreenBackground>
   );
 }
 
-/** `.sech` 라벨 + `.badge` 「선택」 태그. 선택 질문임을 라벨 옆에서 밝힌다 */
+/**
+ * `.sech` 라벨 + 「선택사항」 배지. "선택"이 아니라 **"선택사항"** —
+ * "선택"은 "고르라"는 뜻으로도 읽힌다(`05-b.md`).
+ */
 function FieldLabel({ children }: { children: string }) {
   return (
     <View style={styles.labelRow}>
       <AppText style={styles.label}>{children}</AppText>
       <View style={styles.badge}>
         <AppText tone="accent" style={styles.badgeText}>
-          선택
+          선택사항
         </AppText>
       </View>
     </View>

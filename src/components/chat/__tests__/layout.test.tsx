@@ -10,20 +10,22 @@ import { TypingDots } from "../TypingDots";
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
 
-// .conv{flex:1;gap:11px;justify-content:flex-end;padding-bottom:4px;overflow:hidden}
+// .conv{flex:1;gap:11px} + .convTop{justify-content:flex-start;padding-top:8px;overflow-y:auto}
 describe("ChatLayout", () => {
-  it("하단 고정 스택이고 넘치면 위가 잘린다", async () => {
+  it("상단 정렬 스택이고 넘치면 대화 영역만 스크롤된다", async () => {
+    // v2 가 하단 고정을 뒤집었다 — 아래로 몰면 키보드가 바바의 말을 가린다 (04.md)
     const { getByTestId } = await render(
       <ChatLayout testID="conv">
         <Text>안녕</Text>
       </ChatLayout>,
     );
-    const s = flatten(getByTestId("conv").props.style);
+    const conv = getByTestId("conv");
+    const content = flatten(conv.props.contentContainerStyle);
 
-    expect(s.justifyContent).toBe("flex-end"); // 아래에 붙는다
-    expect(s.overflow).toBe("hidden"); //         스크롤이 아니라 잘림
-    expect(s.gap).toBe(11);
-    expect(s.flex).toBe(1);
+    expect(content.justifyContent).toBe("flex-start"); // 위에서부터 쌓는다
+    expect(content.gap).toBe(11);
+    expect(content.paddingTop).toBe(8);
+    expect(flatten(conv.props.style).flex).toBe(1);
   });
 
   it("자식을 그대로 쌓는다", async () => {

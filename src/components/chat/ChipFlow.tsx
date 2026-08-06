@@ -32,11 +32,17 @@ type Props = Omit<ViewProps, "children"> & {
   /** 선택된 id 들. 단일 선택이면 길이 1 로 넘긴다 */
   selected: readonly string[];
   onToggle: (id: string) => void;
+  /**
+   * 칩 글자 크기 — 기본 14. `07` 쉬는 방법만 **13.5 · gap 7** 로 좁힌다
+   * (`9-mvp.mjs` — 15개를 한 화면에 다 보여야 한다).
+   */
+  chipSize?: number;
+  gap?: number;
 };
 
-export function ChipFlow({ items, selected, onToggle, style, ...rest }: Props) {
+export function ChipFlow({ items, selected, onToggle, chipSize, gap, style, ...rest }: Props) {
   return (
-    <View {...rest} style={[styles.flow, style]}>
+    <View {...rest} style={[styles.flow, gap != null ? { gap } : null, style]}>
       {items.map((item) => {
         const on = selected.includes(item.id);
         return (
@@ -51,7 +57,10 @@ export function ChipFlow({ items, selected, onToggle, style, ...rest }: Props) {
               variant="body"
               tone={on ? "strong" : "body"}
               weight={on ? "600" : "500"}
-              style={styles.label}
+              style={[
+                styles.label,
+                chipSize != null ? { fontSize: chipSize, lineHeight: chipSize } : null,
+              ]}
             >
               {item.label}
             </AppText>
