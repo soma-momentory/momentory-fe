@@ -482,6 +482,21 @@ export const segBar = {
 } as const;
 
 /**
+ * `.dobtn` · `.dobtnOn` — `[해봤어요]`(`A3`·`A3-c`).
+ *
+ * **설정이 아니라 한 번의 기록이라 토글이 아니라 버튼이다**(`A3.md`) — 스위치는
+ * 켜고 끄는 상태를 뜻하고, 이 자리에 필요한 것은 "했다"는 사실 하나다.
+ * 그래서 `Toggle` 을 쓰지 않는다.
+ */
+export const doneButton = {
+  minHeight: 46,
+  fontSize: 13.5,
+  /** 누르기 전 — 면 없이 테두리만. ink 20% */
+  border: `${semantic.textPrimary}33`,
+  borderWidth: 1.5,
+} as const;
+
+/**
  * `.acrow` · `.ack` — 행동 카드의 「상황 / 목표 행동」 두 줄(`C6-b` · `A3`).
  *
  * **행동 카드는 한 장뿐이다** — 여러 장을 만들면 할 일 목록이 되고,

@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
@@ -66,8 +67,7 @@ export default function Archive() {
     filter == null ? monthly : monthly.filter((d) => d.emotions.includes(filter)),
   );
 
-  // TODO A3 일기 상세 (다음 PR) — 라우트가 생기면 `/diary/<id>` 로 연다
-  const open = (_id: string) => {};
+  const open = (id: string) => router.push(`/diary/${id}`);
 
   return (
     <TabScreen active="보관함">

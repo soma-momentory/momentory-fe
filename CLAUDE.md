@@ -82,8 +82,8 @@
 
 ## 지금 어디까지 왔나
 
-**M0·M1 완료. M2(진입·온보딩)·M3(홈)·M4(회고)·M5-1(보관함 달력·목록) 화면 완료 —
-40장 중 32장.** 남은 화면 8장: 일기 상세 4(`A3` `A3-b` `A3-c` `A4`) · 리포트 1 · 마이 3.
+**M0·M1 완료. M2(진입·온보딩)·M3(홈)·M4(회고)·M5-1·M5-2(보관함·일기 상세) 화면
+완료 — 40장 중 36장.** 남은 화면 4장: **리포트 `W1` · 마이 `M1` `M2` `M3`**.
 외부 연동(소셜 SDK · OS 권한 · BE · 영속 저장 · 계측)은 별개로 남아 있다.
 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
@@ -100,6 +100,7 @@ app/(tabs)/{_layout, home}.tsx                    ← M3 `12`·`12-b`
 src/components/common/{TabBar, TabScreen, EmotionPill}.tsx
 src/features/home/                               ← 홈 화면 상태·UI
 app/(tabs)/{_layout, home, archive}.tsx   = 12 · 12-b · A1 · A2 (한 파일이 두 상태씩)
+app/diary/{_layout, [id]/index, [id]/edit}.tsx = A3 · A3-b · A3-c · A4
 src/components/archive/{CalendarMonth, DiaryPreviewCard, EmotionFilter}.tsx
 src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 세지 않는다
 app/home/{_layout, schedule/[id], schedule/new, moment/new}.tsx

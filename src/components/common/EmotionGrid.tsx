@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { CheckCircleIcon } from "@/components/icons/LineIcons";
 import { AppText } from "@/components/primitives/AppText";
 import theme, { type EmotionId } from "@/design/theme";
 import { emotionGrid } from "@/design/tokens.mvp";
@@ -27,9 +28,14 @@ type Props = {
   onToggle: (id: EmotionId) => void;
   /** `big` 은 `C3` 시작 감정 — 점이 이름 위로 간다 */
   size?: "default" | "big";
+  /**
+   * 켜진 칸에 체크를 더 붙인다(`.emck`) — `A4` 가 쓴다. 여럿을 고르는 화면이라
+   * 테두리·굵기만으로는 어느 것이 켜졌는지 훑기 어렵다.
+   */
+  showCheck?: boolean;
 };
 
-export function EmotionGrid({ selected, onToggle, size = "default" }: Props) {
+export function EmotionGrid({ selected, onToggle, size = "default", showCheck = false }: Props) {
   const big = size === "big";
 
   return (
@@ -73,6 +79,13 @@ export function EmotionGrid({ selected, onToggle, size = "default" }: Props) {
             >
               {e.name}
             </AppText>
+
+            {/* .emck — 선택을 색 말고 체크로도 알린다 */}
+            {showCheck && on ? (
+              <View style={styles.check}>
+                <CheckCircleIcon size={13} />
+              </View>
+            ) : null}
           </Pressable>
         );
       })}
@@ -115,4 +128,5 @@ const styles = StyleSheet.create({
     borderRadius: emotionGrid.big.dot / 2,
   },
   label: { fontSize: emotionGrid.cell.fontSize, lineHeight: emotionGrid.cell.fontSize * 1.3 },
+  check: { position: "absolute", top: 5, right: 5 },
 });

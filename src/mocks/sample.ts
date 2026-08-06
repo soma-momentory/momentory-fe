@@ -145,8 +145,16 @@ export const SAMPLE_SCHEDULES: Schedule[] = [
 export type SampleDiary = {
   /** `MM-DD` — 달력·목록이 같은 값을 본다 */
   day: number;
+  /** `[이야기 속 감정, 회고 시작 감정]` — 감정 태그의 초기값이기도 하다 */
   emotions: [EmotionId, EmotionId];
   body: string;
+  /** 「바바가 함께 본 오늘」 — 회고를 마친 당시의 고정 스냅샷 */
+  babaView?: string;
+  /** 그 문장을 쓴 근거 한 줄 — **사용자가 실제로 쓴 말만** 인용한다 */
+  babaViewBasis?: string;
+  weather?: string;
+  /** 그 일기에 붙는 행동 카드 — **한 장뿐**이다 */
+  action?: { situation: string; targetAction: string };
 };
 
 export const SAMPLE_DIARY_MONTH = "2026-07";
@@ -167,7 +175,21 @@ export const SAMPLE_DIARIES: SampleDiary[] = [
   },
   { day: 24, emotions: [9, 4], body: "산책하다 해가 지는 걸 오래 봤다. 별일 없는 날이 좋았다." },
   { day: 26, emotions: [9, 4], body: "주말 내내 아무것도 안 했다. 그게 필요했던 것 같다." },
-  { day: 27, emotions: [1, 2], body: "모의 면접에서 말이 막혔다. 그래도 끝까지 답했다." },
+  {
+    day: 27,
+    emotions: [1, 2],
+    body: "오늘 모의 면접에서 내 차례가 되자 준비했던 말이 잘 떠오르지 않았다. 다른 사람들은 자연스럽게 답하는 것 같아 나만 부족하다는 생각이 들었고, 집에 온 뒤에도 마음이 무거웠다. 그래도 중간에 포기하지 않고 기억나는 내용부터 다시 말해 끝까지 답했다.",
+    babaView:
+      "오늘 모의 면접에서 긴장해 답이 막혔지만, 그 한 번이 면접을 못한다는 뜻은 아니다. 중간에 포기하지 않고 다시 말을 이어 끝까지 답했다. 다음에는 예상 질문 하나를 골라 핵심 세 문장으로 답하는 연습부터 해보려고 한다.",
+    // 근거는 **사용자가 실제로 쓴 말**만 인용한다 — 요약해 바꿔 말하지 않는다
+    babaViewBasis:
+      "대화에서 '아예 포기하지는 않았어요', '기억나는 내용부터 다시 말해서 끝까지 답했어요'라고 하셨어요. 그 말에서 문장을 옮겨 적었어요.",
+    weather: "맑음 · 27℃",
+    action: {
+      situation: "면접 연습을 시작할 때",
+      targetAction: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
+    },
+  },
 ];
 
 /**

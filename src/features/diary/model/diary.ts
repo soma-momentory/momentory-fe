@@ -32,6 +32,24 @@ export type Diary = {
   editedAt: string | null;
   /** 몇 번째 장. **연속 일수가 아니다** */
   ordinal: number;
+
+  /**
+   * ── 여기부터는 **그날의 기록**(`A3-b`)이다. 읽기 전용이고 `A4` 에서 고칠 수 없다.
+   *
+   * `emotions`(감정 태그)와 **다른 값**이다 — 태그는 목록·필터용이라 고칠 수
+   * 있고, 이쪽은 그날 실제로 남은 기록이다. 한 줄로 합치면 어느 시점의 감정인지
+   * 알 수 없어 상류가 두 줄로 나눴다(`A3-b.md` — 「회고 전 감정」은 폐기된 라벨).
+   *
+   * ⚠ 스키마상 원본은 `Schedule.emotions` 와 `Retro` 에 있는데 MVP 는 `Retro` 를
+   * 따로 두지 않는다. **고정 스냅샷**이라는 규칙을 지키려면 일기가 들고 있어야
+   * 해서 여기 뒀다 — 서버가 붙으면 `retroId` 로 따라가는 값이 된다(`TASKS.md`).
+   */
+  /** 일정에 붙었던 감정 */
+  storyEmotion: EmotionId | null;
+  /** `C3` 에서 고른 회고 시작 감정 */
+  startEmotion: EmotionId | null;
+  /** 그날의 날씨 — 읽기 전용 표시 */
+  weather: string | null;
 };
 
 /**
@@ -61,12 +79,35 @@ type DiaryStore = {
     date: string;
     body: string;
     babaView: string;
+    babaViewBasis?: string;
     emotions: EmotionId[];
+    storyEmotion?: EmotionId | null;
+    startEmotion?: EmotionId | null;
+    weather?: string | null;
     situation: string;
     targetAction: string;
     /** 사용자가 초안을 고쳤는지 */
     edited: boolean;
   }) => void;
+  /**
+   * `A4` 수정 — **「내가 남긴 오늘」의 본문과 이 일기의 감정 태그뿐**이다.
+   * 바바의 문장·행동 카드·그날의 기록은 건드리지 않는다.
+   */
+  edit: (id: string, input: { body: string; emotions: EmotionId[] }) => void;
+  /**
+   * `A4` 「이 회고 삭제」 — **지워지는 것은 일기 한 면이 아니라 회고 한 벌**이라
+   * 붙어 있던 행동 카드도 함께 간다. 라벨이 「이 일기 삭제」가 아닌 이유다.
+   */
+  remove: (id: string) => void;
+  /**
+   * `A3` `[해봤어요]` — **토글이 아니라 한 번의 기록**이다. 되돌리는 것은
+   * `undoAction` 이고 확인을 묻는 것은 화면 쪽 몫이다(느낀 점이 함께 지워진다).
+   */
+  markActionDone: (cardId: string) => void;
+  /** 되돌리기 — 완료 기록과 **느낀 점이 함께** 사라진다 */
+  undoActionDone: (cardId: string) => void;
+  /** `A3-c` 느낀 점 한 줄. **선택**이다 — 비워 둬도 완료다 */
+  setReflection: (cardId: string, text: string) => void;
   reset: () => void;
 };
 
@@ -83,19 +124,59 @@ const seed = (): Diary[] =>
     id: `d-sample-${d.day}`,
     date: `${SAMPLE_DIARY_MONTH}-${String(d.day).padStart(2, "0")}`,
     body: d.body,
-    babaView: null,
-    babaViewBasis: null,
+    babaView: d.babaView ?? null,
+    babaViewBasis: d.babaViewBasis ?? null,
     emotions: [...d.emotions],
     authoredBy: "baba",
     editedAt: null,
     ordinal: i + 1,
+    // 그날의 기록 — 감정 태그의 초기값이 여기서 왔다
+    storyEmotion: d.emotions[0],
+    startEmotion: d.emotions[1],
+    weather: d.weather ?? null,
   }));
 
-export const useDiary = create<DiaryStore>((set) => ({
-  diaries: seed(),
-  actionCards: [],
+/** 샘플 일기에 붙는 행동 카드 — **일기 한 장에 한 장**뿐이다 */
+const seedCards = (diaries: readonly Diary[]): ActionCard[] =>
+  SAMPLE_DIARIES.flatMap((d, i) => {
+    if (d.action == null) return [];
+    const diary = diaries[i];
+    if (diary == null) return [];
+    return [
+      {
+        id: `ac-sample-${d.day}`,
+        diaryId: diary.id,
+        situation: d.action.situation,
+        targetAction: d.action.targetAction,
+        done: false,
+        doneAt: null,
+        reflection: null,
+        createdAt: diary.date,
+      },
+    ];
+  });
 
-  save: ({ date, body, babaView, emotions, situation, targetAction, edited }) =>
+const initial = () => {
+  const diaries = seed();
+  return { diaries, actionCards: seedCards(diaries) };
+};
+
+export const useDiary = create<DiaryStore>((set) => ({
+  ...initial(),
+
+  save: ({
+    date,
+    body,
+    babaView,
+    babaViewBasis = null,
+    emotions,
+    storyEmotion = null,
+    startEmotion = null,
+    weather = null,
+    situation,
+    targetAction,
+    edited,
+  }) =>
     set((s) => {
       const diaryId = nextId("d");
       const now = new Date().toISOString();
@@ -107,12 +188,15 @@ export const useDiary = create<DiaryStore>((set) => ({
             date,
             body,
             babaView,
-            babaViewBasis: null,
+            babaViewBasis,
             emotions,
             // 초안은 바바가 썼고, 고쳤으면 사용자의 것이 된다
             authoredBy: edited ? "user" : "baba",
             editedAt: edited ? now : null,
             ordinal: s.diaries.length + 1,
+            storyEmotion,
+            startEmotion,
+            weather,
           },
         ],
         actionCards: [
@@ -131,9 +215,58 @@ export const useDiary = create<DiaryStore>((set) => ({
       };
     }),
 
+  edit: (id, { body, emotions }) =>
+    set((s) => ({
+      diaries: s.diaries.map((d) =>
+        d.id === id
+          ? {
+              ...d,
+              body,
+              emotions,
+              // 고친 순간부터 이 면은 사용자의 것이다
+              authoredBy: "user",
+              editedAt: new Date().toISOString(),
+            }
+          : d,
+      ),
+    })),
+
+  remove: (id) =>
+    set((s) => ({
+      diaries: s.diaries.filter((d) => d.id !== id),
+      // 회고 한 벌이 지워진다 — 붙어 있던 행동 카드도 함께
+      actionCards: s.actionCards.filter((c) => c.diaryId !== id),
+    })),
+
+  markActionDone: (cardId) =>
+    set((s) => ({
+      actionCards: s.actionCards.map((c) =>
+        c.id === cardId ? { ...c, done: true, doneAt: new Date().toISOString() } : c,
+      ),
+    })),
+
+  undoActionDone: (cardId) =>
+    set((s) => ({
+      actionCards: s.actionCards.map((c) =>
+        // 느낀 점이 함께 사라진다 — 그래서 화면이 되돌리기 전에만 확인을 묻는다
+        c.id === cardId ? { ...c, done: false, doneAt: null, reflection: null } : c,
+      ),
+    })),
+
+  setReflection: (cardId, text) =>
+    set((s) => ({
+      actionCards: s.actionCards.map((c) =>
+        c.id === cardId ? { ...c, reflection: text.trim().length === 0 ? null : text } : c,
+      ),
+    })),
+
   /**
    * 데모 시작값으로 되돌린다 — 서버가 붙으면 「다시 불러온다」가 된다.
    * 테스트에서 빈 상태가 필요하면 `setState({ diaries: [], actionCards: [] })`.
    */
-  reset: () => set({ diaries: seed(), actionCards: [] }),
+  reset: () => set(initial()),
 }));
+
+/** 그 일기에 붙은 행동 카드 — **1:1** 이라 배열이 아니다 */
+export const actionCardOf = (cards: readonly ActionCard[], diaryId: string) =>
+  cards.find((c) => c.diaryId === diaryId) ?? null;
