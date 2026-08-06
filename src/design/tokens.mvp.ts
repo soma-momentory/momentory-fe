@@ -77,6 +77,49 @@ export const card = {
 } as const;
 
 /**
+ * 채팅 — `momentory.css` 의 `.conv` `.bub` `.bubme` `.ba` `.chip` `.chipOn` 그대로.
+ *
+ * ⚠ `COMPONENTS.md` 는 `BabaBubble` 을 "크림 카드, **테두리 없음**" 이라고 적지만
+ * MVP 는 **테두리가 있다**(ink 10%). 칩 높이도 52 가 아니라 **44** 다(52 는 `.opt` 선택지 행).
+ *
+ * 모서리는 css 순서(TL TR BR BL)를 그대로 옮긴다 — 꼬리가 붙는 쪽만 6 이다.
+ */
+export const chat = {
+  /** `.conv` — 아래에서 위로 쌓고 넘치면 위가 잘린다 */
+  gap: 11,
+  /** `.bub` — 바바. 왼쪽 아래 꼬리 */
+  baba: {
+    maxWidth: 290,
+    paddingVertical: 14,
+    paddingHorizontal: 17,
+    radius: { topLeft: 20, topRight: 20, bottomRight: 20, bottomLeft: 6 },
+  },
+  /** `.bubme` — 내 답. 오른쪽 아래 꼬리 */
+  answer: {
+    maxWidth: 280,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    radius: { topLeft: 20, topRight: 20, bottomRight: 6, bottomLeft: 20 },
+  },
+  /** `.ba` 52 · `.bas` 34. 바깥 링은 box-shadow `0 0 0 10px rgba(251,246,236,.5)` */
+  avatar: { lg: 52, sm: 34, ring: 10 },
+  /** `typing()` — 62×35 버블 안에 7px 점 3개, 12px 간격 */
+  typing: { width: 62, height: 35, dot: 7, dotGap: 5 },
+  /** `.chip` 44 (·`.opt` 52 는 다른 것) */
+  chip: { minHeight: 44, paddingHorizontal: 16, gap: 8 },
+} as const;
+
+/** 채팅에서 쓰는 테두리·면 — `theme` 에 이름이 없는 것만 */
+export const chatColor = {
+  /** `.bub` `.chipOn` 아님 — 기본 칩 테두리 ink 14% (0.14 × 255 = 35.7 → 24) */
+  chipBorder: `${semantic.textPrimary}24`,
+  /** `.ba` 바깥 링 — rgba(251,246,236,.5). #FBF4E7 = textOnDark */
+  avatarRing: `${semantic.textOnDark}80`,
+  /** `.ba` 이미지가 없을 때의 바탕 */
+  avatarBase: "#EFE5D4",
+} as const;
+
+/**
  * 배경 그라디언트.
  * 상류 `momentory.css` 가 `.scr` 을 `120% 90% at 50% 18%` 로 개정했고,
  * **진입 2장(S0·S1)만** 구 값 `115% 75% at 50% 26%` 를 유지한다.
