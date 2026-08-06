@@ -83,6 +83,7 @@ src/components/primitives/{ScreenBackground, AppText, AppButton, Card,
 src/components/chat/{ChatLayout, BabaBubble, AnswerBubble, Avatar, TypingDots, ChipFlow}.tsx
 src/components/onboarding/OnboardingTopBar.tsx   src/components/icons/Ico17.tsx
 src/features/onboarding/model/draft.ts   ← 온보딩 답안 초안 (Zustand)
+src/features/auth/model/auth.ts          ← M2-0 인증 부트스트랩 — hydrate·가드·fail-closed
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
 src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳은 전부 이걸 쓴다
 ```
