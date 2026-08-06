@@ -57,10 +57,11 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
   });
 
   it("비교는 기준을 밝혀 쓴다", async () => {
+    // 「이전 주 3회」는 앞 주(7/13~19)의 실제 장수에서 계산한 값이다
     const r = await render(<Report />);
 
     expect(r.getByText("이전 주보다 완만했어요")).toBeTruthy();
-    expect(r.getByText("이전 주 4회")).toBeTruthy();
+    expect(r.getByText("이전 주 3회")).toBeTruthy();
   });
 
   it("요일 일곱 칸을 두고 기록 없는 날은 「기록 없음」이다", async () => {
@@ -204,46 +205,98 @@ describe("M1 · 마이 홈", () => {
   });
 });
 
-describe("W1 · 주차 이동", () => {
-  it("이전 주로 옮기면 표시 데이터가 함께 바뀐다", async () => {
+describe("W1 · 주차 이동 — 수치와 해석이 함께 바뀐다", () => {
+  const prev = async (r: Awaited<ReturnType<typeof render>>) =>
+    fireEvent.press(r.getByLabelText("이전 주"));
+
+  it("① 이전 주로 이동하면 날짜 범위가 바뀐다", async () => {
     const r = await render(<Report />);
     expect(r.getByText("7월 20일 – 7월 26일")).toBeTruthy();
-    expect(r.getByText("5회")).toBeTruthy();
 
-    await fireEvent.press(r.getByLabelText("이전 주"));
+    await prev(r);
 
     expect(r.getByText("7월 13일 – 7월 19일")).toBeTruthy();
-    // 7/13 · 7/15 · 7/17 세 편이다
+  });
+
+  it("② 회고·감정 수치가 바뀐다", async () => {
+    const r = await render(<Report />);
+    // 7/20 주 — 일기 5편 · 감정 10개
+    expect(r.getByText("회고 5회 · 감정 기록 10개를 바탕으로 바바가 정리했어요")).toBeTruthy();
+
+    await prev(r);
+
+    // 7/13 주 — 13 · 15 · 17 세 편 · 감정 6개
+    expect(r.getByText("회고 3회 · 감정 기록 6개를 바탕으로 바바가 정리했어요")).toBeTruthy();
     expect(r.getByText("3회")).toBeTruthy();
   });
 
-  it("최신 주에서는 다음 주가 비활성이다 — 범위의 끝", async () => {
+  it("③ 한 주 요약과 흐름 문장도 그 주 값이다", async () => {
+    // 서로 다른 한 주에 같은 문장을 보여주지 않는다
     const r = await render(<Report />);
-    const next = r.getByLabelText("다음 주");
+    expect(r.getByText("흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요.")).toBeTruthy();
+    expect(r.getByText("다시 균형 찾기")).toBeTruthy();
+    expect(r.getByText("무거운 몸으로 시작해 평온함으로 닫은 주였어요.")).toBeTruthy();
 
-    expect(next.props.accessibilityState.disabled).toBe(true);
+    await prev(r);
 
-    await fireEvent.press(next);
-    expect(r.getByText("7월 20일 – 7월 26일")).toBeTruthy(); // 그대로다
+    expect(
+      r.getByText("말수가 줄어든 주였지만, 그런 날도 있다고 스스로 넘겨준 한 주였어요."),
+    ).toBeTruthy();
+    expect(r.getByText("한 박자 쉬어가기")).toBeTruthy();
+    expect(r.getByText("답답함으로 열었지만 끝에는 힘을 뺀 주였어요.")).toBeTruthy();
+    // 앞 주의 문장이 남아 있으면 안 된다
+    expect(r.queryByText("다시 균형 찾기")).toBeNull();
   });
 
-  it("이전 주로 갔다가 다시 돌아올 수 있다", async () => {
+  it("④ 이어갈 한 가지와 행동 수치도 그 주 값이다", async () => {
     const r = await render(<Report />);
-    await fireEvent.press(r.getByLabelText("이전 주"));
+    // 7/20 주 — 20 · 22 · 26 세 장을 만들고 20 · 22 를 해봤다
+    expect(r.getByText("답이 막히면 핵심 한 가지부터 다시 말하기")).toBeTruthy();
+    expect(r.getByText("3번 만들었고 · 2번 해봤어요")).toBeTruthy();
 
-    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(false);
+    await prev(r);
+
+    // 7/13 주 — 13 · 17 두 장을 만들고 13 을 해봤다
+    expect(r.getByText("답장이 밀리면 한 줄만 먼저 보내기")).toBeTruthy();
+    expect(r.getByText("2번 만들었고 · 1번 해봤어요")).toBeTruthy();
+  });
+
+  it("⑤ 다시 다음 주로 가면 원래 데이터로 돌아온다", async () => {
+    const r = await render(<Report />);
+    await prev(r);
+
     await fireEvent.press(r.getByLabelText("다음 주"));
 
     expect(r.getByText("7월 20일 – 7월 26일")).toBeTruthy();
+    expect(r.getByText("다시 균형 찾기")).toBeTruthy();
+    expect(r.getByText("3번 만들었고 · 2번 해봤어요")).toBeTruthy();
   });
 
-  it("더 앞선 기록이 없으면 이전 주도 비활성이다", async () => {
-    // 샘플의 가장 이른 일기는 7/1 — 그 주(6/29~7/5)보다 앞은 갈 곳이 없다
+  it("⑥ 이동 범위의 끝에서는 화살표가 눌리지 않는다", async () => {
+    // 해석이 준비된 주만 본다 — 없는 주로는 넘어가지 않는다
     const r = await render(<Report />);
-    for (let i = 0; i < 3; i++) await fireEvent.press(r.getByLabelText("이전 주"));
 
-    expect(r.getByText("6월 29일 – 7월 5일")).toBeTruthy();
+    // 최신 주 — 다음이 없다
+    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(true);
+    expect(r.getByLabelText("이전 주").props.accessibilityState.disabled).toBe(false);
+
+    await prev(r);
+
+    // 가장 이른 주 — 이전이 없다
     expect(r.getByLabelText("이전 주").props.accessibilityState.disabled).toBe(true);
+    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(false);
+
+    await prev(r); // 눌러도 그대로다
+    expect(r.getByText("7월 13일 – 7월 19일")).toBeTruthy();
+  });
+
+  it("「이전 주 N회」도 계산한다 — 앞 주가 없으면 비교하지 않는다", async () => {
+    const r = await render(<Report />);
+    expect(r.getByText("이전 주 3회")).toBeTruthy();
+
+    await prev(r);
+
+    expect(r.queryByText(/이전 주 \d+회/)).toBeNull();
   });
 });
 

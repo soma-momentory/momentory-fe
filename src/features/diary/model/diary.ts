@@ -161,8 +161,9 @@ const seedCards = (diaries: readonly Diary[]): ActionCard[] =>
         diaryId: diary.id,
         situation: d.action.situation,
         targetAction: d.action.targetAction,
-        done: false,
-        doneAt: null,
+        done: d.action.done ?? false,
+        // 해본 날짜는 만든 다음 날로 둔다 — 「해봤어요 · 7월 21일」처럼 보인다
+        doneAt: d.action.done === true ? `${diary.date}T09:00:00` : null,
         reflection: null,
         createdAt: diary.date,
       },

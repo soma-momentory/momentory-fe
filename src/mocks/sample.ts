@@ -153,8 +153,11 @@ export type SampleDiary = {
   /** 그 문장을 쓴 근거 한 줄 — **사용자가 실제로 쓴 말만** 인용한다 */
   babaViewBasis?: string;
   weather?: string;
-  /** 그 일기에 붙는 행동 카드 — **한 장뿐**이다 */
-  action?: { situation: string; targetAction: string };
+  /**
+   * 그 일기에 붙는 행동 카드 — **한 장뿐**이다.
+   * `done` 은 리포트의 「N번 해봤어요」가 세는 값이다(실행률이 아니라 **수**다).
+   */
+  action?: { situation: string; targetAction: string; done?: boolean };
 };
 
 export const SAMPLE_DIARY_MONTH = "2026-07";
@@ -163,18 +166,39 @@ export const SAMPLE_DIARIES: SampleDiary[] = [
   { day: 1, emotions: [5, 4], body: "새 달의 첫날. 계획을 세우다 말았지만 그래도 적어는 뒀다." },
   { day: 4, emotions: [9, 4], body: "오랜만에 늦잠을 잤다. 죄책감보다 개운함이 컸다." },
   { day: 8, emotions: [4, 8], body: "발표 준비를 끝냈다. 마지막 장을 덮을 때가 제일 좋다." },
-  { day: 13, emotions: [3, 1], body: "메일 하나에 하루 기분이 흔들렸다. 답장은 내일 쓰기로 했다." },
+  {
+    day: 13,
+    emotions: [3, 1],
+    body: "메일 하나에 하루 기분이 흔들렸다. 답장은 내일 쓰기로 했다.",
+    action: { situation: "답장이 밀렸을 때", targetAction: "한 줄만 먼저 보내기", done: true },
+  },
   { day: 15, emotions: [7, 6], body: "몸이 무거운 하루. 그래도 저녁에 일찍 누웠다." },
-  { day: 17, emotions: [5, 2], body: "그런 날도 있다. 이런 날은 그냥 지나가게 두기로 했다." },
-  { day: 20, emotions: [7, 8], body: "미루던 운동을 10분이라도 했다. 시작하니 생각보다 가벼웠다." },
+  {
+    day: 17,
+    emotions: [5, 2],
+    body: "그런 날도 있다. 이런 날은 그냥 지나가게 두기로 했다.",
+    action: { situation: "아무것도 하기 싫을 때", targetAction: "10분만 밖에 나가 보기" },
+  },
+  {
+    day: 20,
+    emotions: [7, 8],
+    body: "미루던 운동을 10분이라도 했다. 시작하니 생각보다 가벼웠다.",
+    action: { situation: "운동을 미루고 싶을 때", targetAction: "10분만 하고 그만두기", done: true },
+  },
   { day: 21, emotions: [1, 9], body: "면접 일정이 잡혔다. 걱정이 앞섰지만 일단 달력에 적었다." },
   {
     day: 22,
     emotions: [3, 8],
     body: "회의는 답답했지만, 그 답답함은 내 의견을 전하고 싶다는 마음에서 왔다.",
+    action: { situation: "회의에서 말이 막힐 때", targetAction: "핵심 한 가지부터 다시 말하기", done: true },
   },
   { day: 24, emotions: [9, 4], body: "산책하다 해가 지는 걸 오래 봤다. 별일 없는 날이 좋았다." },
-  { day: 26, emotions: [9, 4], body: "주말 내내 아무것도 안 했다. 그게 필요했던 것 같다." },
+  {
+    day: 26,
+    emotions: [9, 4],
+    body: "주말 내내 아무것도 안 했다. 그게 필요했던 것 같다.",
+    action: { situation: "쉬고 나서도 개운하지 않을 때", targetAction: "다음 주 할 일 하나만 적어두기" },
+  },
   {
     day: 27,
     emotions: [1, 2],
@@ -232,28 +256,52 @@ export const SAMPLE_ALL_TIME_EMOTIONS: Partial<Record<EmotionId, number>> = {
   6: 3,
 };
 
-/**
- * 주간 리포트(`W1`)가 보는 주 — **7월 20일 ~ 26일**.
- * 그 주 일기는 20 · 21 · 22 · 24 · 26 다섯이고 감정 기록은 10개다.
- */
+/** 리포트가 처음 여는 주 — **최신 주가 마지막**이라 여기서 뒤로만 간다 */
 export const SAMPLE_REPORT_WEEK = { start: "2026-07-20", end: "2026-07-26" } as const;
 
 /**
- * 바바가 쓰는 한 주 요약 — **서버가 그 주 대화를 읽고 만든다.**
+ * 바바가 쓰는 한 주 **해석** — 서버가 그 주 대화를 읽고 만든다.
  *
  * ⛔ `DRAFT_DEMO`·`FOLLOW_UPS` 와 같은 임시 장치다(`TASKS.md` 「BE 연결 전에
- * 반드시 걷어내야 하는 것」). 흐름 라벨은 **상태를 단정하지 않는다** —
- * 「회복」은 진단형이라 상류가 뺐고, 쓰는 말은 움직임을 가리키는 말이다.
+ * 반드시 걷어내야 하는 것」).
+ *
+ * **주차마다 다른 해석이 있어야 한다** — 서로 다른 한 주에 같은 문장을 보여주면
+ * 그 문장이 데이터를 읽고 쓴 것이 아니라는 뜻이 된다. 그래서 이 표의 **키가 곧
+ * 볼 수 있는 주**이고, 해석이 없는 주는 **이동 범위에서 빠진다**(`report.ts`
+ * `availableWeekStarts`). 없는 주를 새 화면으로 만들지 않는다 —
+ * 「기록이 부족해 만들 수 없는 주」는 `report.pendingStates` 다.
+ *
+ * 여기 없는 것은 **전부 데이터에서 계산**한다 — 회고 횟수 · 감정 기록 수 ·
+ * 요일별 감정 · 최빈 감정 · **이전 주 N회** · **행동 만든 수/해본 수**.
+ *
+ * 흐름 라벨은 **상태를 단정하지 않는다** — 「회복」은 진단형이라 상류가 뺐고,
+ * 쓰는 말은 움직임을 가리키는 말이다.
  */
-export const SAMPLE_REPORT_DEMO = {
-  summary: "흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요.",
-  trendLabel: "다시 균형 찾기",
-  trendDelta: "이전 주보다 완만했어요",
-  retroDelta: "이전 주 4회",
-  emotionFlow: "무거운 몸으로 시작해 평온함으로 닫은 주였어요.",
-  /** `[이어갈 한 가지]` — **만든 수와 해본 수만** 적는다. 실행률·연속은 세지 않는다 */
-  action: { text: "답이 막히면 핵심 한 가지부터 다시 말하기", made: 3, done: 2 },
-} as const;
+export type WeekAnalysis = {
+  summary: string;
+  trendLabel: string;
+  trendDelta: string;
+  emotionFlow: string;
+  /** `[이어갈 한 가지]` 의 한 줄. 만든 수·해본 수는 데이터에서 센다 */
+  actionText: string;
+};
+
+export const SAMPLE_REPORT_ANALYSIS: Record<string, WeekAnalysis> = {
+  "2026-07-20": {
+    summary: "흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요.",
+    trendLabel: "다시 균형 찾기",
+    trendDelta: "이전 주보다 완만했어요",
+    emotionFlow: "무거운 몸으로 시작해 평온함으로 닫은 주였어요.",
+    actionText: "답이 막히면 핵심 한 가지부터 다시 말하기",
+  },
+  "2026-07-13": {
+    summary: "말수가 줄어든 주였지만, 그런 날도 있다고 스스로 넘겨준 한 주였어요.",
+    trendLabel: "한 박자 쉬어가기",
+    trendDelta: "이전 주보다 조용했어요",
+    emotionFlow: "답답함으로 열었지만 끝에는 힘을 뺀 주였어요.",
+    actionText: "답장이 밀리면 한 줄만 먼저 보내기",
+  },
+};
 
 /**
  * 순간 2개 — 「오늘의 순간」 라벨 아래 모으고 **개수를 세지 않는다**.

@@ -10,9 +10,11 @@ import { shortEmotionName } from "@/features/archive/model/archive";
 import { useDiary } from "@/features/diary/model/diary";
 import {
   REPORT_UNLOCK_COUNT,
+  adjacentWeek,
+  availableWeekStarts,
   isReportUnlocked,
   diariesInWeek,
-  shiftWeek,
+  weekActions,
   weekDays,
   weekEmotionCount,
   weekEnd,
@@ -20,7 +22,7 @@ import {
   weekTopEmotion,
 } from "@/features/report/model/report";
 import { formatKoreanDateShort } from "@/lib/day";
-import { SAMPLE_REPORT_DEMO, SAMPLE_REPORT_WEEK } from "@/mocks/sample";
+import { SAMPLE_REPORT_ANALYSIS, SAMPLE_REPORT_WEEK } from "@/mocks/sample";
 
 /**
  * `W1` · 주간 리포트
@@ -44,18 +46,32 @@ import { SAMPLE_REPORT_DEMO, SAMPLE_REPORT_WEEK } from "@/mocks/sample";
  */
 export default function Report() {
   const diaries = useDiary((s) => s.diaries);
+  const actionCards = useDiary((s) => s.actionCards);
 
-  // 최신 주가 마지막이다 — 그 뒤로는 볼 것이 없다
-  const latestStart = SAMPLE_REPORT_WEEK.start;
+  // 볼 수 있는 주 = 해석이 준비된 주. 없는 주로는 넘어가지 않는다
+  const starts = availableWeekStarts(SAMPLE_REPORT_ANALYSIS);
   // `SAMPLE_REPORT_WEEK` 가 `as const` 라 명시하지 않으면 리터럴로 좁혀져 못 옮긴다
-  const [start, setStart] = useState<string>(latestStart);
+  const [start, setStart] = useState<string>(SAMPLE_REPORT_WEEK.start);
   const end = weekEnd(start);
-  const { hasPrev, hasNext } = weekRange(diaries, start, latestStart);
+  const { hasPrev, hasNext } = weekRange(starts, start);
 
   const unlocked = isReportUnlocked(diaries);
   const weekly = diariesInWeek(diaries, start, end);
   const days = weekDays(diaries, start, end);
   const top = weekTopEmotion(diaries, start, end);
+  const actions = weekActions(actionCards, start, end);
+  // 해석은 주차마다 다르다 — 같은 문장을 두 주에 보여주지 않는다
+  const analysis = SAMPLE_REPORT_ANALYSIS[start];
+
+  // 「이전 주 N회」도 계산한다 — 앞 주가 범위에 없으면 비교할 것이 없다
+  const prevStart = adjacentWeek(starts, start, -1);
+  const prevCount =
+    prevStart == null ? null : diariesInWeek(diaries, prevStart, weekEnd(prevStart)).length;
+
+  const go = (dir: -1 | 1) => {
+    const next = adjacentWeek(starts, start, dir);
+    if (next != null) setStart(next);
+  };
 
   return (
     <TabScreen active="리포트">
@@ -80,21 +96,11 @@ export default function Report() {
             **화살표를 흐리게 두고 누르지 못하게 하는 것**으로 끝을 말한다.
           */}
           <View style={styles.weekNav}>
-            <WeekArrow
-              glyph="‹"
-              label="이전 주"
-              enabled={hasPrev}
-              onPress={() => setStart(shiftWeek(start, -1))}
-            />
+            <WeekArrow glyph="‹" label="이전 주" enabled={hasPrev} onPress={() => go(-1)} />
             <AppText tone="body" weight="600" style={styles.weekRangeLabel}>
               {`${formatKoreanDateShort(start)} – ${formatKoreanDateShort(end)}`}
             </AppText>
-            <WeekArrow
-              glyph="›"
-              label="다음 주"
-              enabled={hasNext}
-              onPress={() => setStart(shiftWeek(start, 1))}
-            />
+            <WeekArrow glyph="›" label="다음 주" enabled={hasNext} onPress={() => go(1)} />
           </View>
 
           <ScrollView
@@ -107,7 +113,7 @@ export default function Report() {
                 한 주 요약
               </AppText>
               <AppText tone="strong" weight="700" style={styles.summary}>
-                {SAMPLE_REPORT_DEMO.summary}
+                {analysis?.summary ?? ""}
               </AppText>
               <AppText variant="caption" tone="caption">
                 {`회고 ${weekly.length}회 · 감정 기록 ${weekEmotionCount(days)}개를 바탕으로 바바가 정리했어요`}
@@ -116,14 +122,15 @@ export default function Report() {
 
             <View style={styles.metrics}>
               <Metric
-                value={SAMPLE_REPORT_DEMO.trendLabel}
+                value={analysis?.trendLabel ?? "—"}
                 valueSize={15}
-                delta={SAMPLE_REPORT_DEMO.trendDelta}
+                delta={analysis?.trendDelta ?? ""}
                 label="한 주의 흐름"
               />
               <Metric
                 value={`${weekly.length}회`}
-                delta={SAMPLE_REPORT_DEMO.retroDelta}
+                // 비교는 기준을 밝혀 쓴다 — 앞 주가 범위에 없으면 비교하지 않는다
+                delta={prevCount == null ? "" : `이전 주 ${prevCount}회`}
                 label="회고 횟수"
               />
               <Metric
@@ -147,7 +154,7 @@ export default function Report() {
                 그날 기록한 감정이에요 · 하루 최대 3개까지 보여줘요
               </AppText>
               <AppText tone="strong" weight="500" style={styles.flow}>
-                {SAMPLE_REPORT_DEMO.emotionFlow}
+                {analysis?.emotionFlow ?? ""}
               </AppText>
 
               {/* 막대가 아니라 점이다 — 높이로 말할 것이 없다 */}
@@ -198,10 +205,11 @@ export default function Report() {
                 이어갈 한 가지
               </AppText>
               <AppText tone="strong" weight="500" style={styles.actionText}>
-                {SAMPLE_REPORT_DEMO.action.text}
+                {analysis?.actionText ?? ""}
               </AppText>
+              {/* 만든 수와 해본 수만 — 그 주 행동 카드에서 센다. 실행률이 아니다 */}
               <AppText variant="caption" tone="caption">
-                {`${SAMPLE_REPORT_DEMO.action.made}번 만들었고 · ${SAMPLE_REPORT_DEMO.action.done}번 해봤어요`}
+                {`${actions.made}번 만들었고 · ${actions.done}번 해봤어요`}
               </AppText>
             </Card>
           </ScrollView>
