@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 
+import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
 
 /**
@@ -98,6 +99,8 @@ export const useAuth = create<AuthStore>((set) => ({
     await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
     // 초안까지 비운다 — 남기면 다음 사용자의 온보딩에 앞 사람 답이 섞인다
     useDraft.getState().reset();
+    // 온보딩 완료 플래그도 — 남기면 다음 사용자가 남의 완료 상태로 홈에 들어간다
+    useOnboardingCompletion.getState().reset();
     set({ status: "anonymous" });
   },
 }));

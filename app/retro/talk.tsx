@@ -1,4 +1,4 @@
-import { Redirect } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
@@ -159,11 +159,7 @@ export default function RetroTalk() {
         <View style={styles.bottom}>
           {finished ? (
             // 입력칸을 내리고 하나만 둔다 — 대화가 끝났다는 것을 자리로 알린다
-            <AppButton
-              label="일기 보러 가기"
-              // TODO C6 · C6-b 일기 두 면 (다음 PR). 재료는 store 에 남아 있다
-              onPress={() => {}}
-            />
+            <AppButton label="일기 보러 가기" onPress={() => router.push("/retro/draft")} />
           ) : awaitingDirection && !sheetOpen ? (
             /*
               시트를 닫으면 아무것도 저장되지 않는다(`C4-c2.md`) — 그래서 다시

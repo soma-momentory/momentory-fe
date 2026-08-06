@@ -159,8 +159,10 @@ src/
     chat/                    # ChatLayout BabaBubble AnswerBubble Avatar TypingDots ChipFlow
     common/                  # TabBar ScrollArea EmotionPill EmotionGrid Sheet SegBar ...
   features/
-    onboarding/ home/ retro/ archive/ report/ my/
+    auth/ onboarding/ home/ retro/ diary/ archive/ report/ my/
       api/ model/ ui/        # 쿼리 훅 · 도메인 로직 · 화면 조각
+                             # 지금 있는 것: auth · onboarding · home · retro · diary
+                             # (api/ 는 BE 연결 때 생긴다 — 그전까지 model/ 이 mocks/ 를 읽는다)
   lib/
     api/                     # 클라이언트 · 생성된 타입 · 오프라인 아웃박스
     analytics/               # track() 파사드 + 이벤트 상수
@@ -301,8 +303,8 @@ track('home_memo_add', { char_bucket: bucket(text.length) })
 | **M0** ✅ | 프로젝트 셋업 — Expo + TS strict + expo-router + lint/CI + `sync:theme` + Pretendard | 앱이 뜨고 폰트·배경 그라디언트가 시안과 같음 |
 | **M1** ✅ | **P0 컴포넌트 13종** + **테스트 기반** | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가 |
 | **M2** △ | 진입 + 온보딩 13상태 (`S0` `S1` `03`~`10-b`) | 화면 정렬·인증 부트스트랩 완료. 소셜 로그인 3종 · 알림/캘린더 실제 권한은 대기 |
-| **M3** △ | 공용 컴포넌트(P1.5) + 홈 5화면 | `12`·`12-b`와 홈 공용 기반 진행 중. 시트 3종·일정/순간 CRUD·아웃박스는 후속 |
-| **M4** | 회고 12화면 | 채팅(스트리밍 포함) · 감정 필수 · 방향 선택 시트(`C4-c`·`C4-c2`) · 일기 두 면 + 행동 카드 생성 |
+| **M3** △ | 공용 컴포넌트(P1.5) + 홈 5화면 | **화면 완료** — `12`·`12-b` + 시트 3종(`12-c`·`12-d`·`12-e`)과 일정/순간 쓰기 경로. 남은 것은 **M3-3 아웃박스**(멱등 키·409)이고 BE 연결과 함께 간다 |
+| **M4** ✅ | 회고 12화면 (2026-08-07) | 채팅 · 감정 필수 · 방향 선택 시트(`C4-c`·`C4-c2`) · 일기 두 면 + 행동 카드 생성. **스트리밍과 실제 응답 생성은 BE 연결과 함께** — 지금 바바의 말은 고정 문장이다(`TASKS.md` 「BE 연결 전에 반드시 걷어내야 하는 것」) |
 | **M5** | 보관함 6 + 리포트 1 + 마이 3 + **앱 잠금 게이트** | 달력/목록/일기 두 면/행동 완료(`A3-c`)/수정 · 주간 리포트 · 설정 · 토글과 잠금이 같은 마일스톤(§8) |
 | **M6** | `invariants` 전수 테스트 · Maestro E2E · EAS 내부 배포 | |
 

@@ -7,6 +7,7 @@ import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
+import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { formatKoreanTime } from "@/lib/time";
 
@@ -31,6 +32,7 @@ export default function Done() {
   const notifyRetro = useDraft((s) => s.notifyRetro);
   const retroTime = useDraft((s) => s.retroTime);
   const reset = useDraft((s) => s.reset);
+  const complete = useOnboardingCompletion((s) => s.complete);
 
   // 알림만 끄면 캘린더 줄이 남고, 캘린더만 건너뛰면 시간 줄이 남는다 (10-b.md)
   const showCalendar = calendarLinked;
@@ -41,6 +43,8 @@ export default function Done() {
     // 초안은 여기까지가 수명이다. 남기면 다음 사람의 온보딩에 앞 답이 섞인다.
     // (서버 커밋은 인증·계약이 붙은 뒤)
     reset();
+    // 다시 열었을 때 온보딩을 되풀이하지 않게 — S0 의 진입 판정이 이 값을 본다
+    complete();
     // 온보딩의 끝은 홈이다 — 완료 화면을 허브로 만들지 않는다
     router.replace("/home");
   };
