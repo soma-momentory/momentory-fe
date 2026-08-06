@@ -53,6 +53,41 @@ export function weekDays(diaries: readonly Diary[], start: string, end: string):
   });
 }
 
+const toIso = (at: Date) =>
+  `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
+
+/** `iso` 에서 `days` 일 뒤(음수면 앞). 달·해를 넘겨도 `Date` 가 맞춰준다 */
+function addDays(iso: string, days: number) {
+  const [y = "2026", m = "1", d = "1"] = iso.split("-");
+  return toIso(new Date(Number(y), Number(m) - 1, Number(d) + days));
+}
+
+/** 주차 이동 — 음수면 이전 주 */
+export const shiftWeek = (start: string, weeks: number) => addDays(start, weeks * 7);
+
+/** 그 주의 끝(시작 + 6일) */
+export const weekEnd = (start: string) => addDays(start, 6);
+
+/**
+ * 주차 이동 범위.
+ *
+ * - **이전**: 그 주 시작보다 앞선 일기가 하나라도 있으면 갈 수 있다
+ * - **다음**: 최신 주가 마지막이다 — 그 뒤로는 볼 것이 없으므로 **비활성**이다
+ *
+ * 범위의 끝은 `report.pendingStates` 라 화면이 따로 없다 — 화살표를 흐리게 두고
+ * 누르지 못하게 하는 것으로 끝을 말한다.
+ */
+export function weekRange(diaries: readonly Diary[], start: string, latestStart: string) {
+  const earliest = diaries.reduce<string | null>(
+    (min, d) => (min == null || d.date < min ? d.date : min),
+    null,
+  );
+  return {
+    hasPrev: earliest != null && earliest < start,
+    hasNext: start < latestStart,
+  };
+}
+
 /** 그 주 감정 기록 수 — 「회고 5회」와 **다른 값**이라 라벨이 구분해야 한다 */
 export const weekEmotionCount = (days: readonly WeekDay[]) =>
   days.reduce((n, d) => n + d.emotions.length, 0);

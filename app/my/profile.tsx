@@ -11,8 +11,8 @@ import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import { home } from "@/design/tokens.mvp";
-import { MAX_INTERESTS } from "@/features/onboarding/model/draft";
 import { useProfile } from "@/features/my/model/settings";
+import { MAX_INTERESTS, type Gender } from "@/features/onboarding/model/draft";
 
 /**
  * `M2` · 회고 프로필
@@ -21,14 +21,17 @@ import { useProfile } from "@/features/my/model/settings";
  * 버튼은 "뭔가 바뀌었다"는 신호라, 아무것도 안 고친 화면에서 켜져 있으면 매번
  * 눌러 확인하게 된다.
  *
- * - **온보딩에서 묻지 않은 것을 여기서 편집하게 두지 않는다.** 반대로 물은 것은
- *   전부 여기 또는 `M1` 의 다른 줄에 있어야 한다 — 쉬는 방법(`07`) 섹션이 그래서 있다
- * - 선택 칩은 색·굵기만이 아니라 **테두리 굵기**로도 표시한다(`ChipFlow`)
  * - **`[변경하지 않고 나가기]` 를 두지 않는다** — 나가는 길은 상단 뒤로가기
- *   하나로 통일한다. 나가기 버튼이 둘이면 어느 쪽이 저장인지 매번 읽어야 한다
+ *   하나다. 대신 **고치고 저장하지 않은 채 나가면 확인을 묻는다**
+ *   (`my.invariants`). 바꾼 것이 없으면 바로 나간다
+ * - 선택 칩에 **체크를 붙인다** — 색·테두리·굵기만으로 표시하지 않는다
  * - 관심 분야는 **최대 3개**(온보딩 `06` 과 같은 규칙)
  * - 쉬는 방법은 **고른 것 + 대표 몇 개**만 보이고 나머지는 `[＋ 더 고르기]` 로
  *   편다 — 15개를 다 펴는 곳은 온보딩 `07` 이다
+ *
+ * ⚠ **「기본 정보」(나이·성별) 섹션이 여기 있다.** `M1` 은 별도 줄로 두지만
+ * 상류 상태 기계에 그 줄이 갈 화면이 없다 — 화면을 새로 만들지 않고 여기
+ * 담았다(`settings.ts` 주석 · `TASKS.md` 「상류 확인」).
  */
 const INTERESTS = [
   { id: "study", label: "학업" },
@@ -40,6 +43,12 @@ const INTERESTS = [
   { id: "health", label: "건강" },
   { id: "etc", label: "기타" },
 ] as const;
+
+const GENDERS: readonly { id: Gender; label: string }[] = [
+  { id: "male", label: "남성" },
+  { id: "female", label: "여성" },
+  { id: "none", label: "선택 안 함" },
+];
 
 /** 대표 여섯 — 나머지는 `[＋ 더 고르기]` 로 편다 */
 const REST_PREVIEW = [
@@ -63,15 +72,20 @@ export default function ProfileEdit() {
   const [nickname, setNickname] = useState(saved.nickname);
   const [interests, setInterests] = useState<string[]>(saved.interests);
   const [restMethods, setRestMethods] = useState<string[]>(saved.restMethods);
+  const [age, setAge] = useState(saved.age);
+  const [gender, setGender] = useState<Gender | null>(saved.gender);
   const [restExpanded, setRestExpanded] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   const same = (a: readonly string[], b: readonly string[]) =>
     a.length === b.length && a.every((x) => b.includes(x));
-  // 바꾼 것이 없으면 잠긴다
+  // 바꾼 것이 없으면 저장이 잠기고, 뒤로가기도 묻지 않는다
   const changed =
     nickname.trim() !== saved.nickname ||
     !same(interests, saved.interests) ||
-    !same(restMethods, saved.restMethods);
+    !same(restMethods, saved.restMethods) ||
+    age !== saved.age ||
+    gender !== saved.gender;
 
   const toggleInterest = (id: string) => {
     if (interests.includes(id)) {
@@ -89,7 +103,16 @@ export default function ProfileEdit() {
     );
 
   const save = () => {
-    saved.set({ nickname: nickname.trim(), interests, restMethods });
+    saved.set({ nickname: nickname.trim(), interests, restMethods, age, gender });
+    router.back();
+  };
+
+  // 나가는 길은 이 하나뿐이다 — 고쳤으면 묻고, 아니면 그대로 나간다
+  const leave = () => {
+    if (changed) {
+      setConfirmLeave(true);
+      return;
+    }
     router.back();
   };
 
@@ -101,7 +124,7 @@ export default function ProfileEdit() {
 
   return (
     <ScreenBackground>
-      <RetroNav title="회고 프로필" rest={false} />
+      <RetroNav title="회고 프로필" rest={false} onBack={leave} />
 
       <ScrollView
         style={styles.stack}
@@ -134,7 +157,7 @@ export default function ProfileEdit() {
               {`최대 ${MAX_INTERESTS}개 · ${interests.length}개 선택`}
             </AppText>
           </View>
-          <ChipFlow items={INTERESTS} selected={interests} onToggle={toggleInterest} />
+          <ChipFlow items={INTERESTS} selected={interests} onToggle={toggleInterest} showCheck />
         </Card>
 
         {/* 온보딩 07 에서 물은 것이라 편집 경로가 여기 있어야 한다 */}
@@ -153,22 +176,71 @@ export default function ProfileEdit() {
             onToggle={toggleRest}
             chipSize={13.5}
             gap={7}
+            showCheck
           />
           {!restExpanded ? (
-            <AppButton
-              label="＋ 더 고르기"
-              variant="ghost"
-              onPress={() => setRestExpanded(true)}
-            />
+            <AppButton label="＋ 더 고르기" variant="ghost" onPress={() => setRestExpanded(true)} />
           ) : null}
         </Card>
 
-        {/* 나가는 길은 상단 뒤로가기 하나 — [변경하지 않고 나가기] 를 두지 않는다 */}
+        {/* 온보딩 05-b 에서 물은 것 — M1 의 「기본 정보」 줄이 여기로 온다 */}
+        <Card style={styles.card}>
+          <AppText tone="accent" weight="600" style={styles.section}>
+            기본 정보
+          </AppText>
+          <AppText variant="caption" tone="caption">
+            답변은 질문을 조금 더 잘 맞추는 데만 사용하며, 다른 사람에게 공개되지 않아요.
+          </AppText>
+          <InputRow
+            value={age}
+            onChangeText={setAge}
+            keyboardType="number-pad"
+            maxLength={3}
+            onClear={() => setAge("")}
+            accessibilityLabel="나이"
+          />
+          <ChipFlow
+            items={GENDERS}
+            selected={gender == null ? [] : [gender]}
+            // 같은 것을 다시 누르면 미선택으로 — 선택 항목이라 무를 길이 있어야 한다
+            onToggle={(id) => setGender(gender === id ? null : (id as Gender))}
+            showCheck
+          />
+        </Card>
+
         <AppButton label="저장하기" disabled={!changed} onPress={save} />
+
+        {/* 고치고 저장하지 않은 채 나가려 할 때만 — 나가기 버튼을 따로 두지 않는다 */}
+        {confirmLeave ? (
+          <Card style={styles.confirm}>
+            <AppText tone="strong" weight="600" style={styles.confirmTitle}>
+              고친 내용을 저장하지 않고 나갈까요?
+            </AppText>
+            <AppText variant="caption" tone="caption">
+              저장하지 않으면 바꾼 값이 사라져요.
+            </AppText>
+            <View style={styles.confirmActions}>
+              <AppButton
+                label="계속 고치기"
+                variant="ghost"
+                style={styles.confirmButton}
+                onPress={() => setConfirmLeave(false)}
+              />
+              <AppButton
+                label="나가기"
+                variant="ghost"
+                style={styles.confirmButton}
+                onPress={() => router.back()}
+              />
+            </View>
+          </Card>
+        ) : null}
       </ScrollView>
     </ScreenBackground>
   );
 }
+
+const { semantic } = theme.colors;
 
 const styles = StyleSheet.create({
   stack: { flex: 1, marginHorizontal: -theme.layout.screenMargin },
@@ -185,4 +257,9 @@ const styles = StyleSheet.create({
     letterSpacing: home.sectionLabel.letterSpacing,
   },
   count: { flex: 1, textAlign: "right", fontSize: 11.5, lineHeight: 14 },
+
+  confirm: { gap: 8, backgroundColor: semantic.surfaceTone, borderColor: "transparent" },
+  confirmTitle: { fontSize: 14, lineHeight: 20 },
+  confirmActions: { flexDirection: "row", gap: 9, paddingTop: 4 },
+  confirmButton: { flex: 1 },
 });
