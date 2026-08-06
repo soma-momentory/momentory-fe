@@ -18,8 +18,13 @@ import { retroNav } from "@/design/tokens.mvp";
  * 시작 감정 알약은 `C3` 에서 고른 값이고 `C4`~`C4-e` 내내 상단에 남는다 —
  * 대화가 길어져도 무엇으로 시작했는지가 화면에서 사라지지 않는다.
  *
- * `[잠시 쉬기]` 는 **자동 저장하고 홈으로 나간다**(`C1.md`) — 중단 확인을 묻지
- * 않는다. 회고 중단·재개 화면(원본 `C1-b`)은 MVP 범위 밖이다.
+ * `[잠시 쉬기]` 는 **중단을 묻지 않고 홈으로 나간다**(`C1.md`) — 확인 모달이
+ * 없다. 회고 중단·재개 화면(원본 `C1-b`)은 MVP 범위 밖이다.
+ *
+ * ⚠ **아직 기기에 남기지 않는다.** 스펙의 "자동 저장하고 홈에서 이어간다"에서
+ * 지금 지켜지는 것은 **앱이 떠 있는 동안**뿐이다 — 회고 store 가 메모리라
+ * 앱을 끄면 사라진다(`retro.ts`). MMKV 도입은 `ARCHITECTURE.md §1` 의 M3 이고,
+ * 그때까지 **영속 저장을 화면 문구로 약속하지 않는다.**
  */
 type Props = {
   title?: string;
@@ -61,7 +66,8 @@ export function RetroNav({ title, emotion, rest = true, onBack, onRest }: Props)
         <Pressable
           accessibilityRole="button"
           hitSlop={12}
-          // 자동 저장하고 홈에서 이어간다 — 중단을 묻지 않는다 (C1.md)
+          // 중단을 묻지 않는다 — 확인 모달 없이 홈으로 나간다 (C1.md).
+          // 남은 값은 이 앱 세션 동안만 유효하다 (위 주석)
           onPress={onRest ?? (() => router.replace("/home"))}
         >
           <AppText tone="caption" style={styles.rest}>

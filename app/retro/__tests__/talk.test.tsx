@@ -263,11 +263,18 @@ describe("C4-d · 방향을 고른 직후", () => {
     expect(useRetro.getState().direction).toBe("reframe");
   });
 
-  it("고른 방향에 따라 첫 질문이 달라진다", async () => {
-    const r = await startWithDirection("지금 할 수 있는 방법을 찾아보고 싶어요");
+  // 네 방향 전부 — 고른 줄과 이어지는 질문이 짝이 맞아야 한다 (C4-c.md 표)
+  it.each([
+    ["마음을 조금 더 이야기하며 정리하고 싶어요", "feelings", "그 순간 가장 크게 느껴진 마음은 무엇이었나요?", "마음 이야기하며 정리하기"],
+    ["지금 상황을 다른 관점에서 바라보고 싶어요", "reframe", "그때 스스로에게 가장 먼저 어떤 말을 했나요?", "다른 관점에서 바라보기"],
+    ["지금 할 수 있는 방법을 찾아보고 싶어요", "solve", "다음에는 무엇이 조금 달라졌으면 좋겠나요?", "지금 할 수 있는 방법 찾기"],
+    ["오늘 있었던 일을 짧게 기록하고 싶어요", "brief", "오늘 있었던 일과 그때의 마음을 한 문장으로 남겨볼까요?", "짧게 기록하기"],
+  ])("«%s» 를 고르면 그 방향의 칩과 첫 질문이 온다", async (option, id, question, chip) => {
+    const r = await startWithDirection(option);
 
-    expect(r.getByText("좋아요. 다음에는 무엇이 조금 달라졌으면 좋겠나요?")).toBeTruthy();
-    expect(useRetro.getState().direction).toBe("solve");
+    expect(useRetro.getState().direction).toBe(id);
+    expect(r.getByText(chip)).toBeTruthy();
+    expect(r.getByText(`좋아요. ${question}`)).toBeTruthy();
   });
 
   it("되짚기 다음 답에는 관점 확인과 균형 근거 질문이 온다", async () => {
@@ -367,5 +374,78 @@ describe("C4-e · 내 문장과 다음 한 가지", () => {
     const answers = useRetro.getState().turns.filter((t) => t.who === "me");
     expect(answers).toHaveLength(5);
     expect(r.getByText("일기 보러 가기")).toBeTruthy();
+  });
+});
+
+describe("C6 · C6-b 의 재료 — 저장 시점과 출처", () => {
+  it("그 순서의 답을 하기 전에는 비어 있다", async () => {
+    const r = await startWithDirection();
+    expect(useRetro.getState().balanceSentence).toBeNull();
+    expect(useRetro.getState().nextAction).toBeNull();
+
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+
+    // 아직 균형 문장을 말하지 않았다
+    expect(useRetro.getState().balanceSentence).toBeNull();
+    expect(useRetro.getState().nextAction).toBeNull();
+  });
+
+  it("세 번째 답이 균형 문장, 네 번째가 다음 한 가지다", async () => {
+    const r = await startWithDirection();
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+
+    await answerAndWait(r, "오늘은 긴장했지만 끝까지 답했어요.");
+    expect(useRetro.getState().balanceSentence).toBe("오늘은 긴장했지만 끝까지 답했어요.");
+    expect(useRetro.getState().nextAction).toBeNull(); // 아직이다
+
+    await answerAndWait(r, "예상 질문 세 문장 연습을 하고 싶어요.");
+    expect(useRetro.getState().nextAction).toBe("예상 질문 세 문장 연습을 하고 싶어요.");
+    // 앞서 담은 값은 덮이지 않는다
+    expect(useRetro.getState().balanceSentence).toBe("오늘은 긴장했지만 끝까지 답했어요.");
+  });
+
+  it("바바가 만든 문장은 두 값에 들어가지 않는다", async () => {
+    // 행동은 반드시 사용자가 말한 내용에서 나온다 (C4-e.md)
+    const r = await startWithDirection();
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+    await answerAndWait(r, "오늘은 긴장했지만 끝까지 답했어요.");
+    await answerAndWait(r, "예상 질문 세 문장 연습을 하고 싶어요.");
+
+    const babaLines = useRetro
+      .getState()
+      .turns.filter((t) => t.who === "baba")
+      .map((t) => t.text);
+    const { balanceSentence, nextAction } = useRetro.getState();
+
+    expect(babaLines).not.toContain(balanceSentence);
+    expect(babaLines).not.toContain(nextAction);
+    // 둘 다 사용자가 한 말이다
+    const myLines = useRetro.getState().turns.filter((t) => t.who === "me").map((t) => t.text);
+    expect(myLines).toContain(balanceSentence);
+    expect(myLines).toContain(nextAction);
+  });
+
+  it("reset 은 회고 한 벌을 통째로 비운다 — 다음 회고에 앞 답이 섞이지 않게", async () => {
+    const r = await startWithDirection();
+    await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
+    await answerAndWait(r, "말이 막히긴 했지만 아예 포기하지는 않았어요.");
+    await answerAndWait(r, "오늘은 긴장했지만 끝까지 답했어요.");
+    await answerAndWait(r, "예상 질문 세 문장 연습을 하고 싶어요.");
+
+    // 화면이 떠 있는 채로 store 를 비우므로 act 로 감싼다 — 안 그러면 리렌더가 밖에서 돈다
+    await act(async () => {
+      useRetro.getState().reset();
+    });
+
+    expect(useRetro.getState()).toMatchObject({
+      startEmotion: null,
+      turns: [],
+      direction: null,
+      balanceSentence: null,
+      nextAction: null,
+    });
   });
 });

@@ -184,12 +184,29 @@ describe("C3 · 지금 감정 고르기 — 필수다", () => {
 });
 
 describe("회고 상단 — 진행률을 노출하지 않는다", () => {
-  it("[잠시 쉬기] 는 자동 저장하고 홈으로 나간다 — 중단을 묻지 않는다", async () => {
+  it("[잠시 쉬기] 는 중단을 묻지 않고 홈으로 나간다", async () => {
+    // 확인 모달을 두지 않는다 (C1.md). 영속 저장은 아직 아니다 — retro.ts 주석
     const { getByText } = await render(<RetroIntro />);
 
     await fireEvent.press(getByText("잠시 쉬기"));
 
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
+  });
+
+  it("나갔다 와도 이 세션 동안은 값이 남는다 — 다만 영속은 아니다", async () => {
+    // 앱이 떠 있는 동안만이다. 화면에 「저장했어요」류 문구를 두지 않는 이유다
+    useRetro.getState().setStartEmotion(2);
+    const { getByText } = await render(<RetroIntro />);
+    await fireEvent.press(getByText("잠시 쉬기"));
+
+    expect(useRetro.getState().startEmotion).toBe(2);
+  });
+
+  it("저장을 약속하는 문구를 화면에 두지 않는다", async () => {
+    const { queryByText } = await render(<RetroIntro />);
+
+    expect(queryByText(/저장/)).toBeNull();
+    expect(queryByText(/이어서 하기|이어가기/)).toBeNull();
   });
 
   it("단계 번호를 두지 않는다", async () => {
