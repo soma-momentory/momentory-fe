@@ -425,6 +425,44 @@ export const directionOption = {
 } as const;
 
 /**
+ * `.seg` · `.sg` · `.sgOn` — 두 칸 세그먼트. 일기의 **두 면**을 오간다
+ * (`C6`·`C6-b` · `A3`·`A3-b`).
+ *
+ * **면을 바꾸는 것이지 편집 모드를 바꾸는 것이 아니다**(`C6.md`) — 그래서
+ * 저장은 세그먼트가 아니라 `C6-b` 의 버튼 한 번이다.
+ *
+ * 켜진 칸은 **면 색 + 그림자**로 떠오른다 — 색 하나에 기대지 않는다.
+ */
+export const segBar = {
+  gap: 4,
+  padding: 4,
+  /** `#E6DCC9` — 트랙. 팔레트에 이름이 없다(카드보다 한 단계 어두운 톤) */
+  track: "#E6DCC9",
+  item: { minHeight: 36, fontSize: 13 },
+} as const;
+
+/**
+ * `.acrow` · `.ack` — 행동 카드의 「상황 / 목표 행동」 두 줄(`C6-b` · `A3`).
+ *
+ * **행동 카드는 한 장뿐이다** — 여러 장을 만들면 할 일 목록이 되고,
+ * 할 일 목록은 지키지 못한 것의 목록이 된다(`C6-b.md`).
+ */
+export const actionCard = {
+  gap: 10,
+  /** 라벨 열 폭 62 — 값의 시작점이 두 줄 모두 같아야 표로 읽힌다 */
+  labelWidth: 62,
+  labelSize: 12,
+  valueSize: 13,
+  lineHeight: 1.65,
+} as const;
+
+/**
+ * 일기 본문 — `C6` 초안 · `A4` 수정.
+ * **500자 상한**이고 카운터만 둔다. **최소 글자 수를 요구하지 않는다**(`C6.md`).
+ */
+export const diaryBody = { maxLength: 500, fontSize: 15, lineHeight: 27 } as const;
+
+/**
  * `.dirchip` · `.dirchipb` — 대화 가운데에 남는 방향 칩(`C4-d`).
  *
  * **칩이 경계선 역할을 한다** — 어디서부터 방향을 정하고 이야기한 것인지
