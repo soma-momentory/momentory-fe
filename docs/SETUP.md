@@ -38,18 +38,12 @@ cp .env.example .env
 `.env` 값은 팀의 빌드 환경 변수에서 받는다. **비어 있어도 M1 까지는 앱이 뜬다** —
 로그인·캘린더가 들어오는 M2 부터 필요하다. 값의 성격은 [`CONTRIBUTING.md` 「값을 다루는 세 등급」](CONTRIBUTING.md) 참조.
 
-### 설계 저장소도 함께 받는다
+### 이 저장소만 있으면 된다
 
-**이 저장소만으로는 화면을 만들 수 없다.** 스펙·상태 기계·계측 규칙이 전부 설계 저장소에 있다.
-
-```
-C:\SWM\momentory\          ← 설계 저장소
-  09_MVP/                  ← 우리가 만드는 40화면. 여기가 1순위
-  momentory-fe/            ← 이 저장소
-```
-
-**폴더 위치를 이 구조로 맞춘다.** `npm run sync:theme` 이 `../02_디자인시스템/theme.ts` 를
-상대 경로로 찾는다. 다른 곳에 두면 동기화만 안 되고 빌드는 정상이다(테마가 커밋돼 있으므로).
+화면 스펙·값·상태 기계는 [`docs/spec/`](spec/SNAPSHOT.md)에 반입돼 있고, 토큰과 폰트는
+커밋돼 있다 — **설계 상류 폴더는 개발·검증 어디에도 필요 없다.**
+유일한 예외는 `npm run sync:theme`(토큰 재생성)와 스펙 재반입인데, 둘 다 상류 로컬
+저장소를 가진 담당자 전용이다([`docs/spec/SNAPSHOT.md`](spec/SNAPSHOT.md)).
 
 ---
 
@@ -115,8 +109,12 @@ npm run ios
 npm start              # Metro 만 띄운다 (이미 dev client 가 설치돼 있을 때)
 npm run typecheck
 npm run lint           # 경고도 실패다 (--max-warnings 0)
-npm run check:theme    # 생성물이 손대졌는지
+npm run format:check   # Prettier 검사 (고치려면 npm run format)
+npm run test           # 감시 모드는 npm run test:watch
+npm run check:theme    # 생성물이 손대졌는지 — 상류 없이 돈다
 ```
+
+PR 전에 전부 통과해야 한다 — 기준은 [`CONTRIBUTING.md` 「품질 게이트」](CONTRIBUTING.md)가 정본이다.
 
 **다시 빌드해야 하는 때** — 네이티브 의존성 추가, `app.config.ts` 변경, config plugin 추가.
 그 외에는 `npm start` 로 충분하다.
@@ -152,14 +150,12 @@ lsof -ti:8081 | xargs kill
 
 ### `check:theme` 이 "생성 이후에 수정됐다" 로 실패
 
-`src/design/theme.ts` 는 **생성물**이다. 직접 고쳤거나, 포매터가 건드렸거나, 상류가 바뀐 것이다.
+`src/design/theme.ts` 는 **생성물**이다. 직접 고쳤거나 포매터가 건드린 것이다 —
+고친 내용을 되돌린다(`git checkout -- src/design/theme.ts`). 검사 자체는 상류 없이 돈다.
 
-```bash
-npm run sync:theme    # 상류에서 다시 가져온다
-```
-
-값을 바꿔야 한다면 설계 저장소의 `05_도구/lib.mjs` 를 고치고
-`node 05_도구/export-theme.mjs` 를 돌린 뒤 다시 동기화한다.
+토큰 값을 바꾸는 일은 상류에서 시작한다 — 담당자 절차: [`docs/spec/SNAPSHOT.md`](spec/SNAPSHOT.md)
+「`npm run sync:theme`」. 일반 개발자가 `sync:theme` 을 돌리면 "상류 폴더 없음"으로
+실패하는데, 그것이 정상이다.
 
 ### 글자가 Pretendard 가 아닌 것 같다
 
@@ -194,19 +190,18 @@ momentory                # URL scheme (회고 알림 딥링크)
 
 ### 지문 — 개발용(debug)
 
-Android 는 **서명 인증서 지문**으로 앱을 식별한다. 아래는 이 PC 의 `~/.android/debug.keystore`
-값이라 **개발자마다 다르다** — 팀원이 합류하면 각자 값을 뽑아 콘솔에 추가해야 한다.
-
-```
-SHA-1        1C:5A:28:E1:EF:71:55:46:46:E9:8A:8D:68:10:B5:2A:EC:C6:4C:36
-카카오 키해시  gxDkdXL/O47xlt46W77iUmR7EmY=
-```
+Android 는 **서명 인증서 지문**으로 앱을 식별한다. 지문은 각자의
+`~/.android/debug.keystore` 에서 나오므로 **개발자마다 다르다** — 아래 명령으로
+자기 값을 뽑아 카카오·구글 콘솔에 각자 추가한다. **지문 값을 문서·저장소에 적지 않는다**
+(개인 기기 산출물이라 남의 값은 쓸모가 없고, 문서만 낡는다).
 
 <details>
 <summary>직접 뽑는 법 (Windows PowerShell)</summary>
 
 ```powershell
-$kt = "C:\Program Files\Java\jdk-21\bin\keytool.exe"   # 또는 Android Studio\jbr\bin
+# keytool 은 JDK 또는 Android Studio 동봉 JBR 에 있다 (예: <JDK 설치 경로>\bin\keytool.exe,
+# <Android Studio 설치 경로>\jbr\bin\keytool.exe). JAVA_HOME 이 잡혀 있으면 그냥 keytool 로 부른다.
+$kt = "keytool"
 $ks = "$env:USERPROFILE\.android\debug.keystore"
 
 # SHA-1 — 구글 OAuth 용
