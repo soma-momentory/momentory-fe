@@ -242,6 +242,40 @@ keytool -exportcert -alias androiddebugkey -keystore ~/.android/debug.keystore -
 받은 값은 `.env` 에 넣는다 — 커밋하지 않는다.
 성격은 [`CONTRIBUTING.md` 「값을 다루는 세 등급」](CONTRIBUTING.md) 참조(이 값들은 ①번, 공개 식별자다).
 
+### 카카오 콘솔에 정확히 무엇을 넣는가 (2026-08-07 · 카카오 로그인 연결)
+
+| 콘솔 자리                   | 값                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------- |
+| 플랫폼 › Android › 패키지명 | `com.momentory.app`                                                                   |
+| 플랫폼 › Android › 키 해시  | **각자의 debug 키 해시** + EAS 의 release 키 해시 (위 「지문」 절 · 값은 적지 않는다) |
+| 플랫폼 › iOS › 번들 ID      | `com.momentory.app`                                                                   |
+| 카카오 로그인 › 활성화      | ON                                                                                    |
+| 카카오 로그인 › 동의항목    | MVP 가 쓰는 것만 — **닉네임·프로필 사진은 온보딩에서 직접 받으므로 필수 없음**        |
+| 앱 키                       | **네이티브 앱 키** → `EXPO_PUBLIC_KAKAO_APP_KEY` (REST·JavaScript 키가 아니다)        |
+
+- **Redirect URI 를 따로 등록하지 않는다.** 네이티브 SDK 는 `kakao{네이티브앱키}://oauth`
+  스킴으로 돌아오고, 그 스킴은 `app.config.ts` 의 플러그인이 매니페스트·Info.plist 에
+  넣는다(`plugins` 의 `@react-native-seoul/kakao-login`).
+- **iOS URL scheme** 은 `kakao` + 네이티브 앱 키다. 손으로 적지 않는다 — 같은 플러그인이 쓴다.
+- 키 해시가 빠지면 로그인은 `AUTHORIZATION_FAILED: invalid android_key_hash` 로 실패한다.
+  **개발자마다 다르므로 팀원이 늘 때마다 추가한다.**
+
+### API 서버 — 지금은 평문 HTTP 다 (⚠ 개발 전용)
+
+개발 서버에 아직 HTTPS 가 없다. Android 9+ 와 iOS ATS 는 평문을 기본으로 막으므로
+[`plugins/withInsecureDevApi.ts`](../plugins/withInsecureDevApi.ts) 가 예외를 연다 —
+**`EXPO_PUBLIC_API_BASE_URL` 이 `http://` 일 때만** 동작하고, `https://` 로 바뀌면
+아무것도 하지 않는다. **HTTPS 전환은 `.env` 한 줄 + 재빌드가 전부다.**
+
+- **Android** — 그 호스트 하나만 평문을 허용한다(`network_security_config.xml`).
+  나머지 평문 요청은 계속 막힌다.
+- **iOS** — ATS 의 예외 도메인은 **IP 주소를 받지 않는다**(Apple 제약). 그래서 주소가
+  IP 인 동안은 `NSAllowsArbitraryLoads`(앱 전체) 말고 좁힐 방법이 없다. 서버에 도메인이
+  붙으면 자동으로 좁은 예외로 내려간다.
+- ⛔ **운영 배포에는 이 서버를 쓰지 않는다.** 스토어 빌드의 주소는 HTTPS 여야 하고,
+  그러면 위 예외는 생성물에 아예 들어가지 않는다.
+- 주소·앱 키를 바꾸면 네이티브 설정이 바뀐다 — `npm run android` 로 **다시 빌드**해야 한다.
+
 ---
 
 ## 7. 에디터

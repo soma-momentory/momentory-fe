@@ -16,7 +16,10 @@ type SecureMock = {
 const secure = jest.requireMock("expo-secure-store") as SecureMock;
 
 const seedSession = (expiresAt: number) =>
-  secure.__store.set(SESSION_KEY, JSON.stringify({ accessToken: "t", expiresAt }));
+  secure.__store.set(
+    SESSION_KEY,
+    JSON.stringify({ accessToken: "t", refreshToken: "r", expiresAt, userId: 1 }),
+  );
 
 beforeEach(() => {
   secure.__store.clear();
@@ -43,6 +46,20 @@ describe("hydrate — 콜드 스타트 판정", () => {
   it("만료 토큰은 anonymous 이고 죽은 세션을 지운다 — 갱신 경로가 없으므로 fail-closed", async () => {
     // 만료된 토큰으로 보호 라우트에 들어가 첫 401 을 보고 튕겨 나오지 않는다 (§3-1)
     seedSession(Date.now() - 1);
+
+    await useAuth.getState().hydrate();
+
+    expect(useAuth.getState().status).toBe("anonymous");
+    expect(secure.__store.has(SESSION_KEY)).toBe(false);
+  });
+
+  it("모양이 모자란 세션은 anonymous 다 — 옛 형태로 저장된 세션도 여기서 걸린다", async () => {
+    // 카카오 로그인(M2-1)이 refreshToken·userId 를 더했다. 그 전 빌드가 남긴
+    // 세션은 갱신도 식별도 못 하므로 반쯤 살려두지 않고 닫는다.
+    secure.__store.set(
+      SESSION_KEY,
+      JSON.stringify({ accessToken: "t", expiresAt: Date.now() + 60_000 }),
+    );
 
     await useAuth.getState().hydrate();
 

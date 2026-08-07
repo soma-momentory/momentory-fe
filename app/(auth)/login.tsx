@@ -17,21 +17,46 @@ import { useAuth } from "@/features/auth/model/auth";
  * 규격은 `09_MVP/docs/S1.md`.
  */
 /**
- * 소셜 SDK(M2-1)가 붙기 전까지의 개발 통로. **개발 빌드에서만 열린다.**
+ * **아직 SDK 가 없는 두 줄**(Apple·Google)의 개발 통로. **개발 빌드에서만 열린다.**
  *
  * `router.push` 로 건너뛰지 않는다 — `(onboarding)` 레이아웃의 라우트 가드가
  * 세션 없는 진입을 즉시 로그인으로 되돌린다(M2-0). 그래서 `signInDev` 가
  * SecureStore 에 가짜 세션을 만들고 나서 이동한다. 릴리스에서는 `__DEV__` 가
  * false 라 버튼이 비활성으로 남고 `signInDev` 도 아무것도 하지 않는다 —
  * 두 겹 다 세션 없이 보호 흐름에 들어가지 않는 쪽으로 닫힌다.
+ *
+ * 카카오는 이 통로를 쓰지 않는다 — **실제 로그인이 붙었다**(아래 `signInKakao`).
  */
 const DEV_SKIP_AUTH = __DEV__;
 const skipAuth = async () => {
+  // 다른 줄을 누르면 카카오 실패 안내는 지운다 — 지난 시도의 말이 남아 있으면
+  // 방금 누른 것의 결과로 읽힌다
+  useAuth.getState().clearSignInError();
   await useAuth.getState().signInDev();
   router.replace("/welcome");
 };
 
 export default function Login() {
+  const signingIn = useAuth((s) => s.signingIn);
+  const signInError = useAuth((s) => s.signInError);
+
+  /**
+   * 카카오 로그인 (M2-1). 다음 화면은 **서버가 정한다** —
+   * `onboardingRequired` 가 true 면 온보딩, false 면 홈이다.
+   *
+   * - **취소는 아무 일도 일으키지 않는다.** 사용자가 스스로 닫은 것을
+   *   실패로 말하지 않는다(`RULES.md` 4).
+   * - 실패는 store 가 한 줄로 들고 있고 아래 안내 줄이 그것을 그린다 —
+   *   모달·재시도 버튼을 띄우지 않는다.
+   * - 중복 클릭은 store 의 `signingIn` 이 막는다. 버튼도 함께 잠기지만,
+   *   **자물쇠는 화면이 아니라 store 에 있다** — 두 곳에서 눌려도 한 번이다.
+   */
+  const signInKakao = async () => {
+    const outcome = await useAuth.getState().signInWithKakao();
+    if (outcome.kind !== "signed-in") return;
+    router.replace(outcome.onboardingRequired ? "/welcome" : "/home");
+  };
+
   return (
     <ScreenBackground variant="entry">
       <View style={styles.root}>
@@ -72,23 +97,41 @@ export default function Login() {
             label="카카오로 계속하기"
             variant="kakao"
             shape="oauth"
-            disabled={!DEV_SKIP_AUTH}
-            onPress={skipAuth}
+            loading={signingIn}
+            onPress={signInKakao}
           />
           <AppButton
             label="Apple로 계속하기"
             variant="apple"
             shape="oauth"
-            disabled={!DEV_SKIP_AUTH}
+            disabled={!DEV_SKIP_AUTH || signingIn}
             onPress={skipAuth}
           />
           <AppButton
             label="Google로 계속하기"
             variant="google"
             shape="oauth"
-            disabled={!DEV_SKIP_AUTH}
+            disabled={!DEV_SKIP_AUTH || signingIn}
             onPress={skipAuth}
           />
+
+          {/*
+            실패 안내는 **한 줄**이다 — 모달·재시도 버튼·경고 아이콘을 두지 않고,
+            버튼 바로 아래에서 흡수한다(`RULES.md` 4 · `S1.md` 「실패는 원본 X1」).
+            사용자 취소에는 뜨지 않는다. `accessibilityLiveRegion` 으로 보조기술에도
+            같은 순간에 읽힌다 — 화면을 보지 않는 사용자가 눌린 결과를 놓치지 않게.
+          */}
+          {signInError ? (
+            <AppText
+              variant="footnote"
+              tone="accent"
+              style={styles.centered}
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+            >
+              {signInError}
+            </AppText>
+          ) : null}
 
           {/*
             동의 체크박스를 두지 않는다 — 로그인 행위가 동의다.
