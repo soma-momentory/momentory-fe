@@ -23,7 +23,7 @@ import {
   useRetro,
   type RetroDirection,
 } from "@/features/retro/model/retro";
-import { SAMPLE_USER } from "@/mocks/sample";
+import { useProfile } from "@/features/my/model/settings";
 
 /**
  * 회고 대화 한 줄 — `C4` → `C4-b` → `C4-c`/`C4-c2` → `C4-d` → `C4-e`.
@@ -60,6 +60,8 @@ const MIRROR =
 const TYPING_MS = 900;
 
 export default function RetroTalk() {
+  // 마이(M2)에서 고친 닉네임이 다음 대화부터 반영된다 — 같은 store 를 본다
+  const nickname = useProfile((s) => s.nickname);
   const startEmotion = useRetro((s) => s.startEmotion);
   const turns = useRetro((s) => s.turns);
   const addTurn = useRetro((s) => s.addTurn);
@@ -71,7 +73,12 @@ export default function RetroTalk() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => { if (timer.current != null) clearTimeout(timer.current); }, []);
+  useEffect(
+    () => () => {
+      if (timer.current != null) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   // 감정 없이 들어올 수 없다 — C3 이 필수이기 때문이다(C3.md)
   if (startEmotion == null) return <Redirect href="/retro/emotion" />;
@@ -139,7 +146,7 @@ export default function RetroTalk() {
 
           {/* 감정을 단정하지 않고 확인한다 — 상단 알약과 같은 감정을 말로도 한 번 */}
           <BabaBubble index={0}>
-            {`${SAMPLE_USER.nickname}님, 지금은 ${EMOTION_ADNOMINAL[startEmotion]} 마음이 가장 가까이 있군요.`}
+            {`${nickname}님, 지금은 ${EMOTION_ADNOMINAL[startEmotion]} 마음이 가장 가까이 있군요.`}
           </BabaBubble>
           <BabaBubble index={1}>{FIRST_QUESTION}</BabaBubble>
 

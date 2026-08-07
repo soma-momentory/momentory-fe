@@ -1,4 +1,7 @@
 import type { EmotionId } from "@/design/theme";
+import type { Moment, Schedule, Weather } from "@/features/home/model/types";
+import type { WeekAnalysis } from "@/features/report/model/report";
+import { SAMPLE_TODAY } from "@/lib/clock";
 
 /**
  * 데모 데이터 — `momentory.schema.mvp.json` 의 `meta.sampleData` 가 정본이다.
@@ -8,45 +11,18 @@ import type { EmotionId } from "@/design/theme";
  * 여기 한 곳에 둔다.
  *
  * 샘플 하루는 **면접 스터디가 있는 날**이다 — 2026-07-27(월) · 닉네임 지현 ·
- * 일정 4개 · 순간 2개 · 회고 시각 21:30.
+ * 일정 4개 · 순간 2개 · 회고 시각 21:30. 그 날짜는 `SampleClock`(`src/lib/clock.ts`)
+ * 이 들고 있다 — 데이터와 「오늘」이 같은 값을 봐야 하기 때문이다.
  *
  * ⚠ **가장 많이 고른 감정은 기간마다 다른 값**이다 — 전체 화남/답답(마이) ·
  * 이번 달 행복함(보관함) · 그 주 평온함(리포트). **한 값을 세 곳에 넣지 않는다.**
  *
- * 서버가 붙으면 이 파일은 MSW 핸들러의 응답으로 옮겨간다 — 화면은 그대로다.
+ * 타입은 소유하지 않는다 — `Schedule`·`Moment` 는 `features/home/model/types.ts`,
+ * `WeekAnalysis` 는 `features/report/model/report.ts` 가 소유하고 여기는 **그
+ * 타입을 구현하는 값만** 둔다. 화면은 이 파일을 직접 읽지 않고 feature 의
+ * store·repository 를 지난다(`CLAUDE.md`) — 서버가 붙으면 이 파일은 MSW 핸들러의
+ * 응답으로 옮겨가고 화면은 그대로다.
  */
-export type ScheduleSource = "calendar" | "manual";
-
-/** `schema.Schedule` 그대로. 서버가 붙어도 모양이 바뀌지 않게 필드를 다 든다 */
-export type Schedule = {
-  id: string;
-  date: string;
-  title: string;
-  /** MVP 는 항상 `null` — 직접 추가(`12-e`)에 시간 입력이 없다 */
-  time: null;
-  source: ScheduleSource;
-  externalId: string | null;
-  done: boolean;
-  doneAt: string | null;
-  /** 1~9 · 0~2개 권장, 상한 없음 */
-  emotions: EmotionId[];
-  /** 목록에서만 감춘다 — 캘린더 원본은 지우지 않는다 */
-  hidden: boolean;
-};
-
-/** `schema.Moment`. 화면 문구는 **「순간」**이다 — "메모"라고 부르지 않는다 */
-export type Moment = {
-  id: string;
-  createdAt: string;
-  date: string;
-  text: string;
-  /** 실패로 표시하지 않고 "올리는 중" — `local | uploading | synced` */
-  syncState: "local" | "uploading" | "synced";
-};
-
-/** 오늘 — 하루는 새벽 4:00 에 넘어간다(`RULES.md`). `day.ts` 가 생기면 그리로 옮긴다 */
-export const SAMPLE_TODAY = "2026-07-27";
-
 export const SAMPLE_USER = {
   nickname: "지현",
   retroTime: "21:30",
@@ -54,7 +30,7 @@ export const SAMPLE_USER = {
 } as const;
 
 /** 「맑음 · 27℃」 — 상단 한 줄 */
-export const SAMPLE_WEATHER = { label: "맑음", celsius: 27 } as const;
+export const SAMPLE_WEATHER: Weather = { label: "맑음", celsius: 27 };
 
 /**
  * 샘플 하루 — **`meta.sampleData.todaySchedules` 가 정본**이다.
@@ -183,21 +159,32 @@ export const SAMPLE_DIARIES: SampleDiary[] = [
     day: 20,
     emotions: [7, 8],
     body: "미루던 운동을 10분이라도 했다. 시작하니 생각보다 가벼웠다.",
-    action: { situation: "운동을 미루고 싶을 때", targetAction: "10분만 하고 그만두기", done: true },
+    action: {
+      situation: "운동을 미루고 싶을 때",
+      targetAction: "10분만 하고 그만두기",
+      done: true,
+    },
   },
   { day: 21, emotions: [1, 9], body: "면접 일정이 잡혔다. 걱정이 앞섰지만 일단 달력에 적었다." },
   {
     day: 22,
     emotions: [3, 8],
     body: "회의는 답답했지만, 그 답답함은 내 의견을 전하고 싶다는 마음에서 왔다.",
-    action: { situation: "회의에서 말이 막힐 때", targetAction: "핵심 한 가지부터 다시 말하기", done: true },
+    action: {
+      situation: "회의에서 말이 막힐 때",
+      targetAction: "핵심 한 가지부터 다시 말하기",
+      done: true,
+    },
   },
   { day: 24, emotions: [9, 4], body: "산책하다 해가 지는 걸 오래 봤다. 별일 없는 날이 좋았다." },
   {
     day: 26,
     emotions: [9, 4],
     body: "주말 내내 아무것도 안 했다. 그게 필요했던 것 같다.",
-    action: { situation: "쉬고 나서도 개운하지 않을 때", targetAction: "다음 주 할 일 하나만 적어두기" },
+    action: {
+      situation: "쉬고 나서도 개운하지 않을 때",
+      targetAction: "다음 주 할 일 하나만 적어두기",
+    },
   },
   {
     day: 27,
@@ -260,32 +247,13 @@ export const SAMPLE_ALL_TIME_EMOTIONS: Partial<Record<EmotionId, number>> = {
 export const SAMPLE_REPORT_WEEK = { start: "2026-07-20", end: "2026-07-26" } as const;
 
 /**
- * 바바가 쓰는 한 주 **해석** — 서버가 그 주 대화를 읽고 만든다.
+ * 바바가 쓰는 한 주 **해석** — 타입과 규칙은 `features/report/model/report.ts`
+ * 의 `WeekAnalysis` 에 있다.
  *
  * ⛔ `DRAFT_DEMO`·`FOLLOW_UPS` 와 같은 임시 장치다(`TASKS.md` 「BE 연결 전에
- * 반드시 걷어내야 하는 것」).
- *
- * **주차마다 다른 해석이 있어야 한다** — 서로 다른 한 주에 같은 문장을 보여주면
- * 그 문장이 데이터를 읽고 쓴 것이 아니라는 뜻이 된다. 그래서 이 표의 **키가 곧
- * 볼 수 있는 주**이고, 해석이 없는 주는 **이동 범위에서 빠진다**(`report.ts`
- * `availableWeekStarts`). 없는 주를 새 화면으로 만들지 않는다 —
+ * 반드시 걷어내야 하는 것」). 없는 주를 새 화면으로 만들지 않는다 —
  * 「기록이 부족해 만들 수 없는 주」는 `report.pendingStates` 다.
- *
- * 여기 없는 것은 **전부 데이터에서 계산**한다 — 회고 횟수 · 감정 기록 수 ·
- * 요일별 감정 · 최빈 감정 · **이전 주 N회** · **행동 만든 수/해본 수**.
- *
- * 흐름 라벨은 **상태를 단정하지 않는다** — 「회복」은 진단형이라 상류가 뺐고,
- * 쓰는 말은 움직임을 가리키는 말이다.
  */
-export type WeekAnalysis = {
-  summary: string;
-  trendLabel: string;
-  trendDelta: string;
-  emotionFlow: string;
-  /** `[이어갈 한 가지]` 의 한 줄. 만든 수·해본 수는 데이터에서 센다 */
-  actionText: string;
-};
-
 export const SAMPLE_REPORT_ANALYSIS: Record<string, WeekAnalysis> = {
   "2026-07-20": {
     summary: "흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요.",

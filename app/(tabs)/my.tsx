@@ -11,9 +11,9 @@ import { archive as archiveTokens, my as tokens } from "@/design/tokens.mvp";
 import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
+import { allTimeTopEmotion } from "@/features/my/model/stats";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { formatKoreanTime } from "@/lib/time";
-import { SAMPLE_ALL_TIME_EMOTIONS } from "@/mocks/sample";
 
 /**
  * `M1` · 마이 홈
@@ -44,7 +44,7 @@ export default function My() {
   // 세는 대상이 다르다 — 장수와 날수
   const diaryCount = diaries.length;
   const recordedDays = new Set(diaries.map((d) => d.date)).size;
-  const topAllTime = topOf(SAMPLE_ALL_TIME_EMOTIONS);
+  const topAllTime = allTimeTopEmotion();
 
   return (
     <TabScreen active="마이">
@@ -74,7 +74,7 @@ export default function My() {
           <Stat value={`${diaryCount}회`} label="총 회고" />
           <Stat value={`${recordedDays}일`} label="함께한 날" />
           <Stat
-            value={topAllTime == null ? "—" : theme.emotions[topAllTime - 1]?.name ?? "—"}
+            value={topAllTime == null ? "—" : (theme.emotions[topAllTime - 1]?.name ?? "—")}
             label="가장 많이 기록"
             emotion={topAllTime}
           />
@@ -88,7 +88,11 @@ export default function My() {
         <Card style={styles.rows}>
           <SettingRow label="회고 프로필" onPress={() => router.push("/my/profile")} />
           <RowSeparator />
-          <SettingRow label="기본 정보" value="나이 · 성별" onPress={() => router.push("/my/profile")} />
+          <SettingRow
+            label="기본 정보"
+            value="나이 · 성별"
+            onPress={() => router.push("/my/profile")}
+          />
           <RowSeparator />
           <SettingRow
             label="알림 설정"
@@ -102,7 +106,10 @@ export default function My() {
             알림에는 › 를 두지 않는다」(`M3.md`)와 같은 이유로 표식도 두지 않고
             지금 상태만 읽기로 보인다 — 눌리는데 아무 일도 없는 줄을 만들지 않는다.
           */}
-          <SettingRow label="연결 관리" value={calendarLinked ? "캘린더 연결됨" : "캘린더 연결 안 함"} />
+          <SettingRow
+            label="연결 관리"
+            value={calendarLinked ? "캘린더 연결됨" : "캘린더 연결 안 함"}
+          />
         </Card>
 
         {/*
@@ -132,20 +139,15 @@ export default function My() {
   );
 }
 
-/** 가장 많이 기록한 감정 — 전체 기간. 보관함·리포트와 기간이 다르다 */
-function topOf(counts: Partial<Record<EmotionId, number>>): EmotionId | null {
-  let top: EmotionId | null = null;
-  let best = 0;
-  for (const [key, n] of Object.entries(counts)) {
-    if ((n ?? 0) > best) {
-      best = n ?? 0;
-      top = Number(key) as EmotionId;
-    }
-  }
-  return top;
-}
-
-function Stat({ value, label, emotion }: { value: string; label: string; emotion?: EmotionId | null }) {
+function Stat({
+  value,
+  label,
+  emotion,
+}: {
+  value: string;
+  label: string;
+  emotion?: EmotionId | null;
+}) {
   return (
     <Card style={styles.stat}>
       {emotion != null ? (

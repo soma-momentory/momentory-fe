@@ -1,16 +1,17 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useNavigation } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { ChipFlow } from "@/components/chat/ChipFlow";
+import { ConfirmCard } from "@/components/common/ConfirmCard";
 import { RetroNav } from "@/components/common/RetroNav";
+import { SectionLabel } from "@/components/common/SectionLabel";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
-import { home } from "@/design/tokens.mvp";
 import { useProfile } from "@/features/my/model/settings";
 import { MAX_INTERESTS, type Gender } from "@/features/onboarding/model/draft";
 
@@ -24,6 +25,8 @@ import { MAX_INTERESTS, type Gender } from "@/features/onboarding/model/draft";
  * - **`[변경하지 않고 나가기]` 를 두지 않는다** — 나가는 길은 상단 뒤로가기
  *   하나다. 대신 **고치고 저장하지 않은 채 나가면 확인을 묻는다**
  *   (`my.invariants`). 바꾼 것이 없으면 바로 나간다
+ * - 확인은 **라우트 수준**(`beforeRemove`)에서도 지킨다 — 상단 뒤로가기만이
+ *   아니라 **Android 하드웨어 back·스와이프 제스처**도 같은 정책을 지난다
  * - 선택 칩에 **체크를 붙인다** — 색·테두리·굵기만으로 표시하지 않는다
  * - 관심 분야는 **최대 3개**(온보딩 `06` 과 같은 규칙)
  * - 쉬는 방법은 **고른 것 + 대표 몇 개**만 보이고 나머지는 `[＋ 더 고르기]` 로
@@ -61,13 +64,26 @@ const REST_PREVIEW = [
 ];
 
 const REST_ALL = [
-  "😴 잠자기", "🧘 명상하기", "🍰 맛있는 음식 먹기", "🎵 음악 듣기", "🎬 영화·드라마 보기",
-  "📖 독서하기", "✍️ 글쓰기", "☕ 카페 가기", "🚶 산책하기", "👥 가까운 사람과 대화하기",
-  "🏃 운동하기", "🎮 게임하기", "🔄 그때마다 달라요", "😶 멍하니 쉬기", "기타",
+  "😴 잠자기",
+  "🧘 명상하기",
+  "🍰 맛있는 음식 먹기",
+  "🎵 음악 듣기",
+  "🎬 영화·드라마 보기",
+  "📖 독서하기",
+  "✍️ 글쓰기",
+  "☕ 카페 가기",
+  "🚶 산책하기",
+  "👥 가까운 사람과 대화하기",
+  "🏃 운동하기",
+  "🎮 게임하기",
+  "🔄 그때마다 달라요",
+  "😶 멍하니 쉬기",
+  "기타",
 ];
 
 export default function ProfileEdit() {
   const saved = useProfile();
+  const navigation = useNavigation();
 
   const [nickname, setNickname] = useState(saved.nickname);
   const [interests, setInterests] = useState<string[]>(saved.interests);
@@ -76,6 +92,10 @@ export default function ProfileEdit() {
   const [gender, setGender] = useState<Gender | null>(saved.gender);
   const [restExpanded, setRestExpanded] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  // 확인을 거친 이탈 — beforeRemove 가 같은 이탈을 다시 막지 않게 한다
+  const allowLeave = useRef(false);
+  // OS 뒤로가기(하드웨어 back·스와이프)가 막아 둔 네비게이션 — [나가기]가 이어서 실행한다
+  const resumeLeave = useRef<(() => void) | null>(null);
 
   const same = (a: readonly string[], b: readonly string[]) =>
     a.length === b.length && a.every((x) => b.includes(x));
@@ -86,6 +106,17 @@ export default function ProfileEdit() {
     !same(restMethods, saved.restMethods) ||
     age !== saved.age ||
     gender !== saved.gender;
+
+  // 상단 뒤로가기만이 아니라 Android back·스와이프도 같은 확인을 지난다 (my.invariants)
+  useEffect(() => {
+    return navigation.addListener("beforeRemove", (e) => {
+      if (!changed || allowLeave.current) return;
+      e.preventDefault();
+      const action = e.data.action;
+      resumeLeave.current = () => navigation.dispatch(action);
+      setConfirmLeave(true);
+    });
+  }, [navigation, changed]);
 
   const toggleInterest = (id: string) => {
     if (interests.includes(id)) {
@@ -104,10 +135,12 @@ export default function ProfileEdit() {
 
   const save = () => {
     saved.set({ nickname: nickname.trim(), interests, restMethods, age, gender });
+    // 저장한 이탈은 잃는 것이 없다 — beforeRemove 가 묻지 않게 한다
+    allowLeave.current = true;
     router.back();
   };
 
-  // 나가는 길은 이 하나뿐이다 — 고쳤으면 묻고, 아니면 그대로 나간다
+  // 상단 뒤로가기 — 고쳤으면 묻고, 아니면 그대로 나간다. OS 뒤로가기와 같은 정책이다
   const leave = () => {
     if (changed) {
       setConfirmLeave(true);
@@ -116,10 +149,20 @@ export default function ProfileEdit() {
     router.back();
   };
 
+  // 확인의 [나가기] — OS 뒤로가기가 막혀 있었다면 그 네비게이션을 이어서 실행한다
+  const confirmedLeave = () => {
+    allowLeave.current = true;
+    const resume = resumeLeave.current;
+    if (resume != null) {
+      resume();
+      return;
+    }
+    router.back();
+  };
+
   // 고른 것은 항상 보이고, 접혀 있을 때는 대표 몇 개가 함께 보인다
-  const restItems = (restExpanded
-    ? REST_ALL
-    : Array.from(new Set([...restMethods, ...REST_PREVIEW]))
+  const restItems = (
+    restExpanded ? REST_ALL : Array.from(new Set([...restMethods, ...REST_PREVIEW]))
   ).map((label) => ({ id: label, label }));
 
   return (
@@ -136,9 +179,7 @@ export default function ProfileEdit() {
         </AppText>
 
         <Card style={styles.card}>
-          <AppText tone="accent" weight="600" style={styles.section}>
-            닉네임
-          </AppText>
+          <SectionLabel>닉네임</SectionLabel>
           <InputRow
             value={nickname}
             onChangeText={setNickname}
@@ -150,9 +191,7 @@ export default function ProfileEdit() {
 
         <Card style={styles.card}>
           <View style={styles.head}>
-            <AppText tone="accent" weight="600" style={styles.section}>
-              관심 분야
-            </AppText>
+            <SectionLabel>관심 분야</SectionLabel>
             <AppText tone="caption" style={styles.count}>
               {`최대 ${MAX_INTERESTS}개 · ${interests.length}개 선택`}
             </AppText>
@@ -163,9 +202,7 @@ export default function ProfileEdit() {
         {/* 온보딩 07 에서 물은 것이라 편집 경로가 여기 있어야 한다 */}
         <Card style={styles.card}>
           <View style={styles.head}>
-            <AppText tone="accent" weight="600" style={styles.section}>
-              쉬는 방법
-            </AppText>
+            <SectionLabel>쉬는 방법</SectionLabel>
             <AppText tone="caption" style={styles.count}>
               {`${restMethods.length}개 선택`}
             </AppText>
@@ -185,9 +222,7 @@ export default function ProfileEdit() {
 
         {/* 온보딩 05-b 에서 물은 것 — M1 의 「기본 정보」 줄이 여기로 온다 */}
         <Card style={styles.card}>
-          <AppText tone="accent" weight="600" style={styles.section}>
-            기본 정보
-          </AppText>
+          <SectionLabel>기본 정보</SectionLabel>
           <AppText variant="caption" tone="caption">
             답변은 질문을 조금 더 잘 맞추는 데만 사용하며, 다른 사람에게 공개되지 않아요.
           </AppText>
@@ -212,35 +247,22 @@ export default function ProfileEdit() {
 
         {/* 고치고 저장하지 않은 채 나가려 할 때만 — 나가기 버튼을 따로 두지 않는다 */}
         {confirmLeave ? (
-          <Card style={styles.confirm}>
-            <AppText tone="strong" weight="600" style={styles.confirmTitle}>
-              고친 내용을 저장하지 않고 나갈까요?
-            </AppText>
-            <AppText variant="caption" tone="caption">
-              저장하지 않으면 바꾼 값이 사라져요.
-            </AppText>
-            <View style={styles.confirmActions}>
-              <AppButton
-                label="계속 고치기"
-                variant="ghost"
-                style={styles.confirmButton}
-                onPress={() => setConfirmLeave(false)}
-              />
-              <AppButton
-                label="나가기"
-                variant="ghost"
-                style={styles.confirmButton}
-                onPress={() => router.back()}
-              />
-            </View>
-          </Card>
+          <ConfirmCard
+            title="고친 내용을 저장하지 않고 나갈까요?"
+            caption="저장하지 않으면 바꾼 값이 사라져요."
+            cancelLabel="계속 고치기"
+            confirmLabel="나가기"
+            onCancel={() => {
+              resumeLeave.current = null;
+              setConfirmLeave(false);
+            }}
+            onConfirm={confirmedLeave}
+          />
         ) : null}
       </ScrollView>
     </ScreenBackground>
   );
 }
-
-const { semantic } = theme.colors;
 
 const styles = StyleSheet.create({
   stack: { flex: 1, marginHorizontal: -theme.layout.screenMargin },
@@ -251,15 +273,5 @@ const styles = StyleSheet.create({
   },
   card: { gap: 10 },
   head: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  section: {
-    fontSize: home.sectionLabel.fontSize,
-    lineHeight: home.sectionLabel.fontSize,
-    letterSpacing: home.sectionLabel.letterSpacing,
-  },
   count: { flex: 1, textAlign: "right", fontSize: 11.5, lineHeight: 14 },
-
-  confirm: { gap: 8, backgroundColor: semantic.surfaceTone, borderColor: "transparent" },
-  confirmTitle: { fontSize: 14, lineHeight: 20 },
-  confirmActions: { flexDirection: "row", gap: 9, paddingTop: 4 },
-  confirmButton: { flex: 1 },
 });

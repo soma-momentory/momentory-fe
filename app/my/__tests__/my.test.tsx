@@ -6,8 +6,22 @@ import ProfileEdit from "../profile";
 
 import { useProfile, useSettings } from "@/features/my/model/settings";
 
+/** `beforeRemove` 가 받는 이벤트 — 실제 타입의 필요한 부분만 */
+type LeaveEvent = { preventDefault: jest.Mock; data: { action: { type: string } } };
+
+const mockNavDispatch = jest.fn();
+const mockNavListeners: Record<string, (e: LeaveEvent) => void> = {};
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  // 화면이 라우트 수준 이탈 보호(beforeRemove)를 걸 수 있어야 한다
+  useNavigation: () => ({
+    addListener: (type: string, cb: (e: LeaveEvent) => void) => {
+      mockNavListeners[type] = cb;
+      return () => {};
+    },
+    dispatch: mockNavDispatch,
+  }),
 }));
 
 const flatten = (style: unknown) =>
@@ -88,6 +102,57 @@ describe("M2 · 저장은 바꾼 것이 있을 때만", () => {
   });
 });
 
+describe("M2 · 이탈 보호는 라우트 수준이다 — Android back·스와이프도 같은 정책", () => {
+  // OS 뒤로가기(하드웨어 back·스와이프)가 라우트를 벗어나려는 순간을 흉내 낸다
+  const osBack = async (): Promise<LeaveEvent> => {
+    const e: LeaveEvent = { preventDefault: jest.fn(), data: { action: { type: "GO_BACK" } } };
+    await act(async () => mockNavListeners.beforeRemove?.(e));
+    return e;
+  };
+
+  it("바꾼 것이 없으면 OS 뒤로가기를 막지 않는다", async () => {
+    const r = await render(<ProfileEdit />);
+
+    const e = await osBack();
+
+    expect(e.preventDefault).not.toHaveBeenCalled();
+    expect(r.queryByText("고친 내용을 저장하지 않고 나갈까요?")).toBeNull();
+  });
+
+  it("고친 채 OS 뒤로가기를 하면 막고 상단 뒤로가기와 같은 확인을 묻는다", async () => {
+    const r = await render(<ProfileEdit />);
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+
+    const e = await osBack();
+
+    expect(e.preventDefault).toHaveBeenCalled();
+    expect(r.getByText("고친 내용을 저장하지 않고 나갈까요?")).toBeTruthy();
+  });
+
+  it("확인의 [나가기]는 막아 둔 네비게이션을 이어서 실행하고 값은 버려진다", async () => {
+    const r = await render(<ProfileEdit />);
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+    await osBack();
+
+    await fireEvent.press(r.getByText("나가기"));
+
+    expect(mockNavDispatch).toHaveBeenCalledWith({ type: "GO_BACK" });
+    expect(useProfile.getState().nickname).toBe("지현");
+  });
+
+  it("[계속 고치기]를 누르면 화면에 남고 아무것도 실행되지 않는다", async () => {
+    const r = await render(<ProfileEdit />);
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+    await osBack();
+
+    await fireEvent.press(r.getByText("계속 고치기"));
+
+    expect(r.queryByText("고친 내용을 저장하지 않고 나갈까요?")).toBeNull();
+    expect(mockNavDispatch).not.toHaveBeenCalled();
+    expect(jest.mocked(router.back)).not.toHaveBeenCalled();
+  });
+});
+
 describe("M2 · 선택 표시와 상한", () => {
   it("고른 칩에 체크가 붙는다 — 색·굵기만으로 표시하지 않는다", async () => {
     const r = await render(<ProfileEdit />);
@@ -108,7 +173,6 @@ describe("M2 · 선택 표시와 상한", () => {
     expect(r.getByTestId("chip-check-🎵 음악 듣기")).toBeTruthy();
     expect(r.getByTestId("chip-check-female")).toBeTruthy();
   });
-
 
   it("관심 분야는 최대 3개 — 넷째는 눌러도 켜지지 않는다", async () => {
     const r = await render(<ProfileEdit />);

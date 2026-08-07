@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { EmotionPill } from "@/components/common/EmotionPill";
 import { RetroNav } from "@/components/common/RetroNav";
+import { SectionLabel } from "@/components/common/SectionLabel";
 import { PencilIcon, SunIcon } from "@/components/icons/LineIcons";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
@@ -10,9 +11,13 @@ import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import { fill, home } from "@/design/tokens.mvp";
-import { doneCountLabel, useDay, visibleSchedules } from "@/features/home/model/day";
+import {
+  doneCountLabel,
+  useDay,
+  useTodayContext,
+  visibleSchedules,
+} from "@/features/home/model/day";
 import { ScheduleRow } from "@/features/home/ui/ScheduleRow";
-import { SAMPLE_WEATHER } from "@/mocks/sample";
 
 /**
  * `C2` · 오늘 정리 확인
@@ -36,6 +41,8 @@ export default function RetroConfirm() {
   const schedules = useDay((s) => s.schedules);
   const moments = useDay((s) => s.moments);
   const toggleDone = useDay((s) => s.toggleDone);
+  // 홈과 같은 「오늘」을 본다 — 날씨도 같은 공급자에서 온다
+  const { weather } = useTodayContext();
 
   const shown = visibleSchedules(schedules);
   // 「오늘 기록한 감정」 — 줄에 달린 감정을 순서대로 모은다. 개수를 세지 않는다
@@ -68,16 +75,14 @@ export default function RetroConfirm() {
             오늘 날씨
           </AppText>
           <AppText variant="caption" tone="caption">
-            {`${SAMPLE_WEATHER.label} · ${SAMPLE_WEATHER.celsius}℃`}
+            {`${weather.label} · ${weather.celsius}℃`}
           </AppText>
         </Card>
 
         {/* 오늘 일정 — 홈과 같은 카드 */}
         <Card style={styles.card}>
           <View style={styles.dayHead}>
-            <AppText tone="accent" weight="600" style={styles.section}>
-              오늘 일정
-            </AppText>
+            <SectionLabel>오늘 일정</SectionLabel>
             <AppText tone="caption" weight="500" style={styles.count}>
               {doneCountLabel(schedules)}
             </AppText>
@@ -109,9 +114,7 @@ export default function RetroConfirm() {
 
         {/* 오늘의 순간 — 시각을 붙이지 않는다 */}
         <Card style={styles.card}>
-          <AppText tone="accent" weight="600" style={styles.section}>
-            오늘의 순간
-          </AppText>
+          <SectionLabel>오늘의 순간</SectionLabel>
 
           {moments.map((m) => (
             <View key={m.id} style={styles.momentRow}>
@@ -139,9 +142,7 @@ export default function RetroConfirm() {
         {/* 오늘 기록한 감정 — 줄에 달린 것을 그대로 모은다 */}
         {emotions.length > 0 ? (
           <Card style={styles.card}>
-            <AppText tone="accent" weight="600" style={styles.section}>
-              오늘 기록한 감정
-            </AppText>
+            <SectionLabel>오늘 기록한 감정</SectionLabel>
             <View style={styles.emotionRow}>
               {emotions.map((e, i) => (
                 <EmotionPill key={`${e}-${i}`} id={e} />
@@ -176,11 +177,6 @@ const styles = StyleSheet.create({
 
   card: { gap: 10 },
   dayHead: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  section: {
-    fontSize: home.sectionLabel.fontSize,
-    lineHeight: home.sectionLabel.fontSize,
-    letterSpacing: home.sectionLabel.letterSpacing,
-  },
   count: { flex: 1, textAlign: "right", fontSize: 11.5, lineHeight: 11.5 },
   list: { gap: home.list.gap },
 

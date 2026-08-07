@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { Gender } from "@/features/onboarding/model/draft";
+import { SAMPLE_USER } from "@/mocks/sample";
 
 /**
  * 알림 설정(`M3`) — 스키마 `User.notify*` 넷.
@@ -32,8 +33,8 @@ type SettingsStore = {
 };
 
 const EMPTY: Record<NotifyKey, NotifySetting> = {
-  // 온보딩 `08` 에서 정한 회고 시각이 여기로 이어진다
-  retro: { enabled: true, time: "21:30" },
+  // 온보딩 `08` 에서 정한 회고 시각이 여기로 이어진다 — 데모 시작값은 샘플 사용자다
+  retro: { enabled: SAMPLE_USER.notifyRetro, time: SAMPLE_USER.retroTime },
   daily: { enabled: false, time: "14:00" },
   weekly: { enabled: true, time: "21:00" },
   // 시각이 없는 알림 — 누를 곳이 없는 표식(`›`)을 만들지 않는다
@@ -87,7 +88,8 @@ type ProfileStore = {
 };
 
 const PROFILE = {
-  nickname: "지현",
+  // 홈·회고 대화가 같은 닉네임을 봐야 한다 — 값의 정본은 샘플 사용자 한 곳이다
+  nickname: SAMPLE_USER.nickname as string,
   interests: ["relations", "self"],
   restMethods: ["🎵 음악 듣기", "🚶 산책하기"],
   age: "25",

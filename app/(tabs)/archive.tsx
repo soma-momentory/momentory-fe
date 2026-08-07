@@ -17,12 +17,13 @@ import {
   diariesInMonth,
   emotionStem,
   monthChange,
+  monthOf,
   shortEmotionName,
   topEmotion,
   totalEmotionRecords,
 } from "@/features/archive/model/archive";
 import { useDiary } from "@/features/diary/model/diary";
-import { SAMPLE_DIARY_MONTH, SAMPLE_TODAY } from "@/mocks/sample";
+import { clock } from "@/lib/clock";
 
 /**
  * `A1` 보관함 · 달력 + `A2` 보관함 · 목록 + 감정 필터
@@ -62,15 +63,17 @@ export default function Archive() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [filter, setFilter] = useState<EmotionId | null>(null);
 
-  const month = SAMPLE_DIARY_MONTH;
+  // 보관함이 여는 달은 오늘이 속한 달이다 — 달 이동이 생기면 today 는 그달일 때만 찍는다
+  const todayDate = clock.today();
+  const month = monthOf(todayDate);
   const monthly = diariesInMonth(diaries, month);
-  const today = SAMPLE_TODAY.startsWith(month) ? dayOf(SAMPLE_TODAY) : null;
+  const today = dayOf(todayDate);
 
   const top = topEmotion(monthly);
   const change = monthChange(monthly);
 
   const selectedDiary =
-    selectedDay == null ? null : monthly.find((d) => dayOf(d.date) === selectedDay) ?? null;
+    selectedDay == null ? null : (monthly.find((d) => dayOf(d.date) === selectedDay) ?? null);
 
   const listed = byLatest(
     filter == null ? monthly : monthly.filter((d) => d.emotions.includes(filter)),
