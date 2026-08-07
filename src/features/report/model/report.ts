@@ -9,6 +9,25 @@ import type { ActionCard, Diary } from "@/features/diary/model/diary";
  * 세는 것은 **회고 횟수 · 감정 기록 수 · 그 주 가장 많이 기록한 감정** 셋이다.
  */
 
+/**
+ * 바바가 쓰는 한 주 **해석** — 서버가 그 주 대화를 읽고 만든다.
+ *
+ * **주차마다 다른 해석이 있어야 한다** — 서로 다른 한 주에 같은 문장을 보여주면
+ * 그 문장이 데이터를 읽고 쓴 것이 아니라는 뜻이 된다. 그래서 이 값의 **키가 곧
+ * 볼 수 있는 주**이고(`availableWeekStarts`), 해석이 없는 주는 이동 범위에서
+ * 빠진다. 여기 없는 것은 **전부 데이터에서 계산**한다.
+ *
+ * 흐름 라벨은 **상태를 단정하지 않는다** — 「회복」은 진단형이라 상류가 뺐다.
+ */
+export type WeekAnalysis = {
+  summary: string;
+  trendLabel: string;
+  trendDelta: string;
+  emotionFlow: string;
+  /** `[이어갈 한 가지]` 의 한 줄. 만든 수·해본 수는 데이터에서 센다 */
+  actionText: string;
+};
+
 /** 리포트가 열리는 최소 장수 — **일기 7편부터**(`RULES.md` 「리포트」) */
 export const REPORT_UNLOCK_COUNT = 7;
 

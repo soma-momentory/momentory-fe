@@ -1,16 +1,22 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
+import { SectionLabel } from "@/components/common/SectionLabel";
 import { TabScreen } from "@/components/common/TabScreen";
 import { BellIcon, MoonIcon, PencilIcon, SunIcon } from "@/components/icons/LineIcons";
 import { AppText } from "@/components/primitives/AppText";
 import theme from "@/design/theme";
 import { fill, home } from "@/design/tokens.mvp";
-import { doneCountLabel, useDay, visibleSchedules } from "@/features/home/model/day";
+import {
+  doneCountLabel,
+  useDay,
+  useTodayContext,
+  visibleSchedules,
+} from "@/features/home/model/day";
 import { ScheduleRow } from "@/features/home/ui/ScheduleRow";
+import { useSettings } from "@/features/my/model/settings";
 import { formatKoreanDate } from "@/lib/day";
 import { formatKoreanTime } from "@/lib/time";
-import { SAMPLE_TODAY, SAMPLE_USER, SAMPLE_WEATHER } from "@/mocks/sample";
 
 /**
  * `12` · 홈 · 일정을 가져온 상태 + `12-b` · 일정이 없는 경우
@@ -31,6 +37,9 @@ import { SAMPLE_TODAY, SAMPLE_USER, SAMPLE_WEATHER } from "@/mocks/sample";
 export default function Home() {
   const schedules = useDay((s) => s.schedules);
   const toggleDone = useDay((s) => s.toggleDone);
+  const { date: today, weather } = useTodayContext();
+  // 알림 설정(M3)과 같은 store 를 본다 — 홈이 다른 시각을 말하면 안 된다
+  const retroNotify = useSettings((s) => s.notify.retro);
 
   const shown = visibleSchedules(schedules);
   const empty = shown.length === 0;
@@ -40,12 +49,12 @@ export default function Home() {
       {/* .top — 날짜 · 날씨 · 알림. 이모지가 아니라 선 아이콘이다 */}
       <View style={styles.top}>
         <AppText tone="caption" weight="600" style={styles.date}>
-          {formatKoreanDate(SAMPLE_TODAY)}
+          {formatKoreanDate(today)}
         </AppText>
         <View style={styles.weather}>
           <SunIcon />
           <AppText tone="caption" weight="500" style={styles.weatherText}>
-            {`${SAMPLE_WEATHER.celsius}°`}
+            {`${weather.celsius}°`}
           </AppText>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="알림" hitSlop={12}>
@@ -152,8 +161,8 @@ export default function Home() {
             </AppText>
             <AppText variant="caption" tone="caption">
               {/* 알림을 켜지 않은 사람에게 정하지 않은 시각을 말하지 않는다 (12.md) */}
-              {SAMPLE_USER.notifyRetro
-                ? `${formatKoreanTime(SAMPLE_USER.retroTime)}엔 제가 먼저 말 걸어요`
+              {retroNotify.enabled && retroNotify.time != null
+                ? `${formatKoreanTime(retroNotify.time)}엔 제가 먼저 말 걸어요`
                 : "편할 때 언제든 돌아볼 수 있어요"}
             </AppText>
           </View>
@@ -163,15 +172,6 @@ export default function Home() {
         </Pressable>
       </ScrollView>
     </TabScreen>
-  );
-}
-
-/** `.sec` — 카드 안 섹션 라벨. accent 색 · 자간 .04em */
-function SectionLabel({ children, center }: { children: string; center?: boolean }) {
-  return (
-    <AppText tone="accent" weight="600" style={[styles.section, center ? styles.centerText : null]}>
-      {children}
-    </AppText>
   );
 }
 
@@ -222,12 +222,6 @@ const styles = StyleSheet.create({
     ...theme.shadows.sm,
   },
   dayHead: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  section: {
-    fontSize: home.sectionLabel.fontSize,
-    lineHeight: home.sectionLabel.fontSize,
-    letterSpacing: home.sectionLabel.letterSpacing,
-  },
-  centerText: { textAlign: "center" },
   count: { flex: 1, textAlign: "right", fontSize: 11.5, lineHeight: 11.5 },
   list: { gap: home.list.gap },
   more: { fontSize: 12.5, lineHeight: 18 },

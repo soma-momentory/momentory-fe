@@ -23,8 +23,8 @@ describe("12 · 홈 — 세 칸", () => {
   it("칸의 순서는 오늘 일정 → 오늘의 순간 → 돌아보기 다", async () => {
     // 세 칸의 순서는 어떤 상태에서도 바뀌지 않는다 (RULES.md 「홈」)
     const { getByText } = await render(<Home />);
-    const order = ["오늘 일정", "오늘의 순간", "지금 하루 돌아보기"].map(
-      (label) => getByText(label),
+    const order = ["오늘 일정", "오늘의 순간", "지금 하루 돌아보기"].map((label) =>
+      getByText(label),
     );
 
     expect(order.every(Boolean)).toBe(true);

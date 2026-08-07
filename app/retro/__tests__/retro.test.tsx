@@ -146,8 +146,15 @@ describe("C3 · 지금 감정 고르기 — 필수다", () => {
     const { getByLabelText } = await render(<RetroEmotion />);
 
     for (const name of [
-      "불안함", "우울함", "화남/답답", "행복함", "막막함",
-      "무기력", "피곤함", "뿌듯함", "평온함",
+      "불안함",
+      "우울함",
+      "화남/답답",
+      "행복함",
+      "막막함",
+      "무기력",
+      "피곤함",
+      "뿌듯함",
+      "평온함",
     ]) {
       expect(getByLabelText(name)).toBeTruthy();
     }
@@ -171,7 +178,9 @@ describe("C3 · 지금 감정 고르기 — 필수다", () => {
     await fireEvent.press(r.getByLabelText("우울함"));
 
     expect(r.getByText("우울함으로 시작할게요")).toBeTruthy();
-    expect(r.getByText("이 감정으로 오늘 대화를 시작해요 · 지금 다시 골라도 괜찮아요.")).toBeTruthy();
+    expect(
+      r.getByText("이 감정으로 오늘 대화를 시작해요 · 지금 다시 골라도 괜찮아요."),
+    ).toBeTruthy();
     expect(flatten(r.getByText("회고 시작하기").parent?.props.style).opacity).toBeUndefined();
   });
 

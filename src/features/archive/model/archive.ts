@@ -15,6 +15,9 @@ import { SAMPLE_LAST_MONTH_EMOTIONS } from "@/mocks/sample";
 /** `2026-07-22` → `22`. 그달 안에서만 쓰는 값이다 */
 export const dayOf = (date: string) => Number(date.slice(8, 10));
 
+/** `2026-07-22` → `2026-07`. 보관함이 여는 달은 오늘이 속한 달이다 */
+export const monthOf = (date: string) => date.slice(0, 7);
+
 /** `2026-07` 로 시작하는 일기만 */
 export const diariesInMonth = (diaries: readonly Diary[], month: string) =>
   diaries.filter((d) => d.date.startsWith(month));

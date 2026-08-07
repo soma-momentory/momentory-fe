@@ -2,20 +2,21 @@ import { create } from "zustand";
 
 import type { EmotionId } from "@/design/theme";
 import {
-  SAMPLE_MOMENTS,
-  SAMPLE_SCHEDULES,
-  SAMPLE_TODAY,
-  type Moment,
-  type Schedule,
-} from "@/mocks/sample";
+  initialMoments,
+  initialSchedules,
+  todayWeather,
+} from "@/features/home/data/sampleRepository";
+import type { Moment, Schedule, Weather } from "@/features/home/model/types";
+import { clock } from "@/lib/clock";
 
 /**
  * 오늘 하루 — 일정과 순간.
  *
  * **서버를 모른다.** BE 는 마지막에 붙이므로 지금은 샘플 데이터(스키마의
- * `meta.sampleData`)로 시작한다. 다만 **모양은 스키마 그대로**여서, 서버가
- * 붙을 때 이 store 안쪽만 TanStack Query 로 갈아끼우면 화면은 그대로다 —
- * 화면이 `useState` 로 데이터를 직접 들면 그때 컴포넌트를 다시 쓰게 된다.
+ * `meta.sampleData`)로 시작한다 — 그 값은 `data/sampleRepository.ts` 를 지나
+ * 들어오고, **모양은 스키마 그대로**여서 서버가 붙을 때 repository 안쪽만
+ * TanStack Query 로 갈아끼우면 화면은 그대로다 — 화면이 `useState` 로 데이터를
+ * 직접 들면 그때 컴포넌트를 다시 쓰게 된다.
  *
  * ## 여기서 지키는 규칙
  *
@@ -25,6 +26,8 @@ import {
  *   수정·삭제는 `source === "manual"` 에만(`12-c` 에서 화면이 된다).
  * - **`hidden` 은 목록에서만 감춘다** — 캘린더 원본을 지우지 않는다.
  *   그래서 배열에서 빼지 않고 플래그만 켠다.
+ * - **날짜·시각은 `clock` 을 지난다** — 샘플 하루(2026-07-27)와 04:00 하루
+ *   경계가 전부 `src/lib/clock.ts` 한 곳에 있다.
  */
 type DayStore = {
   schedules: Schedule[];
@@ -50,14 +53,14 @@ let seq = 0;
 const nextId = (prefix: string) => `${prefix}-local-${++seq}`;
 
 export const useDay = create<DayStore>((set) => ({
-  schedules: SAMPLE_SCHEDULES,
-  moments: SAMPLE_MOMENTS,
+  schedules: initialSchedules(),
+  moments: initialMoments(),
 
   toggleDone: (id) =>
     set((s) => ({
       schedules: s.schedules.map((x) =>
         x.id === id
-          ? { ...x, done: !x.done, doneAt: x.done ? null : new Date().toISOString() }
+          ? { ...x, done: !x.done, doneAt: x.done ? null : clock.now().toISOString() }
           : x,
       ),
     })),
@@ -87,7 +90,7 @@ export const useDay = create<DayStore>((set) => ({
         ...s.schedules,
         {
           id: nextId("s"),
-          date: SAMPLE_TODAY,
+          date: clock.today(),
           title: title.trim(),
           // 시간 입력이 없으므로 홈 목록도 시간순이 아니라 들어온 순서다 (12-e.md)
           time: null,
@@ -107,8 +110,8 @@ export const useDay = create<DayStore>((set) => ({
         ...s.moments,
         {
           id: nextId("m"),
-          createdAt: new Date().toISOString(),
-          date: SAMPLE_TODAY,
+          createdAt: clock.now().toISOString(),
+          date: clock.today(),
           text: text.trim(),
           // 항상 기기에 먼저 저장하고 연결되면 올린다 — 실패로 표시하지 않는다
           syncState: "local",
@@ -116,6 +119,18 @@ export const useDay = create<DayStore>((set) => ({
       ],
     })),
 }));
+
+/**
+ * 화면 상단이 말하는 「오늘」 — 날짜와 날씨.
+ *
+ * 홈(`12`)과 회고 확인(`C2`)이 같은 값을 봐야 해서 한 곳에 뒀다. 화면이
+ * `SAMPLE_TODAY`·`SAMPLE_WEATHER` 를 직접 읽지 않는 이유가 이 함수다 —
+ * 서버·실제 날짜가 붙으면 여기 안쪽만 바뀐다.
+ */
+export const useTodayContext = (): { date: string; weather: Weather } => ({
+  date: clock.today(),
+  weather: todayWeather(),
+});
 
 /** 목록에 보이는 일정 — 숨긴 것은 빼고 센다 */
 export const visibleSchedules = (schedules: readonly Schedule[]) =>

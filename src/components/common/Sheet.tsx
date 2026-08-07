@@ -74,11 +74,7 @@ export function SheetHeader({
 }) {
   return (
     <View style={styles.top}>
-      <Pressable
-        accessibilityRole="button"
-        hitSlop={8}
-        onPress={onCancel ?? (() => router.back())}
-      >
+      <Pressable accessibilityRole="button" hitSlop={8} onPress={onCancel ?? (() => router.back())}>
         <AppText tone="caption" style={styles.action}>
           취소
         </AppText>

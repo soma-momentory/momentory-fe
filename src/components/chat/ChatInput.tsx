@@ -28,7 +28,11 @@ type Props = {
   placeholder?: string;
 };
 
-export function ChatInput({ onSend, disabled = false, placeholder = "편하게 이야기해주세요" }: Props) {
+export function ChatInput({
+  onSend,
+  disabled = false,
+  placeholder = "편하게 이야기해주세요",
+}: Props) {
   const [text, setText] = useState("");
   const ready = text.trim().length > 0 && !disabled;
 

@@ -112,7 +112,14 @@ export default function Splash() {
 
           {/* 발밑 그림자 92×8 / 24% — 캐릭터가 뜨지 않게 발에 붙인다 */}
           <Svg width={92} height={8} style={styles.shadow} pointerEvents="none">
-            <Ellipse cx={46} cy={4} rx={46} ry={4} fill={babaShadow.color} opacity={babaShadow.opacity} />
+            <Ellipse
+              cx={46}
+              cy={4}
+              rx={46}
+              ry={4}
+              fill={babaShadow.color}
+              opacity={babaShadow.opacity}
+            />
           </Svg>
 
           <Animated.Image

@@ -28,12 +28,12 @@ C:\SWM\momentory\            설계 — 화면 스펙 · 토큰 · 파이프라�
                               ③ 구현:    momentory-fe (이 저장소) ────────┘ (정본의 RN 번역)
 ```
 
-| 무엇의 정본 | 어디 |
-|---|---|
-| 화면이 무엇인가 (규칙·문안·상태) | `09_MVP/docs/<ID>.md` + `RULES.md` + `스펙/` |
-| 값 (색·크기·반경·여백) | `momentory.css` — **최신 반입 번들** (`CLAUDE.md` 「값을 찾는 순서」) |
-| 피그마 노드 | `05_도구/flows/9-mvp.mjs` (css 의 번역 — 값을 새로 정하지 않는다) |
-| RN 토큰 | `src/design/theme.ts`(생성물) + `tokens.mvp.ts`(상류 미반영분 임시) |
+| 무엇의 정본                      | 어디                                                                  |
+| -------------------------------- | --------------------------------------------------------------------- |
+| 화면이 무엇인가 (규칙·문안·상태) | `09_MVP/docs/<ID>.md` + `RULES.md` + `스펙/`                          |
+| 값 (색·크기·반경·여백)           | `momentory.css` — **최신 반입 번들** (`CLAUDE.md` 「값을 찾는 순서」) |
+| 피그마 노드                      | `05_도구/flows/9-mvp.mjs` (css 의 번역 — 값을 새로 정하지 않는다)     |
+| RN 토큰                          | `src/design/theme.ts`(생성물) + `tokens.mvp.ts`(상류 미반영분 임시)   |
 
 **②와 ③이 다르면** 어느 쪽이 `09_MVP/` 문서와 어긋났는지를 본다 — 둘을 직접 맞추지 않는다.
 
@@ -88,11 +88,11 @@ RN 제약이든 스펙의 모순 발견이든, **화면 코드에 조용히 반�
 
 ### ① 공개 식별자 — 커밋만 안 할 뿐, 비밀이 아니다
 
-| | |
-|---|---|
-| 카카오 네이티브 앱 키 | `EXPO_PUBLIC_KAKAO_APP_KEY` |
-| 구글 OAuth 클라이언트 ID | `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` |
-| Firebase 설정 | `google-services.json` · `GoogleService-Info.plist` |
+|                          |                                                     |
+| ------------------------ | --------------------------------------------------- |
+| 카카오 네이티브 앱 키    | `EXPO_PUBLIC_KAKAO_APP_KEY`                         |
+| 구글 OAuth 클라이언트 ID | `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID`                    |
+| Firebase 설정            | `google-services.json` · `GoogleService-Info.plist` |
 
 **`EXPO_PUBLIC_` 접두가 붙은 값은 앱 번들에 그대로 박힌다.** APK 를 풀면 누구나 읽을 수 있으므로
 **보호되고 있다고 생각하면 안 된다.** 이 값들의 안전은 값을 숨기는 데서 오지 않고,
@@ -135,10 +135,10 @@ Expo SDK 57 트리의 peer 충돌(expo 가 고정한 `react@19.2.3` vs `react-do
 
 직접 고치면 다음 생성 때 덮인다. **소스를 고치고 다시 만든다.**
 
-| 생성물 | 소스 | 다시 만들기 |
-|---|---|---|
-| `src/design/theme.ts` | 상류 `05_도구/lib.mjs` | 상류에서 `node 05_도구/export-theme.mjs` → 여기서 `npm run sync:theme` |
-| `ios/` `android/` | `app.config.ts` + config plugin | `npx expo prebuild --clean` |
+| 생성물                | 소스                            | 다시 만들기                                                            |
+| --------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| `src/design/theme.ts` | 상류 `05_도구/lib.mjs`          | 상류에서 `node 05_도구/export-theme.mjs` → 여기서 `npm run sync:theme` |
+| `ios/` `android/`     | `app.config.ts` + config plugin | `npx expo prebuild --clean`                                            |
 
 `theme.ts` 는 헤더에 원본 커밋 SHA 와 본문 sha256 을 달고 있다.
 `npm run check:theme` 가 손댔는지 검사하고 CI 가 매번 돌린다.

@@ -40,4 +40,25 @@ module.exports = [
       "no-restricted-syntax": "off",
     },
   },
+  {
+    // 화면·공용 컴포넌트는 mock 을 직접 읽지 않는다 — feature 의 store·repository 를
+    // 지난다(`CLAUDE.md` 「BE 는 마지막에 붙인다」). 규칙은 사람이 아니라 린터가 지킨다.
+    // feature 의 model/data 와 테스트는 예외다 — 거기가 mock 이 들어오는 경계다.
+    files: ["app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/mocks/sample",
+              message:
+                "화면은 mock 을 직접 읽지 않는다 — src/features/<도메인>/ 의 store·repository 를 지난다.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

@@ -21,20 +21,20 @@
 
 색·크기·반경·여백을 정할 때다. **위에서부터 보고, 없을 때만 아래로 내려간다.**
 
-| | 어디 | 무엇 |
-|---|---|---|
-| 1 | `../09_MVP/docs/<ID>.md` | 그 화면의 규칙·문안 |
-| 2 | **`momentory.css`** | **MVP 값 정본** — 색·크기·반경·여백. `../07_반입/_archive/UXUI리팩토링_MVP_v2_20260806_반입완료/export/mvp/` (최신 반입 번들이 정본 — 새 반입이 오면 경로가 바뀐다) |
-| 3 | `../05_도구/flows/9-mvp.mjs` · `ui.mjs` | MVP 40화면 조립 (2번의 figma 번역) |
-| 4 | `../02_디자인시스템/COMPONENTS.md` · `../05_도구/lib.mjs` | ⚠ **원본 기준.** 위에 없을 때만 |
+|     | 어디                                                      | 무엇                                                                                                                                                                |
+| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `../09_MVP/docs/<ID>.md`                                  | 그 화면의 규칙·문안                                                                                                                                                 |
+| 2   | **`momentory.css`**                                       | **MVP 값 정본** — 색·크기·반경·여백. `../07_반입/_archive/UXUI리팩토링_MVP_v2_20260806_반입완료/export/mvp/` (최신 반입 번들이 정본 — 새 반입이 오면 경로가 바뀐다) |
+| 3   | `../05_도구/flows/9-mvp.mjs` · `ui.mjs`                   | MVP 40화면 조립 (2번의 figma 번역)                                                                                                                                  |
+| 4   | `../02_디자인시스템/COMPONENTS.md` · `../05_도구/lib.mjs` | ⚠ **원본 기준.** 위에 없을 때만                                                                                                                                     |
 
 **`COMPONENTS.md` 의 P0 스펙 표는 원본을 서술한다.** 그대로 만들면 어긋난다 — 실제로 셋이 어긋났다:
 
-| 컴포넌트 | COMPONENTS.md (원본) | MVP 정본 |
-|---|---|---|
-| `Card` | r14 · 테두리 primary 30% | **r18 · ink 10% · 여백 15/17** |
-| `ProgressDots` | gap 8 | **gap 6** |
-| `BackChevron` | 글리프 26 · ink | **19 · body** |
+| 컴포넌트       | COMPONENTS.md (원본)     | MVP 정본                       |
+| -------------- | ------------------------ | ------------------------------ |
+| `Card`         | r14 · 테두리 primary 30% | **r18 · ink 10% · 여백 15/17** |
+| `ProgressDots` | gap 8                    | **gap 6**                      |
+| `BackChevron`  | 글리프 26 · ink          | **19 · body**                  |
 
 > **`S0`·`S1` 도 v2 부터 MVP 리팩토링 대상이다** — `9-mvp.mjs` 40화면에 들어 있다.
 > 원본 값 예외는 **배경 그라디언트 구 값**(`115% 75% at 50% 26%`) 하나뿐이다.
@@ -116,16 +116,26 @@ app/home/{_layout, schedule/[id], schedule/new, moment/new}.tsx
                                           = 12-c · 12-e · 12-d — 투명 모달 시트
 app/retro/{_layout, intro, confirm, emotion, talk, draft, done}.tsx = C1~C7 (회고 12장)
                                           talk = C4~C4-e · draft = C6·C6-b (세그먼트 두 면)
-src/features/diary/model/diary.ts         ← 회고가 남기는 것: Diary + ActionCard
+src/features/diary/{model/{diary,types,selectors}.ts, data/sampleAdapter.ts}
+                                          ← 회고가 남기는 것: Diary + ActionCard.
+                                            타입·selector·샘플 seed 가 store 와 분리돼 있다
 src/components/common/SegBar.tsx          ← 일기 두 면 (보관함 A3 도 쓴다)
 src/components/chat/DirectionChip.tsx     ← C4-d 방향 칩 (대화의 경계선)
 src/components/chat/ChatInput.tsx         ← .inp 알약 + .send (빠른 답변 칩 금지)
 src/components/common/DirectionSheet.tsx  ← C4-c · C4-c2 방향 4줄
 src/components/common/{TabBar, TabScreen, EmotionPill, Sheet, EmotionGrid, Toggle, RetroNav}.tsx
 src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이모지 금지)
-src/features/home/{model/day.ts, ui/ScheduleRow.tsx}
-src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData)
-src/lib/day.ts                            ← 날짜. 하루 경계 04:00 은 M3 에 들어온다
+src/features/home/{model/{day,types}.ts, data/sampleRepository.ts, ui/ScheduleRow.tsx}
+src/features/report/data/sampleRepository.ts ← 주간 해석 공급 — 화면과 mock 의 경계
+src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData).
+                                            타입은 소유하지 않는다 — feature 가 소유.
+                                            화면이 직접 import 하면 린터가 막는다
+src/lib/day.ts                            ← 날짜 표기. 계산은 clock.ts 가 한다
+src/lib/clock.ts                          ← 시각의 단일 공급자 — SampleClock(2026-07-27) ·
+                                            SystemClock(04:00 하루 경계) · fixedClock(테스트)
+src/components/common/{SectionLabel, ConfirmCard}.tsx ← .sec 라벨 · 인라인 확인 카드
+src/components/diary/{ActionRow, ActionCardSection, DiaryBabaFace}.tsx ← C6-b·A3 공유
+src/components/report/{WeeklySummaryCard, WeeklyEmotionGrid, ActionInsightCard}.tsx
 src/features/onboarding/model/{draft, completion}.ts ← 답안 초안 · 완료 플래그(진입 분기)
 src/features/auth/model/auth.ts          ← M2-0 인증 부트스트랩 — hydrate·가드·fail-closed
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
@@ -148,9 +158,9 @@ CI 는 `check:theme` · `typecheck` · `lint` · `test` · 시크릿 검사를 �
 
 다음으로 넘어가기 전에 닫혀야 하는 것:
 
-| 막는 것 | 필요한 것 |
-|---|---|
-| M2 이후 | `docs/api/openapi.yaml` — BE 팀과 합의한 계약 + 멱등성 규약 |
+| 막는 것           | 필요한 것                                                      |
+| ----------------- | -------------------------------------------------------------- |
+| M2 이후           | `docs/api/openapi.yaml` — BE 팀과 합의한 계약 + 멱등성 규약    |
 | M3 (첫 로컬 쓰기) | `docs/DATA-SECURITY.md` — 민감 필드 저장 위치·암호화·삭제 보장 |
 
 ## 명령

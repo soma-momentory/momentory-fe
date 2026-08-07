@@ -65,7 +65,11 @@ export function BellIcon({ size = 15, color = semantic.textBody }: IconProps) {
 export function MoonIcon({ size = 16, color = fill.primaryDeep }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M20.5 15.3A8.8 8.8 0 1 1 9.2 3.6a6.9 6.9 0 0 0 11.3 11.7Z" stroke={color} {...stroke} />
+      <Path
+        d="M20.5 15.3A8.8 8.8 0 1 1 9.2 3.6a6.9 6.9 0 0 0 11.3 11.7Z"
+        stroke={color}
+        {...stroke}
+      />
     </Svg>
   );
 }

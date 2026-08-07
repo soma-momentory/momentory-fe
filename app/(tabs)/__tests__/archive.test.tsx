@@ -114,8 +114,15 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     const { filter } = await openList();
 
     for (const name of [
-      "불안함", "우울함", "화남/답답", "행복함", "막막함",
-      "무기력", "피곤함", "뿌듯함", "평온함",
+      "불안함",
+      "우울함",
+      "화남/답답",
+      "행복함",
+      "막막함",
+      "무기력",
+      "피곤함",
+      "뿌듯함",
+      "평온함",
     ]) {
       expect(filter.getByText(name)).toBeTruthy();
     }
@@ -178,7 +185,9 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
 
   it("미리보기는 두 줄 말줄임이다 — 목록이 벽이 되지 않게", async () => {
     const { r } = await openList();
-    const preview = r.getByText("회의는 답답했지만, 그 답답함은 내 의견을 전하고 싶다는 마음에서 왔다.");
+    const preview = r.getByText(
+      "회의는 답답했지만, 그 답답함은 내 의견을 전하고 싶다는 마음에서 왔다.",
+    );
 
     expect(preview.props.numberOfLines).toBe(2);
   });
@@ -238,7 +247,6 @@ describe("삭제 되돌리기 — 확인 모달 대신 되돌릴 길을 남긴�
 describe("하단 탭 — 네 칸이 전부 이어진다", () => {
   const tabNamed = (r: Awaited<ReturnType<typeof render>>, name: string) =>
     r.getAllByRole("tab").find((t) => within(t).queryByText(name) != null);
-
 
   it("보관함이 활성이고 홈으로 옮겨갈 수 있다", async () => {
     const r = await render(<Archive />);

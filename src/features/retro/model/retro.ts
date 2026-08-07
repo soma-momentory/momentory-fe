@@ -83,8 +83,7 @@ export const useRetro = create<RetroStore>((set) => ({
 
   setStartEmotion: (id) => set({ startEmotion: id }),
 
-  addTurn: (who, text) =>
-    set((s) => ({ turns: [...s.turns, { id: `t${++seq}`, who, text }] })),
+  addTurn: (who, text) => set((s) => ({ turns: [...s.turns, { id: `t${++seq}`, who, text }] })),
 
   setDirection: (d) => set({ direction: d }),
   setBalanceSentence: (text) => set({ balanceSentence: text }),

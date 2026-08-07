@@ -5,7 +5,7 @@ import { CheckCircleIcon } from "@/components/icons/LineIcons";
 import { AppText } from "@/components/primitives/AppText";
 import theme from "@/design/theme";
 import { addEmotionChip, home } from "@/design/tokens.mvp";
-import type { Schedule } from "@/mocks/sample";
+import type { Schedule } from "@/features/home/model/types";
 
 /**
  * 일정 한 줄 — `momentory.css` `.ir` · `.chk` · `.it` · `.epill`.
@@ -50,11 +50,7 @@ export function ScheduleRow({ schedule, onToggleDone, onOpen, addEmotion = false
         hitSlop={home.check.hitSlop}
         onPress={() => onToggleDone(id)}
       >
-        {done ? (
-          <CheckCircleIcon size={home.check.size} />
-        ) : (
-          <View style={styles.checkOff} />
-        )}
+        {done ? <CheckCircleIcon size={home.check.size} /> : <View style={styles.checkOff} />}
       </Pressable>
 
       {/* 제목·행은 상세 시트로 — 체크 원과 다른 동작이다 */}

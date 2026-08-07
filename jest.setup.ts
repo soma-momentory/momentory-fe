@@ -13,10 +13,12 @@ jest.mock("react-native/Libraries/Utilities/Appearance", () => ({
 // SafeAreaProvider 는 인셋을 **실제로 재기 전까지 자식을 그리지 않는다** — 네이티브가
 // 없는 테스트에서는 영원히 빈 화면이다. 라이브러리가 주는 공식 목이 320×640 · 인셋 0
 // 으로 즉시 그리게 한다. 여기 없으면 화면 테스트가 전부 "요소를 못 찾음" 으로 깨진다.
-jest.mock("react-native-safe-area-context", () =>
-  // jest.mock 팩토리는 호이스팅되어 import 보다 먼저 실행된다 — require 여야 한다.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  require("react-native-safe-area-context/jest/mock").default,
+jest.mock(
+  "react-native-safe-area-context",
+  () =>
+    // jest.mock 팩토리는 호이스팅되어 import 보다 먼저 실행된다 — require 여야 한다.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("react-native-safe-area-context/jest/mock").default,
 );
 
 // OS 시간 피커(08)는 네이티브 모듈이라 테스트 환경에 없다. 화면 테스트가 보는 것은

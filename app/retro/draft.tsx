@@ -4,17 +4,19 @@ import { ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { EmotionPill } from "@/components/common/EmotionPill";
 import { RetroNav } from "@/components/common/RetroNav";
+import { SectionLabel } from "@/components/common/SectionLabel";
 import { SegBar } from "@/components/common/SegBar";
+import { ActionRow } from "@/components/diary/ActionRow";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
-import { actionCard, diaryBody, home } from "@/design/tokens.mvp";
+import { diaryBody } from "@/design/tokens.mvp";
 import { useDiary } from "@/features/diary/model/diary";
+import { useTodayContext } from "@/features/home/model/day";
 import { DRAFT_DEMO, useRetro } from "@/features/retro/model/retro";
 import { formatKoreanDate } from "@/lib/day";
-import { SAMPLE_TODAY, SAMPLE_WEATHER } from "@/mocks/sample";
 
 /**
  * `C6` 일기 초안 · 내 문장 + `C6-b` 바바가 함께 본 오늘 + 행동 카드
@@ -48,6 +50,8 @@ export default function RetroDraft() {
   const nextAction = useRetro((s) => s.nextAction);
   const resetRetro = useRetro((s) => s.reset);
   const saveDiary = useDiary((s) => s.save);
+  // 홈·회고 확인과 같은 「오늘」 — 일기의 날짜·날씨가 여기서 온다
+  const { date: today, weather } = useTodayContext();
 
   const [face, setFace] = useState<0 | 1>(0);
   // `DRAFT_DEMO` 가 `as const` 라 명시하지 않으면 리터럴 타입으로 좁혀져 못 고친다
@@ -72,7 +76,7 @@ export default function RetroDraft() {
     if (saving.current) return;
     saving.current = true;
     saveDiary({
-      date: SAMPLE_TODAY,
+      date: today,
       body,
       babaView: DRAFT_DEMO.babaView,
       babaViewBasis: DRAFT_DEMO.babaViewBasis,
@@ -80,7 +84,7 @@ export default function RetroDraft() {
       // 그날의 기록 — `A3-b` 가 두 줄로 나눠 보여준다. 감정 태그와 달리 고칠 수 없다
       storyEmotion: DRAFT_DEMO.storyEmotion,
       startEmotion,
-      weather: `${SAMPLE_WEATHER.label} · ${SAMPLE_WEATHER.celsius}℃`,
+      weather: `${weather.label} · ${weather.celsius}℃`,
       situation: DRAFT_DEMO.situation,
       targetAction,
       edited: body !== DRAFT_DEMO.body,
@@ -96,7 +100,7 @@ export default function RetroDraft() {
 
       <View style={styles.head}>
         <AppText variant="caption" tone="caption" style={styles.date}>
-          {`${formatKoreanDate(SAMPLE_TODAY)} · 오늘의 회고`}
+          {`${formatKoreanDate(today)} · 오늘의 회고`}
         </AppText>
         {/* 감정을 더하는 [+] 를 두지 않는다 — 여기서 만들면 리포트가 두 갈래가 된다 */}
         {emotions.map((e, i) => (
@@ -145,9 +149,7 @@ export default function RetroDraft() {
             </Card>
 
             <Card style={styles.card}>
-              <AppText tone="accent" weight="600" style={styles.section}>
-                오늘 만든 행동 카드
-              </AppText>
+              <SectionLabel>오늘 만든 행동 카드</SectionLabel>
               <ActionRow label="상황" value={DRAFT_DEMO.situation} />
               <ActionRow label="목표 행동" value={targetAction} />
               <AppText variant="caption" tone="caption">
@@ -165,20 +167,6 @@ export default function RetroDraft() {
         <AppButton label="오늘 일기 저장하기" onPress={save} />
       )}
     </ScreenBackground>
-  );
-}
-
-/** `.acrow` — 라벨 열 62 + 값. 두 줄의 값 시작점이 같아야 표로 읽힌다 */
-function ActionRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.acRow}>
-      <AppText tone="caption" weight="500" style={styles.acLabel}>
-        {label}
-      </AppText>
-      <AppText tone="body" style={styles.acValue}>
-        {value}
-      </AppText>
-    </View>
   );
 }
 
@@ -214,21 +202,4 @@ const styles = StyleSheet.create({
   footRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
   foot: { flex: 1 },
   counter: { fontVariant: ["tabular-nums"] },
-
-  section: {
-    fontSize: home.sectionLabel.fontSize,
-    lineHeight: home.sectionLabel.fontSize,
-    letterSpacing: home.sectionLabel.letterSpacing,
-  },
-  acRow: { flexDirection: "row", alignItems: "flex-start", gap: actionCard.gap },
-  acLabel: {
-    width: actionCard.labelWidth,
-    fontSize: actionCard.labelSize,
-    lineHeight: actionCard.labelSize * actionCard.lineHeight,
-  },
-  acValue: {
-    flex: 1,
-    fontSize: actionCard.valueSize,
-    lineHeight: actionCard.valueSize * actionCard.lineHeight,
-  },
 });
