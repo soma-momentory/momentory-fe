@@ -190,19 +190,44 @@ momentory                # URL scheme (회고 알림 딥링크)
 
 ### 지문 — 개발용(debug)
 
-Android 는 **서명 인증서 지문**으로 앱을 식별한다. 지문은 각자의
-`~/.android/debug.keystore` 에서 나오므로 **개발자마다 다르다** — 아래 명령으로
-자기 값을 뽑아 카카오·구글 콘솔에 각자 추가한다. **지문 값을 문서·저장소에 적지 않는다**
-(개인 기기 산출물이라 남의 값은 쓸모가 없고, 문서만 낡는다).
+Android 는 **서명 인증서 지문**으로 앱을 식별한다. **어느 키스토어로 서명하는지가
+먼저다** — 이 프로젝트에는 debug 키스토어가 둘 있고 값이 서로 다르다.
+
+| 언제                                   | 키스토어                     | 성격                                           |
+| -------------------------------------- | ---------------------------- | ---------------------------------------------- |
+| **`npm run android`** (공식 개발 경로) | `android/app/debug.keystore` | **팀 공용** — prebuild 가 Expo 템플릿에서 복사 |
+| Android Studio 로 직접 빌드            | `~/.android/debug.keystore`  | **개인 기기 산출물** — 사람마다 다르다         |
+
+`android/app/build.gradle` 의 debug `signingConfig` 가 **프로젝트 안의 파일**을
+가리킨다. 그래서 `npm run android` 로 만든 빌드는 누가 돌려도 같은 키로 서명되고,
+**카카오 콘솔에 넣을 값도 팀에 하나뿐이다**:
+
+```
+키 해시  Xo8WBi6jzSxKDVR4drqm84yr9iU=
+SHA-1    5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25
+```
+
+> **이 값은 적어 둔다.** 「지문을 문서에 적지 않는다」는 **개인 기기 산출물**에 대한
+> 규칙이다 — 남의 값은 쓸모가 없고 문서만 낡기 때문이다. 위 값은 템플릿이 배포하는
+> **공개 상수**(2014-01-01 생성, 전 세계 RN 프로젝트가 같은 파일)라 그 이유가 없고,
+> 적어 두지 않으면 팀원마다 없는 값을 찾아 헤맨다. `android/` 는 생성물이지만
+> prebuild 를 다시 해도 같은 파일이 온다.
+
+**개인 키스토어 값도 함께 등록해 두면 좋다** — 카카오는 키 해시를 여러 개 받고,
+누군가 Android Studio 에서 직접 돌리면 그때 필요하다. 등록 비용이 없다.
+**개인 값은 각자 뽑아 콘솔에만 넣고 문서·저장소에는 적지 않는다.**
 
 <details>
-<summary>직접 뽑는 법 (Windows PowerShell)</summary>
+<summary>직접 뽑는 법 — 공용 값 검증 · 개인 값 추출 (Windows PowerShell)</summary>
+
+`$ks` 만 바꿔 같은 명령을 쓴다 — 공용은 `android\app\debug.keystore`(prebuild 뒤에
+생긴다), 개인은 `$env:USERPROFILE\.android\debug.keystore`.
 
 ```powershell
 # keytool 은 JDK 또는 Android Studio 동봉 JBR 에 있다 (예: <JDK 설치 경로>\bin\keytool.exe,
 # <Android Studio 설치 경로>\jbr\bin\keytool.exe). JAVA_HOME 이 잡혀 있으면 그냥 keytool 로 부른다.
 $kt = "keytool"
-$ks = "$env:USERPROFILE\.android\debug.keystore"
+$ks = "android\app\debug.keystore"   # 개인 값은 "$env:USERPROFILE\.android\debug.keystore"
 
 # SHA-1 — 구글 OAuth 용
 & $kt -list -v -keystore $ks -alias androiddebugkey -storepass android | Select-String "SHA1:"
@@ -216,16 +241,27 @@ $tmp = "$env:TEMP\dbg.der"
 macOS / Linux:
 
 ```bash
-keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android | grep SHA1
-keytool -exportcert -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android \
+ks=android/app/debug.keystore   # 개인 값은 ~/.android/debug.keystore
+keytool -list -v -keystore "$ks" -alias androiddebugkey -storepass android | grep SHA1
+keytool -exportcert -alias androiddebugkey -keystore "$ks" -storepass android \
   | openssl sha1 -binary | openssl base64
 ```
 
 </details>
 
-> ⚠ **출시용(release) 지문은 이것과 다르다.** EAS 가 서명 키를 관리하므로
+> ⚠ **출시용(release) 지문은 이것과 다르고, 아직 존재하지 않는다.**
+> `android/app/build.gradle` 의 release 는 RN 템플릿 기본값 그대로 **debug 키를
+> 가리키고**, 서명 키는 EAS 를 붙일 때 생긴다(`eas.json` 이 아직 없다). 그때
 > `eas credentials` 로 릴리스 SHA-1 을 확인해 콘솔에 **따로 추가**한다.
-> 이걸 빼먹으면 개발 중엔 되던 로그인이 스토어 빌드에서만 실패한다.
+> 카카오가 받는 것은 base64 라 hex 를 바꿔 넣는다:
+>
+> ```bash
+> echo <콜론을 뺀 SHA-1 hex> | xxd -r -p | openssl base64
+> ```
+>
+> **Play 앱 서명을 쓰면 하나 더다** — 구글이 앱을 자기 키로 다시 서명하므로
+> Play Console 의 **앱 서명 인증서 SHA-1** 도 같은 방식으로 등록한다.
+> 이걸 빼먹으면 개발 중엔 되던 로그인이 **스토어 설치본에서만** 실패한다.
 
 ### 등록 체크리스트
 
@@ -244,21 +280,24 @@ keytool -exportcert -alias androiddebugkey -keystore ~/.android/debug.keystore -
 
 ### 카카오 콘솔에 정확히 무엇을 넣는가 (2026-08-07 · 카카오 로그인 연결)
 
-| 콘솔 자리                   | 값                                                                                    |
-| --------------------------- | ------------------------------------------------------------------------------------- |
-| 플랫폼 › Android › 패키지명 | `com.momentory.app`                                                                   |
-| 플랫폼 › Android › 키 해시  | **각자의 debug 키 해시** + EAS 의 release 키 해시 (위 「지문」 절 · 값은 적지 않는다) |
-| 플랫폼 › iOS › 번들 ID      | `com.momentory.app`                                                                   |
-| 카카오 로그인 › 활성화      | ON                                                                                    |
-| 카카오 로그인 › 동의항목    | MVP 가 쓰는 것만 — **닉네임·프로필 사진은 온보딩에서 직접 받으므로 필수 없음**        |
-| 앱 키                       | **네이티브 앱 키** → `EXPO_PUBLIC_KAKAO_APP_KEY` (REST·JavaScript 키가 아니다)        |
+| 콘솔 자리                   | 값                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| 플랫폼 › Android › 패키지명 | `com.momentory.app`                                                            |
+| 플랫폼 › Android › 키 해시  | **`Xo8WBi6jzSxKDVR4drqm84yr9iU=`** (팀 공용 debug — 위 「지문」 절)            |
+| 플랫폼 › iOS › 번들 ID      | `com.momentory.app`                                                            |
+| 카카오 로그인 › 활성화      | ON                                                                             |
+| 카카오 로그인 › 동의항목    | MVP 가 쓰는 것만 — **닉네임·프로필 사진은 온보딩에서 직접 받으므로 필수 없음** |
+| 앱 키                       | **네이티브 앱 키** → `EXPO_PUBLIC_KAKAO_APP_KEY` (REST·JavaScript 키가 아니다) |
 
 - **Redirect URI 를 따로 등록하지 않는다.** 네이티브 SDK 는 `kakao{네이티브앱키}://oauth`
   스킴으로 돌아오고, 그 스킴은 `app.config.ts` 의 플러그인이 매니페스트·Info.plist 에
   넣는다(`plugins` 의 `@react-native-seoul/kakao-login`).
 - **iOS URL scheme** 은 `kakao` + 네이티브 앱 키다. 손으로 적지 않는다 — 같은 플러그인이 쓴다.
 - 키 해시가 빠지면 로그인은 `AUTHORIZATION_FAILED: invalid android_key_hash` 로 실패한다.
-  **개발자마다 다르므로 팀원이 늘 때마다 추가한다.**
+  **`npm run android` 경로는 위 공용 값 하나로 팀 전원이 덮인다** — 팀원이 늘어도
+  다시 넣을 것이 없다. Android Studio 로 직접 빌드하는 사람만 자기 값을 더한다.
+- **release 키 해시는 아직 없다** — EAS 를 붙인 뒤 추가한다(위 「지문」 절 ⚠).
+  스토어 빌드 전에 반드시 닫아야 하는 항목이다.
 
 ### API 서버 — 지금은 평문 HTTP 다 (⚠ 개발 전용)
 
