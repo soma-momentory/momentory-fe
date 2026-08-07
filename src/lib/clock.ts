@@ -42,13 +42,19 @@ export const SystemClock: Clock = {
 export const SAMPLE_TODAY = "2026-07-27";
 
 /**
- * 화면 데모의 시계 — **하루는 고정이고 시각은 실제**다.
+ * 화면 데모의 시계 — **하루는 고정이고 시·분·초만 실제**를 따른다.
  *
- * 날짜(2026-07-27)는 샘플 데이터와 맞아야 해서 고정하고, `doneAt`·`createdAt`
- * 같은 타임스탬프는 실제 시각을 남겨 형식이 진짜와 같게 둔다.
+ * 날짜(2026-07-27)는 샘플 데이터와 맞아야 해서 고정한다. `now()` 까지 기기
+ * 날짜를 쓰면 새 기록의 `date` 는 7/27 인데 `createdAt`·`doneAt` 은 다른 날이
+ * 되는 어긋남이 생긴다 — 그래서 타임스탬프의 날짜도 샘플 하루로 옮기고,
+ * 시각만 실제를 따라 기록 사이의 순서·간격은 진짜처럼 남긴다.
  */
 export const SampleClock: Clock = {
-  now: () => new Date(),
+  now: () => {
+    const [y = 2026, m = 1, d = 1] = SAMPLE_TODAY.split("-").map(Number);
+    const at = new Date();
+    return new Date(y, m - 1, d, at.getHours(), at.getMinutes(), at.getSeconds());
+  },
   today: () => SAMPLE_TODAY,
 };
 

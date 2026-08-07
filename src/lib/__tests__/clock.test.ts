@@ -35,6 +35,13 @@ describe("시계 공급자", () => {
     expect(clock.today()).toBe(SAMPLE_TODAY);
   });
 
+  it("SampleClock 의 now() 도 샘플 하루를 가리킨다 — date 와 createdAt 이 어긋나지 않는다", () => {
+    const at = SampleClock.now();
+    const ymd = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
+
+    expect(ymd).toBe(SAMPLE_TODAY);
+  });
+
   it("fixedClock 은 테스트 고정 시각이고 4:00 경계를 지킨다", () => {
     setClock(fixedClock("2026-07-28T03:00:00"));
 
