@@ -275,8 +275,22 @@ SecureStore 에 눕는 것은 서버가 준 모멘토리 access/refresh 뿐이�
 - **개발 서버가 평문 HTTP(IP)** — Android 는 호스트 하나만 열었지만 **iOS 는 ATS 가
   IP 예외를 지원하지 않아 앱 전체 예외뿐이다.** 운영 배포에는 쓸 수 없다
 
-남은 것: **실기기 카카오 로그인 검증**(카카오 콘솔에 패키지명·키 해시 등록 +
-dev client 재빌드 — [`SETUP.md` §6](SETUP.md)) · Apple · Google.
+**기기 검증 완료 (2026-08-07 · Android 에뮬레이터 Pixel_8)** — 전 구간이 실제로 돌았다:
+카카오 SDK → 카카오계정 웹 로그인(카카오톡 미설치 시 폴백) → `kakao<앱키>://oauth`
+리다이렉트 → `POST /api/v1/auth/kakao` → SecureStore. 서버가 `onboardingRequired: true`
+를 주어 온보딩(`03`)으로 갔고, **앱을 강제 종료한 뒤 다시 열어도 로그인 화면을 보지
+않았다**(hydrate 경로 · M2-0). 물리 기기는 아직이지만 debug 서명 키가 팀 공용이라
+같은 APK 가 그대로 돈다.
+
+검증에서 **두 가지가 드러나 고쳤다** — 둘 다 이 문서와 같은 PR 이다:
+
+1. **개발 빌드가 아예 뜨지 않았다.** 평문 정책이 Metro 번들 서버까지 막았다
+   (Android 는 `networkSecurityConfig` 앞에서 `usesCleartextTraffic` 을 무시한다).
+   `src/debug/res` 에 느슨한 판을 따로 둬서 갈랐다 — 회귀 테스트 7개로 고정
+2. **실패 사유가 보이지 않았다.** SDK 오류를 통째로 삼켜 「마치지 못했어요」 하나로
+   키 해시·콘솔·네트워크가 구분되지 않았다. `__DEV__` 에서만 사유를 남긴다
+
+남은 것: **iOS 기기 검증** · Apple · Google · 공식 브랜드 마크.
 
 ### 2026-08-07 · 데이터 경계 정리 (코드 리뷰 1~3단계 반영)
 
