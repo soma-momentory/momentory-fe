@@ -16,7 +16,12 @@ const secure = jest.requireMock("expo-secure-store") as SecureMock;
 const seedSession = () =>
   secure.__store.set(
     SESSION_KEY,
-    JSON.stringify({ accessToken: "t", expiresAt: Date.now() + 60_000 }),
+    JSON.stringify({
+      accessToken: "t",
+      refreshToken: "r",
+      expiresAt: Date.now() + 60_000,
+      userId: 1,
+    }),
   );
 
 beforeEach(() => {

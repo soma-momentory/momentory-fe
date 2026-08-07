@@ -47,7 +47,12 @@ it("S0 을 건너뛴 콜드 스타트 — 스스로 hydrate 를 돌려 판정한
   // 유효한 세션이 있는 기기에서 딥링크로 바로 들어온 경우
   secure.__store.set(
     SESSION_KEY,
-    JSON.stringify({ accessToken: "t", expiresAt: Date.now() + 60_000 }),
+    JSON.stringify({
+      accessToken: "t",
+      refreshToken: "r",
+      expiresAt: Date.now() + 60_000,
+      userId: 1,
+    }),
   );
   useAuth.setState({ status: "hydrating" });
 

@@ -95,7 +95,8 @@
 보관함 6 · 리포트 1 · 마이 3. 화면 ID ↔ 라우트 매핑은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표가 정본이다.
 
 ⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 남은 것은 BE · 영속 저장(MMKV) ·
-소셜 SDK · OS 권한(알림·**캘린더 연결**) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
+소셜 SDK **나머지 둘**(카카오는 2026-08-07 연결 — 갱신 계약·HTTPS 는 대기,
+[`DISCUSSION.md`](docs/DISCUSSION.md) §1-6) · OS 권한(알림·**캘린더 연결**) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
 M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](docs/TASKS.md)
 「화면 40장이 끝난 뒤 남은 것」에 있다.
 
@@ -135,11 +136,18 @@ src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 �
 src/features/report/{model/report.ts, data/sampleRepository.ts} ← 주간 집계 · 해석 공급 경계
 src/features/my/model/{settings,stats}.ts ← 알림/프로필 설정 · 전체 기간 집계
 src/features/onboarding/model/{draft, completion}.ts ← 답안 초안 · 완료 플래그(진입 분기)
-src/features/auth/model/auth.ts          ← M2-0 인증 부트스트랩 — hydrate·가드·fail-closed
+src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi}.ts}
+                                          ← M2-0 부트스트랩(hydrate·가드·fail-closed) +
+                                            M2-1 카카오 로그인. 카카오 토큰은 서버로 한 번
+                                            보내고 버린다 — SecureStore 에는 모멘토리 토큰만
 src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData).
                                             타입은 소유하지 않는다 — feature 가 소유.
                                             화면이 직접 import 하면 린터가 막는다
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
+src/lib/config.ts       ← 서버 주소·앱 키의 단일 공급자(.env → app.config extra).
+                          화면·repository 에 IP 를 적지 않는다
+plugins/withInsecureDevApi.ts ← 개발 서버가 평문 HTTP 인 동안만 그 호스트에 예외.
+                          https 로 바꾸면 아무것도 하지 않는다 (docs/SETUP.md §6)
 src/lib/clock.ts        ← 시각의 단일 공급자 — SampleClock(2026-07-27) ·
                           SystemClock(04:00 하루 경계) · fixedClock(테스트)
 src/lib/day.ts          ← 날짜 표기. 계산은 clock.ts 가 한다
@@ -148,7 +156,8 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 
 설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context ·
 **Zustand** · **expo-secure-store** · **@react-native-community/datetimepicker**
-(08 OS 피커 — 네이티브라 dev client 재빌드 필요).
+(08 OS 피커) · **@react-native-seoul/kakao-login** + **expo-build-properties**
+(카카오 로그인 — 둘 다 네이티브라 **dev client 재빌드 필요**).
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
