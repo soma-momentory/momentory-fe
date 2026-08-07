@@ -233,7 +233,9 @@ describe("W1 · 주차 이동 — 수치와 해석이 함께 바뀐다", () => {
   it("③ 한 주 요약과 흐름 문장도 그 주 값이다", async () => {
     // 서로 다른 한 주에 같은 문장을 보여주지 않는다
     const r = await render(<Report />);
-    expect(r.getByText("흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요.")).toBeTruthy();
+    expect(
+      r.getByText("흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요."),
+    ).toBeTruthy();
     expect(r.getByText("다시 균형 찾기")).toBeTruthy();
     expect(r.getByText("무거운 몸으로 시작해 평온함으로 닫은 주였어요.")).toBeTruthy();
 

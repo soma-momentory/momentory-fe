@@ -140,7 +140,9 @@ export function AppButton({
         >
           {label}
         </AppText>
-        {loading ? <LoadingDots color={progressColorOf(variant)} reduceMotion={reduceMotion} /> : null}
+        {loading ? (
+          <LoadingDots color={progressColorOf(variant)} reduceMotion={reduceMotion} />
+        ) : null}
       </Pressable>
     </Animated.View>
   );
@@ -290,7 +292,11 @@ const styles = StyleSheet.create({
   oauth: { height: oauth.height, borderRadius: oauth.radius },
   // 라벨 서체도 갈린다 — `.pri` 는 600 15.5px/1, `.oauth` 는 600 15px/1.
   labelPill: { fontFamily: "Pretendard-SemiBold", fontSize: 15.5, lineHeight: 15.5 },
-  labelOauth: { fontFamily: "Pretendard-SemiBold", fontSize: oauth.fontSize, lineHeight: oauth.fontSize },
+  labelOauth: {
+    fontFamily: "Pretendard-SemiBold",
+    fontSize: oauth.fontSize,
+    lineHeight: oauth.fontSize,
+  },
   // 비활성은 흐리게만 한다. 경고색·아이콘을 붙이지 않는다 (RULES 4).
   // `.off{opacity:.36;box-shadow:none}` — 그림자까지 지운다. 남기면 눌리는 것처럼 떠 보인다.
   disabled: { opacity: 0.36, shadowOpacity: 0, elevation: 0 },

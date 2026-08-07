@@ -95,14 +95,18 @@ describe("AppButton", () => {
   });
 
   it("loading은 버튼을 잠그고 진행점을 표시한다", async () => {
-    const { getByRole, getByText, getByTestId } = await render(<AppButton label="로그인 중" loading />);
+    const { getByRole, getByText, getByTestId } = await render(
+      <AppButton label="로그인 중" loading />,
+    );
 
     expect(getByRole("button").props.accessibilityState).toMatchObject({
       disabled: true,
       busy: true,
     });
     expect(getByText("로그인 중")).toBeTruthy();
-    expect(getByTestId("button-progress", { includeHiddenElements: true }).children).toHaveLength(3);
+    expect(getByTestId("button-progress", { includeHiddenElements: true }).children).toHaveLength(
+      3,
+    );
   });
 
   // 호출자 props 를 rest 로 마지막에 펼치면 accessibilityState 가 통째로 교체된다.
@@ -124,7 +128,12 @@ describe("AppButton", () => {
   it("호출자가 disabled 를 뒤집어도 잠금이 풀리지 않는다", async () => {
     const onPress = jest.fn();
     const { getByRole } = await render(
-      <AppButton label="다음" disabled accessibilityState={{ disabled: false }} onPress={onPress} />,
+      <AppButton
+        label="다음"
+        disabled
+        accessibilityState={{ disabled: false }}
+        onPress={onPress}
+      />,
     );
     const btn = getByRole("button");
 

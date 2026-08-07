@@ -58,7 +58,11 @@ export default function NewSchedule() {
         {/* 양방향을 다 말한다 — 나가지도 않고, 들어온 것을 고치지도 않는다 */}
         <View style={styles.notice}>
           <AppText tone="body" weight="500" style={styles.noticeText}>
-            이 일정은 <AppText tone="strong" weight="700">모멘토리에만</AppText> 저장돼요.
+            이 일정은{" "}
+            <AppText tone="strong" weight="700">
+              모멘토리에만
+            </AppText>{" "}
+            저장돼요.
             {"\n"}캘린더에는 추가되지 않아요.
           </AppText>
         </View>

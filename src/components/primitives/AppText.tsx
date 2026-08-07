@@ -32,14 +32,10 @@ type Props = TextProps & {
   weight?: Weight;
 };
 
-export function AppText({
-  variant = "body",
-  tone = "body",
-  weight,
-  style,
-  ...rest
-}: Props) {
-  return <Text style={[styles[variant], colorOf(tone), fontOf(variant, weight), style]} {...rest} />;
+export function AppText({ variant = "body", tone = "body", weight, style, ...rest }: Props) {
+  return (
+    <Text style={[styles[variant], colorOf(tone), fontOf(variant, weight), style]} {...rest} />
+  );
 }
 
 const colorOf = (tone: TextTone): TextStyle => ({ color: textColor[tone] });

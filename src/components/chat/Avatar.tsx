@@ -45,7 +45,10 @@ export function Avatar({ size = "lg", ring = true, style, ...rest }: Props) {
         style,
       ]}
     >
-      <View testID="avatar-face" style={[styles.face, { width: px, height: px, borderRadius: px / 2 }]}>
+      <View
+        testID="avatar-face"
+        style={[styles.face, { width: px, height: px, borderRadius: px / 2 }]}
+      >
         <Image
           source={require("../../../assets/baba/face-default.png")}
           style={{

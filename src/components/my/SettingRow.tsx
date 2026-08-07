@@ -44,11 +44,12 @@ export function SettingRow({ label, value, onPress, trailing, danger = false }: 
         </AppText>
       ) : null}
 
-      {trailing ?? (onPress != null ? (
-        <AppText tone="caption" style={styles.chevron}>
-          ›
-        </AppText>
-      ) : null)}
+      {trailing ??
+        (onPress != null ? (
+          <AppText tone="caption" style={styles.chevron}>
+            ›
+          </AppText>
+        ) : null)}
     </View>
   );
 

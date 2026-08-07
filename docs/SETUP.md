@@ -20,12 +20,12 @@
 
 ## 1. 공통
 
-| | 버전 | 확인 |
-|---|---|---|
-| Node | **22.14** (`.nvmrc`) | `node -v` |
-| npm | 11 이상 | `npm -v` |
-| Git | 2.4x | `git --version` |
-| JDK | **17 이상** (21 권장) | `java -version` |
+|      | 버전                  | 확인            |
+| ---- | --------------------- | --------------- |
+| Node | **22.14** (`.nvmrc`)  | `node -v`       |
+| npm  | 11 이상               | `npm -v`        |
+| Git  | 2.4x                  | `git --version` |
+| JDK  | **17 이상** (21 권장) | `java -version` |
 
 ```bash
 git clone https://github.com/soma-momentory/momentory-fe.git
@@ -225,6 +225,7 @@ keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -sto
 keytool -exportcert -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android \
   | openssl sha1 -binary | openssl base64
 ```
+
 </details>
 
 > ⚠ **출시용(release) 지문은 이것과 다르다.** EAS 가 서명 키를 관리하므로
@@ -233,11 +234,11 @@ keytool -exportcert -alias androiddebugkey -keystore ~/.android/debug.keystore -
 
 ### 등록 체크리스트
 
-| 공급자 | 해야 할 것 | 얻는 값 | 비고 |
-|---|---|---|---|
-| **카카오** | 앱 등록 → 플랫폼에 패키지명 + 키 해시 → 카카오 로그인 ON → 동의항목 설정 | 네이티브 앱 키 → `EXPO_PUBLIC_KAKAO_APP_KEY` | 당일·무료 |
-| **구글** | Cloud Console OAuth 클라이언트 — Android(패키지명 + SHA-1) · iOS(번들 ID) · **Web** | Web/iOS 클라이언트 ID → `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | 당일·무료. `idToken` 검증에 **Web 클라이언트 ID 가 필요**하다 |
-| **애플** | Developer Program 가입 → Sign in with Apple 활성화 | — | **$99/년 · 심사 1~2일** |
+| 공급자     | 해야 할 것                                                                          | 얻는 값                                                  | 비고                                                          |
+| ---------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------- |
+| **카카오** | 앱 등록 → 플랫폼에 패키지명 + 키 해시 → 카카오 로그인 ON → 동의항목 설정            | 네이티브 앱 키 → `EXPO_PUBLIC_KAKAO_APP_KEY`             | 당일·무료                                                     |
+| **구글**   | Cloud Console OAuth 클라이언트 — Android(패키지명 + SHA-1) · iOS(번들 ID) · **Web** | Web/iOS 클라이언트 ID → `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | 당일·무료. `idToken` 검증에 **Web 클라이언트 ID 가 필요**하다 |
+| **애플**   | Developer Program 가입 → Sign in with Apple 활성화                                  | —                                                        | **$99/년 · 심사 1~2일**                                       |
 
 **애플은 지금 미룰 수 있다.** iOS 전용이고 Android 빌드에는 필요 없다.
 다만 App Store 심사 규정(4.8)상 다른 소셜 로그인을 제공하는 iOS 앱은 Sign in with Apple 이
@@ -260,6 +261,6 @@ VS Code 기준 권장 확장:
 {
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
 }
 ```

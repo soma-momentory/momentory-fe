@@ -6,15 +6,15 @@
 
 ## 0. 무엇을 만드는가
 
-| 파트 | 화면 | 장수 |
-|---|---|---|
-| 진입 | `S0` `S1` | 2 |
-| 온보딩 | `03` `04` `05-b` `06` `06-b` `06-c` `07` `08` `09` `10` `10-b` | 11 |
-| 홈 | `12-b` `12` `12-e` `12-c` `12-d` | 5 |
-| 회고 | `C1` `C2` `C3` `C4` `C4-b` `C4-c` `C4-c2` `C4-d` `C4-e` `C6` `C6-b` `C7` | 12 |
-| 보관함 | `A1` `A2` `A3` `A3-b` `A3-c` `A4` | 6 |
-| 리포트 | `W1` | 1 |
-| 마이 | `M1` `M2` `M3` | 3 |
+| 파트   | 화면                                                                     | 장수 |
+| ------ | ------------------------------------------------------------------------ | ---- |
+| 진입   | `S0` `S1`                                                                | 2    |
+| 온보딩 | `03` `04` `05-b` `06` `06-b` `06-c` `07` `08` `09` `10` `10-b`           | 11   |
+| 홈     | `12-b` `12` `12-e` `12-c` `12-d`                                         | 5    |
+| 회고   | `C1` `C2` `C3` `C4` `C4-b` `C4-c` `C4-c2` `C4-d` `C4-e` `C6` `C6-b` `C7` | 12   |
+| 보관함 | `A1` `A2` `A3` `A3-b` `A3-c` `A4`                                        | 6    |
+| 리포트 | `W1`                                                                     | 1    |
+| 마이   | `M1` `M2` `M3`                                                           | 3    |
 
 하단 탭 **4칸** — 홈 · 보관함 · 리포트 · 마이 (쉼터 없음).
 
@@ -30,48 +30,48 @@
 
 ### 지금 쓰는 것
 
-| 영역 | 선택 | 이유 |
-|---|---|---|
-| 런타임 | **Expo SDK 57** + Dev Client + CNG | 카카오/애플/구글 로그인·캘린더·알림·생체인증이 전부 config plugin으로 해결된다. `ios/` `android/` 는 커밋하지 않고 `expo prebuild` 로 생성(CNG) — 네이티브 수정은 plugin 으로만 |
-| 언어 | TypeScript 6 `strict` + `noUncheckedIndexedAccess` | 상류 스키마를 타입으로 고정 |
-| 네비게이션 | **expo-router** (파일 기반) | `states.mvp.json` 의 machine → 라우트 그룹이 1:1. 회고 알림 → 딥링크가 공짜 |
-| 스타일 | **StyleSheet + `theme` 객체** | 다크모드 없음(RULES: 크림 배경 유지), 토큰이 고정 상수 — 런타임 테마 엔진이 필요 없다. NativeWind/Tamagui 는 12.5px·자간 .145em 같은 값을 우회하게 만들어 오히려 손해 |
-| 그라디언트 | **react-native-svg** `RadialGradient` | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다 |
-| 폰트 | expo-font + Pretendard 4 weight | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다) |
-| 품질 | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions | **현재 CI = `check:theme` · `typecheck` · `lint` · `test` · 시크릿 추적 검사.** |
-| 보안 저장 | expo-secure-store | M2-0 개발 세션과 인증 hydration. 읽기가 비동기라 진입 라우팅을 규정한다(§3) |
-| 클라이언트 상태 | Zustand (작게) | 온보딩 초안 · 인증 판정 · 화면용 로컬 상태 |
-| OS 시간 선택 | @react-native-community/datetimepicker | `08` 회고 시간. 네이티브 모듈이라 dev client 재빌드 필요 |
+| 영역            | 선택                                               | 이유                                                                                                                                                                            |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 런타임          | **Expo SDK 57** + Dev Client + CNG                 | 카카오/애플/구글 로그인·캘린더·알림·생체인증이 전부 config plugin으로 해결된다. `ios/` `android/` 는 커밋하지 않고 `expo prebuild` 로 생성(CNG) — 네이티브 수정은 plugin 으로만 |
+| 언어            | TypeScript 6 `strict` + `noUncheckedIndexedAccess` | 상류 스키마를 타입으로 고정                                                                                                                                                     |
+| 네비게이션      | **expo-router** (파일 기반)                        | `states.mvp.json` 의 machine → 라우트 그룹이 1:1. 회고 알림 → 딥링크가 공짜                                                                                                     |
+| 스타일          | **StyleSheet + `theme` 객체**                      | 다크모드 없음(RULES: 크림 배경 유지), 토큰이 고정 상수 — 런타임 테마 엔진이 필요 없다. NativeWind/Tamagui 는 12.5px·자간 .145em 같은 값을 우회하게 만들어 오히려 손해           |
+| 그라디언트      | **react-native-svg** `RadialGradient`              | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다                                                                                                                         |
+| 폰트            | expo-font + Pretendard 4 weight                    | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다)                                                                                                       |
+| 품질            | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions | **현재 CI = `check:theme` · `typecheck` · `lint` · `test` · 시크릿 추적 검사.**                                                                                                 |
+| 보안 저장       | expo-secure-store                                  | M2-0 개발 세션과 인증 hydration. 읽기가 비동기라 진입 라우팅을 규정한다(§3)                                                                                                     |
+| 클라이언트 상태 | Zustand (작게)                                     | 온보딩 초안 · 인증 판정 · 화면용 로컬 상태                                                                                                                                      |
+| OS 시간 선택    | @react-native-community/datetimepicker             | `08` 회고 시간. 네이티브 모듈이라 dev client 재빌드 필요                                                                                                                        |
 
 ### 도입 예정 — 필요해지는 마일스톤에
 
 아래 항목은 아직 설치하지 않았다. **쓸 화면이 생길 때 넣는다** — 미리 깔면 쓰지도 않는
 의존성이 락파일에 굳는다.
 
-| 영역 | 선택 | 언제 | 왜 그때인가 |
-|---|---|---|---|
-| 애니메이션 | react-native-reanimated | M1 | `theme.motion.spec.*` 를 쓰는 첫 컴포넌트(`AppButton` press)부터 |
-| 서버 상태 | TanStack Query v5 | M2 | 첫 API 호출. **OpenAPI 계약 합의가 선행**(§4) |
-| 목 서버 | MSW | M2 | BE 미확정 구간을 화면 개발이 기다리지 않게 |
-| 로컬 저장 | react-native-mmkv | M3 | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4) |
-| 계측 | 얇은 `track()` 파사드 | M3 | `06_운영문서/ANALYTICS.md` 이름 규칙은 이미 확정 |
-| 이미지 | expo-image | M2 | 바바 아바타가 처음 나오는 온보딩 |
-| E2E | Maestro | M6 | 흐름이 다 연결된 뒤 |
-| 배포 | EAS Build / Update | M6 | |
+| 영역       | 선택                    | 언제 | 왜 그때인가                                                      |
+| ---------- | ----------------------- | ---- | ---------------------------------------------------------------- |
+| 애니메이션 | react-native-reanimated | M1   | `theme.motion.spec.*` 를 쓰는 첫 컴포넌트(`AppButton` press)부터 |
+| 서버 상태  | TanStack Query v5       | M2   | 첫 API 호출. **OpenAPI 계약 합의가 선행**(§4)                    |
+| 목 서버    | MSW                     | M2   | BE 미확정 구간을 화면 개발이 기다리지 않게                       |
+| 로컬 저장  | react-native-mmkv       | M3   | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4)                    |
+| 계측       | 얇은 `track()` 파사드   | M3   | `06_운영문서/ANALYTICS.md` 이름 규칙은 이미 확정                 |
+| 이미지     | expo-image              | M2   | 바바 아바타가 처음 나오는 온보딩                                 |
+| E2E        | Maestro                 | M6   | 흐름이 다 연결된 뒤                                              |
+| 배포       | EAS Build / Update      | M6   |                                                                  |
 
 ### 네이티브 기능 — dev client는 현재, 앱 기능은 M2 이후 도입 예정
 
 `expo-dev-client` 는 M1부터 공식 개발 환경으로 사용한다. 아래 앱 기능 패키지는 아직 설치하지
 않았으며, M2에서 필요한 기능과 함께 추가한다. Expo Go 는 지원하지 않는다.
 
-| 기능 | 패키지 | 비고 |
-|---|---|---|
-| 카카오 로그인 | `@react-native-seoul/kakao-login` | Expo config plugin 필요 (prebuild) |
-| 애플 로그인 | `expo-apple-authentication` | iOS 전용. 이름 비공개해도 온보딩 `04`에서 호칭을 받으므로 빈 이름 없음 |
-| 구글 로그인 | `@react-native-google-signin/google-signin` | |
-| 캘린더 | `expo-calendar` | **읽기 전용**. 직접 추가한 일정은 캘린더에 쓰지 않는다 |
-| 알림 | `expo-notifications` | **MVP는 전부 로컬 알림으로 충분** — 회고 시각(매일 반복) · 낮 리마인드 · 주간. 서버 푸시 인프라 없이 시작 |
-| 앱 잠금 | `expo-local-authentication` | **토글을 켰으면 실제로 잠근다** — 게이트는 MVP에 포함. 커스텀 잠금 화면(`M5`)만 다음 마일스톤 (§8) |
+| 기능          | 패키지                                      | 비고                                                                                                      |
+| ------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 카카오 로그인 | `@react-native-seoul/kakao-login`           | Expo config plugin 필요 (prebuild)                                                                        |
+| 애플 로그인   | `expo-apple-authentication`                 | iOS 전용. 이름 비공개해도 온보딩 `04`에서 호칭을 받으므로 빈 이름 없음                                    |
+| 구글 로그인   | `@react-native-google-signin/google-signin` |                                                                                                           |
+| 캘린더        | `expo-calendar`                             | **읽기 전용**. 직접 추가한 일정은 캘린더에 쓰지 않는다                                                    |
+| 알림          | `expo-notifications`                        | **MVP는 전부 로컬 알림으로 충분** — 회고 시각(매일 반복) · 낮 리마인드 · 주간. 서버 푸시 인프라 없이 시작 |
+| 앱 잠금       | `expo-local-authentication`                 | **토글을 켰으면 실제로 잠근다** — 게이트는 MVP에 포함. 커스텀 잠금 화면(`M5`)만 다음 마일스톤 (§8)        |
 
 ---
 
@@ -200,6 +200,7 @@ src/
 
   현재 테스트로 고정한 경로: 만료 토큰 · SecureStore 오류 · 로그아웃 후 재진입 · 앱 킬 후
   콜드 스타트. 갱신 실패는 서버 갱신 계약과 구현이 생길 때 추가한다.
+
 - **onboarding** — 질문 여섯: 닉네임(`04`) · 기본 정보(`05-b`) · 관심 분야(`06`, 기타 입력 `06-b`/`06-c`) · 쉬는 방법(`07`, 필수·복수 — 답은 `User.restMethods` 로 **저장만**, MVP 에 보여주는 화면은 없음) · 회고 시간(`08`) · 캘린더(`09`). 진행 점 6칸이 이 여섯을 가리킨다. 완료는 `10`, 캘린더·알림을 건너뛰면 `10-b`. 답은 화면마다 서버로 보내지 않고 Zustand 초안에 쌓는다. **현재는 메모리 전용**이라 앱을 종료하면 사라지고, 데이터 보안 정책과 MMKV 도입 뒤 중간 이탈 복원을 붙인다.
 - **home** — 한 상태(`day`). `12-b`(빈 상태)는 별도 레이아웃이 아니라 **같은 카드가 초대로 바뀌는 변형**이므로 같은 컴포넌트의 prop.
 - **retro** — 전체화면 모달 스택. `C7` 에서 홈으로 pop, `Diary` 생성. `diaryCount >= 7` 이면 `Report.unlocked`.
@@ -268,12 +269,12 @@ npm run sync:theme    # ../02_디자인시스템/theme.ts → src/design/theme.t
 
 MVP 리팩토링본 `momentory.css` 에는 있는데 `lib.mjs` → `theme.ts` 에는 **아직 없는** 값들:
 
-| 토큰 | css 값 | theme.ts |
-|---|---|---|
-| `--textStrong` `--textBody` `--textCaption` `--textLegal` `--textAccent` `--textOnDark` | 글자색 6종 체계 | 다른 이름 체계(`textPrimary`/`textMuted`/`textSlogan`/`textLegalInk`) |
-| `--primaryDeepPress` | `#9E5626` | 없음 |
-| ~~`--dangerInk`~~ | `#9B3B2F` | ✅ **해결됨 (2026-08-05 · `R-40`)** — `lib.mjs` 등록 완료, `theme.ts` 에 `colors.dangerInk` 로 나온다. 오버라이드 불필요. **글자·테두리 전용이고 면을 채우지 않는다** |
-| `.scr` 배경 | `120% 90% at 50% 18%` (S0·S1 만 구 값 유지) | `gradients.screen` 은 구 값만 |
+| 토큰                                                                                    | css 값                                      | theme.ts                                                                                                                                                              |
+| --------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--textStrong` `--textBody` `--textCaption` `--textLegal` `--textAccent` `--textOnDark` | 글자색 6종 체계                             | 다른 이름 체계(`textPrimary`/`textMuted`/`textSlogan`/`textLegalInk`)                                                                                                 |
+| `--primaryDeepPress`                                                                    | `#9E5626`                                   | 없음                                                                                                                                                                  |
+| ~~`--dangerInk`~~                                                                       | `#9B3B2F`                                   | ✅ **해결됨 (2026-08-05 · `R-40`)** — `lib.mjs` 등록 완료, `theme.ts` 에 `colors.dangerInk` 로 나온다. 오버라이드 불필요. **글자·테두리 전용이고 면을 채우지 않는다** |
+| `.scr` 배경                                                                             | `120% 90% at 50% 18%` (S0·S1 만 구 값 유지) | `gradients.screen` 은 구 값만                                                                                                                                         |
 
 **대응**: `05_도구/lib.mjs` 에 위 값을 반영하고 `export-theme.mjs` 를 다시 돌리는 것이 정공법이다. 그때까지 FE 는 `src/design/tokens.mvp.ts` 에 오버라이드를 모아 두고, 반영되면 그 파일을 지운다. (오버라이드를 화면 코드에 흩지 않는다.)
 
@@ -289,7 +290,7 @@ MVP 리팩토링본 `momentory.css` 에는 있는데 `lib.mjs` → `theme.ts` �
 `ANALYTICS.md` 규칙은 **확정**이므로 그대로 심는다. 공통 속성 `screen_id`(필수) · `day_no` · `is_offline` 는 파사드가 자동으로 붙인다.
 
 ```ts
-track('home_memo_add', { char_bucket: bucket(text.length) })
+track("home_memo_add", { char_bucket: bucket(text.length) });
 ```
 
 **보내지 않는 것**: 일기 본문 · 순간 본문 · 회고 대화 내용 · 감정 이름을 제외한 모든 자유 텍스트. 감정은 `emotion_id`(1~9) 숫자로만. 이 금지는 파사드에서 타입으로 막는다(자유 텍스트 필드를 받지 않는 이벤트 타입).
@@ -298,15 +299,15 @@ track('home_memo_add', { char_bucket: bucket(text.length) })
 
 ## 7. 마일스톤
 
-| # | 내용 | 산출 |
-|---|---|---|
-| **M0** ✅ | 프로젝트 셋업 — Expo + TS strict + expo-router + lint/CI + `sync:theme` + Pretendard | 앱이 뜨고 폰트·배경 그라디언트가 시안과 같음 |
-| **M1** ✅ | **P0 컴포넌트 13종** + **테스트 기반** | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가 |
-| **M2** △ | 진입 + 온보딩 13상태 (`S0` `S1` `03`~`10-b`) | 화면 정렬·인증 부트스트랩 완료. 소셜 로그인 3종 · 알림/캘린더 실제 권한은 대기 |
-| **M3** △ | 공용 컴포넌트(P1.5) + 홈 5화면 | **화면 완료** — `12`·`12-b` + 시트 3종(`12-c`·`12-d`·`12-e`)과 일정/순간 쓰기 경로. 남은 것은 **M3-3 아웃박스**(멱등 키·409)이고 BE 연결과 함께 간다 |
-| **M4** ✅ | 회고 12화면 (2026-08-07) | 채팅 · 감정 필수 · 방향 선택 시트(`C4-c`·`C4-c2`) · 일기 두 면 + 행동 카드 생성. **스트리밍과 실제 응답 생성은 BE 연결과 함께** — 지금 바바의 말은 고정 문장이다(`TASKS.md` 「BE 연결 전에 반드시 걷어내야 하는 것」) |
-| **M5** △ | 보관함 6 + 리포트 1 + 마이 3 (2026-08-07) | **화면 완료** — 달력/목록/일기 두 면/행동 완료(`A3-c`)/수정 · 주간 리포트 · 설정. **앱 잠금 게이트는 여기서 뺐다** — §8 의 「토글과 잠금을 떼지 않는다」는 그대로이고, MVP 에 잠금 **토글 자체가 없어서**(상류가 `M1`·`M3` 에서 내렸다) 지금은 지킬 것이 없다. 토글이 돌아오면 같은 마일스톤에서 게이트도 함께 온다 |
-| **M6** | `invariants` 전수 테스트 · Maestro E2E · EAS 내부 배포 | |
+| #         | 내용                                                                                 | 산출                                                                                                                                                                                                                                                                                                                |
+| --------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M0** ✅ | 프로젝트 셋업 — Expo + TS strict + expo-router + lint/CI + `sync:theme` + Pretendard | 앱이 뜨고 폰트·배경 그라디언트가 시안과 같음                                                                                                                                                                                                                                                                        |
+| **M1** ✅ | **P0 컴포넌트 13종** + **테스트 기반**                                               | `ScreenBackground` `AppText` `AppButton` `Card` `ChatLayout` `BabaBubble` `AnswerBubble` `Avatar` `TypingDots` `ChipFlow` `InputRow` `ProgressDots` `BackChevron` · Jest + RNTL + CI 에 `test` 추가                                                                                                                 |
+| **M2** △  | 진입 + 온보딩 13상태 (`S0` `S1` `03`~`10-b`)                                         | 화면 정렬·인증 부트스트랩 완료. 소셜 로그인 3종 · 알림/캘린더 실제 권한은 대기                                                                                                                                                                                                                                      |
+| **M3** △  | 공용 컴포넌트(P1.5) + 홈 5화면                                                       | **화면 완료** — `12`·`12-b` + 시트 3종(`12-c`·`12-d`·`12-e`)과 일정/순간 쓰기 경로. 남은 것은 **M3-3 아웃박스**(멱등 키·409)이고 BE 연결과 함께 간다                                                                                                                                                                |
+| **M4** ✅ | 회고 12화면 (2026-08-07)                                                             | 채팅 · 감정 필수 · 방향 선택 시트(`C4-c`·`C4-c2`) · 일기 두 면 + 행동 카드 생성. **스트리밍과 실제 응답 생성은 BE 연결과 함께** — 지금 바바의 말은 고정 문장이다(`TASKS.md` 「BE 연결 전에 반드시 걷어내야 하는 것」)                                                                                               |
+| **M5** △  | 보관함 6 + 리포트 1 + 마이 3 (2026-08-07)                                            | **화면 완료** — 달력/목록/일기 두 면/행동 완료(`A3-c`)/수정 · 주간 리포트 · 설정. **앱 잠금 게이트는 여기서 뺐다** — §8 의 「토글과 잠금을 떼지 않는다」는 그대로이고, MVP 에 잠금 **토글 자체가 없어서**(상류가 `M1`·`M3` 에서 내렸다) 지금은 지킬 것이 없다. 토글이 돌아오면 같은 마일스톤에서 게이트도 함께 온다 |
+| **M6**    | `invariants` 전수 테스트 · Maestro E2E · EAS 내부 배포                               |                                                                                                                                                                                                                                                                                                                     |
 
 **테스트는 M6 에 몰지 않는다.** 기반은 M1 에 세우고, 인증 부트스트랩·아웃박스처럼 **틀리면 조용히 데이터가 깨지는 것**은 그 기능을 만드는 마일스톤에서 함께 쓴다. M6 에 남는 것은 `states.mvp.json` 의 `invariants` 전수 검사와 E2E 뿐이다.
 

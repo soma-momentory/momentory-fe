@@ -43,7 +43,9 @@ describe("C4 · 대화 · 첫 질문", () => {
     const { getByText, queryByText } = await render(<RetroTalk />);
 
     expect(
-      getByText("오늘은 어떤 이야기를 나누고 싶어요? 일정에 없던 일이나 지금 떠오른 생각도 괜찮아요."),
+      getByText(
+        "오늘은 어떤 이야기를 나누고 싶어요? 일정에 없던 일이나 지금 떠오른 생각도 괜찮아요.",
+      ),
     ).toBeTruthy();
     expect(queryByText(/면접 스터디/)).toBeNull();
     expect(queryByText(/팀 회의/)).toBeNull();
@@ -147,7 +149,9 @@ describe("C4-c · 방향 고르기 — 추천하지 않는다", () => {
     const r = await openSheet();
 
     expect(r.getByText("지금은 어떻게 이야기를 이어가고 싶어요?")).toBeTruthy();
-    expect(r.getByText("고르는 대로 다음 질문이 달라져요 · 대화 중에 바꿔도 괜찮아요")).toBeTruthy();
+    expect(
+      r.getByText("고르는 대로 다음 질문이 달라져요 · 대화 중에 바꿔도 괜찮아요"),
+    ).toBeTruthy();
   });
 
   it("네 줄을 사용자의 말로 쓰고 내부 유형명을 노출하지 않는다", async () => {
@@ -195,19 +199,27 @@ describe("C4-c2 · 하나를 누른 뒤", () => {
   it("누른 줄만 켜지고 CTA 가 열린다", async () => {
     const r = await openAndPick("지금 상황을 다른 관점에서 바라보고 싶어요");
 
-    expect(flatten(r.getByText("이 방향으로 이어가기").parent?.props.style).opacity).toBeUndefined();
+    expect(
+      flatten(r.getByText("이 방향으로 이어가기").parent?.props.style).opacity,
+    ).toBeUndefined();
   });
 
   it("다른 줄을 누르면 앞의 선택이 풀린다 — 방향은 하나다", async () => {
     const r = await openAndPick("지금 상황을 다른 관점에서 바라보고 싶어요");
     const optionOf = (label: string) => r.getByText(label).parent?.parent;
 
-    expect(optionOf("지금 상황을 다른 관점에서 바라보고 싶어요")?.props.accessibilityState.selected).toBe(true);
+    expect(
+      optionOf("지금 상황을 다른 관점에서 바라보고 싶어요")?.props.accessibilityState.selected,
+    ).toBe(true);
 
     await fireEvent.press(r.getByText("지금 할 수 있는 방법을 찾아보고 싶어요"));
 
-    expect(optionOf("지금 상황을 다른 관점에서 바라보고 싶어요")?.props.accessibilityState.selected).toBe(false);
-    expect(optionOf("지금 할 수 있는 방법을 찾아보고 싶어요")?.props.accessibilityState.selected).toBe(true);
+    expect(
+      optionOf("지금 상황을 다른 관점에서 바라보고 싶어요")?.props.accessibilityState.selected,
+    ).toBe(false);
+    expect(
+      optionOf("지금 할 수 있는 방법을 찾아보고 싶어요")?.props.accessibilityState.selected,
+    ).toBe(true);
   });
 
   it("누른 순간에는 저장되지 않는다 — CTA 를 눌러야 확정된다", async () => {
@@ -228,7 +240,9 @@ describe("C4-c2 · 하나를 누른 뒤", () => {
 
     // 닫은 뒤에도 갇히지 않는다
     await fireEvent.press(r.getByText("이야기 방향 고르기"));
-    await waitFor(() => expect(r.getByText("지금은 어떻게 이야기를 이어가고 싶어요?")).toBeTruthy());
+    await waitFor(() =>
+      expect(r.getByText("지금은 어떻게 이야기를 이어가고 싶어요?")).toBeTruthy(),
+    );
 
     // 다시 열면 앞의 선택은 남아 있지 않다
     expect(flatten(r.getByText("이 방향으로 이어가기").parent?.props.style).opacity).toBe(0.36);
@@ -265,10 +279,30 @@ describe("C4-d · 방향을 고른 직후", () => {
 
   // 네 방향 전부 — 고른 줄과 이어지는 질문이 짝이 맞아야 한다 (C4-c.md 표)
   it.each([
-    ["마음을 조금 더 이야기하며 정리하고 싶어요", "feelings", "그 순간 가장 크게 느껴진 마음은 무엇이었나요?", "마음 이야기하며 정리하기"],
-    ["지금 상황을 다른 관점에서 바라보고 싶어요", "reframe", "그때 스스로에게 가장 먼저 어떤 말을 했나요?", "다른 관점에서 바라보기"],
-    ["지금 할 수 있는 방법을 찾아보고 싶어요", "solve", "다음에는 무엇이 조금 달라졌으면 좋겠나요?", "지금 할 수 있는 방법 찾기"],
-    ["오늘 있었던 일을 짧게 기록하고 싶어요", "brief", "오늘 있었던 일과 그때의 마음을 한 문장으로 남겨볼까요?", "짧게 기록하기"],
+    [
+      "마음을 조금 더 이야기하며 정리하고 싶어요",
+      "feelings",
+      "그 순간 가장 크게 느껴진 마음은 무엇이었나요?",
+      "마음 이야기하며 정리하기",
+    ],
+    [
+      "지금 상황을 다른 관점에서 바라보고 싶어요",
+      "reframe",
+      "그때 스스로에게 가장 먼저 어떤 말을 했나요?",
+      "다른 관점에서 바라보기",
+    ],
+    [
+      "지금 할 수 있는 방법을 찾아보고 싶어요",
+      "solve",
+      "다음에는 무엇이 조금 달라졌으면 좋겠나요?",
+      "지금 할 수 있는 방법 찾기",
+    ],
+    [
+      "오늘 있었던 일을 짧게 기록하고 싶어요",
+      "brief",
+      "오늘 있었던 일과 그때의 마음을 한 문장으로 남겨볼까요?",
+      "짧게 기록하기",
+    ],
   ])("«%s» 를 고르면 그 방향의 칩과 첫 질문이 온다", async (option, id, question, chip) => {
     const r = await startWithDirection(option);
 
@@ -281,7 +315,9 @@ describe("C4-d · 방향을 고른 직후", () => {
     const r = await startWithDirection();
     await answerAndWait(r, "역시 나는 면접을 못하나 봐 하는 생각이 들었어요.");
 
-    expect(r.getByText("한 번 답이 막힌 일이 '나는 면접을 못한다'는 결론까지 커졌군요.")).toBeTruthy();
+    expect(
+      r.getByText("한 번 답이 막힌 일이 '나는 면접을 못한다'는 결론까지 커졌군요."),
+    ).toBeTruthy();
     // 사용자가 말하지 않은 성공을 만들지 않는다 — 질문이지 단정이 아니다
     expect(
       r.getByText("오늘 완벽하지는 않았어도, 중간에 포기하지 않고 해낸 부분도 있었나요?"),
@@ -423,7 +459,10 @@ describe("C6 · C6-b 의 재료 — 저장 시점과 출처", () => {
     expect(babaLines).not.toContain(balanceSentence);
     expect(babaLines).not.toContain(nextAction);
     // 둘 다 사용자가 한 말이다
-    const myLines = useRetro.getState().turns.filter((t) => t.who === "me").map((t) => t.text);
+    const myLines = useRetro
+      .getState()
+      .turns.filter((t) => t.who === "me")
+      .map((t) => t.text);
     expect(myLines).toContain(balanceSentence);
     expect(myLines).toContain(nextAction);
   });

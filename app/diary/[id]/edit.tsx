@@ -95,12 +95,19 @@ export default function DiaryEdit() {
         {/* 무엇이 안 바뀌는지를 먼저 말한다 */}
         <View style={styles.warn}>
           <AppText tone="accent" weight="500" style={styles.warnText}>
-            {"수정한 내용은 '내가 남긴 오늘'에만 반영돼요. 바바의 문장과 행동 카드는 회고를 마친 당시 내용 그대로 남아요."}
+            {
+              "수정한 내용은 '내가 남긴 오늘'에만 반영돼요. 바바의 문장과 행동 카드는 회고를 마친 당시 내용 그대로 남아요."
+            }
           </AppText>
         </View>
 
         <View style={styles.actions}>
-          <AppButton label="취소" variant="ghost" style={styles.action} onPress={() => router.back()} />
+          <AppButton
+            label="취소"
+            variant="ghost"
+            style={styles.action}
+            onPress={() => router.back()}
+          />
           <AppButton label="저장" style={styles.action} onPress={save} />
         </View>
 
@@ -188,7 +195,12 @@ const styles = StyleSheet.create({
   action: { flex: 1 },
 
   // 면도 테두리도 없다 — 되돌릴 수 없는 동작이 누르기 쉬워지면 안 된다
-  deleteButton: { alignSelf: "center", minHeight: 36, paddingHorizontal: 14, justifyContent: "center" },
+  deleteButton: {
+    alignSelf: "center",
+    minHeight: 36,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+  },
   deleteConfirm: {
     flex: 1,
     minHeight: 48,

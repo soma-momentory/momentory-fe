@@ -1,4 +1,11 @@
-import { Pressable, StyleSheet, View, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
 import theme from "@/design/theme";
 
@@ -27,7 +34,13 @@ type Props = Omit<PressableProps, "style" | "children"> & {
 
 export function BackChevron({ hidden = false, style, ...rest }: Props) {
   if (hidden) {
-    return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.box, style]} />;
+    return (
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={[styles.box, style]}
+      />
+    );
   }
 
   return (

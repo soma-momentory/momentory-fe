@@ -35,8 +35,16 @@ import { dateAtTime, formatKoreanTime, toHHMM } from "@/lib/time";
  */
 const ROWS: readonly { key: NotifyKey; label: string; note: (time: string | null) => string }[] = [
   { key: "retro", label: "회고 시간 알림", note: (t) => `매일 ${formatKoreanTime(t ?? "21:30")}` },
-  { key: "daily", label: "낮 기록 리마인드", note: (t) => `하루 한 번 · ${formatKoreanTime(t ?? "14:00")}` },
-  { key: "weekly", label: "주간 돌아보기", note: (t) => `일요일 ${formatKoreanTime(t ?? "21:00")}` },
+  {
+    key: "daily",
+    label: "낮 기록 리마인드",
+    note: (t) => `하루 한 번 · ${formatKoreanTime(t ?? "14:00")}`,
+  },
+  {
+    key: "weekly",
+    label: "주간 돌아보기",
+    note: (t) => `일요일 ${formatKoreanTime(t ?? "21:00")}`,
+  },
   { key: "news", label: "새로운 소식", note: () => "" },
 ];
 

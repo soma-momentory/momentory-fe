@@ -23,8 +23,12 @@ describe("BackChevron", () => {
     const slop = getByRole("button").props.hitSlop;
 
     expect(slop).toEqual(theme.touch.hitSlopForSmallGlyph);
-    expect(Number(box.width) + slop.left + slop.right).toBeGreaterThanOrEqual(theme.touch.minTarget);
-    expect(Number(box.height) + slop.top + slop.bottom).toBeGreaterThanOrEqual(theme.touch.minTarget);
+    expect(Number(box.width) + slop.left + slop.right).toBeGreaterThanOrEqual(
+      theme.touch.minTarget,
+    );
+    expect(Number(box.height) + slop.top + slop.bottom).toBeGreaterThanOrEqual(
+      theme.touch.minTarget,
+    );
   });
 
   it("hidden 이면 자리를 남기고 그리지 않는다", async () => {

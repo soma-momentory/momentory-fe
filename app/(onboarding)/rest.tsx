@@ -53,10 +53,7 @@ export default function Rest() {
   const set = useDraft((s) => s.set);
 
   const toggle = (id: string) =>
-    set(
-      "restMethods",
-      picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id],
-    );
+    set("restMethods", picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id]);
 
   return (
     <ScreenBackground>

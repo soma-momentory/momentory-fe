@@ -77,10 +77,7 @@ export default function ScheduleDetail() {
           </AppText>
         </View>
 
-        <EmotionGrid
-          selected={schedule.emotions}
-          onToggle={(e) => toggleEmotion(schedule.id, e)}
-        />
+        <EmotionGrid selected={schedule.emotions} onToggle={(e) => toggleEmotion(schedule.id, e)} />
 
         <AppText variant="footnote" tone="caption">
           고르지 않아도 괜찮아요 · 마침만 켜도 돼요.
@@ -100,12 +97,7 @@ export default function ScheduleDetail() {
       </View>
 
       {/* 되돌릴 수 있는 동작 — 면도 테두리도 없이 글자만 dangerInk */}
-      <Pressable
-        accessibilityRole="button"
-        hitSlop={4}
-        onPress={onHide}
-        style={styles.hideButton}
-      >
+      <Pressable accessibilityRole="button" hitSlop={4} onPress={onHide} style={styles.hideButton}>
         <AppText weight="500" style={styles.hideLabel}>
           {manual ? "이 일정 삭제" : "홈에서 숨기기"}
         </AppText>
@@ -161,7 +153,12 @@ const styles = StyleSheet.create({
   markLabel: { flex: 1, fontSize: 14.5, lineHeight: 20.3 },
 
   // .sbtnDel — 면도 테두리도 없다. 색이 아니라 라벨이 무엇인지 말한다
-  hideButton: { alignSelf: "center", minHeight: 36, paddingHorizontal: 14, justifyContent: "center" },
+  hideButton: {
+    alignSelf: "center",
+    minHeight: 36,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+  },
   hideLabel: { fontSize: 12.5, lineHeight: 12.5, color: textColor.danger },
   centerText: { textAlign: "center" },
 });

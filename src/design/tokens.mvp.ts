@@ -489,7 +489,15 @@ export const segBar = {
  */
 export const report = {
   /** `.metric` — 값 · 비교 · 라벨 세 줄 */
-  metric: { radius: 16, paddingVertical: 14, paddingHorizontal: 8, gap: 5, valueSize: 19, deltaSize: 11, labelSize: 11 },
+  metric: {
+    radius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    gap: 5,
+    valueSize: 19,
+    deltaSize: 11,
+    labelSize: 11,
+  },
   /** `.mtd` — 비교 줄. 초록은 「좋다」가 아니라 「달라졌다」를 가리킨다 */
   deltaColor: "#5E8A6B",
   /** `.wdcol` — 요일 한 칸. 기록 없는 날은 면이 없다(`.wdcolOff`) */

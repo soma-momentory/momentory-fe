@@ -75,10 +75,7 @@ describe("Card", () => {
   it("배열·조건부 스타일을 받는다", async () => {
     const selected = false;
     const s = await styleOf(
-      <Card
-        testID="card"
-        style={[sheet.wide, selected && sheet.tall, null, [sheet.nested]]}
-      />,
+      <Card testID="card" style={[sheet.wide, selected && sheet.tall, null, [sheet.nested]]} />,
     );
 
     expect(s.paddingHorizontal).toBe(24);

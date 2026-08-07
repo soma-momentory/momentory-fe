@@ -126,8 +126,15 @@ describe("12-c · 마침과 감정은 서로를 요구하지 않는다", () => {
     const { getByLabelText } = await render(<ScheduleDetail />);
 
     for (const name of [
-      "불안함", "우울함", "화남/답답", "행복함", "막막함",
-      "무기력", "피곤함", "뿌듯함", "평온함",
+      "불안함",
+      "우울함",
+      "화남/답답",
+      "행복함",
+      "막막함",
+      "무기력",
+      "피곤함",
+      "뿌듯함",
+      "평온함",
     ]) {
       expect(getByLabelText(name)).toBeTruthy();
     }

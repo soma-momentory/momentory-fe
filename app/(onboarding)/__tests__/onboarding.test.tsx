@@ -50,7 +50,9 @@ describe("04 · 닉네임", () => {
     const { getByText } = await render(<Nickname />);
 
     expect(getByText("어떻게 불러드리면 좋을까요?")).toBeTruthy();
-    expect(getByText("편하게 불리고 싶은 이름을 알려주세요.\n실명도, 별명도 괜찮아요.")).toBeTruthy();
+    expect(
+      getByText("편하게 불리고 싶은 이름을 알려주세요.\n실명도, 별명도 괜찮아요."),
+    ).toBeTruthy();
   });
 
   it("1~10자 — 카운터가 세고, 상한은 maxLength 가 막는다", async () => {
@@ -149,7 +151,16 @@ describe("06 · 관심 분야 (+ 06-b·06-c 기타 입력)", () => {
     // 스크롤로 감추면 뒤쪽은 선택되지 않는다 (06.md)
     const { getByText } = await render(<Interests />);
 
-    for (const label of ["학업", "취업·진로", "일·직장생활", "인간관계", "가족", "나 자신", "건강", "기타"]) {
+    for (const label of [
+      "학업",
+      "취업·진로",
+      "일·직장생활",
+      "인간관계",
+      "가족",
+      "나 자신",
+      "건강",
+      "기타",
+    ]) {
       expect(getByText(label)).toBeTruthy();
     }
   });
@@ -241,7 +252,14 @@ describe("07 · 쉬는 방법", () => {
     // 아이콘을 선 아이콘으로 바꾼 규칙의 유일한 예외 (07.md)
     const { getByText } = await render(<Rest />);
 
-    for (const label of ["😴 잠자기", "🎵 음악 듣기", "🚶 산책하기", "🔄 그때마다 달라요", "😶 멍하니 쉬기", "기타"]) {
+    for (const label of [
+      "😴 잠자기",
+      "🎵 음악 듣기",
+      "🚶 산책하기",
+      "🔄 그때마다 달라요",
+      "😶 멍하니 쉬기",
+      "기타",
+    ]) {
       expect(getByText(label)).toBeTruthy();
     }
   });
@@ -447,7 +465,9 @@ describe("10 · 완료 (+ 10-b 건너뜀)", () => {
 
     expect(queryByText("캘린더 연결 완료")).toBeNull();
     expect(queryByText("돌아보는 시간")).toBeNull();
-    expect(getByText("캘린더 연결과 돌아보는 시간은 마이에서 언제든 설정할 수 있어요.")).toBeTruthy();
+    expect(
+      getByText("캘린더 연결과 돌아보는 시간은 마이에서 언제든 설정할 수 있어요."),
+    ).toBeTruthy();
     expect(getByText("모멘토리 시작하기")).toBeTruthy(); // CTA 는 두 화면이 같다
   });
 
