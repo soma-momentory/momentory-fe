@@ -48,12 +48,18 @@ export const SAMPLE_TODAY = "2026-07-27";
  * 날짜를 쓰면 새 기록의 `date` 는 7/27 인데 `createdAt`·`doneAt` 은 다른 날이
  * 되는 어긋남이 생긴다 — 그래서 타임스탬프의 날짜도 샘플 하루로 옮기고,
  * 시각만 실제를 따라 기록 사이의 순서·간격은 진짜처럼 남긴다.
+ *
+ * 지키는 불변식은 `dayFrom(now()) === today()` 다 — 오전 0~3시는 04:00 경계
+ * 기준으로 아직 「어제」에 속하므로, 그 시각이 샘플 하루에 속하려면 달력
+ * 날짜를 **다음 날(7/28)** 로 잡아야 한다.
  */
 export const SampleClock: Clock = {
   now: () => {
     const [y = 2026, m = 1, d = 1] = SAMPLE_TODAY.split("-").map(Number);
     const at = new Date();
-    return new Date(y, m - 1, d, at.getHours(), at.getMinutes(), at.getSeconds());
+    const day = at.getHours() < DAY_BOUNDARY_HOUR ? d + 1 : d;
+    // Date 생성자가 달·해 넘김을 맞춰준다 — 7/31 + 1 도 8/1 이 된다
+    return new Date(y, m - 1, day, at.getHours(), at.getMinutes(), at.getSeconds());
   },
   today: () => SAMPLE_TODAY,
 };

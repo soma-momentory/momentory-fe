@@ -35,11 +35,21 @@ describe("시계 공급자", () => {
     expect(clock.today()).toBe(SAMPLE_TODAY);
   });
 
-  it("SampleClock 의 now() 도 샘플 하루를 가리킨다 — date 와 createdAt 이 어긋나지 않는다", () => {
-    const at = SampleClock.now();
-    const ymd = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
+  it("SampleClock 의 now() 도 샘플 하루에 속한다 — date 와 createdAt 이 어긋나지 않는다", () => {
+    // 달력 날짜가 아니라 04:00 경계를 지난 「하루」로 검증한다
+    expect(dayFrom(SampleClock.now())).toBe(SAMPLE_TODAY);
+  });
 
-    expect(ymd).toBe(SAMPLE_TODAY);
+  it("오전 0~3시의 now() 는 달력 날짜가 다음 날이어야 샘플 하루에 속한다", () => {
+    jest.useFakeTimers({ now: new Date("2026-08-08T03:00:00") });
+    try {
+      const at = SampleClock.now();
+
+      expect(dayFrom(at)).toBe(SAMPLE_TODAY);
+      expect(at.getDate()).toBe(28); // 7/28 03:00 — 04:00 경계로는 7/27 이다
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it("fixedClock 은 테스트 고정 시각이고 4:00 경계를 지킨다", () => {
