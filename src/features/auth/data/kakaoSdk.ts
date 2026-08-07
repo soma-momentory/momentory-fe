@@ -26,6 +26,20 @@ export type KakaoSdkResult =
 
 const CANCELLED = /cancel/i;
 
+/**
+ * **개발 빌드에서만** 실패 사유를 남긴다. 릴리스에서는 아무것도 하지 않는다.
+ *
+ * 사용자에게는 한 줄 안내만 보이므로(`RULES.md` 4), 이 줄이 없으면 「로그인을
+ * 마치지 못했어요」가 키 해시 미등록인지·콘솔 설정인지·네트워크인지 구분할 방법이
+ * 없다 — 실제로 2026-08-07 실기기 검증에서 여기서 막혔다.
+ *
+ * **남기는 것은 라이브러리의 오류 메시지뿐이다** — 토큰은 이 경로에 오지 않는다
+ * (`docs/CONTRIBUTING.md` 「값을 다루는 세 등급」).
+ */
+const warnInDev = (reason: string) => {
+  if (__DEV__) console.warn("[kakao] 로그인 실패:", reason);
+};
+
 const messageOf = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   if (typeof error === "object" && error !== null && "message" in error) {
@@ -46,9 +60,14 @@ export async function requestKakaoAccessToken(): Promise<KakaoSdkResult> {
     const token = await kakaoLogin();
     const accessToken = typeof token?.accessToken === "string" ? token.accessToken.trim() : "";
     // 토큰 없이 resolve 되는 경로가 실제로 있었다(라이브러리 주석 참조) — 성공으로 세지 않는다
-    if (!accessToken) return { kind: "failed" };
+    if (!accessToken) {
+      warnInDev("토큰 없이 resolve 됨");
+      return { kind: "failed" };
+    }
     return { kind: "token", accessToken };
   } catch (error) {
-    return CANCELLED.test(messageOf(error)) ? { kind: "cancelled" } : { kind: "failed" };
+    const message = messageOf(error);
+    warnInDev(message);
+    return CANCELLED.test(message) ? { kind: "cancelled" } : { kind: "failed" };
   }
 }
