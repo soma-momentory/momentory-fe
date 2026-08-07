@@ -34,7 +34,7 @@ jobs:
         run: |
           # .env.example 은 값이 빈 템플릿이라 일부러 커밋한다 — 여기서만 제외한다.
           hits=$(git ls-files \
-            | grep -iE '(^|/)\.env($|\.)|google-services\.json|GoogleService-Info\.plist|\.(jks|p8|p12|keystore|mobileprovision)$' \
+            | grep -iE '(^|/)\.env($|\.)|google-services\.json|GoogleService-Info\.plist|\.(jks|p8|p12|key|pem|keystore|mobileprovision)$' \
             | grep -vE '(^|/)\.env\.example$' || true)
           if [ -n "$hits" ]; then
             echo "시크릿으로 보이는 파일이 추적되고 있다:"
