@@ -25,6 +25,10 @@ import {
  *
  * - **Android** — `network_security_config.xml` 로 **그 호스트만** 평문을 허용하고
  *   나머지는 `base-config` 가 계속 막는다. 원하는 만큼 좁다.
+ *   ⚠ 단 **debug 빌드에는 같은 이름의 느슨한 판을 따로 둔다** — 좁은 정책 하나만
+ *   두면 Metro 번들 서버(개발 PC 의 평문 8081)까지 막혀 앱이 뜨지 않는다.
+ *   Android 가 `networkSecurityConfig` 앞에서 `usesCleartextTraffic` 을 무시하기
+ *   때문이다. 자세한 것은 아래 `androidXmlPath` 주석.
  * - **iOS** — ATS 의 `NSExceptionDomains` 는 **도메인 이름만 받는다. IP 주소는 예외로
  *   등록할 수 없다**(Apple 문서 · 알려진 제약). 그래서 호스트가 IP 면 좁힐 방법이 없고
  *   `NSAllowsArbitraryLoads`(앱 전체) 말고는 선택지가 없다. 이 파일은 그 사실을 숨기지
@@ -42,17 +46,23 @@ export type InsecureDevApiProps = {
 /** 점 넷으로 된 IPv4 인가 — iOS 가 좁은 예외를 못 거는 경우다 */
 const isIpLiteral = (host: string) => /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(":");
 
-const ANDROID_XML_RELATIVE = join(
-  "app",
-  "src",
-  "main",
-  "res",
-  "xml",
-  "network_security_config.xml",
-);
+/**
+ * 같은 이름의 리소스를 **빌드 타입별로** 둘 쓴다. Gradle 의 리소스 병합이
+ * `src/<buildType>/res` 를 `src/main/res` 보다 우선하므로, 파일 이름이 같으면
+ * debug 빌드는 debug 판을, release 빌드는 main 판을 집는다.
+ *
+ * ⚠ **이 분리가 없으면 개발 자체가 막힌다.** Android 는 `networkSecurityConfig` 가
+ * 있으면 `android:usesCleartextTraffic` 을 **무시한다** — RN/Expo 가 debug 매니페스트에
+ * 켜 두는 그 스위치가 Metro(개발 PC 의 LAN 주소, 평문 8081)를 위한 것인데, 좁은 정책
+ * 하나만 두면 그것까지 함께 막혀 번들을 못 받는다
+ * (`CLEARTEXT communication to <개발 PC> not permitted`). 실제로 그렇게 막혔었다.
+ */
+export const androidXmlPath = (buildType: "main" | "debug") =>
+  join("app", "src", buildType, "res", "xml", "network_security_config.xml");
 const ANDROID_XML_REF = "@xml/network_security_config";
 
-const networkSecurityConfigXml = (host: string) => `<?xml version="1.0" encoding="utf-8"?>
+/** release·기본판 — 개발 API 서버 하나만 열고 나머지는 계속 막는다 */
+export const networkSecurityConfigXml = (host: string) => `<?xml version="1.0" encoding="utf-8"?>
 <!--
   생성물 — plugins/withInsecureDevApi.ts 가 쓴다. 직접 고치지 않는다.
   개발 API 서버(${host}) 하나만 평문 HTTP 를 허용하고 나머지는 계속 막는다.
@@ -65,14 +75,37 @@ const networkSecurityConfigXml = (host: string) => `<?xml version="1.0" encoding
 </network-security-config>
 `;
 
+/**
+ * debug 판 — **RN/Expo 의 기본 동작 그대로** 평문을 연다.
+ *
+ * 좁히지 않는 이유는 Metro 주소가 고정이 아니기 때문이다. 개발 PC 의 LAN IP 는
+ * 네트워크마다·재접속마다 바뀌고, 터널·에뮬레이터 경로(`10.0.2.2`)까지 더하면
+ * 목록으로 따라잡을 수 없다. **debug 는 원래 이만큼 열려 있었다** — 이 파일이
+ * 그 상태를 되돌릴 뿐, 새로 넓히는 것이 아니다. 좁은 정책은 아래 main 판이 든다.
+ */
+export const debugNetworkSecurityConfigXml = `<?xml version="1.0" encoding="utf-8"?>
+<!--
+  생성물 — plugins/withInsecureDevApi.ts 가 쓴다. 직접 고치지 않는다.
+  debug 전용. Metro 번들 서버가 평문이라 여기서 막으면 앱이 뜨지 않는다.
+  좁은 정책은 src/main/res/xml 의 같은 이름 파일이 든다 (release 가 그것을 쓴다).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
+`;
+
 const withAndroidCleartextHost: ConfigPlugin<InsecureDevApiProps> = (config, { host }) => {
   // 1. res/xml 에 정책 파일을 쓴다. prebuild 가 android/ 를 다시 만들 때마다 함께 생긴다.
   config = withDangerousMod(config, [
     "android",
     (cfg) => {
-      const target = join(cfg.modRequest.platformProjectRoot, ANDROID_XML_RELATIVE);
-      mkdirSync(dirname(target), { recursive: true });
-      writeFileSync(target, networkSecurityConfigXml(host), "utf8");
+      const write = (relative: string, contents: string) => {
+        const target = join(cfg.modRequest.platformProjectRoot, relative);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, contents, "utf8");
+      };
+      write(androidXmlPath("main"), networkSecurityConfigXml(host));
+      write(androidXmlPath("debug"), debugNetworkSecurityConfigXml);
       return cfg;
     },
   ]);
