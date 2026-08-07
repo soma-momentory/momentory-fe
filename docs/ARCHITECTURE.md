@@ -1,8 +1,11 @@
 # momentory-fe 설계
 
-> 범위: **MVP 40화면** (`../09_MVP/json/` · 2026-08-06 상류 v2 개정) · 기준 문서는 상류 3종
-> `momentory.states.mvp.json`(상태 기계 7개) · `momentory.schema.mvp.json`(엔티티 7개) · `momentory.css`(값)
-> 전체 설계(136화면)는 `01_화면설계/`에 그대로 있고, 쉼터를 되살릴 때 돌아온다. **MVP가 원본을 대체하지 않는다.**
+> 범위: **MVP 40화면** (2026-08-06 상류 v2 개정) · 기준 문서는 [`docs/spec/`](spec/SNAPSHOT.md) 3종 —
+> [`momentory.states.mvp.json`](spec/momentory.states.mvp.json)(상태 기계 7개) ·
+> [`momentory.schema.mvp.json`](spec/momentory.schema.mvp.json)(엔티티 7개) ·
+> [`momentory.css`](spec/momentory.css)(값)
+> 전체 설계(136화면)는 상류 `01_화면설계/` 에만 있고, 쉼터를 되살릴 때 돌아온다(담당자 경유).
+> **MVP가 원본을 대체하지 않는다.**
 
 ## 0. 무엇을 만드는가
 
@@ -18,7 +21,7 @@
 
 하단 탭 **4칸** — 홈 · 보관함 · 리포트 · 마이 (쉼터 없음).
 
-**개발 단위는 화면이 아니라 컴포넌트다** (`02_디자인시스템/COMPONENTS.md`).
+**개발 단위는 화면이 아니라 컴포넌트다** ([`docs/spec/COMPONENTS.md`](spec/COMPONENTS.md) — ⚠ 값은 원본 기준, 배너 참조).
 온보딩 채팅 컴포넌트군 = 회고 채팅과 같은 틀 — 한 번 만들면 앱의 두 축을 다 덮는다.
 
 ---
@@ -38,7 +41,7 @@
 | 스타일          | **StyleSheet + `theme` 객체**                      | 다크모드 없음(RULES: 크림 배경 유지), 토큰이 고정 상수 — 런타임 테마 엔진이 필요 없다. NativeWind/Tamagui 는 12.5px·자간 .145em 같은 값을 우회하게 만들어 오히려 손해           |
 | 그라디언트      | **react-native-svg** `RadialGradient`              | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다                                                                                                                         |
 | 폰트            | expo-font + Pretendard 4 weight                    | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다)                                                                                                       |
-| 품질            | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions | **현재 CI = `check:theme` · `typecheck` · `lint` · `test` · 시크릿 추적 검사.**                                                                                                 |
+| 품질            | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions | CI 단계의 정본은 [`CONTRIBUTING.md` 「품질 게이트」](CONTRIBUTING.md)                                                                                                           |
 | 보안 저장       | expo-secure-store                                  | M2-0 개발 세션과 인증 hydration. 읽기가 비동기라 진입 라우팅을 규정한다(§3)                                                                                                     |
 | 클라이언트 상태 | Zustand (작게)                                     | 온보딩 초안 · 인증 판정 · 화면용 로컬 상태                                                                                                                                      |
 | OS 시간 선택    | @react-native-community/datetimepicker             | `08` 회고 시간. 네이티브 모듈이라 dev client 재빌드 필요                                                                                                                        |
@@ -48,16 +51,16 @@
 아래 항목은 아직 설치하지 않았다. **쓸 화면이 생길 때 넣는다** — 미리 깔면 쓰지도 않는
 의존성이 락파일에 굳는다.
 
-| 영역       | 선택                    | 언제 | 왜 그때인가                                                      |
-| ---------- | ----------------------- | ---- | ---------------------------------------------------------------- |
-| 애니메이션 | react-native-reanimated | M1   | `theme.motion.spec.*` 를 쓰는 첫 컴포넌트(`AppButton` press)부터 |
-| 서버 상태  | TanStack Query v5       | M2   | 첫 API 호출. **OpenAPI 계약 합의가 선행**(§4)                    |
-| 목 서버    | MSW                     | M2   | BE 미확정 구간을 화면 개발이 기다리지 않게                       |
-| 로컬 저장  | react-native-mmkv       | M3   | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4)                    |
-| 계측       | 얇은 `track()` 파사드   | M3   | `06_운영문서/ANALYTICS.md` 이름 규칙은 이미 확정                 |
-| 이미지     | expo-image              | M2   | 바바 아바타가 처음 나오는 온보딩                                 |
-| E2E        | Maestro                 | M6   | 흐름이 다 연결된 뒤                                              |
-| 배포       | EAS Build / Update      | M6   |                                                                  |
+| 영역       | 선택                    | 언제 | 왜 그때인가                                                                                                                                   |
+| ---------- | ----------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 애니메이션 | react-native-reanimated | M3   | 채팅 밀림 모션이 MVP 에 없음이 확인돼(`R-41`) 바텀시트·제스처가 필요한 시점으로 미뤘다 — [spec/OPEN-ISSUES-요약.md](spec/OPEN-ISSUES-요약.md) |
+| 서버 상태  | TanStack Query v5       | M2   | 첫 API 호출. **OpenAPI 계약 합의가 선행**(§4)                                                                                                 |
+| 목 서버    | MSW                     | M2   | BE 미확정 구간을 화면 개발이 기다리지 않게                                                                                                    |
+| 로컬 저장  | react-native-mmkv       | M3   | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4)                                                                                                 |
+| 계측       | 얇은 `track()` 파사드   | M3   | 이름 규칙은 확정(`R-05`) — 단 `reflection_*`→`retro_*` 통일(`R-38`)이 미결                                                                    |
+| 이미지     | expo-image              | M2   | 바바 아바타가 처음 나오는 온보딩                                                                                                              |
+| E2E        | Maestro                 | M6   | 흐름이 다 연결된 뒤                                                                                                                           |
+| 배포       | EAS Build / Update      | M6   |                                                                                                                                               |
 
 ### 네이티브 기능 — dev client는 현재, 앱 기능은 M2 이후 도입 예정
 
@@ -80,27 +83,41 @@
 **`app/` 은 저장소 루트다** — `src/app/` 이 아니다. expo-router 가 루트 `app/` 을 라우트 트리로 잡고,
 `src/` 는 라우트가 아닌 코드만 담는다. 경계가 이름으로 드러난다.
 
-### 지금 있는 것
+### 지금 있는 것 (2026-08-07 · 정적 40화면 완료)
+
+화면 ID 와 라우트 파일의 1:1 매핑은 [`PRODUCT.md`](PRODUCT.md) 표가 정본이다. 구조만 본다:
 
 ```
 app/                         # 라우트만 — 로직을 두지 않는다
   _layout.tsx                # Stack · StatusBar (Provider 는 여기가 아니다)
-  index.tsx                  # 진입 판정 (M2 에서 S0 스플래시가 된다)
+  index.tsx                  # S0 진입 분기
   (auth)/login.tsx           # S1
-  (onboarding)/              # 03 04 05-b 06(+06-b·06-c) 07 08 09 10(+10-b) — v2 기준 (2026-08-07)
-    _layout.tsx  welcome.tsx  nickname.tsx  profile.tsx
-    interests.tsx  rest.tsx  retro-time.tsx  calendar.tsx  done.tsx
+  (onboarding)/              # 03~10-b (9파일 + _layout)
+  (tabs)/                    # home archive report my + _layout (TabBar 4칸)
+  home/                      # schedule/[id] schedule/new moment/new — 투명 모달 시트
+  retro/                     # intro confirm emotion talk draft done + _layout — 회고 12장
+  diary/[id]/                # index (A3·A3-b·A3-c) · edit (A4)
+  my/                        # profile (M2) · notify (M3)
 src/
   design/
     theme.ts                 # 생성물 — 직접 수정 금지 (§5)
     tokens.mvp.ts            # 상류 반영 전까지의 이름 매핑 (§5)
   components/
     primitives/              # ScreenBackground AppText AppButton Card InputRow ProgressDots BackChevron
-    chat/                    # ChatLayout BabaBubble AnswerBubble Avatar TypingDots ChipFlow
-    onboarding/              # OnboardingTopBar (‹ + 진행점 6칸)
-  features/onboarding/model/draft.ts   # 온보딩 답안 초안 (Zustand)
+    chat/                    # ChatLayout BabaBubble AnswerBubble Avatar TypingDots ChipFlow DirectionChip ChatInput
+    common/                  # TabBar TabScreen EmotionPill EmotionGrid Sheet SegBar Toggle RetroNav
+                             # DirectionSheet SectionLabel ConfirmCard
+    onboarding/ my/ icons/   # OnboardingTopBar · SettingRow · LineIcons
+    archive/ diary/ report/  # 화면 조각 — CalendarMonth · ActionCardSection · WeeklyEmotionGrid 등
+  features/                  # 도메인별 — auth onboarding home retro diary archive report my
+    <도메인>/model/          # 타입(types.ts)·store(Zustand)·selector
+    <도메인>/data/           # mock↔store 경계 — sampleRepository·sampleAdapter (home·report·diary)
+    <도메인>/ui/             # 화면 조각 (home/ScheduleRow)
+  mocks/sample.ts            # 데모 데이터 정본 (schema meta.sampleData) — 화면은 직접 읽지 않는다(린터가 막음)
   lib/
     providers.tsx            # Provider 스택 — 늘릴 때 여기만 고친다
+    clock.ts                 # 시각의 단일 공급자 — 04:00 하루 경계 · SampleClock (§4)
+    day.ts  time.ts          # 날짜·시각 표기
 ```
 
 **Provider 를 `app/_layout.tsx` 에 두지 않는다.** 축 A·B 두 사람이 같은 줄에서
@@ -160,13 +177,14 @@ src/
     common/                  # TabBar ScrollArea EmotionPill EmotionGrid Sheet SegBar ...
   features/
     auth/ onboarding/ home/ retro/ diary/ archive/ report/ my/
-      api/ model/ ui/        # 쿼리 훅 · 도메인 로직 · 화면 조각
-                             # 지금 있는 것: auth · onboarding · home · retro · diary
-                             # (api/ 는 BE 연결 때 생긴다 — 그전까지 model/ 이 mocks/ 를 읽는다)
+      api/ model/ data/ ui/  # 쿼리 훅 · 도메인 로직 · mock/API 경계 · 화면 조각
+                             # 도메인 8종 전부 존재. mocks/ 는 data/(repository·adapter)만 읽고
+                             # 화면·model 은 data/ 를 지난다 — api/ 는 BE 연결 때 data/ 안쪽을 대체
   lib/
     api/                     # 클라이언트 · 생성된 타입 · 오프라인 아웃박스
     analytics/               # track() 파사드 + 이벤트 상수
-    day.ts                   # 04:00 하루 경계
+    clock.ts                 # 시각의 단일 공급자 — 04:00 하루 경계 (BE 전환 시 SystemClock 으로)
+    day.ts                   # 날짜 표기
     a11y.ts                  # Reduce Motion 훅
   mocks/                     # MSW 핸들러 + 샘플 데이터(schema meta.sampleData)
 ```
@@ -249,21 +267,26 @@ BE 팀의 API 가 확정되지 않았으므로 **FE 가 계약을 먼저 제안�
 
 ### 파생값
 
-`diaryCount` · `recordedDays` · `emotionRecords` · `monthTopEmotion` · `monthChange` · `reportUnlock` 은 **서버 계산**을 기본으로 한다(같은 값이 여러 화면에 쓰이고, 기간마다 다른 값이라 클라이언트 중복 계산은 어긋나기 쉽다). 오프라인일 때만 캐시된 값을 보여준다.
+`diaryCount` · `recordedDays` · `emotionRecords` · `monthTopEmotion` · `monthChange` · `reportUnlock` —
+**현재는 전부 FE 가 계산한다** (`features/{archive,report,my}/model/` 의 순수 함수 · 테스트로 고정).
+서버 이동 여부는 BE 계약(openapi.yaml) 확정 시 재결정한다 — 같은 값이 여러 화면에 쓰이고
+기간마다 다른 값이라 이중 계산은 어긋나기 쉽다는 우려가 근거다.
+[`PRODUCT.md` 「상류와 차이」](PRODUCT.md) · [`DISCUSSION.md`](DISCUSSION.md) §1-3 에 결정 대기로 있다.
 
-`day.ts` — 하루 경계는 **04:00**. `date` 계산은 전부 이 유틸을 지난다.
+**시각은 `src/lib/clock.ts` 를 지난다** — 하루 경계 **04:00**, 샘플 하루(2026-07-27)의
+`SampleClock` 이 기본값이고 BE·실제 날짜 전환 시 `SystemClock` 으로 바꾸는 곳이 이 한 파일이다.
+`day.ts` 는 날짜 **표기**만 담당한다.
 
 ---
 
 ## 5. 디자인 시스템 연동
 
-`02_디자인시스템/theme.ts` 가 정본이고, FE 는 **복사본을 쓴다** (momentory-fe 는 별도 저장소라 상대 경로 import 가 안 된다).
-
-```bash
-npm run sync:theme    # ../02_디자인시스템/theme.ts → src/design/theme.ts (헤더에 "생성물" 주석)
-```
+상류 `02_디자인시스템/theme.ts` 가 토큰 정본이고, FE 는 **복사본(`src/design/theme.ts`)을 커밋해서 쓴다**.
+재생성(`npm run sync:theme`)은 상류 로컬 폴더를 가진 담당자 전용이다 —
+절차와 검증은 [`docs/spec/SNAPSHOT.md`](spec/SNAPSHOT.md). `npm run check:theme` 는 상류 없이 돈다.
 
 색·크기·시간을 하드코딩하지 않는다. 어기면 ESLint 커스텀 룰(리터럴 hex 금지)이 잡는다.
+값을 찾는 순서는 [`PRODUCT.md`](PRODUCT.md) — 화면 스펙 → [`spec/momentory.css`](spec/momentory.css) → (담당자 경유) 상류 도구.
 
 ### ⚠ 지금 있는 토큰 불일치 (상류 확인 필요)
 
@@ -276,18 +299,24 @@ MVP 리팩토링본 `momentory.css` 에는 있는데 `lib.mjs` → `theme.ts` �
 | ~~`--dangerInk`~~                                                                       | `#9B3B2F`                                   | ✅ **해결됨 (2026-08-05 · `R-40`)** — `lib.mjs` 등록 완료, `theme.ts` 에 `colors.dangerInk` 로 나온다. 오버라이드 불필요. **글자·테두리 전용이고 면을 채우지 않는다** |
 | `.scr` 배경                                                                             | `120% 90% at 50% 18%` (S0·S1 만 구 값 유지) | `gradients.screen` 은 구 값만                                                                                                                                         |
 
-**대응**: `05_도구/lib.mjs` 에 위 값을 반영하고 `export-theme.mjs` 를 다시 돌리는 것이 정공법이다. 그때까지 FE 는 `src/design/tokens.mvp.ts` 에 오버라이드를 모아 두고, 반영되면 그 파일을 지운다. (오버라이드를 화면 코드에 흩지 않는다.)
+**대응**: 상류 `lib.mjs` 에 위 값이 반영되는 것이 정공법이다(담당자가 상류에 요청 —
+[`PRODUCT.md` 「상류와 차이」](PRODUCT.md) #1). 그때까지 FE 는 `src/design/tokens.mvp.ts` 에
+오버라이드를 모아 두고, 반영되면 그 파일을 지운다. (오버라이드를 화면 코드에 흩지 않는다.)
 
 ### 자산
 
-- **Pretendard 폰트 파일이 `04_자산/` 에 없다** — README 는 `폰트/` 를 가리키지만 실제 폴더에는 캐릭터만 있다. 웹폰트 배포본에서 4 weight 를 받아 `assets/fonts/` 에 넣는다.
-- 바바 이미지는 `04_자산/캐릭터/` 에서 필요한 것만 가져온다 — MVP 사용분: 얼굴 클로즈업 `01_기본표정`, 전체모습 `01_앉아서_인사`, 표정 `01_기쁨`. 투명 배경은 `.PNG`.
+- **Pretendard 4 weight 는 `assets/fonts/` 에 커밋돼 있다** — 출처·해시·라이선스는
+  [`assets/fonts/README.md`](../assets/fonts/README.md).
+- 바바 이미지는 상류 `04_자산/캐릭터/` 에서 필요한 것만 가져온다(담당자 경유) —
+  MVP 사용분: 얼굴 클로즈업 `01_기본표정`, 전체모습 `01_앉아서_인사`, 표정 `01_기쁨`. 투명 배경은 `.PNG`.
 
 ---
 
 ## 6. 계측
 
-`ANALYTICS.md` 규칙은 **확정**이므로 그대로 심는다. 공통 속성 `screen_id`(필수) · `day_no` · `is_offline` 는 파사드가 자동으로 붙인다.
+이름 규칙(`<파트>_<대상>_<동작>`)은 확정(`R-05`)이라 그대로 심는다 — 이벤트 이름의 정본은
+상류 `ANALYTICS.md`(담당자 경유), 화면별 이벤트는 [`spec/screens/<ID>.md`](spec/screens/) 의 「계측」 절.
+공통 속성 `screen_id`(필수) · `day_no` · `is_offline` 는 파사드가 자동으로 붙인다.
 
 ```ts
 track("home_memo_add", { char_bucket: bucket(text.length) });
@@ -346,7 +375,7 @@ M1 이 병목이자 지렛대다 — 여기서 만든 채팅 컴포넌트군이 
 
 ---
 
-## 9. 지키는 규칙 (전 컴포넌트 · `COMPONENTS.md` §공통 규칙)
+## 9. 지키는 규칙 (전 컴포넌트 · [`spec/COMPONENTS.md`](spec/COMPONENTS.md) §공통 규칙)
 
 1. 감정은 `theme.emotions` 9종만. 이모지 척도로 대체하지 않는다.
 2. 색·크기·시간을 하드코딩하지 않는다.

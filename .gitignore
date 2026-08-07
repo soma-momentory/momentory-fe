@@ -20,6 +20,7 @@ expo-env.d.ts
 *.p8
 *.p12
 *.key
+*.keystore
 *.mobileprovision
 *.pem
 
@@ -51,6 +52,9 @@ coverage/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# 에디터 개인 설정 (권장 설정 예시는 docs/SETUP.md §7)
+.vscode/
 
 # Claude Code 로컬 설정 (기기별 권한 허용 목록)
 .claude/settings.local.json
