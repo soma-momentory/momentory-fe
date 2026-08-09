@@ -9,9 +9,11 @@ import { getApiBaseUrl } from "@/lib/config";
  *   호출부가 오류 종류를 다시 추측하지 않게 한다.
  * - **서버를 믿지 않는다.** `data` 는 파싱만 한 값이고 **형태 검증은 호출부 몫**이다
  *   (`retroApi.ts` 가 `ReplyDto` 를 런타임에 검사한다). `fetch` 는 형태를 보장하지 않는다.
- * - **토큰의 정본은 SecureStore 세션**이다. 매 호출에서 `getAccessToken()` 으로 읽고,
- *   없으면(비로그인·만료) **보내지 않고** `unauthenticated` 로 닫는다 — 갱신 계약이
- *   아직 없어 만료 토큰을 보내 401 을 받느니 fail-closed 로 넘어간다(`auth.ts` 상단 ⚠).
+ * - **토큰의 정본은 SecureStore 세션**이다. 매 호출에서 `getAccessToken()` 으로 읽는다 —
+ *   그 함수가 만료를 보면 먼저 조용히 갱신을 시도하므로, 여기는 갱신 성공 여부를
+ *   모른 채 결과(새 토큰 또는 `null`)만 받는다. `null`(비로그인·손상·갱신 실패)이면
+ *   **보내지 않고** `unauthenticated` 로 닫는다 — 이미 죽은 걸 아는 토큰을 보내
+ *   401 을 받느니 fail-closed 로 넘어간다.
  *
  * 본문·토큰을 로그로 남기지 않는다(`docs/CONTRIBUTING.md` 「값을 다루는 세 등급」).
  */

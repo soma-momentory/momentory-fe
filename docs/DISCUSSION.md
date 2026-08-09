@@ -94,19 +94,22 @@
   유예(soft delete) 기간이 있는가. FE 는 이 답이 있어야 탈퇴 확인 화면
   (`my.pendingStates`, 아직 없음)의 문안을 쓸 수 있다
 
-### 1-6. 인증 — 카카오 로그인은 붙었고 **갱신·HTTPS 가 비어 있다** (2026-08-07 추가)
+### 1-6. 인증 — 카카오 로그인·토큰 갱신은 붙었고 **HTTPS 가 비어 있다** (2026-08-07 추가 · 2026-08-09 갱신 닫힘)
 
-`POST /api/v1/auth/kakao` 하나는 합의돼 구현했다(요청 `{accessToken}` → 응답
+`POST /api/v1/auth/kakao` 는 합의돼 구현했다(요청 `{accessToken}` → 응답
 `accessToken`·`refreshToken`·`tokenType`·`accessTokenExpiresIn`·`userId`·`onboardingRequired`,
 오류 `400 INVALID_REQUEST` · `401 KAKAO_TOKEN_INVALID` · `502 KAKAO_API_SERVER_ERROR` ·
-`503 KAKAO_API_NETWORK_ERROR`). **남은 둘이 운영 배포를 막는다:**
+`503 KAKAO_API_NETWORK_ERROR`).
 
-- ⛔ **갱신(refresh) 엔드포인트 계약이 없다.** 서버가 `refreshToken` 을 주는데 그것을
-  쓸 API 가 없어 **저장만 하고 있다** — access token 이 만료되면 갱신 없이
-  `anonymous` 로 닫힌다(`ARCHITECTURE §3-4` fail-closed). 필요한 합의: 경로 ·
-  요청/응답 형태 · refresh token 의 수명과 **회전 여부**(한 번 쓰면 새것을 주는가) ·
-  만료·폐기 시 상태 코드. **계약 없이 지어내지 않았다** — 추측한 갱신은 조용히
-  실패하고 사용자는 이유 없이 로그아웃된다.
+✅ **갱신(refresh)도 닫혔다** — BE 가 이미 `POST /api/v1/auth/reissue` 를 구현해
+두었다(요청 `{refreshToken}` → 응답 `accessToken`·`refreshToken`·`tokenType`·
+`accessTokenExpiresIn`, 오류 `400 INVALID_REQUEST` · `401 REFRESH_TOKEN_INVALID` /
+`REFRESH_TOKEN_REVOKED` / `REFRESH_TOKEN_EXPIRED`). refresh token 은 **회전한다**
+(한 번 쓰면 폐기하고 새것을 준다). FE 는 `reissueApi.ts` + `auth.ts` 의
+`getAccessToken`/`hydrate` 에서 붙였다 — `TASKS.md` 「2026-08-09 · 토큰 갱신」.
+
+**남은 하나가 운영 배포를 막는다:**
+
 - ⛔ **개발 서버가 평문 HTTP(IP 주소)다.** Android 는 그 호스트 하나만 예외로 열었지만
   (`plugins/withInsecureDevApi.ts`) **iOS 는 ATS 가 IP 예외를 지원하지 않아 앱 전체
   예외 말고는 좁힐 방법이 없다.** 스토어 빌드에는 쓸 수 없다 — 서버에 HTTPS(가능하면

@@ -18,9 +18,8 @@ import { getApiBaseUrl } from "@/lib/config";
  * **토큰과 응답 본문을 로그로 남기지 않는다.** 실패도 사유 코드까지만 남기고
  * 본문은 버린다(`docs/CONTRIBUTING.md` 「값을 다루는 세 등급」).
  *
- * ⚠ **갱신(refresh) 계약이 아직 없다.** 서버가 refresh token 을 주지만 그것을
- * 쓸 엔드포인트가 합의되지 않았다 — 지어내지 않고 저장만 한다. 만료는 계속
- * fail-closed 다(`docs/DISCUSSION.md` §1 · `docs/TASKS.md`).
+ * 갱신(refresh)은 여기 없다 — 로그인 직후 최초 세션을 만드는 자리일 뿐이고,
+ * 만료된 세션을 새 토큰으로 바꾸는 것은 `reissueApi.ts`(`POST …/reissue`) 몫이다.
  */
 export const KAKAO_LOGIN_PATH = "/api/v1/auth/kakao";
 

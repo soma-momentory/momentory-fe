@@ -26,8 +26,10 @@ void SplashScreen.preventAutoHideAsync();
  * 순서에 이유가 있다:
  * - **GestureHandlerRootView 가 가장 밖**이다. 안쪽에 두면 그 위의 제스처가
  *   죽는다 — 홈 바텀시트(`12-c`·`12-d`·`12-e`)가 여기 걸린다.
- * - **AuthGate 는 가장 안**이다. 토큰 갱신에 Query 가 필요하고, 갱신 결과로
- *   라우트를 막아야 하므로 라우트 트리 바로 위여야 한다.
+ * - **AuthGate 는 가장 안**이다. 판정 결과로 라우트를 막아야 하므로 라우트
+ *   트리 바로 위여야 한다. 토큰 갱신 자체는 Query 없이 `auth.ts`(`getAccessToken`·
+ *   `hydrate`)에서 이미 돈다 — AuthGate 가 필요한 것은 QueryClient 도입 이후
+ *   백그라운드 리페치 등에서 세션이 죽었을 때 라우트를 되돌리는 몫이다.
  *
  * **아직 설치하지 않은 것을 미리 넣지 않는다** — 쓸 화면이 생길 때 넣는다
  * (`ARCHITECTURE.md §1`). 위 셋은 자리만 적어둔 것이지 지금 있는 것이 아니다.
