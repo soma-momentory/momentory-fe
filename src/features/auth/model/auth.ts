@@ -143,6 +143,28 @@ const persist = async (session: Session): Promise<boolean> => {
   }
 };
 
+/**
+ * 인증 API 호출에 실을 **모멘토리 access token**. 없거나 만료·손상이면 `null`.
+ *
+ * **`useAuth` store 가 아니라 SecureStore 에서 읽는다** — 토큰의 정본은 세션
+ * 하나뿐이고 store 는 판정 결과(`status`)만 든다. 미러를 만들면 로그아웃·만료
+ * 뒤에 죽은 토큰이 남아 인증된 것처럼 요청을 실어 보낸다.
+ *
+ * 만료를 여기서 걸러 **fail-closed** 로 넘어간다 — 갱신 계약이 아직 없으므로
+ * 만료된 토큰을 보내 401 을 받느니 보내지 않는다(`auth.ts` 상단 ⚠). 갱신이
+ * 생기면 이 자리에서 재발급을 시도하게 된다.
+ */
+export const getAccessToken = async (): Promise<string | null> => {
+  try {
+    const raw = await SecureStore.getItemAsync(SESSION_KEY);
+    if (raw == null) return null;
+    const session: unknown = JSON.parse(raw);
+    return isValidSession(session) ? session.accessToken : null;
+  } catch {
+    return null;
+  }
+};
+
 export const useAuth = create<AuthStore>((set, get) => ({
   status: "hydrating",
   signingIn: false,
