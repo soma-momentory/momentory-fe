@@ -16,8 +16,19 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * 대충 단언하면 필드가 빠진 200 이 그대로 화면에 오른다.
  */
 
-/** 선택지 하나. `id` 는 1-base 번호 문자열 — 턴 요청의 `optionId` 로 돌려보낸다 */
-export type ReplyOption = { id: string; label: string; description: string | null };
+/**
+ * 선택지 하나. `id` 는 1-base 번호 문자열 — 턴 요청의 `optionId` 로 돌려보낸다.
+ *
+ * `hint` 는 화면 배지용 맥락 한 줄(예: "지난 비슷한 상황에서 정한 행동"). `input` 이 true 면
+ * "직접 입력" 옵션이라, 고르면 텍스트 필드를 열고 `optionId` 대신 `content` 로 돌려보낸다.
+ */
+export type ReplyOption = {
+  id: string;
+  label: string;
+  description: string | null;
+  hint: string | null;
+  input: boolean;
+};
 
 /** 슬라이더 하나. `id` 는 measure 필드 키 — 턴 요청 `measures` 의 키로 돌려보낸다 */
 export type ReplyMeasure = { id: string; label: string; min: number; max: number };
@@ -110,8 +121,17 @@ const readBodyCode = (body: unknown): RetroFailureCode | null => {
   return typeof code === "string" ? (BODY_CODES[code] ?? null) : null;
 };
 
-/** http 계층 오류 → 회고 사유. 본문 코드가 있으면 그것을, 없으면 상태 코드로 접는다 */
-const mapError = (error: HttpError): RetroFailureCode => {
+/**
+ * http 계층 오류 → 회고 사유. 본문 코드가 있으면 그것을, 없으면 상태 코드로 접는다.
+ *
+ * `notFound` 는 **본문 코드 없는 404 를 무엇으로 볼 것인가**다 — 요청마다 다르기
+ * 때문에 밖에서 받는다. 세션을 지목한 요청(`sendTurn`)의 404 는 정말 그 세션이
+ * 없는 것이지만, **시작 요청에는 지목할 세션이 없다** — 거기서 온 404 는 세션이
+ * 아니라 서버 쪽 문제(엔드포인트 부재·경로 오타)다. 그걸 `session_not_found` 로
+ * 접으면 「처음부터 다시 시작해 주세요」라고 안내해 놓고 다시 시작해도 같은 자리에
+ * 서게 된다 — 사용자가 할 수 있는 일이 없는데 할 일을 시키는 문구가 된다.
+ */
+const mapError = (error: HttpError, notFound: RetroFailureCode): RetroFailureCode => {
   switch (error.code) {
     case "unconfigured":
       return "unconfigured";
@@ -126,7 +146,7 @@ const mapError = (error: HttpError): RetroFailureCode => {
       if (fromBody != null) return fromBody;
       if (error.status === 400) return "invalid_request";
       if (error.status === 401) return "unauthenticated";
-      if (error.status === 404) return "session_not_found";
+      if (error.status === 404) return notFound;
       return "server";
     }
   }
@@ -146,7 +166,14 @@ const toOptions = (v: unknown): ReplyOption[] | null => {
     const id = asString(item.id);
     const label = asString(item.label);
     if (id == null || label == null) return null;
-    out.push({ id, label, description: asString(item.description) });
+    out.push({
+      id,
+      label,
+      description: asString(item.description),
+      hint: asString(item.hint),
+      // 서버는 "직접 입력" 옵션에만 input:true 를 싣는다(NON_NULL) — 없으면 보통 옵션
+      input: item.input === true,
+    });
   }
   return out;
 };
@@ -222,7 +249,8 @@ export async function startRetro(
   options?: { signal?: AbortSignal },
 ): Promise<RetroResult<StartResponse>> {
   const result = await authedRequest<unknown>("POST", RETROSPECT_PATH, input, options);
-  if (!result.ok) return { ok: false, code: mapError(result.error) };
+  // 아직 세션이 없다 — 여기서의 404 는 서버가 이 길을 열어두지 않았다는 뜻이다
+  if (!result.ok) return { ok: false, code: mapError(result.error, "server") };
 
   if (!isObject(result.data)) return { ok: false, code: "malformed" };
   const sessionId = result.data.sessionId;
@@ -243,7 +271,7 @@ export async function sendTurn(
     input,
     options,
   );
-  if (!result.ok) return { ok: false, code: mapError(result.error) };
+  if (!result.ok) return { ok: false, code: mapError(result.error, "session_not_found") };
 
   const reply = toReply(result.data);
   if (reply == null) return { ok: false, code: "malformed" };

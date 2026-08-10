@@ -44,6 +44,8 @@ type DiaryStore = {
     weather?: string | null;
     situation?: string | null;
     targetAction?: string | null;
+    /** 이 일기를 남긴 서버 회고 세션 id — 서버 저장분을 다시 불러오는 열쇠 */
+    retrospectId?: string | null;
     /** 사용자가 초안을 고쳤는지 */
     edited: boolean;
   }) => void;
@@ -99,6 +101,7 @@ export const useDiary = create<DiaryStore>((set) => ({
     weather = null,
     situation = null,
     targetAction = null,
+    retrospectId = null,
     edited,
   }) =>
     set((s) => {
@@ -127,6 +130,7 @@ export const useDiary = create<DiaryStore>((set) => ({
             storyEmotion,
             startEmotion,
             weather,
+            retrospectId,
           },
         ],
         actionCards: hasCard

@@ -10,7 +10,7 @@ import { ChatLayout } from "@/components/chat/ChatLayout";
 import { DirectionChip } from "@/components/chat/DirectionChip";
 import { MeasureInput } from "@/components/chat/MeasureInput";
 import { TypingDots } from "@/components/chat/TypingDots";
-import { DirectionSheet } from "@/components/common/DirectionSheet";
+import { DirectionSheet, type DirectionChoice } from "@/components/common/DirectionSheet";
 import { RetroNav } from "@/components/common/RetroNav";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
@@ -142,7 +142,15 @@ export default function RetroTalk() {
     void runTurn({ content: text });
   };
 
-  const pickOption = (optionId: string) => {
+  const confirmChoice = (choice: DirectionChoice) => {
+    setSheetOpen(false);
+    // "직접 입력" 옵션 — 사용자가 적은 행동을 내가 한 말로 남기고 자유 텍스트로 보낸다
+    if ("content" in choice) {
+      addMyTurn(choice.content);
+      void runTurn({ content: choice.content });
+      return;
+    }
+    const { optionId } = choice;
     const phase = lastReply?.phase ?? "";
     const option = lastReply?.options?.find((o) => o.id === optionId);
     if (option != null) {
@@ -150,7 +158,6 @@ export default function RetroTalk() {
       if (isDirectionPhase(phase)) addChipTurn(option.label);
       else addMyTurn(option.label);
     }
-    setSheetOpen(false);
     void runTurn({ optionId });
   };
 
@@ -233,7 +240,7 @@ export default function RetroTalk() {
       {sheetOpen && lastReply?.options != null ? (
         <DirectionSheet
           options={lastReply.options}
-          onConfirm={pickOption}
+          onConfirm={confirmChoice}
           onDismiss={() => setSheetOpen(false)}
         />
       ) : null}

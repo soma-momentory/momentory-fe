@@ -111,6 +111,19 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
     expect(card?.targetAction).toBe(SEED_ACTION.action);
   });
 
+  it("서버 회고 세션 id 를 일기에 남긴다 — 나중에 서버 저장분을 되불러오는 열쇠다", async () => {
+    useRetro.setState({ sessionId: 42 });
+    await save();
+
+    expect(useDiary.getState().diaries[0]?.retrospectId).toBe("42");
+  });
+
+  it("세션 id 가 없으면(로컬만) retrospectId 는 없다", async () => {
+    await save();
+
+    expect(useDiary.getState().diaries[0]?.retrospectId).toBeNull();
+  });
+
   it("고치면 사용자의 것이 된다", async () => {
     await save("내가 다시 쓴 오늘.");
 

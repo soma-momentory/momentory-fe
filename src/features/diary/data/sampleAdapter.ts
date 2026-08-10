@@ -19,6 +19,8 @@ const seedDiaries = (): Diary[] =>
     authoredBy: "baba",
     editedAt: null,
     ordinal: i + 1,
+    // 샘플 일기는 서버 회고에서 온 것이 아니다 — 서버 조회 열쇠가 없다
+    retrospectId: null,
     // 그날의 기록 — 감정 태그의 초기값이 여기서 왔다
     storyEmotion: d.emotions[0],
     startEmotion: d.emotions[1],
