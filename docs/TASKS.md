@@ -632,7 +632,7 @@ lib/notifications.ts                ← expo-notifications 를 부르는 유일�
 
 ## M3 — 공용 컴포넌트 + 홈 5화면 · 축 B
 
-**선행**: `docs/DATA-SECURITY.md` (M3-3 아웃박스 전까지)
+**선행**: [`docs/DATA-SECURITY.md`](DATA-SECURITY.md) ✅ 초안(2026-08-11) — 남은 것은 §2 결정 둘
 
 > **BE 연결은 마지막에 한다** (2026-08-07 결정). 화면은 `src/mocks/sample.ts`
 > (= 스키마 `meta.sampleData`)로 채우고, 데이터는 `features/<도메인>/` 의 store 와
@@ -753,7 +753,8 @@ M1 에서 실제로 셋이 어긋났다 — `Card`(r14→**18**, primary 30%→*
   단계가 끝나 **연결 단계에서는 의미가 약해졌다** — 다음 분담은 「남은 것」 표 기준으로 다시 가른다
 - **지금 하는 것**: BE 연결이다. 계약이 [`docs/api/openapi.json`](api/openapi.json) 으로
   들어와 「BE 대기」가 풀렸다 — 순서는 위 「남은 API 연결」 표
-- **아직 멈춰 있는 것**: 보안 정책(`docs/DATA-SECURITY.md` · §2 — MMKV 를 막는다),
+- **아직 멈춰 있는 것**: 보안 정책의 **결정 둘**([`DATA-SECURITY.md`](DATA-SECURITY.md) §5-1·§5-2 —
+  문서는 섰고 팀 답만 남았다. MMKV 를 막는다),
   멱등성·동기화 방향 규약([`DISCUSSION.md`](DISCUSSION.md) §1-1·§1-4 — 아웃박스·캘린더를
   막는다), 상류 확인([`PRODUCT.md` 「상류와 차이」](PRODUCT.md) · §3)
 - **처음 볼 파일**: `app/index.tsx`(진입 분기) → `src/features/`(도메인 store) →
