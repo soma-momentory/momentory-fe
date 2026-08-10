@@ -33,6 +33,15 @@ import { create } from "zustand";
 export const OTHER_INTEREST = "OTHER";
 
 /**
+ * 쉬는 방법 「기타」 — `07` 의 직접 입력 줄이 이 칩에 매여 있다.
+ *
+ * **`OTHER_INTEREST` 와 문자열이 같지만 같은 것이 아니다.** 하나는
+ * `interestAreas` 의 코드고 하나는 `restMethods` 의 코드다 — 서버가 한쪽만
+ * 바꿔도 다른 쪽이 따라 움직이지 않도록 따로 둔다.
+ */
+export const OTHER_REST_METHOD = "OTHER";
+
+/**
  * 성별 「선택 안 함」. **`null`(미선택)과 다르다** — 앞은 묻지 않기를 고른
  * 것이고 이것은 해당 없음을 고른 것이다(`05-b.md`).
  */
@@ -52,11 +61,24 @@ export type OnboardingDraft = {
    */
   interestOther: string;
   /**
-   * `07` · 쉬는 방법 · 필수 · 복수 · 상한 없음.
+   * `07` · 쉬는 방법 · 필수 · 복수 · 상한 없음. 서버 `restMethods[].code`.
    * MVP 에서 이 값을 보여주는 화면은 없다 — **저장만** 한다
    * (`momentory.schema.mvp.json` `User.restMethods` · `07.md`).
+   *
+   * ⚠ **이모지 라벨이 아니라 코드다**(`SLEEP` · `LISTENING_TO_MUSIC` …).
+   * 관심사·성별과 같은 이유로 목록의 주인이 서버다 — 라벨을 id 로 쓰면
+   * 서버가 항목을 늘렸을 때 그 칩만 조용히 사라진다(`ARCHITECTURE §4`).
    */
   restMethods: string[];
+  /**
+   * `07` · 「기타」 직접 입력 값 (최대 12자, trim 저장).
+   * `restMethods` 에 `OTHER_REST_METHOD` 가 있을 때만 의미를 갖는다 —
+   * 기타를 끄면 함께 비운다. `interestOther` 와 같은 규칙이다.
+   *
+   * **서버가 `OTHER` 와 함께 이 값을 요구한다** — 없으면 온보딩 제출이 400 이다
+   * (`DISCUSSION.md` §1-7). 그래서 `07` 에 입력 줄이 생겼다.
+   */
+  restMethodOther: string;
   /**
    * `08` · 회고 시각. **기본 `21:30`** — 스키마가 정한 값이다
    * (`momentory.schema.mvp.json` — "time · 기본 21:30 (08 · M3에서 수정)").
@@ -95,6 +117,7 @@ const EMPTY: OnboardingDraft = {
   interests: [],
   interestOther: "",
   restMethods: [],
+  restMethodOther: "",
   retroTime: "21:30",
   notifyRetro: true,
   calendarLinked: false,

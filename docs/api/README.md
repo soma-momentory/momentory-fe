@@ -34,15 +34,16 @@ OpenAPI 는 **모양**을 말하지만 다음은 말하지 않는다 — 그 셋
 화면은 서버 모양을 보지 않는다. **`src/features/<도메인>/data/` 의 어댑터가 경계**이고,
 각 어댑터 파일 머리의 JSDoc 이 그 엔드포인트에 대한 이 저장소 쪽 기록이다.
 
-| 어댑터                                          | 엔드포인트                                         |
-| ----------------------------------------------- | -------------------------------------------------- |
-| `src/features/auth/data/kakaoAuthApi.ts`        | `POST /api/v1/auth/kakao`                          |
-| `src/features/auth/data/reissueApi.ts`          | `POST /api/v1/auth/reissue`                        |
-| `src/features/auth/data/logoutApi.ts`           | `POST /api/v1/auth/logout`                         |
-| `src/features/auth/data/meApi.ts`               | `GET /api/v1/users/me`                             |
-| `src/features/onboarding/data/optionsApi.ts`    | `GET /api/v1/onboarding/options`                   |
-| `src/features/retro/data/retroApi.ts`           | `POST /api/v1/retrospect` · `POST …/{id}/messages` |
-| `src/features/diary/data/retrospectDiaryApi.ts` | `GET /api/v1/retrospect/{id}/diary`                |
+| 어댑터                                                  | 엔드포인트                                         |
+| ------------------------------------------------------- | -------------------------------------------------- |
+| `src/features/auth/data/kakaoAuthApi.ts`                | `POST /api/v1/auth/kakao`                          |
+| `src/features/auth/data/reissueApi.ts`                  | `POST /api/v1/auth/reissue`                        |
+| `src/features/auth/data/logoutApi.ts`                   | `POST /api/v1/auth/logout`                         |
+| `src/features/auth/data/meApi.ts`                       | `GET /api/v1/users/me`                             |
+| `src/features/onboarding/data/optionsApi.ts`            | `GET /api/v1/onboarding/options`                   |
+| `src/features/onboarding/data/completeOnboardingApi.ts` | `PUT /api/v1/users/me/onboarding`                  |
+| `src/features/retro/data/retroApi.ts`                   | `POST /api/v1/retrospect` · `POST …/{id}/messages` |
+| `src/features/diary/data/retrospectDiaryApi.ts`         | `GET /api/v1/retrospect/{id}/diary`                |
 
-아직 붙지 않은 것(일정 6종 · `PUT /users/me/onboarding` · 하루 메모 3종)은
+아직 붙지 않은 것(일정 6종 · 하루 메모 3종)은
 `openapi.json` 에는 있고 어댑터가 없다. 순서는 `docs/TASKS.md` 「남은 API 연결」을 본다.

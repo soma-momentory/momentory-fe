@@ -22,9 +22,10 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * ⚠ **서버가 주지 않는 것**: 관심사 상한 3 · 닉네임 금지어 · 「기타」 직접 입력
  * 12자. 전부 화면·`draft.ts` 에 남는다.
  *
- * ⚠ **쉬는 방법 15종(`07`)은 이제 서버가 준다** — 응답에 `restMethods` 가 있다
- * (BE `689feca` · 2026-08-10 재반입). **아직 읽지 않는다**: `07` 이 이모지 라벨을
- * id 로 들고 있어 서버 코드로 옮기는 전환이 먼저다(`TASKS.md` 「3단계의 선행 둘」).
+ * **쉬는 방법 15종(`07`)도 서버가 준다** (BE `689feca` · 2026-08-10 재반입).
+ * ⚠ **서버 라벨에는 이모지가 없다** — `07.md` 는 이모지를 라벨의 일부로 못박은
+ * 유일한 예외라, 연결됐을 때와 대역일 때 칩의 생김새가 달라진다.
+ * `PRODUCT.md` 「상류와 차이」 9번에 성별·관심사 라벨 차이와 함께 적었다.
  */
 export const OPTIONS_PATH = "/api/v1/onboarding/options";
 
@@ -54,6 +55,7 @@ export type OnboardingOptions = {
   nickname: NicknamePolicy | null;
   genders: Option[] | null;
   interestAreas: Option[] | null;
+  restMethods: Option[] | null;
   /**
    * `"HH:mm"` · `"Asia/Seoul"`. **아직 아무도 읽지 않는다** — `08` 은
    * `lib/time.ts` 가 정한 `"HH:mm"` 을 쓰고 시간대는 서버가 알아서 한다.
@@ -143,14 +145,20 @@ export const toOnboardingOptions = (v: unknown): OnboardingOptions | null => {
     nickname: toNicknamePolicy(v.nickname),
     genders: toOptions(v.genders),
     interestAreas: toOptions(v.interestAreas),
+    restMethods: toOptions(v.restMethods),
     reflectionTimeFormat: asText(v.reflectionTimeFormat),
     defaultTimeZone: asText(v.defaultTimeZone),
   };
 
-  // **셋 다 못 읽었으면 성공이 아니다.** 「받은 것만 덮는다」는 규칙 때문에
+  // **넷 다 못 읽었으면 성공이 아니다.** 「받은 것만 덮는다」는 규칙 때문에
   // 이런 응답도 조용히 통과하는데, 그러면 store 가 「서버 답을 받았다」로
   // 굳어 다시 묻지 않는다 — 대역인 채로 영영 남는다.
-  if (parsed.nickname == null && parsed.genders == null && parsed.interestAreas == null) {
+  if (
+    parsed.nickname == null &&
+    parsed.genders == null &&
+    parsed.interestAreas == null &&
+    parsed.restMethods == null
+  ) {
     return null;
   }
   return parsed;
