@@ -313,6 +313,20 @@ describe("signOut — 서버의 refresh token 폐기", () => {
     expect(secure.__store.has(SESSION_KEY)).toBe(false);
     expect(useAuth.getState().signInError).toBeNull();
   });
+
+  it("실패는 개발 빌드에 사유 코드만 남는다 — 토큰은 남기지 않는다", async () => {
+    seedSession(Date.now() + 60_000, { refreshToken: "device-refresh" });
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    revoke.mockResolvedValueOnce({ ok: false, code: "network" });
+
+    await useAuth.getState().signOut();
+    // 배웅이라 로그는 signOut 이 끝난 뒤에 붙는다
+    await Promise.resolve();
+
+    expect(warn).toHaveBeenCalledWith("[auth] 로그아웃 폐기 실패:", "network");
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("device-refresh");
+    warn.mockRestore();
+  });
 });
 
 describe("signInDev — 개발 통로", () => {

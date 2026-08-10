@@ -180,6 +180,21 @@ const readSession = async (): Promise<Session | null> => {
 };
 
 /**
+ * 폐기 실패를 **개발 빌드에서만** 남긴다 — `kakaoSdk.ts` 와 같은 방식.
+ *
+ * 로그아웃은 결과를 보지 않는 설계다(그래야 서버가 죽어도 로그아웃이 끝난다).
+ * 그런데 그 침묵은 **폐기가 성공한 것과 요청이 나가지도 못한 것을 구분할 수
+ * 없게** 만든다 — 실제로 이 경로는 검증할 방법이 없어 한 번 막혔다. 사유 코드
+ * 한 줄이면 logcat 에서 갈린다: 아무 말이 없으면 서버가 받았다는 뜻이다.
+ *
+ * **남기는 것은 사유 코드뿐이다** — 토큰도 본문도 남기지 않는다
+ * (`docs/CONTRIBUTING.md` 「값을 다루는 세 등급」).
+ */
+const warnInDev = (reason: string) => {
+  if (__DEV__) console.warn("[auth] 로그아웃 폐기 실패:", reason);
+};
+
+/**
  * 로그아웃·계정 삭제가 비우는 것 — **목록의 단일 지점**이다(`ARCHITECTURE §3-5`).
  *
  * 남기면 다음 사용자의 세션에 앞 사람의 것이 섞인다. 온보딩 답만의 문제가 아니다 —
@@ -411,6 +426,10 @@ export const useAuth = create<AuthStore>((set, get) => ({
     // 느린 만큼(최대 10초) 마이 화면이 아무 반응 없이 서 있게 되는데,
     // `SettingRow` 에는 진행 중을 보일 자리가 없고 화면도 `void signOut()` 로
     // 기다릴 준비가 안 돼 있다. **로그아웃은 실패할 수 없는 동작으로 둔다.**
-    if (session != null) void revokeRefreshToken(session.refreshToken);
+    if (session != null) {
+      void revokeRefreshToken(session.refreshToken).then((result) => {
+        if (!result.ok) warnInDev(result.code);
+      });
+    }
   },
 }));
