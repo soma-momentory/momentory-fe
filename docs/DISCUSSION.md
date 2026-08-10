@@ -94,7 +94,7 @@
   유예(soft delete) 기간이 있는가. FE 는 이 답이 있어야 탈퇴 확인 화면
   (`my.pendingStates`, 아직 없음)의 문안을 쓸 수 있다
 
-### 1-6. 인증 — 카카오 로그인·토큰 갱신은 붙었고 **HTTPS 가 비어 있다** (2026-08-07 추가 · 2026-08-09 갱신 닫힘)
+### 1-6. 인증 — 카카오 로그인·갱신·로그아웃은 붙었고 **HTTPS 가 비어 있다** (2026-08-07 추가 · 2026-08-09 갱신 닫힘 · 2026-08-10 로그아웃 닫힘)
 
 `POST /api/v1/auth/kakao` 는 합의돼 구현했다(요청 `{accessToken}` → 응답
 `accessToken`·`refreshToken`·`tokenType`·`accessTokenExpiresIn`·`userId`·`onboardingRequired`,
@@ -108,13 +108,20 @@
 (한 번 쓰면 폐기하고 새것을 준다). FE 는 `reissueApi.ts` + `auth.ts` 의
 `getAccessToken`/`hydrate` 에서 붙였다 — `TASKS.md` 「2026-08-09 · 토큰 갱신」.
 
+✅ **로그아웃도 닫혔다** — `POST /api/v1/auth/logout`(요청 `{refreshToken}` →
+**`204` 본문 없음**, 오류 `400 INVALID_REQUEST`). **제출한 refresh token 하나만
+멱등적으로 폐기한다** — 다른 기기의 세션은 살아 있고, 같은 토큰을 두 번 보내도
+결과가 같다. FE 는 `logoutApi.ts` + `auth.ts` 의 `signOut` 에서 붙였고,
+**로컬을 먼저 비우고 폐기는 기다리지 않는다**(서버가 죽어 있어도 로그아웃은 끝난다).
+
 **남은 하나가 운영 배포를 막는다:**
 
 - ⛔ **개발 서버가 평문 HTTP(IP 주소)다.** Android 는 그 호스트 하나만 예외로 열었지만
   (`plugins/withInsecureDevApi.ts`) **iOS 는 ATS 가 IP 예외를 지원하지 않아 앱 전체
   예외 말고는 좁힐 방법이 없다.** 스토어 빌드에는 쓸 수 없다 — 서버에 HTTPS(가능하면
   IP 가 아닌 도메인까지)가 필요하다. 준비되면 FE 는 `.env` 한 줄만 바꾼다.
-- 그 밖에 정해야 할 것: 로그아웃·회원 탈퇴 시 서버측 토큰 폐기 API · 401 을 받았을 때
+- 그 밖에 정해야 할 것: **회원 탈퇴 시** 서버측 토큰 폐기(로그아웃과 달리 그 계정의
+  **모든 기기** 세션을 끊어야 하고, 삭제 범위·유예는 §1-5 가 열려 있다) · 401 을 받았을 때
   아웃박스(§1-1)와 세션의 관계 · Apple·Google 세션 교환 엔드포인트(카카오와 같은 형태인가).
 
 ---
