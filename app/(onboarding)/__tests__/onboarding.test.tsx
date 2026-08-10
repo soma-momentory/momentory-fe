@@ -9,11 +9,22 @@ import Done from "../done";
 import Rest from "../rest";
 import RetroTime from "../retro-time";
 
+import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
 import { UNSPECIFIED_GENDER, useDraft } from "@/features/onboarding/model/draft";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
 }));
+
+/**
+ * `10` 의 서버 커밋. **어댑터 아래는 `completeOnboardingApi.test` 가 본다** —
+ * 여기서 보는 것은 「성공해야 홈으로 간다 · 실패하면 한 줄」이라는 화면의 규칙이다.
+ */
+jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
+  completeOnboarding: jest.fn(),
+}));
+
+const submit = jest.mocked(completeOnboarding);
 
 /** `08` 의 OS 권한 다이얼로그. 기본은 허용이고, 거부 경로만 각 테스트가 바꾼다 */
 const notifications = jest.requireMock("expo-notifications") as {
@@ -28,6 +39,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
+  submit.mockResolvedValue({ ok: true, data: { onboardingRequired: false } });
 });
 
 const flatten = (style: unknown) =>
@@ -293,7 +305,56 @@ describe("07 · 쉬는 방법", () => {
 
     await fireEvent.press(r.getByText("🧘 명상하기"));
     expect(r.getByText("3개 선택됨 · 다시 누르면 취소돼요")).toBeTruthy();
-    expect(useDraft.getState().restMethods).toEqual(["🎵 음악 듣기", "🚶 산책하기", "😴 잠자기"]);
+    // **라벨이 아니라 서버 코드가 남는다** — 이모지 문자열을 id 로 쓰면 서버가
+    // 받지 못하고, 항목을 늘렸을 때 그 칩만 조용히 사라진다
+    expect(useDraft.getState().restMethods).toEqual(["LISTENING_TO_MUSIC", "WALKING", "SLEEP"]);
+  });
+
+  it("[기타] 를 누르면 적을 자리가 열리고, 비워 두면 [다음] 이 잠긴다", async () => {
+    // 서버가 OTHER 와 함께 직접 입력 값을 요구한다 — 없으면 제출이 400 이다
+    // (DISCUSSION §1-7). 시안에 없는 줄이라 PRODUCT.md 「상류와 차이」 14번.
+    const r = await render(<Rest />);
+
+    await fireEvent.press(r.getByText("기타"));
+
+    expect(r.getByPlaceholderText("직접 입력")).toBeTruthy();
+    expect(flatten(r.getByText("다음").parent?.props.style).opacity).toBe(0.36);
+    expect(r.getByText("기타에 무엇을 적을지 알려주세요.")).toBeTruthy();
+  });
+
+  it("기타에 적으면 열리고, 그 값이 초안에 남는다", async () => {
+    const r = await render(<Rest />);
+    await fireEvent.press(r.getByText("기타"));
+
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), " 뜨개질 ");
+    await fireEvent(r.getByPlaceholderText("직접 입력"), "submitEditing");
+
+    expect(useDraft.getState().restMethodOther).toBe("뜨개질");
+    expect(useDraft.getState().restMethods).toEqual(["OTHER"]);
+    expect(flatten(r.getByText("다음").parent?.props.style).opacity).toBeUndefined();
+  });
+
+  it("기타를 끄면 적던 값도 함께 비운다 — 꺼진 답을 초안에 남기지 않는다", async () => {
+    const r = await render(<Rest />);
+    await fireEvent.press(r.getByText("기타"));
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), "뜨개질");
+
+    // 줄이 열리면 「기타」가 둘이다 — 칩과 입력 줄의 이름. 앞의 것이 칩이다
+    await fireEvent.press(r.getAllByText("기타")[0]!);
+
+    expect(useDraft.getState().restMethods).toEqual([]);
+    expect(useDraft.getState().restMethodOther).toBe("");
+  });
+
+  it("공백만 적고 확정하면 기타 선택이 취소된다 — 빈 칩을 만들지 않는다", async () => {
+    const r = await render(<Rest />);
+    await fireEvent.press(r.getByText("기타"));
+
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), "   ");
+    await fireEvent(r.getByPlaceholderText("직접 입력"), "submitEditing");
+
+    expect(useDraft.getState().restMethods).toEqual([]);
+    expect(useDraft.getState().restMethodOther).toBe("");
   });
 });
 
@@ -534,6 +595,58 @@ describe("10 · 완료 (+ 10-b 건너뜀)", () => {
 
     await fireEvent.press(getByText("모멘토리 시작하기"));
 
-    expect(useDraft.getState().nickname).toBe("");
+    await waitFor(() => expect(useDraft.getState().nickname).toBe(""));
+  });
+
+  it("답을 서버에 남기고서야 홈으로 간다", async () => {
+    useDraft.getState().set("nickname", "지현");
+    useDraft.getState().set("restMethods", ["SLEEP"]);
+    const { getByText } = await render(<Done />);
+
+    await fireEvent.press(getByText("모멘토리 시작하기"));
+
+    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({ nickname: "지현", restMethods: ["SLEEP"] }),
+    );
+  });
+
+  it("보내지 못하면 홈으로 가지 않는다 — 초안도 그대로 둔다", async () => {
+    // 완료의 정본은 서버다(`syncMe`). 보내지 못한 채 넘어가면 앱을 다시 열었을 때
+    // 열한 화면을 처음부터 다시 답하게 된다.
+    submit.mockResolvedValue({ ok: false, code: "network" });
+    useDraft.getState().set("nickname", "지현");
+    const { getByText } = await render(<Done />);
+
+    await fireEvent.press(getByText("모멘토리 시작하기"));
+
+    await waitFor(() =>
+      expect(getByText("지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.")).toBeTruthy(),
+    );
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
+    expect(useDraft.getState().nickname).toBe("지현");
+  });
+
+  it("200 인데 아직 「온보딩 필요」면 성공으로 보지 않는다", async () => {
+    submit.mockResolvedValue({ ok: true, data: { onboardingRequired: true } });
+    const { getByText } = await render(<Done />);
+
+    await fireEvent.press(getByText("모멘토리 시작하기"));
+
+    await waitFor(() =>
+      expect(getByText("지금은 저장할 수 없어요. 잠시 뒤 다시 시도해 주세요.")).toBeTruthy(),
+    );
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
+  });
+
+  it("실패해도 모달·재시도 버튼을 두지 않는다 — 다시 누를 곳은 CTA 하나다", async () => {
+    submit.mockResolvedValue({ ok: false, code: "server" });
+    const { getByText, queryByText } = await render(<Done />);
+
+    await fireEvent.press(getByText("모멘토리 시작하기"));
+
+    await waitFor(() => expect(queryByText(/저장할 수 없어요/)).toBeTruthy());
+    expect(queryByText(/다시 시도하기|재시도/)).toBeNull();
+    expect(getByText("모멘토리 시작하기")).toBeTruthy();
   });
 });

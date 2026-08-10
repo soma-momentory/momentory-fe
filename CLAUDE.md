@@ -132,7 +132,10 @@ src/components/chat/{ChatLayout, BabaBubble, AnswerBubble, Avatar, TypingDots, C
                                             MeasureInput = 서버가 ui:"measure" 를 줄 때의 눈금
 src/components/common/{TabBar, TabScreen, EmotionPill, Sheet, EmotionGrid, Toggle, RetroNav,
                        SegBar, DirectionSheet, SectionLabel, ConfirmCard}.tsx
-src/components/onboarding/OnboardingTopBar.tsx   src/components/my/SettingRow.tsx
+src/components/onboarding/{OnboardingTopBar, OtherRow}.tsx
+                                          ← OtherRow = 「기타」 인라인 입력 줄.
+                                            06-b · 07 · M2 가 나눠 쓴다
+src/components/my/SettingRow.tsx
 src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이모지 금지)
 src/components/archive/{CalendarMonth, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionRow, ActionCardSection, DiaryBabaFace}.tsx ← C6-b·A3 공유
@@ -154,13 +157,16 @@ src/features/my/model/{settings,stats,reminders}.ts
                                             화면이 예약을 부르지 않는다(값이 바뀌는
                                             자리가 넷이라 하나를 빠뜨린다).
                                             알림 문안도 여기 산다
-src/features/onboarding/{model/{draft, completion, options}.ts, data/optionsApi.ts}
+src/features/onboarding/{model/{draft, completion, options, submit}.ts,
+                         data/{optionsApi, completeOnboardingApi}.ts}
                                           ← 답안 초안 · 완료 플래그(진입 분기) ·
-                                            선택지(04·05-b·06 · M2 가 같은 목록을 본다).
-                                            관심사·성별은 **서버 코드를 그대로 든다** —
+                                            선택지(04·05-b·06·07 · M2 가 같은 목록을 본다) ·
+                                            **서버 커밋**(10 과 M2 가 같은 PUT 을 지난다).
+                                            관심사·성별·쉬는 방법은 **서버 코드를 그대로 든다** —
                                             우리 id 로 옮기면 서버가 새로 넣은 항목이
                                             조용히 사라진다(ARCHITECTURE §4).
-                                            못 받으면 대역으로 그린다 — 온보딩은 멈추지 않는다
+                                            못 받으면 대역으로 그린다 — 온보딩은 멈추지 않는다.
+                                            실패 문구는 submit.ts 한 곳(10·M2 가 나눠 쓴다)
 src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,reissueApi,logoutApi}.ts}
                                           ← M2-0 부트스트랩(hydrate·가드·fail-closed) +
                                             M2-1 카카오 로그인 + 만료 토큰의 조용한 갱신

@@ -30,6 +30,10 @@ const BODY = {
     { code: "STUDY", label: "학업" },
     { code: "OTHER", label: "기타" },
   ],
+  restMethods: [
+    { code: "SLEEP", label: "잠자기" },
+    { code: "OTHER", label: "기타" },
+  ],
   reflectionTimeFormat: "HH:mm",
   defaultTimeZone: "Asia/Seoul",
 };
@@ -80,6 +84,11 @@ describe("성공", () => {
         ],
         interestAreas: [
           { id: "STUDY", label: "학업" },
+          { id: "OTHER", label: "기타" },
+        ],
+        // 쉬는 방법도 서버가 준다 — `07` 이 이모지 라벨을 id 로 들던 자리다
+        restMethods: [
+          { id: "SLEEP", label: "잠자기" },
           { id: "OTHER", label: "기타" },
         ],
         reflectionTimeFormat: "HH:mm",

@@ -27,8 +27,12 @@ const PROFILE = {
   age: 25,
   gender: "FEMALE",
   interestAreas: ["CAREER", "RELATIONSHIP"],
+  otherInterestDetail: null,
+  restMethods: ["READING", "WALKING"],
+  otherRestMethodDetail: null,
   reflectionTime: "21:30",
   calendarIntegrationEnabled: true,
+  notificationEnabled: true,
 };
 
 const BODY = { userId: 7, role: "USER", onboardingRequired: false, profile: PROFILE };
@@ -99,11 +103,41 @@ describe("성공 — 서버 값을 화면 값으로 옮긴다", () => {
           age: "25",
           gender: "FEMALE",
           interests: ["RELATIONSHIP", "OTHER", "SELF"],
+          interestOther: "",
+          restMethods: ["READING", "WALKING"],
+          restMethodOther: "",
           retroTime: "21:30",
           calendarLinked: true,
+          notifyRetro: true,
         },
       },
     });
+  });
+
+  it("알림 켜짐은 안 준 것과 끈 것을 가른다 — 없는 것으로 덮지 않는다", async () => {
+    // `undefined` 면 `adoptProfile` 이 지금 값을 그대로 둔다. `false` 로 접으면
+    // 앱을 다시 열 때마다 사용자가 켠 알림이 꺼진다.
+    mockFetch(async () =>
+      respond(200, { ...BODY, profile: { ...PROFILE, notificationEnabled: undefined } }),
+    );
+
+    const result = await fetchMe();
+
+    expect(result.ok && result.data.profile?.notifyRetro).toBeUndefined();
+  });
+
+  it("「기타」 직접 입력을 옮긴다 — 없으면 빈 문자열이다", async () => {
+    mockFetch(async () =>
+      respond(200, {
+        ...BODY,
+        profile: { ...PROFILE, otherInterestDetail: " 반려동물 ", otherRestMethodDetail: null },
+      }),
+    );
+
+    const result = await fetchMe();
+
+    expect(result.ok && result.data.profile?.interestOther).toBe("반려동물");
+    expect(result.ok && result.data.profile?.restMethodOther).toBe("");
   });
 
   it("성별이 비면 「선택 안 함」으로 읽는다 — 미선택(null)은 서버에 없다", async () => {

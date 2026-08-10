@@ -75,7 +75,12 @@ export const useSettings = create<SettingsStore>((set) => ({
 type ProfileStore = {
   nickname: string;
   interests: string[];
+  /** `06-b` 의 직접 입력. `interests` 에 `OTHER` 가 있을 때만 의미를 갖는다 */
+  interestOther: string;
+  /** 서버 `restMethods[].code` — 이모지 라벨이 아니다(`draft.ts` 와 같은 이유) */
   restMethods: string[];
+  /** `07` 의 직접 입력. 서버가 `OTHER` 와 함께 요구한다(`DISCUSSION.md` §1-7) */
+  restMethodOther: string;
   /**
    * 온보딩 `05-b` 의 기본 정보 — **선택**이라 비어 있을 수 있다.
    * `M1` 의 「기본 정보」 줄이 여기로 온다(아래 주석 참조).
@@ -100,7 +105,10 @@ const PROFILE = {
   nickname: SAMPLE_USER.nickname as string,
   // 서버 `interestAreas[].code` — 목록의 주인이 서버라 우리 id 로 옮기지 않는다
   interests: ["RELATIONSHIP", "SELF"],
-  restMethods: ["🎵 음악 듣기", "🚶 산책하기"],
+  interestOther: "",
+  // 서버 `restMethods[].code` — 이모지 라벨(`🎵 음악 듣기`)을 id 로 쓰던 자리다
+  restMethods: ["LISTENING_TO_MUSIC", "WALKING"],
+  restMethodOther: "",
   age: "25",
   gender: "FEMALE" as string | null,
   // 샘플 일정 넷 중 셋이 `source: "calendar"` 다 — 연결한 사용자로 시작한다
@@ -122,8 +130,9 @@ export const useProfile = create<ProfileStore>((set) => ({
  * 줄에는 안 되는** 식으로 어긋난다 — 실제로 그 어긋남이 한 번 있었다
  * (`calendarLinked` 를 draft 에만 두어 마이가 늘 「연결 안 함」을 보던 것).
  *
- * **`undefined` 는 「모른다」이지 「비었다」가 아니다.** 서버 `Profile` 에는
- * 쉬는 방법도 알림 켜짐도 없다 — 없는 것으로 지금 값을 덮지 않는다.
+ * **`undefined` 는 「모른다」이지 「비었다」가 아니다.** 없는 것으로 지금 값을
+ * 덮지 않는다 — 서버가 주지 않는 필드가 있고(`meApi.ts` 가 읽지 못한 것도
+ * `undefined` 다), 그걸 「비었다」로 읽으면 멀쩡한 답이 지워진다.
  */
 export type ProfileInput = {
   nickname: string;
@@ -132,16 +141,22 @@ export type ProfileInput = {
   interests: string[];
   retroTime: string;
   calendarLinked: boolean;
-  /** 서버는 주지 않는다 — 온보딩 초안에서만 온다 */
+  interestOther?: string;
   restMethods?: string[];
-  /** 서버는 주지 않는다 — 알림 켜짐은 `08` 의 답이다 */
+  restMethodOther?: string;
   notifyRetro?: boolean;
 };
 
 export const adoptProfile = (input: ProfileInput): void => {
-  const { retroTime, notifyRetro, restMethods, ...profile } = input;
+  const { retroTime, notifyRetro, restMethods, interestOther, restMethodOther, ...profile } = input;
 
-  useProfile.getState().set(restMethods === undefined ? profile : { ...profile, restMethods });
+  useProfile.getState().set({
+    ...profile,
+    // 준 것만 덮는다 — 각각 따로 없을 수 있다
+    ...(restMethods === undefined ? {} : { restMethods }),
+    ...(interestOther === undefined ? {} : { interestOther }),
+    ...(restMethodOther === undefined ? {} : { restMethodOther }),
+  });
 
   // 시각이 비면 화면이 할 말을 잃는다 — 빈 값으로 덮지 않는다
   if (retroTime.length > 0) useSettings.getState().setTime("retro", retroTime);

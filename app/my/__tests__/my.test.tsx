@@ -5,6 +5,17 @@ import NotifySettings from "../notify";
 import ProfileEdit from "../profile";
 
 import { useProfile, useSettings } from "@/features/my/model/settings";
+import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
+
+/**
+ * `M2` 의 저장은 서버까지 간다 — **어댑터 아래는 `completeOnboardingApi.test`**.
+ * 여기서 보는 것은 「성공해야 닫는다 · 실패하면 한 줄」이라는 화면의 규칙이다.
+ */
+jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
+  completeOnboarding: jest.fn(),
+}));
+
+const submit = jest.mocked(completeOnboarding);
 
 /** `beforeRemove` 가 받는 이벤트 — 실제 타입의 필요한 부분만 */
 type LeaveEvent = { preventDefault: jest.Mock; data: { action: { type: string } } };
@@ -39,6 +50,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
+  submit.mockResolvedValue({ ok: true, data: { onboardingRequired: false } });
 });
 
 describe("M2 · 저장은 바꾼 것이 있을 때만", () => {
@@ -57,7 +69,8 @@ describe("M2 · 저장은 바꾼 것이 있을 때만", () => {
 
     await fireEvent.press(r.getByText("저장하기"));
 
-    expect(useProfile.getState().nickname).toBe("지현이");
+    // 저장은 서버까지 갔다 와야 끝난다 — 누른 직후가 아니라 답이 온 뒤에 본다
+    await waitFor(() => expect(useProfile.getState().nickname).toBe("지현이"));
     expect(jest.mocked(router.back)).toHaveBeenCalled();
   });
 
@@ -178,7 +191,8 @@ describe("M2 · 선택 표시와 상한", () => {
   it("쉬는 방법과 성별 칩에도 체크가 붙는다", async () => {
     const r = await render(<ProfileEdit />);
 
-    expect(r.getByTestId("chip-check-🎵 음악 듣기")).toBeTruthy();
+    // 칩 id 는 서버 코드다 — 이모지 라벨이 아니다
+    expect(r.getByTestId("chip-check-LISTENING_TO_MUSIC")).toBeTruthy();
     expect(r.getByTestId("chip-check-FEMALE")).toBeTruthy();
   });
 
@@ -213,7 +227,7 @@ describe("M2 · 기본 정보 — 온보딩 05-b 의 편집 경로", () => {
     await fireEvent.press(r.getByText("남성"));
     await fireEvent.press(r.getByText("저장하기"));
 
-    expect(useProfile.getState().age).toBe("26");
+    await waitFor(() => expect(useProfile.getState().age).toBe("26"));
     expect(useProfile.getState().gender).toBe("MALE");
   });
 
@@ -223,7 +237,7 @@ describe("M2 · 기본 정보 — 온보딩 05-b 의 편집 경로", () => {
     await fireEvent.press(r.getByText("여성")); // 이미 골라져 있던 것
     await fireEvent.press(r.getByText("저장하기"));
 
-    expect(useProfile.getState().gender).toBeNull();
+    await waitFor(() => expect(useProfile.getState().gender).toBeNull());
   });
 
   it("개인정보 문구는 실제 처리와 같은 말을 쓴다", async () => {
@@ -232,6 +246,99 @@ describe("M2 · 기본 정보 — 온보딩 05-b 의 편집 경로", () => {
     expect(
       r.getByText("답변은 질문을 조금 더 잘 맞추는 데만 사용하며, 다른 사람에게 공개되지 않아요."),
     ).toBeTruthy();
+  });
+});
+
+describe("M2 · 저장은 서버까지 간다", () => {
+  it("고친 값을 서버에 보낸다 — 기기에만 남기지 않는다", async () => {
+    const r = await render(<ProfileEdit />);
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+
+    await fireEvent.press(r.getByText("저장하기"));
+
+    await waitFor(() =>
+      expect(submit).toHaveBeenCalledWith(expect.objectContaining({ nickname: "지현이" })),
+    );
+  });
+
+  it("이 화면이 묻지 않는 값(회고 시각·알림)도 지금 값으로 함께 보낸다", async () => {
+    // 서버가 통째로 덮어쓰는 엔드포인트다 — 빼고 보내면 08 에서 정한 시각이 지워진다
+    const r = await render(<ProfileEdit />);
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+
+    await fireEvent.press(r.getByText("저장하기"));
+
+    await waitFor(() =>
+      expect(submit).toHaveBeenCalledWith(
+        expect.objectContaining({ retroTime: "21:30", notifyRetro: true }),
+      ),
+    );
+  });
+
+  it("보내지 못하면 화면을 닫지 않고 한 줄로 말한다", async () => {
+    submit.mockResolvedValue({ ok: false, code: "network" });
+    const r = await render(<ProfileEdit />);
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+
+    await fireEvent.press(r.getByText("저장하기"));
+
+    await waitFor(() =>
+      expect(r.getByText("지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.")).toBeTruthy(),
+    );
+    expect(jest.mocked(router.back)).not.toHaveBeenCalled();
+    // 고친 값은 화면에 남는다 — 다시 누르면 그대로 간다
+    expect(useProfile.getState().nickname).toBe("지현");
+    expect(r.queryByText(/다시 시도하기|재시도/)).toBeNull();
+  });
+});
+
+describe("M2 · 「기타」도 고칠 수 있다 — 온보딩에서 물은 답이다", () => {
+  it("관심 분야 기타를 켜면 적을 자리가 열린다", async () => {
+    const r = await render(<ProfileEdit />);
+
+    await fireEvent.press(r.getByText("기타"));
+
+    expect(r.getByLabelText("관심 분야 기타 직접 입력")).toBeTruthy();
+  });
+
+  it("쉬는 방법 기타도 같은 자리를 연다", async () => {
+    const r = await render(<ProfileEdit />);
+    await fireEvent.press(r.getByText("＋ 더 고르기"));
+
+    // 「기타」가 관심 분야에도 있다 — 쉬는 방법 카드의 것이 뒤에 온다
+    await fireEvent.press(r.getAllByText("기타")[1]!);
+
+    expect(r.getByLabelText("쉬는 방법 기타 직접 입력")).toBeTruthy();
+  });
+
+  it("기타를 켠 채 비워 두면 저장이 잠긴다 — 서버가 거절하는 모양이다", async () => {
+    const r = await render(<ProfileEdit />);
+
+    await fireEvent.press(r.getByText("기타"));
+
+    expect(flatten(r.getByText("저장하기").parent?.props.style).opacity).toBe(0.36);
+  });
+
+  it("적으면 열리고 그 값이 서버로 간다", async () => {
+    const r = await render(<ProfileEdit />);
+    await fireEvent.press(r.getByText("기타"));
+
+    await fireEvent.changeText(r.getByLabelText("관심 분야 기타 직접 입력"), "반려동물");
+    await fireEvent.press(r.getByText("저장하기"));
+
+    await waitFor(() =>
+      expect(submit).toHaveBeenCalledWith(expect.objectContaining({ interestOther: "반려동물" })),
+    );
+  });
+
+  it("기타를 끄면 적던 값도 함께 비운다", async () => {
+    const r = await render(<ProfileEdit />);
+    await fireEvent.press(r.getByText("기타"));
+    await fireEvent.changeText(r.getByLabelText("관심 분야 기타 직접 입력"), "반려동물");
+
+    await fireEvent.press(r.getAllByText("기타")[0]!);
+
+    expect(r.queryByLabelText("관심 분야 기타 직접 입력")).toBeNull();
   });
 });
 

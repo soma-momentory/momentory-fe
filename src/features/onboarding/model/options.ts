@@ -5,14 +5,19 @@ import {
   type NicknamePolicy,
   type Option,
 } from "@/features/onboarding/data/optionsApi";
-import { OTHER_INTEREST, UNSPECIFIED_GENDER } from "@/features/onboarding/model/draft";
+import {
+  OTHER_INTEREST,
+  OTHER_REST_METHOD,
+  UNSPECIFIED_GENDER,
+} from "@/features/onboarding/model/draft";
 
 /**
  * 온보딩이 그리는 선택지 — **서버가 정본이고 여기 있는 것은 대역이다.**
  *
- * `04`(닉네임 상한) · `05-b`(성별) · `06`(관심 분야) · `M2`(그 셋의 편집)가
- * 같은 목록을 봐야 한다. 그전에는 화면 파일마다 배열을 들고 있어서 관심사 8개가
- * **두 곳(`06` 과 `M2`)에 복사돼 있었다** — 한쪽만 고치면 온보딩에서 고른 칩이
+ * `04`(닉네임 상한) · `05-b`(성별) · `06`(관심 분야) · `07`(쉬는 방법) ·
+ * `M2`(그 넷의 편집)가 같은 목록을 봐야 한다. 그전에는 화면 파일마다 배열을
+ * 들고 있어서 관심사 8개가 **두 곳(`06` 과 `M2`)에 복사돼 있었고**, 쉬는 방법
+ * 15개도 `07` 과 `M2` 에 따로 있었다 — 한쪽만 고치면 온보딩에서 고른 칩이
  * 마이에서 사라진다.
  *
  * ## 실패해도 온보딩은 멈추지 않는다
@@ -57,10 +62,39 @@ const FALLBACK_INTERESTS: Option[] = [
   { id: OTHER_INTEREST, label: "기타" },
 ];
 
+/**
+ * `07` — 열다섯 개를 한 화면에 다 보인다. **이모지는 라벨의 일부다**
+ * (`07.md` · 이모지를 선 아이콘으로 바꾼 규칙의 유일한 예외).
+ *
+ * ⚠ **서버 라벨에는 이모지가 없고 낱말 둘이 다르다**(`영화, 드라마 보기` ·
+ * `카페가기`). 즉 **연결됐을 때와 대역일 때 칩이 다르게 보인다** — 성별·관심사와
+ * 같은 성질의 어긋남이고 기록도 같은 자리다(`PRODUCT.md` 9번). 여기서
+ * 되돌리지 않는 이유도 같다: 라벨을 화면에 고정하면 서버가 항목을 늘렸을 때
+ * 그 칩이 사라진다.
+ */
+const FALLBACK_REST_METHODS: Option[] = [
+  { id: "SLEEP", label: "😴 잠자기" },
+  { id: "MEDITATION", label: "🧘 명상하기" },
+  { id: "ENJOYING_FOOD", label: "🍰 맛있는 음식 먹기" },
+  { id: "LISTENING_TO_MUSIC", label: "🎵 음악 듣기" },
+  { id: "WATCHING_MOVIES_OR_DRAMAS", label: "🎬 영화·드라마 보기" },
+  { id: "READING", label: "📖 독서하기" },
+  { id: "WRITING", label: "✍️ 글쓰기" },
+  { id: "VISITING_A_CAFE", label: "☕ 카페 가기" },
+  { id: "WALKING", label: "🚶 산책하기" },
+  { id: "TALKING_WITH_CLOSE_PEOPLE", label: "👥 가까운 사람과 대화하기" },
+  { id: "EXERCISE", label: "🏃 운동하기" },
+  { id: "GAMING", label: "🎮 게임하기" },
+  { id: "VARIES_BY_DAY", label: "🔄 그때마다 달라요" },
+  { id: "IDLE_REST", label: "😶 멍하니 쉬기" },
+  { id: OTHER_REST_METHOD, label: "기타" },
+];
+
 type OptionsStore = {
   nickname: NicknamePolicy;
   genders: Option[];
   interestAreas: Option[];
+  restMethods: Option[];
   /** 서버 답으로 그리고 있는가 — 대역인 채로 넘어간 사용자를 구분한다 */
   fromServer: boolean;
   /**
@@ -75,6 +109,7 @@ const EMPTY = {
   nickname: FALLBACK_NICKNAME,
   genders: FALLBACK_GENDERS,
   interestAreas: FALLBACK_INTERESTS,
+  restMethods: FALLBACK_REST_METHODS,
   fromServer: false,
 };
 
@@ -97,11 +132,12 @@ export const useOnboardingOptions = create<OptionsStore>((set, get) => ({
         if (!result.ok) return;
         // **받은 것만 덮는다.** 성별만 어긋난 응답에 관심사까지 대역으로
         // 되돌리면 서버가 새로 넣은 항목이 사라진다
-        const { nickname, genders, interestAreas } = result.data;
+        const { nickname, genders, interestAreas, restMethods } = result.data;
         set({
           nickname: nickname ?? get().nickname,
           genders: genders ?? get().genders,
           interestAreas: interestAreas ?? get().interestAreas,
+          restMethods: restMethods ?? get().restMethods,
           fromServer: true,
         });
       })

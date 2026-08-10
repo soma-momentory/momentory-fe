@@ -49,8 +49,19 @@ export type MeProfile = {
   gender: string;
   /** 서버 `interestAreas[].code` */
   interests: string[];
+  /** `06-b` 의 직접 입력. 서버가 `null` 이면 빈 문자열이다 */
+  interestOther: string;
+  /** 서버 `restMethods[].code` — 이모지 라벨이 아니다 */
+  restMethods: string[];
+  /** `07` 의 직접 입력 */
+  restMethodOther: string;
   retroTime: string;
   calendarLinked: boolean;
+  /**
+   * `08` 의 알림 켜짐. **서버가 안 주면 `undefined`** — 「끈 것」이 아니다.
+   * 없는 것으로 덮으면 앱을 다시 열 때마다 알림 설정이 뒤집힌다.
+   */
+  notifyRetro: boolean | undefined;
 };
 
 /**
@@ -124,6 +135,10 @@ const toProfile = (v: unknown): MeProfile | null => {
   if (typeof v.nickname !== "string" || v.nickname.trim().length === 0) return null;
 
   const areas = Array.isArray(v.interestAreas) ? v.interestAreas : [];
+  const rests = Array.isArray(v.restMethods) ? v.restMethods : [];
+  const codes = (list: unknown[]) =>
+    list.filter((code): code is string => typeof code === "string" && code.length > 0);
+  const detail = (x: unknown) => (typeof x === "string" ? x.trim() : "");
 
   return {
     nickname: v.nickname.trim(),
@@ -131,10 +146,15 @@ const toProfile = (v: unknown): MeProfile | null => {
     age: typeof v.age === "number" && Number.isFinite(v.age) ? String(v.age) : "",
     // 서버가 안 주면 「선택 안 함」으로 읽는다 — 프로필이 있는데 성별만 빈 경우다
     gender: typeof v.gender === "string" && v.gender.length > 0 ? v.gender : UNSPECIFIED_GENDER,
-    interests: areas.filter((code): code is string => typeof code === "string" && code.length > 0),
+    interests: codes(areas),
+    interestOther: detail(v.otherInterestDetail),
+    restMethods: codes(rests),
+    restMethodOther: detail(v.otherRestMethodDetail),
     // 시각이 비면 화면이 할 말을 잃는다 — 빈 값은 받지 않고 store 의 값을 지킨다
     retroTime: typeof v.reflectionTime === "string" ? v.reflectionTime : "",
     calendarLinked: v.calendarIntegrationEnabled === true,
+    // **안 준 것과 끈 것을 가른다** — 불리언이 아니면 모르는 것이다
+    notifyRetro: typeof v.notificationEnabled === "boolean" ? v.notificationEnabled : undefined,
   };
 };
 

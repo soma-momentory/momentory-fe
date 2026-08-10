@@ -1,16 +1,16 @@
 import { router } from "expo-router";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { Avatar } from "@/components/chat/Avatar";
 import { BabaBubble } from "@/components/chat/BabaBubble";
 import { ChatLayout } from "@/components/chat/ChatLayout";
 import { ChipFlow } from "@/components/chat/ChipFlow";
 import { OnboardingTopBar } from "@/components/onboarding/OnboardingTopBar";
+import { OtherRow } from "@/components/onboarding/OtherRow";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
-import theme from "@/design/theme";
-import { clearButton, otherRow, warnRow } from "@/design/tokens.mvp";
+import { warnRow } from "@/design/tokens.mvp";
 import { MAX_INTERESTS, OTHER_INTEREST, useDraft } from "@/features/onboarding/model/draft";
 import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
@@ -140,103 +140,9 @@ function hintOf(count: number, etcOn: boolean, etcFilled: boolean) {
   return `${count}개 선택됨 · 다시 누르면 취소돼요`;
 }
 
-/**
- * `.othr` — 기타 인라인 입력 줄. 밑줄만 강조한다 — 칩 줄 안에 사각 입력칸을
- * 넣으면 칩과 같은 것으로 읽힌다(`06-b.md`). 12자 상한 · 카운터 · 값이 있을 때
- * 지우기 ×(시각 19 · 히트 44).
- */
-function OtherRow({
-  value,
-  onChangeText,
-  onCommit,
-}: {
-  value: string;
-  onChangeText: (v: string) => void;
-  onCommit: () => void;
-}) {
-  const atLimit = value.length >= otherRow.maxLength;
-
-  return (
-    <View style={styles.othr}>
-      <AppText tone="caption" style={styles.othLabel}>
-        기타
-      </AppText>
-      <View style={styles.othField}>
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          placeholder="직접 입력"
-          placeholderTextColor={semantic.textSlogan}
-          maxLength={otherRow.maxLength}
-          returnKeyType="done"
-          onSubmitEditing={onCommit}
-          onBlur={onCommit}
-          selectionColor={semantic.accentFill}
-          style={styles.othInput}
-        />
-        <AppText
-          variant="footnote"
-          // 상한 도달은 색만 바뀐다 (06-c.md)
-          tone={atLimit ? "accent" : "caption"}
-          style={styles.othCounter}
-        >
-          {`${value.length}/${otherRow.maxLength}`}
-        </AppText>
-        {value.length > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="기타 지우기"
-            hitSlop={clearButton.hitSlop}
-            onPress={() => onChangeText("")}
-            style={styles.othClear}
-          >
-            <AppText tone="body" style={styles.othClearMark}>
-              ×
-            </AppText>
-          </Pressable>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-const { semantic } = theme.colors;
-
 const styles = StyleSheet.create({
   // 칩 → (기타 줄) → (경고) → 안내 → 버튼. 시안 간격 11
   bottom: { gap: 11 },
-  othr: { flexDirection: "row", alignItems: "center", gap: otherRow.gap },
-  othLabel: { fontSize: otherRow.labelSize, lineHeight: otherRow.labelSize },
-  othField: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: otherRow.field.gap,
-    minHeight: otherRow.field.minHeight,
-    paddingHorizontal: otherRow.field.paddingHorizontal,
-    backgroundColor: semantic.surface,
-    borderTopLeftRadius: otherRow.field.radiusTop,
-    borderTopRightRadius: otherRow.field.radiusTop,
-    borderBottomWidth: otherRow.field.underline,
-    borderBottomColor: semantic.accentFill, // primaryDeep 밑줄 (.othf)
-  },
-  othInput: {
-    flex: 1,
-    fontFamily: "Pretendard-Medium",
-    fontSize: otherRow.fontSize,
-    color: semantic.textPrimary,
-    padding: 0,
-  },
-  othCounter: { fontVariant: ["tabular-nums"] },
-  othClear: {
-    width: clearButton.size,
-    height: clearButton.size,
-    borderRadius: clearButton.size / 2,
-    backgroundColor: clearButton.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  othClearMark: { fontSize: 12, lineHeight: 14 },
   warn: {
     borderRadius: warnRow.radius,
     paddingVertical: warnRow.paddingVertical,

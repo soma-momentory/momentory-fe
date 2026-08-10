@@ -38,8 +38,12 @@ const meProfile = (overrides?: Partial<{ nickname: string; retroTime: string }>)
   age: "31",
   gender: "none" as const,
   interests: ["work"],
+  interestOther: "",
+  restMethods: ["WALKING"],
+  restMethodOther: "",
   retroTime: overrides?.retroTime ?? "07:00",
   calendarLinked: true,
+  notifyRetro: undefined,
 });
 
 type SecureMock = {
@@ -211,9 +215,22 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
     expect(useSettings.getState().notify.retro.time).toBe("07:00");
   });
 
-  it("서버에 없는 값(쉬는 방법·알림 켜짐)은 덮지 않는다", async () => {
+  it("서버가 준 쉬는 방법은 덮는다 — 이제 서버가 든다", async () => {
     seedSession(Date.now() + 60_000);
-    const restBefore = useProfile.getState().restMethods;
+    me.mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: false, profile: meProfile() },
+    });
+
+    await useAuth.getState().hydrate();
+
+    expect(useProfile.getState().restMethods).toEqual(["WALKING"]);
+  });
+
+  it("서버가 주지 않은 값(알림 켜짐)은 덮지 않는다 — 모르는 것과 끈 것은 다르다", async () => {
+    // `notifyRetro` 가 `undefined` 면 지금 값을 그대로 둔다. 「끈 것」으로 접으면
+    // 앱을 다시 열 때마다 사용자가 켠 알림이 꺼진다.
+    seedSession(Date.now() + 60_000);
     const notifyBefore = useSettings.getState().notify.retro.enabled;
     me.mockResolvedValueOnce({
       ok: true,
@@ -222,7 +239,6 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
 
     await useAuth.getState().hydrate();
 
-    expect(useProfile.getState().restMethods).toEqual(restBefore);
     expect(useSettings.getState().notify.retro.enabled).toBe(notifyBefore);
   });
 

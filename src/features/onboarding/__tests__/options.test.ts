@@ -17,6 +17,7 @@ const SERVER = {
   nickname: { maxLength: 12, duplicateAllowed: false },
   genders: [{ id: "MALE", label: "남" }],
   interestAreas: [{ id: "MONEY", label: "돈·재정" }],
+  restMethods: [{ id: "NAPPING", label: "낮잠" }],
   reflectionTimeFormat: "HH:mm",
   defaultTimeZone: "Asia/Seoul",
 };
