@@ -257,22 +257,35 @@ v2 `momentory.css` 가 `.tfield` 를 정의해 추측이 필요 없어졌다 —
 계약이 [`docs/api/openapi.json`](api/openapi.json) 에 있으므로 이제 순서만 남았다.
 **하나씩 붙인다** — 한 PR 이 엔드포인트 하나(또는 같은 자원의 CRUD 묶음)다.
 
-| 순  | 엔드포인트                                           | 무엇을 닫는가                                                                                                                     |
-| --- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| ✅  | `POST /api/v1/auth/{kakao,reissue,logout}`           | 로그인 · 갱신 · 로그아웃 (M2-1 · PR #46·#48·#49)                                                                                  |
-| ✅  | `POST /api/v1/retrospect` · `…/{id}/messages`        | 회고 대화 (서버 주도)                                                                                                             |
-| ✅  | `GET /api/v1/users/me`                               | **온보딩 재진입 버그** · 프로필의 샘플 하드코딩 (PR #51)                                                                          |
-| ✅  | `GET /api/v1/onboarding/options`                     | `04`·`05-b`·`06` 선택지의 화면 하드코딩 (`06` 과 `M2` 두 곳 중복)                                                                 |
-| 3   | `PUT /api/v1/users/me/onboarding` ⛔                 | `10` 이 서버에 아무것도 보내지 않는 것 · `M2` 저장이 로컬에만 남는 것. **온보딩 답 셋을 서버가 안 받는다** — `DISCUSSION.md` §1-7 |
-| 4   | `GET /api/v1/schedules`                              | `useDay` 에 **날짜 축이 없다** — 오늘 하루만 메모리에 있다                                                                        |
-| 5   | `PUT /api/v1/schedules/{id}/completion`              | 마침·감정 토글                                                                                                                    |
-| 6   | `POST` · `PATCH` · `DELETE /api/v1/schedules[/{id}]` | 수동 일정. `[id].tsx` 의 「삭제」가 실제로는 `hide()` 인 어긋남도 함께                                                            |
-| 7   | `PATCH /api/v1/schedules/order`                      | 순서. **`Schedule` 에 순서 필드가 없다** — 스펙 차이 기록 후보                                                                    |
-| 8   | (OS) `expo-calendar`                                 | `09` · `M1` 연결 관리. 네이티브 재빌드 · 동기화 방향 미결(§1-4)                                                                   |
+| 순  | 엔드포인트                                           | 무엇을 닫는가                                                                                                                                                     |
+| --- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅  | `POST /api/v1/auth/{kakao,reissue,logout}`           | 로그인 · 갱신 · 로그아웃 (M2-1 · PR #46·#48·#49)                                                                                                                  |
+| ✅  | `POST /api/v1/retrospect` · `…/{id}/messages`        | 회고 대화 (서버 주도)                                                                                                                                             |
+| ✅  | `GET /api/v1/users/me`                               | **온보딩 재진입 버그** · 프로필의 샘플 하드코딩 (PR #51)                                                                                                          |
+| ✅  | `GET /api/v1/onboarding/options`                     | `04`·`05-b`·`06` 선택지의 화면 하드코딩 (`06` 과 `M2` 두 곳 중복)                                                                                                 |
+| 3   | `PUT /api/v1/users/me/onboarding`                    | `10` 이 서버에 아무것도 보내지 않는 것 · `M2` 저장이 로컬에만 남는 것. **9개를 다 받는다**(BE `689feca`) — 남은 걸림돌은 `07` 「기타」 하나(`DISCUSSION.md` §1-7) |
+| 4   | `GET /api/v1/schedules`                              | `useDay` 에 **날짜 축이 없다** — 오늘 하루만 메모리에 있다                                                                                                        |
+| 5   | `PUT /api/v1/schedules/{id}/completion`              | 마침·감정 토글                                                                                                                                                    |
+| 6   | `POST` · `PATCH` · `DELETE /api/v1/schedules[/{id}]` | 수동 일정. `[id].tsx` 의 「삭제」가 실제로는 `hide()` 인 어긋남도 함께                                                                                            |
+| 7   | `PATCH /api/v1/schedules/order`                      | 순서. **`Schedule` 에 순서 필드가 없다** — 스펙 차이 기록 후보                                                                                                    |
+| 8   | (OS) `expo-calendar`                                 | `09` · `M1` 연결 관리. 네이티브 재빌드 · 동기화 방향 미결(§1-4)                                                                                                   |
 
-- **선행 하나**: `authedRequest` 의 메서드가 `"GET" | "POST"` 뿐이다(`src/lib/http.ts`).
-  3·5·6·7 이 PUT/PATCH/DELETE 라 그전에 유니온을 넓힌다 — 「둘이 부딪히는 곳」 파일이라
-  **넓히는 것만 따로 낸다.**
+- ~~**선행 하나**: `authedRequest` 의 메서드가 `"GET" | "POST"` 뿐이다~~ — 넓혔다
+  (PR #53 · `src/lib/http.ts` 가 PUT·PATCH·DELETE 도 받는다). 3·5·6·7 이 바로 쓴다.
+- **3단계의 선행 둘** (2026-08-10 · 로컬 BE `689feca` 전수 확인):
+  1. **`07` 이 쉬는 방법을 라벨 문자열로 들고 있다.** `restMethods` 의 id 가
+     `"🎵 음악 듣기"` 라서 그대로 보내면 **400** 이다 — 서버는 enum 코드
+     (`LISTENING_TO_MUSIC` …)만 받는다. 목록도 이제 서버가 준다
+     (`GET /api/v1/onboarding/options` 의 `restMethods`) — 관심사·성별에 한 전환을
+     그대로 한 번 더 하면 되고, `optionsApi`·`options.ts` 구조가 이미 있다.
+     ⚠ 서버 라벨에는 **이모지가 없다** — `PRODUCT.md` 「상류와 차이」 9번.
+  2. **`07` 의 「기타」를 고르면 400 이다.** 서버가 `otherRestMethodDetail` 을
+     필수로 요구하는데 `07` 에는 적을 자리가 없다 — `DISCUSSION.md` §1-7 이
+     열려 있다. **이것이 3단계를 막는 유일한 것이다.**
+- 계약의 성질 하나: `restMethods`·`notificationEnabled` 는 **생략하면 「유지」**이고
+  (`null` 도 같다) 관심사는 **「교체」**다. 빈 배열은 400 이라 쉬는 방법을 비울 길은
+  없다 — `07` 이 1개 이상을 강제하므로 온보딩에는 문제가 없지만, `M2` 가 일부만
+  고쳐 보낼 때 이 차이를 알고 있어야 한다.
 - `openapi.json` 에는 있지만 FE 에 대응 화면이 없는 것: `GET/PUT/DELETE /api/v1/memos/{date}`
   (날짜별 하루 메모) · `GET /api/v1/retrospect/{id}/diary`. 위 순서에 넣지 않았다.
 
