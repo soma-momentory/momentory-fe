@@ -18,6 +18,14 @@ jest.mock("@/lib/config", () => ({
   getKakaoAppKey: jest.fn(() => "kakao-key"),
 }));
 
+/**
+ * 로그인 성공 뒤 프로필 조회가 **배웅으로** 따라 나간다 — 여기서는 그것이
+ * 로그인 판정에 끼어들지 않는지만 본다(계약은 `meApi.test.ts`).
+ */
+jest.mock("../data/meApi", () => ({
+  fetchMe: jest.fn(async () => ({ ok: false, code: "network" })),
+}));
+
 const sdkLogin = jest.mocked(kakaoLogin) as unknown as jest.Mock;
 
 type SecureMock = {

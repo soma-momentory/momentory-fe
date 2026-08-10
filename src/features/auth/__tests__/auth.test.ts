@@ -1,9 +1,11 @@
 import { SESSION_KEY, getAccessToken, useAuth } from "../model/auth";
 import { revokeRefreshToken } from "../data/logoutApi";
+import { fetchMe } from "../data/meApi";
 import { reissueAccessToken } from "../data/reissueApi";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
+import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { useRetro } from "@/features/retro/model/retro";
 
@@ -21,6 +23,24 @@ jest.mock("../data/logoutApi", () => ({
   revokeRefreshToken: jest.fn(async () => ({ ok: true })),
 }));
 const revoke = jest.mocked(revokeRefreshToken);
+
+/**
+ * 기본값은 **서버에 못 물어본 상태**다 — 그래야 아래 옛 시험들이 `hydrate` 의
+ * 로컬 판정만 재는 그대로 남는다. `/me` 계약 자체는 `meApi.test.ts` 가 본다.
+ */
+jest.mock("../data/meApi", () => ({
+  fetchMe: jest.fn(async () => ({ ok: false, code: "network" })),
+}));
+const me = jest.mocked(fetchMe);
+
+const meProfile = (overrides?: Partial<{ nickname: string; retroTime: string }>) => ({
+  nickname: overrides?.nickname ?? "서버닉",
+  age: "31",
+  gender: "none" as const,
+  interests: ["work"],
+  retroTime: overrides?.retroTime ?? "07:00",
+  calendarLinked: true,
+});
 
 type SecureMock = {
   __store: Map<string, string>;
@@ -44,10 +64,14 @@ const seedSession = (expiresAt: number, overrides?: Partial<{ refreshToken: stri
 beforeEach(() => {
   secure.__store.clear();
   jest.clearAllMocks();
+  me.mockResolvedValue({ ok: false, code: "network" });
   useAuth.setState({ status: "hydrating" });
   useDraft.getState().reset();
   useRetro.getState().reset();
   useDiary.getState().reset();
+  useProfile.getState().reset();
+  useSettings.getState().reset();
+  useOnboardingCompletion.getState().reset();
 });
 
 describe("hydrate — 콜드 스타트 판정", () => {
@@ -137,6 +161,131 @@ describe("hydrate — 콜드 스타트 판정", () => {
     await useAuth.getState().hydrate();
 
     expect(useAuth.getState().status).toBe("anonymous");
+  });
+});
+
+describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이다", () => {
+  it("온보딩을 마친 세션으로 콜드 스타트하면 홈으로 간다 — 온보딩을 되풀이하지 않는다", async () => {
+    // 이게 이 절의 핵심이다. 완료 플래그가 메모리뿐일 때는 앱을 껐다 켤 때마다
+    // 온보딩이 다시 떴다 — MMKV(M3) 를 기다리지 않고 서버 답으로 닫는다.
+    seedSession(Date.now() + 60_000);
+    me.mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: false, profile: meProfile() },
+    });
+
+    await useAuth.getState().hydrate();
+
+    expect(useAuth.getState().status).toBe("authenticated");
+    expect(useOnboardingCompletion.getState().completed).toBe(true);
+  });
+
+  it("아직 온보딩 전이면 기기에 남아 있던 완료 플래그를 덮는다", async () => {
+    seedSession(Date.now() + 60_000);
+    useOnboardingCompletion.getState().complete(); // 앞 사용자·앞 세션의 흔적
+    me.mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: true, profile: null },
+    });
+
+    await useAuth.getState().hydrate();
+
+    expect(useOnboardingCompletion.getState().completed).toBe(false);
+  });
+
+  it("프로필을 두 store 로 옮긴다 — 마이·홈·회고가 같은 닉네임을 본다", async () => {
+    seedSession(Date.now() + 60_000);
+    me.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        userId: 1,
+        onboardingRequired: false,
+        profile: meProfile({ nickname: "서버닉", retroTime: "07:00" }),
+      },
+    });
+
+    await useAuth.getState().hydrate();
+
+    expect(useProfile.getState().nickname).toBe("서버닉");
+    expect(useProfile.getState().calendarLinked).toBe(true);
+    expect(useSettings.getState().notify.retro.time).toBe("07:00");
+  });
+
+  it("서버에 없는 값(쉬는 방법·알림 켜짐)은 덮지 않는다", async () => {
+    seedSession(Date.now() + 60_000);
+    const restBefore = useProfile.getState().restMethods;
+    const notifyBefore = useSettings.getState().notify.retro.enabled;
+    me.mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: false, profile: meProfile() },
+    });
+
+    await useAuth.getState().hydrate();
+
+    expect(useProfile.getState().restMethods).toEqual(restBefore);
+    expect(useSettings.getState().notify.retro.enabled).toBe(notifyBefore);
+  });
+
+  it("온보딩 전이라 프로필이 없으면 지금 값을 지우지 않는다", async () => {
+    seedSession(Date.now() + 60_000);
+    const before = useProfile.getState().nickname;
+    me.mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: true, profile: null },
+    });
+
+    await useAuth.getState().hydrate();
+
+    expect(useProfile.getState().nickname).toBe(before);
+  });
+
+  it("401 이면 세션을 지우고 anonymous 로 닫는다 — 갱신까지 마친 토큰을 거부당했다", async () => {
+    seedSession(Date.now() + 60_000);
+    me.mockResolvedValueOnce({ ok: false, code: "unauthorized" });
+
+    await useAuth.getState().hydrate();
+
+    expect(useAuth.getState().status).toBe("anonymous");
+    expect(secure.__store.has(SESSION_KEY)).toBe(false);
+  });
+
+  it.each([["no_session"], ["network"], ["server"], ["malformed"], ["unconfigured"]] as const)(
+    "%s 로 실패하면 아무것도 덮지 않는다 — 못 물어본 것을 「온보딩을 안 했다」로 읽지 않는다",
+    async (code) => {
+      // `no_session` 에는 **갱신이 네트워크로 실패한 경우**가 섞여 있다.
+      // 401 과 같이 취급하면 순간적인 연결 문제 한 번에 로그인이 날아간다.
+      seedSession(Date.now() + 60_000);
+      useOnboardingCompletion.getState().complete();
+      me.mockResolvedValueOnce({ ok: false, code });
+
+      await useAuth.getState().hydrate();
+
+      expect(useAuth.getState().status).toBe("authenticated");
+      expect(secure.__store.has(SESSION_KEY)).toBe(true);
+      expect(useOnboardingCompletion.getState().completed).toBe(true);
+    },
+  );
+
+  it("갱신에 성공한 뒤에도 서버에 묻는다 — 만료 세션으로 켠 앱도 홈으로 간다", async () => {
+    seedSession(Date.now() - 1);
+    reissue.mockResolvedValueOnce({
+      ok: true,
+      session: { accessToken: "new-t", refreshToken: "new-r", accessTokenExpiresIn: 1800 },
+    });
+    me.mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: false, profile: meProfile() },
+    });
+
+    await useAuth.getState().hydrate();
+
+    expect(useOnboardingCompletion.getState().completed).toBe(true);
+  });
+
+  it("세션이 없으면 묻지 않는다 — 보낼 토큰이 없다", async () => {
+    await useAuth.getState().hydrate();
+
+    expect(me).not.toHaveBeenCalled();
   });
 });
 

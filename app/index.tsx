@@ -35,9 +35,11 @@ import { useOnboardingCompletion } from "@/features/onboarding/model/completion"
  * 세션 있음 · 온보딩 완료       → (tabs)/home
  * ```
  *
- * ⚠ **온보딩 완료 플래그가 아직 기기에 남지 않는다**(`completion.ts`) — MMKV
- * 도입이 M3 라서 메모리다. **앱을 껐다 켜면 온보딩을 다시 본다.** 분기 자체는
- * 여기 있고, 영속이 붙으면 이 파일은 바뀌지 않는다.
+ * **온보딩 완료 여부의 정본은 서버다** — `hydrate` 가 `GET /api/v1/users/me` 를
+ * 기다렸다가 `completion` 에 적는다(`auth.ts` `syncMe`). 그래서 앱을 껐다 켜도
+ * 온보딩이 되풀이되지 않는다. ⚠ 단 **서버에 못 물어봤을 때는**(오프라인 등) 그
+ * 플래그가 아직 메모리라(`completion.ts` · MMKV 는 M3) 온보딩이 다시 뜬다.
+ * 분기 자체는 여기 있고, 영속이 붙어도 이 파일은 바뀌지 않는다.
  */
 const MIN_SPLASH_MS = 800;
 const BABA = 147;
@@ -65,7 +67,7 @@ export default function Splash() {
       return;
     }
     // 온보딩을 마친 사람은 홈으로 — 매번 온보딩을 다시 보게 하지 않는다.
-    // 이 플래그는 아직 메모리라 앱을 껐다 켜면 온보딩으로 간다(위 주석).
+    // 이 값은 `hydrate` 가 서버에 물어 적어둔 것이다(위 주석).
     router.replace(completed ? "/home" : "/welcome");
   }, [minDone, status, completed]);
 

@@ -83,6 +83,14 @@ type ProfileStore = {
    */
   age: string;
   gender: Gender | null;
+  /**
+   * 온보딩 `09` 의 캘린더 연결 — `M1` 의 「연결 관리」 줄이 읽는 값이다.
+   *
+   * **draft 가 아니라 여기 있다.** `10` 이 draft 를 `reset()` 하고 홈으로 보내므로
+   * draft 를 읽으면 온보딩에서 연결했어도 마이는 늘 `false` 를 본다 — 온보딩 답이
+   * 실사용 store 로 넘어오지 않던 자리다.
+   */
+  calendarLinked: boolean;
   set: (v: Partial<Omit<ProfileStore, "set" | "reset">>) => void;
   reset: () => void;
 };
@@ -94,6 +102,8 @@ const PROFILE = {
   restMethods: ["🎵 음악 듣기", "🚶 산책하기"],
   age: "25",
   gender: "female" as Gender | null,
+  // 샘플 일정 넷 중 셋이 `source: "calendar"` 다 — 연결한 사용자로 시작한다
+  calendarLinked: true,
 };
 
 export const useProfile = create<ProfileStore>((set) => ({
@@ -101,3 +111,40 @@ export const useProfile = create<ProfileStore>((set) => ({
   set: (v) => set(v),
   reset: () => set(PROFILE),
 }));
+
+/**
+ * 프로필 한 벌이 두 store 로 들어가는 **유일한 문**.
+ *
+ * 지금 이걸 부르는 곳이 둘이다 — 온보딩 완료(`10`, 초안에서)와 부트스트랩
+ * (`auth.ts`, 서버 `GET /users/me` 에서). 각자 `useProfile.set` 과
+ * `useSettings.setTime` 을 따로 부르면 **회고 시각이 프로필에는 반영되고 알림
+ * 줄에는 안 되는** 식으로 어긋난다 — 실제로 그 어긋남이 한 번 있었다
+ * (`calendarLinked` 를 draft 에만 두어 마이가 늘 「연결 안 함」을 보던 것).
+ *
+ * **`undefined` 는 「모른다」이지 「비었다」가 아니다.** 서버 `Profile` 에는
+ * 쉬는 방법도 알림 켜짐도 없다 — 없는 것으로 지금 값을 덮지 않는다.
+ */
+export type ProfileInput = {
+  nickname: string;
+  age: string;
+  gender: Gender | null;
+  interests: string[];
+  retroTime: string;
+  calendarLinked: boolean;
+  /** 서버는 주지 않는다 — 온보딩 초안에서만 온다 */
+  restMethods?: string[];
+  /** 서버는 주지 않는다 — 알림 켜짐은 `08` 의 답이다 */
+  notifyRetro?: boolean;
+};
+
+export const adoptProfile = (input: ProfileInput): void => {
+  const { retroTime, notifyRetro, restMethods, ...profile } = input;
+
+  useProfile.getState().set(restMethods === undefined ? profile : { ...profile, restMethods });
+
+  // 시각이 비면 화면이 할 말을 잃는다 — 빈 값으로 덮지 않는다
+  if (retroTime.length > 0) useSettings.getState().setTime("retro", retroTime);
+  if (notifyRetro !== undefined && notifyRetro !== useSettings.getState().notify.retro.enabled) {
+    useSettings.getState().toggle("retro");
+  }
+};

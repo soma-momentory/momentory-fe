@@ -1,0 +1,2353 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://3.39.210.114",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "인증 API"
+    },
+    {
+      "name": "Schedules",
+      "description": "홈 일정 API"
+    },
+    {
+      "name": "Onboarding",
+      "description": "온보딩 API"
+    },
+    {
+      "name": "Users",
+      "description": "사용자 API"
+    },
+    {
+      "name": "Retrospect",
+      "description": "AI 회고 채팅 API"
+    },
+    {
+      "name": "Daily Memos",
+      "description": "하루 메모 API"
+    }
+  ],
+  "paths": {
+    "/api/v1/users/me/onboarding": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "온보딩 완료 또는 갱신",
+        "operationId": "complete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteOnboardingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "온보딩 저장 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteOnboardingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "validationError": {
+                    "description": "validationError",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "nickname은 필수입니다."
+                    }
+                  },
+                  "unreadableRequest": {
+                    "description": "unreadableRequest",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/schedules/{scheduleId}/completion": {
+      "put": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "일정 완료 및 감정 변경",
+        "operationId": "changeCompletion",
+        "parameters": [
+          {
+            "name": "scheduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleCompletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "완료 상태 변경 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleCompletionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "incompleteScheduleWithEmotion": {
+                    "description": "incompleteScheduleWithEmotion",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "미완료 상태에서는 감정을 선택할 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일정을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "SCHEDULE_NOT_FOUND": {
+                    "description": "SCHEDULE_NOT_FOUND",
+                    "value": {
+                      "code": "SCHEDULE_NOT_FOUND",
+                      "message": "일정을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/memos/{date}": {
+      "get": {
+        "tags": [
+          "Daily Memos"
+        ],
+        "summary": "날짜별 하루 메모 조회",
+        "operationId": "getDailyMemo",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-08-07"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "하루 메모 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyMemoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 날짜 형식",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "invalidDateFormat": {
+                    "description": "invalidDateFormat",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "하루 메모를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "DAILY_MEMO_NOT_FOUND": {
+                    "description": "DAILY_MEMO_NOT_FOUND",
+                    "value": {
+                      "code": "DAILY_MEMO_NOT_FOUND",
+                      "message": "하루 메모를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Daily Memos"
+        ],
+        "summary": "날짜별 하루 메모 저장 또는 수정",
+        "operationId": "saveDailyMemo",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-08-07"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DailyMemoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "하루 메모 저장 또는 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyMemoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "invalidDateFormat": {
+                    "description": "invalidDateFormat",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "malformedRequestBody": {
+                    "description": "malformedRequestBody",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "contentRequiredOrBlank": {
+                    "description": "contentRequiredOrBlank",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "메모 내용을 입력해주세요."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Daily Memos"
+        ],
+        "summary": "날짜별 하루 메모 삭제",
+        "operationId": "deleteDailyMemo",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-08-07"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "하루 메모 삭제 성공"
+          },
+          "400": {
+            "description": "잘못된 날짜 형식",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "invalidDateFormat": {
+                    "description": "invalidDateFormat",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/schedules": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "날짜별 일정 조회",
+        "operationId": "getSchedules",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-08-10"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "일정 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "수동 일정 추가",
+        "operationId": "createSchedule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "일정 추가 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "title은 필수입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/retrospect": {
+      "post": {
+        "tags": [
+          "Retrospect"
+        ],
+        "summary": "회고 시작",
+        "description": "일정·감정을 골라 세션을 만들고 첫 메시지를 받는다.",
+        "operationId": "start",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartRetrospectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "회고 시작 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartRetrospectResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(감정 키 오류 등)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "currentEmotion은 필수입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/retrospect/{id}/messages": {
+      "post": {
+        "tags": [
+          "Retrospect"
+        ],
+        "summary": "회고 한 턴 진행",
+        "description": "자유 텍스트·선택지·슬라이더 값 중 그 턴에 맞는 것을 보낸다.",
+        "operationId": "sendMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "턴 진행 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplyDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "세션을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "RETROSPECT_SESSION_NOT_FOUND": {
+                    "description": "RETROSPECT_SESSION_NOT_FOUND",
+                    "value": {
+                      "code": "RETROSPECT_SESSION_NOT_FOUND",
+                      "message": "회고 세션을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/reissue": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Access Token 재발급",
+        "description": "Refresh Token을 회전시켜 새 Access Token과 Refresh Token을 발급합니다.",
+        "operationId": "reissue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenReissueRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "재발급 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshTokenReissueResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "validationError": {
+                    "description": "validationError",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "refreshToken은 필수입니다."
+                    }
+                  },
+                  "unreadableRequest": {
+                    "description": "unreadableRequest",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "유효하지 않거나 폐기·만료된 Refresh Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "REFRESH_TOKEN_INVALID": {
+                    "description": "REFRESH_TOKEN_INVALID",
+                    "value": {
+                      "code": "REFRESH_TOKEN_INVALID",
+                      "message": "리프레시 토큰이 유효하지 않습니다."
+                    }
+                  },
+                  "REFRESH_TOKEN_REVOKED": {
+                    "description": "REFRESH_TOKEN_REVOKED",
+                    "value": {
+                      "code": "REFRESH_TOKEN_REVOKED",
+                      "message": "리프레시 토큰이 이미 폐기되었습니다."
+                    }
+                  },
+                  "REFRESH_TOKEN_EXPIRED": {
+                    "description": "REFRESH_TOKEN_EXPIRED",
+                    "value": {
+                      "code": "REFRESH_TOKEN_EXPIRED",
+                      "message": "리프레시 토큰이 만료되었습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "현재 기기 로그아웃",
+        "description": "제출된 Refresh Token 하나만 멱등적으로 폐기합니다.",
+        "operationId": "logout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "로그아웃 완료"
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "validationError": {
+                    "description": "validationError",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "refreshToken은 필수입니다."
+                    }
+                  },
+                  "unreadableRequest": {
+                    "description": "unreadableRequest",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/kakao": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "카카오 Native 로그인",
+        "description": "React Native 카카오 Native SDK Access Token을 검증하고 모멘토리 토큰을 발급합니다.",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KakaoLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KakaoLoginResponse"
+                },
+                "example": {
+                  "accessToken": "발급된 모멘토리 Access Token",
+                  "refreshToken": "발급된 모멘토리 Refresh Token",
+                  "tokenType": "Bearer",
+                  "accessTokenExpiresIn": 1800,
+                  "userId": 1,
+                  "onboardingRequired": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "validationError": {
+                    "description": "validationError",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "accessToken은 필수입니다."
+                    }
+                  },
+                  "unreadableRequest": {
+                    "description": "unreadableRequest",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "카카오 토큰 검증 실패",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "KAKAO_TOKEN_INVALID": {
+                    "description": "KAKAO_TOKEN_INVALID",
+                    "value": {
+                      "code": "KAKAO_TOKEN_INVALID",
+                      "message": "카카오 인증에 실패했습니다."
+                    }
+                  },
+                  "KAKAO_APP_ID_MISMATCH": {
+                    "description": "KAKAO_APP_ID_MISMATCH",
+                    "value": {
+                      "code": "KAKAO_APP_ID_MISMATCH",
+                      "message": "카카오 인증에 실패했습니다."
+                    }
+                  },
+                  "KAKAO_USER_ID_MISMATCH": {
+                    "description": "KAKAO_USER_ID_MISMATCH",
+                    "value": {
+                      "code": "KAKAO_USER_ID_MISMATCH",
+                      "message": "카카오 인증에 실패했습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "카카오 API 서버 또는 응답 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "KAKAO_API_SERVER_ERROR": {
+                    "description": "KAKAO_API_SERVER_ERROR",
+                    "value": {
+                      "code": "KAKAO_API_SERVER_ERROR",
+                      "message": "카카오 서비스에 일시적인 오류가 발생했습니다."
+                    }
+                  },
+                  "KAKAO_API_RESPONSE_ERROR": {
+                    "description": "KAKAO_API_RESPONSE_ERROR",
+                    "value": {
+                      "code": "KAKAO_API_RESPONSE_ERROR",
+                      "message": "카카오 서비스 응답을 처리할 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "카카오 API 네트워크 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "KAKAO_API_NETWORK_ERROR": {
+                    "description": "KAKAO_API_NETWORK_ERROR",
+                    "value": {
+                      "code": "KAKAO_API_NETWORK_ERROR",
+                      "message": "카카오 서비스에 연결할 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/{scheduleId}": {
+      "delete": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "일정 삭제",
+        "operationId": "deleteSchedule",
+        "parameters": [
+          {
+            "name": "scheduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "일정 삭제 성공"
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일정을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "SCHEDULE_NOT_FOUND": {
+                    "description": "SCHEDULE_NOT_FOUND",
+                    "value": {
+                      "code": "SCHEDULE_NOT_FOUND",
+                      "message": "일정을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "수동 일정 수정",
+        "operationId": "updateSchedule",
+        "parameters": [
+          {
+            "name": "scheduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "일정 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "title은 필수입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일정을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "SCHEDULE_NOT_FOUND": {
+                    "description": "SCHEDULE_NOT_FOUND",
+                    "value": {
+                      "code": "SCHEDULE_NOT_FOUND",
+                      "message": "일정을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/schedules/order": {
+      "patch": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "같은 날짜의 일정 순서 변경",
+        "operationId": "changeScheduleOrder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "일정 순서 변경 성공"
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "invalidScheduleOrder": {
+                    "description": "invalidScheduleOrder",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "일정 순서 변경 요청이 올바르지 않습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일정을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "SCHEDULE_NOT_FOUND": {
+                    "description": "SCHEDULE_NOT_FOUND",
+                    "value": {
+                      "code": "SCHEDULE_NOT_FOUND",
+                      "message": "일정을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "현재 로그인 사용자 조회",
+        "description": "현재 Access Token의 사용자 정보를 조회합니다.",
+        "operationId": "getUserMe",
+        "responses": {
+          "200": {
+            "description": "사용자 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserMeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증이 없거나 유효하지 않음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/retrospect/{id}/diary": {
+      "get": {
+        "tags": [
+          "Retrospect"
+        ],
+        "summary": "회고 일기 조회",
+        "description": "완료된 회고의 일기 본문과 (있으면) 행동 카드를 돌려준다.",
+        "operationId": "getDiary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrospectDiaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "세션을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "RETROSPECT_SESSION_NOT_FOUND": {
+                    "description": "RETROSPECT_SESSION_NOT_FOUND",
+                    "value": {
+                      "code": "RETROSPECT_SESSION_NOT_FOUND",
+                      "message": "회고 세션을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/onboarding/options": {
+      "get": {
+        "tags": [
+          "Onboarding"
+        ],
+        "summary": "온보딩 선택지 조회",
+        "operationId": "getOptions",
+        "responses": {
+          "200": {
+            "description": "선택지 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingOptionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CompleteOnboardingRequest": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "description": "닉네임",
+            "example": "모리",
+            "maxLength": 10,
+            "minLength": 0
+          },
+          "age": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "나이",
+            "example": 25,
+            "maximum": 120,
+            "minimum": 1
+          },
+          "gender": {
+            "type": "string",
+            "description": "성별",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "UNSPECIFIED"
+            ],
+            "example": "FEMALE"
+          },
+          "interestAreas": {
+            "type": "array",
+            "description": "관심 분야",
+            "example": [
+              "CAREER",
+              "RELATIONSHIP"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "STUDY",
+                "CAREER",
+                "WORK",
+                "RELATIONSHIP",
+                "FAMILY",
+                "SELF",
+                "HEALTH",
+                "OTHER"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "reflectionTime": {
+            "type": "string",
+            "description": "회고 시간",
+            "example": "21:30",
+            "minLength": 1,
+            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "calendarIntegrationEnabled": {
+            "type": "boolean",
+            "description": "프론트가 보고한 캘린더 연동 성공 여부",
+            "example": true
+          }
+        },
+        "required": [
+          "calendarIntegrationEnabled",
+          "gender",
+          "interestAreas",
+          "nickname",
+          "reflectionTime"
+        ]
+      },
+      "CompleteOnboardingResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "사용자 ID",
+            "example": 1
+          },
+          "onboardingRequired": {
+            "type": "boolean",
+            "description": "온보딩 필요 여부",
+            "example": false
+          }
+        }
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "description": "API 오류 응답",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "클라이언트가 오류 종류를 식별하는 애플리케이션 오류 코드",
+            "example": "INVALID_REQUEST"
+          },
+          "message": {
+            "type": "string",
+            "description": "사용자에게 전달되는 오류 설명",
+            "example": "잘못된 요청입니다."
+          }
+        }
+      },
+      "ScheduleCompletionRequest": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean",
+            "example": true
+          },
+          "emotion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "ANXIOUS",
+              "DEPRESSED",
+              "ANGRY_FRUSTRATED",
+              "HAPPY",
+              "STUCK",
+              "LETHARGIC",
+              "TIRED",
+              "PROUD",
+              "CALM"
+            ],
+            "example": "PROUD"
+          }
+        },
+        "required": [
+          "completed"
+        ]
+      },
+      "ScheduleCompletionResponse": {
+        "type": "object",
+        "properties": {
+          "scheduleId": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "completed": {
+            "type": "boolean",
+            "example": true
+          },
+          "emotion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "ANXIOUS",
+              "DEPRESSED",
+              "ANGRY_FRUSTRATED",
+              "HAPPY",
+              "STUCK",
+              "LETHARGIC",
+              "TIRED",
+              "PROUD",
+              "CALM"
+            ],
+            "example": "PROUD"
+          }
+        }
+      },
+      "DailyMemoRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "하루 메모 내용",
+            "example": "오늘 회의가 많았지만 잘 마무리했다.",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "DailyMemoResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-08-07"
+          },
+          "content": {
+            "type": "string",
+            "example": "오늘 회의가 많았지만 잘 마무리했다."
+          }
+        }
+      },
+      "ScheduleRequest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "일정 날짜",
+            "example": "2026-08-10"
+          },
+          "title": {
+            "type": "string",
+            "description": "일정 제목",
+            "example": "운동하기",
+            "maxLength": 255,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "date",
+          "title"
+        ]
+      },
+      "ScheduleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-08-10"
+          },
+          "title": {
+            "type": "string",
+            "example": "운동하기"
+          },
+          "completed": {
+            "type": "boolean",
+            "example": false
+          },
+          "emotion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "ANXIOUS",
+              "DEPRESSED",
+              "ANGRY_FRUSTRATED",
+              "HAPPY",
+              "STUCK",
+              "LETHARGIC",
+              "TIRED",
+              "PROUD",
+              "CALM"
+            ],
+            "example": "HAPPY"
+          },
+          "displayOrder": {
+            "type": "integer",
+            "format": "int64",
+            "example": 0
+          }
+        }
+      },
+      "ScheduleItemRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "일정 이름",
+            "example": "면접 스터디"
+          },
+          "emotion": {
+            "type": "string",
+            "description": "이 일정에 연결된 감정 키",
+            "example": "anxious"
+          }
+        }
+      },
+      "StartRetrospectRequest": {
+        "type": "object",
+        "properties": {
+          "schedules": {
+            "type": "array",
+            "description": "오늘의 일정 목록(각 항목에 감정 태그). 비우면 '오늘 하루' 회고",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleItemRequest"
+            }
+          },
+          "currentEmotion": {
+            "type": "string",
+            "description": "현재 감정 키",
+            "example": "depressed",
+            "minLength": 1
+          },
+          "nickname": {
+            "type": "string",
+            "description": "호칭 프리픽스(선택)",
+            "example": "지은"
+          },
+          "interest": {
+            "type": "string",
+            "description": "관심분야(선택)",
+            "example": "취업 준비"
+          }
+        },
+        "required": [
+          "currentEmotion"
+        ]
+      },
+      "ActionCardDto": {
+        "type": "object",
+        "properties": {
+          "situation": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string"
+          }
+        }
+      },
+      "DiaryDto": {
+        "type": "object",
+        "properties": {
+          "diary": {
+            "type": "string"
+          },
+          "reframedDiary": {
+            "type": "string"
+          }
+        }
+      },
+      "MeasureDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "min": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "max": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "OptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          },
+          "input": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ReplyDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionDto"
+            }
+          },
+          "ui": {
+            "type": "string"
+          },
+          "measures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeasureDto"
+            }
+          },
+          "actionCard": {
+            "$ref": "#/components/schemas/ActionCardDto"
+          },
+          "diary": {
+            "$ref": "#/components/schemas/DiaryDto"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "safetyLevel": {
+            "type": "string"
+          }
+        }
+      },
+      "StartRetrospectResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "세션 식별자",
+            "example": 1
+          },
+          "reply": {
+            "$ref": "#/components/schemas/ReplyDto"
+          }
+        }
+      },
+      "TurnRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "자유 텍스트 답변",
+            "example": "발표에서 말이 막혀서 계속 곱씹게 돼요."
+          },
+          "optionId": {
+            "type": "string",
+            "description": "선택지 턴에서 고른 버튼 id",
+            "example": "1"
+          },
+          "measures": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "측정 턴의 슬라이더 값(0~10)",
+            "example": {
+              "current_emotion": 6
+            }
+          }
+        }
+      },
+      "RefreshTokenReissueRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "모멘토리 로그인 시 발급한 Refresh Token",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "RefreshTokenReissueResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "tokenType": {
+            "type": "string"
+          },
+          "accessTokenExpiresIn": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "LogoutRequest": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "현재 기기의 모멘토리 Refresh Token",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "KakaoLoginRequest": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "React Native 카카오 Native SDK에서 발급한 Access Token",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "accessToken"
+        ]
+      },
+      "KakaoLoginResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "모멘토리 Access Token"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "모멘토리 Refresh Token"
+          },
+          "tokenType": {
+            "type": "string",
+            "description": "Access Token 인증 방식",
+            "example": "Bearer"
+          },
+          "accessTokenExpiresIn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Access Token 만료까지 남은 시간(초)",
+            "example": 1800
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "모멘토리 사용자 ID",
+            "example": 1
+          },
+          "onboardingRequired": {
+            "type": "boolean",
+            "description": "온보딩 필요 여부",
+            "example": true
+          }
+        }
+      },
+      "ScheduleOrderRequest": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-08-10"
+          },
+          "scheduleIds": {
+            "type": "array",
+            "example": [
+              4,
+              2,
+              8,
+              1
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "date",
+          "scheduleIds"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "description": "닉네임",
+            "example": "모리"
+          },
+          "age": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "나이",
+            "example": 25
+          },
+          "gender": {
+            "type": "string",
+            "description": "성별",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "UNSPECIFIED"
+            ],
+            "example": "FEMALE"
+          },
+          "interestAreas": {
+            "type": "array",
+            "description": "관심 분야",
+            "example": [
+              "CAREER",
+              "RELATIONSHIP"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "STUDY",
+                "CAREER",
+                "WORK",
+                "RELATIONSHIP",
+                "FAMILY",
+                "SELF",
+                "HEALTH",
+                "OTHER"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "reflectionTime": {
+            "type": "string",
+            "description": "회고 시간",
+            "example": "21:30"
+          },
+          "calendarIntegrationEnabled": {
+            "type": "boolean",
+            "description": "캘린더 연동 여부",
+            "example": true
+          }
+        }
+      },
+      "UserMeResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "사용자 ID",
+            "example": 1
+          },
+          "role": {
+            "type": "string",
+            "description": "현재 사용자 역할",
+            "example": "USER"
+          },
+          "onboardingRequired": {
+            "type": "boolean",
+            "description": "온보딩 필요 여부",
+            "example": true
+          },
+          "profile": {
+            "type": "null",
+            "$ref": "#/components/schemas/Profile",
+            "description": "온보딩에서 받은 프로필. 온보딩 전에는 없다"
+          }
+        }
+      },
+      "ScheduleListResponse": {
+        "type": "object",
+        "properties": {
+          "schedules": {
+            "type": "array",
+            "description": "일정 목록",
+            "items": {
+              "$ref": "#/components/schemas/ScheduleResponse"
+            }
+          }
+        }
+      },
+      "ActionCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1
+          },
+          "situation": {
+            "type": "string",
+            "example": "발표를 앞두고 긴장했던 상황"
+          },
+          "targetAction": {
+            "type": "string",
+            "example": "심호흡을 세 번 하고 시작하기"
+          },
+          "detail": {
+            "type": "string",
+            "example": "떨리는 건 준비를 잘했다는 신호라고 생각하기"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-08-10"
+          },
+          "done": {
+            "type": "boolean",
+            "example": false
+          },
+          "reflection": {
+            "type": "string",
+            "description": "느낀 점 — 해본 뒤에만 채워짐"
+          }
+        }
+      },
+      "RetrospectDiaryResponse": {
+        "type": "object",
+        "properties": {
+          "diary": {
+            "type": "string",
+            "description": "일기 본문"
+          },
+          "reframedDiary": {
+            "type": "string",
+            "description": "다시 본 오늘(리프레임) — 없을 수 있음"
+          },
+          "actionCard": {
+            "$ref": "#/components/schemas/ActionCard",
+            "description": "행동 카드 — 없을 수 있음"
+          }
+        }
+      },
+      "NicknamePolicyResponse": {
+        "type": "object",
+        "properties": {
+          "maxLength": {
+            "type": "integer",
+            "format": "int32",
+            "description": "닉네임 최대 길이",
+            "example": 10
+          },
+          "duplicateAllowed": {
+            "type": "boolean",
+            "description": "닉네임 중복 허용 여부",
+            "example": true
+          }
+        }
+      },
+      "OnboardingOptionsResponse": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "$ref": "#/components/schemas/NicknamePolicyResponse"
+          },
+          "genders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionResponse"
+            }
+          },
+          "interestAreas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionResponse"
+            }
+          },
+          "reflectionTimeFormat": {
+            "type": "string",
+            "description": "회고 시간 형식",
+            "example": "HH:mm"
+          },
+          "defaultTimeZone": {
+            "type": "string",
+            "description": "기본 시간대",
+            "example": "Asia/Seoul"
+          }
+        }
+      },
+      "OptionResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

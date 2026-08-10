@@ -192,8 +192,11 @@ CI 와 로컬 검증의 정본은 [`docs/CONTRIBUTING.md` 「품질 게이트」
 
 | 막는 것           | 필요한 것                                                      |
 | ----------------- | -------------------------------------------------------------- |
-| M2 이후           | `docs/api/openapi.yaml` — BE 팀과 합의한 계약 + 멱등성 규약    |
+| 아웃박스(M3-3)    | 멱등성 규약 — `DISCUSSION.md` §1-1. 계약의 **모양**은 닫혔다   |
 | M3 (첫 로컬 쓰기) | `docs/DATA-SECURITY.md` — 민감 필드 저장 위치·암호화·삭제 보장 |
+
+서버 API 계약은 [`docs/api/openapi.json`](docs/api/README.md) 에 있다 —
+개발 서버에서 받은 **반입 스냅샷**이라 직접 고치지 않는다(`npm run sync:api`).
 
 ## 명령
 
@@ -201,6 +204,7 @@ CI 와 로컬 검증의 정본은 [`docs/CONTRIBUTING.md` 「품질 게이트」
 npm start            npm run typecheck    npm run lint
 npm run test         npm run format:check
 npm run check:theme  # 생성물 자기 검증 — 상류 없이 돈다
+npm run sync:api     # 서버 OpenAPI 계약 재반입 — docs/api/README.md
 npm run android      # 공식 개발 환경인 dev client 빌드 — Expo Go 는 지원하지 않는다
 npm run sync:theme   # 담당자 전용 — docs/spec/SNAPSHOT.md
 ```

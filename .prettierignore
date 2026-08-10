@@ -12,3 +12,6 @@ src/design/theme.ts
 
 # 상류 반입 스냅샷 — 포맷하면 본문 바이트가 바뀌어 SNAPSHOT.md 의 sha256 대조가 깨진다.
 docs/spec/
+
+# 서버에서 받은 API 계약 — 서식은 scripts/sync-api.mjs 가 정한다 (docs/api/README.md).
+docs/api/openapi.json
