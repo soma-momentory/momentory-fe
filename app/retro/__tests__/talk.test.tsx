@@ -42,7 +42,10 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockStart.mockResolvedValue({
     ok: true,
-    data: { sessionId: 7, reply: reply({ text: "오늘은 어떤 이야기를 나누고 싶어요?", phase: "intro" }) },
+    data: {
+      sessionId: 7,
+      reply: reply({ text: "오늘은 어떤 이야기를 나누고 싶어요?", phase: "intro" }),
+    },
   });
 });
 
@@ -51,7 +54,9 @@ describe("시작 — 서버가 첫 응답을 준다", () => {
     await render(<RetroTalk />);
 
     await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(1));
-    expect(mockStart).toHaveBeenCalledWith(expect.objectContaining({ currentEmotion: "depressed" }));
+    expect(mockStart).toHaveBeenCalledWith(
+      expect.objectContaining({ currentEmotion: "depressed" }),
+    );
   });
 
   it("서버의 첫 질문을 버블로 보여준다", async () => {
@@ -110,7 +115,10 @@ describe("선택지 턴 — 방향 시트", () => {
 
   it("선택지가 오면 시트를 열고, 고르면 optionId 로 보낸다", async () => {
     withOptions();
-    mockTurn.mockResolvedValue({ ok: true, data: reply({ text: "좋아요.", ui: "measure", measures: [] }) });
+    mockTurn.mockResolvedValue({
+      ok: true,
+      data: reply({ text: "좋아요.", ui: "measure", measures: [] }),
+    });
     const r = await render(<RetroTalk />);
 
     await waitFor(() => expect(r.getByText("짧게 기록하기")).toBeTruthy());

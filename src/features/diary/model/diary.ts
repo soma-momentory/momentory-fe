@@ -106,7 +106,10 @@ export const useDiary = create<DiaryStore>((set) => ({
       const now = clock.now().toISOString();
       // 상황·목표 행동이 둘 다 있을 때만 행동 카드를 만든다 — 짧은 기록형은 일기만
       const hasCard =
-        situation != null && situation.length > 0 && targetAction != null && targetAction.length > 0;
+        situation != null &&
+        situation.length > 0 &&
+        targetAction != null &&
+        targetAction.length > 0;
       return {
         diaries: [
           ...s.diaries,

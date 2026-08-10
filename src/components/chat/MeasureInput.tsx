@@ -34,7 +34,10 @@ export function MeasureInput({ measures, onSubmit, disabled = false }: Props) {
       {measures.map((measure) => {
         const current = values[measure.id];
         // 0..max 까지 (max 포함) 칸을 만든다
-        const ticks = Array.from({ length: measure.max - measure.min + 1 }, (_, i) => measure.min + i);
+        const ticks = Array.from(
+          { length: measure.max - measure.min + 1 },
+          (_, i) => measure.min + i,
+        );
         return (
           <View key={measure.id} style={styles.block}>
             <AppText tone="body" weight="500" style={styles.label}>
@@ -44,7 +47,9 @@ export function MeasureInput({ measures, onSubmit, disabled = false }: Props) {
               style={styles.track}
               accessibilityRole="adjustable"
               accessibilityLabel={measure.label}
-              accessibilityValue={current == null ? undefined : { now: current, min: measure.min, max: measure.max }}
+              accessibilityValue={
+                current == null ? undefined : { now: current, min: measure.min, max: measure.max }
+              }
             >
               {ticks.map((tick) => {
                 const filled = current != null && tick <= current;

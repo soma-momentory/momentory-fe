@@ -95,8 +95,7 @@ export const useRetro = create<RetroStore>((set) => ({
       actionCard: reply.actionCard,
     })),
 
-  addMyTurn: (text) =>
-    set((s) => ({ turns: [...s.turns, { id: `t${++seq}`, who: "me", text }] })),
+  addMyTurn: (text) => set((s) => ({ turns: [...s.turns, { id: `t${++seq}`, who: "me", text }] })),
 
   addChipTurn: (label) =>
     set((s) => ({ turns: [...s.turns, { id: `t${++seq}`, who: "chip", text: label }] })),
