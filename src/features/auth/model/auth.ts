@@ -7,6 +7,7 @@ import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
 import { fetchMe } from "@/features/auth/data/meApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
 import { useDiary } from "@/features/diary/model/diary";
+import { useDay } from "@/features/home/model/day";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
@@ -221,6 +222,8 @@ const clearUserScopedStores = () => {
   useOnboardingCompletion.getState().reset();
   useRetro.getState().reset();
   useDiary.getState().reset();
+  // 일정이 서버에서 오면서 앞 사람의 하루가 남을 수 있게 됐다 (2026-08-11)
+  useDay.getState().reset();
   useProfile.getState().reset();
   useSettings.getState().reset();
 };

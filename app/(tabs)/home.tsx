@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { SectionLabel } from "@/components/common/SectionLabel";
@@ -37,9 +38,16 @@ import { formatKoreanTime } from "@/lib/time";
 export default function Home() {
   const schedules = useDay((s) => s.schedules);
   const toggleDone = useDay((s) => s.toggleDone);
+  const load = useDay((s) => s.load);
   const { date: today, weather } = useTodayContext();
   // 알림 설정(M3)과 같은 store 를 본다 — 홈이 다른 시각을 말하면 안 된다
   const retroNotify = useSettings((s) => s.notify.retro);
+
+  // 일정은 서버가 정본이다 — 홈이 뜰 때 받아온다. **못 받아도 화면은 그대로
+  // 그린다**(빈 목록 = `12-b`) — 로딩 표시도 안내도 두지 않는다(`RULES.md` 4)
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const shown = visibleSchedules(schedules);
   const empty = shown.length === 0;

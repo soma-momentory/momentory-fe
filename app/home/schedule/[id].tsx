@@ -17,9 +17,15 @@ import { useDay } from "@/features/home/model/day";
  * 읽힌다(실제로는 `hidden` 만 켠다).
  *
  * - **수정·삭제는 `source=manual` 에만** 붙는다 — 그 일정은 모멘토리에만
- *   있으므로 지울 것이 실제로 있다
- * - **마침과 감정은 서로를 요구하지 않는다** — 감정만 남겨도 되고 마침만 켜도 된다
+ *   있으므로 지울 것이 실제로 있다. 삭제는 이제 **서버에서도 지운다**
+ *   (`DELETE /api/v1/schedules/{id}`) — 전에는 `hide()` 를 부르고 있었다
  * - 감정은 **다시 누르면 취소**되는 토글이고 확인 모달을 두지 않는다
+ *
+ * ⚠ **서버 계약 때문에 스펙 둘을 지키지 못한다**(`PRODUCT.md` 「상류와 차이」):
+ * 감정이 **하나만** 남고(서버 `emotion` 이 단수), **감정을 고르면 마침이 함께
+ * 켜진다**(서버가 마침 없는 감정을 거부한다). 시안은 「마침과 감정은 서로를
+ * 요구하지 않는다」이고 감정도 여러 개다. 화면 문구는 시안 그대로 두었다 —
+ * 계약이 바뀌면 store 만 되돌리면 된다.
  * - **`dangerInk` 는 글자에만 얹고 면도 테두리도 채우지 않는다**(`R-40`).
  *   `[홈에서 숨기기]` 는 되돌릴 수 있는 동작이라 그중에서도 가장 가벼운
  *   처리(면·테두리 없음 · 36 시각 + 44 히트)를 쓴다
@@ -29,16 +35,19 @@ export default function ScheduleDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const schedule = useDay((s) => s.schedules.find((x) => x.id === id));
   const toggleDone = useDay((s) => s.toggleDone);
-  const toggleEmotion = useDay((s) => s.toggleEmotion);
+  const selectEmotion = useDay((s) => s.selectEmotion);
   const hide = useDay((s) => s.hide);
+  const remove = useDay((s) => s.remove);
 
   // 없는 일정이면 조용히 닫는다 — 오류 화면을 만들지 않는다(RULES 5)
   if (schedule == null) return <Sheet onDismiss={() => router.back()}>{null}</Sheet>;
 
   const manual = schedule.source === "manual";
 
-  const onHide = () => {
-    hide(schedule.id);
+  // 직접 추가한 것만 실제로 지운다. 가져온 일정은 캘린더 원본을 건드리지 않는다
+  const onLeave = () => {
+    if (manual) remove(schedule.id);
+    else hide(schedule.id);
     router.back();
   };
 
@@ -77,7 +86,7 @@ export default function ScheduleDetail() {
           </AppText>
         </View>
 
-        <EmotionGrid selected={schedule.emotions} onToggle={(e) => toggleEmotion(schedule.id, e)} />
+        <EmotionGrid selected={schedule.emotions} onToggle={(e) => selectEmotion(schedule.id, e)} />
 
         <AppText variant="footnote" tone="caption">
           고르지 않아도 괜찮아요 · 마침만 켜도 돼요.
@@ -97,7 +106,7 @@ export default function ScheduleDetail() {
       </View>
 
       {/* 되돌릴 수 있는 동작 — 면도 테두리도 없이 글자만 dangerInk */}
-      <Pressable accessibilityRole="button" hitSlop={4} onPress={onHide} style={styles.hideButton}>
+      <Pressable accessibilityRole="button" hitSlop={4} onPress={onLeave} style={styles.hideButton}>
         <AppText weight="500" style={styles.hideLabel}>
           {manual ? "이 일정 삭제" : "홈에서 숨기기"}
         </AppText>
