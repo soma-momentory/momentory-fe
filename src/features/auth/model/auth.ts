@@ -3,9 +3,13 @@ import { create } from "zustand";
 
 import { exchangeKakaoToken, type AuthFailureCode } from "@/features/auth/data/kakaoAuthApi";
 import { requestKakaoAccessToken } from "@/features/auth/data/kakaoSdk";
+import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
+import { useDiary } from "@/features/diary/model/diary";
+import { useProfile, useSettings } from "@/features/my/model/settings";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
+import { useRetro } from "@/features/retro/model/retro";
 
 /**
  * 인증 부트스트랩 (M2-0) + 카카오 로그인 (M2-1). `ARCHITECTURE.md §3` 의 규칙을 그대로 옮긴다.
@@ -22,8 +26,10 @@ import { useDraft } from "@/features/onboarding/model/draft";
  *   하나이고, 이 store 는 그 판정 결과만 든다.
  * - **라우트 가드가 최종 권한을 갖는다** — 판정은 여기서 하지만 강제는
  *   `(onboarding)`(·나중의 `(tabs)`) 레이아웃이 한다. 진입 판정 한 번으로 끝내지 않는다.
- * - 로그아웃은 세션과 함께 **온보딩 초안도 비운다** — 다음 사용자의 세션에
- *   앞 사람의 답이 남지 않게(§3-5. Query 캐시·아웃박스는 생기는 마일스톤에서 합류).
+ * - **로그아웃** — 기기의 세션과 사용자에게 묶인 store 를 비우고(§3-5 ·
+ *   `clearUserScopedStores`), `POST /api/v1/auth/logout` 으로 서버의 refresh token
+ *   도 폐기한다(`logoutApi.ts`). **로컬을 먼저 비우고 폐기는 배웅으로 보낸다** —
+ *   기다리지 않으므로 서버가 죽어 있어도 로그아웃은 즉시 끝난다.
  * - **토큰 갱신** — access token 이 만료됐고 refresh token 이 있으면 `POST
  *   /api/v1/auth/reissue` 로 조용히 새 토큰 쌍을 받는다(`reissueApi.ts`). **서버가
  *   refresh token 을 실제로 거부했을 때만**(폐기·만료·무효) `anonymous` 로 닫고
@@ -110,7 +116,10 @@ type AuthStore = {
    * 릴리스 빌드에서는 아무것도 하지 않는다 — 세션 없이 보호 흐름에 들어가지 않는다.
    */
   signInDev: () => Promise<void>;
-  /** 세션 · 온보딩 초안을 함께 비운다 (§3-5) */
+  /**
+   * 기기의 세션 · 사용자에게 묶인 store 를 비우고, 서버의 refresh token 도
+   * 폐기한다 (§3-5). **폐기를 기다리지 않는다** — 즉시 `anonymous` 로 닫는다
+   */
   signOut: () => Promise<void>;
 };
 
@@ -147,6 +156,48 @@ const persist = async (session: Session): Promise<boolean> => {
   } catch {
     return false;
   }
+};
+
+/**
+ * SecureStore 의 세션을 읽어 **모양까지 확인한 것만** 돌려준다.
+ *
+ * 없음 · 손상 · 읽기 오류를 전부 `null` 하나로 접는다 — **무엇을 할지는 호출부가
+ * 정한다.** `hydrate` 는 죽은 값을 지우고 로그인 화면으로 닫고, `getAccessToken`
+ * 은 그냥 토큰이 없다고 답하고, `signOut` 은 폐기할 refresh token 을 여기서 든다.
+ *
+ * **만료는 보지 않는다** — 만료된 세션도 refresh token 은 살아 있어 갱신·폐기에
+ * 쓸 수 있다. 만료 판정은 `isExpired` 가 따로 한다.
+ */
+const readSession = async (): Promise<Session | null> => {
+  try {
+    const raw = await SecureStore.getItemAsync(SESSION_KEY);
+    if (raw == null) return null;
+    const session: unknown = JSON.parse(raw);
+    return isSessionShape(session) ? session : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * 로그아웃·계정 삭제가 비우는 것 — **목록의 단일 지점**이다(`ARCHITECTURE §3-5`).
+ *
+ * 남기면 다음 사용자의 세션에 앞 사람의 것이 섞인다. 온보딩 답만의 문제가 아니다 —
+ * `useRetro` 는 **서버가 그 사용자를 위해 생성한 대화 전문**을 들고 있고, `useDiary`
+ * 는 그 대화가 남긴 일기다. 로그인 화면으로 나갔다가 다른 계정으로 들어와도
+ * 메모리에 그대로 있으면 그건 남의 기록을 보여주는 것이다.
+ *
+ * ⚠ **아직 못 비우는 것이 셋 있다** — MMKV 캐시 · Query 캐시 · 아웃박스 큐.
+ * 셋 다 도입 전이라 비울 것이 없다. 생기는 마일스톤에서 이 함수에 합류한다
+ * (§3-5 · §4 "큐는 계정에 묶인다. 로그아웃 시 비운다").
+ */
+const clearUserScopedStores = () => {
+  useDraft.getState().reset();
+  useOnboardingCompletion.getState().reset();
+  useRetro.getState().reset();
+  useDiary.getState().reset();
+  useProfile.getState().reset();
+  useSettings.getState().reset();
 };
 
 /**
@@ -228,10 +279,8 @@ const refreshSession = (session: Session): Promise<RefreshOutcome> => {
  */
 export const getAccessToken = async (): Promise<string | null> => {
   try {
-    const raw = await SecureStore.getItemAsync(SESSION_KEY);
-    if (raw == null) return null;
-    const session: unknown = JSON.parse(raw);
-    if (!isSessionShape(session)) return null;
+    const session = await readSession();
+    if (session == null) return null;
     if (!isExpired(session)) return session.accessToken;
 
     const result = await refreshSession(session);
@@ -254,15 +303,11 @@ export const useAuth = create<AuthStore>((set, get) => ({
 
   hydrate: async () => {
     try {
-      const raw = await SecureStore.getItemAsync(SESSION_KEY);
-      if (raw == null) {
-        set({ status: "anonymous" });
-        return;
-      }
-      const session: unknown = JSON.parse(raw);
-      if (!isSessionShape(session)) {
-        // 손상 — 갱신할 refresh token 도 못 읽으므로 fail-closed. 죽은 세션은
-        // 지워서 다음 부트가 같은 판정을 반복하지 않게 한다.
+      const session = await readSession();
+      if (session == null) {
+        // 없거나 손상이다. 손상이면 갱신할 refresh token 도 못 읽으므로
+        // fail-closed 이고, 죽은 값은 지워서 다음 부트가 같은 판정을 반복하지
+        // 않게 한다 — 없을 때의 삭제는 아무 일도 하지 않는다.
         await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
         set({ status: "anonymous" });
         return;
@@ -354,11 +399,18 @@ export const useAuth = create<AuthStore>((set, get) => ({
   },
 
   signOut: async () => {
+    // 지우기 전에 refresh token 을 든다 — 폐기 요청이 가리킬 것이 이것뿐이다
+    const session = await readSession();
+
     await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
-    // 초안까지 비운다 — 남기면 다음 사용자의 온보딩에 앞 사람 답이 섞인다
-    useDraft.getState().reset();
-    // 온보딩 완료 플래그도 — 남기면 다음 사용자가 남의 완료 상태로 홈에 들어간다
-    useOnboardingCompletion.getState().reset();
+    clearUserScopedStores();
     set({ status: "anonymous", signInError: null });
+
+    // 배웅 — **기다리지 않고 결과를 보지 않는다.** 이 기기에는 이미 세션이
+    // 없으므로 폐기가 실패해도 사용자는 로그아웃 상태다. 기다리면 서버가
+    // 느린 만큼(최대 10초) 마이 화면이 아무 반응 없이 서 있게 되는데,
+    // `SettingRow` 에는 진행 중을 보일 자리가 없고 화면도 `void signOut()` 로
+    // 기다릴 준비가 안 돼 있다. **로그아웃은 실패할 수 없는 동작으로 둔다.**
+    if (session != null) void revokeRefreshToken(session.refreshToken);
   },
 }));
