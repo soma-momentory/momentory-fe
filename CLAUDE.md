@@ -89,8 +89,8 @@
 지금 안 써도 타입에 둔다.** 날짜·시각은 `src/lib/clock.ts` 를 지난다 —
 샘플 하루(2026-07-27)와 04:00 경계가 그 한 파일에 있다.
 
-⚠ **인증과 회고 대화는 이미 붙었다** (2026-08-09 · PR #46). 결정이 뒤집힌 것은
-아니고, 나머지 도메인(홈·보관함·리포트·마이)은 그대로 `sample.ts` 를 쓴다.
+⚠ **인증과 회고 대화는 이미 붙었다** (2026-08-09 · PR #46, 로그아웃 2026-08-10).
+결정이 뒤집힌 것은 아니고, 나머지 도메인(홈·보관함·리포트·마이)은 그대로 `sample.ts` 를 쓴다.
 **서버 호출은 `src/lib/http.ts` 하나를 지난다** — `authedRequest` 가 Bearer 주입 ·
 타임아웃 · 안전 파싱을 맡고 **던지지 않고 `{ ok, error }` 로 닫는다.** 응답의
 형태 검증은 호출부(`data/` 어댑터) 몫이다. 다음 도메인을 붙일 때 **자기 `fetch`
@@ -149,11 +149,13 @@ src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 �
 src/features/report/{model/report.ts, data/sampleRepository.ts} ← 주간 집계 · 해석 공급 경계
 src/features/my/model/{settings,stats}.ts ← 알림/프로필 설정 · 전체 기간 집계
 src/features/onboarding/model/{draft, completion}.ts ← 답안 초안 · 완료 플래그(진입 분기)
-src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,reissueApi}.ts}
+src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,reissueApi,logoutApi}.ts}
                                           ← M2-0 부트스트랩(hydrate·가드·fail-closed) +
                                             M2-1 카카오 로그인 + 만료 토큰의 조용한 갱신
-                                            (refresh 는 회전한다). 카카오 토큰은 서버로 한 번
-                                            보내고 버린다 — SecureStore 에는 모멘토리 토큰만
+                                            (refresh 는 회전한다) + 로그아웃(서버 폐기).
+                                            카카오 토큰은 서버로 한 번
+                                            보내고 버린다 — SecureStore 에는 모멘토리 토큰만.
+                                            로그아웃이 비우는 목록은 clearUserScopedStores 하나
 src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData).
                                             타입은 소유하지 않는다 — feature 가 소유.
                                             화면이 직접 import 하면 린터가 막는다

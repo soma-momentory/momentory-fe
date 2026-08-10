@@ -315,8 +315,34 @@ BE 가 `POST /api/v1/auth/reissue` 를 이미 구현해 두었다(`RefreshTokenR
 이제 `access-token-expiration`(현재 30분, `application.yml`)이 지나도 화면에 "로그인이
 만료됐어요"가 뜨지 않는다 — refresh token 자체가 만료·폐기됐을 때만 그 문구를 본다.
 
-남은 것: 로그아웃·회원 탈퇴 시 서버측 refresh token 폐기 API 연동(`DISCUSSION.md` §1-6
-「그 밖에 정해야 할 것」) — 지금은 기기에서만 지운다.
+### 2026-08-10 · 로그아웃 — 서버의 refresh token 도 폐기한다
+
+`POST /api/v1/auth/logout` 에 붙였다(요청 `{refreshToken}` → `204` 본문 없음, 오류
+`400 INVALID_REQUEST`). **제출한 토큰 하나만 멱등적으로 폐기한다** — 다른 기기는 살아
+있다. 그전까지는 기기에서만 지워서, 서버에 남은 refresh token 이 수명이 다할 때까지
+새 access token 을 계속 발급받을 수 있었다.
+
+- `src/features/auth/data/logoutApi.ts` — `reissueApi.ts` 와 같은 방어. **`lib/http.ts`
+  를 지나지 않는다**: Bearer 를 쓰지 않고 refresh token 자체가 신원을 증명하는 계약이고,
+  `authedRequest` 를 쓰면 `getAccessToken()` 이 만료를 보고 **폐기보다 먼저 재발급을
+  보내** refresh token 이 회전해 손에 든 토큰이 그 자리에서 죽는다. 성공(204)의 본문은
+  읽지 않는다 — 없는 것을 파싱하면 끝난 폐기가 실패로 보고된다
+- `signOut` 은 **로컬을 먼저 비우고 폐기를 배웅으로 보낸다.** 기다리지 않으므로 서버가
+  죽어 있어도 로그아웃은 즉시 끝난다 — **로그아웃은 실패할 수 없는 동작**이다.
+  `SettingRow` 에 진행 중을 보일 자리가 없고 화면도 `void signOut()` 이라 기다릴 준비가
+  안 돼 있다
+- **비우는 store 를 넓혔다** — 온보딩 초안·완료 플래그 둘뿐이라 회고 대화·일기·프로필·
+  알림 설정이 메모리에 남았다. 회고 대화는 서버가 그 사용자를 위해 생성한 문장 전문이라
+  다음 사용자에게 남길 것이 아니다(`ARCHITECTURE §3-5`). 목록의 단일 지점은 `auth.ts`
+  의 `clearUserScopedStores` 이고, MMKV·Query 캐시·아웃박스는 생기는 마일스톤에서 합류한다
+
+남은 것: **회원 탈퇴** 시의 폐기 — 그 계정의 **모든 기기** 세션을 끊어야 하고
+삭제 범위·유예가 아직 열려 있다(`DISCUSSION.md` §1-5 · §1-6). 확인 화면도 없다.
+
+⚠ **아직 고치지 않은 것** — `refreshInFlight` 가 도는 중에 로그아웃하면, 갱신이 나중에
+끝나면서 `performRefresh` 의 `persist()` 가 **새 세션을 SecureStore 에 다시 써넣는다.**
+다음 부트에 조용히 로그인된 상태가 된다. 좁은 창이지만 실재한다 — 세대 카운터나
+갱신 취소로 닫는다.
 
 ### 2026-08-07 · 데이터 경계 정리 (코드 리뷰 1~3단계 반영)
 

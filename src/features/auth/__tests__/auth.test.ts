@@ -1,7 +1,11 @@
 import { SESSION_KEY, getAccessToken, useAuth } from "../model/auth";
+import { revokeRefreshToken } from "../data/logoutApi";
 import { reissueAccessToken } from "../data/reissueApi";
 
+import { useDiary } from "@/features/diary/model/diary";
+import { useProfile, useSettings } from "@/features/my/model/settings";
 import { useDraft } from "@/features/onboarding/model/draft";
+import { useRetro } from "@/features/retro/model/retro";
 
 /**
  * `ARCHITECTURE §3` — "테스트로 고정할 경로: 만료 토큰 · 갱신 실패 · SecureStore
@@ -12,6 +16,11 @@ jest.mock("../data/reissueApi", () => ({
   reissueAccessToken: jest.fn(),
 }));
 const reissue = jest.mocked(reissueAccessToken);
+
+jest.mock("../data/logoutApi", () => ({
+  revokeRefreshToken: jest.fn(async () => ({ ok: true })),
+}));
+const revoke = jest.mocked(revokeRefreshToken);
 
 type SecureMock = {
   __store: Map<string, string>;
@@ -37,6 +46,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   useAuth.setState({ status: "hydrating" });
   useDraft.getState().reset();
+  useRetro.getState().reset();
+  useDiary.getState().reset();
 });
 
 describe("hydrate — 콜드 스타트 판정", () => {
@@ -228,6 +239,93 @@ describe("signOut — 로그아웃 후 재진입", () => {
     await useAuth.getState().signOut();
 
     expect(useAuth.getState().status).toBe("anonymous");
+  });
+
+  it("사용자에게 묶인 store 를 함께 비운다 — 다음 사용자에게 남의 기록을 보이지 않는다", async () => {
+    seedSession(Date.now() + 60_000);
+    const notifyBefore = useSettings.getState().notify.retro.enabled;
+    useRetro.getState().addMyTurn("오늘은 좀 지쳤어");
+    useProfile.getState().set({ nickname: "앞사람" });
+    useSettings.getState().toggle("retro");
+    const firstDiaryId = useDiary.getState().diaries[0]!.id;
+    useDiary.getState().remove(firstDiaryId);
+
+    await useAuth.getState().signOut();
+
+    // 서버가 그 사용자를 위해 생성한 대화 — 메모리에 남기지 않는다
+    expect(useRetro.getState().turns).toEqual([]);
+    expect(useProfile.getState().nickname).not.toBe("앞사람");
+    expect(useSettings.getState().notify.retro.enabled).toBe(notifyBefore);
+    // 지운 일기가 되살아난다 = 일기 store 가 초기 상태로 돌아갔다
+    expect(useDiary.getState().diaries.some((d) => d.id === firstDiaryId)).toBe(true);
+  });
+});
+
+describe("signOut — 서버의 refresh token 폐기", () => {
+  it("저장돼 있던 refresh token 을 그대로 보낸다", async () => {
+    seedSession(Date.now() + 60_000, { refreshToken: "device-refresh" });
+
+    await useAuth.getState().signOut();
+
+    expect(revoke).toHaveBeenCalledWith("device-refresh");
+  });
+
+  it("만료된 세션이어도 폐기한다 — access token 이 죽었어도 refresh token 은 살아 있다", async () => {
+    seedSession(Date.now() - 1, { refreshToken: "device-refresh" });
+
+    await useAuth.getState().signOut();
+
+    expect(revoke).toHaveBeenCalledWith("device-refresh");
+    // 폐기 전에 갱신을 부르지 않는다 — 부르면 회전해서 손에 든 토큰이 그 자리에서 죽는다
+    expect(reissue).not.toHaveBeenCalled();
+  });
+
+  it("세션이 없으면 요청하지 않는다 — 보낼 토큰이 없다", async () => {
+    await useAuth.getState().signOut();
+
+    expect(revoke).not.toHaveBeenCalled();
+    expect(useAuth.getState().status).toBe("anonymous");
+  });
+
+  it("서버를 기다리지 않는다 — 응답이 오기 전에 이미 로그아웃이다", async () => {
+    seedSession(Date.now() + 60_000);
+    let settle: () => void = () => {};
+    revoke.mockReturnValueOnce(
+      new Promise((resolve) => {
+        settle = () => resolve({ ok: true });
+      }),
+    );
+
+    await useAuth.getState().signOut();
+
+    expect(useAuth.getState().status).toBe("anonymous");
+    expect(secure.__store.has(SESSION_KEY)).toBe(false);
+    settle();
+  });
+
+  it("폐기가 실패해도 로그아웃은 끝난다 — 화면에 아무것도 띄우지 않는다", async () => {
+    seedSession(Date.now() + 60_000);
+    revoke.mockResolvedValueOnce({ ok: false, code: "network" });
+
+    await useAuth.getState().signOut();
+
+    expect(useAuth.getState().status).toBe("anonymous");
+    expect(secure.__store.has(SESSION_KEY)).toBe(false);
+    expect(useAuth.getState().signInError).toBeNull();
+  });
+
+  it("실패는 개발 빌드에 사유 코드만 남는다 — 토큰은 남기지 않는다", async () => {
+    seedSession(Date.now() + 60_000, { refreshToken: "device-refresh" });
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    revoke.mockResolvedValueOnce({ ok: false, code: "network" });
+
+    await useAuth.getState().signOut();
+    // 배웅이라 로그는 signOut 이 끝난 뒤에 붙는다
+    await Promise.resolve();
+
+    expect(warn).toHaveBeenCalledWith("[auth] 로그아웃 폐기 실패:", "network");
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("device-refresh");
+    warn.mockRestore();
   });
 });
 
