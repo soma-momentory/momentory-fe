@@ -188,6 +188,10 @@ plugins/withInsecureDevApi.ts ← 개발 서버가 평문 HTTP 인 동안만 그
 src/lib/notifications.ts ← OS 알림의 단일 통로 — 권한 · 예약 화해. 던지지 않는다.
                           **문안을 모른다**(features/my/model/reminders.ts 몫) ·
                           배지 숫자를 올리지 않는다 · 전부 로컬 알림이다
+src/lib/calendar.ts     ← 기기 캘린더의 단일 통로 — 권한 · 범위 조회 ·
+                          externalId 정규화. 던지지 않는다(실패하면 빈 목록).
+                          **아직 서버로 가지 않는다** — 계약에 externalId·source·
+                          hidden 이 없다(DISCUSSION §1-4). 플랫폼 차이는 여기서만
 src/lib/clock.ts        ← 시각의 단일 공급자 — SampleClock(2026-07-27) ·
                           SystemClock(04:00 하루 경계) · fixedClock(테스트)
 src/lib/day.ts          ← 날짜 표기. 계산은 clock.ts 가 한다
@@ -197,8 +201,9 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context ·
 **Zustand** · **expo-secure-store** · **@react-native-community/datetimepicker**
 (08 OS 피커) · **@react-native-seoul/kakao-login** + **expo-build-properties**
-(카카오 로그인) · **expo-notifications**(회고 시간 알림 — 전부 로컬)
-— 셋 다 네이티브라 **dev client 재빌드 필요**.
+(카카오 로그인) · **expo-notifications**(회고 시간 알림 — 전부 로컬) ·
+**expo-calendar**(`09` 기기 캘린더 — **읽기만**)
+— 넷 다 네이티브라 **dev client 재빌드 필요**.
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
