@@ -89,14 +89,22 @@
 지금 안 써도 타입에 둔다.** 날짜·시각은 `src/lib/clock.ts` 를 지난다 —
 샘플 하루(2026-07-27)와 04:00 경계가 그 한 파일에 있다.
 
+⚠ **인증과 회고 대화는 이미 붙었다** (2026-08-09 · PR #46). 결정이 뒤집힌 것은
+아니고, 나머지 도메인(홈·보관함·리포트·마이)은 그대로 `sample.ts` 를 쓴다.
+**서버 호출은 `src/lib/http.ts` 하나를 지난다** — `authedRequest` 가 Bearer 주입 ·
+타임아웃 · 안전 파싱을 맡고 **던지지 않고 `{ ok, error }` 로 닫는다.** 응답의
+형태 검증은 호출부(`data/` 어댑터) 몫이다. 다음 도메인을 붙일 때 **자기 `fetch`
+래퍼를 만들지 않는다** — [`docs/TASKS.md`](docs/TASKS.md) 「둘이 부딪히는 곳」.
+
 ## 지금 어디까지 왔나
 
 **정적 화면 40장이 전부 있다** (2026-08-07). 진입 2 · 온보딩 11 · 홈 5 · 회고 12 ·
 보관함 6 · 리포트 1 · 마이 3. 화면 ID ↔ 라우트 매핑은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표가 정본이다.
 
-⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 남은 것은 BE · 영속 저장(MMKV) ·
-소셜 SDK **나머지 둘**(카카오는 2026-08-07 연결 — 갱신 계약·HTTPS 는 대기,
-[`DISCUSSION.md`](docs/DISCUSSION.md) §1-6) · OS 권한(알림·**캘린더 연결**) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
+⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 남은 것은 **나머지 도메인의 BE 연결** ·
+영속 저장(MMKV) · 소셜 SDK **나머지 둘**(카카오는 2026-08-07 연결 · 토큰 갱신은
+2026-08-09 닫힘 — **HTTPS 만 대기**, [`DISCUSSION.md`](docs/DISCUSSION.md) §1-6) ·
+OS 권한(알림·**캘린더 연결**) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
 M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](docs/TASKS.md)
 「화면 40장이 끝난 뒤 남은 것」에 있다.
 
@@ -119,7 +127,9 @@ src/design/{theme.ts, tokens.mvp.ts}
 src/components/primitives/{ScreenBackground, AppText, AppButton, Card,
                            InputRow, ProgressDots, BackChevron}.tsx
 src/components/chat/{ChatLayout, BabaBubble, AnswerBubble, Avatar, TypingDots, ChipFlow,
-                     DirectionChip, ChatInput}.tsx ← 방향 칩 = 대화의 경계선 · 빠른 답변 칩 금지
+                     DirectionChip, ChatInput, MeasureInput}.tsx
+                                          ← 방향 칩 = 대화의 경계선 · 빠른 답변 칩 금지.
+                                            MeasureInput = 서버가 ui:"measure" 를 줄 때의 눈금
 src/components/common/{TabBar, TabScreen, EmotionPill, Sheet, EmotionGrid, Toggle, RetroNav,
                        SegBar, DirectionSheet, SectionLabel, ConfirmCard}.tsx
 src/components/onboarding/OnboardingTopBar.tsx   src/components/my/SettingRow.tsx
@@ -128,7 +138,10 @@ src/components/archive/{CalendarMonth, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionRow, ActionCardSection, DiaryBabaFace}.tsx ← C6-b·A3 공유
 src/components/report/{WeeklySummaryCard, WeeklyEmotionGrid, ActionInsightCard}.tsx
 src/features/home/{model/{day,types}.ts, data/sampleRepository.ts, ui/ScheduleRow.tsx}
-src/features/retro/model/retro.ts         ← 회고 한 벌 — 시작 감정·대화·방향
+src/features/retro/{model/retro.ts, data/retroApi.ts}
+                                          ← 대화는 서버가 주도한다 — store 는 시작 감정 ·
+                                            세션 id · 버블 · 서버의 마지막 응답만 든다.
+                                            고정 대사(FOLLOW_UPS·DRAFT_DEMO)는 사라졌다
 src/features/diary/{model/{diary,types,selectors}.ts, data/sampleAdapter.ts}
                                           ← 회고가 남기는 것: Diary + ActionCard.
                                             타입·selector·샘플 seed 가 store 와 분리돼 있다
@@ -136,14 +149,18 @@ src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 �
 src/features/report/{model/report.ts, data/sampleRepository.ts} ← 주간 집계 · 해석 공급 경계
 src/features/my/model/{settings,stats}.ts ← 알림/프로필 설정 · 전체 기간 집계
 src/features/onboarding/model/{draft, completion}.ts ← 답안 초안 · 완료 플래그(진입 분기)
-src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi}.ts}
+src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,reissueApi}.ts}
                                           ← M2-0 부트스트랩(hydrate·가드·fail-closed) +
-                                            M2-1 카카오 로그인. 카카오 토큰은 서버로 한 번
+                                            M2-1 카카오 로그인 + 만료 토큰의 조용한 갱신
+                                            (refresh 는 회전한다). 카카오 토큰은 서버로 한 번
                                             보내고 버린다 — SecureStore 에는 모멘토리 토큰만
 src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData).
                                             타입은 소유하지 않는다 — feature 가 소유.
                                             화면이 직접 import 하면 린터가 막는다
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
+src/lib/http.ts         ← 인증이 필요한 서버 호출의 단일 통로 — Bearer 주입 · 타임아웃 ·
+                          안전 파싱. 던지지 않고 { ok, error } 로 닫는다.
+                          형태 검증은 호출부(data/ 어댑터) 몫 — 각자 fetch 래퍼 금지
 src/lib/config.ts       ← 서버 주소·앱 키의 단일 공급자(.env → app.config extra).
                           화면·repository 에 IP 를 적지 않는다
 plugins/withInsecureDevApi.ts ← 개발 서버가 평문 HTTP 인 동안만 그 호스트에 예외.
