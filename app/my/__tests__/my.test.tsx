@@ -1,4 +1,4 @@
-import { render, fireEvent, act } from "@testing-library/react-native";
+import { render, fireEvent, act, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import NotifySettings from "../notify";
@@ -24,6 +24,12 @@ jest.mock("expo-router", () => ({
   }),
 }));
 
+/** `M3` 의 스위치가 보는 OS 권한. 기본은 허용이고, 각 테스트가 거부로 바꾼다 */
+const notifications = jest.requireMock("expo-notifications") as {
+  getPermissionsAsync: jest.Mock;
+  requestPermissionsAsync: jest.Mock;
+};
+
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
 
@@ -31,6 +37,8 @@ beforeEach(() => {
   useProfile.getState().reset();
   useSettings.getState().reset();
   jest.clearAllMocks();
+  notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
+  notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
 });
 
 describe("M2 · 저장은 바꾼 것이 있을 때만", () => {
@@ -253,12 +261,14 @@ describe("M3 · 알림 설정", () => {
     const sw = r.getByLabelText("주간 돌아보기");
 
     await fireEvent.press(sw); // 끔
-    await fireEvent.press(sw); // 다시 켬
+    await fireEvent.press(sw); // 다시 켬 — 이때 OS 권한을 한 번 확인한다
 
-    expect(useSettings.getState().notify.weekly).toMatchObject({
-      enabled: true,
-      time: "21:00",
-    });
+    await waitFor(() =>
+      expect(useSettings.getState().notify.weekly).toMatchObject({
+        enabled: true,
+        time: "21:00",
+      }),
+    );
   });
 
   it("행을 누르면 시각을 고친다", async () => {
@@ -302,5 +312,79 @@ describe("M3 · 알림 설정", () => {
 
     expect(r.getByText("기록 보호 방식은 개인정보 처리방침에서 확인할 수 있어요")).toBeTruthy();
     expect(r.queryByText(/나만 볼 수 있|암호화/)).toBeNull();
+  });
+});
+
+describe("M3 · 스위치를 켜는 것과 알림이 오는 것", () => {
+  const BLOCKED_NOTE = "기기 설정에서 알림을 켜면 이 시간에 찾아갈게요.";
+
+  it("켤 때 OS 권한을 묻는다", async () => {
+    // 아직 한 번도 묻지 않은 기기 — 스위치가 곧 그 물음이다
+    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
+    useSettings.getState().toggle("retro"); // 꺼 둔 상태에서 시작
+    const r = await render(<NotifySettings />);
+
+    await fireEvent.press(r.getByLabelText("회고 시간 알림"));
+
+    // 스위치는 OS 의 답을 기다린다 — 누른 직후가 아니라 답이 온 뒤에 본다
+    await waitFor(() => expect(useSettings.getState().notify.retro.enabled).toBe(true));
+    expect(notifications.requestPermissionsAsync).toHaveBeenCalled();
+  });
+
+  it("끌 때는 묻지 않는다 — 끄는 데는 권한이 필요 없다", async () => {
+    const r = await render(<NotifySettings />);
+
+    await fireEvent.press(r.getByLabelText("회고 시간 알림"));
+
+    expect(notifications.requestPermissionsAsync).not.toHaveBeenCalled();
+    expect(useSettings.getState().notify.retro.enabled).toBe(false);
+  });
+
+  it("권한을 받지 못하면 스위치가 켜지지 않는다", async () => {
+    // 켜진 채 아무 알림도 안 오면 사용자가 확인할 방법이 없다 (ARCHITECTURE §8 과 같은 이유)
+    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
+    notifications.requestPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: false });
+    useSettings.getState().toggle("retro");
+    const r = await render(<NotifySettings />);
+
+    await fireEvent.press(r.getByLabelText("회고 시간 알림"));
+
+    // 물었다는 것까지 확인한 뒤에 본다 — 아직 안 물어서 꺼져 있는 것과 구별한다
+    await waitFor(() => expect(notifications.requestPermissionsAsync).toHaveBeenCalled());
+    expect(useSettings.getState().notify.retro.enabled).toBe(false);
+  });
+
+  it("다시 물을 수 없을 때만 한 줄로 길을 알려준다 — 모달도 재시도 버튼도 없다", async () => {
+    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: false });
+    const r = await render(<NotifySettings />);
+
+    expect(await r.findByText(BLOCKED_NOTE)).toBeTruthy();
+    expect(r.queryByText(/다시 시도|허용하기/)).toBeNull();
+  });
+
+  it("아직 물을 수 있으면 안내하지 않는다 — 스위치가 곧 그 물음이다", async () => {
+    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
+    const r = await render(<NotifySettings />);
+
+    await act(async () => {});
+
+    expect(r.queryByText(BLOCKED_NOTE)).toBeNull();
+  });
+
+  it("권한이 켜져 있으면 아무 말도 하지 않는다", async () => {
+    const r = await render(<NotifySettings />);
+
+    await act(async () => {});
+
+    expect(r.queryByText(BLOCKED_NOTE)).toBeNull();
+  });
+
+  it("[새로운 소식] 은 권한을 묻지 않는다 — 서버 푸시가 필요한 설정이다", async () => {
+    const r = await render(<NotifySettings />);
+
+    await fireEvent.press(r.getByLabelText("새로운 소식")); // 꺼짐 → 켬
+
+    await waitFor(() => expect(useSettings.getState().notify.news.enabled).toBe(true));
+    expect(notifications.requestPermissionsAsync).not.toHaveBeenCalled();
   });
 });

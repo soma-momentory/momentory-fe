@@ -3,6 +3,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect, type ReactNode } from "react";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
+import { startReminderSync } from "@/features/my/model/reminders";
+
 // 폰트가 준비되기 전에 화면을 보이지 않는다 — 서체가 바뀌며 깜빡이지 않게.
 void SplashScreen.preventAutoHideAsync();
 
@@ -36,6 +38,12 @@ void SplashScreen.preventAutoHideAsync();
  */
 export function AppProviders({ children }: { children: ReactNode }) {
   const fontsReady = useAppFonts();
+
+  // 알림 설정 ↔ OS 예약을 맞추는 구독. **화면이 아니라 여기 하나에 건다** —
+  // 값이 바뀌는 자리가 넷이라, 화면마다 걸면 하나를 빠뜨린다
+  // (`features/my/model/reminders.ts`). 폰트보다 먼저 걸어도 되는 일이라
+  // 이른 반환 위에 둔다 — 훅은 조건 없이 돈다.
+  useEffect(() => startReminderSync(), []);
 
   // 폰트를 기다리는 동안은 스플래시가 떠 있다. 여기서 무언가를 그리면
   // 시스템 서체로 한 번 그렸다가 바뀌며 깜빡인다.

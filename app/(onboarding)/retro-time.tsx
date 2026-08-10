@@ -13,6 +13,7 @@ import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import { timeField } from "@/design/tokens.mvp";
 import { useDraft } from "@/features/onboarding/model/draft";
+import { requestNotificationPermission } from "@/lib/notifications";
 import { dateAtTime, formatKoreanTime, toHHMM } from "@/lib/time";
 
 /**
@@ -28,13 +29,18 @@ import { dateAtTime, formatKoreanTime, toHHMM } from "@/lib/time";
  *   끄고, 홈의 「밤 9:30엔 제가 먼저 말 걸어요」 문구는 시각을 계속 쓴다
  * - 여기서 정한 시각은 `10` 완료 카드 · `M1` 프로필 · `M3` 알림 **세 곳이 같은
  *   값**을 본다 — 그래서 초안 `retroTime` 하나에만 쓴다
- * - 저장 직후의 OS 알림 권한 다이얼로그(`P*`)는 OS 가 그린다. 권한 API 는
- *   M2 에서 `expo-notifications` 와 함께 붙는다 — 지금은 자리만 비워 둔다
+ * - **저장 직후의 OS 권한 다이얼로그(`P*`)는 OS 가 그린다** — 커스텀 화면을
+ *   만들지 않는다(`08.md` · `RULES.md`). `[다음]` 을 누르면 여기서 한 번 묻는다
+ * - **거부해도 온보딩은 멈추지 않는다.** 거부는 오류가 아니라 답이라, 안내도
+ *   재시도도 없이 `notifyRetro` 만 끄고 그대로 `09` 로 간다 — 결과가
+ *   `[알림 없이 쓸게요]` 와 같아지고, `10` 은 그 답대로 시간 줄을 지운다
  */
 export default function RetroTime() {
   const retroTime = useDraft((s) => s.retroTime);
   const set = useDraft((s) => s.set);
   const [showPicker, setShowPicker] = useState(false);
+  /** 다이얼로그가 뜨기 전 한 번 더 눌리면 권한 요청이 둘이 된다 */
+  const [asking, setAsking] = useState(false);
   // 초안의 21:30 은 스키마 기본값이라 「고른 것」이 아니다 — 고르기 전에는
   // placeholder 를 보인다(시안의 「선택 전」). 고르면 그 값이 자리를 채운다.
   const [picked, setPicked] = useState(false);
@@ -47,9 +53,22 @@ export default function RetroTime() {
     }
   };
 
-  const goNext = (notify: boolean) => {
+  const goNext = async (notify: boolean) => {
+    if (asking) return;
+
     // 알림만 끈다 — 회고 시각은 남는다 (08.md)
-    set("notifyRetro", notify);
+    if (!notify) {
+      set("notifyRetro", false);
+      router.push("/calendar");
+      return;
+    }
+
+    setAsking(true);
+    // 권한이 곧 답이다 — 켜겠다고 했지만 OS 에서 거부하면 알림은 꺼진 것이다.
+    // (계측 `onb_permission_result` 는 track() 파사드가 생길 때 여기서 남긴다)
+    const { granted } = await requestNotificationPermission();
+    set("notifyRetro", granted);
+    setAsking(false);
     router.push("/calendar");
   };
 
@@ -89,10 +108,10 @@ export default function RetroTime() {
         </AppText>
 
         {/* 고르지 않아도 넘어간다 — 초안이 스키마 기본값 21:30 을 들고 있다 */}
-        <AppButton label="다음" onPress={() => goNext(true)} />
+        <AppButton label="다음" onPress={() => void goNext(true)} />
 
         {/* 거절을 같은 화면에 둔다. 골라도 회고 시각은 저장된다 */}
-        <AppButton label="알림 없이 쓸게요" variant="quiet" onPress={() => goNext(false)} />
+        <AppButton label="알림 없이 쓸게요" variant="quiet" onPress={() => void goNext(false)} />
       </View>
     </ScreenBackground>
   );
