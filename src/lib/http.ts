@@ -46,7 +46,9 @@ type RequestOptions = {
 };
 
 /** 본문 없는 응답(204)·JSON 파싱 실패를 가른다 */
-const parseJson = async (response: Response): Promise<{ ok: true; value: unknown } | { ok: false }> => {
+const parseJson = async (
+  response: Response,
+): Promise<{ ok: true; value: unknown } | { ok: false }> => {
   const text = await response.text().catch(() => null);
   if (text == null) return { ok: false };
   if (text.length === 0) return { ok: true, value: null };
