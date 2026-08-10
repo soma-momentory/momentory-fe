@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 import theme from "@/design/theme";
 import { useAuth } from "@/features/auth/model/auth";
+import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * 온보딩 스택. 상단 조각(`BackChevron`·`ProgressDots`)은 **여기서 그리지 않는다** —
@@ -19,6 +20,10 @@ import { useAuth } from "@/features/auth/model/auth";
  * **라우트 가드가 최종 권한을 갖는다**(`ARCHITECTURE §3-3`) — 진입 판정(S0)
  * 한 번으로 끝내지 않고, 이 레이아웃이 `authenticated` 가 아니면 무조건
  * 로그인으로 되돌린다. 딥링크로 바로 들어와도 여기서 막힌다.
+ *
+ * **선택지도 여기서 한 번 받아둔다**(`04`·`05-b`·`06` 이 같은 목록을 본다).
+ * **기다리지 않는다** — 화면은 대역으로 즉시 그리고 답이 오면 조용히 바뀐다.
+ * 선택지를 기다리느라 온보딩 첫 화면을 붙잡아 두지 않는다.
  */
 export default function OnboardingLayout() {
   const status = useAuth((s) => s.status);
@@ -28,6 +33,11 @@ export default function OnboardingLayout() {
   useEffect(() => {
     if (useAuth.getState().status === "hydrating") void useAuth.getState().hydrate();
   }, []);
+
+  // 인증된 뒤에 부른다 — 토큰이 없으면 요청이 나가지도 않고 폴백만 남는다
+  useEffect(() => {
+    if (status === "authenticated") void useOnboardingOptions.getState().load();
+  }, [status]);
 
   if (status === "hydrating") {
     // 판정 전에는 보호 라우트를 그리지 않는다 — 깜빡임보다 유출이 나쁘다.

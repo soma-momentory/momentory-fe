@@ -1,4 +1,4 @@
-import type { Gender } from "@/features/onboarding/model/draft";
+import { UNSPECIFIED_GENDER } from "@/features/onboarding/model/draft";
 import { authedRequest, type HttpError } from "@/lib/http";
 
 /**
@@ -15,9 +15,10 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * 있어서(`features/onboarding/model/completion.ts`) 앱을 껐다 켜면 온보딩을 다시
  * 봤다 — MMKV(M3) 를 기다리지 않고 서버 답으로 닫는다.
  *
- * **서버 enum 은 이 파일 밖으로 나가지 않는다.** 화면과 store 는 이미 자기 id
- * 체계(`"relations"` · `"none"` …)를 쓰고 있고, 그 둘이 섞이면 어느 쪽 값인지
- * 매번 확인해야 한다. 경계에서 한 번 옮긴다 — 그게 `data/` 가 있는 이유다.
+ * **성별·관심사 코드는 서버 것을 그대로 통과시킨다.** 목록의 주인이 서버
+ * (`GET /api/v1/onboarding/options`)이고 초안도 그 코드를 든다(`draft.ts`) —
+ * 여기서 우리 id 로 옮기면 **서버가 새로 넣은 코드에 옮길 이름이 없어** 그
+ * 항목만 조용히 사라진다. 옮기지 않는 것이 이 어댑터가 하는 일이다.
  *
  * ⚠ **서버 `Profile` 에 없는 것**: `restMethods`(`07`) · `notifyDaily/Weekly/News` ·
  * 기타 관심사 직접 입력(`interestOther`). 지금 값을 덮지 않고 그대로 둔다.
@@ -44,7 +45,9 @@ export type MeProfile = {
   nickname: string;
   /** 빈 문자열은 「나이를 묻지 않기로 했다」 — draft·useProfile 과 같은 규약 */
   age: string;
-  gender: Gender;
+  /** 서버 `genders[].code`. 서버는 `null`(미선택)을 주지 않는다 */
+  gender: string;
+  /** 서버 `interestAreas[].code` */
   interests: string[];
   retroTime: string;
   calendarLinked: boolean;
@@ -105,27 +108,6 @@ const mapError = (error: HttpError): MeFailureCode => {
   }
 };
 
-// ── 서버 값 → FE 값 ──────────────────────────────────────────────────────
-
-/** `UNSPECIFIED` 는 「선택 안 함」(`"none"`)이다. 미선택(`null`)은 서버에 없다 */
-const GENDERS: Record<string, Gender> = {
-  MALE: "male",
-  FEMALE: "female",
-  UNSPECIFIED: "none",
-};
-
-/** `06` 의 칩 id 와 같은 값을 낸다. 둘만 이름이 다르다 — `RELATIONSHIP` · `OTHER` */
-const INTERESTS: Record<string, string> = {
-  STUDY: "study",
-  CAREER: "career",
-  WORK: "work",
-  RELATIONSHIP: "relations",
-  FAMILY: "family",
-  SELF: "self",
-  HEALTH: "health",
-  OTHER: "etc",
-};
-
 // ── 런타임 검증 ──────────────────────────────────────────────────────────
 
 /**
@@ -133,8 +115,9 @@ const INTERESTS: Record<string, string> = {
  * 화면을 채우면 온보딩을 마쳤는지 아닌지를 화면이 다시 추측하게 된다.
  * 나머지는 없거나 어긋나면 그 필드만 기본값으로 접는다.
  *
- * **모르는 관심사 코드는 버리고 나머지를 살린다** — 서버가 항목을 늘렸을 때
- * 프로필 전체가 사라지는 것보다 하나가 비는 편이 낫다.
+ * **코드는 검사만 하고 옮기지 않는다** — 문자열이 아닌 항목만 버린다. 모르는
+ * 코드까지 버리면 서버가 새로 넣은 관심사가 프로필에서만 사라져, 마이에서
+ * 저장을 누르는 순간 그 답이 지워진다.
  */
 const toProfile = (v: unknown): MeProfile | null => {
   if (!isObject(v)) return null;
@@ -146,10 +129,9 @@ const toProfile = (v: unknown): MeProfile | null => {
     nickname: v.nickname.trim(),
     // 서버는 정수 또는 null 이고 화면은 입력칸 문자열이다 — 없으면 빈 문자열
     age: typeof v.age === "number" && Number.isFinite(v.age) ? String(v.age) : "",
-    gender: (typeof v.gender === "string" ? GENDERS[v.gender] : undefined) ?? "none",
-    interests: areas
-      .map((code) => (typeof code === "string" ? INTERESTS[code] : undefined))
-      .filter((id): id is string => id !== undefined),
+    // 서버가 안 주면 「선택 안 함」으로 읽는다 — 프로필이 있는데 성별만 빈 경우다
+    gender: typeof v.gender === "string" && v.gender.length > 0 ? v.gender : UNSPECIFIED_GENDER,
+    interests: areas.filter((code): code is string => typeof code === "string" && code.length > 0),
     // 시각이 비면 화면이 할 말을 잃는다 — 빈 값은 받지 않고 store 의 값을 지킨다
     retroTime: typeof v.reflectionTime === "string" ? v.reflectionTime : "",
     calendarLinked: v.calendarIntegrationEnabled === true,

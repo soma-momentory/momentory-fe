@@ -11,7 +11,8 @@ import { AppText } from "@/components/primitives/AppText";
 import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
-import { useDraft, type Gender } from "@/features/onboarding/model/draft";
+import { useDraft } from "@/features/onboarding/model/draft";
+import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * `05-b` · 나이 · 성별 (온보딩 2/6 · **선택**)
@@ -25,19 +26,17 @@ import { useDraft, type Gender } from "@/features/onboarding/model/draft";
  * - **값이 들어간 나이에는 지우기 × 가 붙는다**(시각 19 · 히트 44) —
  *   선택을 되돌릴 길이 없으면 선택이 아니다
  * - **비워둔 것과 「선택 안 함」을 구별한다.** 앞은 묻지 않기를 고른 것이고,
- *   뒤는 해당 없음을 고른 것이다 — `gender` 는 `null` 과 `"none"` 을 따로 든다
+ *   뒤는 해당 없음을 고른 것이다 — `gender` 는 `null` 과 `UNSPECIFIED_GENDER`
+ *   를 따로 든다
  *
  * ⚠ 스펙은 「입력 후」 상태(값 칩 104×44)만 그린다 — **입력 전 모양이 없어**
  * 나이는 입력줄(`.tfield`)로 받고, 스펙의 핵심인 지우기 × 를 값이 있을 때
  * 붙인다. 값 칩 형태로 바꿀지는 상류 확인 후보다(`TASKS.md`).
+ *
+ * **성별 칩은 서버가 준다**(`model/options.ts`). 못 받았으면 대역으로 그린다.
  */
-const GENDERS: readonly { id: Gender; label: string }[] = [
-  { id: "male", label: "남성" },
-  { id: "female", label: "여성" },
-  { id: "none", label: "선택 안 함" },
-];
-
 export default function Profile() {
+  const genders = useOnboardingOptions((s) => s.genders);
   const age = useDraft((s) => s.age);
   const gender = useDraft((s) => s.gender);
   const set = useDraft((s) => s.set);
@@ -76,10 +75,10 @@ export default function Profile() {
           <View style={styles.field}>
             <FieldLabel>성별</FieldLabel>
             <ChipFlow
-              items={GENDERS}
+              items={genders}
               selected={gender == null ? [] : [gender]}
               // 같은 것을 다시 누르면 미선택으로 되돌린다 — 고른 뒤 무를 길이 있어야 한다
-              onToggle={(id) => set("gender", gender === id ? null : (id as Gender))}
+              onToggle={(id) => set("gender", gender === id ? null : id)}
             />
           </View>
 

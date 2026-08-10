@@ -16,23 +16,39 @@ import { create } from "zustand";
  * 쓰지도 않는 의존성이 락파일에 굳는다(`§1`).
  *
  * **비어 있음과 「선택 안 함」을 구별한다.** `gender` 가 `null` 이면 묻지 않기를
- * 고른 것이고, `"none"` 이면 해당 없음을 고른 것이다(`05-b.md`). 타입으로 갈라
- * 둬야 `10` 에서 둘을 다르게 보낼 수 있다.
+ * 고른 것이고, `"UNSPECIFIED"` 면 해당 없음을 고른 것이다(`05-b.md`). 타입으로
+ * 갈라 둬야 `10` 에서 둘을 다르게 보낼 수 있다.
+ *
+ * **성별·관심사는 서버 코드 그대로 든다**(`MALE` · `RELATIONSHIP` …). 목록의
+ * 주인이 서버(`GET /api/v1/onboarding/options`)라, 우리 id 로 옮겼다가 되돌리면
+ * **서버가 새로 넣은 코드에는 옮길 이름이 없어 그 칩만 조용히 사라진다.**
+ * 값의 뜻을 알아야 하는 곳은 아래 코드 둘뿐이다.
  */
-export type Gender = "male" | "female" | "none";
 
+/**
+ * 관심사 「기타」 — `06-b` 의 직접 입력 줄이 이 칩에 매여 있다.
+ * **문자열을 화면에 적지 않는다** — 서버가 코드를 바꾸면 어디를 고쳐야
+ * 하는지 알 수 없게 된다.
+ */
+export const OTHER_INTEREST = "OTHER";
+
+/**
+ * 성별 「선택 안 함」. **`null`(미선택)과 다르다** — 앞은 묻지 않기를 고른
+ * 것이고 이것은 해당 없음을 고른 것이다(`05-b.md`).
+ */
+export const UNSPECIFIED_GENDER = "UNSPECIFIED";
 export type OnboardingDraft = {
   /** `04` · 필수 */
   nickname: string;
   /** `05-b` · 선택. 빈 문자열은 「묻지 않기를 골랐다」 */
   age: string;
-  /** `05-b` · 선택. `null` 은 미선택 — 「선택 안 함」(`"none"`)과 다르다 */
-  gender: Gender | null;
-  /** `06` · 필수 · 최대 3 */
+  /** `05-b` · 선택. 서버 `genders[].code`. `null` 은 미선택 — `"UNSPECIFIED"` 와 다르다 */
+  gender: string | null;
+  /** `06` · 필수 · 최대 3. 서버 `interestAreas[].code` */
   interests: string[];
   /**
    * `06-b`/`06-c` · 「기타」 직접 입력 값 (최대 12자, trim 저장).
-   * `interests` 에 `"etc"` 가 있을 때만 의미를 갖는다 — 기타를 끄면 함께 비운다.
+   * `interests` 에 `OTHER_INTEREST` 가 있을 때만 의미를 갖는다 — 기타를 끄면 함께 비운다.
    */
   interestOther: string;
   /**

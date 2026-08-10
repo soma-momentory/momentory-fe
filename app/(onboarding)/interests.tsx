@@ -11,7 +11,8 @@ import { AppText } from "@/components/primitives/AppText";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import { clearButton, otherRow, warnRow } from "@/design/tokens.mvp";
-import { MAX_INTERESTS, useDraft } from "@/features/onboarding/model/draft";
+import { MAX_INTERESTS, OTHER_INTEREST, useDraft } from "@/features/onboarding/model/draft";
+import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * `06` · 관심 분야 (온보딩 3/6 · 필수 · 복수) + `06-b`/`06-c` 기타 입력
@@ -31,26 +32,20 @@ import { MAX_INTERESTS, useDraft } from "@/features/onboarding/model/draft";
  * - 확정 기준은 셋 — 키보드 `[완료]` · 입력 줄 밖 탭 · `[다음]`. 전부 trim 한
  *   값을 쓰고, **공백뿐이면 확정하지 않고 기타 선택을 취소한다**(`06-c.md`)
  * - 12자 상한 — 넘기면 더 입력되지 않고 오류 문구 없이 **카운터 색만** 바뀐다
+ *
+ * **칩 목록은 서버가 준다**(`GET /api/v1/onboarding/options`). 못 받았으면
+ * 대역(`model/options.ts`)으로 그린다 — 선택지를 기다리느라 온보딩을 멈추지
+ * 않는다. 상한 3 은 서버가 말하지 않아 여기 남는다.
  */
 const MAX = MAX_INTERESTS;
 
-const ITEMS = [
-  { id: "study", label: "학업" },
-  { id: "career", label: "취업·진로" },
-  { id: "work", label: "일·직장생활" },
-  { id: "relations", label: "인간관계" },
-  { id: "family", label: "가족" },
-  { id: "self", label: "나 자신" },
-  { id: "health", label: "건강" },
-  { id: "etc", label: "기타" },
-] as const;
-
 export default function Interests() {
+  const items = useOnboardingOptions((s) => s.interestAreas);
   const picked = useDraft((s) => s.interests);
   const other = useDraft((s) => s.interestOther);
   const set = useDraft((s) => s.set);
 
-  const etcOn = picked.includes("etc");
+  const etcOn = picked.includes(OTHER_INTEREST);
   const otherTrimmed = other.trim();
   // 기타를 켠 채 비워 두면 잠긴다 (06-b.md)
   const ready = picked.length > 0 && (!etcOn || otherTrimmed.length > 0);
@@ -62,7 +57,7 @@ export default function Interests() {
         picked.filter((x) => x !== id),
       );
       // 기타를 끄면 적던 값도 함께 비운다 — 꺼진 답을 초안에 남기지 않는다
-      if (id === "etc") set("interestOther", "");
+      if (id === OTHER_INTEREST) set("interestOther", "");
       return;
     }
     // 넷째부터는 눌러도 켜지지 않는다 — 경고를 미리 띄우지 않는다 (06.md · 06-c.md)
@@ -79,7 +74,7 @@ export default function Interests() {
     if (otherTrimmed.length === 0) {
       set(
         "interests",
-        picked.filter((x) => x !== "etc"),
+        picked.filter((x) => x !== OTHER_INTEREST),
       );
       set("interestOther", "");
       return;
@@ -105,7 +100,7 @@ export default function Interests() {
       </ChatLayout>
 
       <View style={styles.bottom}>
-        <ChipFlow items={ITEMS} selected={picked} onToggle={toggle} />
+        <ChipFlow items={items} selected={picked} onToggle={toggle} />
 
         {etcOn ? (
           <OtherRow

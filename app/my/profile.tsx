@@ -13,7 +13,8 @@ import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import { useProfile } from "@/features/my/model/settings";
-import { MAX_INTERESTS, type Gender } from "@/features/onboarding/model/draft";
+import { MAX_INTERESTS } from "@/features/onboarding/model/draft";
+import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * `M2` · 회고 프로필
@@ -35,23 +36,12 @@ import { MAX_INTERESTS, type Gender } from "@/features/onboarding/model/draft";
  * ⚠ **「기본 정보」(나이·성별) 섹션이 여기 있다.** `M1` 은 별도 줄로 두지만
  * 상류 상태 기계에 그 줄이 갈 화면이 없다 — 화면을 새로 만들지 않고 여기
  * 담았다(`settings.ts` 주석 · `TASKS.md` 「상류 확인」).
+ *
+ * **관심사·성별 칩은 온보딩 `06`·`05-b` 와 같은 목록이고 서버가 준다**
+ * (`model/options.ts`). 전에는 두 화면이 배열을 각자 들고 있어서, 한쪽만
+ * 고치면 온보딩에서 고른 칩이 여기서 사라지는 구조였다.
+ * 쉬는 방법 15종은 **서버에 없어** 아래에 남는다.
  */
-const INTERESTS = [
-  { id: "study", label: "학업" },
-  { id: "career", label: "취업·진로" },
-  { id: "work", label: "일·직장생활" },
-  { id: "relations", label: "인간관계" },
-  { id: "family", label: "가족" },
-  { id: "self", label: "나 자신" },
-  { id: "health", label: "건강" },
-  { id: "etc", label: "기타" },
-] as const;
-
-const GENDERS: readonly { id: Gender; label: string }[] = [
-  { id: "male", label: "남성" },
-  { id: "female", label: "여성" },
-  { id: "none", label: "선택 안 함" },
-];
 
 /** 대표 여섯 — 나머지는 `[＋ 더 고르기]` 로 편다 */
 const REST_PREVIEW = [
@@ -84,12 +74,21 @@ const REST_ALL = [
 export default function ProfileEdit() {
   const saved = useProfile();
   const navigation = useNavigation();
+  const interestItems = useOnboardingOptions((s) => s.interestAreas);
+  const genderItems = useOnboardingOptions((s) => s.genders);
+  const maxNickname = useOnboardingOptions((s) => s.nickname.maxLength);
+
+  // 온보딩을 거치지 않고 여기로 바로 올 수 있다(마이 → 회고 프로필) — 그때도
+  // 서버 목록을 쓴다. 이미 받았으면 아무 일도 하지 않는다
+  useEffect(() => {
+    void useOnboardingOptions.getState().load();
+  }, []);
 
   const [nickname, setNickname] = useState(saved.nickname);
   const [interests, setInterests] = useState<string[]>(saved.interests);
   const [restMethods, setRestMethods] = useState<string[]>(saved.restMethods);
   const [age, setAge] = useState(saved.age);
-  const [gender, setGender] = useState<Gender | null>(saved.gender);
+  const [gender, setGender] = useState<string | null>(saved.gender);
   const [restExpanded, setRestExpanded] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   // 확인을 거친 이탈 — beforeRemove 가 같은 이탈을 다시 막지 않게 한다
@@ -183,7 +182,7 @@ export default function ProfileEdit() {
           <InputRow
             value={nickname}
             onChangeText={setNickname}
-            maxLength={10}
+            maxLength={maxNickname}
             showCounter
             accessibilityLabel="닉네임"
           />
@@ -196,7 +195,12 @@ export default function ProfileEdit() {
               {`최대 ${MAX_INTERESTS}개 · ${interests.length}개 선택`}
             </AppText>
           </View>
-          <ChipFlow items={INTERESTS} selected={interests} onToggle={toggleInterest} showCheck />
+          <ChipFlow
+            items={interestItems}
+            selected={interests}
+            onToggle={toggleInterest}
+            showCheck
+          />
         </Card>
 
         {/* 온보딩 07 에서 물은 것이라 편집 경로가 여기 있어야 한다 */}
@@ -235,10 +239,10 @@ export default function ProfileEdit() {
             accessibilityLabel="나이"
           />
           <ChipFlow
-            items={GENDERS}
+            items={genderItems}
             selected={gender == null ? [] : [gender]}
             // 같은 것을 다시 누르면 미선택으로 — 선택 항목이라 무를 길이 있어야 한다
-            onToggle={(id) => setGender(gender === id ? null : (id as Gender))}
+            onToggle={(id) => setGender(gender === id ? null : id)}
             showCheck
           />
         </Card>
