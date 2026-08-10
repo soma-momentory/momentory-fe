@@ -14,6 +14,7 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "sync:api": "node scripts/sync-api.mjs",
     "sync:theme": "node scripts/sync-theme.mjs",
     "check:theme": "node scripts/sync-theme.mjs --verify",
     "test": "jest",
