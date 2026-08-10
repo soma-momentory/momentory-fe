@@ -45,6 +45,17 @@ type RequestOptions = {
   signal?: AbortSignal;
 };
 
+/**
+ * 서버가 받는 메서드. **`GET`·`POST` 로 시작했다가 일정 API 를 붙이며 넓혔다** —
+ * 완료·감정 변경(`PUT`) · 수동 일정 수정(`PATCH`) · 삭제(`DELETE`)가 전부
+ * 여기를 지난다(`docs/api/openapi.json`).
+ *
+ * 넓히는 것 말고는 아무것도 바뀌지 않는다. `DELETE` 는 대개 본문이 없고
+ * `204` 로 답하는데, 본문 없는 응답은 이미 `data: null` 로 닫힌다(아래
+ * `parseJson`) — 메서드별 분기를 만들지 않는다.
+ */
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
 /** 본문 없는 응답(204)·JSON 파싱 실패를 가른다 */
 const parseJson = async (
   response: Response,
@@ -61,9 +72,12 @@ const parseJson = async (
 
 /**
  * 인증 요청 하나. `data` 는 **검증되지 않은** 파싱 결과다 — 호출부가 형태를 확인한다.
+ *
+ * 본문 없는 성공(`204`)은 `{ ok: true, data: null }` 이다 — 삭제처럼 돌려받을
+ * 것이 없는 호출은 `authedRequest<null>` 로 받는다.
  */
 export async function authedRequest<T>(
-  method: "GET" | "POST",
+  method: HttpMethod,
   path: string,
   body?: unknown,
   options?: RequestOptions,
