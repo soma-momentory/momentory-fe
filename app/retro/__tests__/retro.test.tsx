@@ -36,7 +36,7 @@ describe("C1 · 회고 인트로 — 떠올리기가 아니라 고르기", () =>
   });
 
   it("재료는 홈과 같은 값을 본다 — 하드코딩하지 않는다", async () => {
-    useDay.getState().toggleEmotion("s4", 9); // 운동 가기에 평온함 추가
+    useDay.getState().selectEmotion("s4", 9); // 운동 가기에 평온함 추가
     const { getByText } = await render(<RetroIntro />);
 
     expect(getByText("일정 4개 · 순간 2개 · 감정 기록 4개")).toBeTruthy();

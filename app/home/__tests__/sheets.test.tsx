@@ -77,7 +77,7 @@ describe("12-c · 일정 상세 — 가져온 일정은 읽기 전용", () => {
   });
 });
 
-describe("12-c · 마침과 감정은 서로를 요구하지 않는다", () => {
+describe("12-c · 마침과 감정 — 서버 계약이 시안을 좁힌 자리", () => {
   // 샘플의 「운동 가기」가 마침도 감정도 없는 줄이다 (「면접 스터디」는 감정만 있다)
   const emptyRow = () => {
     mockParams = { id: "s4" };
@@ -90,7 +90,10 @@ describe("12-c · 마침과 감정은 서로를 요구하지 않는다", () => {
     expect(s?.done).toBe(false);
   });
 
-  it("감정만 남길 수 있다 — 마침을 켜지 않아도", async () => {
+  // ⚠ 시안(`12-c.md`)은 「마침과 감정은 서로를 요구하지 않는다」인데, 서버는
+  // 마침 없는 감정을 거부한다(`Schedule.changeCompletion`). 아래 둘이 그 차이를
+  // 고정한다 — 계약이 바뀌면 이 두 개가 먼저 깨진다. `PRODUCT.md` 「상류와 차이」
+  it("감정을 고르면 마침도 함께 켜진다 — 서버가 마침 없는 감정을 받지 않는다", async () => {
     emptyRow();
     const { getByLabelText } = await render(<ScheduleDetail />);
 
@@ -98,7 +101,20 @@ describe("12-c · 마침과 감정은 서로를 요구하지 않는다", () => {
 
     const s = useDay.getState().schedules.find((x) => x.id === "s4");
     expect(s?.emotions).toEqual([1]);
-    expect(s?.done).toBe(false); // 마침은 그대로다
+    expect(s?.done).toBe(true);
+  });
+
+  it("마침을 끄면 감정도 사라진다 — 서버가 그렇게 지운다", async () => {
+    mockParams = { id: "s3" }; // 감정만 있는 줄
+    const { getByLabelText } = await render(<ScheduleDetail />);
+
+    await fireEvent.press(getByLabelText("마침으로 표시")); // 켜기 — 감정 유지
+    expect(useDay.getState().schedules.find((x) => x.id === "s3")?.emotions).toEqual([1]);
+
+    await fireEvent.press(getByLabelText("마침으로 표시")); // 끄기 — 감정도 함께
+    const s = useDay.getState().schedules.find((x) => x.id === "s3");
+    expect(s?.done).toBe(false);
+    expect(s?.emotions).toEqual([]);
   });
 
   it("마침만 켤 수 있다 — 감정을 고르지 않아도", async () => {
@@ -120,6 +136,17 @@ describe("12-c · 마침과 감정은 서로를 요구하지 않는다", () => {
     await fireEvent.press(getByLabelText("불안함"));
 
     expect(useDay.getState().schedules.find((x) => x.id === "s4")?.emotions).toEqual([]);
+  });
+
+  it("감정은 하나만 남는다 — 다른 것을 누르면 갈아치운다", async () => {
+    // 시안은 0~2개 권장·상한 없음인데 서버 `emotion` 이 단수다
+    emptyRow();
+    const { getByLabelText } = await render(<ScheduleDetail />);
+
+    await fireEvent.press(getByLabelText("불안함"));
+    await fireEvent.press(getByLabelText("평온함"));
+
+    expect(useDay.getState().schedules.find((x) => x.id === "s4")?.emotions).toEqual([9]);
   });
 
   it("감정 9종을 다 보인다 — 접지 않는다", async () => {
