@@ -40,7 +40,7 @@ import { useOnboardingOptions } from "@/features/onboarding/model/options";
  * ⚠ **`[기타]` 를 누르면 입력 줄이 열린다 — 시안에 없는 줄이다.** 서버가
  * `OTHER` 와 함께 직접 입력 값을 요구해서(없으면 온보딩 제출이 400 ·
  * `DISCUSSION.md` §1-7), 관심 분야 `06-b` 와 같은 모양으로 더했다.
- * 기록: `PRODUCT.md` 「상류와 차이」 14번.
+ * 기록: `PRODUCT.md` 「상류와 차이」 15번.
  */
 export default function Rest() {
   const items = useOnboardingOptions((s) => s.restMethods);

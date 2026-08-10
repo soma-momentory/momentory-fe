@@ -312,7 +312,7 @@ describe("07 · 쉬는 방법", () => {
 
   it("[기타] 를 누르면 적을 자리가 열리고, 비워 두면 [다음] 이 잠긴다", async () => {
     // 서버가 OTHER 와 함께 직접 입력 값을 요구한다 — 없으면 제출이 400 이다
-    // (DISCUSSION §1-7). 시안에 없는 줄이라 PRODUCT.md 「상류와 차이」 14번.
+    // (DISCUSSION §1-7). 시안에 없는 줄이라 PRODUCT.md 「상류와 차이」 15번.
     const r = await render(<Rest />);
 
     await fireEvent.press(r.getByText("기타"));
