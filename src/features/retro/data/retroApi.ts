@@ -16,8 +16,19 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * 대충 단언하면 필드가 빠진 200 이 그대로 화면에 오른다.
  */
 
-/** 선택지 하나. `id` 는 1-base 번호 문자열 — 턴 요청의 `optionId` 로 돌려보낸다 */
-export type ReplyOption = { id: string; label: string; description: string | null };
+/**
+ * 선택지 하나. `id` 는 1-base 번호 문자열 — 턴 요청의 `optionId` 로 돌려보낸다.
+ *
+ * `hint` 는 화면 배지용 맥락 한 줄(예: "지난 비슷한 상황에서 정한 행동"). `input` 이 true 면
+ * "직접 입력" 옵션이라, 고르면 텍스트 필드를 열고 `optionId` 대신 `content` 로 돌려보낸다.
+ */
+export type ReplyOption = {
+  id: string;
+  label: string;
+  description: string | null;
+  hint: string | null;
+  input: boolean;
+};
 
 /** 슬라이더 하나. `id` 는 measure 필드 키 — 턴 요청 `measures` 의 키로 돌려보낸다 */
 export type ReplyMeasure = { id: string; label: string; min: number; max: number };
@@ -156,7 +167,14 @@ const toOptions = (v: unknown): ReplyOption[] | null => {
     const id = asString(item.id);
     const label = asString(item.label);
     if (id == null || label == null) return null;
-    out.push({ id, label, description: asString(item.description) });
+    out.push({
+      id,
+      label,
+      description: asString(item.description),
+      hint: asString(item.hint),
+      // 서버는 "직접 입력" 옵션에만 input:true 를 싣는다(NON_NULL) — 없으면 보통 옵션
+      input: item.input === true,
+    });
   }
   return out;
 };

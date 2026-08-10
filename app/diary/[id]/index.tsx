@@ -1,5 +1,5 @@
 import { Redirect, router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { EmotionPill } from "@/components/common/EmotionPill";
@@ -12,7 +12,12 @@ import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
+import {
+  fetchRetrospectDiary,
+  type FetchedActionCard,
+} from "@/features/diary/data/retrospectDiaryApi";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
+import type { ActionCard } from "@/features/diary/model/types";
 import { formatKoreanDate, formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -39,8 +44,41 @@ export default function DiaryDetail() {
 
   const [face, setFace] = useState<0 | 1>(0);
 
+  /**
+   * 로컬 store 에 카드가 없고 이 일기가 서버 회고에서 온 것이면(`retrospectId`),
+   * 서버에 저장된 행동 카드를 불러온다 — 보관함처럼 로컬 초안 없이 열린 일기의 자리.
+   * 지금 흐름(회고 → 저장 → 열기)은 로컬 카드가 늘 있어 이 경로를 타지 않는다.
+   * 서버 카드는 **읽기 전용**이다(done/reflection 쓰기 경로가 아직 없다).
+   */
+  const retrospectId = diary?.retrospectId ?? null;
+  const needServerCard = card == null && retrospectId != null;
+  const [serverCard, setServerCard] = useState<FetchedActionCard | null>(null);
+  useEffect(() => {
+    if (!needServerCard || retrospectId == null) return;
+    const controller = new AbortController();
+    fetchRetrospectDiary(retrospectId, { signal: controller.signal }).then((d) => {
+      if (!controller.signal.aborted) setServerCard(d?.actionCard ?? null);
+    });
+    return () => controller.abort();
+  }, [needServerCard, retrospectId]);
+
   // 지워진 일기를 열고 있었다면 보관함으로 — 오류 화면을 만들지 않는다
   if (diary == null) return <Redirect href="/archive" />;
+
+  // 서버에서 온 카드를 화면 카드 모양으로 옮긴다(읽기 전용) — 로컬 카드가 없을 때만
+  const readOnlyCard: ActionCard | null =
+    card == null && serverCard != null
+      ? {
+          id: serverCard.id,
+          diaryId: diary.id,
+          situation: serverCard.situation,
+          targetAction: serverCard.targetAction,
+          done: serverCard.done,
+          doneAt: null,
+          reflection: serverCard.reflection,
+          createdAt: serverCard.createdDate ?? diary.date,
+        }
+      : null;
 
   return (
     <ScreenBackground>
@@ -84,6 +122,9 @@ export default function DiaryDetail() {
                 onUndoDone={undoDone}
                 onSetReflection={setReflection}
               />
+            ) : readOnlyCard != null ? (
+              // 서버에서 불러온 카드 — 상호작용은 닫혀 있다(읽기 전용)
+              <ActionCardSection card={readOnlyCard} diaryDate={diary.date} readOnly />
             ) : null}
           </>
         ) : (

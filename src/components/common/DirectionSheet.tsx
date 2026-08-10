@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { Sheet } from "@/components/common/Sheet";
 import { CheckCircleIcon } from "@/components/icons/LineIcons";
@@ -29,18 +29,34 @@ import type { ReplyOption } from "@/features/retro/data/retroApi";
  * - **다른 줄을 누르면 앞 선택이 풀린다** — 하나만 고른다
  * - 제목/버튼 고정, **선택지 영역만 스크롤**. 시트 최대 높이 74%. 키보드 없음
  */
+/** 확정 결과 — 보통 옵션은 `optionId`, "직접 입력" 옵션은 사용자가 적은 `content`. */
+export type DirectionChoice = { optionId: string } | { content: string };
+
 type Props = {
   options: ReplyOption[];
-  /** 확정한 선택지의 `id` 를 그대로 서버로 돌려보낸다 */
-  onConfirm: (optionId: string) => void;
+  /** 확정한 선택 — 보기면 그 `id`, 직접 입력이면 적은 텍스트를 서버로 돌려보낸다 */
+  onConfirm: (choice: DirectionChoice) => void;
   onDismiss: () => void;
 };
 
 export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
   // 확정 전까지의 선택 — 시트를 닫으면 이 값이 통째로 사라진다
   const [pickedId, setPickedId] = useState<string | null>(null);
+  // "직접 입력" 옵션을 골랐을 때 적는 행동 한 줄
+  const [customText, setCustomText] = useState("");
   const maxListHeight =
     Dimensions.get("window").height * directionOption.sheetMaxRatio - HEADER_AND_CTA;
+
+  const picked = options.find((o) => o.id === pickedId) ?? null;
+  const isCustom = picked?.input === true;
+  const trimmed = customText.trim();
+  // 직접 입력은 한 줄을 적어야, 보통 옵션은 고르기만 하면 확정할 수 있다
+  const canConfirm = picked != null && (!isCustom || trimmed.length > 0);
+
+  const confirm = () => {
+    if (picked == null) return;
+    onConfirm(picked.input ? { content: trimmed } : { optionId: picked.id });
+  };
 
   return (
     <Sheet onDismiss={onDismiss}>
@@ -68,6 +84,12 @@ export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
               onPress={() => setPickedId(option.id)}
               style={[styles.option, on ? styles.optionOn : null]}
             >
+              {/* 맥락 배지 — 카드 내용이 아니라 "지난 비슷한 상황에서" 같은 표시 */}
+              {option.hint != null ? (
+                <AppText variant="caption" tone="accent" weight="600" style={styles.hint}>
+                  {option.hint}
+                </AppText>
+              ) : null}
               <View style={styles.optionHead}>
                 <AppText tone="strong" weight="600" style={styles.optionTitle}>
                   {option.label}
@@ -79,17 +101,26 @@ export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
                   {option.description}
                 </AppText>
               ) : null}
+              {/* "직접 입력" 을 고르면 여기서 원하는 행동을 적는다 */}
+              {on && option.input ? (
+                <TextInput
+                  value={customText}
+                  onChangeText={setCustomText}
+                  placeholder="예: 자기 전에 오늘 답변 한 줄 적어보기"
+                  placeholderTextColor={semantic.textSlogan}
+                  multiline
+                  selectionColor={semantic.accentInk}
+                  style={styles.input}
+                  accessibilityLabel="직접 입력한 행동"
+                />
+              ) : null}
             </Pressable>
           );
         })}
       </ScrollView>
 
       {/* 고르기 전에는 잠기되 사라지지 않는다 */}
-      <AppButton
-        label="이 방향으로 이어가기"
-        disabled={pickedId == null}
-        onPress={() => pickedId != null && onConfirm(pickedId)}
-      />
+      <AppButton label="이 방향으로 이어가기" disabled={!canConfirm} onPress={confirm} />
     </Sheet>
   );
 }
@@ -126,4 +157,18 @@ const styles = StyleSheet.create({
     lineHeight: directionOption.titleSize * 1.5,
   },
   optionDesc: { fontSize: directionOption.descSize, lineHeight: directionOption.descSize * 1.5 },
+  hint: { fontSize: directionOption.descSize },
+  input: {
+    marginTop: 2,
+    minHeight: 40,
+    borderRadius: directionOption.radius,
+    borderWidth: 1,
+    borderColor: semantic.accentFill,
+    paddingHorizontal: directionOption.paddingHorizontal,
+    paddingVertical: 8,
+    fontFamily: "Pretendard-Regular",
+    fontSize: directionOption.titleSize,
+    lineHeight: directionOption.titleSize * 1.4,
+    color: semantic.textBody,
+  },
 });

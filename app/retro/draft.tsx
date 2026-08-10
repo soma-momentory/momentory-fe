@@ -39,6 +39,8 @@ export default function RetroDraft() {
   const startEmotion = useRetro((s) => s.startEmotion);
   const diary = useRetro((s) => s.diary);
   const actionCard = useRetro((s) => s.actionCard);
+  // 서버 회고 세션 id — 저장하는 일기에 실어 두면 나중에 서버 저장분을 되불러온다
+  const sessionId = useRetro((s) => s.sessionId);
   const resetRetro = useRetro((s) => s.reset);
   const saveDiary = useDiary((s) => s.save);
   // 홈·회고 확인과 같은 「오늘」 — 일기의 날짜·날씨가 여기서 온다
@@ -76,6 +78,7 @@ export default function RetroDraft() {
       weather: `${weather.label} · ${weather.celsius}℃`,
       situation: actionCard?.situation ?? null,
       targetAction: actionCard?.action ?? null,
+      retrospectId: sessionId != null ? String(sessionId) : null,
       edited: body !== diary.diary,
     });
     // 회고 한 벌은 여기까지가 수명이다 — 다음 회고에 앞 대화가 섞이지 않게

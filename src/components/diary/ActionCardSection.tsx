@@ -28,9 +28,15 @@ type Props = {
   card: ActionCard;
   /** 카드가 만들어진 회고의 날짜 — 「7월 27일 회고에서 만들어졌어요」 */
   diaryDate: string;
-  onMarkDone: (cardId: string) => void;
-  onUndoDone: (cardId: string) => void;
-  onSetReflection: (cardId: string, text: string) => void;
+  onMarkDone?: (cardId: string) => void;
+  onUndoDone?: (cardId: string) => void;
+  onSetReflection?: (cardId: string, text: string) => void;
+  /**
+   * 읽기 전용 — 서버에서 불러온(store 에 없는) 카드일 때. 「해봤어요」·되돌리기·느낀
+   * 점 편집이 store 를 바꾸는데 서버 카드는 그 대상이 아니라, 상호작용을 닫아 둔다.
+   * done/reflection 쓰기 경로가 붙으면 풀린다.
+   */
+  readOnly?: boolean;
 };
 
 export function ActionCardSection({
@@ -39,6 +45,7 @@ export function ActionCardSection({
   onMarkDone,
   onUndoDone,
   onSetReflection,
+  readOnly = false,
 }: Props) {
   const [confirmUndo, setConfirmUndo] = useState(false);
 
@@ -56,7 +63,8 @@ export function ActionCardSection({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="해봤어요 되돌리기"
-              onPress={() => setConfirmUndo(true)}
+              onPress={readOnly ? undefined : () => setConfirmUndo(true)}
+              disabled={readOnly}
               style={[styles.doneButton, styles.doneButtonOn]}
             >
               <CheckCircleIcon size={15} />
@@ -66,18 +74,21 @@ export function ActionCardSection({
             </Pressable>
 
             {/* 느낀 점은 **선택**이다 — 완료한 뒤에야 자리가 열린다 */}
-            <ActionRow label="느낀 점" value={card.reflection ?? ""}>
-              <TextInput
-                value={card.reflection ?? ""}
-                onChangeText={(t) => onSetReflection(card.id, t)}
-                placeholder="한 줄 남겨도 좋아요"
-                placeholderTextColor={semantic.textSlogan}
-                multiline
-                selectionColor={semantic.accentInk}
-                style={styles.reflection}
-                accessibilityLabel="느낀 점"
-              />
-            </ActionRow>
+            {readOnly && (card.reflection ?? "").length === 0 ? null : (
+              <ActionRow label="느낀 점" value={card.reflection ?? ""}>
+                <TextInput
+                  value={card.reflection ?? ""}
+                  onChangeText={(t) => onSetReflection?.(card.id, t)}
+                  editable={!readOnly}
+                  placeholder="한 줄 남겨도 좋아요"
+                  placeholderTextColor={semantic.textSlogan}
+                  multiline
+                  selectionColor={semantic.accentInk}
+                  style={styles.reflection}
+                  accessibilityLabel="느낀 점"
+                />
+              </ActionRow>
+            )}
 
             <AppText variant="caption" tone="caption">
               {`${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요`}
@@ -85,24 +96,29 @@ export function ActionCardSection({
           </>
         ) : (
           <>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onMarkDone(card.id)}
-              style={styles.doneButton}
-            >
-              <AppText tone="body" weight="600" style={styles.doneLabel}>
-                해봤어요
-              </AppText>
-            </Pressable>
+            {/* 서버 카드(읽기 전용)는 아직 「해봤어요」를 눌러도 저장할 곳이 없어 버튼을 닫는다 */}
+            {readOnly ? null : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onMarkDone?.(card.id)}
+                style={styles.doneButton}
+              >
+                <AppText tone="body" weight="600" style={styles.doneLabel}>
+                  해봤어요
+                </AppText>
+              </Pressable>
+            )}
             <AppText variant="caption" tone="caption">
-              {`${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요 · 해본 뒤에 한 줄 남길 수 있어요`}
+              {readOnly
+                ? `${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요`
+                : `${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요 · 해본 뒤에 한 줄 남길 수 있어요`}
             </AppText>
           </>
         )}
       </Card>
 
       {/* 되돌릴 때만 확인을 묻는다 — 완료 기록과 느낀 점이 함께 사라진다 */}
-      {confirmUndo ? (
+      {confirmUndo && !readOnly ? (
         <ConfirmCard
           title="해본 기록을 지울까요?"
           caption="해본 날짜와 느낀 점이 함께 지워져요."
@@ -110,7 +126,7 @@ export function ActionCardSection({
           confirmLabel="지우기"
           onCancel={() => setConfirmUndo(false)}
           onConfirm={() => {
-            onUndoDone(card.id);
+            onUndoDone?.(card.id);
             setConfirmUndo(false);
           }}
         />

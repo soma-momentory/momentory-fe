@@ -3,7 +3,7 @@ import { router } from "expo-router";
 
 import RetroTalk from "../talk";
 
-import type { Reply } from "@/features/retro/data/retroApi";
+import type { Reply, ReplyOption } from "@/features/retro/data/retroApi";
 import { startRetro, sendTurn } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
 
@@ -33,6 +33,14 @@ const reply = (over: Partial<Reply> = {}): Reply => ({
   diary: null,
   done: false,
   safetyLevel: "none",
+  ...over,
+});
+
+/** 선택지 하나 — 필요한 필드만 덮어쓴다 */
+const option = (over: Partial<ReplyOption> & { id: string; label: string }): ReplyOption => ({
+  description: null,
+  hint: null,
+  input: false,
   ...over,
 });
 
@@ -101,8 +109,8 @@ describe("선택지 턴 — 방향 시트", () => {
           text: "어떻게 이어갈까요?",
           phase: "await_direction",
           options: [
-            { id: "1", label: "마음 이야기하기", description: "감정 정리형" },
-            { id: "4", label: "짧게 기록하기", description: "짧은 기록형" },
+            option({ id: "1", label: "마음 이야기하기", description: "감정 정리형" }),
+            option({ id: "4", label: "짧게 기록하기", description: "짧은 기록형" }),
           ],
         }),
       },
@@ -135,6 +143,68 @@ describe("선택지 턴 — 방향 시트", () => {
 
     // 칩 라벨이 대화에 남는다 (경계선)
     await waitFor(() => expect(useRetro.getState().turns.some((t) => t.who === "chip")).toBe(true));
+  });
+});
+
+describe("행동 추천 — 이전 카드 배지 + 직접 입력", () => {
+  const withActionOptions = () =>
+    mockStart.mockResolvedValue({
+      ok: true,
+      data: {
+        sessionId: 7,
+        reply: reply({
+          text: "어떤 행동을 해볼까요?",
+          phase: "script",
+          options: [
+            option({
+              id: "1",
+              label: "예상 질문 하나 답해보기",
+              hint: "지난 비슷한 상황에서 정한 행동이에요",
+            }),
+            option({ id: "2", label: "답변 핵심 세 줄 만들기", description: "결론부터" }),
+            option({ id: "3", label: "내가 직접 정할래요", input: true }),
+          ],
+        }),
+      },
+    });
+
+  it("이전 카드 옵션의 hint 배지를 보여준다", async () => {
+    withActionOptions();
+    const r = await render(<RetroTalk />);
+
+    await waitFor(() =>
+      expect(r.getByText("지난 비슷한 상황에서 정한 행동이에요")).toBeTruthy(),
+    );
+  });
+
+  it("직접 입력을 고르기 전에는 텍스트 필드가 없다", async () => {
+    withActionOptions();
+    const r = await render(<RetroTalk />);
+
+    await waitFor(() => expect(r.getByText("내가 직접 정할래요")).toBeTruthy());
+    expect(r.queryByLabelText("직접 입력한 행동")).toBeNull();
+  });
+
+  it("직접 입력을 고르면 필드가 열리고, 적은 행동을 content 로 보낸다", async () => {
+    withActionOptions();
+    mockTurn.mockResolvedValue({
+      ok: true,
+      data: reply({ text: "좋아요.", ui: "measure", measures: [] }),
+    });
+    const r = await render(<RetroTalk />);
+
+    await waitFor(() => expect(r.getByText("내가 직접 정할래요")).toBeTruthy());
+    await fireEvent.press(r.getByText("내가 직접 정할래요"));
+
+    const input = r.getByLabelText("직접 입력한 행동");
+    await fireEvent.changeText(input, "자기 전에 오늘 답변 한 줄 적어보기");
+    await act(async () => {
+      await fireEvent.press(r.getByText("이 방향으로 이어가기"));
+    });
+
+    expect(mockTurn).toHaveBeenCalledWith(7, { content: "자기 전에 오늘 답변 한 줄 적어보기" });
+    // 직접 적은 행동이 내 버블로 남는다
+    expect(r.getByText("자기 전에 오늘 답변 한 줄 적어보기")).toBeTruthy();
   });
 });
 
