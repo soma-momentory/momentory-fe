@@ -259,14 +259,37 @@ src/
 
 ---
 
-## 4. 데이터 레이어 (BE 미확정 대응)
+## 4. 데이터 레이어
 
-BE 팀의 API 가 확정되지 않았으므로 **FE 가 계약을 먼저 제안한다.**
+> **2026-08-10 — 이 절의 전제가 바뀌었다.** 아래 1~4 는 「BE 가 없으니 FE 가
+> 계약을 먼저 제안한다」는 계획이었는데, **BE 가 계약을 먼저 냈다.** 실제로는
+> `docs/api/openapi.json`(서버에서 반입 · `npm run sync:api`)이 정본이고
+> `openapi-typescript`·MSW 는 도입하지 않았다 — 붙일 엔드포인트가 이미 있어
+> 목 서버를 거칠 이유가 없었다. 기록으로 남긴다.
 
-1. `schema.mvp.json` 의 엔티티 7개 + `states.mvp.json` 의 `effect(s)` 를 그대로 옮겨 **OpenAPI 계약 초안**(`docs/api/openapi.yaml`)을 쓴다. 화면에 없는 필드는 만들지 않는다.
-2. `openapi-typescript` 로 타입을 생성 → `src/lib/api/schema.d.ts` (생성물).
-3. **MSW 핸들러**가 그 계약을 구현한다. 샘플 값은 `schema.mvp.json` 의 `meta.sampleData` 그대로 (오늘 2026-07-27 · 일기 12편 · 닉네임 지현 · 이번 주 회고 5회).
-4. BE 가 나오면 base URL 만 바꾼다. 계약이 어긋나면 그 차이가 곧 BE 팀과의 논의 항목이 된다.
+1. ~~`schema.mvp.json` 의 엔티티 7개 + `states.mvp.json` 의 `effect(s)` 를 그대로 옮겨 **OpenAPI 계약 초안**을 쓴다.~~ → 서버가 낸 것을 반입한다.
+2. ~~`openapi-typescript` 로 타입을 생성 → `src/lib/api/schema.d.ts` (생성물).~~ → 어댑터가 손으로 쓴 DTO 타입 + **런타임 검증**을 든다. 생성 타입은 컴파일만 통과시킬 뿐 200 응답의 형태를 보장하지 않는다.
+3. ~~**MSW 핸들러**가 그 계약을 구현한다.~~ → 아직 붙지 않은 도메인은 `src/mocks/sample.ts` 가 계속 채운다.
+4. 계약이 어긋나면 그 차이가 곧 BE 팀과의 논의 항목이 된다 — [`DISCUSSION.md`](DISCUSSION.md) §1.
+
+### 서버가 목록의 주인인 값은 **코드를 그대로 든다** (2026-08-10)
+
+관심 분야·성별처럼 **선택지를 서버가 내려주는 값**(`GET /api/v1/onboarding/options`)은
+`draft`·`useProfile` 이 **서버 코드 그대로** 든다 — `RELATIONSHIP` · `UNSPECIFIED`.
+우리 id(`relations` · `none`)로 옮기지 않는다.
+
+「화면은 서버 모양을 보지 않는다」는 원칙의 **예외이고, 근거가 있다**: 매핑표를 두면
+**서버가 새로 넣은 코드에 옮길 이름이 없어 그 항목만 조용히 사라진다.** 사용자에게는
+칩 하나가 안 보이는 것으로 끝나지 않는다 — `M2` 에서 저장을 누르는 순간, 화면이
+읽지 못한 그 답이 지워진 채로 서버에 덮인다.
+
+원칙이 지켜지는 자리는 그대로다. **값의 뜻을 아는 코드는 둘뿐**이고 둘 다
+`features/onboarding/model/draft.ts` 에 있다 — `OTHER_INTEREST`(기타 입력 줄이
+매인 칩) · `UNSPECIFIED_GENDER`(「선택 안 함」과 미선택 `null` 의 구분).
+화면은 그 외의 코드를 문자열로 적지 않는다.
+
+**적용 범위는 「서버가 목록을 주는 값」뿐이다.** 감정 9종처럼 디자인 토큰과 묶인
+것(`theme.emotions`)은 여전히 FE 어휘를 쓴다.
 
 ### local-first 쓰기 — 아웃박스
 
