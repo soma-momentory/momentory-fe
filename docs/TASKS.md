@@ -261,8 +261,8 @@ v2 `momentory.css` 가 `.tfield` 를 정의해 추측이 필요 없어졌다 —
 | --- | ---------------------------------------------------- | ---------------------------------------------------------------------- |
 | ✅  | `POST /api/v1/auth/{kakao,reissue,logout}`           | 로그인 · 갱신 · 로그아웃 (M2-1 · PR #46·#48·#49)                       |
 | ✅  | `POST /api/v1/retrospect` · `…/{id}/messages`        | 회고 대화 (서버 주도)                                                  |
-| 1   | `GET /api/v1/users/me`                               | **온보딩 재진입 버그** · 닉네임·관심사·회고 시각의 샘플 하드코딩       |
-| 2   | `GET /api/v1/onboarding/options`                     | `06`·`05-b` 선택지의 화면 하드코딩 (두 곳 중복)                        |
+| ✅  | `GET /api/v1/users/me`                               | **온보딩 재진입 버그** · 프로필의 샘플 하드코딩 (PR #51)               |
+| ✅  | `GET /api/v1/onboarding/options`                     | `04`·`05-b`·`06` 선택지의 화면 하드코딩 (`06` 과 `M2` 두 곳 중복)      |
 | 3   | `PUT /api/v1/users/me/onboarding`                    | `10` 이 서버에 아무것도 보내지 않는 것 · `M2` 저장이 로컬에만 남는 것  |
 | 4   | `GET /api/v1/schedules`                              | `useDay` 에 **날짜 축이 없다** — 오늘 하루만 메모리에 있다             |
 | 5   | `PUT /api/v1/schedules/{id}/completion`              | 마침·감정 토글                                                         |

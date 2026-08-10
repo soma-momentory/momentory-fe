@@ -1,6 +1,5 @@
 import { create } from "zustand";
 
-import type { Gender } from "@/features/onboarding/model/draft";
 import { SAMPLE_USER } from "@/mocks/sample";
 
 /**
@@ -82,7 +81,8 @@ type ProfileStore = {
    * `M1` 의 「기본 정보」 줄이 여기로 온다(아래 주석 참조).
    */
   age: string;
-  gender: Gender | null;
+  /** 서버 `genders[].code`. `null` 은 미선택 — `UNSPECIFIED_GENDER` 와 다르다 */
+  gender: string | null;
   /**
    * 온보딩 `09` 의 캘린더 연결 — `M1` 의 「연결 관리」 줄이 읽는 값이다.
    *
@@ -98,10 +98,11 @@ type ProfileStore = {
 const PROFILE = {
   // 홈·회고 대화가 같은 닉네임을 봐야 한다 — 값의 정본은 샘플 사용자 한 곳이다
   nickname: SAMPLE_USER.nickname as string,
-  interests: ["relations", "self"],
+  // 서버 `interestAreas[].code` — 목록의 주인이 서버라 우리 id 로 옮기지 않는다
+  interests: ["RELATIONSHIP", "SELF"],
   restMethods: ["🎵 음악 듣기", "🚶 산책하기"],
   age: "25",
-  gender: "female" as Gender | null,
+  gender: "FEMALE" as string | null,
   // 샘플 일정 넷 중 셋이 `source: "calendar"` 다 — 연결한 사용자로 시작한다
   calendarLinked: true,
 };
@@ -127,7 +128,7 @@ export const useProfile = create<ProfileStore>((set) => ({
 export type ProfileInput = {
   nickname: string;
   age: string;
-  gender: Gender | null;
+  gender: string | null;
   interests: string[];
   retroTime: string;
   calendarLinked: boolean;

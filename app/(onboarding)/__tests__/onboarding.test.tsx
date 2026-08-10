@@ -8,7 +8,7 @@ import Done from "../done";
 import Rest from "../rest";
 import RetroTime from "../retro-time";
 
-import { useDraft } from "@/features/onboarding/model/draft";
+import { UNSPECIFIED_GENDER, useDraft } from "@/features/onboarding/model/draft";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -315,22 +315,23 @@ describe("온보딩 초안 — 답이 화면을 넘어 남는가", () => {
     const i = await render(<Interests />);
     await fireEvent.press(i.getByText("가족"));
 
-    // 초안에는 라벨이 아니라 **id** 가 담긴다 — 문구가 바뀌어도 저장된 답은 그대로여야 한다
+    // 초안에는 라벨이 아니라 **서버 코드**가 담긴다 — 문구가 바뀌어도 저장된
+    // 답은 그대로여야 하고, 그 코드가 그대로 서버로 나간다
     expect(useDraft.getState()).toMatchObject({
       nickname: "지현",
-      gender: "female",
-      interests: ["family"],
+      gender: "FEMALE",
+      interests: ["FAMILY"],
     });
   });
 
   it("미선택과 「선택 안 함」이 초안에서도 구별된다", async () => {
-    // null 은 묻지 않기를 고른 것, "none" 은 해당 없음을 고른 것이다.
+    // null 은 묻지 않기를 고른 것, UNSPECIFIED 는 해당 없음을 고른 것이다.
     expect(useDraft.getState().gender).toBeNull();
 
     const p = await render(<Profile />);
     await fireEvent.press(p.getByText("선택 안 함"));
 
-    expect(useDraft.getState().gender).toBe("none");
+    expect(useDraft.getState().gender).toBe(UNSPECIFIED_GENDER);
   });
 
   it("reset 은 앞 사람의 답을 남기지 않는다", async () => {

@@ -10,6 +10,7 @@ import { AppText } from "@/components/primitives/AppText";
 import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import { useDraft } from "@/features/onboarding/model/draft";
+import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * `04` · 닉네임 (온보딩 1/6 · 필수)
@@ -18,20 +19,23 @@ import { useDraft } from "@/features/onboarding/model/draft";
  * 첫 줄은 무엇을 묻는지, 둘째 줄은 왜 묻는지.
  *
  * - **1~10자.** 11자부터는 더 입력되지 않고 **오류 문구 없이 카운터 색만**
- *   바뀐다(`04.md`) — 막힌 이유는 글자 수 표시가 이미 말하고 있다
+ *   바뀐다(`04.md`) — 막힌 이유는 글자 수 표시가 이미 말하고 있다.
+ *   상한은 서버가 준다(`model/options.ts` — 지금 서버도 10 이다)
  * - **중복 검사를 하지 않는다.** 닉네임은 식별자가 아니라 부르는 말이라
- *   "이미 사용 중" 이라는 실패를 만들 이유가 없다
- * - **금지어는 바바 · 모멘토리 둘뿐**이고 이때만 한 줄이 붙는다(`04.md`)
+ *   "이미 사용 중" 이라는 실패를 만들 이유가 없다. 서버도 `duplicateAllowed:
+ *   true` 를 준다 — 그것이 `false` 가 되면 확인할 엔드포인트부터 필요하다
+ * - **금지어는 바바 · 모멘토리 둘뿐**이고 이때만 한 줄이 붙는다(`04.md`).
+ *   **서버 정책에 없어 여기 남는다** — 선택지 응답이 말하지 않는 규칙이다
  * - **앞뒤 공백은 저장할 때 잘라낸다** — 입력 중에는 그대로 두고 다음으로
  *   넘어가는 순간 trim 한 값이 초안에 남는다
  * - 입력 전에도 버튼을 **사라지게 하지 않는다** — 비활성(0.36)으로 남겨
  *   다음에 무엇이 오는지 보이게 한다
  * - **뒤로가 없다.** 첫 질문이라 돌아갈 곳이 없다 — 자리는 예약한다
  */
-const MAX_NICKNAME = 10;
 const FORBIDDEN = ["바바", "모멘토리"];
 
 export default function Nickname() {
+  const maxLength = useOnboardingOptions((s) => s.nickname.maxLength);
   // 화면 로컬 state 로 두면 다음 화면으로 넘어가는 순간 사라진다 — 초안에 쌓는다
   const name = useDraft((s) => s.nickname);
   const set = useDraft((s) => s.set);
@@ -66,7 +70,7 @@ export default function Nickname() {
             value={name}
             onChangeText={(v) => set("nickname", v)}
             placeholder="이름 또는 별명"
-            maxLength={MAX_NICKNAME}
+            maxLength={maxLength}
             showCounter
             returnKeyType="done"
             onSubmitEditing={() => ready && goNext()}

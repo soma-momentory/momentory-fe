@@ -148,7 +148,13 @@ src/features/diary/{model/{diary,types,selectors}.ts, data/sampleAdapter.ts}
 src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 세지 않는다
 src/features/report/{model/report.ts, data/sampleRepository.ts} ← 주간 집계 · 해석 공급 경계
 src/features/my/model/{settings,stats}.ts ← 알림/프로필 설정 · 전체 기간 집계
-src/features/onboarding/model/{draft, completion}.ts ← 답안 초안 · 완료 플래그(진입 분기)
+src/features/onboarding/{model/{draft, completion, options}.ts, data/optionsApi.ts}
+                                          ← 답안 초안 · 완료 플래그(진입 분기) ·
+                                            선택지(04·05-b·06 · M2 가 같은 목록을 본다).
+                                            관심사·성별은 **서버 코드를 그대로 든다** —
+                                            우리 id 로 옮기면 서버가 새로 넣은 항목이
+                                            조용히 사라진다(ARCHITECTURE §4).
+                                            못 받으면 대역으로 그린다 — 온보딩은 멈추지 않는다
 src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,reissueApi,logoutApi}.ts}
                                           ← M2-0 부트스트랩(hydrate·가드·fail-closed) +
                                             M2-1 카카오 로그인 + 만료 토큰의 조용한 갱신
