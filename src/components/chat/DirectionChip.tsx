@@ -16,15 +16,15 @@ import { directionChip } from "@/design/tokens.mvp";
  * **칩이 경계선 역할을 한다**(`C4-d.md`) — 어디서부터 방향을 정하고 이야기한
  * 것인지 나중에 다시 봐도 보인다. 그래서 좌우 말풍선과 달리 가운데 정렬이다.
  *
- * **칩에 쓰는 말은 사용자의 말이다** — 내부 분기명(`reframe`)은 저장만 하고
- * 화면에 쓰지 않는다.
+ * **칩에 쓰는 말은 사용자의 말이다** — 서버 선택지의 라벨을 그대로 옮긴다.
  *
- * `[변경]` 은 같은 시트를 다시 연다. **그때까지의 대화는 지워지지 않는다** —
- * 방향을 바꾸는 일이 대화를 버리는 일이 되면 아무도 바꾸지 않는다.
+ * `onChange` 를 주면 `[변경]` 이 붙어 같은 시트를 다시 연다. 서버가 이미 다음
+ * 단계로 넘어간 뒤에는 방향을 되돌릴 수 없으므로(상태 기계가 앞으로만 간다)
+ * **회고 대화에서는 주지 않는다** — 칩은 「여기서부터 이 방향」이라는 경계 표시로만 남는다.
  */
 type Props = {
   label: string;
-  onChange: () => void;
+  onChange?: () => void;
 };
 
 export function DirectionChip({ label, onChange }: Props) {
@@ -33,14 +33,18 @@ export function DirectionChip({ label, onChange }: Props) {
       <AppText tone="body" weight="500" style={styles.label}>
         {label}
       </AppText>
-      <AppText tone="body" style={styles.label}>
-        ·
-      </AppText>
-      <Pressable accessibilityRole="button" hitSlop={10} onPress={onChange}>
-        <AppText tone="accent" weight="600" style={styles.label}>
-          변경
-        </AppText>
-      </Pressable>
+      {onChange != null ? (
+        <>
+          <AppText tone="body" style={styles.label}>
+            ·
+          </AppText>
+          <Pressable accessibilityRole="button" hitSlop={10} onPress={onChange}>
+            <AppText tone="accent" weight="600" style={styles.label}>
+              변경
+            </AppText>
+          </Pressable>
+        </>
+      ) : null}
     </View>
   );
 }

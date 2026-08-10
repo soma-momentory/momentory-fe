@@ -1,4 +1,5 @@
-import { SESSION_KEY, useAuth } from "../model/auth";
+import { SESSION_KEY, getAccessToken, useAuth } from "../model/auth";
+import { reissueAccessToken } from "../data/reissueApi";
 
 import { useDraft } from "@/features/onboarding/model/draft";
 
@@ -7,6 +8,11 @@ import { useDraft } from "@/features/onboarding/model/draft";
  * 오류 · 로그아웃 후 재진입 · 앱 킬 후 콜드 스타트." 인증 폴백은 **화면에 오류를
  * 띄우지 않는 설계**라 테스트가 없으면 잘못돼도 아무도 모른다(§7).
  */
+jest.mock("../data/reissueApi", () => ({
+  reissueAccessToken: jest.fn(),
+}));
+const reissue = jest.mocked(reissueAccessToken);
+
 type SecureMock = {
   __store: Map<string, string>;
   getItemAsync: jest.Mock;
@@ -15,10 +21,15 @@ type SecureMock = {
 };
 const secure = jest.requireMock("expo-secure-store") as SecureMock;
 
-const seedSession = (expiresAt: number) =>
+const seedSession = (expiresAt: number, overrides?: Partial<{ refreshToken: string }>) =>
   secure.__store.set(
     SESSION_KEY,
-    JSON.stringify({ accessToken: "t", refreshToken: "r", expiresAt, userId: 1 }),
+    JSON.stringify({
+      accessToken: "t",
+      refreshToken: overrides?.refreshToken ?? "r",
+      expiresAt,
+      userId: 1,
+    }),
   );
 
 beforeEach(() => {
@@ -43,15 +54,49 @@ describe("hydrate — 콜드 스타트 판정", () => {
     expect(useAuth.getState().status).toBe("anonymous");
   });
 
-  it("만료 토큰은 anonymous 이고 죽은 세션을 지운다 — 갱신 경로가 없으므로 fail-closed", async () => {
+  it("만료 토큰은 갱신을 먼저 시도한다 — 갱신이 되면 authenticated 로 새 세션을 남긴다", async () => {
     // 만료된 토큰으로 보호 라우트에 들어가 첫 401 을 보고 튕겨 나오지 않는다 (§3-1)
     seedSession(Date.now() - 1);
+    reissue.mockResolvedValueOnce({
+      ok: true,
+      session: { accessToken: "new-t", refreshToken: "new-r", accessTokenExpiresIn: 1800 },
+    });
 
     await useAuth.getState().hydrate();
 
-    expect(useAuth.getState().status).toBe("anonymous");
-    expect(secure.__store.has(SESSION_KEY)).toBe(false);
+    expect(useAuth.getState().status).toBe("authenticated");
+    expect(reissue).toHaveBeenCalledWith("r");
+    const stored = JSON.parse(secure.__store.get(SESSION_KEY)!) as { accessToken: string };
+    expect(stored.accessToken).toBe("new-t");
   });
+
+  it.each([["refresh_expired"], ["refresh_revoked"], ["refresh_invalid"]] as const)(
+    "갱신이 %s 로 거부되면 anonymous 이고 죽은 세션을 지운다",
+    async (code) => {
+      seedSession(Date.now() - 1);
+      reissue.mockResolvedValueOnce({ ok: false, code });
+
+      await useAuth.getState().hydrate();
+
+      expect(useAuth.getState().status).toBe("anonymous");
+      expect(secure.__store.has(SESSION_KEY)).toBe(false);
+    },
+  );
+
+  it.each([["network"], ["server"], ["malformed"], ["unconfigured"]] as const)(
+    "갱신이 %s 로 실패하면 — refresh token 이 죽었다는 뜻이 아니므로 authenticated 로 두고 세션을 지우지 않는다",
+    async (code) => {
+      // 회귀 시험 — 에뮬레이터·서버 간 순간적인 지연 한 번에 멀쩡한 로그인이
+      // 영구히 로그아웃되던 버그(실사용 중 재현)를 고정한다.
+      seedSession(Date.now() - 1);
+      reissue.mockResolvedValueOnce({ ok: false, code });
+
+      await useAuth.getState().hydrate();
+
+      expect(useAuth.getState().status).toBe("authenticated");
+      expect(secure.__store.has(SESSION_KEY)).toBe(true);
+    },
+  );
 
   it("모양이 모자란 세션은 anonymous 다 — 옛 형태로 저장된 세션도 여기서 걸린다", async () => {
     // 카카오 로그인(M2-1)이 refreshToken·userId 를 더했다. 그 전 빌드가 남긴
@@ -81,6 +126,74 @@ describe("hydrate — 콜드 스타트 판정", () => {
     await useAuth.getState().hydrate();
 
     expect(useAuth.getState().status).toBe("anonymous");
+  });
+});
+
+describe("getAccessToken — API 호출 경로의 갱신", () => {
+  it("만료 전이면 갱신을 시도하지 않고 그대로 돌려준다", async () => {
+    seedSession(Date.now() + 60_000);
+
+    expect(await getAccessToken()).toBe("t");
+    expect(reissue).not.toHaveBeenCalled();
+  });
+
+  it("만료됐으면 조용히 갱신하고 새 access token 을 돌려준다 — 호출부는 만료를 모른다", async () => {
+    seedSession(Date.now() - 1);
+    reissue.mockResolvedValueOnce({
+      ok: true,
+      session: { accessToken: "new-t", refreshToken: "new-r", accessTokenExpiresIn: 1800 },
+    });
+
+    expect(await getAccessToken()).toBe("new-t");
+  });
+
+  it("refresh token 이 거부되면 null 이고, 다음 hydrate 를 기다리지 않고 즉시 status 를 내린다", async () => {
+    seedSession(Date.now() - 1);
+    useAuth.setState({ status: "authenticated" });
+    reissue.mockResolvedValueOnce({ ok: false, code: "refresh_revoked" });
+
+    expect(await getAccessToken()).toBeNull();
+    expect(useAuth.getState().status).toBe("anonymous");
+  });
+
+  it("일시적 실패(네트워크 등)는 null 을 돌려주되 세션도 status 도 건드리지 않는다", async () => {
+    // 이번 API 호출만 실패한 것뿐이지 로그인이 죽은 게 아니다 — 다음 호출이
+    // 같은 refresh token 으로 다시 시도할 수 있어야 한다.
+    seedSession(Date.now() - 1);
+    useAuth.setState({ status: "authenticated" });
+    reissue.mockResolvedValueOnce({ ok: false, code: "network" });
+
+    expect(await getAccessToken()).toBeNull();
+    expect(useAuth.getState().status).toBe("authenticated");
+    expect(secure.__store.has(SESSION_KEY)).toBe(true);
+  });
+
+  it("동시에 여러 호출이 만료를 봐도 재발급 요청은 한 번만 나간다", async () => {
+    // refresh token 은 회전한다 — 두 번 보내면 늦은 쪽이 REFRESH_TOKEN_REVOKED 로
+    // 튕긴다. 진행 중인 갱신을 나눠 받아야 이 창이 닫힌다.
+    seedSession(Date.now() - 1);
+    let resolveReissue!: (value: Awaited<ReturnType<typeof reissueAccessToken>>) => void;
+    reissue.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveReissue = resolve;
+      }),
+    );
+
+    const first = getAccessToken();
+    const second = getAccessToken();
+    resolveReissue({
+      ok: true,
+      session: { accessToken: "new-t", refreshToken: "new-r", accessTokenExpiresIn: 1800 },
+    });
+
+    expect(await first).toBe("new-t");
+    expect(await second).toBe("new-t");
+    expect(reissue).toHaveBeenCalledTimes(1);
+  });
+
+  it("세션이 없으면 갱신을 시도하지 않고 null", async () => {
+    expect(await getAccessToken()).toBeNull();
+    expect(reissue).not.toHaveBeenCalled();
   });
 });
 

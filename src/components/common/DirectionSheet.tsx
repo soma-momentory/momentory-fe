@@ -7,36 +7,38 @@ import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import theme from "@/design/theme";
 import { directionOption } from "@/design/tokens.mvp";
-import { DIRECTIONS, type RetroDirection } from "@/features/retro/model/retro";
+import type { ReplyOption } from "@/features/retro/data/retroApi";
 
 /**
- * `C4-c` · `C4-c2` — 회고 방향 고르기 하단 시트.
+ * `C4-c` · `C4-c2` — 서버가 준 선택지를 고르는 하단 시트.
  *
- * **전체 화면이 아니라 하단 시트다** — 뒤에 지금까지의 대화가 그대로 보여야
- * 흐름이 끊기지 않는다.
+ * 방향 4택(`await_direction`)·세부 2택(`await_sub_direction`)·일정 선택
+ * (`await_schedule`)이 **모두 이 시트를 쓴다** — 셋 다 「선택지를 고르고 되돌려
+ * 보낸다」는 같은 모양이라, 문안·개수는 서버 `options[]` 가 정하고 여기선 그리기만 한다.
  *
- * **바바는 추천하지 않는다**(`C4-c.md`): 네 줄 모두 같은 무게이고, 처음에는
- * 아무것도 골라져 있지 않으며, 고르기 전에는 CTA 가 잠긴다. 추천이 붙으면 그
- * 줄이 정답처럼 보이고 방향을 정하는 일이 바바의 판단을 확인하는 일이 된다.
+ * **전체 화면이 아니라 하단 시트다** — 뒤에 지금까지의 대화(그리고 방금 온 질문
+ * 버블)가 반투명 스크림 너머로 보여야 흐름이 끊기지 않는다. 그래서 시트는 질문을
+ * 되풀이하지 않고 **선택지만** 둔다.
  *
- * - **고른 값은 누른 순간 저장되지 않는다** — `[이 방향으로 이어가기]` 를
- *   눌러야 확정된다. 시트를 닫으면 아무 일도 일어나지 않는다(`C4-c2.md`).
- *   그래서 선택이 이 컴포넌트의 로컬 상태다
- * - 선택 표시는 **테두리(1→1.5px) + 배경 + 체크** 셋을 함께 — 색 하나에
- *   기대지 않는다. 체크는 완료 카드와 같은 `.ico17` 한 벌이다
- * - **다른 줄을 누르면 앞의 선택이 풀린다** — 방향은 하나다
- * - 제목과 버튼은 **고정**이고 **선택지 영역만 스크롤**된다(`.dlistw`).
- *   시트 최대 높이 74%
- * - **키보드는 열리지 않는다** — 이 시트에 입력이 없다
+ * **바바는 추천하지 않는다**(`C4-c.md`): 줄들이 같은 무게이고, 처음엔 아무것도
+ * 골라져 있지 않으며, 고르기 전에는 CTA 가 잠긴다.
+ *
+ * - **누른 순간 저장되지 않는다** — `[이 방향으로 이어가기]` 를 눌러야 확정된다.
+ *   시트를 닫으면 아무 일도 일어나지 않는다(`C4-c2.md`). 그래서 선택이 로컬 상태다
+ * - 선택 표시는 **테두리(1→1.5px) + 배경 + 체크** 셋을 함께 — 색 하나에 기대지 않는다
+ * - **다른 줄을 누르면 앞 선택이 풀린다** — 하나만 고른다
+ * - 제목/버튼 고정, **선택지 영역만 스크롤**. 시트 최대 높이 74%. 키보드 없음
  */
 type Props = {
-  onConfirm: (direction: RetroDirection) => void;
+  options: ReplyOption[];
+  /** 확정한 선택지의 `id` 를 그대로 서버로 돌려보낸다 */
+  onConfirm: (optionId: string) => void;
   onDismiss: () => void;
 };
 
-export function DirectionSheet({ onConfirm, onDismiss }: Props) {
+export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
   // 확정 전까지의 선택 — 시트를 닫으면 이 값이 통째로 사라진다
-  const [picked, setPicked] = useState<RetroDirection | null>(null);
+  const [pickedId, setPickedId] = useState<string | null>(null);
   const maxListHeight =
     Dimensions.get("window").height * directionOption.sheetMaxRatio - HEADER_AND_CTA;
 
@@ -44,10 +46,10 @@ export function DirectionSheet({ onConfirm, onDismiss }: Props) {
     <Sheet onDismiss={onDismiss}>
       <View style={styles.head}>
         <AppText tone="strong" weight="700" style={styles.title}>
-          지금은 어떻게 이야기를 이어가고 싶어요?
+          어떻게 이야기를 이어가고 싶어요?
         </AppText>
         <AppText variant="caption" tone="caption">
-          고르는 대로 다음 질문이 달라져요 · 대화 중에 바꿔도 괜찮아요
+          고르는 대로 다음 이야기가 이어져요 · 대화 중에 바꿔도 괜찮아요
         </AppText>
       </View>
 
@@ -56,25 +58,27 @@ export function DirectionSheet({ onConfirm, onDismiss }: Props) {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       >
-        {DIRECTIONS.map((d) => {
-          const on = picked === d.id;
+        {options.map((option) => {
+          const on = pickedId === option.id;
           return (
             <Pressable
-              key={d.id}
+              key={option.id}
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
-              onPress={() => setPicked(d.id)}
+              onPress={() => setPickedId(option.id)}
               style={[styles.option, on ? styles.optionOn : null]}
             >
               <View style={styles.optionHead}>
                 <AppText tone="strong" weight="600" style={styles.optionTitle}>
-                  {d.title}
+                  {option.label}
                 </AppText>
                 {on ? <CheckCircleIcon /> : null}
               </View>
-              <AppText tone="caption" style={styles.optionDesc}>
-                {d.desc}
-              </AppText>
+              {option.description != null ? (
+                <AppText tone="caption" style={styles.optionDesc}>
+                  {option.description}
+                </AppText>
+              ) : null}
             </Pressable>
           );
         })}
@@ -83,8 +87,8 @@ export function DirectionSheet({ onConfirm, onDismiss }: Props) {
       {/* 고르기 전에는 잠기되 사라지지 않는다 */}
       <AppButton
         label="이 방향으로 이어가기"
-        disabled={picked == null}
-        onPress={() => picked != null && onConfirm(picked)}
+        disabled={pickedId == null}
+        onPress={() => pickedId != null && onConfirm(pickedId)}
       />
     </Sheet>
   );

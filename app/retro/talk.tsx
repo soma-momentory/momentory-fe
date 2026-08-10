@@ -8,130 +8,168 @@ import { BabaBubble } from "@/components/chat/BabaBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatLayout } from "@/components/chat/ChatLayout";
 import { DirectionChip } from "@/components/chat/DirectionChip";
+import { MeasureInput } from "@/components/chat/MeasureInput";
 import { TypingDots } from "@/components/chat/TypingDots";
 import { DirectionSheet } from "@/components/common/DirectionSheet";
 import { RetroNav } from "@/components/common/RetroNav";
 import { AppButton } from "@/components/primitives/AppButton";
+import { AppText } from "@/components/primitives/AppText";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import theme from "@/design/theme";
 import {
-  ACTION_ANSWER_INDEX,
-  BALANCE_ANSWER_INDEX,
-  EMOTION_ADNOMINAL,
-  FOLLOW_UPS,
-  directionOf,
-  useRetro,
-  type RetroDirection,
-} from "@/features/retro/model/retro";
+  PHASE_ENDED,
+  UI_MEASURE,
+  sendTurn,
+  startRetro,
+  type Reply,
+  type RetroFailureCode,
+  type StartScheduleItem,
+  type TurnInput,
+} from "@/features/retro/data/retroApi";
+import { visibleSchedules, useDay } from "@/features/home/model/day";
+import { emotionKeyOf, useRetro } from "@/features/retro/model/retro";
 import { useProfile } from "@/features/my/model/settings";
 
 /**
- * 회고 대화 한 줄 — `C4` → `C4-b` → `C4-c`/`C4-c2` → `C4-d` → `C4-e`.
+ * 회고 대화 — **서버가 주도한다**(`C4`~`C4-e`). 옛 고정 스크립트(`FOLLOW_UPS`)는
+ * BE 연결로 사라졌다: 화면은 `startRetro`/`sendTurn` 을 부르고 **응답의 형태를 보고
+ * 무엇을 그릴지 정할** 뿐이다.
  *
- * 다섯 화면이 한 파일인 이유는 **같은 대화의 다른 순간**이기 때문이다. 라우트를
- * 나누면 뒤로가기가 대화를 되감는 것처럼 보이는데, 회고는 되감는 흐름이 아니다.
+ * - `options` 있음 → 방향/세부/일정 **선택 시트**(`DirectionSheet`)
+ * - `ui==="measure"` → **0~10 눈금**(`MeasureInput`)
+ * - 그 밖의 텍스트 질문 → **자유 입력**(`ChatInput`)
+ * - `done` → 일기가 있으면 `[일기 보러 가기]`(`draft`), 없으면 안전 종료(`ended`)
  *
- * - `C4` — **바바가 일정을 먼저 지목하지 않는다.** 무엇을 이야기하고 싶은지부터 묻는다
- * - `C4-b` — **되짚기까지만 하고 멈춘다.** 다음 질문은 방향을 정한 뒤다
- * - `C4-c`/`C4-c2` — 방향 시트(`DirectionSheet`)
- * - `C4-d` — **시트가 닫히면 대화가 그 자리에서 이어진다.** 되짚은 말 아래에
- *   방향 칩이 한 줄 남고 그다음이 그 방향의 첫 질문이다. 칩이 경계선 역할을 한다
- * - `C4-e` — **입력칸을 내리고 `[일기 보러 가기]` 하나만** 두어 대화가 끝났다는
- *   것을 자리로 알린다
+ * phase 가 아니라 **형태로 분기**한다 — 같은 `script` phase 에서도 셋이 번갈아 온다.
  *
  * 공통으로 지키는 것:
- * - 한 메시지는 2~3문장, 질문은 한 번에 하나. 기본 **3~5회 답변** 안에 마무리
- * - **지난 버블을 삭제하지 않는다** — 위로 올리면 그대로 있다
- * - 내부 흐름(감정 확인 → 관점 전환 → 균형 근거 → 사용자 문장 → 작은 행동)의
- *   **단계 이름을 화면에 쓰지 않는다.** 진행률·단계 번호도 없다
- * - **사용자가 말하지 않은 성공·교훈을 만들지 않는다**
- *
- * ⚠ **바바의 응답은 아직 고정 문장이다**(`FOLLOW_UPS` 주석) — 흐름·상태·규칙은
- * 진짜이고 문장을 만드는 곳만 서버로 갈린다.
+ * - **지난 버블을 삭제하지 않는다** — `turns` 는 쌓기만 한다
+ * - **방향을 고른 지점에 경계 칩**을 남긴다(`C4-d.md`) — 선택 라벨을 그대로
+ * - **오류는 한 줄로 흡수한다** — 모달·경고 아이콘을 두지 않는다(`RULES.md` 4).
+ *   대화 중 실패는 입력을 잠그지 않고 다시 말할 수 있게 둔다
  */
-const FIRST_QUESTION =
-  "오늘은 어떤 이야기를 나누고 싶어요? 일정에 없던 일이나 지금 떠오른 생각도 괜찮아요.";
 
-/** 되짚기 — 들은 것만 다시 말한다 */
-const MIRROR =
-  "답이 막힌 순간이 계속 마음에 남았군요. 다른 사람들과 비교하면서 자신감도 많이 내려간 것 같아요.";
+/** 실패 사유 → 화면 한 줄. 사용자가 할 수 있는 일이 같으면 문구도 같다 */
+const FAILURE_MESSAGES: Record<RetroFailureCode, string> = {
+  invalid_request: "지금은 회고를 이어갈 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  session_not_found: "회고를 이어갈 수 없어요. 처음부터 다시 시작해 주세요.",
+  unauthenticated: "로그인이 만료됐어요. 다시 로그인해 주세요.",
+  network: "지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.",
+  server: "지금은 회고를 이어갈 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  malformed: "지금은 회고를 이어갈 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  unconfigured: "지금은 회고를 이어갈 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+};
 
-/** 바바가 답을 쓰는 것처럼 보이는 시간. 실제 응답이 붙으면 스트리밍이 이 자리를 쓴다 */
-const TYPING_MS = 900;
+/** 선택을 경계 칩으로 남기는 phase — 나머지(일정 선택 등)는 내가 한 말로 남긴다 */
+const isDirectionPhase = (phase: string) =>
+  phase === "await_direction" || phase === "await_sub_direction";
 
 export default function RetroTalk() {
-  // 마이(M2)에서 고친 닉네임이 다음 대화부터 반영된다 — 같은 store 를 본다
+  // 마이(M2)에서 고친 닉네임이 시작 요청의 호칭으로 간다 — 같은 store 를 본다
   const nickname = useProfile((s) => s.nickname);
   const startEmotion = useRetro((s) => s.startEmotion);
+  const sessionId = useRetro((s) => s.sessionId);
   const turns = useRetro((s) => s.turns);
-  const addTurn = useRetro((s) => s.addTurn);
-  const setDirection = useRetro((s) => s.setDirection);
-  const setBalanceSentence = useRetro((s) => s.setBalanceSentence);
-  const setNextAction = useRetro((s) => s.setNextAction);
+  const lastReply = useRetro((s) => s.lastReply);
+  const beginSession = useRetro((s) => s.beginSession);
+  const applyReply = useRetro((s) => s.applyReply);
+  const addMyTurn = useRetro((s) => s.addMyTurn);
+  const addChipTurn = useRetro((s) => s.addChipTurn);
+  const schedules = useDay((s) => s.schedules);
 
-  const [typing, setTyping] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 시작 요청을 한 번만 보낸다 — 첫 렌더의 이펙트가 두 번 돌아도 세션이 둘 생기지 않게
+  const starting = useRef(false);
 
-  useEffect(
-    () => () => {
-      if (timer.current != null) clearTimeout(timer.current);
-    },
-    [],
-  );
+  useEffect(() => {
+    if (startEmotion == null || sessionId != null || starting.current) return;
+    starting.current = true;
+    void runStart(startEmotion);
+    // runStart 는 렌더 스코프의 값(schedules·nickname)을 읽으므로 의존성에 담지 않고
+    // 첫 진입에서 한 번만 돈다 — starting ref 가 재실행을 막는다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startEmotion, sessionId]);
 
   // 감정 없이 들어올 수 없다 — C3 이 필수이기 때문이다(C3.md)
   if (startEmotion == null) return <Redirect href="/retro/emotion" />;
 
-  // 방향을 바꾸면 칩이 하나 더 붙는다 — 세는 기준은 **마지막** 칩이다
-  const chipAt = turns.map((t) => t.who).lastIndexOf("chip");
-  const answered = chipAt < 0 ? 0 : turns.slice(chipAt).filter((t) => t.who === "me").length;
-
-  const mirrored = turns.some((t) => t.who === "baba" && t.text === MIRROR);
-  const awaitingDirection = mirrored && chipAt < 0;
-  // 마지막 묶음까지 나왔으면 대화가 끝났다
-  const finished = chipAt >= 0 && answered >= FOLLOW_UPS.length && !typing;
-
-  const reply = (lines: readonly string[]) => {
-    setTyping(true);
-    timer.current = setTimeout(() => {
-      setTyping(false);
-      lines.forEach((line) => addTurn("baba", line));
-    }, TYPING_MS);
+  const applyServerReply = (reply: Reply) => {
+    applyReply(reply);
+    // 선택지가 오면 시트를 연다 — 뒤 대화(방금 온 질문 버블)가 스크림 너머로 보인다
+    setSheetOpen((reply.options?.length ?? 0) > 0);
   };
 
-  const send = (text: string) => {
-    addTurn("me", text);
+  async function runStart(emotion: NonNullable<typeof startEmotion>) {
+    setPending(true);
+    setError(null);
+    const items: StartScheduleItem[] = visibleSchedules(schedules).flatMap((s) => {
+      // BE 는 일정마다 감정 하나가 필수다 — 감정이 없는 줄은 보내지 않는다
+      const first = s.emotions[0];
+      return first == null ? [] : [{ name: s.title, emotion: emotionKeyOf(first) }];
+    });
 
-    if (chipAt < 0) {
-      // 첫 이야기 — 되짚고 멈춘다. 다음은 방향이다
-      setTyping(true);
-      timer.current = setTimeout(() => {
-        setTyping(false);
-        addTurn("baba", MIRROR);
-        setSheetOpen(true);
-      }, TYPING_MS);
-      return;
+    const result = await startRetro({
+      schedules: items,
+      currentEmotion: emotionKeyOf(emotion),
+      nickname: nickname || null,
+    });
+    setPending(false);
+
+    if (result.ok) {
+      beginSession(result.data.sessionId, result.data.reply);
+      setSheetOpen((result.data.reply.options?.length ?? 0) > 0);
+    } else {
+      // 다시 시도할 수 있게 자물쇠를 푼다
+      starting.current = false;
+      setError(FAILURE_MESSAGES[result.code]);
     }
+  }
 
-    // 방향을 고른 뒤 — 이 답이 몇 번째인지가 무엇의 재료인지를 정한다
-    const n = answered + 1;
-    if (n === BALANCE_ANSWER_INDEX) setBalanceSentence(text); //  C6 일기
-    if (n === ACTION_ANSWER_INDEX) setNextAction(text); //        C6-b 행동 카드
-
-    const group = FOLLOW_UPS[n - 1];
-    if (group != null) reply(group);
+  const runTurn = async (input: TurnInput) => {
+    if (sessionId == null || pending) return;
+    setPending(true);
+    setError(null);
+    const result = await sendTurn(sessionId, input);
+    setPending(false);
+    if (result.ok) applyServerReply(result.data);
+    else setError(FAILURE_MESSAGES[result.code]);
   };
 
-  const confirmDirection = (d: RetroDirection) => {
-    const picked = directionOf(d);
-    setDirection(d);
+  const sendText = (text: string) => {
+    addMyTurn(text);
+    void runTurn({ content: text });
+  };
+
+  const pickOption = (optionId: string) => {
+    const phase = lastReply?.phase ?? "";
+    const option = lastReply?.options?.find((o) => o.id === optionId);
+    if (option != null) {
+      // 방향 선택은 경계 칩으로, 일정 선택 등은 내가 한 말로 남긴다
+      if (isDirectionPhase(phase)) addChipTurn(option.label);
+      else addMyTurn(option.label);
+    }
     setSheetOpen(false);
-    if (picked == null) return;
-    // 칩이 경계선이고, 그다음 줄이 그 방향의 첫 질문이다
-    addTurn("chip", picked.chip);
-    reply([`좋아요. ${picked.question}`]);
+    void runTurn({ optionId });
   };
+
+  const submitMeasures = (values: Record<string, number>) => {
+    // 요약은 서버가 다음 응답에 담아준다 — 여기서 내 버블을 지어내지 않는다
+    void runTurn({ measures: values });
+  };
+
+  const retryStart = () => {
+    if (startEmotion == null) return;
+    starting.current = true;
+    void runStart(startEmotion);
+  };
+
+  const done = lastReply?.done === true;
+  const ended = done && lastReply?.phase === PHASE_ENDED;
+  const hasOptions = (lastReply?.options?.length ?? 0) > 0;
+  const isMeasure = lastReply?.ui === UI_MEASURE && (lastReply?.measures?.length ?? 0) > 0;
+  const startFailed = sessionId == null && error != null;
 
   return (
     <ScreenBackground>
@@ -144,47 +182,59 @@ export default function RetroTalk() {
         <ChatLayout stickToEnd>
           <Avatar />
 
-          {/* 감정을 단정하지 않고 확인한다 — 상단 알약과 같은 감정을 말로도 한 번 */}
-          <BabaBubble index={0}>
-            {`${nickname}님, 지금은 ${EMOTION_ADNOMINAL[startEmotion]} 마음이 가장 가까이 있군요.`}
-          </BabaBubble>
-          <BabaBubble index={1}>{FIRST_QUESTION}</BabaBubble>
-
           {turns.map((t) => {
             if (t.who === "me") return <AnswerBubble key={t.id}>{t.text}</AnswerBubble>;
-            if (t.who === "chip") {
-              return (
-                <DirectionChip key={t.id} label={t.text} onChange={() => setSheetOpen(true)} />
-              );
-            }
+            if (t.who === "chip") return <DirectionChip key={t.id} label={t.text} />;
             return <BabaBubble key={t.id}>{t.text}</BabaBubble>;
           })}
 
-          {typing ? <TypingDots /> : null}
+          {pending ? <TypingDots /> : null}
         </ChatLayout>
 
         <View style={styles.bottom}>
-          {finished ? (
+          {/* 대화 중 실패는 한 줄로 흡수하고 입력을 잠그지 않는다 */}
+          {error != null && !startFailed ? (
+            <AppText tone="caption" style={styles.error}>
+              {error}
+            </AppText>
+          ) : null}
+
+          {startFailed ? (
+            <>
+              <AppText tone="caption" style={styles.error}>
+                {error}
+              </AppText>
+              <AppButton label="다시 시도" onPress={retryStart} disabled={pending} />
+            </>
+          ) : ended ? (
+            // 안전 종료 — 마지막 바바 버블이 안내를 담고, 여기선 나가는 길만 둔다
+            <AppButton label="홈으로 돌아가기" onPress={() => router.replace("/home")} />
+          ) : done ? (
             // 입력칸을 내리고 하나만 둔다 — 대화가 끝났다는 것을 자리로 알린다
             <AppButton label="일기 보러 가기" onPress={() => router.push("/retro/draft")} />
-          ) : awaitingDirection && !sheetOpen ? (
-            /*
-              시트를 닫으면 아무것도 저장되지 않는다(`C4-c2.md`) — 그래서 다시
-              여는 길이 필요하다. 시안에는 이 자리가 없다: 닫은 뒤의 상태가
-              MVP 화면에 없어서다. 문구·형태는 상류 확인 후보다(`TASKS.md`).
-            */
-            <AppButton label="이야기 방향 고르기" onPress={() => setSheetOpen(true)} />
+          ) : isMeasure && lastReply?.measures != null ? (
+            <MeasureInput
+              measures={lastReply.measures}
+              onSubmit={submitMeasures}
+              disabled={pending}
+            />
+          ) : hasOptions && !sheetOpen ? (
+            // 시트를 닫았을 때 다시 여는 길 — 닫으면 아무것도 확정되지 않는다(C4-c2.md)
+            <AppButton label="이야기 이어가기" onPress={() => setSheetOpen(true)} />
+          ) : hasOptions ? (
+            // 시트가 열려 있는 동안 하단은 비운다
+            <View />
           ) : (
-            <ChatInput onSend={send} disabled={typing || awaitingDirection} />
+            <ChatInput onSend={sendText} disabled={pending} />
           )}
         </View>
       </KeyboardAvoidingView>
 
-      {sheetOpen ? (
+      {sheetOpen && lastReply?.options != null ? (
         <DirectionSheet
+          options={lastReply.options}
+          onConfirm={pickOption}
           onDismiss={() => setSheetOpen(false)}
-          // 방향을 바꿔도 그때까지의 대화는 지워지지 않는다 (C4-d.md)
-          onConfirm={confirmDirection}
         />
       ) : null}
     </ScreenBackground>
@@ -193,5 +243,6 @@ export default function RetroTalk() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  bottom: { paddingTop: theme.layout.gap.element },
+  bottom: { paddingTop: theme.layout.gap.element, gap: theme.layout.gap.element },
+  error: { color: theme.colors.semantic.accentInk },
 });

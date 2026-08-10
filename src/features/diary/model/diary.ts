@@ -27,18 +27,23 @@ export { actionCardOf };
 type DiaryStore = {
   diaries: Diary[];
   actionCards: ActionCard[];
-  /** `C6-b` 저장 — 일기 한 장과 행동 카드 한 장이 함께 남는다 */
+  /**
+   * `C6-b` 저장 — 일기 한 장과 (있으면) 행동 카드 한 장이 함께 남는다.
+   *
+   * **행동 카드는 방향에 따라 없을 수 있다** — 짧은 기록형은 일기만 남긴다.
+   * `situation`·`targetAction` 이 **둘 다** 있을 때만 카드를 만든다.
+   */
   save: (input: {
     date: string;
     body: string;
-    babaView: string;
-    babaViewBasis?: string;
+    babaView: string | null;
+    babaViewBasis?: string | null;
     emotions: EmotionId[];
     storyEmotion?: EmotionId | null;
     startEmotion?: EmotionId | null;
     weather?: string | null;
-    situation: string;
-    targetAction: string;
+    situation?: string | null;
+    targetAction?: string | null;
     /** 사용자가 초안을 고쳤는지 */
     edited: boolean;
   }) => void;
@@ -92,13 +97,16 @@ export const useDiary = create<DiaryStore>((set) => ({
     storyEmotion = null,
     startEmotion = null,
     weather = null,
-    situation,
-    targetAction,
+    situation = null,
+    targetAction = null,
     edited,
   }) =>
     set((s) => {
       const diaryId = nextId("d");
       const now = clock.now().toISOString();
+      // 상황·목표 행동이 둘 다 있을 때만 행동 카드를 만든다 — 짧은 기록형은 일기만
+      const hasCard =
+        situation != null && situation.length > 0 && targetAction != null && targetAction.length > 0;
       return {
         diaries: [
           ...s.diaries,
@@ -118,19 +126,21 @@ export const useDiary = create<DiaryStore>((set) => ({
             weather,
           },
         ],
-        actionCards: [
-          ...s.actionCards,
-          {
-            id: nextId("ac"),
-            diaryId,
-            situation,
-            targetAction,
-            done: false,
-            doneAt: null,
-            reflection: null,
-            createdAt: now,
-          },
-        ],
+        actionCards: hasCard
+          ? [
+              ...s.actionCards,
+              {
+                id: nextId("ac"),
+                diaryId,
+                situation,
+                targetAction,
+                done: false,
+                doneAt: null,
+                reflection: null,
+                createdAt: now,
+              },
+            ]
+          : s.actionCards,
       };
     }),
 

@@ -3,6 +3,7 @@ import { create } from "zustand";
 
 import { exchangeKakaoToken, type AuthFailureCode } from "@/features/auth/data/kakaoAuthApi";
 import { requestKakaoAccessToken } from "@/features/auth/data/kakaoSdk";
+import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
 
@@ -23,12 +24,16 @@ import { useDraft } from "@/features/onboarding/model/draft";
  *   `(onboarding)`(·나중의 `(tabs)`) 레이아웃이 한다. 진입 판정 한 번으로 끝내지 않는다.
  * - 로그아웃은 세션과 함께 **온보딩 초안도 비운다** — 다음 사용자의 세션에
  *   앞 사람의 답이 남지 않게(§3-5. Query 캐시·아웃박스는 생기는 마일스톤에서 합류).
- *
- * ⚠ **토큰 갱신은 아직 없다.** 서버가 `refreshToken` 을 주지만 **그것을 쓸
- * 엔드포인트가 합의되지 않았다**(2026-08-07) — 계약이 없는 API 를 지어내지
- * 않는다. 그래서 저장만 하고, 만료면 여전히 fail-closed 로 `anonymous` 다.
- * 계약이 오면 갱신을 붙이면서 QueryClient 안쪽의 `AuthGate` 로 옮긴다
- * (`providers.tsx` 의 자리 주석 · `docs/DISCUSSION.md` §1-6).
+ * - **토큰 갱신** — access token 이 만료됐고 refresh token 이 있으면 `POST
+ *   /api/v1/auth/reissue` 로 조용히 새 토큰 쌍을 받는다(`reissueApi.ts`). **서버가
+ *   refresh token 을 실제로 거부했을 때만**(폐기·만료·무효) `anonymous` 로 닫고
+ *   세션을 지운다 — 네트워크·타임아웃·서버 오류처럼 이번 시도만 실패한 것뿐인
+ *   경우는 세션을 그대로 두고 다음 호출이 다시 시도하게 한다. 여기서까지
+ *   fail-closed 를 적용하면 순간적인 연결 문제 한 번에 멀쩡한 로그인이
+ *   영구히 날아간다. **refresh token 은 한 번 쓰면 서버가 폐기하고 회전한다** —
+ *   동시에 여러 요청이 만료를 보고 각자 갱신을 시도하면 나중 것이
+ *   `REFRESH_TOKEN_REVOKED` 로 튕긴다. `refreshInFlight` 하나로 이 창을 닫는다 —
+ *   전체 세션에 갱신은 한 번에 하나뿐이다.
  */
 export type AuthStatus = "hydrating" | "anonymous" | "authenticated";
 
@@ -41,9 +46,8 @@ export type AuthStatus = "hydrating" | "anonymous" | "authenticated";
  */
 export type Session = {
   accessToken: string;
-  /** 갱신 계약이 생길 때까지 **저장만** 한다 (위 ⚠) */
   refreshToken: string;
-  /** epoch ms. 지났으면 갱신 대상인데, 갱신이 없으므로 지금은 곧 로그아웃이다 */
+  /** epoch ms. 지나면 access token 은 죽고 refresh 대상이다 */
   expiresAt: number;
   userId: number;
 };
@@ -120,7 +124,8 @@ type AuthStore = {
  */
 const nowMs = () => Date.now();
 
-const isValidSession = (value: unknown): value is Session => {
+/** 모양만 본다 — 만료 여부는 별도(`isExpired`)다 */
+const isSessionShape = (value: unknown): value is Session => {
   if (typeof value !== "object" || value === null) return false;
   const session = value as Partial<Session>;
   return (
@@ -128,10 +133,11 @@ const isValidSession = (value: unknown): value is Session => {
     session.accessToken.length > 0 &&
     typeof session.refreshToken === "string" &&
     typeof session.expiresAt === "number" &&
-    typeof session.userId === "number" &&
-    session.expiresAt > nowMs()
+    typeof session.userId === "number"
   );
 };
+
+const isExpired = (session: Session): boolean => session.expiresAt <= nowMs();
 
 /** 저장에 실패하면 **세션이 없는 것으로 친다** — 성공했다고 말하지 않는다 */
 const persist = async (session: Session): Promise<boolean> => {
@@ -140,6 +146,104 @@ const persist = async (session: Session): Promise<boolean> => {
     return true;
   } catch {
     return false;
+  }
+};
+
+/**
+ * 서버가 refresh token 자체를 거부한 사유 — 재로그인 말고는 답이 없다.
+ * 네트워크·타임아웃·서버 5xx·형태 위반은 **여기 없다** — 그건 이 순간의 요청이
+ * 실패한 것뿐이지 refresh token 이 죽었다는 근거가 아니다. 이걸 구분하지 않고
+ * 아무 실패에나 세션을 지우면, 에뮬레이터·서버 사이 한 번의 순간적인 지연·오류로
+ * 멀쩡한 refresh token 이 날아가 계속 재로그인해야 하는 상태가 된다.
+ */
+const isRefreshTokenDead = (code: ReissueFailureCode): boolean =>
+  code === "refresh_invalid" || code === "refresh_revoked" || code === "refresh_expired";
+
+/**
+ * 갱신 시도 결과. **`evicted` 가 있어야 호출부가 세션이 실제로 사라졌는지 안다** —
+ * 실패를 `null` 하나로만 표현하면 "이번 시도만 실패"와 "세션이 죽었다"를
+ * 구분할 길이 없어, 호출부가 일시적 실패에도 로그아웃 처리를 하게 된다.
+ */
+type RefreshOutcome = { ok: true; session: Session } | { ok: false; evicted: boolean };
+
+/**
+ * 죽은 access token 을 새 access/refresh 쌍으로 바꾼다. **refresh token 이
+ * 실제로 거부됐을 때만** 세션을 지운다 — 그 밖의 실패는 이번 시도만 접고,
+ * 세션은 남겨 다음 API 호출이 다시 시도할 수 있게 한다.
+ */
+const performRefresh = async (session: Session): Promise<RefreshOutcome> => {
+  const reissued = await reissueAccessToken(session.refreshToken);
+  if (!reissued.ok) {
+    const evicted = isRefreshTokenDead(reissued.code);
+    if (evicted) await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
+    return { ok: false, evicted };
+  }
+
+  // 갱신은 세션의 주인을 바꾸지 않는다 — userId 는 옛 세션 것을 그대로 쓴다
+  // (`reissueApi.ts` 의 응답 계약엔 userId 가 없다).
+  const refreshed: Session = {
+    accessToken: reissued.session.accessToken,
+    refreshToken: reissued.session.refreshToken,
+    expiresAt: nowMs() + reissued.session.accessTokenExpiresIn * 1000,
+    userId: session.userId,
+  };
+  const stored = await persist(refreshed);
+  if (!stored) {
+    // 새로 받은 토큰을 기기에 남기지 못했다 — 이 쌍은 이미 쓴 것으로 서버에
+    // 기록됐으니 옛 refresh token도 다음 시도에 못 쓴다. 세션을 지운다.
+    await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
+    return { ok: false, evicted: true };
+  }
+  return { ok: true, session: refreshed };
+};
+
+/**
+ * 진행 중인 갱신 요청 — 전역에 하나만 둔다. refresh token 은 회전해 한 번
+ * 쓰면 서버가 폐기하므로, 동시에 두 호출이 각자 재발급을 보내면 늦은 쪽이
+ * `REFRESH_TOKEN_REVOKED` 로 튕긴다. 진행 중이면 그 결과를 나눠 받는다.
+ */
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
+
+const refreshSession = (session: Session): Promise<RefreshOutcome> => {
+  if (refreshInFlight == null) {
+    refreshInFlight = performRefresh(session).finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+};
+
+/**
+ * 인증 API 호출에 실을 **모멘토리 access token**. 없거나 손상이면, 혹은
+ * 만료됐는데 refresh token 마저 죽어 있으면 `null`.
+ *
+ * **`useAuth` store 가 아니라 SecureStore 에서 읽는다** — 토큰의 정본은 세션
+ * 하나뿐이고 store 는 판정 결과(`status`)만 든다. 미러를 만들면 로그아웃·만료
+ * 뒤에 죽은 토큰이 남아 인증된 것처럼 요청을 실어 보낸다.
+ *
+ * 만료면 **여기서 조용히 갱신을 시도한다** — 성공하면 호출부는 만료를 아예
+ * 모른 채 새 토큰을 받는다. **refresh token 이 실제로 거부됐을 때만** `status`
+ * 를 내려 라우트 가드가 즉시 로그인으로 돌려보내게 한다(다음 `hydrate` 를
+ * 기다리지 않는다) — 일시적 실패(네트워크 등)로는 로그아웃시키지 않는다.
+ */
+export const getAccessToken = async (): Promise<string | null> => {
+  try {
+    const raw = await SecureStore.getItemAsync(SESSION_KEY);
+    if (raw == null) return null;
+    const session: unknown = JSON.parse(raw);
+    if (!isSessionShape(session)) return null;
+    if (!isExpired(session)) return session.accessToken;
+
+    const result = await refreshSession(session);
+    if (!result.ok) {
+      // 세션이 실제로 사라졌을 때만 로그아웃 상태로 내린다 — 일시적 실패로는
+      // 세션이 그대로 남아 있으니 다음 호출이 다시 시도한다.
+      if (result.evicted) useAuth.setState({ status: "anonymous" });
+      return null;
+    }
+    return result.session.accessToken;
+  } catch {
+    return null;
   }
 };
 
@@ -156,14 +260,25 @@ export const useAuth = create<AuthStore>((set, get) => ({
         return;
       }
       const session: unknown = JSON.parse(raw);
-      if (!isValidSession(session)) {
-        // 만료·손상 — 갱신 경로가 없으므로 fail-closed. 죽은 세션은 지워서
-        // 다음 부트가 같은 판정을 반복하지 않게 한다.
+      if (!isSessionShape(session)) {
+        // 손상 — 갱신할 refresh token 도 못 읽으므로 fail-closed. 죽은 세션은
+        // 지워서 다음 부트가 같은 판정을 반복하지 않게 한다.
         await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
         set({ status: "anonymous" });
         return;
       }
-      set({ status: "authenticated" });
+      if (!isExpired(session)) {
+        set({ status: "authenticated" });
+        return;
+      }
+      // access token 은 죽었지만 refresh token 은 있다 — 로그인 화면부터 다시
+      // 보여주기 전에 갱신을 한 번 시도한다. 만료된 토큰으로 보호 라우트에
+      // 들어가 첫 401 을 보고서야 튕겨 나오지 않게 하는 자리다(§3-1).
+      const result = await refreshSession(session);
+      // 세션이 실제로 죽었을 때(evicted)만 로그인 화면으로 닫는다. 일시적
+      // 실패(네트워크 등)는 여기서 재로그인을 강제하지 않는다 — 세션은 남아
+      // 있으니 authenticated 로 들여보내고, 화면의 첫 API 호출이 다시 시도한다.
+      set({ status: result.ok || !result.evicted ? "authenticated" : "anonymous" });
     } catch {
       // 읽기 오류·복호화 실패 — 판단이 안 서면 로그인 화면이다 (§3-4)
       set({ status: "anonymous" });
