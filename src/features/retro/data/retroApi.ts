@@ -154,8 +154,7 @@ const mapError = (error: HttpError, notFound: RetroFailureCode): RetroFailureCod
 
 // ── 런타임 검증 ──────────────────────────────────────────────────────────
 
-const isObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null;
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 
 const asString = (v: unknown): string | null => (typeof v === "string" ? v : null);
 
