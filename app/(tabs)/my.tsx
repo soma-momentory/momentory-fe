@@ -12,7 +12,6 @@ import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
 import { allTimeTopEmotion } from "@/features/my/model/stats";
-import { useDraft } from "@/features/onboarding/model/draft";
 import { formatKoreanTime } from "@/lib/time";
 
 /**
@@ -38,8 +37,9 @@ export default function My() {
   const nickname = useProfile((s) => s.nickname);
   const retro = useSettings((s) => s.notify.retro);
   const signOut = useAuth((s) => s.signOut);
-  // 온보딩 `09` 에서 정한 값 — 연결 관리 줄이 지금 상태를 읽기로 보인다
-  const calendarLinked = useDraft((s) => s.calendarLinked);
+  // 온보딩 `09` 에서 정한 값 — 연결 관리 줄이 지금 상태를 읽기로 보인다.
+  // draft 가 아니라 프로필에서 읽는다 — `10` 이 draft 를 비우고 홈으로 보낸다
+  const calendarLinked = useProfile((s) => s.calendarLinked);
 
   // 세는 대상이 다르다 — 장수와 날수
   const diaryCount = diaries.length;

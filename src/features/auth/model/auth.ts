@@ -4,9 +4,10 @@ import { create } from "zustand";
 import { exchangeKakaoToken, type AuthFailureCode } from "@/features/auth/data/kakaoAuthApi";
 import { requestKakaoAccessToken } from "@/features/auth/data/kakaoSdk";
 import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
+import { fetchMe } from "@/features/auth/data/meApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
 import { useDiary } from "@/features/diary/model/diary";
-import { useProfile, useSettings } from "@/features/my/model/settings";
+import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { useRetro } from "@/features/retro/model/retro";
@@ -40,6 +41,10 @@ import { useRetro } from "@/features/retro/model/retro";
  *   동시에 여러 요청이 만료를 보고 각자 갱신을 시도하면 나중 것이
  *   `REFRESH_TOKEN_REVOKED` 로 튕긴다. `refreshInFlight` 하나로 이 창을 닫는다 —
  *   전체 세션에 갱신은 한 번에 하나뿐이다.
+ * - **내가 누구인가는 서버가 답한다** — 세션이 살아 있으면 `GET /api/v1/users/me`
+ *   로 온보딩 완료 여부와 프로필을 받아 온다(`meApi.ts`). 그전까지 완료 여부는
+ *   기기 메모리에만 있어서 **앱을 껐다 켜면 온보딩을 다시 봤다.** 조회가 실패하면
+ *   아무것도 덮지 않는다 — **401 만 세션 폐기 신호로 읽는다.**
  */
 export type AuthStatus = "hydrating" | "anonymous" | "authenticated";
 
@@ -104,6 +109,11 @@ type AuthStore = {
   signInError: string | null;
   /** 콜드 스타트 · 포그라운드 복귀에서 부른다. 결과는 status 로만 나온다 */
   hydrate: () => Promise<void>;
+  /**
+   * 서버에 지금 토큰의 주인을 묻고 **온보딩 완료 여부와 프로필을 맞춘다.**
+   * 실패는 조용하다 — 401 일 때만 세션을 내린다.
+   */
+  syncMe: () => Promise<void>;
   /**
    * `S1` 의 [카카오로 계속하기]. 카카오 SDK → 서버 교환 → SecureStore 순서다.
    * **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다.**
@@ -400,6 +410,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
       }
       if (!isExpired(session)) {
         set({ status: "authenticated" });
+        await get().syncMe();
         return;
       }
       // access token 은 죽었지만 refresh token 은 있다 — 로그인 화면부터 다시
@@ -412,9 +423,46 @@ export const useAuth = create<AuthStore>((set, get) => ({
       // 세션이 실제로 죽었을 때(evicted)만 로그인 화면으로 닫는다. 일시적
       // 실패(네트워크 등)는 여기서 재로그인을 강제하지 않는다 — 세션은 남아
       // 있으니 authenticated 로 들여보내고, 화면의 첫 API 호출이 다시 시도한다.
-      set({ status: result.ok || result.reason === "retry" ? "authenticated" : "anonymous" });
+      if (!result.ok && result.reason === "evicted") {
+        set({ status: "anonymous" });
+        return;
+      }
+      set({ status: "authenticated" });
+      await get().syncMe();
     } catch {
       // 읽기 오류·복호화 실패 — 판단이 안 서면 로그인 화면이다 (§3-4)
+      set({ status: "anonymous" });
+    }
+  },
+
+  /**
+   * **스플래시가 이걸 기다린다.** `S0` 는 `status !== "hydrating"` 이면 곧장
+   * 라우팅하므로, 온보딩 완료 여부를 여기서 받아두지 않으면 온보딩으로 보냈다가
+   * 홈으로 튀는 깜빡임이 된다. 그래서 `hydrate` 는 이걸 `await` 하고,
+   * `meApi` 의 8초 상한이 그 기다림의 최대치를 정한다.
+   *
+   * **실패는 조용하다.** `no_session`(갱신이 네트워크로 실패한 경우가 여기 섞인다) ·
+   * `network` · `server` · `malformed` 는 **아무것도 덮지 않는다** — 서버에게
+   * 못 물어본 것을 「온보딩을 안 했다」로 읽으면 오프라인일 때마다 온보딩이 뜬다.
+   */
+  syncMe: async () => {
+    const result = await fetchMe();
+
+    if (result.ok) {
+      // 온보딩 완료 여부의 정본은 서버다 — 기기에 남아 있던 판정을 덮는다
+      const completion = useOnboardingCompletion.getState();
+      if (result.data.onboardingRequired) completion.reset();
+      else completion.complete();
+
+      // 온보딩 전에는 프로필이 없다. 없는 것으로 지금 값을 지우지 않는다
+      if (result.data.profile != null) adoptProfile(result.data.profile);
+      return;
+    }
+
+    if (result.code === "unauthorized") {
+      // 갱신까지 마친 토큰을 서버가 거부했다 — 이건 일시적 실패가 아니다
+      await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
+      clearUserScopedStores();
       set({ status: "anonymous" });
     }
   },
@@ -466,6 +514,12 @@ export const useAuth = create<AuthStore>((set, get) => ({
       else completion.complete();
 
       set({ status: "authenticated" });
+
+      // 프로필을 뒤따라 채운다 — **기다리지 않는다.** 다음 화면은 위 플래그가
+      // 이미 정했고, 여기서 더 받을 것은 닉네임·관심사뿐이라 로그인을 붙잡을
+      // 이유가 없다. 실패해도 조용하다(`syncMe`).
+      void get().syncMe();
+
       return { kind: "signed-in", onboardingRequired: session.onboardingRequired };
     } finally {
       set({ signingIn: false });
