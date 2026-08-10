@@ -2,7 +2,7 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 
 import { exchangeKakaoToken, type AuthFailureCode } from "@/features/auth/data/kakaoAuthApi";
-import { requestKakaoAccessToken, unlinkKakao } from "@/features/auth/data/kakaoSdk";
+import { requestKakaoAccessToken } from "@/features/auth/data/kakaoSdk";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
@@ -354,9 +354,6 @@ export const useAuth = create<AuthStore>((set, get) => ({
   },
 
   signOut: async () => {
-    // 카카오 연결도 끊는다(unlink) — 앱 세션만 지우면 카카오 세션이 남아, 다음
-    // 「카카오로 계속하기」가 계정 선택·재동의 없이 즉시 재로그인된다. 실패해도 로그아웃은 계속.
-    await unlinkKakao();
     await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
     // 초안까지 비운다 — 남기면 다음 사용자의 온보딩에 앞 사람 답이 섞인다
     useDraft.getState().reset();

@@ -1,4 +1,4 @@
-import { login as kakaoLogin, unlink as kakaoUnlink } from "@react-native-seoul/kakao-login";
+import { login as kakaoLogin } from "@react-native-seoul/kakao-login";
 
 /**
  * 카카오 네이티브 SDK 경계 — **네이티브를 부르는 곳은 여기 하나다.**
@@ -55,22 +55,6 @@ const messageOf = (error: unknown): string => {
  * **던지지 않는다** — 호출부가 try/catch 로 사유를 다시 분류하면 분류 규칙이
  * 두 곳에 생긴다. 결과는 항상 위 세 갈래 중 하나다.
  */
-/**
- * 카카오 연결을 끊는다(unlink) — 로그아웃 때 부른다. 이걸 해야 다음 「카카오로 계속하기」가
- * 카카오의 살아있는 세션으로 즉시 재로그인되지 않고 **인증·동의를 다시 거친다.**
- *
- * **던지지 않는다.** 앱 로그아웃은 로컬 세션만 지워도 성립한다(카카오는 남의 세션이다) —
- * unlink 실패(오프라인·미로그인 등)가 로그아웃을 막으면 안 되므로 삼키고, 개발 빌드에서만
- * 사유를 남긴다.
- */
-export async function unlinkKakao(): Promise<void> {
-  try {
-    await kakaoUnlink();
-  } catch (error) {
-    if (__DEV__) console.warn("[kakao] unlink 실패:", messageOf(error));
-  }
-}
-
 export async function requestKakaoAccessToken(): Promise<KakaoSdkResult> {
   try {
     const token = await kakaoLogin();
