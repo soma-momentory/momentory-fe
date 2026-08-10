@@ -216,6 +216,57 @@ const clearUserScopedStores = () => {
 };
 
 /**
+ * 계보가 갈린 뒤 손에 남은 refresh token 을 **서버에서도 지운다.**
+ *
+ * 서버는 이미 회전시켰다 — 우리가 안 쓴다고 그것이 죽는 것은 아니다. 그냥 버리면
+ * **로그아웃한 기기가 받아온 토큰이 서버에 살아남는다.** 로그아웃이 보낸 폐기는
+ * 그보다 앞선(이미 폐기된) 토큰을 가리켰으므로 이 한 장은 아무도 지우지 않는다.
+ *
+ * 로그아웃과 같은 배웅이다 — 기다리지 않고 결과도 보지 않는다.
+ */
+const orphanRevoke = (refreshToken: string) => {
+  void revokeRefreshToken(refreshToken).then((result) => {
+    if (!result.ok) warnInDev(result.code);
+  });
+};
+
+/**
+ * **갱신은 자기가 시작한 세션만 교체한다** — 기기에 있는 것이 아직 `expected` 일
+ * 때만 `next` 로 바꾼다.
+ *
+ * 갱신은 서버 왕복이라 **그 사이에 세션이 갈릴 수 있다.** 확인 없이 쓰면 두 방향으로
+ * 잘못된다 — 그새 로그아웃했으면 지워진 세션을 **되살리고**(다음 부트에 조용히
+ * 로그인된 상태가 된다), 다른 계정으로 들어왔으면 **남의 세션을 덮는다.**
+ *
+ * ⚠ 읽기와 쓰기 사이의 한 틱은 여전히 열려 있다 — SecureStore 에 원자적 교체가
+ * 없어서 그 이상은 잠금 없이 좁힐 수 없다. 왕복(초 단위)이 마이크로태스크 몇 개로
+ * 줄어드는 것이 이 함수가 하는 일이다.
+ */
+type SwapResult = "written" | "stale" | "failed";
+
+const swapSession = async (expected: Session, next: Session): Promise<SwapResult> => {
+  const current = await SecureStore.getItemAsync(SESSION_KEY).catch(() => null);
+  if (current !== JSON.stringify(expected)) return "stale";
+  return (await persist(next)) ? "written" : "failed";
+};
+
+/**
+ * 갱신하던 세션이 **아직 그대로일 때만** 지운다. 지웠으면 `true`.
+ *
+ * 서버가 refresh token 을 거부했을 때 쓴다. 확인 없이 지우면 그새 들어온 **새
+ * 세션을 지우게 된다** — 갓 로그인한 사용자가 이유 없이 튕겨 나간다.
+ *
+ * **지웠는지를 돌려주는 것이 중요하다** — 못 지웠다는 것은 이 거부가 지금 세션과
+ * 관계없다는 뜻이고, 그때 `evicted` 라고 말하면 호출부가 멀쩡한 로그인을 내린다.
+ */
+const deleteIfUnchanged = async (expected: Session): Promise<boolean> => {
+  const current = await SecureStore.getItemAsync(SESSION_KEY).catch(() => null);
+  if (current !== JSON.stringify(expected)) return false;
+  await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
+  return true;
+};
+
+/**
  * 서버가 refresh token 자체를 거부한 사유 — 재로그인 말고는 답이 없다.
  * 네트워크·타임아웃·서버 5xx·형태 위반은 **여기 없다** — 그건 이 순간의 요청이
  * 실패한 것뿐이지 refresh token 이 죽었다는 근거가 아니다. 이걸 구분하지 않고
@@ -226,11 +277,20 @@ const isRefreshTokenDead = (code: ReissueFailureCode): boolean =>
   code === "refresh_invalid" || code === "refresh_revoked" || code === "refresh_expired";
 
 /**
- * 갱신 시도 결과. **`evicted` 가 있어야 호출부가 세션이 실제로 사라졌는지 안다** —
- * 실패를 `null` 하나로만 표현하면 "이번 시도만 실패"와 "세션이 죽었다"를
- * 구분할 길이 없어, 호출부가 일시적 실패에도 로그아웃 처리를 하게 된다.
+ * 갱신 시도 결과. **셋을 구분한다** — 실패를 `null` 하나로만 표현하면 호출부가
+ * 종류를 다시 추측하게 되고, 일시적 실패에도 로그아웃 처리를 하게 된다.
  */
-type RefreshOutcome = { ok: true; session: Session } | { ok: false; evicted: boolean };
+type RefreshOutcome =
+  | { ok: true; session: Session }
+  /** refresh token 이 실제로 거부됐다 — 재로그인 말고는 답이 없다 */
+  | { ok: false; reason: "evicted" }
+  /** 이번 시도만 실패했다(네트워크·5xx 등) — 세션은 그대로다 */
+  | { ok: false; reason: "retry" }
+  /**
+   * 갱신이 도는 사이 세션이 갈렸다 — **결과를 버린다.** 상태 판정은 세션을 바꾼
+   * 쪽(로그아웃·로그인)이 이미 했으므로 여기서 덧쓰지 않는다.
+   */
+  | { ok: false; reason: "stale" };
 
 /**
  * 죽은 access token 을 새 access/refresh 쌍으로 바꾼다. **refresh token 이
@@ -239,10 +299,13 @@ type RefreshOutcome = { ok: true; session: Session } | { ok: false; evicted: boo
  */
 const performRefresh = async (session: Session): Promise<RefreshOutcome> => {
   const reissued = await reissueAccessToken(session.refreshToken);
+
   if (!reissued.ok) {
-    const evicted = isRefreshTokenDead(reissued.code);
-    if (evicted) await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
-    return { ok: false, evicted };
+    if (!isRefreshTokenDead(reissued.code)) return { ok: false, reason: "retry" };
+    // 죽은 세션을 지운다 — 단 **그 사이 갈리지 않았을 때만.** 로그아웃 뒤 다시
+    // 로그인했다면 지금 있는 것은 새 세션이고, 그건 이 거부와 관계가 없다
+    const removed = await deleteIfUnchanged(session);
+    return { ok: false, reason: removed ? "evicted" : "stale" };
   }
 
   // 갱신은 세션의 주인을 바꾸지 않는다 — userId 는 옛 세션 것을 그대로 쓴다
@@ -253,14 +316,21 @@ const performRefresh = async (session: Session): Promise<RefreshOutcome> => {
     expiresAt: nowMs() + reissued.session.accessTokenExpiresIn * 1000,
     userId: session.userId,
   };
-  const stored = await persist(refreshed);
-  if (!stored) {
-    // 새로 받은 토큰을 기기에 남기지 못했다 — 이 쌍은 이미 쓴 것으로 서버에
-    // 기록됐으니 옛 refresh token도 다음 시도에 못 쓴다. 세션을 지운다.
-    await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
-    return { ok: false, evicted: true };
+
+  switch (await swapSession(session, refreshed)) {
+    case "written":
+      return { ok: true, session: refreshed };
+    case "stale":
+      // 왕복 사이에 로그아웃했거나 다른 계정으로 들어왔다. 아무것도 쓰지 않는다
+      orphanRevoke(refreshed.refreshToken);
+      return { ok: false, reason: "stale" };
+    case "failed": {
+      // 새로 받은 토큰을 기기에 남기지 못했다 — 이 쌍은 이미 쓴 것으로 서버에
+      // 기록됐으니 옛 refresh token 도 다음 시도에 못 쓴다. 세션을 지운다.
+      const removed = await deleteIfUnchanged(session);
+      return { ok: false, reason: removed ? "evicted" : "stale" };
+    }
   }
-  return { ok: true, session: refreshed };
 };
 
 /**
@@ -301,8 +371,9 @@ export const getAccessToken = async (): Promise<string | null> => {
     const result = await refreshSession(session);
     if (!result.ok) {
       // 세션이 실제로 사라졌을 때만 로그아웃 상태로 내린다 — 일시적 실패로는
-      // 세션이 그대로 남아 있으니 다음 호출이 다시 시도한다.
-      if (result.evicted) useAuth.setState({ status: "anonymous" });
+      // 세션이 그대로 남아 있으니 다음 호출이 다시 시도한다. `stale` 이면
+      // 세션을 바꾼 쪽이 이미 판정했으므로 여기서 덧쓰지 않는다.
+      if (result.reason === "evicted") useAuth.setState({ status: "anonymous" });
       return null;
     }
     return result.session.accessToken;
@@ -335,10 +406,13 @@ export const useAuth = create<AuthStore>((set, get) => ({
       // 보여주기 전에 갱신을 한 번 시도한다. 만료된 토큰으로 보호 라우트에
       // 들어가 첫 401 을 보고서야 튕겨 나오지 않게 하는 자리다(§3-1).
       const result = await refreshSession(session);
+      // 부팅 중에 세션이 갈렸다면(로그아웃 등) 판정은 그쪽이 이미 했다 — 덧쓰면
+      // 방금 로그아웃한 사람을 다시 들여보내게 된다.
+      if (!result.ok && result.reason === "stale") return;
       // 세션이 실제로 죽었을 때(evicted)만 로그인 화면으로 닫는다. 일시적
       // 실패(네트워크 등)는 여기서 재로그인을 강제하지 않는다 — 세션은 남아
       // 있으니 authenticated 로 들여보내고, 화면의 첫 API 호출이 다시 시도한다.
-      set({ status: result.ok || !result.evicted ? "authenticated" : "anonymous" });
+      set({ status: result.ok || result.reason === "retry" ? "authenticated" : "anonymous" });
     } catch {
       // 읽기 오류·복호화 실패 — 판단이 안 서면 로그인 화면이다 (§3-4)
       set({ status: "anonymous" });

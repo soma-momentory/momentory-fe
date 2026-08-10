@@ -329,6 +329,95 @@ describe("signOut — 서버의 refresh token 폐기", () => {
   });
 });
 
+describe("갱신이 도는 사이 세션이 갈릴 때 — 늦게 끝난 갱신은 아무것도 쓰지 않는다", () => {
+  /** 갱신을 **응답 전에 멈춰 세운다** — 그 창 안에서 로그아웃·재로그인을 끼워 넣는다 */
+  const hangingReissue = () => {
+    let resolve!: (value: Awaited<ReturnType<typeof reissueAccessToken>>) => void;
+    reissue.mockReturnValueOnce(
+      new Promise((r) => {
+        resolve = r;
+      }),
+    );
+    return resolve;
+  };
+
+  const REISSUED = {
+    ok: true as const,
+    session: { accessToken: "new-t", refreshToken: "new-r", accessTokenExpiresIn: 1800 },
+  };
+
+  it("로그아웃 뒤에 갱신이 성공해도 세션이 되살아나지 않는다", async () => {
+    // 이게 이 파일의 핵심이다 — 되살아나면 다음 부트에 **조용히 로그인된 상태**가 된다
+    seedSession(Date.now() - 1);
+    const finishReissue = hangingReissue();
+
+    const pending = getAccessToken();
+    await useAuth.getState().signOut();
+    finishReissue(REISSUED);
+
+    expect(await pending).toBeNull();
+    expect(secure.__store.has(SESSION_KEY)).toBe(false);
+    expect(useAuth.getState().status).toBe("anonymous");
+  });
+
+  it("그때 새로 받은 refresh token 도 서버에서 폐기한다 — 서버에 살려두지 않는다", async () => {
+    seedSession(Date.now() - 1, { refreshToken: "old-r" });
+    const finishReissue = hangingReissue();
+
+    const pending = getAccessToken();
+    await useAuth.getState().signOut();
+    finishReissue(REISSUED);
+    await pending;
+
+    // 로그아웃이 보낸 폐기는 이미 회전으로 죽은 옛 토큰을 가리킨다 —
+    // 새 토큰은 이 경로가 지우지 않으면 아무도 안 지운다
+    expect(revoke).toHaveBeenCalledWith("old-r");
+    expect(revoke).toHaveBeenCalledWith("new-r");
+  });
+
+  it("재로그인 뒤에 갱신이 성공해도 새 세션을 덮지 않는다", async () => {
+    seedSession(Date.now() - 1);
+    const finishReissue = hangingReissue();
+
+    const pending = getAccessToken();
+    await useAuth.getState().signOut();
+    await useAuth.getState().signInDev();
+    finishReissue(REISSUED);
+    await pending;
+
+    const stored = JSON.parse(secure.__store.get(SESSION_KEY)!) as { accessToken: string };
+    expect(stored.accessToken).toBe("dev");
+  });
+
+  it("재로그인 뒤에 갱신이 거부돼도 새 세션을 지우지 않는다", async () => {
+    // 갓 로그인한 사용자가 앞 세션의 실패 때문에 튕겨 나가면 안 된다
+    seedSession(Date.now() - 1);
+    const finishReissue = hangingReissue();
+
+    const pending = getAccessToken();
+    await useAuth.getState().signOut();
+    await useAuth.getState().signInDev();
+    finishReissue({ ok: false, code: "refresh_expired" });
+    await pending;
+
+    expect(secure.__store.has(SESSION_KEY)).toBe(true);
+    expect(useAuth.getState().status).toBe("authenticated");
+  });
+
+  it("부팅 중 로그아웃하면 hydrate 가 다시 authenticated 로 되돌리지 않는다", async () => {
+    seedSession(Date.now() - 1);
+    const finishReissue = hangingReissue();
+
+    const booting = useAuth.getState().hydrate();
+    await useAuth.getState().signOut();
+    finishReissue(REISSUED);
+    await booting;
+
+    expect(useAuth.getState().status).toBe("anonymous");
+    expect(secure.__store.has(SESSION_KEY)).toBe(false);
+  });
+});
+
 describe("signInDev — 개발 통로", () => {
   it("가짜 세션을 저장하고 authenticated 가 된다 (__DEV__)", async () => {
     await useAuth.getState().signInDev();
