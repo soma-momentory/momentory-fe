@@ -159,19 +159,19 @@ describe("M2 · 선택 표시와 상한", () => {
 
     // 「인간관계」는 이미 골라져 있고 「가족」은 아니다
     expect(r.getByText("인간관계").parent?.props.accessibilityState.selected).toBe(true);
-    expect(r.getByTestId("chip-check-relations")).toBeTruthy();
-    expect(r.queryByTestId("chip-check-family")).toBeNull();
+    expect(r.getByTestId("chip-check-RELATIONSHIP")).toBeTruthy();
+    expect(r.queryByTestId("chip-check-FAMILY")).toBeNull();
 
     await fireEvent.press(r.getByText("가족"));
 
-    expect(r.getByTestId("chip-check-family")).toBeTruthy();
+    expect(r.getByTestId("chip-check-FAMILY")).toBeTruthy();
   });
 
   it("쉬는 방법과 성별 칩에도 체크가 붙는다", async () => {
     const r = await render(<ProfileEdit />);
 
     expect(r.getByTestId("chip-check-🎵 음악 듣기")).toBeTruthy();
-    expect(r.getByTestId("chip-check-female")).toBeTruthy();
+    expect(r.getByTestId("chip-check-FEMALE")).toBeTruthy();
   });
 
   it("관심 분야는 최대 3개 — 넷째는 눌러도 켜지지 않는다", async () => {
@@ -206,7 +206,7 @@ describe("M2 · 기본 정보 — 온보딩 05-b 의 편집 경로", () => {
     await fireEvent.press(r.getByText("저장하기"));
 
     expect(useProfile.getState().age).toBe("26");
-    expect(useProfile.getState().gender).toBe("male");
+    expect(useProfile.getState().gender).toBe("MALE");
   });
 
   it("성별은 다시 누르면 미선택으로 돌아간다 — 선택 항목이다", async () => {

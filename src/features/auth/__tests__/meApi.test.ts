@@ -79,7 +79,7 @@ describe("요청", () => {
 });
 
 describe("성공 — 서버 값을 화면 값으로 옮긴다", () => {
-  it("enum 두 개는 이름이 다르다 — RELATIONSHIP·OTHER", async () => {
+  it("코드는 옮기지 않고 그대로 통과시킨다 — 목록의 주인이 서버다", async () => {
     mockFetch(async () =>
       respond(200, {
         ...BODY,
@@ -97,8 +97,8 @@ describe("성공 — 서버 값을 화면 값으로 옮긴다", () => {
         profile: {
           nickname: "모리",
           age: "25",
-          gender: "female",
-          interests: ["relations", "etc", "self"],
+          gender: "FEMALE",
+          interests: ["RELATIONSHIP", "OTHER", "SELF"],
           retroTime: "21:30",
           calendarLinked: true,
         },
@@ -106,14 +106,12 @@ describe("성공 — 서버 값을 화면 값으로 옮긴다", () => {
     });
   });
 
-  it("UNSPECIFIED 는 「선택 안 함」이다 — 미선택(null)과 구분한다", async () => {
-    mockFetch(async () =>
-      respond(200, { ...BODY, profile: { ...PROFILE, gender: "UNSPECIFIED" } }),
-    );
+  it("성별이 비면 「선택 안 함」으로 읽는다 — 미선택(null)은 서버에 없다", async () => {
+    mockFetch(async () => respond(200, { ...BODY, profile: { ...PROFILE, gender: null } }));
 
     const result = await fetchMe();
 
-    expect(result.ok && result.data.profile?.gender).toBe("none");
+    expect(result.ok && result.data.profile?.gender).toBe("UNSPECIFIED");
   });
 
   it("나이는 정수로 오고 화면은 문자열이다. 없으면 빈 문자열", async () => {
@@ -135,17 +133,20 @@ describe("성공 — 서버 값을 화면 값으로 옮긴다", () => {
     });
   });
 
-  it("모르는 관심사 코드는 버리고 나머지를 살린다 — 서버가 항목을 늘려도 프로필이 사라지지 않는다", async () => {
+  it("우리가 모르는 코드도 그대로 든다 — 버리면 마이에서 저장하는 순간 그 답이 지워진다", async () => {
+    // 서버가 관심사를 늘렸을 때, FE 가 아는 것만 남기면 `M2` 의 저장이
+    // 사용자가 고르지도 않은 삭제를 하게 된다
     mockFetch(async () =>
       respond(200, {
         ...BODY,
-        profile: { ...PROFILE, interestAreas: ["MONEY", "HEALTH"] },
+        profile: { ...PROFILE, interestAreas: ["MONEY", "HEALTH", 42, ""] },
       }),
     );
 
     const result = await fetchMe();
 
-    expect(result.ok && result.data.profile?.interests).toEqual(["health"]);
+    // 문자열이 아닌 것과 빈 것만 걸러낸다
+    expect(result.ok && result.data.profile?.interests).toEqual(["MONEY", "HEALTH"]);
   });
 });
 
