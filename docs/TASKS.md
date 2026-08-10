@@ -257,18 +257,18 @@ v2 `momentory.css` 가 `.tfield` 를 정의해 추측이 필요 없어졌다 —
 계약이 [`docs/api/openapi.json`](api/openapi.json) 에 있으므로 이제 순서만 남았다.
 **하나씩 붙인다** — 한 PR 이 엔드포인트 하나(또는 같은 자원의 CRUD 묶음)다.
 
-| 순  | 엔드포인트                                           | 무엇을 닫는가                                                          |
-| --- | ---------------------------------------------------- | ---------------------------------------------------------------------- |
-| ✅  | `POST /api/v1/auth/{kakao,reissue,logout}`           | 로그인 · 갱신 · 로그아웃 (M2-1 · PR #46·#48·#49)                       |
-| ✅  | `POST /api/v1/retrospect` · `…/{id}/messages`        | 회고 대화 (서버 주도)                                                  |
-| ✅  | `GET /api/v1/users/me`                               | **온보딩 재진입 버그** · 프로필의 샘플 하드코딩 (PR #51)               |
-| ✅  | `GET /api/v1/onboarding/options`                     | `04`·`05-b`·`06` 선택지의 화면 하드코딩 (`06` 과 `M2` 두 곳 중복)      |
-| 3   | `PUT /api/v1/users/me/onboarding`                    | `10` 이 서버에 아무것도 보내지 않는 것 · `M2` 저장이 로컬에만 남는 것  |
-| 4   | `GET /api/v1/schedules`                              | `useDay` 에 **날짜 축이 없다** — 오늘 하루만 메모리에 있다             |
-| 5   | `PUT /api/v1/schedules/{id}/completion`              | 마침·감정 토글                                                         |
-| 6   | `POST` · `PATCH` · `DELETE /api/v1/schedules[/{id}]` | 수동 일정. `[id].tsx` 의 「삭제」가 실제로는 `hide()` 인 어긋남도 함께 |
-| 7   | `PATCH /api/v1/schedules/order`                      | 순서. **`Schedule` 에 순서 필드가 없다** — 스펙 차이 기록 후보         |
-| 8   | (OS) `expo-calendar`                                 | `09` · `M1` 연결 관리. 네이티브 재빌드 · 동기화 방향 미결(§1-4)        |
+| 순  | 엔드포인트                                           | 무엇을 닫는가                                                                                                                     |
+| --- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| ✅  | `POST /api/v1/auth/{kakao,reissue,logout}`           | 로그인 · 갱신 · 로그아웃 (M2-1 · PR #46·#48·#49)                                                                                  |
+| ✅  | `POST /api/v1/retrospect` · `…/{id}/messages`        | 회고 대화 (서버 주도)                                                                                                             |
+| ✅  | `GET /api/v1/users/me`                               | **온보딩 재진입 버그** · 프로필의 샘플 하드코딩 (PR #51)                                                                          |
+| ✅  | `GET /api/v1/onboarding/options`                     | `04`·`05-b`·`06` 선택지의 화면 하드코딩 (`06` 과 `M2` 두 곳 중복)                                                                 |
+| 3   | `PUT /api/v1/users/me/onboarding` ⛔                 | `10` 이 서버에 아무것도 보내지 않는 것 · `M2` 저장이 로컬에만 남는 것. **온보딩 답 셋을 서버가 안 받는다** — `DISCUSSION.md` §1-7 |
+| 4   | `GET /api/v1/schedules`                              | `useDay` 에 **날짜 축이 없다** — 오늘 하루만 메모리에 있다                                                                        |
+| 5   | `PUT /api/v1/schedules/{id}/completion`              | 마침·감정 토글                                                                                                                    |
+| 6   | `POST` · `PATCH` · `DELETE /api/v1/schedules[/{id}]` | 수동 일정. `[id].tsx` 의 「삭제」가 실제로는 `hide()` 인 어긋남도 함께                                                            |
+| 7   | `PATCH /api/v1/schedules/order`                      | 순서. **`Schedule` 에 순서 필드가 없다** — 스펙 차이 기록 후보                                                                    |
+| 8   | (OS) `expo-calendar`                                 | `09` · `M1` 연결 관리. 네이티브 재빌드 · 동기화 방향 미결(§1-4)                                                                   |
 
 - **선행 하나**: `authedRequest` 의 메서드가 `"GET" | "POST"` 뿐이다(`src/lib/http.ts`).
   3·5·6·7 이 PUT/PATCH/DELETE 라 그전에 유니온을 넓힌다 — 「둘이 부딪히는 곳」 파일이라
