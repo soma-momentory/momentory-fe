@@ -1611,6 +1611,60 @@
             "minItems": 1,
             "uniqueItems": true
           },
+          "otherInterestDetail": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "관심 분야 기타 직접 입력",
+            "example": "에세이 글쓰기",
+            "maxLength": 50,
+            "minLength": 0
+          },
+          "restMethods": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "쉬는 방법",
+            "example": [
+              "READING",
+              "WALKING"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "SLEEP",
+                "MEDITATION",
+                "ENJOYING_FOOD",
+                "LISTENING_TO_MUSIC",
+                "WATCHING_MOVIES_OR_DRAMAS",
+                "READING",
+                "WRITING",
+                "VISITING_A_CAFE",
+                "WALKING",
+                "TALKING_WITH_CLOSE_PEOPLE",
+                "EXERCISE",
+                "GAMING",
+                "VARIES_BY_DAY",
+                "IDLE_REST",
+                "OTHER"
+              ]
+            },
+            "maxItems": 2147483647,
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "otherRestMethodDetail": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "쉬는 방법 기타 직접 입력",
+            "example": "따뜻한 차 마시기",
+            "maxLength": 50,
+            "minLength": 0
+          },
           "reflectionTime": {
             "type": "string",
             "description": "회고 시간",
@@ -1621,6 +1675,14 @@
           "calendarIntegrationEnabled": {
             "type": "boolean",
             "description": "프론트가 보고한 캘린더 연동 성공 여부",
+            "example": true
+          },
+          "notificationEnabled": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "푸시 알림 수신 선호 여부",
             "example": true
           }
         },
@@ -2182,6 +2244,51 @@
             },
             "uniqueItems": true
           },
+          "otherInterestDetail": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "관심 분야 기타 직접 입력",
+            "example": "에세이 글쓰기"
+          },
+          "restMethods": {
+            "type": "array",
+            "description": "쉬는 방법",
+            "example": [
+              "READING",
+              "WALKING"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "SLEEP",
+                "MEDITATION",
+                "ENJOYING_FOOD",
+                "LISTENING_TO_MUSIC",
+                "WATCHING_MOVIES_OR_DRAMAS",
+                "READING",
+                "WRITING",
+                "VISITING_A_CAFE",
+                "WALKING",
+                "TALKING_WITH_CLOSE_PEOPLE",
+                "EXERCISE",
+                "GAMING",
+                "VARIES_BY_DAY",
+                "IDLE_REST",
+                "OTHER"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "otherRestMethodDetail": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "쉬는 방법 기타 직접 입력",
+            "example": "따뜻한 차 마시기"
+          },
           "reflectionTime": {
             "type": "string",
             "description": "회고 시간",
@@ -2190,6 +2297,11 @@
           "calendarIntegrationEnabled": {
             "type": "boolean",
             "description": "캘린더 연동 여부",
+            "example": true
+          },
+          "notificationEnabled": {
+            "type": "boolean",
+            "description": "푸시 알림 수신 선호 여부",
             "example": true
           }
         }
@@ -2313,6 +2425,12 @@
             }
           },
           "interestAreas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionResponse"
+            }
+          },
+          "restMethods": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OptionResponse"
