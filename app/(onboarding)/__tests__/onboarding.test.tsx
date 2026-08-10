@@ -1,4 +1,5 @@
-import { act, render, fireEvent } from "@testing-library/react-native";
+import { act, render, fireEvent, waitFor } from "@testing-library/react-native";
+import { router } from "expo-router";
 
 import Interests from "../interests";
 import Nickname from "../nickname";
@@ -14,9 +15,20 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
 }));
 
+/** `08` 의 OS 권한 다이얼로그. 기본은 허용이고, 거부 경로만 각 테스트가 바꾼다 */
+const notifications = jest.requireMock("expo-notifications") as {
+  getPermissionsAsync: jest.Mock;
+  requestPermissionsAsync: jest.Mock;
+};
+
 // 초안은 모듈 store 라 테스트 사이에 값이 샌다 — 각 테스트가 빈 상태에서 시작해야
 // "입력 전 버튼이 잠겨 있다" 같은 단언이 앞 테스트에 기대지 않는다.
-beforeEach(() => useDraft.getState().reset());
+beforeEach(() => {
+  useDraft.getState().reset();
+  jest.clearAllMocks();
+  notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
+  notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
+});
 
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
@@ -390,13 +402,48 @@ describe("08 · 회고 시간", () => {
     expect(useDraft.getState().retroTime).toBe("21:30");
   });
 
+  // `[다음]` 은 OS 다이얼로그를 기다린다 — 누른 직후가 아니라 답이 온 뒤에 본다
   it("[다음] 은 알림 의도를 켠 채 넘어간다", async () => {
     useDraft.getState().set("notifyRetro", false);
     const { getByText } = await render(<RetroTime />);
 
     await fireEvent.press(getByText("다음"));
 
-    expect(useDraft.getState().notifyRetro).toBe(true);
+    await waitFor(() => expect(useDraft.getState().notifyRetro).toBe(true));
+  });
+
+  it("[다음] 저장 직후 OS 가 권한을 묻는다 — 커스텀 화면을 만들지 않는다", async () => {
+    // 원본 `P*` 는 OS 가 그린다 (RULES.md 「OS 권한」 · 08.md)
+    const { getByText } = await render(<RetroTime />);
+
+    await fireEvent.press(getByText("다음"));
+
+    await waitFor(() => expect(notifications.requestPermissionsAsync).toHaveBeenCalled());
+  });
+
+  it("[알림 없이 쓸게요] 는 묻지도 않는다 — 이미 답한 사람에게 다시 묻지 않는다", async () => {
+    const { getByText } = await render(<RetroTime />);
+
+    await fireEvent.press(getByText("알림 없이 쓸게요"));
+
+    expect(notifications.requestPermissionsAsync).not.toHaveBeenCalled();
+  });
+
+  it("거부해도 온보딩은 멈추지 않는다 — 알림만 꺼지고 시각은 남는다", async () => {
+    // 거부는 오류가 아니라 답이다. 안내도 재시도도 없이 결과가
+    // [알림 없이 쓸게요] 와 같아진다 (RULES.md 4)
+    notifications.requestPermissionsAsync.mockResolvedValue({
+      granted: false,
+      canAskAgain: false,
+    });
+    const { getByText, queryByText } = await render(<RetroTime />);
+
+    await fireEvent.press(getByText("다음"));
+
+    await waitFor(() => expect(jest.mocked(router.push)).toHaveBeenCalledWith("/calendar"));
+    expect(useDraft.getState().notifyRetro).toBe(false);
+    expect(useDraft.getState().retroTime).toBe("21:30");
+    expect(queryByText(/다시|허용해|설정에서/)).toBeNull();
   });
 });
 

@@ -28,6 +28,21 @@ jest.mock("@react-native-community/datetimepicker", () => ({
   default: () => null,
 }));
 
+// 알림도 네이티브다. **기본은 「허용됨」** — 대부분의 테스트는 알림을 신경 쓰지
+// 않는데, 기본이 거부면 `08` 의 [다음] 이 알림을 끄는 것으로 읽혀 관계없는
+// 테스트가 함께 깨진다. 권한을 검사하는 테스트가 각자 이 목을 바꿔 쓴다.
+jest.mock("expo-notifications", () => ({
+  __esModule: true,
+  AndroidImportance: { DEFAULT: 5 },
+  SchedulableTriggerInputTypes: { DAILY: "daily", WEEKLY: "weekly" },
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: true })),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: true })),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve("id")),
+  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+}));
+
 // SecureStore(M2-0 세션)도 네이티브다. 인메모리 Map 으로 대신하고, 인증 테스트가
 // `jest.requireMock("expo-secure-store").__store` 로 직접 만료 토큰·오류를 심는다.
 jest.mock("expo-secure-store", () => {

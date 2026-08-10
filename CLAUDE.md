@@ -104,7 +104,7 @@
 ⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 남은 것은 **나머지 도메인의 BE 연결** ·
 영속 저장(MMKV) · 소셜 SDK **나머지 둘**(카카오는 2026-08-07 연결 · 토큰 갱신은
 2026-08-09 닫힘 — **HTTPS 만 대기**, [`DISCUSSION.md`](docs/DISCUSSION.md) §1-6) ·
-OS 권한(알림·**캘린더 연결**) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
+OS 권한 중 **캘린더 연결**(알림은 2026-08-11 닫힘) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
 M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](docs/TASKS.md)
 「화면 40장이 끝난 뒤 남은 것」에 있다.
 
@@ -147,7 +147,13 @@ src/features/diary/{model/{diary,types,selectors}.ts, data/sampleAdapter.ts}
                                             타입·selector·샘플 seed 가 store 와 분리돼 있다
 src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 세지 않는다
 src/features/report/{model/report.ts, data/sampleRepository.ts} ← 주간 집계 · 해석 공급 경계
-src/features/my/model/{settings,stats}.ts ← 알림/프로필 설정 · 전체 기간 집계
+src/features/my/model/{settings,stats,reminders}.ts
+                                          ← 알림/프로필 설정 · 전체 기간 집계 ·
+                                            **설정 ↔ OS 예약 화해**. store 는 순수하게
+                                            두고 reminders 가 구독해서 예약을 맞춘다 —
+                                            화면이 예약을 부르지 않는다(값이 바뀌는
+                                            자리가 넷이라 하나를 빠뜨린다).
+                                            알림 문안도 여기 산다
 src/features/onboarding/{model/{draft, completion, options}.ts, data/optionsApi.ts}
                                           ← 답안 초안 · 완료 플래그(진입 분기) ·
                                             선택지(04·05-b·06 · M2 가 같은 목록을 본다).
@@ -173,6 +179,9 @@ src/lib/config.ts       ← 서버 주소·앱 키의 단일 공급자(.env → 
                           화면·repository 에 IP 를 적지 않는다
 plugins/withInsecureDevApi.ts ← 개발 서버가 평문 HTTP 인 동안만 그 호스트에 예외.
                           https 로 바꾸면 아무것도 하지 않는다 (docs/SETUP.md §6)
+src/lib/notifications.ts ← OS 알림의 단일 통로 — 권한 · 예약 화해. 던지지 않는다.
+                          **문안을 모른다**(features/my/model/reminders.ts 몫) ·
+                          배지 숫자를 올리지 않는다 · 전부 로컬 알림이다
 src/lib/clock.ts        ← 시각의 단일 공급자 — SampleClock(2026-07-27) ·
                           SystemClock(04:00 하루 경계) · fixedClock(테스트)
 src/lib/day.ts          ← 날짜 표기. 계산은 clock.ts 가 한다
@@ -182,7 +191,8 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 설치된 것: expo-router · expo-dev-client · expo-font · react-native-svg · safe-area-context ·
 **Zustand** · **expo-secure-store** · **@react-native-community/datetimepicker**
 (08 OS 피커) · **@react-native-seoul/kakao-login** + **expo-build-properties**
-(카카오 로그인 — 둘 다 네이티브라 **dev client 재빌드 필요**).
+(카카오 로그인) · **expo-notifications**(회고 시간 알림 — 전부 로컬)
+— 셋 다 네이티브라 **dev client 재빌드 필요**.
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
