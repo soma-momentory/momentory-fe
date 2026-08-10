@@ -94,6 +94,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         color: "#C2703D",
       },
     ],
+    // 09 캘린더 연결 — **읽기만 한다.** 원본을 고치지 않으므로 쓰기 권한 문구도
+    // 미리 알림(iOS 전용)도 두지 않는다. 문구는 `09.md` 안내 카드 문안 그대로다 —
+    // 시스템 다이얼로그와 앞 화면이 다른 말을 하면 안내가 안내가 아니게 된다.
+    [
+      "expo-calendar",
+      {
+        calendarPermission:
+          "일정 제목을 모멘토리에 저장해 회고 질문을 만드는 데 사용해요. 캘린더 원본은 수정하지 않고, 다른 사람에게 공유하지 않아요.",
+      },
+    ],
     // 카카오 SDK 는 Maven Central 에 없다 — 카카오 저장소를 Gradle 에 알린다.
     // (`@react-native-seoul/kakao-login` README 「EXPO」)
     [
