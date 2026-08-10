@@ -20,9 +20,31 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
-const UPSTREAM_REPO = resolve(REPO, "..");
-const SOURCE = join(UPSTREAM_REPO, "02_디자인시스템", "theme.ts");
+const SOURCE_REL = join("02_디자인시스템", "theme.ts");
+const UPSTREAM_REPO = findUpstream();
+const SOURCE = UPSTREAM_REPO ? join(UPSTREAM_REPO, SOURCE_REL) : null;
 const TARGET = join(REPO, "src", "design", "theme.ts");
+
+/**
+ * 상류 저장소를 위로 올라가며 찾는다.
+ *
+ * 예전엔 바로 위(`..`)였지만 저장소가 한 단계 깊어지면서 어긋났다 —
+ * 깊이를 박아 두면 또 어긋나므로 표식(02_디자인시스템/theme.ts)으로 찾는다.
+ * 상류가 다른 곳에 있으면 MOMENTORY_UPSTREAM 으로 알려준다.
+ * 못 찾으면 null — CI 는 상류 없이 --verify 만 돌리므로 여기서 죽이지 않는다.
+ */
+function findUpstream() {
+  const given = process.env.MOMENTORY_UPSTREAM;
+  if (given) return resolve(given);
+
+  let dir = REPO;
+  for (;;) {
+    const parent = dirname(dir);
+    if (parent === dir) return null;
+    if (existsSync(join(parent, SOURCE_REL))) return parent;
+    dir = parent;
+  }
+}
 
 const MARKER = "// @generated-sha256 ";
 const DELIM = "\n// ─── 여기부터 상류 원본 ───\n";
@@ -61,10 +83,11 @@ function verify() {
 }
 
 function sync() {
-  if (!existsSync(SOURCE)) {
+  if (!SOURCE || !existsSync(SOURCE)) {
     fail(
-      `상류 원본을 찾을 수 없다: ${SOURCE}\n` +
-        `  이 스크립트는 momentory-fe 가 부모 저장소 안에 있을 때만 돈다.\n` +
+      `상류 원본을 찾을 수 없다: ${SOURCE ?? SOURCE_REL.replace(/\\/g, "/")}\n` +
+        `  이 저장소 위쪽에서 상류를 찾지 못했다. 상류 저장소 안에 두거나\n` +
+        `  MOMENTORY_UPSTREAM 에 경로를 준다 (예: MOMENTORY_UPSTREAM=C:/SWM/momentory).\n` +
         `  커밋된 src/design/theme.ts 만으로 빌드는 되므로, 동기화가 필요할 때만 실행한다.`,
     );
   }

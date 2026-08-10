@@ -7,7 +7,7 @@
 // 값을 바꾸려면 상류 05_도구/lib.mjs 를 고치고 node 05_도구/export-theme.mjs 를
 // 돌린 뒤 여기로 다시 동기화한다. 이 파일을 고치면 다음 동기화에 덮인다.
 //
-// @generated-from  momentory@111e8368c372b329f59e61ebeb46cda57bcabbe6 (미커밋 변경 있음)
+// @generated-from  momentory@f8ec6600e8d952edeec01cc8666816ff8a2be85f
 // @generated-sha256 62243d0f6b5dc205f4e5d80392ff22fbad94013fd704e48336169e0ad842ab29
 // ─── 여기부터 상류 원본 ───
 // 자동 생성 파일 — 직접 수정하지 말 것.
