@@ -144,12 +144,22 @@ POST /api/v1/schedules/sync
 
 **아직 답이 없는 것 셋:**
 
-1. **모양의 확정** — 위 `POST /schedules/sync` 같은 화해 엔드포인트를 새로 두는가,
-   아니면 `POST /schedules` 에 `externalId` 를 더하고 삭제는 FE 가 `DELETE` 로
-   따로 부르는가(그러면 지워진 개수만큼 호출이 는다)
-2. **훑는 범위** — 앱을 열 때 며칠치를 보나. 홈은 오늘만 그리지만 보관함·회고는
-   과거를 본다. 범위를 서버가 정하는가(리포트 주차 이동과 같은 규칙 — §1-3).
-   **삭제가 이 범위에 묶이므로 이제 이것이 안전 장치다**
+1. ~~**모양의 확정**~~ — **✅ 정해졌다** (2026-08-14): **화해 엔드포인트를 새로 둔다.**
+   `POST /api/v1/schedules/sync` · 본문 `{ from, to, events: [{ externalId, date, title }] }`.
+   서버가 맞춰보는 대상은 **`user` AND `source = CALENDAR` AND `date ∈ [from, to]`** 셋을
+   모두 만족하는 행뿐이고, `date`·`title` 만 덮으며 **`hidden`·`completed`·`emotion` 은 보존**한다.
+   `events: []` 도 정상 스냅샷이다(그 범위를 다 지운 사용자가 있다) — **잘못된 빈 목록을 막는
+   것은 FE 몫**이다(`CALENDAR-PROBE.md` §10).
+   `externalId` 는 **불투명 문자열**이라 서버가 파싱하지 않는다.
+   딸려 오는 서버 변경: `schedules.source`·`external_id`·`hidden` 추가(기존 행은 `MANUAL` 백필) ·
+   `(user_id, external_id)` 유일 · `ScheduleResponse` 에 `source`·`hidden` 노출 ·
+   `PATCH /schedules/{id}` 는 캘린더 일정에 **`hidden` 만** 허용 ·
+   **`DELETE` 는 `source = CALENDAR` 에 거부**(기기가 정본이므로 삭제는 화해로만 일어난다)
+2. ~~**훑는 범위**~~ — **✅ 정해졌다** (2026-08-14): **이전 달 1일 ~ 다음 달 말일**
+   (8월이면 `07-01 ~ 09-30`). 첫 연결과 이후 화해가 같은 규칙이라 창이 달마다 밀린다.
+   **삭제가 이 범위에 묶이므로 이것이 안전 장치다** — 창 밖으로 밀려난 과거는 서버에서
+   굳고, 위 ⚠ 의 대가(감정·마침 기록이 함께 사라진다)가 최근 3개월에만 미친다.
+   보내는 값과 공휴일 필터는 [`CALENDAR-PROBE.md` 「결정」](CALENDAR-PROBE.md)에 있다
 3. **연동을 껐을 때**(`M1` 연결 관리 · `09`) — 이미 올라간 캘린더 일정을 서버에서
    지우는가 남기는가. 위 결정과 같은 방향이면 지우는 쪽이고, 같은 대가를 치른다
 
