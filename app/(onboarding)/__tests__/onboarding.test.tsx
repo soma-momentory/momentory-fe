@@ -9,8 +9,10 @@ import Done from "../done";
 import Rest from "../rest";
 import RetroTime from "../retro-time";
 
+import { SESSION_KEY } from "@/features/auth/model/auth";
 import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
 import { UNSPECIFIED_GENDER, useDraft } from "@/features/onboarding/model/draft";
+import { requestCalendarAccess } from "@/lib/calendar";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -24,7 +26,20 @@ jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
   completeOnboarding: jest.fn(),
 }));
 
+/**
+ * `09` 의 OS 권한 다이얼로그. **경계 아래는 `lib/__tests__/calendar.test` 가 본다** —
+ * 여기서 보는 것은 「허용 여부가 초안에 그대로 옮겨진다 · 어느 쪽이든 막지 않는다」다.
+ */
+jest.mock("@/lib/calendar", () => ({ requestCalendarAccess: jest.fn() }));
+
+/** 첫 적재. 화면이 **기다리지 않는다**는 것만 보므로 호출 여부로 충분하다 */
+const mockCalendarSync = jest.fn();
+jest.mock("@/features/calendar/model/calendarSync", () => ({
+  useCalendarSync: { getState: () => ({ sync: mockCalendarSync }) },
+}));
+
 const submit = jest.mocked(completeOnboarding);
+const calendarAccess = jest.mocked(requestCalendarAccess);
 
 /** `08` 의 OS 권한 다이얼로그. 기본은 허용이고, 거부 경로만 각 테스트가 바꾼다 */
 const notifications = jest.requireMock("expo-notifications") as {
@@ -40,6 +55,7 @@ beforeEach(() => {
   notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   submit.mockResolvedValue({ ok: true, data: { onboardingRequired: false } });
+  calendarAccess.mockResolvedValue({ granted: true, canAskAgain: false });
 });
 
 const flatten = (style: unknown) =>
@@ -535,6 +551,50 @@ describe("09 · 캘린더", () => {
     const b = await render(<CalendarLink />);
     await fireEvent.press(b.getByText("캘린더 연결하기"));
     expect(useDraft.getState().calendarLinked).toBe(true);
+    expect(router.push).toHaveBeenCalledWith("/done");
+  });
+
+  it("허용하지 않으면 연결됐다고 하지 않는다 — 안내와 처리가 같아야 한다", async () => {
+    // 거부해도 온보딩은 이어진다. 다만 완료 화면은 `10-b` 가 된다
+    calendarAccess.mockResolvedValue({ granted: false, canAskAgain: false });
+
+    const { getByText } = await render(<CalendarLink />);
+    await fireEvent.press(getByText("캘린더 연결하기"));
+
+    expect(useDraft.getState().calendarLinked).toBe(false);
+    expect(router.push).toHaveBeenCalledWith("/done");
+  });
+
+  it("커스텀 권한 화면을 만들지 않는다 — OS 다이얼로그를 부른다", async () => {
+    const { getByText } = await render(<CalendarLink />);
+    await fireEvent.press(getByText("캘린더 연결하기"));
+
+    expect(calendarAccess).toHaveBeenCalledTimes(1);
+  });
+
+  it("허용했을 때만 첫 적재를 건다 — 화면은 기다리지 않는다", async () => {
+    // 적재는 사용자에게 묶인다 — 세션이 있어야 어느 사용자 것인지 정해진다
+    const secureStore = jest.requireMock("expo-secure-store") as { __store: Map<string, string> };
+    secureStore.__store.set(
+      SESSION_KEY,
+      JSON.stringify({
+        accessToken: "a",
+        refreshToken: "r",
+        expiresAt: Date.now() + 60_000,
+        userId: 7,
+      }),
+    );
+
+    const allowed = await render(<CalendarLink />);
+    await fireEvent.press(allowed.getByText("캘린더 연결하기"));
+    await waitFor(() => expect(mockCalendarSync).toHaveBeenCalledWith(7));
+
+    mockCalendarSync.mockClear();
+    calendarAccess.mockResolvedValue({ granted: false, canAskAgain: false });
+
+    const denied = await render(<CalendarLink />);
+    await fireEvent.press(denied.getByText("캘린더 연결하기"));
+    expect(mockCalendarSync).not.toHaveBeenCalled();
   });
 });
 

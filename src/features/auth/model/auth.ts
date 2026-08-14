@@ -6,6 +6,8 @@ import { requestKakaoAccessToken } from "@/features/auth/data/kakaoSdk";
 import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
 import { fetchMe } from "@/features/auth/data/meApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
+import { clearSyncState } from "@/features/calendar/data/syncStateStore";
+import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
@@ -66,6 +68,18 @@ export type Session = {
 
 /** SecureStore 키 — 세션의 유일한 자리. 미러를 만들지 않는다 */
 export const SESSION_KEY = "momentory.session";
+
+/**
+ * 지금 세션의 사용자 id. **store 에 미러를 두지 않는 규칙**(§3) 때문에 세션을
+ * 그때그때 읽는다 — 진실은 SecureStore 에 있다.
+ *
+ * 사용자마다 따로 눕는 것(캘린더 동기화 상태 등)을 다루는 쪽이 부른다. 그쪽이
+ * `auth` 를 import 하는 방향이어야 한다 — 반대로 하면 `auth` 가 이미 그 모듈들을
+ * 로그아웃에서 부르고 있어 **순환 import** 가 된다.
+ */
+export async function currentUserId(): Promise<number | null> {
+  return (await readSession())?.userId ?? null;
+}
 
 /**
  * 로그인 시도의 결과. **셋을 구분한다** — 취소는 오류가 아니고, SDK 실패와
@@ -217,7 +231,7 @@ const warnInDev = (reason: string) => {
  * 셋 다 도입 전이라 비울 것이 없다. 생기는 마일스톤에서 이 함수에 합류한다
  * (§3-5 · §4 "큐는 계정에 묶인다. 로그아웃 시 비운다").
  */
-const clearUserScopedStores = () => {
+const clearUserScopedStores = (userId?: number) => {
   useDraft.getState().reset();
   useOnboardingCompletion.getState().reset();
   useRetro.getState().reset();
@@ -226,6 +240,16 @@ const clearUserScopedStores = () => {
   useDay.getState().reset();
   useProfile.getState().reset();
   useSettings.getState().reset();
+  useCalendarSync.getState().reset();
+
+  // 캘린더 동기화 상태는 **기기에 눕는다** — 메모리를 비우는 것만으로는 부족하다.
+  // 남기면 다음 사용자가 앞 사람의 해시와 비교해 **자기 첫 동기화를 통째로
+  // 건너뛴다**(`syncStateStore.ts`). `userId` 를 모르면 지울 키도 없으므로
+  // 부르는 쪽이 세션을 지우기 **전에** 읽어 넘겨야 한다.
+  //
+  // 기다리지 않는다 — 로그아웃은 실패할 수 없는 동작이고(아래 `signOut` 주석),
+  // 지우지 못해도 키에 `userId` 가 박혀 있어 다른 계정이 그것을 보지는 않는다.
+  if (userId != null) void clearSyncState(userId);
 };
 
 /**
@@ -463,9 +487,11 @@ export const useAuth = create<AuthStore>((set, get) => ({
     }
 
     if (result.code === "unauthorized") {
-      // 갱신까지 마친 토큰을 서버가 거부했다 — 이건 일시적 실패가 아니다
+      // 갱신까지 마친 토큰을 서버가 거부했다 — 이건 일시적 실패가 아니다.
+      // 지우기 전에 세션을 읽는다 — 사용자별로 눕는 것을 비우려면 `userId` 가 필요하다
+      const session = await readSession();
       await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
-      clearUserScopedStores();
+      clearUserScopedStores(session?.userId);
       set({ status: "anonymous" });
     }
   },
@@ -549,7 +575,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
     const session = await readSession();
 
     await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
-    clearUserScopedStores();
+    clearUserScopedStores(session?.userId);
     set({ status: "anonymous", signInError: null });
 
     // 배웅 — **기다리지 않고 결과를 보지 않는다.** 이 기기에는 이미 세션이
