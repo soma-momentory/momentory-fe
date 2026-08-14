@@ -8,6 +8,7 @@ import { RowSeparator, SettingRow } from "@/components/my/SettingRow";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { paperColors, paperTypography } from "@/design/paper";
 import theme from "@/design/theme";
 import { warnRow } from "@/design/tokens.mvp";
 import { useSettings, type NotifyKey } from "@/features/my/model/settings";
@@ -47,6 +48,13 @@ import { dateAtTime, formatKoreanTime, toHHMM } from "@/lib/time";
  *
  * **「새로운 소식」은 권한을 묻지 않는다** — 서버 푸시가 필요한 설정인데 MVP 에
  * 푸시 인프라가 없다. 지금은 값만 받아 둔다(`features/my/model/reminders.ts`).
+ *
+ * ## 새 디자인 (2026-08-14 · `PLAN.md` Phase 3-7)
+ *
+ * 종이 배경 · 초록 스위치 · **시각을 시간 칩으로**(시안 마이 시트의 타임칩).
+ * 시안은 20:00~23:00 중에서 고르는 칩 넷이지만 **여기는 OS 피커를 유지한다** —
+ * 정한 시각을 네 개로 줄이면 `08` 에서 아무 시각이나 고른 사람이 그 값을 잃는다.
+ * 칩은 지금 시각을 보여주고 누르면 피커가 열린다.
  */
 const ROWS: readonly { key: NotifyKey; label: string; note: (time: string | null) => string }[] = [
   { key: "retro", label: "회고 시간 알림", note: (t) => `매일 ${formatKoreanTime(t ?? "21:30")}` },
@@ -107,11 +115,11 @@ export default function NotifySettings() {
   const blocked = permission != null && !permission.granted && !permission.canAskAgain;
 
   return (
-    <ScreenBackground>
-      <RetroNav title="알림 설정" rest={false} />
+    <ScreenBackground variant="paperFlat">
+      <RetroNav title="알림 설정" rest={false} variant="paper" />
 
       <View style={styles.body}>
-        <Card style={styles.rows}>
+        <Card variant="paperOpaque" style={styles.rows}>
           {ROWS.map((row, i) => {
             const setting = notify[row.key];
             const note = row.note(setting.time);
@@ -121,6 +129,8 @@ export default function NotifySettings() {
                 <SettingRow
                   label={row.label}
                   value={note.length > 0 ? note : undefined}
+                  // 시각은 **칩**으로 보인다 — 켜짐은 스위치가 함께 말한다(색만으로 표시하지 않는다)
+                  chip={note.length > 0 ? (setting.enabled ? "on" : "off") : undefined}
                   // 시각이 있는 줄만 눌러 고친다 — 없는 줄에는 표식도 두지 않는다
                   onPress={setting.time == null ? undefined : () => setEditing(row.key)}
                   trailing={
@@ -128,6 +138,7 @@ export default function NotifySettings() {
                       value={setting.enabled}
                       onChange={() => void onToggle(row.key)}
                       accessibilityLabel={row.label}
+                      variant="paper"
                     />
                   }
                 />
@@ -145,14 +156,14 @@ export default function NotifySettings() {
 
         {/* 거부는 한 줄로 흡수한다 — 모달도 재시도 버튼도 경고 아이콘도 없다 */}
         {blocked ? (
-          <AppText variant="caption" tone="caption" style={styles.blockedNote}>
+          <AppText style={styles.blockedNote}>
             기기 설정에서 알림을 켜면 이 시간에 찾아갈게요.
           </AppText>
         ) : null}
 
         {/* 확정된 범위만 말한다 — 지킬 수 없는 약속을 쓰지 않는다 */}
         <View style={styles.warn}>
-          <AppText tone="accent" weight="500" style={styles.warnText}>
+          <AppText style={styles.warnText}>
             기록 보호 방식은 개인정보 처리방침에서 확인할 수 있어요
           </AppText>
         </View>
@@ -161,16 +172,29 @@ export default function NotifySettings() {
   );
 }
 
+const { styles: type } = paperTypography;
+
 const styles = StyleSheet.create({
   body: { flex: 1, gap: 10, paddingTop: theme.layout.gap.element },
-  rows: { paddingVertical: 4, gap: 0 },
+  // 줄 여백은 각 줄이 만든다 — 카드는 면과 라운드만 준다
+  rows: { paddingVertical: 4, paddingHorizontal: 0, gap: 0 },
   // 카드 밖 한 줄 — 카드 안에 넣으면 설정 항목처럼 읽힌다
-  blockedNote: { paddingHorizontal: 2, lineHeight: 20 },
+  blockedNote: {
+    paddingHorizontal: 2,
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight * 1.2,
+    color: paperColors.text.green,
+  },
   warn: {
     borderRadius: warnRow.radius,
     paddingVertical: warnRow.paddingVertical,
     paddingHorizontal: warnRow.paddingHorizontal,
-    backgroundColor: warnRow.background,
+    backgroundColor: paperColors.bg.fieldAlt,
   },
-  warnText: { fontSize: warnRow.fontSize, lineHeight: warnRow.fontSize * 1.55 },
+  // 시안의 sand 는 장식 전용이라 글자는 green 이다 (fieldAlt 위 4.86 AA)
+  warnText: {
+    fontSize: type.label.fontSize,
+    lineHeight: type.label.fontSize * 1.55,
+    color: paperColors.text.green,
+  },
 });

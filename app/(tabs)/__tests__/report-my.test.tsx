@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import My from "../my";
 import Report from "../report";
 
-import { text as textColor } from "@/design/tokens.mvp";
+import { paperColors } from "@/design/paper";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
 
@@ -88,7 +88,34 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     const r = await render(<Report />);
 
     expect(r.getByText("3번 만들었고 · 2번 해봤어요")).toBeTruthy();
-    expect(r.queryByText(/실행률|%|연속|최고 기록/)).toBeNull();
+    // `%` 는 도넛의 감정 **비율**에만 쓴다(`app-flow.md` §2.6) — 실행률·달성률이 아니다
+    expect(r.queryByText(/실행률|달성률|연속|최고 기록/)).toBeNull();
+  });
+
+  it("감정 도넛은 비율과 이름을 함께 말한다 — 색만으로 판단하게 하지 않는다", async () => {
+    // 7/20 주 — 평온함 3 · 그 밖 7 (감정 기록 10개). 가운데는 최다 감정으로 연다
+    const r = await render(<Report />);
+
+    expect(r.getByLabelText(/주간 감정 비율/)).toBeTruthy();
+    expect(r.getByText("30%")).toBeTruthy();
+    // 범례 칩 — 고른 칩은 면·테두리·굵기가 함께 바뀐다
+    expect(r.getByLabelText("평온함 30%").props.accessibilityState.selected).toBe(true);
+  });
+
+  it("범례를 누르면 도넛 가운데가 그 감정으로 바뀐다", async () => {
+    const r = await render(<Report />);
+    const second = r.getByLabelText("뿌듯함 20%");
+
+    await fireEvent.press(second);
+
+    expect(second.props.accessibilityState.selected).toBe(true);
+    expect(r.getByText("20%")).toBeTruthy();
+  });
+
+  it("초록 통계 패널이 근거 수치를 모아 말한다", async () => {
+    const r = await render(<Report />);
+
+    expect(r.getByText("이 주의 기록 보러가기")).toBeTruthy();
   });
 
   it("점수·등급·배지를 쓰지 않는다", async () => {
@@ -109,26 +136,25 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
 });
 
 describe("M1 · 마이 홈", () => {
-  it("같은 값을 두 칸에 넣지 않는다 — 세는 대상이 다르다", async () => {
+  it("프로필은 닉네임과 회고 수 한 줄이다 — 통계 3칸은 새 디자인에서 빠졌다", async () => {
     const r = await render(<My />);
 
-    expect(r.getByText("12회")).toBeTruthy();
-    expect(r.getByText("총 회고")).toBeTruthy();
-    expect(r.getByText("12일")).toBeTruthy();
-    expect(r.getByText("함께한 날")).toBeTruthy();
+    expect(r.getByText("지현")).toBeTruthy();
+    expect(r.getByText("총 회고 12회")).toBeTruthy();
   });
 
-  it("가장 많이 기록한 감정은 전체 기간 기준이다 — 보관함·리포트와 다르다", async () => {
+  it("연속 일수·점수·배지를 쓰지 않는다 — 「총 회고 12회」다", async () => {
     const r = await render(<My />);
 
-    expect(r.getByText("화남/답답")).toBeTruthy();
-  });
-
-  it("연속 일수·점수·배지를 쓰지 않는다 — 「일기 12편」이다", async () => {
-    const r = await render(<My />);
-
-    expect(r.getByText("밤 9:30 회고 · 일기 12편")).toBeTruthy();
     expect(r.queryByText(/일째|연속|점수|배지/)).toBeNull();
+  });
+
+  it("설정을 세 무리로 묶는다 — 앱 설정 · 지원 · 계정", async () => {
+    const r = await render(<My />);
+
+    for (const label of ["앱 설정", "지원", "계정"]) {
+      expect(r.getByText(label)).toBeTruthy();
+    }
   });
 
   it("온보딩 여섯 질문의 편집 경로가 빠짐없이 있다", async () => {
@@ -162,17 +188,20 @@ describe("M1 · 마이 홈", () => {
       expect(rowOf(label)?.parent?.props.accessibilityRole).toBe("button");
     }
     // 아직 갈 곳이 없는 줄 — 눌리지 않는다
-    for (const label of ["연결 관리", "약관 및 정책", "문의하기", "회원 탈퇴"]) {
+    for (const label of ["연결 관리", "약관 및 정책", "문의하기"]) {
       expect(rowOf(label)?.parent?.props.accessibilityRole).not.toBe("button");
     }
   });
 
   it("회원 탈퇴는 확인 화면이 없어 아직 실행되지 않는다", async () => {
-    // 되돌릴 수 없는 동작을 확인 없이 실행하지 않는다 (my.pendingStates)
+    // 되돌릴 수 없는 동작을 확인 없이 실행하지 않는다 (my.pendingStates).
+    // 시안의 바닥 밑줄 텍스트 자리에 있지만 **아직 눌리지 않고**, 왜 그런지를
+    // 바로 아래 한 줄이 말한다
     const r = await render(<My />);
 
     expect(r.getByText("회원 탈퇴")).toBeTruthy();
     expect(r.getByText("회원 탈퇴").parent?.parent?.props.accessibilityRole).not.toBe("button");
+    expect(r.getAllByText("준비 중").length).toBeGreaterThanOrEqual(1);
   });
 
   it("기본 정보도 편집 화면으로 이어진다", async () => {
@@ -182,12 +211,14 @@ describe("M1 · 마이 홈", () => {
     expect(jest.mocked(router.push)).toHaveBeenCalledWith("/my/profile");
   });
 
-  it("회원 탈퇴는 로그아웃과 줄을 나누고 dangerInk 글자를 쓴다", async () => {
+  it("회원 탈퇴는 계정 카드 밖에 홀로 있다 — 로그아웃과 같은 무게로 보이지 않게", async () => {
+    // 시안의 위험 동작은 면을 채우지 않고 바닥의 한 줄이다.
+    // 언덕(#C7D3C0) 위라 글자는 greenStrong 이다 — danger 계열은 이 면에서 AA 미달
     const r = await render(<My />);
     const style = [r.getByText("회원 탈퇴").props.style].flat(Infinity).filter(Boolean);
 
     expect(r.getByText("로그아웃")).toBeTruthy();
-    expect(Object.assign({}, ...style).color).toBe(textColor.danger);
+    expect(Object.assign({}, ...style).color).toBe(paperColors.text.greenStrong);
   });
 
   it("회고 프로필로 갈 수 있다", async () => {
@@ -211,11 +242,11 @@ describe("W1 · 주차 이동 — 수치와 해석이 함께 바뀐다", () => {
 
   it("① 이전 주로 이동하면 날짜 범위가 바뀐다", async () => {
     const r = await render(<Report />);
-    expect(r.getByText("7월 20일 – 7월 26일")).toBeTruthy();
+    expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy();
 
     await prev(r);
 
-    expect(r.getByText("7월 13일 – 7월 19일")).toBeTruthy();
+    expect(r.getByText("7월 13일 ~ 7월 19일")).toBeTruthy();
   });
 
   it("② 회고·감정 수치가 바뀐다", async () => {
@@ -269,7 +300,7 @@ describe("W1 · 주차 이동 — 수치와 해석이 함께 바뀐다", () => {
 
     await fireEvent.press(r.getByLabelText("다음 주"));
 
-    expect(r.getByText("7월 20일 – 7월 26일")).toBeTruthy();
+    expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy();
     expect(r.getByText("다시 균형 찾기")).toBeTruthy();
     expect(r.getByText("3번 만들었고 · 2번 해봤어요")).toBeTruthy();
   });
@@ -289,7 +320,7 @@ describe("W1 · 주차 이동 — 수치와 해석이 함께 바뀐다", () => {
     expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(false);
 
     await prev(r); // 눌러도 그대로다
-    expect(r.getByText("7월 13일 – 7월 19일")).toBeTruthy();
+    expect(r.getByText("7월 13일 ~ 7월 19일")).toBeTruthy();
   });
 
   it("「이전 주 N회」도 계산한다 — 앞 주가 없으면 비교하지 않는다", async () => {

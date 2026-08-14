@@ -20,7 +20,7 @@ beforeEach(() => {
 
 describe("A1 · 보관함 달력", () => {
   it("탭 이름은 「달력」이다 — 「캘린더」라고 쓰지 않는다", async () => {
-    // 외부 캘린더 앱과 구분한다 (A1.md)
+    // 외부 캘린더 앱과 구분한다 (A1.md) — 시안의 「캘린더/리스트」를 따르지 않는다
     const { getByText, queryByText } = await render(<Archive />);
 
     expect(getByText("달력")).toBeTruthy();
@@ -28,36 +28,26 @@ describe("A1 · 보관함 달력", () => {
     expect(queryByText("캘린더")).toBeNull();
   });
 
-  it("요약 3칸은 기록 수치만 쓴다", async () => {
-    const { getByText } = await render(<Archive />);
-
-    expect(getByText("12편")).toBeTruthy();
-    expect(getByText("이번 달 기록")).toBeTruthy();
-    expect(getByText("가장 많이 기록")).toBeTruthy();
-  });
-
-  it("이번 달 가장 많이 기록한 감정은 행복함이다", async () => {
-    // 기간마다 다른 값이다 — 한 값을 세 곳에 넣지 않는다 (RULES 샘플 데이터)
-    const { getByText } = await render(<Archive />);
-
-    expect(getByText("행복함")).toBeTruthy();
-  });
-
-  it("지난달과 비교는 얼마나 줄었는지를 말한다 — 화살표가 아니다", async () => {
-    const { getByText, queryByText } = await render(<Archive />);
-
-    expect(getByText("불안 2회 감소")).toBeTruthy();
-    expect(getByText("지난달과 비교")).toBeTruthy();
-    expect(queryByText(/↓|↑/)).toBeNull();
-  });
-
-  it("연속 일수를 세지 않는다", async () => {
+  it("연속 일수를 세지 않고 화살표로 압박하지 않는다", async () => {
     const { queryByText } = await render(<Archive />);
 
     expect(queryByText(/연속|일째|스트릭/)).toBeNull();
+    expect(queryByText(/↓|↑/)).toBeNull();
   });
 
-  it("일기가 있는 날만 누를 수 있고 감정 점이 붙는다", async () => {
+  it("여는 달은 오늘이 속한 달이고 `‹ ›` 로 옮긴다", async () => {
+    const r = await render(<Archive />);
+
+    expect(r.getByText("2026년 7월")).toBeTruthy();
+
+    await fireEvent.press(r.getByLabelText("이전 달"));
+    expect(r.getByText("2026년 6월")).toBeTruthy();
+
+    await fireEvent.press(r.getByLabelText("다음 달"));
+    expect(r.getByText("2026년 7월")).toBeTruthy();
+  });
+
+  it("일기가 있는 날도 없는 날도 칸은 있다", async () => {
     const { getByLabelText } = await render(<Archive />);
 
     // 7월 22일은 일기가 있다
@@ -71,8 +61,9 @@ describe("A1 · 보관함 달력", () => {
 
     await fireEvent.press(r.getByLabelText("22일"));
 
+    expect(r.getByText("7월 22일의 기록")).toBeTruthy();
     expect(r.getByText("7월 22일 수요일")).toBeTruthy();
-    expect(r.getByText("화남/답답")).toBeTruthy(); // 점이 아니라 이름으로
+    expect(r.getByText("화남/답답")).toBeTruthy(); // 얼굴이 아니라 이름으로
     expect(r.getByText("뿌듯함")).toBeTruthy();
     expect(r.getByText("일기 열어보기 ›")).toBeTruthy();
   });
@@ -84,11 +75,13 @@ describe("A1 · 보관함 달력", () => {
     expect(r.queryByText(/전체 일기 보기/)).toBeNull();
   });
 
-  it("일기가 없는 날을 고르면 카드가 뜨지 않는다", async () => {
+  it("일기가 없는 날은 같은 자리에 한 장만 바뀐다 — 빈 상태 전용 화면이 아니다", async () => {
     const r = await render(<Archive />);
 
     await fireEvent.press(r.getByLabelText("23일"));
 
+    expect(r.getByText("7월 23일의 기록")).toBeTruthy();
+    expect(r.getByText(/이 날은 기록이 없어요/)).toBeTruthy();
     expect(r.queryByText("일기 열어보기 ›")).toBeNull();
   });
 
@@ -102,7 +95,7 @@ describe("A1 · 보관함 달력", () => {
 });
 
 describe("A2 · 보관함 목록 + 감정 필터", () => {
-  /** 감정 이름은 요약칸·알약에도 나온다 — 필터 안에서만 찾는다 */
+  /** 감정 이름은 알약에도 나온다 — 필터 안에서만 찾는다 */
   const openList = async () => {
     const r = await render(<Archive />);
     await fireEvent.press(r.getByText("목록"));
@@ -128,12 +121,19 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     }
   });
 
-  it("「전체 24」의 24 는 감정 기록 수다 — 「12편」과 다른 값", async () => {
-    // 일기 12편 × 감정 2개 (A2.md)
-    const { r, filter } = await openList();
+  it("「전체」 칩은 없다 — 고른 칩을 다시 눌러 푼다", async () => {
+    // 새 디자인 §4.4 — 초기화 버튼을 따로 두지 않는다
+    const { r, filter, chip } = await openList();
 
-    expect(filter.getByText("전체 24")).toBeTruthy();
-    expect(r.getByText("12편")).toBeTruthy();
+    expect(filter.queryByText(/전체/)).toBeNull();
+
+    await fireEvent.press(filter.getByText("우울함"));
+    expect(chip("우울함")?.props.accessibilityState.selected).toBe(true);
+    expect(r.queryByText("7월 22일 수요일")).toBeNull();
+
+    await fireEvent.press(filter.getByText("우울함"));
+    expect(chip("우울함")?.props.accessibilityState.selected).toBe(false);
+    expect(r.getByText("7월 22일 수요일")).toBeTruthy();
   });
 
   it("한 번에 하나만 고른다 — 다른 감정을 누르면 앞 선택이 풀린다", async () => {
@@ -141,27 +141,22 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
 
     await fireEvent.press(filter.getByText("행복함"));
     expect(chip("행복함")?.props.accessibilityState.selected).toBe(true);
-    expect(chip("전체 24")?.props.accessibilityState.selected).toBe(false);
 
     await fireEvent.press(filter.getByText("평온함"));
     expect(chip("행복함")?.props.accessibilityState.selected).toBe(false);
     expect(chip("평온함")?.props.accessibilityState.selected).toBe(true);
   });
 
-  it("[전체] 는 초기화다", async () => {
+  it("고른 칩은 색뿐 아니라 테두리·글자 굵기로도 표시한다", async () => {
     const { filter, chip } = await openList();
-    await fireEvent.press(filter.getByText("행복함"));
-    await fireEvent.press(filter.getByText("전체 24"));
 
-    expect(chip("전체 24")?.props.accessibilityState.selected).toBe(true);
-  });
+    expect(flatten(filter.getByText("평온함").props.style).fontFamily).toBe("Pretendard-Regular");
+    expect(flatten(chip("평온함")?.props.style).borderWidth).toBe(1);
 
-  it("고른 칩은 색뿐 아니라 글자 굵기로도 표시한다", async () => {
-    const { filter } = await openList();
-
-    expect(flatten(filter.getByText("평온함").props.style).fontFamily).toBe("Pretendard-Medium");
     await fireEvent.press(filter.getByText("평온함"));
-    expect(flatten(filter.getByText("평온함").props.style).fontFamily).toBe("Pretendard-SemiBold");
+
+    expect(flatten(filter.getByText("평온함").props.style).fontFamily).toBe("Pretendard-Bold");
+    expect(flatten(chip("평온함")?.props.style).borderWidth).toBe(2);
   });
 
   it("기본 정렬은 최신순이고 정렬 옵션을 두지 않는다", async () => {
@@ -181,6 +176,23 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     expect(r.getByText("7월 27일 월요일")).toBeTruthy();
     expect(r.getByText("7월 17일 금요일")).toBeTruthy();
     expect(r.queryByText("7월 22일 수요일")).toBeNull();
+  });
+
+  it("검색은 일기 본문을 찾는다", async () => {
+    const { r } = await openList();
+
+    await fireEvent.changeText(r.getByLabelText("일기 내용 검색"), "회의");
+
+    expect(r.getByText("7월 22일 수요일")).toBeTruthy();
+    expect(r.queryByText("7월 27일 월요일")).toBeNull();
+  });
+
+  it("결과가 없으면 같은 자리에 한 줄만 남는다", async () => {
+    const { r } = await openList();
+
+    await fireEvent.changeText(r.getByLabelText("일기 내용 검색"), "없는말없는말");
+
+    expect(r.getByText("조건에 맞는 일기가 없어요.")).toBeTruthy();
   });
 
   it("미리보기는 두 줄 말줄임이다 — 목록이 벽이 되지 않게", async () => {
@@ -235,16 +247,9 @@ describe("삭제 되돌리기 — 확인 모달 대신 되돌릴 길을 남긴�
     expect(useDiary.getState().recentlyDeleted).toBeNull();
     jest.useRealTimers();
   });
-
-  it("삭제하면 12편이 11편이 된다 — 요약도 함께 준다", async () => {
-    useDiary.getState().remove(ID);
-    const r = await render(<Archive />);
-
-    expect(r.getByText("11편")).toBeTruthy();
-  });
 });
 
-describe("하단 탭 — 네 칸이 전부 이어진다", () => {
+describe("하단 탭 — 다섯 칸이 전부 이어진다", () => {
   const tabNamed = (r: Awaited<ReturnType<typeof render>>, name: string) =>
     r.getAllByRole("tab").find((t) => within(t).queryByText(name) != null);
 
