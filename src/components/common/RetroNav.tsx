@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { EmotionPill } from "@/components/common/EmotionPill";
 import { AppText } from "@/components/primitives/AppText";
+import { paperColors, paperTypography } from "@/design/paper";
 import { type EmotionId } from "@/design/theme";
 import { retroNav } from "@/design/tokens.mvp";
 
@@ -34,9 +35,23 @@ type Props = {
   rest?: boolean;
   onBack?: () => void;
   onRest?: () => void;
+  /**
+   * 새 디자인의 상단 — 글자색만 종이 톤으로 바꾼다(`PLAN.md` Phase 2 opt-in).
+   * 회고·일기가 같은 컴포넌트를 쓰므로 **기본값은 그대로**다.
+   */
+  variant?: "default" | "paper";
 };
 
-export function RetroNav({ title, emotion, rest = true, onBack, onRest }: Props) {
+export function RetroNav({
+  title,
+  emotion,
+  rest = true,
+  onBack,
+  onRest,
+  variant = "default",
+}: Props) {
+  const paper = variant === "paper";
+
   return (
     <View style={styles.nav}>
       <Pressable
@@ -46,13 +61,17 @@ export function RetroNav({ title, emotion, rest = true, onBack, onRest }: Props)
         hitSlop={11}
         onPress={onBack ?? (() => router.back())}
       >
-        <AppText tone="body" style={styles.chevron}>
+        <AppText tone="body" style={[styles.chevron, paper ? styles.inkPaper : null]}>
           ‹
         </AppText>
       </Pressable>
 
       {title != null ? (
-        <AppText tone="strong" weight="600" style={styles.title}>
+        <AppText
+          tone="strong"
+          weight={paper ? "700" : "600"}
+          style={[styles.title, paper ? styles.titlePaper : null]}
+        >
           {title}
         </AppText>
       ) : null}
@@ -60,7 +79,7 @@ export function RetroNav({ title, emotion, rest = true, onBack, onRest }: Props)
       {/* 제목이 없어도 오른쪽 것들이 끝으로 밀리게 자리를 채운다 */}
       <View style={styles.spacer} />
 
-      {emotion != null ? <EmotionPill id={emotion} /> : null}
+      {emotion != null ? <EmotionPill id={emotion} variant={paper ? "paper" : "default"} /> : null}
 
       {rest ? (
         <Pressable
@@ -70,7 +89,7 @@ export function RetroNav({ title, emotion, rest = true, onBack, onRest }: Props)
           // 남은 값은 이 앱 세션 동안만 유효하다 (위 주석)
           onPress={onRest ?? (() => router.replace("/home"))}
         >
-          <AppText tone="caption" style={styles.rest}>
+          <AppText tone="caption" style={[styles.rest, paper ? styles.restPaper : null]}>
             잠시 쉬기
           </AppText>
         </Pressable>
@@ -90,4 +109,13 @@ const styles = StyleSheet.create({
   title: { fontSize: retroNav.titleSize, lineHeight: retroNav.titleSize },
   spacer: { flex: 1 },
   rest: { fontSize: retroNav.restSize, lineHeight: retroNav.restSize * 1.3 },
+
+  // ── 새 디자인 ────────────────────────────────────────────────────────
+  inkPaper: { color: paperColors.text.primary },
+  titlePaper: {
+    fontSize: paperTypography.styles.cardTitle.fontSize,
+    lineHeight: paperTypography.styles.cardTitle.lineHeight,
+    color: paperColors.text.primary,
+  },
+  restPaper: { color: paperColors.text.green },
 });

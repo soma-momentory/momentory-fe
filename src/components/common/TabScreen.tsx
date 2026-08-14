@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { ScreenBackground, type BackgroundVariant } from "@/components/primitives/ScreenBackground";
 
 import { TabBar, type TabName } from "./TabBar";
 
@@ -17,8 +17,9 @@ import { TabBar, type TabName } from "./TabBar";
  * `replace` 인 이유 — 탭은 쌓이는 화면이 아니다. `push` 로 오가면 뒤로가기가
  * 탭 이동 이력을 되짚어 홈에서 나가기까지 여러 번 눌러야 한다.
  */
-const ROUTES: Record<TabName, "/home" | "/archive" | "/report" | "/my"> = {
+const ROUTES: Record<TabName, "/home" | "/rest" | "/archive" | "/report" | "/my"> = {
   홈: "/home",
+  쉼터: "/rest",
   보관함: "/archive",
   리포트: "/report",
   마이: "/my",
@@ -29,9 +30,22 @@ type Props = {
   children: ReactNode;
   /** 기본 동작(탭 이동)을 바꿔야 할 때만 */
   onTabPress?: (tab: TabName) => void;
+  /**
+   * 새 디자인 배경 opt-in (`PLAN.md` Phase 3) — 화면이 리스킨될 때
+   * `paperSky`(보관함·마이) 등으로 바꾼다. 기본은 옛 라디얼 그대로.
+   */
+  background?: BackgroundVariant;
+  /** 화면 맨 위가 배경과 다른 면일 때 상태바 밑까지 맞춘다 (홈의 날씨 하늘) */
+  surfaceColor?: string;
 };
 
-export function TabScreen({ active, children, onTabPress }: Props) {
+export function TabScreen({
+  active,
+  children,
+  onTabPress,
+  background = "screen",
+  surfaceColor,
+}: Props) {
   const go = (tab: TabName) => {
     if (onTabPress != null) {
       onTabPress(tab);
@@ -43,7 +57,7 @@ export function TabScreen({ active, children, onTabPress }: Props) {
   };
 
   return (
-    <ScreenBackground>
+    <ScreenBackground variant={background} surfaceColor={surfaceColor}>
       <View style={styles.body}>{children}</View>
       <TabBar active={active} onPress={go} />
     </ScreenBackground>

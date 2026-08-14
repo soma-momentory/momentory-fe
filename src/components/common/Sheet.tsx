@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
+import { paperColors, paperRadius, paperTypography } from "@/design/paper";
 import theme from "@/design/theme";
 import { sheet } from "@/design/tokens.mvp";
 
@@ -32,21 +33,27 @@ type Props = {
   grab?: boolean;
   /** 스크림을 눌렀을 때. 기본은 닫기 */
   onDismiss?: () => void;
+  /**
+   * 새 디자인 — 딤 `rgba(48,38,28,.32)` · 시트 `r22` · 그랩 `38×4`
+   * (`docs/design/design-system.md` §4.7). 리스킨된 화면만 opt-in 한다.
+   */
+  variant?: "default" | "paper";
 };
 
-export function Sheet({ children, grab = true, onDismiss }: Props) {
+export function Sheet({ children, grab = true, onDismiss, variant = "default" }: Props) {
   const dismiss = onDismiss ?? (() => router.back());
+  const paper = variant === "paper";
 
   return (
     <View style={styles.root}>
       <Pressable
-        style={styles.scrim}
+        style={[styles.scrim, paper ? styles.scrimPaper : null]}
         accessibilityRole="button"
         accessibilityLabel="닫기"
         onPress={dismiss}
       />
-      <View style={styles.sheet}>
-        {grab ? <View style={styles.grab} /> : null}
+      <View style={[styles.sheet, paper ? styles.sheetPaper : null]}>
+        {grab ? <View style={[styles.grab, paper ? styles.grabPaper : null]} /> : null}
         {children}
       </View>
     </View>
@@ -65,22 +72,30 @@ export function SheetHeader({
   onCancel,
   onSave,
   saveDisabled = false,
+  variant = "default",
 }: {
   title: string;
   onCancel?: () => void;
   onSave: () => void;
   /** 제목이 비면 저장이 잠긴다(`12-e.md`) */
   saveDisabled?: boolean;
+  variant?: "default" | "paper";
 }) {
+  const paper = variant === "paper";
+
   return (
     <View style={styles.top}>
       <Pressable accessibilityRole="button" hitSlop={8} onPress={onCancel ?? (() => router.back())}>
-        <AppText tone="caption" style={styles.action}>
+        <AppText tone="caption" style={[styles.action, paper ? styles.cancelPaper : null]}>
           취소
         </AppText>
       </Pressable>
 
-      <AppText tone="strong" weight="600" style={styles.title}>
+      <AppText
+        tone="strong"
+        weight={paper ? "700" : "600"}
+        style={[styles.title, paper ? styles.titlePaper : null]}
+      >
         {title}
       </AppText>
 
@@ -94,8 +109,12 @@ export function SheetHeader({
         {/* 잠긴 저장은 흐려질 뿐 사라지지 않는다 — 다음이 있다는 사실은 남는다 */}
         <AppText
           tone="accent"
-          weight="600"
-          style={[styles.action, saveDisabled ? styles.disabled : null]}
+          weight={paper ? "700" : "600"}
+          style={[
+            styles.action,
+            paper ? styles.savePaper : null,
+            saveDisabled ? styles.disabled : null,
+          ]}
         >
           저장
         </AppText>
@@ -137,4 +156,22 @@ const styles = StyleSheet.create({
   action: { minHeight: theme.touch.minTarget, fontSize: 15, lineHeight: theme.touch.minTarget },
   title: { fontSize: 14, lineHeight: 14 },
   disabled: { opacity: 0.36 },
+
+  // ── 새 디자인 ────────────────────────────────────────────────────────
+  scrimPaper: { backgroundColor: paperColors.overlay.dim },
+  sheetPaper: {
+    backgroundColor: paperColors.bg.cardOpaque,
+    borderTopLeftRadius: paperRadius.sheet,
+    borderTopRightRadius: paperRadius.sheet,
+    paddingTop: 12,
+    paddingBottom: 26,
+  },
+  grabPaper: { width: 38, height: 4, backgroundColor: paperColors.line.grab },
+  cancelPaper: { color: paperColors.text.mutedWarmText },
+  titlePaper: {
+    fontSize: paperTypography.styles.bodyLg.fontSize,
+    lineHeight: paperTypography.styles.bodyLg.lineHeight,
+    color: paperColors.text.primary,
+  },
+  savePaper: { color: paperColors.brand.greenDark },
 });

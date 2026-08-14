@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
+import { paperColors, paperRadius, paperShadows } from "@/design/paper";
 import theme from "@/design/theme";
 import { segBar } from "@/design/tokens.mvp";
 
@@ -26,11 +27,18 @@ type Props = {
   items: readonly [string, string];
   activeIndex: 0 | 1;
   onChange: (index: 0 | 1) => void;
+  /**
+   * 새 디자인 — 종이 트랙 위에 **밝은 썸이 미끄러지는** 모양
+   * (`일기.dc.html` · `보관함.dc.html`). 리스킨된 화면만 opt-in 한다.
+   */
+  variant?: "default" | "paper";
 };
 
-export function SegBar({ items, activeIndex, onChange }: Props) {
+export function SegBar({ items, activeIndex, onChange, variant = "default" }: Props) {
+  const paper = variant === "paper";
+
   return (
-    <View style={styles.track}>
+    <View style={[styles.track, paper ? styles.trackPaper : null]}>
       {items.map((label, i) => {
         const on = i === activeIndex;
         return (
@@ -39,9 +47,17 @@ export function SegBar({ items, activeIndex, onChange }: Props) {
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(i as 0 | 1)}
-            style={[styles.item, on ? styles.itemOn : null]}
+            style={[
+              styles.item,
+              on ? styles.itemOn : null,
+              paper ? (on ? styles.itemOnPaper : styles.itemOffPaper) : null,
+            ]}
           >
-            <AppText tone={on ? "strong" : "body"} weight="600" style={styles.label}>
+            <AppText
+              tone={on ? "strong" : "body"}
+              weight={paper && on ? "700" : "600"}
+              style={[styles.label, paper ? styles.labelPaper : null]}
+            >
               {label}
             </AppText>
           </Pressable>
@@ -71,4 +87,14 @@ const styles = StyleSheet.create({
     ...theme.shadows.sm,
   },
   label: { fontSize: segBar.item.fontSize, lineHeight: segBar.item.minHeight },
+
+  // ── 새 디자인 ────────────────────────────────────────────────────────
+  trackPaper: { backgroundColor: "rgba(237,230,210,0.6)", borderRadius: paperRadius.sheet },
+  itemOnPaper: {
+    backgroundColor: paperColors.bg.cardSoft,
+    borderRadius: paperRadius.sheet - 4,
+    ...paperShadows.flat,
+  },
+  itemOffPaper: { backgroundColor: "transparent" },
+  labelPaper: { color: paperColors.text.primary },
 });

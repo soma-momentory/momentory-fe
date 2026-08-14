@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
+import { paperColors, paperEmotionColor, paperRadius } from "@/design/paper";
 import theme, { type EmotionId } from "@/design/theme";
 import { emotionPill } from "@/design/tokens.mvp";
 
@@ -21,21 +22,38 @@ import { emotionPill } from "@/design/tokens.mvp";
  */
 type Props = {
   id: EmotionId;
+  /**
+   * 새 디자인의 감정 칩 — **면이 감정색 원색**이고 점이 없다
+   * (`design-system.md` §4.4). 색 위의 글자는 잉크라 대비가 4.5 를 넘는다.
+   */
+  variant?: "default" | "paper";
 };
 
-export function EmotionPill({ id }: Props) {
+export function EmotionPill({ id, variant = "default" }: Props) {
   const emotion = theme.emotions[id - 1];
   if (emotion == null) return null;
+  const paper = variant === "paper";
 
   return (
     <View
       // 낭독기에는 「불안함 감정」 하나로 읽힌다 — 점과 이름을 따로 읽으면 두 번이다
       accessibilityRole="text"
       accessibilityLabel={`${emotion.name} 감정`}
-      style={[styles.pill, { backgroundColor: `${emotion.base}${emotionPill.fillAlpha}` }]}
+      style={[
+        styles.pill,
+        paper ? styles.pillPaper : null,
+        {
+          backgroundColor: paper
+            ? paperEmotionColor(id)
+            : `${emotion.base}${emotionPill.fillAlpha}`,
+        },
+      ]}
     >
-      <View style={[styles.dot, { backgroundColor: emotion.ink }]} />
-      <AppText weight="600" style={[styles.label, { color: emotion.ink }]}>
+      {paper ? null : <View style={[styles.dot, { backgroundColor: emotion.ink }]} />}
+      <AppText
+        weight={paper ? "700" : "600"}
+        style={[styles.label, { color: paper ? paperColors.text.primary : emotion.ink }]}
+      >
         {emotion.name}
       </AppText>
     </View>
@@ -59,4 +77,10 @@ const styles = StyleSheet.create({
   },
   // css 11.5px/1 — 줄간격 1 이라 프리셋(footnote 18)을 쓰면 알약이 세로로 늘어난다
   label: { fontSize: emotionPill.fontSize, lineHeight: emotionPill.fontSize },
+  // 시안의 감정 칩 — padding 6/13 · radius 16 · 테두리 없음
+  pillPaper: {
+    paddingVertical: 6,
+    paddingHorizontal: 13,
+    borderRadius: paperRadius.chip,
+  },
 });
