@@ -1,11 +1,11 @@
 import { render, fireEvent } from "@testing-library/react-native";
 import { router } from "expo-router";
 
+import ScheduleEmotion from "../emotion/[id]";
 import ScheduleDetail from "../schedule/[id]";
 import NewSchedule from "../schedule/new";
-import NewMoment from "../moment/new";
 
-import { text as textColor } from "@/design/tokens.mvp";
+import { paperColors } from "@/design/paper";
 import { useDay } from "@/features/home/model/day";
 import { SAMPLE_MOMENTS, SAMPLE_SCHEDULES } from "@/mocks/sample";
 
@@ -29,128 +29,101 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe("12-c · 일정 상세 — 가져온 일정은 읽기 전용", () => {
-  it("출처를 밝히고 제목은 고칠 수 없다", async () => {
-    const { getByText, queryByLabelText } = await render(<ScheduleDetail />);
+describe("12-c · 제목을 누르면 입력 바가 열린다 (PLAN.md D11)", () => {
+  it("직접 추가한 일정은 제목을 고칠 수 있다", async () => {
+    mockParams = { id: "s4" }; // 운동 가기 — source: manual
+    const { getByLabelText, getByText } = await render(<ScheduleDetail />);
 
-    expect(getByText("캘린더에서 가져온 일정")).toBeTruthy();
-    expect(getByText("면접 스터디")).toBeTruthy();
-    // 제목 [수정] 을 두지 않는다 — 캘린더 원본을 고치는 것처럼 읽힌다
-    expect(queryByLabelText("일정 제목")).toBeNull();
+    const input = getByLabelText("일정 제목");
+    expect(input.props.value).toBe("운동 가기");
+    expect(input.props.editable).toBe(true);
+
+    await fireEvent.changeText(input, "저녁 산책");
+    await fireEvent.press(getByText("완료"));
+
+    expect(useDay.getState().schedules.find((s) => s.id === "s4")?.title).toBe("저녁 산책");
+    expect(jest.mocked(router.back)).toHaveBeenCalled();
   });
 
-  it("삭제 대신 「홈에서 숨기기」다 — 캘린더 원본은 그대로", async () => {
-    const { getByText, queryByText } = await render(<ScheduleDetail />);
+  it("가져온 일정은 제목을 고칠 수 없다 — 캘린더 원본이다", async () => {
+    const { getByLabelText, getByText } = await render(<ScheduleDetail />);
 
-    expect(getByText("홈에서 숨기기")).toBeTruthy();
-    expect(queryByText(/삭제/)).toBeNull();
-    expect(getByText("홈에서만 보이지 않게 돼요 · 캘린더 원본은 그대로 있어요")).toBeTruthy();
+    expect(getByLabelText("일정 제목").props.editable).toBe(false);
+    expect(
+      getByText("캘린더에서 가져온 일정이라 제목을 고칠 수 없어요 · 홈에서만 숨길 수 있어요"),
+    ).toBeTruthy();
   });
 
-  it("숨기면 목록에서만 빠지고 배열에는 남는다", async () => {
-    const { getByText } = await render(<ScheduleDetail />);
+  it("가져온 일정은 삭제가 아니라 숨기기다 — 묻지 않는다", async () => {
+    const { getByLabelText } = await render(<ScheduleDetail />);
 
-    await fireEvent.press(getByText("홈에서 숨기기"));
+    await fireEvent.press(getByLabelText("홈에서 숨기기"));
 
     expect(useDay.getState().schedules.find((s) => s.id === "s3")?.hidden).toBe(true);
     expect(useDay.getState().schedules).toHaveLength(4);
     expect(jest.mocked(router.back)).toHaveBeenCalled();
   });
 
-  it("dangerInk 는 글자에만 얹는다 — 면도 테두리도 채우지 않는다 (R-40)", async () => {
-    const { getByText } = await render(<ScheduleDetail />);
-    const label = getByText("홈에서 숨기기");
-    const button = label.parent;
+  it("직접 추가한 일정의 삭제는 한 번 묻는다 — 되돌릴 수 없다", async () => {
+    mockParams = { id: "s4" };
+    const { getByLabelText, getByText, queryByText } = await render(<ScheduleDetail />);
 
-    expect(flatten(label.props.style).color).toBe(textColor.danger);
-    expect(flatten(button?.props.style).backgroundColor).toBeUndefined();
-    expect(flatten(button?.props.style).borderWidth).toBeUndefined();
+    await fireEvent.press(getByLabelText("이 일정 삭제"));
+    // 아직 지워지지 않았다 — 확인이 먼저다
+    expect(getByText("이 일정을 지울까요?")).toBeTruthy();
+    expect(useDay.getState().schedules).toHaveLength(4);
+
+    await fireEvent.press(getByText("그대로 둘게요"));
+    expect(queryByText("이 일정을 지울까요?")).toBeNull();
+    expect(useDay.getState().schedules).toHaveLength(4);
   });
 
-  it("직접 추가한 일정에만 삭제가 붙는다", async () => {
-    mockParams = { id: "s4" }; // 운동 가기 — source: manual
-    const { getByText } = await render(<ScheduleDetail />);
+  it("확인하면 실제로 지워진다", async () => {
+    mockParams = { id: "s4" };
+    const { getByLabelText, getByText } = await render(<ScheduleDetail />);
 
-    expect(getByText("직접 추가한 일정")).toBeTruthy();
-    expect(getByText("이 일정 삭제")).toBeTruthy();
-    expect(getByText("모멘토리에만 있던 일정이라 완전히 지워져요")).toBeTruthy();
+    await fireEvent.press(getByLabelText("이 일정 삭제"));
+    // 모달의 실행 버튼 — 라벨이 무엇이 일어나는지 말한다
+    await fireEvent.press(getByText("이 일정 삭제"));
+
+    expect(useDay.getState().schedules).toHaveLength(3);
+    expect(jest.mocked(router.back)).toHaveBeenCalled();
+  });
+
+  it("제목이 비면 완료가 잠긴다", async () => {
+    mockParams = { id: "s4" };
+    const { getByLabelText, getByText } = await render(<ScheduleDetail />);
+
+    await fireEvent.changeText(getByLabelText("일정 제목"), "   ");
+    expect(flatten(getByText("완료").parent?.props.style).opacity).toBe(0.36);
   });
 });
 
-describe("12-c · 마침과 감정 — 서버 계약이 시안을 좁힌 자리", () => {
-  // 샘플의 「운동 가기」가 마침도 감정도 없는 줄이다 (「면접 스터디」는 감정만 있다)
+describe("완료 감정 시트 — 마침 원을 누르면 뜬다", () => {
   const emptyRow = () => {
-    mockParams = { id: "s4" };
+    mockParams = { id: "s4" }; // 마침도 감정도 없는 줄
   };
 
-  it("샘플이 이미 그것을 보인다 — 감정만 있고 마침은 없는 줄", async () => {
-    // 스키마 샘플 「면접 스터디 · 불안함」 — 마침 표시가 없다
-    const s = useDay.getState().schedules.find((x) => x.id === "s3");
-    expect(s?.emotions).toEqual([1]);
-    expect(s?.done).toBe(false);
-  });
-
-  // ⚠ 시안(`12-c.md`)은 「마침과 감정은 서로를 요구하지 않는다」인데, 서버는
-  // 마침 없는 감정을 거부한다(`Schedule.changeCompletion`). 아래 둘이 그 차이를
-  // 고정한다 — 계약이 바뀌면 이 두 개가 먼저 깨진다. `PRODUCT.md` 「상류와 차이」
-  it("감정을 고르면 마침도 함께 켜진다 — 서버가 마침 없는 감정을 받지 않는다", async () => {
+  it("무엇을 마쳤는지 시트가 말한다", async () => {
     emptyRow();
-    const { getByLabelText } = await render(<ScheduleDetail />);
+    const { getByText } = await render(<ScheduleEmotion />);
 
-    await fireEvent.press(getByLabelText("불안함"));
-
-    const s = useDay.getState().schedules.find((x) => x.id === "s4");
-    expect(s?.emotions).toEqual([1]);
-    expect(s?.done).toBe(true);
+    expect(getByText("마쳤어요! 어땠나요?")).toBeTruthy();
+    expect(getByText("운동 가기")).toBeTruthy();
   });
 
-  it("마침을 끄면 감정도 사라진다 — 서버가 그렇게 지운다", async () => {
-    mockParams = { id: "s3" }; // 감정만 있는 줄
-    const { getByLabelText } = await render(<ScheduleDetail />);
-
-    await fireEvent.press(getByLabelText("마침으로 표시")); // 켜기 — 감정 유지
-    expect(useDay.getState().schedules.find((x) => x.id === "s3")?.emotions).toEqual([1]);
-
-    await fireEvent.press(getByLabelText("마침으로 표시")); // 끄기 — 감정도 함께
-    const s = useDay.getState().schedules.find((x) => x.id === "s3");
-    expect(s?.done).toBe(false);
-    expect(s?.emotions).toEqual([]);
-  });
-
-  it("마침만 켤 수 있다 — 감정을 고르지 않아도", async () => {
+  it("건너뛸 수 있다 — 「감정 없이 완료」", async () => {
     emptyRow();
-    const { getByLabelText } = await render(<ScheduleDetail />);
+    const { getByText } = await render(<ScheduleEmotion />);
 
-    await fireEvent.press(getByLabelText("마침으로 표시"));
-
-    const s = useDay.getState().schedules.find((x) => x.id === "s4");
-    expect(s?.done).toBe(true);
-    expect(s?.emotions).toEqual([]);
-  });
-
-  it("감정은 다시 누르면 취소된다 — 확인 모달이 없다", async () => {
-    emptyRow();
-    const { getByLabelText } = await render(<ScheduleDetail />);
-
-    await fireEvent.press(getByLabelText("불안함"));
-    await fireEvent.press(getByLabelText("불안함"));
+    await fireEvent.press(getByText("감정 없이 완료"));
 
     expect(useDay.getState().schedules.find((x) => x.id === "s4")?.emotions).toEqual([]);
-  });
-
-  it("감정은 하나만 남는다 — 다른 것을 누르면 갈아치운다", async () => {
-    // 시안은 0~2개 권장·상한 없음인데 서버 `emotion` 이 단수다
-    emptyRow();
-    const { getByLabelText } = await render(<ScheduleDetail />);
-
-    await fireEvent.press(getByLabelText("불안함"));
-    await fireEvent.press(getByLabelText("평온함"));
-
-    expect(useDay.getState().schedules.find((x) => x.id === "s4")?.emotions).toEqual([9]);
+    expect(jest.mocked(router.back)).toHaveBeenCalled();
   });
 
   it("감정 9종을 다 보인다 — 접지 않는다", async () => {
-    const { getByLabelText } = await render(<ScheduleDetail />);
+    const { getByLabelText } = await render(<ScheduleEmotion />);
 
     for (const name of [
       "불안함",
@@ -167,60 +140,50 @@ describe("12-c · 마침과 감정 — 서버 계약이 시안을 좁힌 자리"
     }
   });
 
-  it("선택을 색만으로 표시하지 않는다 — 테두리 2px + 굵기 600", async () => {
+  // ⚠ 시안(`12-c.md`)은 「마침과 감정은 서로를 요구하지 않는다」인데, 서버는
+  // 마침 없는 감정을 거부한다(`Schedule.changeCompletion`). `PRODUCT.md` 「상류와 차이」
+  it("감정을 고르면 마침도 함께 켜진다 — 서버가 마침 없는 감정을 받지 않는다", async () => {
     emptyRow();
-    const { getByLabelText, getByText } = await render(<ScheduleDetail />);
+    const { getByLabelText } = await render(<ScheduleEmotion />);
 
-    expect(flatten(getByLabelText("불안함").props.style).borderWidth).toBe(1);
     await fireEvent.press(getByLabelText("불안함"));
 
-    expect(flatten(getByLabelText("불안함").props.style).borderWidth).toBe(2);
-    expect(flatten(getByText("불안함").props.style).fontFamily).toBe("Pretendard-SemiBold");
-  });
-});
-
-describe("12-d · 순간 입력", () => {
-  it("시각을 함께 보여준다 — 밤에 되읽을 때의 절반이다", async () => {
-    const { getByText } = await render(<NewMoment />);
-
-    // 오전/오후·새벽·낮·밤 중 하나 + 시:분
-    expect(getByText(/(새벽|아침|낮|밤) \d{1,2}:\d{2}/)).toBeTruthy();
+    const s = useDay.getState().schedules.find((x) => x.id === "s4");
+    expect(s?.emotions).toEqual([1]);
+    expect(s?.done).toBe(true);
   });
 
-  it("감정을 함께 묻지 않는다 — 순간은 감정 기록이 아니다", async () => {
-    const { queryByLabelText } = await render(<NewMoment />);
+  it("감정은 다시 누르면 취소된다 — 확인 모달이 없다", async () => {
+    emptyRow();
+    const { getByLabelText } = await render(<ScheduleEmotion />);
 
-    for (const name of ["불안함", "행복함", "평온함"]) {
-      expect(queryByLabelText(name)).toBeNull();
-    }
+    await fireEvent.press(getByLabelText("불안함"));
+    await fireEvent.press(getByLabelText("불안함"));
+
+    expect(useDay.getState().schedules.find((x) => x.id === "s4")?.emotions).toEqual([]);
   });
 
-  it("저장은 상단 우측 한 곳이고 비면 잠긴다", async () => {
-    const r = await render(<NewMoment />);
+  it("감정은 하나만 남는다 — 다른 것을 누르면 갈아치운다", async () => {
+    // 시안은 0~2개 권장·상한 없음인데 서버 `emotion` 이 단수다
+    emptyRow();
+    const { getByLabelText } = await render(<ScheduleEmotion />);
 
-    expect(r.getByText("취소")).toBeTruthy();
-    expect(flatten(r.getByText("저장").props.style).opacity).toBe(0.36);
+    await fireEvent.press(getByLabelText("불안함"));
+    await fireEvent.press(getByLabelText("평온함"));
 
-    await fireEvent.changeText(r.getByLabelText("순간"), "회의가 생각보다 잘 끝났다");
-    expect(flatten(r.getByText("저장").props.style).opacity).toBeUndefined();
+    expect(useDay.getState().schedules.find((x) => x.id === "s4")?.emotions).toEqual([9]);
   });
 
-  it("저장하면 순간이 남고 「올리는 중」으로 시작한다", async () => {
-    const r = await render(<NewMoment />);
-    await fireEvent.changeText(r.getByLabelText("순간"), "회의가 생각보다 잘 끝났다");
-    await fireEvent.press(r.getByText("저장"));
+  it("선택을 색만으로 표시하지 않는다 — 잉크 테두리 + 굵기 700", async () => {
+    emptyRow();
+    const { getByLabelText, getByText } = await render(<ScheduleEmotion />);
 
-    const saved = useDay.getState().moments.at(-1);
-    expect(saved?.text).toBe("회의가 생각보다 잘 끝났다");
-    // 실패로 표시하지 않는다 — local 로 시작해 연결되면 올린다
-    expect(saved?.syncState).toBe("local");
-    expect(jest.mocked(router.back)).toHaveBeenCalled();
-  });
+    // 테두리 자리는 늘 2 이고 **색이 잉크로 켜진다** (비워 두면 켤 때 글자가 밀린다)
+    expect(flatten(getByLabelText("불안함").props.style).borderColor).toBe("transparent");
+    await fireEvent.press(getByLabelText("불안함"));
 
-  it("각주가 한 줄이면 충분하다고 말한다", async () => {
-    const { getByText } = await render(<NewMoment />);
-
-    expect(getByText("정리하지 않아도 괜찮아요 · 한 줄이면 충분해요")).toBeTruthy();
+    expect(flatten(getByLabelText("불안함").props.style).borderColor).toBe(paperColors.line.ink);
+    expect(flatten(getByText("불안함").props.style).fontFamily).toBe("Pretendard-Bold");
   });
 });
 
@@ -234,19 +197,25 @@ describe("12-e · 일정 직접 추가", () => {
     expect(queryByText(/반복/)).toBeNull();
   });
 
-  it("제목이 비면 저장이 잠긴다", async () => {
+  it("제목이 비면 완료가 잠긴다", async () => {
     const r = await render(<NewSchedule />);
 
-    expect(flatten(r.getByText("저장").props.style).opacity).toBe(0.36);
+    expect(flatten(r.getByText("완료").parent?.props.style).opacity).toBe(0.36);
 
     await fireEvent.changeText(r.getByLabelText("일정 제목"), "운동 가기");
-    expect(flatten(r.getByText("저장").props.style).opacity).toBeUndefined();
+    expect(flatten(r.getByText("완료").parent?.props.style).opacity).toBeUndefined();
+  });
+
+  it("추가 모드에는 지우기가 없다", async () => {
+    const { queryByLabelText } = await render(<NewSchedule />);
+
+    expect(queryByLabelText("삭제")).toBeNull();
   });
 
   it("저장하면 manual 일정이 되고 time 은 null 이다", async () => {
     const r = await render(<NewSchedule />);
     await fireEvent.changeText(r.getByLabelText("일정 제목"), "운동 가기");
-    await fireEvent.press(r.getByText("저장"));
+    await fireEvent.press(r.getByText("완료"));
 
     const added = useDay.getState().schedules.at(-1);
     expect(added).toMatchObject({ title: "운동 가기", source: "manual", time: null, done: false });
@@ -256,8 +225,6 @@ describe("12-e · 일정 직접 추가", () => {
   it("안내가 양방향을 다 말한다", async () => {
     const { getByText } = await render(<NewSchedule />);
 
-    expect(getByText(/모멘토리에만/)).toBeTruthy();
-    expect(getByText(/캘린더에는 추가되지 않아요/)).toBeTruthy();
-    expect(getByText("한 단어여도 괜찮아요 · 제목만 적어도 저장돼요")).toBeTruthy();
+    expect(getByText("모멘토리에만 저장돼요 · 캘린더에는 추가되지 않아요")).toBeTruthy();
   });
 });

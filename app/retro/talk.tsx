@@ -3,18 +3,19 @@ import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
 import { AnswerBubble } from "@/components/chat/AnswerBubble";
-import { Avatar } from "@/components/chat/Avatar";
 import { BabaBubble } from "@/components/chat/BabaBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatLayout } from "@/components/chat/ChatLayout";
 import { DirectionChip } from "@/components/chat/DirectionChip";
 import { MeasureInput } from "@/components/chat/MeasureInput";
+import { RetroButton } from "@/components/chat/RetroButton";
+import { RetroScene } from "@/components/chat/RetroScene";
 import { TypingDots } from "@/components/chat/TypingDots";
 import { DirectionSheet, type DirectionChoice } from "@/components/common/DirectionSheet";
 import { RetroNav } from "@/components/common/RetroNav";
-import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { paperColors, paperTypography } from "@/design/paper";
 import theme from "@/design/theme";
 import {
   PHASE_ENDED,
@@ -47,6 +48,11 @@ import { useProfile } from "@/features/my/model/settings";
  * - **방향을 고른 지점에 경계 칩**을 남긴다(`C4-d.md`) — 선택 라벨을 그대로
  * - **오류는 한 줄로 흡수한다** — 모달·경고 아이콘을 두지 않는다(`RULES.md` 4).
  *   대화 중 실패는 입력을 잠그지 않고 다시 말할 수 있게 둔다
+ *
+ * 새 디자인(`PLAN.md` D2 — 흐름은 그대로, 시각만): 언덕·카피바라 배경
+ * (`RetroScene`) 위에 말풍선 둘과 **입력 독**이 뜬다. **바바 얼굴(`Avatar`)은
+ * 뺐다** — 배경의 카피바라가 그 자리를 대신하고, 말풍선 위에 얼굴을 한 번 더
+ * 얹으면 같은 캐릭터가 두 번 나온다.
  */
 
 /** 실패 사유 → 화면 한 줄. 사용자가 할 수 있는 일이 같으면 문구도 같다 */
@@ -179,60 +185,64 @@ export default function RetroTalk() {
   const startFailed = sessionId == null && error != null;
 
   return (
-    <ScreenBackground>
-      <RetroNav emotion={startEmotion} />
+    <ScreenBackground variant="paperFlat">
+      <RetroScene />
+      <RetroNav variant="paper" emotion={startEmotion} />
 
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ChatLayout stickToEnd>
-          <Avatar />
-
+        <ChatLayout variant="paper" stickToEnd>
           {turns.map((t) => {
-            if (t.who === "me") return <AnswerBubble key={t.id}>{t.text}</AnswerBubble>;
-            if (t.who === "chip") return <DirectionChip key={t.id} label={t.text} />;
-            return <BabaBubble key={t.id}>{t.text}</BabaBubble>;
+            if (t.who === "me")
+              return (
+                <AnswerBubble key={t.id} variant="paper">
+                  {t.text}
+                </AnswerBubble>
+              );
+            if (t.who === "chip")
+              return <DirectionChip key={t.id} variant="paper" label={t.text} />;
+            return (
+              <BabaBubble key={t.id} variant="paper">
+                {t.text}
+              </BabaBubble>
+            );
           })}
 
-          {pending ? <TypingDots /> : null}
+          {pending ? <TypingDots variant="paper" /> : null}
         </ChatLayout>
 
         <View style={styles.bottom}>
           {/* 대화 중 실패는 한 줄로 흡수하고 입력을 잠그지 않는다 */}
-          {error != null && !startFailed ? (
-            <AppText tone="caption" style={styles.error}>
-              {error}
-            </AppText>
-          ) : null}
+          {error != null && !startFailed ? <AppText style={styles.error}>{error}</AppText> : null}
 
           {startFailed ? (
             <>
-              <AppText tone="caption" style={styles.error}>
-                {error}
-              </AppText>
-              <AppButton label="다시 시도" onPress={retryStart} disabled={pending} />
+              <AppText style={styles.error}>{error}</AppText>
+              <RetroButton label="다시 시도" onPress={retryStart} disabled={pending} />
             </>
           ) : ended ? (
             // 안전 종료 — 마지막 바바 버블이 안내를 담고, 여기선 나가는 길만 둔다
-            <AppButton label="홈으로 돌아가기" onPress={() => router.replace("/home")} />
+            <RetroButton label="홈으로 돌아가기" onPress={() => router.replace("/home")} />
           ) : done ? (
             // 입력칸을 내리고 하나만 둔다 — 대화가 끝났다는 것을 자리로 알린다
-            <AppButton label="일기 보러 가기" onPress={() => router.push("/retro/draft")} />
+            <RetroButton label="일기 보러 가기" onPress={() => router.push("/retro/draft")} />
           ) : isMeasure && lastReply?.measures != null ? (
             <MeasureInput
+              variant="paper"
               measures={lastReply.measures}
               onSubmit={submitMeasures}
               disabled={pending}
             />
           ) : hasOptions && !sheetOpen ? (
             // 시트를 닫았을 때 다시 여는 길 — 닫으면 아무것도 확정되지 않는다(C4-c2.md)
-            <AppButton label="이야기 이어가기" onPress={() => setSheetOpen(true)} />
+            <RetroButton label="이야기 이어가기" onPress={() => setSheetOpen(true)} />
           ) : hasOptions ? (
             // 시트가 열려 있는 동안 하단은 비운다
             <View />
           ) : (
-            <ChatInput onSend={sendText} disabled={pending} />
+            <ChatInput variant="paper" onSend={sendText} disabled={pending} />
           )}
         </View>
       </KeyboardAvoidingView>
@@ -250,6 +260,19 @@ export default function RetroTalk() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  bottom: { paddingTop: theme.layout.gap.element, gap: theme.layout.gap.element },
-  error: { color: theme.colors.semantic.accentInk },
+  bottom: {
+    paddingTop: theme.layout.gap.element,
+    paddingBottom: theme.layout.gap.element,
+    gap: theme.layout.gap.element,
+  },
+  /**
+   * 한 줄 안내는 **경고색을 쓰지 않는다**(`RULES.md` 4 — 오류는 흡수한다).
+   * 게다가 이 줄은 화면 아래, 언덕(`bg/hill`) 위에 앉는다 — 위험색
+   * `dangerFill` 은 그 면에서 3.2 로 AA 미달이라 잉크 톤이 맞다.
+   */
+  error: {
+    fontSize: paperTypography.styles.bodySm.fontSize,
+    lineHeight: paperTypography.styles.bodySm.lineHeight,
+    color: paperColors.text.primary,
+  },
 });

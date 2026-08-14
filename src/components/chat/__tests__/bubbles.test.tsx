@@ -1,6 +1,7 @@
 import { AccessibilityInfo, Animated } from "react-native";
 import { render, waitFor } from "@testing-library/react-native";
 
+import { paperChat } from "@/design/paper";
 import theme from "@/design/theme";
 
 import { AnswerBubble } from "../AnswerBubble";
@@ -102,5 +103,44 @@ describe("AnswerBubble", () => {
     const { getByText } = await render(<AnswerBubble>알려주고 싶지 않아요</AnswerBubble>);
 
     expect(getByText("알려주고 싶지 않아요")).toBeTruthy();
+  });
+});
+
+// 새 디자인(회고 리스킨 — PLAN.md D2). **기본값을 바꾸지 않는다** — 온보딩
+// 11장이 같은 컴포넌트를 쓰고 리스킨 범위 밖이다. 위의 기본값 검사들이 그 보증이다.
+describe("paper 변형 — 회고만 켠다", () => {
+  it("바바는 반투명 흰 면 · 14/14/14/4 · 최대 84%", async () => {
+    const { getByText } = await render(<BabaBubble variant="paper">안녕</BabaBubble>);
+    const s = flatten(getByText("안녕").parent?.props.style);
+
+    expect(s.backgroundColor).toBe(paperChat.baba.background);
+    expect(s.maxWidth).toBe(paperChat.baba.maxWidth); // "84%"
+    expect(s.borderTopLeftRadius).toBe(14);
+    expect(s.borderBottomLeftRadius).toBe(4); // 꼬리는 그대로 왼쪽 아래
+    // 테두리 대신 얕은 그림자 하나다 (design-system.md §3)
+    expect(s.borderWidth).toBe(0);
+  });
+
+  it("나는 잉크 면 + 밝은 글자 · 14/14/4/14 · 최대 76%", async () => {
+    const { getByText } = await render(<AnswerBubble variant="paper">지현</AnswerBubble>);
+    const s = flatten(getByText("지현").parent?.props.style);
+
+    expect(s.backgroundColor).toBe(paperChat.me.background);
+    expect(s.maxWidth).toBe(paperChat.me.maxWidth); // "76%"
+    expect(s.borderBottomRightRadius).toBe(4); // 꼬리는 그대로 오른쪽 아래
+    expect(flatten(getByText("지현").props.style).color).toBe(paperChat.me.color);
+  });
+
+  it("Reduce Motion 분기는 변형과 무관하게 남는다", async () => {
+    jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(true);
+
+    const { getByText } = await render(
+      <BabaBubble variant="paper" index={2}>
+        안녕
+      </BabaBubble>,
+    );
+    await waitFor(() => expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalled());
+
+    expect(flatten(getByText("안녕").parent?.props.style).transform).toEqual([]);
   });
 });

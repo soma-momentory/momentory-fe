@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
+import { paperColors } from "@/design/paper";
 import theme from "@/design/theme";
 import { directionChip } from "@/design/tokens.mvp";
 
@@ -25,21 +26,30 @@ import { directionChip } from "@/design/tokens.mvp";
 type Props = {
   label: string;
   onChange?: () => void;
+  /** 새 디자인 — 종이 칩 면(`bg/title-chip`) + 잉크 글자. 회고 화면만 켠다 */
+  variant?: "default" | "paper";
 };
 
-export function DirectionChip({ label, onChange }: Props) {
+export function DirectionChip({ label, onChange, variant = "default" }: Props) {
+  const paper = variant === "paper";
+  const labelStyle = [styles.label, paper ? styles.labelPaper : null];
+
   return (
-    <View style={styles.chip}>
-      <AppText tone="body" weight="500" style={styles.label}>
+    <View style={[styles.chip, paper ? styles.chipPaper : null]}>
+      <AppText tone="body" weight={paper ? "700" : "500"} style={labelStyle}>
         {label}
       </AppText>
       {onChange != null ? (
         <>
-          <AppText tone="body" style={styles.label}>
+          <AppText tone="body" style={labelStyle}>
             ·
           </AppText>
           <Pressable accessibilityRole="button" hitSlop={10} onPress={onChange}>
-            <AppText tone="accent" weight="600" style={styles.label}>
+            <AppText
+              tone="accent"
+              weight={paper ? "700" : "600"}
+              style={[styles.label, paper ? styles.changePaper : null]}
+            >
               변경
             </AppText>
           </Pressable>
@@ -61,4 +71,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.semantic.surfaceTone,
   },
   label: { fontSize: directionChip.fontSize, lineHeight: directionChip.minHeight },
+
+  // ── 새 디자인 ────────────────────────────────────────────────────────
+  chipPaper: { backgroundColor: paperColors.bg.titleChip },
+  labelPaper: { color: paperColors.text.primary },
+  changePaper: { color: paperColors.brand.greenDark },
 });

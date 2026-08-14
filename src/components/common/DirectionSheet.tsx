@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Dimensions, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
+import { RetroButton } from "@/components/chat/RetroButton";
 import { Sheet } from "@/components/common/Sheet";
 import { CheckCircleIcon } from "@/components/icons/LineIcons";
-import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
-import theme from "@/design/theme";
+import { paperColors, paperRadius, paperTabBar, paperTypography } from "@/design/paper";
 import { directionOption } from "@/design/tokens.mvp";
 import type { ReplyOption } from "@/features/retro/data/retroApi";
 
@@ -25,9 +25,13 @@ import type { ReplyOption } from "@/features/retro/data/retroApi";
  *
  * - **누른 순간 저장되지 않는다** — `[이 방향으로 이어가기]` 를 눌러야 확정된다.
  *   시트를 닫으면 아무 일도 일어나지 않는다(`C4-c2.md`). 그래서 선택이 로컬 상태다
- * - 선택 표시는 **테두리(1→1.5px) + 배경 + 체크** 셋을 함께 — 색 하나에 기대지 않는다
+ * - 선택 표시는 **테두리(1.5→2px) + 배경 + 체크** 셋을 함께 — 색 하나에 기대지 않는다
  * - **다른 줄을 누르면 앞 선택이 풀린다** — 하나만 고른다
  * - 제목/버튼 고정, **선택지 영역만 스크롤**. 시트 최대 높이 74%. 키보드 없음
+ *
+ * 시각은 새 디자인 하나뿐이다 — **회고 대화에서만 쓰는 시트**라 옛 변형을 남길
+ * 자리가 없다(`PLAN.md` §5 「한 화면에 두 체계 혼용 금지」). 껍데기는
+ * `Sheet variant="paper"`, 줄은 시안(`회고.dc.html`)의 선택 카드다.
  */
 /** 확정 결과 — 보통 옵션은 `optionId`, "직접 입력" 옵션은 사용자가 적은 `content`. */
 export type DirectionChoice = { optionId: string } | { content: string };
@@ -59,12 +63,12 @@ export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
   };
 
   return (
-    <Sheet onDismiss={onDismiss}>
+    <Sheet variant="paper" onDismiss={onDismiss}>
       <View style={styles.head}>
-        <AppText tone="strong" weight="700" style={styles.title}>
+        <AppText weight="700" style={styles.title}>
           어떻게 이야기를 이어가고 싶어요?
         </AppText>
-        <AppText variant="caption" tone="caption">
+        <AppText style={styles.sub}>
           고르는 대로 다음 이야기가 이어져요 · 대화 중에 바꿔도 괜찮아요
         </AppText>
       </View>
@@ -86,20 +90,21 @@ export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
             >
               {/* 맥락 배지 — 카드 내용이 아니라 "지난 비슷한 상황에서" 같은 표시 */}
               {option.hint != null ? (
-                <AppText variant="caption" tone="accent" weight="600" style={styles.hint}>
+                <AppText weight="700" style={styles.hint}>
                   {option.hint}
                 </AppText>
               ) : null}
               <View style={styles.optionHead}>
-                <AppText tone="strong" weight="600" style={styles.optionTitle}>
+                <AppText
+                  weight={on ? "700" : "400"}
+                  style={[styles.optionTitle, on ? styles.optionTitleOn : null]}
+                >
                   {option.label}
                 </AppText>
-                {on ? <CheckCircleIcon /> : null}
+                {on ? <CheckCircleIcon color={paperColors.brand.greenDark} /> : null}
               </View>
               {option.description != null ? (
-                <AppText tone="caption" style={styles.optionDesc}>
-                  {option.description}
-                </AppText>
+                <AppText style={styles.optionDesc}>{option.description}</AppText>
               ) : null}
               {/* "직접 입력" 을 고르면 여기서 원하는 행동을 적는다 */}
               {on && option.input ? (
@@ -107,9 +112,9 @@ export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
                   value={customText}
                   onChangeText={setCustomText}
                   placeholder="예: 자기 전에 오늘 답변 한 줄 적어보기"
-                  placeholderTextColor={semantic.textSlogan}
+                  placeholderTextColor={paperColors.text.faint}
                   multiline
-                  selectionColor={semantic.accentInk}
+                  selectionColor={paperColors.brand.greenDark}
                   style={styles.input}
                   accessibilityLabel="직접 입력한 행동"
                 />
@@ -120,7 +125,7 @@ export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
       </ScrollView>
 
       {/* 고르기 전에는 잠기되 사라지지 않는다 */}
-      <AppButton label="이 방향으로 이어가기" disabled={!canConfirm} onPress={confirm} />
+      <RetroButton label="이 방향으로 이어가기" disabled={!canConfirm} onPress={confirm} />
     </Sheet>
   );
 }
@@ -128,47 +133,70 @@ export function DirectionSheet({ options, onConfirm, onDismiss }: Props) {
 /** 제목·안내·CTA·시트 여백이 쓰는 세로 — 목록의 최대 높이를 여기서 뺀다 */
 const HEADER_AND_CTA = 210;
 
-const { semantic } = theme.colors;
+const { styles: type } = paperTypography;
 
 const styles = StyleSheet.create({
   head: { gap: 3 },
-  title: { fontSize: 17, lineHeight: 24.65 },
+  title: {
+    fontSize: type.sheetTitle.fontSize,
+    lineHeight: type.sheetTitle.lineHeight,
+    color: paperColors.text.primary,
+  },
+  sub: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.text.mutedWarmText,
+  },
   // .dlistw — 이 안만 스크롤된다
-  list: { gap: directionOption.listGap, padding: 1 },
+  list: { gap: 8, padding: 1 },
+  // 시안의 선택 줄 — 흰 면 · 1.5px 테두리 · r18 · padding 12/16
   option: {
     minHeight: directionOption.minHeight,
-    borderRadius: directionOption.radius,
-    paddingVertical: directionOption.paddingVertical,
-    paddingHorizontal: directionOption.paddingHorizontal,
-    gap: directionOption.gap,
-    backgroundColor: semantic.surface,
-    borderWidth: 1,
-    borderColor: directionOption.border,
+    borderRadius: paperRadius.cardLg,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 3,
+    backgroundColor: paperColors.bg.cardOpaque,
+    borderWidth: 1.5,
+    borderColor: paperColors.neutral.tabInactiveBorder,
   },
+  // 색만으로 표시하지 않는다 — 테두리가 굵어지고 글자가 700 이 되고 체크가 붙는다
   optionOn: {
-    borderWidth: directionOption.onBorderWidth,
-    borderColor: semantic.accentFill, // primaryDeep
-    backgroundColor: semantic.accentWash,
+    borderWidth: 2,
+    borderColor: paperColors.brand.greenBorder,
+    backgroundColor: paperTabBar.active.tint,
   },
   optionHead: { flexDirection: "row", alignItems: "center", gap: 7 },
   optionTitle: {
     flex: 1,
-    fontSize: directionOption.titleSize,
-    lineHeight: directionOption.titleSize * 1.5,
+    fontSize: type.body.fontSize,
+    lineHeight: type.body.lineHeight,
+    color: paperColors.text.primary,
   },
-  optionDesc: { fontSize: directionOption.descSize, lineHeight: directionOption.descSize * 1.5 },
-  hint: { fontSize: directionOption.descSize },
+  optionTitleOn: { color: paperColors.text.primary },
+  optionDesc: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.text.mutedWarmText,
+  },
+  // 「지난 비슷한 상황에서」 — sand 역할이지만 글자라 `sandText` 다 (대비 보정)
+  hint: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.accent.sandText,
+  },
   input: {
     marginTop: 2,
     minHeight: 40,
-    borderRadius: directionOption.radius,
-    borderWidth: 1,
-    borderColor: semantic.accentFill,
-    paddingHorizontal: directionOption.paddingHorizontal,
+    borderRadius: paperRadius.field,
+    borderWidth: 1.5,
+    borderColor: paperColors.brand.greenBorder,
+    backgroundColor: paperColors.bg.field,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    fontFamily: "Pretendard-Regular",
-    fontSize: directionOption.titleSize,
-    lineHeight: directionOption.titleSize * 1.4,
-    color: semantic.textBody,
+    fontFamily: paperTypography.fontFamily.regular,
+    fontSize: type.body.fontSize,
+    lineHeight: type.body.lineHeight,
+    color: paperColors.text.primary,
   },
 });

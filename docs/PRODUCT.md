@@ -6,25 +6,27 @@
 
 ## 무엇이 어디 있나
 
-| 찾는 것                                                    | 정본                                                                             |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| 불변 규칙 · 범위 · 접근성 · 샘플 데이터 기준               | [`spec/RULES.md`](spec/RULES.md)                                                 |
-| 상태 기계 7개 (화면 하나 = `states.<키>` 하나)             | [`spec/momentory.states.mvp.json`](spec/momentory.states.mvp.json)               |
-| 엔티티 7개 · 파생값 8개 · 세지 않는 것 · `meta.sampleData` | [`spec/momentory.schema.mvp.json`](spec/momentory.schema.mvp.json)               |
-| 값 (색·크기·반경·여백)                                     | [`spec/momentory.css`](spec/momentory.css) — 여기 없으면 아래 「값을 찾는 순서」 |
-| 화면별 규칙·문안·계측 이름                                 | [`spec/screens/<ID>.md`](spec/screens/)                                          |
-| 파트별 구현 사양 서술                                      | [`spec/범위.md`](spec/범위.md)                                                   |
-| 컴포넌트 인벤토리 (⚠ 원본 기준 — 값은 css 가 이긴다)       | [`spec/COMPONENTS.md`](spec/COMPONENTS.md)                                       |
-| 상류 미결·기본값(R-nn)                                     | [`spec/OPEN-ISSUES-요약.md`](spec/OPEN-ISSUES-요약.md)                           |
-| RN 도메인 타입의 소유자                                    | `src/features/<도메인>/model/types.ts` — mock 이 아니라 feature 가 소유한다      |
-| RN 토큰                                                    | `src/design/theme.ts`(생성물) + `src/design/tokens.mvp.ts`(상류 미반영분 임시)   |
+| 찾는 것                                                    | 정본                                                                                                 |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 불변 규칙 · 범위 · 접근성 · 샘플 데이터 기준               | [`spec/RULES.md`](spec/RULES.md)                                                                     |
+| 상태 기계 7개 (화면 하나 = `states.<키>` 하나)             | [`spec/momentory.states.mvp.json`](spec/momentory.states.mvp.json)                                   |
+| 엔티티 7개 · 파생값 8개 · 세지 않는 것 · `meta.sampleData` | [`spec/momentory.schema.mvp.json`](spec/momentory.schema.mvp.json)                                   |
+| 값 (색·크기·반경·여백) — **새 디자인** (2026-08-14 전환)   | [`design/design-system.md`](design/design-system.md) + `design/prototype/` — 아래 「값을 찾는 순서」 |
+| 값 — 로그인·온보딩 (리스킨 제외 범위) 전용                 | [`spec/momentory.css`](spec/momentory.css)                                                           |
+| 화면별 규칙·문안·계측 이름                                 | [`spec/screens/<ID>.md`](spec/screens/)                                                              |
+| 파트별 구현 사양 서술                                      | [`spec/범위.md`](spec/범위.md)                                                                       |
+| 컴포넌트 인벤토리 (⚠ 원본 기준 — 값은 css 가 이긴다)       | [`spec/COMPONENTS.md`](spec/COMPONENTS.md)                                                           |
+| 상류 미결·기본값(R-nn)                                     | [`spec/OPEN-ISSUES-요약.md`](spec/OPEN-ISSUES-요약.md)                                               |
+| RN 도메인 타입의 소유자                                    | `src/features/<도메인>/model/types.ts` — mock 이 아니라 feature 가 소유한다                          |
+| RN 토큰                                                    | `src/design/paper.ts`(**새 정본**) — `theme.ts`·`tokens.mvp.ts` 는 동결·삭제 예정                    |
 
-**값을 찾는 순서** — 위에서부터 보고, 없을 때만 아래로 내려간다:
+**값을 찾는 순서** — 위에서부터 보고, 없을 때만 아래로 내려간다 (2026-08-14 개정 — [`/PLAN.md`](../PLAN.md)):
 
-1. `spec/screens/<ID>.md` — 그 화면의 규칙·문안
-2. `spec/momentory.css` — **MVP 값 정본**
-3. (상류 전용 — 담당자 경유) `05_도구/flows/9-mvp.mjs` · `ui.mjs` — 2번의 figma 번역
-4. (상류 전용 — 담당자 경유) `spec/COMPONENTS.md` · `05_도구/lib.mjs` — ⚠ **원본 기준**
+1. `spec/screens/<ID>.md` — 그 화면의 규칙·**문안** (문안은 항상 여기)
+2. `src/design/paper.ts` — **새 디자인 토큰 정본** (코드가 쓰는 값)
+3. `design/design-system.md` — 새 디자인 스펙. 값 충돌 시 `design/prototype/*.dc.html` 이 이긴다
+4. `spec/momentory.css` — ⚠ 옛 값 정본. **로그인·온보딩(리스킨 제외 범위) 전용**
+5. `spec/COMPONENTS.md` — ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다
 
 ## 화면 ID ↔ 라우트 매핑 (40화면)
 
@@ -42,7 +44,8 @@
 | 온보딩 | `10` `10-b`               | `app/(onboarding)/done.tsx`             | 한 파일이 두 상태                                         |
 | 홈     | `12` `12-b`               | `app/(tabs)/home.tsx`                   | 일정 있음/없음 — 별도 레이아웃 아님                       |
 | 홈     | `12-c`                    | `app/home/schedule/[id].tsx`            | 투명 모달 시트                                            |
-| 홈     | `12-d`                    | `app/home/moment/new.tsx`               | 〃                                                        |
+| 홈     | ~~`12-d`~~                | **없음 — 2026-08-14 삭제**              | 새 홈에 순간 카드가 없다 (차이 대장 #18)                  |
+| 홈     | (신규)                    | `app/home/emotion/[id].tsx`             | 마침 원을 누르면 뜨는 감정 시트 (`/PLAN.md` D11)          |
 | 홈     | `12-e`                    | `app/home/schedule/new.tsx`             | 〃                                                        |
 | 회고   | `C1`                      | `app/retro/intro.tsx`                   |                                                           |
 | 회고   | `C2`                      | `app/retro/confirm.tsx`                 | 홈과 같은 store·컴포넌트                                  |
@@ -85,5 +88,13 @@
 | 14  | **「홈에서 숨기기」가 기기에만 남는다** — `Schedule.hidden` 은 「목록에서만 감춤 · 캘린더 원본은 건드리지 않음」이 규칙인데 서버 `ScheduleResponse` 에 **`hidden`·`source`·`externalId` 가 없다.** 그래서 숨김은 메모리에만 남고 다시 받아오면 풀린다. 지금은 드러나지 않는다 — 캘린더 연동 전이라 서버 일정은 전부 `POST` 로 만든 것이고, 어댑터가 `source: "manual"` 로 고정해 `12-c` 가 언제나 「이 일정 삭제」(`DELETE`)를 보인다. **캘린더가 붙는 순간 실제 문제가 된다**                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `ScheduleResponse`(`api/openapi.json`) vs `momentory.schema.mvp.json` `Schedule` · `spec/screens/12-c.md`                                                              | `src/features/home/data/scheduleApi.ts` 의 「서버가 주지 않는 것 넷」 표 · `day.ts` 의 `hide` · 이 행                        | BE 가 `source`·`hidden`·`externalId` 를 계약에 넣는다(§1-4 캘린더 동기화와 함께)       | **BE 확인 대기**   |
 | 15  | **`07` 에 「기타」 직접 입력 줄을 더했다** — 시안 `07` 은 칩 15개뿐이고 15번째가 그냥 「기타」다. 그런데 서버는 `restMethods` 에 `OTHER` 가 있으면 `otherRestMethodDetail` 을 **필수**로 요구해서(없으면 온보딩 제출이 400), 지금 모양 그대로 붙이면 **「기타」를 고른 사람은 마지막 제출에서 전부 막힌다.** 관심 분야 `06-b` 와 **같은 모양**(칩 아래 인라인 한 줄 · 12자 · 공백이면 확정하지 않고 칩까지 끔)으로 더했다 — 규칙이 하나로 정리되고 컴포넌트도 공유한다(`components/onboarding/OtherRow.tsx`). 같은 이유로 `M2` 에도 「기타」 두 줄이 생겼다(관심 분야·쉬는 방법)                                                                                                                                                                                                                                                                                                                                                                            | `DISCUSSION.md` §1-7 · BE `689feca` 검증 규칙 vs `spec/screens/07.md`                                                                                                  | `app/(onboarding)/rest.tsx` · `app/my/profile.tsx` 주석 · 이 행                                                              | 상류가 `07` 에 입력 줄을 반영하거나, BE 가 `OTHER` 여도 문구를 선택으로 바꿔 줄을 내림 | **상류 확인 대기** |
 | 16  | **오늘의 순간(`12-d`)을 서버에 올리지 않는다** — 스키마 `Moment` 는 `syncState`(local·uploading·synced)를 두고 「항상 기기에 먼저 저장하고 **연결되면 올립니다**」가 규칙이다. 계약에 `GET/PUT/DELETE /api/v1/memos/{date}` 가 있지만 **하루에 하나**(`{content}`)뿐이고, 스키마 `Moment` 는 `id`·`createdAt` 을 가진 **여러 개**라 홈이 목록으로 그린다. 2026-08-11 제품 결정으로 **붙이지 않기로 했다.** 그래서 순간은 기기에만 남고, MMKV(M3) 전인 지금은 **앱을 껐다 켜면 사라진다.** `syncState` 는 타입에 그대로 둔다 — 올리기로 뒤집혔을 때 자리를 다시 만들지 않아도 되게                                                                                                                                                                                                                                                                                                                                                                           | 제품 결정(2026-08-11) vs `momentory.schema.mvp.json` `Moment` 「연결되면 올립니다」 · `api/openapi.json` 의 `DailyMemoRequest`                                         | `src/features/home/model/day.ts` 의 `addMoment` · `data/sampleRepository.ts` 주석 · 이 행                                    | 순간을 서버에 남기기로 뒤집히면 — `memos` 를 여러 개 모양으로 고쳐 붙인다              | 결정됨(기록 유지)  |
+
+| 17 | **디자인 전면 전환 + 상류 동기화 중단** — 시각 정본을 `spec/momentory.css`(웜 테라코타)에서 `docs/design/`(손그림 다이어리) + `src/design/paper.ts` 로 바꿨다(로그인·온보딩 제외). 탭도 4 → **5**(쉼터 편입 — 상류 MVP 가 자른 `R*` 를 새 디자인 스펙으로 되살림). 이와 함께 **상류 재반입·`sync:theme` 을 전제하지 않기로 했다** — 이 저장소가 정본이고, `docs/spec/**` 는 동결 스냅샷으로만 유지한다. 상태 기계·엔티티·문안·불변 규칙은 계속 `docs/spec/` 을 따른다 | 사용자 결정(2026-08-14) — `/PLAN.md` §0 D1·D2·D4·D8 | `/PLAN.md` · `docs/design/IMPORT.md` · `src/design/paper.ts` · 이 행 | 전환 완료(옛 토큰 삭제) 시 이 행을 「닫힘(기록 유지)」로 바꾼다. 상류와의 관계를 되살리려면 별도 결정 | **진행 중** |
+
+| 18 | **홈이 날씨·일정 둘만 남았다** — 시안(`design/prototype/홈.dc.html`)의 홈은 날씨 씬 + 「오늘 일정」 카드뿐이다. 그래서 **「오늘의 순간」(메모) 카드**와 **「지금 하루 돌아보기」 줄**을 뺐고, 회고는 **씬의 병아리**가 연다(`design/app-flow.md` §1). 이로써 `RULES.md` 「세 칸의 순서가 하루의 순서다」는 이 화면에서 성립하지 않고, `12.md` 의 **채운 버튼(`.addr`)** 도 시안대로 **테두리 알약**이 됐다. **`12-d`(순간 입력 시트)는 지웠다**(2026-08-14 결정) — 라우트 `app/home/moment/` · 테스트 · store 의 `addMoment` 를 함께 걷어냈다. ⚠ **`Moment` 모델·샘플은 남긴다** — 회고 인트로(`C1`)의 「순간 n개」와 확인(`C2`)의 목록이 아직 읽는다. **만드는 길이 없으므로 샘플 밖의 순간은 생기지 않는다**(연결 뒤에는 늘 0개) | 사용자 결정(2026-08-14) vs `spec/screens/{12,12-d}.md` · `spec/RULES.md` 「홈」 | `app/(tabs)/home.tsx` · `features/home/model/day.ts` 의 `moments` 주석 · [`/PLAN.md`](../PLAN.md) D9 · 이 행 | `C1`·`C2` 에서 순간을 어떻게 할지 정한다 — 빼거나, 다른 입구를 준다 | **진행 중** |
+
+| 19 | **일정의 세 조작이 시안대로 갈렸다** — `12-c` 는 「상세 시트(감정+마침+삭제)」였는데, 시안은 **원 = 마침 + 감정 시트** · **제목 = 수정·삭제 입력 바** · **손잡이 = 순서**다(`design/design-system.md` §4.2·4.3 · `홈.dc.html`). 그대로 옮겨 감정을 `12-c` 에서 떼고 새 라우트(`app/home/emotion/[id].tsx`)로 옮겼다. 제목 수정이 생기면서 `PATCH /api/v1/schedules/{id}` 를 붙였다(전에는 「부를 화면이 없다」고 비워 둔 통로). ⚠ `12-c.md` 의 「제목 `[수정]` 을 두지 않는다」는 **가져온 일정에만** 남는다 — 직접 추가한 일정은 고칠 수 있다 | 사용자 결정(2026-08-14) vs `spec/screens/12-c.md` | `app/home/schedule/[id].tsx` · `app/home/emotion/[id].tsx` · [`/PLAN.md`](../PLAN.md) D11 · 이 행 | 상류가 시안 구조를 스펙에 반영하거나, 다른 배치를 정한다 | **진행 중** |
+
+| 20 | **`09` 에서 권한을 거부해도 `10-b` 로 간다** — `09.md` 는 완료 화면이 `10-b` 가 되는 조건을 「`[나중에 할게요]` 로 건너뛰면」으로만 적어 두고, 「연결하기를 눌렀는데 OS 다이얼로그에서 거부한」 경우를 말하지 않는다(그 상태는 「아직 화면이 없다」로 남아 있다 · `09.md` 「연결 실패·권한 해제 상태」). 실제 권한 요청을 붙이자(2026-08-14) 그 경우가 매번 생기는데, 연결되지 않았는데 `10`(「캘린더도 연결됐어요」)을 보이면 **안내가 사실과 달라진다** — `09.md` 자신의 첫 규칙(「안내는 실제 처리와 같은 말이어야 한다」)이 그것을 막는다. 그래서 **거부도 `calendarLinked = false`** 로 두어 `[나중에 할게요]` 와 같은 화면으로 보낸다. ⚠ 사용자는 「연결하기」를 눌렀는데 「나중에 하기로 했다」는 안내를 보게 된다 — 두 경로를 가르려면 `10-c` 같은 화면이 하나 더 필요하다 | `09.md` 「안내는 실제 처리와 같은 말이어야 한다」 · 「연결 실패·권한 해제 상태는 아직 화면이 없다」 | `app/(onboarding)/calendar.tsx` 주석 · `app/(onboarding)/__tests__/onboarding.test.tsx` 「허용하지 않으면 연결됐다고 하지 않는다」 · 이 행 | 상류가 거부 경로의 화면·문안을 MVP 로 반입 → 그 화면으로 가른다 | **상류 확인 대기** |
 
 새 행을 추가할 때: 차이·근거·임시 기록 자리·닫히는 조건을 전부 채운다 — 하나라도 비면 "조용한 이탈"이 된다.

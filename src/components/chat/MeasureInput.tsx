@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { RetroButton } from "@/components/chat/RetroButton";
 import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
+import { paperColors, paperRadius, paperShadows, paperTypography } from "@/design/paper";
 import theme from "@/design/theme";
 import type { ReplyMeasure } from "@/features/retro/data/retroApi";
 
@@ -23,14 +25,20 @@ type Props = {
   onSubmit: (values: Record<string, number>) => void;
   /** 요청 중 — 다시 누르지 못하게 */
   disabled?: boolean;
+  /**
+   * 새 디자인 — 대화 위에 **떠 있는 카드**(`회고.dc.html` 의 슬라이더 카드).
+   * 채운 눈금은 `brand.green`, 고른 칸은 `greenDark` 다. 회고 화면만 켠다.
+   */
+  variant?: "default" | "paper";
 };
 
-export function MeasureInput({ measures, onSubmit, disabled = false }: Props) {
+export function MeasureInput({ measures, onSubmit, disabled = false, variant = "default" }: Props) {
   const [values, setValues] = useState<Record<string, number>>({});
+  const paper = variant === "paper";
   const allAnswered = measures.every((m) => values[m.id] != null);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, paper ? styles.rootPaper : null]}>
       {measures.map((measure) => {
         const current = values[measure.id];
         // 0..max 까지 (max 포함) 칸을 만든다
@@ -40,7 +48,11 @@ export function MeasureInput({ measures, onSubmit, disabled = false }: Props) {
         );
         return (
           <View key={measure.id} style={styles.block}>
-            <AppText tone="body" weight="500" style={styles.label}>
+            <AppText
+              tone="body"
+              weight={paper ? "700" : "500"}
+              style={[styles.label, paper ? styles.labelPaper : null]}
+            >
               {measure.label}
             </AppText>
             <View
@@ -66,8 +78,9 @@ export function MeasureInput({ measures, onSubmit, disabled = false }: Props) {
                     <View
                       style={[
                         styles.tick,
-                        filled ? styles.tickFilled : null,
-                        isCurrent ? styles.tickCurrent : null,
+                        paper ? styles.tickPaper : null,
+                        filled ? (paper ? styles.tickFilledPaper : styles.tickFilled) : null,
+                        isCurrent ? (paper ? styles.tickCurrentPaper : styles.tickCurrent) : null,
                       ]}
                     />
                   </Pressable>
@@ -75,10 +88,10 @@ export function MeasureInput({ measures, onSubmit, disabled = false }: Props) {
               })}
             </View>
             <View style={styles.ends}>
-              <AppText variant="caption" tone="caption">
+              <AppText variant="caption" tone="caption" style={paper ? styles.endPaper : null}>
                 약하다
               </AppText>
-              <AppText variant="caption" tone="caption">
+              <AppText variant="caption" tone="caption" style={paper ? styles.endPaper : null}>
                 강하다
               </AppText>
             </View>
@@ -86,16 +99,27 @@ export function MeasureInput({ measures, onSubmit, disabled = false }: Props) {
         );
       })}
 
-      <AppButton
-        label="이어가기"
-        disabled={disabled || !allAnswered}
-        onPress={() => onSubmit(values)}
-      />
+      {paper ? (
+        // 시안의 확인 버튼은 **테두리 알약**이다 — 카드 안에서 면을 하나 더 얹지 않는다
+        <RetroButton
+          tone="outline"
+          label="이어가기"
+          disabled={disabled || !allAnswered}
+          onPress={() => onSubmit(values)}
+        />
+      ) : (
+        <AppButton
+          label="이어가기"
+          disabled={disabled || !allAnswered}
+          onPress={() => onSubmit(values)}
+        />
+      )}
     </View>
   );
 }
 
 const { semantic } = theme.colors;
+const { styles: type } = paperTypography;
 
 const styles = StyleSheet.create({
   root: { gap: 16 },
@@ -113,4 +137,26 @@ const styles = StyleSheet.create({
   tickFilled: { backgroundColor: semantic.accentWash },
   tickCurrent: { backgroundColor: semantic.accentFill },
   ends: { flexDirection: "row", justifyContent: "space-between" },
+
+  // ── 새 디자인 — 대화 위에 뜬 카드 ───────────────────────────────────
+  rootPaper: {
+    gap: 11,
+    padding: 18,
+    borderRadius: paperRadius.cardLg,
+    backgroundColor: paperColors.bg.cardOpaque,
+    ...paperShadows.raised,
+  },
+  labelPaper: {
+    fontSize: type.body.fontSize,
+    lineHeight: type.body.lineHeight,
+    color: paperColors.text.primary,
+  },
+  tickPaper: { height: 5, backgroundColor: paperColors.line.soft },
+  tickFilledPaper: { backgroundColor: paperColors.brand.green },
+  tickCurrentPaper: { backgroundColor: paperColors.brand.greenDark },
+  endPaper: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.text.faint,
+  },
 });

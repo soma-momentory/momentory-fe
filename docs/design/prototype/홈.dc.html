@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+body{margin:0;background:#EAE2D6;font-family:'Pretendard',-apple-system,sans-serif}
+a{color:#8A6A4A}a:hover{color:#5A4632}
+input{font-family:'Pretendard',sans-serif}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.35)}100%{transform:scale(1)}}
+@keyframes riseIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes rain{from{transform:translateY(-20px);opacity:0}20%{opacity:.5}to{transform:translateY(300px);opacity:0}}
+::-webkit-scrollbar{width:0}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;box-sizing:border-box">
+<div style="position:relative;width:390px;height:803px;border-radius:46px;background:#111;padding:5px;box-sizing:border-box;box-shadow:0 30px 70px rgba(60,42,26,.32)">
+<div style="position:relative;width:100%;height:100%;border-radius:41px;overflow:hidden;background:#F7F1E7;display:flex;flex-direction:column">
+
+  <div style="position:relative;z-index:6;display:flex;align-items:center;justify-content:space-between;padding:14px 26px 2px;font-size:13px;color:#4A3B2C;font-weight:700;background:{{ skyTop }}">
+    <span>9:41</span>
+    <span style="display:flex;gap:4px;align-items:center">
+      <span style="width:4px;height:9px;border-radius:1px;background:#4A3B2C;display:inline-block"></span>
+      <span style="width:4px;height:9px;border-radius:1px;background:#4A3B2C;display:inline-block"></span>
+      <span style="width:4px;height:9px;border-radius:1px;background:#4A3B2C;display:inline-block;opacity:.35"></span>
+    </span>
+  </div>
+
+  <div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;padding:8px 24px 10px;background:{{ skyTop }}">
+    <div style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:29px;line-height:1;color:#3C2E22;letter-spacing:-.5px">{{ dateLabel }}</div>
+    <div style="display:flex;align-items:center;gap:5px;font-size:13px;color:#5C7C8A;padding-bottom:3px">
+      <span style="font-size:14px">{{ weatherIcon }}</span><span>{{ weatherLabel }}</span>
+    </div>
+  </div>
+
+  <div style="position:relative;height:320px;flex:none;overflow:hidden;background:linear-gradient(180deg,{{ skyTop2 }} 0%,{{ skyBg }} 62%)">
+    <div style="position:absolute;inset:0;animation:fadeIn .6s ease">{{ weatherFx }}</div>
+    <div style="position:absolute;left:24px;top:118px;width:74px;height:26px;border-radius:999px;background:#FFFFFF"></div>
+    <div style="position:absolute;left:36px;top:104px;width:40px;height:40px;border-radius:50%;background:#FFFFFF"></div>
+    <div style="position:absolute;left:64px;top:112px;width:32px;height:32px;border-radius:50%;background:#FFFFFF"></div>
+    <div style="position:absolute;left:-30px;right:-30px;bottom:-92px;height:190px;border-radius:50%;background:#DDEBCB"></div>
+    <div style="position:absolute;left:-30px;right:-30px;bottom:-96px;height:160px;border-radius:50%;background:#C7E0AE"></div>
+    <div style="position:absolute;left:-30px;right:-30px;bottom:-104px;height:130px;border-radius:50%;background:#AFD196"></div>
+    <a href="회고.dc.html" style="position:absolute;left:31px;bottom:30px;width:67px;z-index:2;display:block"><img src="assets/chick-trim.png" alt="서브 캐릭터" style="width:100%;display:block"></a>
+    <img src="assets/capybara-trim.png" alt="카피바라" style="position:absolute;right:31px;bottom:30px;width:110px">
+    <div style="position:absolute;left:37px;top:180px;background:#FFFDF8;border:1.5px solid #4A3B2C;border-radius:16px;padding:7px 13px 8px;font-family:'Pretendard',sans-serif;font-weight:700;font-size:16px;color:#3C2E22;box-shadow:0 3px 0 rgba(74,59,44,.12);white-space:nowrap;z-index:3">
+      {{ bubble }}
+      <div style="position:absolute;left:28px;bottom:-7px;width:11px;height:11px;background:#FFFDF8;border-right:1.5px solid #4A3B2C;border-bottom:1.5px solid #4A3B2C;transform:rotate(45deg)"></div>
+    </div>
+  </div>
+
+  <div style="margin-top:auto;flex:1;display:flex;flex-direction:column;min-height:0;background:#AFD196;padding:14px 14px 106px">
+  <div style="display:flex;flex-direction:column;background:#FFFDF8;border:1.5px solid #4A3B2C;border-radius:20px;overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px">
+    <div style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:22px;color:#3C2E22">오늘 일정</div>
+    <button onClick="{{ startAdd }}" style="display:flex;align-items:center;gap:4px;border:1.5px solid #4A3B2C;background:#FFFDF8;border-radius:999px;padding:6px 13px;font-family:'Pretendard',sans-serif;font-size:13px;color:#3C2E22;cursor:pointer" style-hover="background:#F1E7D8">＋ 추가</button>
+  </div>
+
+  <div ref="{{ scrollRef }}" style="height:206px;overflow-y:auto;padding:0 20px 16px">
+    <div ref="{{ listRef }}" style="display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ tasks }}" as="t" hint-placeholder-count="4">
+        <div style="position:relative;height:58px;flex:none;border-radius:14px;border:{{ t.slotBorder }};opacity:{{ t.slotOpacity }};transition:opacity .18s ease">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#A79883;opacity:{{ t.slotHintOpacity }}">놓일 자리</div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;gap:14px;padding:0 4px;box-sizing:border-box;border-bottom:{{ t.divider }};background:{{ t.rowBg }};box-shadow:{{ t.rowShadow }};transform:translateY({{ t.dragY }}px) scale({{ t.rowScale }});opacity:{{ t.rowOpacity }};transition:{{ t.rowTransition }};z-index:{{ t.z }}">
+            <button onClick="{{ t.onCircle }}" style="flex:none;width:22px;height:22px;border-radius:50%;cursor:pointer;padding:0;background:{{ t.circleBg }};border:{{ t.circleBorderW }} solid {{ t.circleBorder }};animation:{{ t.circleAnim }}"></button>
+            <div onClick="{{ t.onEdit }}" style="flex:1;font-size:16px;color:{{ t.titleColor }};cursor:text;user-select:none;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ t.title }}</div>
+            <div onPointerDown="{{ t.onGrab }}" style="flex:none;width:26px;height:26px;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 6px;box-sizing:border-box;cursor:grab;touch-action:none">
+              <div style="height:1.5px;background:#C7BCA9;border-radius:1px"></div>
+              <div style="height:1.5px;background:#C7BCA9;border-radius:1px"></div>
+              <div style="height:1.5px;background:#C7BCA9;border-radius:1px"></div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:7;display:flex;justify-content:space-around;align-items:center;padding:10px 8px 26px;background:#FFFDF8;border-top:1px solid #E5D9C6;transform:translateY({{ navY }});transition:transform .28s cubic-bezier(.3,.9,.3,1)">
+    <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+      <a href="{{ n.href }}" style="display:flex;flex-direction:column;align-items:center;gap:6px;width:60px;cursor:pointer;text-decoration:none">
+        <div style="width:30px;height:30px;border:{{ n.borderW }} solid {{ n.color }};border-radius:9px"></div>
+        <div style="font-size:12px;font-weight:{{ n.weight }};color:{{ n.color }}">{{ n.label }}</div>
+      </a>
+    </sc-for>
+  </div>
+
+  <div onClick="{{ dismiss }}" style="position:absolute;inset:0;z-index:8;background:transparent;pointer-events:{{ dismissPointer }}"></div>
+
+  <div style="position:absolute;left:0;right:0;bottom:296px;z-index:9;padding:8px 20px 10px;background:linear-gradient(180deg,rgba(247,241,231,0) 0%,#F7F1E7 34%);transform:translateY({{ editBarY }});opacity:{{ editOpacity }};pointer-events:{{ editPointer }};transition:transform .28s cubic-bezier(.3,.9,.3,1),opacity .2s ease">
+      <div style="display:flex;align-items:center;gap:10px;background:#FFFDF8;border:1.5px solid #4A3B2C;border-radius:999px;padding:8px 12px 8px 14px">
+        <div style="flex:none;width:21px;height:21px;border-radius:50%;border:2px solid {{ editCircleBorder }};background:{{ editCircleBg }}"></div>
+        <input ref="{{ inputRef }}" value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onKeyDown }}" placeholder="{{ placeholder }}" style="flex:1;border:none;outline:none;background:transparent;font-size:15px;color:#3C2E22;min-width:0">
+        <sc-if value="{{ isNew }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ cancelEdit }}" style="border:none;background:none;font-family:'Pretendard',sans-serif;font-size:14px;color:#9A8874;cursor:pointer;padding:2px 4px">취소</button>
+        </sc-if>
+        <sc-if value="{{ isEdit }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ deleteTask }}" style="border:none;background:none;font-size:15px;color:#9A8874;cursor:pointer;padding:2px 4px">🗑</button>
+        </sc-if>
+        <button onClick="{{ commitEdit }}" style="border:none;background:none;font-family:'Pretendard',sans-serif;font-size:14px;font-weight:700;color:#3C2E22;cursor:pointer;padding:2px 4px">완료</button>
+      </div>
+    </div>
+
+    <div style="position:absolute;left:0;right:0;bottom:0;z-index:9;height:296px;background:#D4CCC0;padding:8px 3px 26px;box-sizing:border-box;display:flex;flex-direction:column;gap:9px;transform:translateY({{ kbY }});pointer-events:{{ editPointer }};transition:transform .3s cubic-bezier(.3,.9,.3,1)">
+      <sc-for list="{{ keyRows }}" as="row" hint-placeholder-count="4">
+        <div style="display:flex;gap:5px;padding:0 3px;flex:1">
+          <sc-for list="{{ row.keys }}" as="k" hint-placeholder-count="10">
+            <button onClick="{{ k.press }}" style="flex:{{ k.f }};min-width:0;border:none;border-radius:6px;background:{{ k.bg }};color:{{ k.color }};font-family:'Pretendard',sans-serif;font-size:{{ k.size }};box-shadow:0 1px 0 rgba(0,0,0,.22);cursor:pointer;padding:0" style-active="transform:translateY(1px)">{{ k.label }}</button>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+
+  <sc-if value="{{ confirming }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cancelDelete }}" style="position:absolute;inset:0;z-index:12;background:rgba(48,38,28,.32);animation:fadeIn .2s ease"></div>
+    <div style="position:absolute;left:30px;right:30px;top:50%;z-index:13;transform:translateY(-50%);background:#FFFDF8;border:1.5px solid #4A3B2C;border-radius:20px;padding:22px 20px 16px;animation:fadeIn .2s ease">
+      <div style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:20px;color:#3C2E22;text-align:center;margin-bottom:6px">이 일정을 삭제할까요?</div>
+      <div style="font-size:14px;color:#8C7A66;text-align:center;margin-bottom:18px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ confirmTitle }}</div>
+      <div style="display:flex;gap:10px">
+        <button onClick="{{ cancelDelete }}" style="flex:1;border:1.5px solid #C9BFAE;background:#FFFDF8;border-radius:12px;padding:13px;font-family:'Pretendard',sans-serif;font-size:15px;color:#6B5C4A;cursor:pointer">취소</button>
+        <button onClick="{{ confirmDelete }}" style="flex:1;border:1.5px solid #4A3B2C;background:#E4886C;border-radius:12px;padding:13px;font-family:'Pretendard',sans-serif;font-size:15px;color:#FFFDF8;cursor:pointer">삭제하기</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:10;background:rgba(48,38,28,.32);opacity:{{ sheetOpacity }};pointer-events:{{ sheetPointer }};transition:opacity .24s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:11;background:#FFFDF8;border-radius:22px 22px 0 0;padding:12px 20px 26px;transform:translateY({{ sheetY }});pointer-events:{{ sheetPointer }};transition:transform .3s cubic-bezier(.25,.95,.3,1)">
+      <div style="width:38px;height:4px;border-radius:2px;background:#DED2BE;margin:0 auto 14px"></div>
+      <div style="background:#F3EADC;border-radius:12px;padding:12px 14px;font-family:'Pretendard',sans-serif;font-weight:700;font-size:19px;color:#3C2E22;margin-bottom:14px">{{ sheetTitle }}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px">
+        <sc-for list="{{ moods }}" as="m" hint-placeholder-count="9">
+          <button onClick="{{ m.pick }}" style="border:2px solid {{ m.border }};background:{{ m.bg }};border-radius:11px;padding:12px 4px;font-family:'Pretendard',sans-serif;font-size:14px;color:#3C2E22;cursor:pointer;transform:scale({{ m.scale }});transition:transform .14s ease,border-color .14s ease">{{ m.label }}</button>
+        </sc-for>
+      </div>
+      <button onClick="{{ confirmMood }}" style="width:100%;margin-top:16px;border:1.5px solid #4A3B2C;background:{{ confirmBg }};border-radius:12px;padding:14px;font-family:'Pretendard',sans-serif;font-size:16px;color:#3C2E22;cursor:pointer">완료</button>
+      <button onClick="{{ completeNoMood }}" style="width:100%;margin-top:10px;border:none;background:none;font-family:'Pretendard',sans-serif;font-size:13px;color:#9A8874;cursor:pointer">감정 없이 완료</button>
+    </div>
+
+</div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:470,&quot;height&quot;:924},&quot;weather&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;맑음&quot;,&quot;흐림&quot;,&quot;비&quot;,&quot;밤&quot;],&quot;default&quot;:&quot;맑음&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;bubbleText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;일찍 쓰러 가요&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const CHO=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const JUNG=['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const JONG=['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const JUNG_COMBO={'ㅗㅏ':'ㅘ','ㅗㅐ':'ㅙ','ㅗㅣ':'ㅚ','ㅜㅓ':'ㅝ','ㅜㅔ':'ㅞ','ㅜㅣ':'ㅟ','ㅡㅣ':'ㅢ'};
+const JONG_COMBO={'ㄱㅅ':'ㄳ','ㄴㅈ':'ㄵ','ㄴㅎ':'ㄶ','ㄹㄱ':'ㄺ','ㄹㅁ':'ㄻ','ㄹㅂ':'ㄼ','ㄹㅅ':'ㄽ','ㄹㅌ':'ㄾ','ㄹㅍ':'ㄿ','ㄹㅎ':'ㅀ','ㅂㅅ':'ㅄ'};
+const JONG_SPLIT={'ㄳ':['ㄱ','ㅅ'],'ㄵ':['ㄴ','ㅈ'],'ㄶ':['ㄴ','ㅎ'],'ㄺ':['ㄹ','ㄱ'],'ㄻ':['ㄹ','ㅁ'],'ㄼ':['ㄹ','ㅂ'],'ㄽ':['ㄹ','ㅅ'],'ㄾ':['ㄹ','ㅌ'],'ㄿ':['ㄹ','ㅍ'],'ㅀ':['ㄹ','ㅎ'],'ㅄ':['ㅂ','ㅅ']};
+const JUNG_SPLIT={'ㅘ':['ㅗ','ㅏ'],'ㅙ':['ㅗ','ㅐ'],'ㅚ':['ㅗ','ㅣ'],'ㅝ':['ㅜ','ㅓ'],'ㅞ':['ㅜ','ㅔ'],'ㅟ':['ㅜ','ㅣ'],'ㅢ':['ㅡ','ㅣ']};
+const isSyl=c=>c>='가'&&c<='힣';
+const decomp=c=>{const n=c.charCodeAt(0)-44032;return{c:CHO[Math.floor(n/588)],v:JUNG[Math.floor((n%588)/28)],t:JONG[n%28]};};
+const comp=(c,v,t)=>String.fromCharCode(44032+CHO.indexOf(c)*588+JUNG.indexOf(v)*28+JONG.indexOf(t||''));
+
+const MOODS=[
+  {label:'행복함',c:'#F3D07A'},{label:'두근함',c:'#EFA76B'},{label:'평온함',c:'#A8C79B'},
+  {label:'피곤함',c:'#B4C3CC'},{label:'무기력',c:'#C7C1B6'},{label:'우울함',c:'#A9B5D9'},
+  {label:'불안함',c:'#BFC7AE'},{label:'막막함',c:'#C9AFA6'},{label:'화남/답답',c:'#E4886C'}
+];
+const NEUTRAL='#C4BCAF';
+const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;};
+const STEP=54;
+
+const K1=['ㅂ','ㅈ','ㄷ','ㄱ','ㅅ','ㅛ','ㅕ','ㅑ','ㅐ','ㅔ'];
+const K1S=['ㅃ','ㅉ','ㄸ','ㄲ','ㅆ','ㅛ','ㅕ','ㅑ','ㅒ','ㅖ'];
+const K2=['ㅁ','ㄴ','ㅇ','ㄹ','ㅎ','ㅗ','ㅓ','ㅏ','ㅣ'];
+const K3=['ㅋ','ㅌ','ㅊ','ㅍ','ㅠ','ㅜ','ㅡ'];
+
+class Component extends DCLogic {
+  state={
+    tasks:[
+      {id:1,title:'아침 산책 30분',done:true,mood:'행복함'},
+      {id:2,title:'약 챙겨 먹기',done:true,mood:'평온함'},
+      {id:3,title:'보고서 초안 정리',done:true,mood:null},
+      {id:4,title:'저녁에 통화하기',done:false,mood:null}
+    ],
+    editing:null, draft:'', sheetId:null, pickMood:null, shift:false, confirmId:null,
+    popId:null, dragId:null, dragY:0, mode:'ko'
+  };
+  nextId=5;
+  inputRef=React.createRef();
+  listRef=React.createRef();
+  scrollRef=React.createRef();
+
+  focusInput(){requestAnimationFrame(()=>{const el=this.inputRef.current;if(el)el.focus();});}
+
+  startAdd=()=>{this.setState({editing:{mode:'new'},draft:'',sheetId:null},()=>this.focusInput());};
+  editTask=(id)=>{const t=this.state.tasks.find(x=>x.id===id);this.setState({editing:{mode:'edit',id},draft:t.title},()=>this.focusInput());};
+  cancelEdit=()=>this.setState({editing:null,draft:''});
+  setMode=(m)=>this.setState({mode:m,shift:false});
+  dismiss=()=>{this.commitEdit();};
+  commitEdit=()=>{
+    const {editing,draft}=this.state;const v=draft.trim();
+    if(!editing)return;
+    if(editing.mode==='new'){
+      if(!v)return this.setState({editing:null,draft:''});
+      this.setState(s=>({tasks:[...s.tasks,{id:this.nextId++,title:v,done:false,mood:null}],editing:null,draft:''}));
+    }else{
+      this.setState(s=>({tasks:s.tasks.map(t=>t.id===editing.id?{...t,title:v||t.title}:t),editing:null,draft:''}));
+    }
+  };
+  deleteTask=()=>{const e=this.state.editing;this.setState({confirmId:e.id,editing:null,draft:''});};
+  cancelDelete=()=>this.setState({confirmId:null});
+  confirmDelete=()=>this.setState(s=>({tasks:s.tasks.filter(t=>t.id!==s.confirmId),confirmId:null}));
+  onDraft=(ev)=>this.setState({draft:ev.target.value});
+  onKeyDown=(ev)=>{
+    if(ev.key==='Enter'){
+      ev.preventDefault();
+      const {editing,draft}=this.state;const v=draft.trim();
+      if(editing&&editing.mode==='new'&&v){
+        this.setState(s=>({tasks:[...s.tasks,{id:this.nextId++,title:v,done:false,mood:null}],draft:''}),()=>this.focusInput());
+      }else this.commitEdit();
+    }
+    if(ev.key==='Escape')this.cancelEdit();
+  };
+
+  insertJamo=(j)=>{
+    const s=this.state.draft;const last=s.slice(-1);const head=s.slice(0,-1);
+    const isC=CHO.indexOf(j)>=0||JONG.indexOf(j)>0;const isV=JUNG.indexOf(j)>=0;
+    let out;
+    if(isV){
+      if(isSyl(last)){
+        const d=decomp(last);
+        if(d.t){
+          const sp=JONG_SPLIT[d.t];
+          if(sp)out=head+comp(d.c,d.v,sp[0])+comp(sp[1],j,'');
+          else out=head+comp(d.c,d.v,'')+comp(d.t,j,'');
+        }else{
+          const cb=JUNG_COMBO[d.v+j];
+          out=cb?head+comp(d.c,cb,d.t):s+j;
+        }
+      }else if(CHO.indexOf(last)>=0){out=head+comp(last,j,'');}
+      else if(JUNG.indexOf(last)>=0&&JUNG_COMBO[last+j]){out=head+JUNG_COMBO[last+j];}
+      else out=s+j;
+    }else if(isC){
+      if(isSyl(last)){
+        const d=decomp(last);
+        if(!d.t&&JONG.indexOf(j)>0)out=head+comp(d.c,d.v,j);
+        else if(d.t&&JONG_COMBO[d.t+j])out=head+comp(d.c,d.v,JONG_COMBO[d.t+j]);
+        else out=s+j;
+      }else out=s+j;
+    }else out=s+j;
+    this.setState({draft:out,shift:false});
+  };
+  backspace=()=>{
+    const s=this.state.draft;if(!s)return;const last=s.slice(-1);const head=s.slice(0,-1);
+    if(isSyl(last)){
+      const d=decomp(last);
+      if(d.t){const sp=JONG_SPLIT[d.t];this.setState({draft:head+comp(d.c,d.v,sp?sp[0]:'')});}
+      else{const sp=JUNG_SPLIT[d.v];this.setState({draft:head+(sp?comp(d.c,sp[0],''):d.c)});}
+    }else this.setState({draft:head});
+  };
+
+  openSheet=(id)=>{
+    const t=this.state.tasks.find(x=>x.id===id);
+    if(t.done)return this.setState(s=>({tasks:s.tasks.map(x=>x.id===id?{...x,done:false,mood:null}:x)}));
+    this.setState({sheetId:id,pickMood:null,editing:null});
+  };
+  closeSheet=()=>this.setState({sheetId:null,pickMood:null});
+  finish=(mood)=>{
+    const id=this.state.sheetId;
+    this.setState(s=>({tasks:s.tasks.map(t=>t.id===id?{...t,done:true,mood}:t),sheetId:null,pickMood:null,popId:id}));
+    setTimeout(()=>this.setState({popId:null}),450);
+  };
+  confirmMood=()=>this.finish(this.state.pickMood);
+  completeNoMood=()=>this.finish(null);
+
+  onGrab=(id,ev)=>{
+    ev.preventDefault();
+    this.startY=ev.clientY;this.moved=0;
+    this.setState({dragId:id,dragY:0,editing:null});
+    const move=(e)=>{
+      const dy=e.clientY-this.startY;
+      const idx=this.state.tasks.findIndex(t=>t.id===id);
+      const shift=Math.round(dy/STEP);
+      const target=Math.max(0,Math.min(this.state.tasks.length-1,idx+shift));
+      if(target!==idx&&Math.abs(dy)>STEP*0.55){
+        const arr=[...this.state.tasks];const [it]=arr.splice(idx,1);arr.splice(target,0,it);
+        this.startY+=(target-idx)*STEP;
+        this.setState({tasks:arr,dragY:e.clientY-this.startY});
+      }else this.setState({dragY:dy});
+      const sc=this.scrollRef.current;
+      if(sc){
+        const r=sc.getBoundingClientRect();
+        const edge=36;
+        if(e.clientY>r.bottom-edge)sc.scrollTop+=12;
+        else if(e.clientY<r.top+edge)sc.scrollTop-=12;
+      }
+    };
+    const up=()=>{
+      window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);
+      this.setState({dragId:null,dragY:0});
+    };
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);
+  };
+
+  renderVals(){
+    const s=this.state;
+    const weather=this.props.weather??'맑음';
+    const tint=this.props.rowTint??true;
+    const wmap={
+      '맑음':{icon:'☀',sky:'#EAF4EA',top:'#CFE9F0',top2:'#DCEEEF'},
+      '흐림':{icon:'☁',sky:'#EDF1EA',top:'#D6E1E2',top2:'#DFE7E4'},
+      '비':{icon:'☂',sky:'#E9EEE6',top:'#B9C7CC',top2:'#CBD6D6'},
+      '밤':{icon:'☾',sky:'#E7ECE5',top:'#5C6C82',top2:'#8896A6'}
+    };
+    const w=wmap[weather]||wmap['맑음'];
+    const skyTop=w.top, skyTop2=w.top2;
+    const ce=React.createElement;
+    let fx=null;
+    if(weather==='맑음')fx=ce('div',{style:{position:'absolute',right:28,top:20,width:46,height:46,borderRadius:'50%',background:'#F6DFA0',boxShadow:'0 0 24px 10px rgba(246,223,160,.5)'}});
+    else if(weather==='밤')fx=ce('div',{style:{position:'absolute',right:38,top:24,width:44,height:44,borderRadius:'50%',background:'#EDE7DA',boxShadow:'inset -13px 2px 0 0 #5C6C82'}});
+    else if(weather==='흐림')fx=ce('div',{style:{position:'absolute',right:26,top:26,width:88,height:34,borderRadius:'999px',background:'rgba(255,253,248,.85)'}});
+    else if(weather==='비')fx=ce('div',{style:{position:'absolute',inset:0,overflow:'hidden'}},
+      [0,1,2,3,4,5,6,7].map(i=>ce('div',{key:i,style:{position:'absolute',left:(i*47+14)+'px',top:0,width:'2px',height:'16px',borderRadius:'2px',background:'rgba(140,150,155,.5)',animation:`rain ${1.1+(i%3)*0.25}s linear ${i*0.18}s infinite`}})));
+
+    const tasks=s.tasks.map(t=>{
+      const mc=t.mood?(MOODS.find(m=>m.label===t.mood)||{}).c:null;
+      const dragging=s.dragId===t.id;
+      const dim=s.dragId!==null&&!dragging;
+      return {
+        ...t,
+        circleBg:t.done?(mc||'radial-gradient(circle,#D9D9D9 0%,#D9D9D9 45%,#ffffff 45%,#ffffff 73%,#D9D9D9 73%,#D9D9D9 100%)'):'#FFFDF8',
+        circleBorder:t.done?(mc||'#C9BFAE'):'#C9BFAE',
+        circleBorderW:t.done?(mc?'0px':'2px'):'2px',
+        circleAnim:s.popId===t.id?'pop .45s cubic-bezier(.3,1.4,.5,1)':'none',
+        titleColor:'#3C2E22',
+        rowBg:'transparent',
+        divider:dragging?'none':'1px solid #E7DFD1',
+        rowShadow:dragging?'0 10px 22px rgba(74,59,44,.22)':'none',
+        rowScale:dragging?1.03:1,
+        rowOpacity:dim?0.45:1,
+        rowTransition:dragging?'box-shadow .15s ease':'background .35s ease,opacity .2s ease,transform .18s ease',
+        dragY:dragging?s.dragY:0,
+        z:dragging?5:1,
+        slotBorder:dragging?'1.5px dashed #C9B99F':'1.5px solid transparent',
+        slotOpacity:1,
+        slotHintOpacity:dragging?1:0,
+        onCircle:()=>this.openSheet(t.id),
+        onEdit:()=>this.editTask(t.id),
+        onGrab:(ev)=>this.onGrab(t.id,ev)
+      };
+    });
+
+    const sheetTask=s.tasks.find(t=>t.id===s.sheetId)||null;
+    const pickC=s.pickMood?(MOODS.find(m=>m.label===s.pickMood)||{}).c:null;
+    const mk=(label,f,bg,color,size,press)=>({label,f,bg:bg||'#FFFDF8',color:color||'#2C2620',size:size||'16px',press});
+    const G='#B7AE9F';
+    const put=(ch)=>()=>this.setState(p=>({draft:p.draft+ch,shift:false}));
+    const bottom=(a,b)=>[mk(a[0],1.4,G,'#fff','13px',a[1]),mk(b[0],1.4,G,'#fff','13px',b[1]),
+      mk('',4,null,null,null,put(' ')),mk('.',1,null,null,null,put('.')),
+      mk('완료',1.6,'#7C9E86','#fff','14px',this.commitEdit)];
+    let rows;
+    if(s.mode==='sym'){
+      rows=[
+        '1234567890'.split('').map(c=>mk(c,1,null,null,null,put(c))),
+        ['-','/',':',';','(',')','₩','&','@','"'].map(c=>mk(c,1,null,null,null,put(c))),
+        [mk('#+=',1.4,G,'#fff','13px',()=>this.setMode('sym2'))].concat(['.',',','?','!','\''].map(c=>mk(c,1.2,null,null,null,put(c)))).concat([mk('⌫',1.4,G,'#fff','15px',this.backspace)]),
+        bottom(['한글',()=>this.setMode('ko')],['ABC',()=>this.setMode('en')])
+      ];
+    }else if(s.mode==='sym2'){
+      rows=[
+        ['[',']','{','}','#','%','^','*','+','='].map(c=>mk(c,1,null,null,null,put(c))),
+        ['_','\\','|','~','<','>','$','€','¥','•'].map(c=>mk(c,1,null,null,null,put(c))),
+        [mk('123',1.4,G,'#fff','13px',()=>this.setMode('sym'))].concat(['.',',','?','!','\''].map(c=>mk(c,1.2,null,null,null,put(c)))).concat([mk('⌫',1.4,G,'#fff','15px',this.backspace)]),
+        bottom(['한글',()=>this.setMode('ko')],['ABC',()=>this.setMode('en')])
+      ];
+    }else if(s.mode==='en'){
+      const up=s.shift;
+      const m=c=>{const ch=up?c.toUpperCase():c;return mk(ch,1,null,null,null,put(ch));};
+      rows=[
+        'qwertyuiop'.split('').map(m),
+        'asdfghjkl'.split('').map(m),
+        [mk('⇧',1.4,up?'#8E8579':G,'#fff','15px',()=>this.setState(p=>({shift:!p.shift})))]
+          .concat('zxcvbnm'.split('').map(m))
+          .concat([mk('⌫',1.4,G,'#fff','15px',this.backspace)]),
+        bottom(['!#1',()=>this.setMode('sym')],['한/영',()=>this.setMode('ko')])
+      ];
+    }else{
+      rows=[
+        (s.shift?K1S:K1).map(j=>mk(j,1,null,null,null,()=>this.insertJamo(j))),
+        K2.map(j=>mk(j,1,null,null,null,()=>this.insertJamo(j))),
+        [mk('⇧',1.4,s.shift?'#8E8579':G,'#fff','15px',()=>this.setState(p=>({shift:!p.shift})))]
+          .concat(K3.map(j=>mk(j,1,null,null,null,()=>this.insertJamo(j))))
+          .concat([mk('⌫',1.4,G,'#fff','15px',this.backspace)]),
+        bottom(['!#1',()=>this.setMode('sym')],['한/영',()=>this.setMode('en')])
+      ];
+    }
+
+    return {
+      dateLabel:'08월 13일 목요일',
+      weatherIcon:w.icon, weatherLabel:weather, skyBg:w.sky, skyTop, skyTop2, weatherFx:fx,
+      bubble:this.props.bubbleText??'일찍 쓰러 가요',
+      tasks, listRef:this.listRef, scrollRef:this.scrollRef, startAdd:this.startAdd,
+      nav:[['홈','홈.dc.html'],['쉼터','쉼터.dc.html'],['보관함','보관함.dc.html'],['리포트','리포트.dc.html'],['마이','마이.dc.html']].map((n,i)=>({label:n[0],href:n[1],color:i===0?'#7C9E86':'#C2BAAA',borderW:i===0?'2.5px':'2px',weight:i===0?700:400})),
+      navY:s.editing?'110%':'0%',
+      editing:!!s.editing, isNew:s.editing&&s.editing.mode==='new', isEdit:s.editing&&s.editing.mode==='edit',
+      editBarY:s.editing?'0px':'26px', editOpacity:s.editing?1:0,
+      editPointer:s.editing?'auto':'none', kbY:s.editing?'0%':'100%',
+      dismiss:this.dismiss, dismissPointer:s.editing?'auto':'none',
+      sheetY:sheetTask?'0%':'100%', sheetOpacity:sheetTask?1:0, sheetPointer:sheetTask?'auto':'none',
+      draft:s.draft, onDraft:this.onDraft, onKeyDown:this.onKeyDown, inputRef:this.inputRef,
+      placeholder:s.editing&&s.editing.mode==='new'?'새 일정 입력…':'',
+      editCircleBg:'transparent', editCircleBorder:'#B9AB96',
+      cancelEdit:this.cancelEdit, commitEdit:this.commitEdit, deleteTask:this.deleteTask,
+      keyRows:rows.map(k=>({keys:k})),
+      confirming:s.confirmId!==null,
+      confirmTitle:(s.tasks.find(t=>t.id===s.confirmId)||{}).title||'',
+      cancelDelete:this.cancelDelete, confirmDelete:this.confirmDelete,
+      sheetTask:!!sheetTask, sheetTitle:sheetTask?sheetTask.title:'',
+      moods:MOODS.map(m=>({label:m.label,bg:hexA(m.c,s.pickMood===m.label?.95:.55),border:s.pickMood===m.label?'#4A3B2C':'transparent',scale:s.pickMood===m.label?1.04:1,pick:()=>this.setState({pickMood:m.label})})),
+      confirmBg:pickC?hexA(pickC,.55):'#F1E7D8',
+      confirmMood:this.confirmMood, completeNoMood:this.completeNoMood, closeSheet:this.closeSheet
+    };
+  }
+}
+</script>
+</body>
+</html>

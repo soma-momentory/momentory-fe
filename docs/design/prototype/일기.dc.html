@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+body{margin:0;background:#E6E1D6;font-family:'Pretendard',-apple-system,sans-serif}
+a{color:#8C9A76;text-decoration:none}a:hover{color:#6E7B5C}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;box-sizing:border-box">
+<div style="position:relative;width:390px;height:803px;border-radius:46px;background:#161512;padding:5px;box-sizing:border-box;box-shadow:0 30px 70px rgba(60,56,48,.3)">
+<div style="position:relative;width:100%;height:100%;border-radius:41px;overflow:hidden;background:#F7F4ED;display:flex;flex-direction:column">
+
+  <div style="position:absolute;left:0;right:0;bottom:0;height:436px;z-index:0">
+    <div style="position:absolute;left:-20%;top:0;width:140%;height:78px;background:#C7D3C0;border-radius:50% 50% 0 0 / 100% 100% 0 0"></div>
+    <div style="position:absolute;left:0;right:0;top:38px;bottom:0;background:#C7D3C0"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:14px 26px 2px;font-size:12px;color:#9AA8AD;flex:none">
+    <span>9:41</span>
+    <span style="display:flex;gap:4px;align-items:center">
+      <span style="width:4px;height:9px;border-radius:1px;background:#9AA8AD;display:inline-block"></span>
+      <span style="width:4px;height:9px;border-radius:1px;background:#9AA8AD;display:inline-block"></span>
+      <span style="width:4px;height:9px;border-radius:1px;background:#9AA8AD;display:inline-block;opacity:.4"></span>
+    </span>
+  </div>
+
+  <div style="position:relative;z-index:1;flex:1;min-height:0;display:flex;flex-direction:column;animation:fadeIn .3s ease">
+
+    <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:8px 18px 10px">
+      <a href="{{ backHref }}" style="font-size:16px;color:#3C3830;padding:2px 4px">✕</a>
+      <div style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:21px;color:#3C3830">{{ dateLabel }}</div>
+      <span style="font-size:14px;color:#7D8A86;padding:2px 4px">☀︎</span>
+    </div>
+
+    <div style="flex:none;margin:0 16px 12px;position:relative;display:flex;background:rgba(237,230,210,.6);border-radius:22px;padding:5px">
+      <div style="position:absolute;top:5px;bottom:5px;left:5px;width:calc(50% - 5px);border-radius:18px;background:rgba(255,255,255,.9);box-shadow:0 1px 3px rgba(0,0,0,.08);transform:translateX({{ tabX }});transition:transform .3s cubic-bezier(.3,.9,.3,1)"></div>
+      <button onClick="{{ pickMine }}" style="position:relative;flex:1;border:none;background:none;padding:9px 0;font-family:'Pretendard',sans-serif;font-size:14px;color:{{ mineColor }};cursor:pointer">내 시선</button>
+      <button onClick="{{ pickOther }}" style="position:relative;flex:1;border:none;background:none;padding:9px 0;font-family:'Pretendard',sans-serif;font-size:14px;color:{{ otherColor }};cursor:pointer">다른 시선</button>
+    </div>
+
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:0 16px 120px;display:flex;flex-direction:column;gap:11px">
+
+      <div style="flex:none;background:rgba(255,255,255,.85);border-radius:16px;padding:14px 2px 12px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px 10px">
+          <span style="font-size:11px;color:#B9B2A2">{{ diaryLabel }}</span>
+          <div style="display:flex;gap:5px;flex:none;align-items:center">
+            <span style="border:1px solid #E7E1D2;border-radius:10px;padding:3px 9px;font-size:11px;color:#8F9A83">☀︎ 맑음</span>
+            <span style="border-radius:10px;padding:3px 9px;font-size:11px;background:{{ moodBg }};color:#3C3830">{{ moodLabel }}</span>
+          </div>
+        </div>
+        <div onClick="{{ nextPage }}" style="overflow:hidden;cursor:pointer">
+          <div style="display:flex;width:100%;transform:translateX({{ pageX }});transition:transform .38s cubic-bezier(.3,.9,.3,1)">
+            <sc-for list="{{ pages }}" as="p" hint-placeholder-count="2">
+              <div style="flex:none;width:100%;box-sizing:border-box;padding:0 14px;display:flex;flex-direction:column;gap:12px;min-height:196px">
+                <sc-for list="{{ p.lines }}" as="l" hint-placeholder-count="3">
+                  <div style="font-size:14px;line-height:1.75;color:#3C3830;letter-spacing:-.2px;word-break:keep-all">{{ l.text }}</div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:6px;padding-top:12px">
+          <sc-for list="{{ dots }}" as="d" hint-placeholder-count="2">
+            <span style="width:7px;height:7px;border-radius:50%;background:{{ d.bg }};transition:background .25s ease"></span>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ hasTasks }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none;background:rgba(255,255,255,.85);border-radius:16px;padding:13px 16px 8px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+        <div style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:18px;color:#3C3830;margin-bottom:2px">오늘 일정</div>
+        <sc-for list="{{ tasks }}" as="t" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #E7E1D2">
+            <span style="flex:none;width:14px;height:14px;border-radius:50%;background:{{ t.dotBg }};border:1.5px solid {{ t.dotBorder }}"></span>
+            <span style="font-size:13px;color:{{ t.color }}">{{ t.title }}</span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+    </div>
+
+    <sc-if value="{{ canSave }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;right:14px;bottom:16px;z-index:3;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <sc-if value="{{ noteOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;right:0;bottom:112px;width:216px;background:rgba(255,255,255,.94);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.6;color:#3C3830;box-shadow:0 4px 14px rgba(0,0,0,.1);animation:cardIn .26s cubic-bezier(.3,.9,.3,1);word-break:keep-all">{{ noteText }}</div>
+      </sc-if>
+      <button onClick="{{ save }}" style="width:78px;height:78px;border-radius:50%;background:#F7F4ED;border:1.5px solid #C7D3C0;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+        <img src="assets/chick-trim.png" alt="서브 캐릭터" style="width:48px;animation:bob 3.4s ease-in-out infinite"></img>
+      </button>
+      <button onClick="{{ save }}" style="border:none;background:none;font-family:'Pretendard',sans-serif;font-weight:700;font-size:16px;color:{{ saveColor }};cursor:pointer;padding:2px 4px">{{ saveLabel }}</button>
+    </div>
+    </sc-if>
+
+  </div>
+
+</div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:470,&quot;height&quot;:924},&quot;dateLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;8월 13일의 일기&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;내 시선&quot;,&quot;다른 시선&quot;],&quot;default&quot;:&quot;내 시선&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const MOOD_BG={'행복함':'#F3D07A','두근함':'#EFA76B','평온함':'#A8C79B','피곤함':'#B4C3CC','무기력':'#C7C1B6','우울함':'#A9B5D9','불안함':'#BFC7AE','막막함':'#C9AFA6','화남/답답':'#E4886C'};
+const NEUTRAL='#C4BCAF';
+const TASKS=[
+  {title:'아침 산책 30분',c:'#F3D07A',done:true},
+  {title:'약 챙겨 먹기',c:'#A8C79B',done:true},
+  {title:'보고서 초안 정리',c:'#C4BCAF',done:true},
+  {title:'저녁에 통화하기',c:null,done:false}
+];
+const MINE=[
+  ['보고서 초안을 오래 붙잡고 있었다. 잘 풀리지 않아서 오전이 통째로 지나갔다.','점심에 잠깐 밖에 나가 걸었다. 십 분 남짓이었는데, 그 사이에 어깨가 조금 내려갔다.'],
+  ['저녁에 하려던 통화는 미뤘다. 오늘은 여기까지만 하기로 했다.','하루를 점수로 매기면 7점. 생각보다 나쁘지 않았다.','내일은 충분히 쉬는 것부터 챙기기로 했다.']
+];
+const OTHER=[
+  ['오늘 지현님은 잘 풀리지 않는 일을 오래 붙잡고 있었어요. 그건 쉽게 놓지 않았다는 뜻이에요.','점심에 밖으로 나간 십 분은, 스스로를 챙긴 시간이었고요.'],
+  ['미뤄둔 통화 하나는 게으름이 아니라 남은 힘을 아껴둔 선택이었어요.','7점이라는 숫자 안에는 오늘을 버텨낸 시간이 전부 들어 있어요.','내일은 충분히 쉬기. 그 약속, 제가 기억하고 있을게요.']
+];
+
+class Component extends DCLogic {
+  state={tab:'mine',page:0,saved:false,noteOpen:false,viewOnly:false,gen:null};
+  componentDidMount(){
+    const q=window.location.search||'';
+    const st={};
+    if((this.props.startTab??'내 시선')==='다른 시선')st.tab='other';
+    if(q.indexOf('mode=view')>=0)st.viewOnly=true;
+    if(Object.keys(st).length)this.setState(st);
+    const gp=(k)=>{const mm=q.match(new RegExp('[?&]'+k+'=(\\d+)'));return mm?Number(mm[1]):null;};
+    const y=gp('y'),m=gp('m'),d=gp('d');
+    if(y&&m&&d&&!(y===2026&&m===8&&d===13)){
+      import('./data.js').then(D=>{
+        const g=D.getDay(y,m,d);
+        const t=D.diaryText(y,m,d);
+        if(g&&t)this.setState({gen:{
+          mine:t.mine,other:t.other,
+          mood:g.diary.mood,
+          tasks:g.tasks,
+          label:m+'월 '+d+'일의 일기'
+        }});
+      });
+    }
+  }
+
+  pickMine=()=>this.setState({tab:'mine',page:0});
+  pickOther=()=>this.setState({tab:'other',page:0});
+  nextPage=()=>this.setState(s=>({page:(s.page+1)%2}));
+  save=()=>{
+    if(this.state.saved)return;
+    this.setState({saved:true,noteOpen:true});
+    setTimeout(()=>{window.location.href='쉼터.dc.html?view=card';},900);
+  };
+
+  renderVals(){
+    const s=this.state;
+    const isMine=s.tab==='mine';
+    const gen=s.gen;
+    const src=gen?(isMine?gen.mine:gen.other):(isMine?MINE:OTHER);
+    const taskList=gen?gen.tasks.map(t=>({title:t[0],c:t[1]?(t[2]?MOOD_BG[t[2]]:NEUTRAL):null,done:t[1]})):TASKS;
+    const mood=gen?gen.mood:'행복함';
+    return {
+      dateLabel:gen?gen.label:(this.props.dateLabel??'8월 13일의 일기'),
+      moodLabel:mood, moodBg:MOOD_BG[mood]||'#F3D07A', hasTasks:taskList.length>0,
+      tabX:isMine?'0%':'100%',
+      mineColor:isMine?'#3C3830':'#8F9A83', otherColor:isMine?'#8F9A83':'#3C3830',
+      pickMine:this.pickMine, pickOther:this.pickOther,
+      diaryLabel:isMine?'내가 쓴 하루':'캐릭터가 다시 써준 하루',
+      pages:src.map(lines=>({lines:lines.map(t=>({text:t}))})),
+      pageX:'-'+(s.page*100)+'%', nextPage:this.nextPage,
+      dots:[0,1].map(i=>({bg:s.page===i?'#3C3830':'#E7E1D2'})),
+      tasks:taskList.map(t=>({
+        title:t.title,
+        dotBg:t.done?(t.c||'transparent'):'transparent',
+        dotBorder:t.done?(t.c||'#C3C1B6'):'#C3C1B6',
+        color:t.done?'#3C3830':'#B9B2A2'
+      })),
+      save:this.save, noteOpen:s.noteOpen,
+      canSave:!s.viewOnly, backHref:s.viewOnly?'보관함.dc.html':'홈.dc.html',
+      noteText:'오늘 이야기 고마워요. 이 하루로 만든 행동카드를 보여드릴게요.',
+      saveLabel:s.saved?'행동카드로 가는 중…':'일기 저장하기',
+      saveColor:s.saved?'#8C9A76':'#3C3830'
+    };
+  }
+}
+</script>
+</body>
+</html>

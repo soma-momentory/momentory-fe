@@ -2,15 +2,17 @@ import { Redirect, router } from "expo-router";
 import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, TextInput, View } from "react-native";
 
+import { RetroButton } from "@/components/chat/RetroButton";
+import { RetroScene } from "@/components/chat/RetroScene";
 import { EmotionPill } from "@/components/common/EmotionPill";
 import { RetroNav } from "@/components/common/RetroNav";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { SegBar } from "@/components/common/SegBar";
 import { ActionRow } from "@/components/diary/ActionRow";
-import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { paperColors, paperTypography } from "@/design/paper";
 import theme from "@/design/theme";
 import { diaryBody } from "@/design/tokens.mvp";
 import { useDiary } from "@/features/diary/model/diary";
@@ -90,18 +92,19 @@ export default function RetroDraft() {
   const showEditor = face === 0 || !hasBabaFace;
 
   return (
-    <ScreenBackground>
-      <RetroNav title="오늘의 일기" rest={false} />
+    <ScreenBackground variant="paperFlat">
+      <RetroScene />
+      <RetroNav variant="paper" title="오늘의 일기" rest={false} />
 
       <View style={styles.head}>
-        <AppText variant="caption" tone="caption" style={styles.date}>
-          {`${formatKoreanDate(today)} · 오늘의 회고`}
-        </AppText>
+        <AppText style={styles.date}>{`${formatKoreanDate(today)} · 오늘의 회고`}</AppText>
         {/* 감정을 더하는 [+] 를 두지 않는다 — 여기서 만들면 리포트가 두 갈래가 된다 */}
-        <EmotionPill id={startEmotion} />
+        <EmotionPill id={startEmotion} variant="paper" />
       </View>
 
-      {hasBabaFace ? <SegBar items={FACES} activeIndex={face} onChange={setFace} /> : null}
+      {hasBabaFace ? (
+        <SegBar variant="paper" items={FACES} activeIndex={face} onChange={setFace} />
+      ) : null}
 
       <ScrollView
         style={styles.stack}
@@ -109,22 +112,22 @@ export default function RetroDraft() {
         showsVerticalScrollIndicator={false}
       >
         {showEditor ? (
-          <Card style={styles.card}>
+          <Card variant="paperOpaque" style={styles.card}>
             <TextInput
               value={body}
               onChangeText={setBody}
               multiline
               maxLength={diaryBody.maxLength}
-              selectionColor={semantic.accentInk}
+              selectionColor={paperColors.brand.greenDark}
               style={styles.body}
               accessibilityLabel="일기 본문"
             />
             <View style={styles.footRow}>
-              <AppText variant="caption" tone="caption" style={styles.foot}>
+              <AppText style={[styles.foot, styles.footFlex]}>
                 대화를 바탕으로 적어봤어요 · 고쳐도 괜찮아요
               </AppText>
               {/* 카운터만 둔다 — 최소 글자 수를 요구하지 않는다 */}
-              <AppText variant="caption" tone="caption" style={styles.counter}>
+              <AppText style={[styles.foot, styles.counter]}>
                 {`${body.length} / ${diaryBody.maxLength}`}
               </AppText>
             </View>
@@ -133,24 +136,20 @@ export default function RetroDraft() {
           <>
             {/* 회고를 마친 당시의 고정 스냅샷 — 저장 뒤에는 다시 만들지 않는다 */}
             {reframed != null ? (
-              <Card style={styles.babaCard}>
-                <AppText tone="strong" style={styles.body}>
-                  {reframed}
-                </AppText>
-                <AppText variant="caption" tone="caption">
+              <Card variant="paperSoft" style={styles.card}>
+                <AppText style={styles.body}>{reframed}</AppText>
+                <AppText style={styles.foot}>
                   바바의 관점은 제안일 뿐이에요 · 내 문장이 우선이에요
                 </AppText>
               </Card>
             ) : null}
 
             {actionCard != null ? (
-              <Card style={styles.card}>
-                <SectionLabel>오늘 만든 행동 카드</SectionLabel>
+              <Card variant="paperOpaque" style={styles.card}>
+                <SectionLabel variant="paper">오늘 만든 행동 카드</SectionLabel>
                 <ActionRow label="상황" value={actionCard.situation} />
                 <ActionRow label="목표 행동" value={actionCard.action} />
-                <AppText variant="caption" tone="caption">
-                  저장하면 이 일기 아래에 함께 남아요
-                </AppText>
+                <AppText style={styles.foot}>저장하면 이 일기 아래에 함께 남아요</AppText>
               </Card>
             ) : null}
           </>
@@ -159,15 +158,15 @@ export default function RetroDraft() {
 
       {/* 저장은 마지막 면에서 한 번뿐이다 — 세그먼트는 면을 바꿀 뿐 저장하지 않는다 */}
       {hasBabaFace && face === 0 ? (
-        <AppButton label="다음" onPress={() => setFace(1)} />
+        <RetroButton label="다음" onPress={() => setFace(1)} />
       ) : (
-        <AppButton label="오늘 일기 저장하기" onPress={save} />
+        <RetroButton label="오늘 일기 저장하기" onPress={save} />
       )}
     </ScreenBackground>
   );
 }
 
-const { semantic } = theme.colors;
+const { styles: type } = paperTypography;
 
 const styles = StyleSheet.create({
   head: {
@@ -177,7 +176,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: theme.layout.gap.element,
   },
-  date: { flex: 1, fontSize: 12.5, lineHeight: 15 },
+  date: {
+    flex: 1,
+    fontSize: type.label.fontSize,
+    lineHeight: type.label.lineHeight,
+    color: paperColors.text.greenStrong,
+  },
 
   stack: { flex: 1, marginHorizontal: -theme.layout.screenMargin },
   stackContent: {
@@ -187,16 +191,19 @@ const styles = StyleSheet.create({
   },
 
   card: { gap: 10 },
-  // 바바의 면은 톤 배경 — 내 문장과 다른 사람의 문장이 면으로 갈린다
-  babaCard: { gap: 10, backgroundColor: semantic.surfaceTone, borderColor: "transparent" },
   body: {
-    fontFamily: "Pretendard-Regular",
+    fontFamily: paperTypography.fontFamily.regular,
     fontSize: diaryBody.fontSize,
     lineHeight: diaryBody.lineHeight,
-    color: semantic.textPrimary,
+    color: paperColors.text.primary,
     padding: 0,
   },
   footRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
-  foot: { flex: 1 },
+  foot: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.text.mutedWarmText,
+  },
+  footFlex: { flex: 1 },
   counter: { fontVariant: ["tabular-nums"] },
 });

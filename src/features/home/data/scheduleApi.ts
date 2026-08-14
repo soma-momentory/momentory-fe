@@ -12,10 +12,16 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * PUT    /api/v1/schedules/{id}/completion   200 { scheduleId, completed, emotion }
  * ```
  *
- * **계약의 나머지 둘은 붙이지 않았다** — `PATCH /schedules/{id}`(제목 수정)와
- * `PATCH /schedules/order`(순서)를 **부를 화면이 없다.** `12-c` 에 제목 `[수정]`
- * 이 없고(가져온 일정은 읽기 전용이라 시안에 아예 없다) 홈 목록에 끌어 옮기기도
- * 없다. 쓰지 않는 통로를 미리 만들면 계약이 바뀔 때 조용히 썩는다.
+ * ```
+ * PATCH  /api/v1/schedules/order            200   { date, scheduleIds }
+ * ```
+ *
+ * ```
+ * PATCH  /api/v1/schedules/{id}             200 ScheduleResponse   { date, title }
+ * ```
+ *
+ * **계약을 다 쓴다** — 순서(`/order`)는 끌기 손잡이(`PLAN.md` D10)가, 제목 수정은
+ * 하단 입력 바의 편집 모드(D11)가 부른다. 둘 다 2026-08-14 에 붙었다.
  *
  * **화면은 서버 모양을 보지 않는다.** 여기서 스키마 `Schedule`(`model/types.ts`)로
  * 옮기고, 어긋나는 자리는 아래에 전부 적었다 — 나중에 계약이 바뀌면 고칠 곳이
@@ -158,7 +164,7 @@ const toSchedules = (v: unknown): Schedule[] | null => {
 // ── 호출 ────────────────────────────────────────────────────────────────
 
 const call = async <T>(
-  method: "GET" | "POST" | "PUT",
+  method: "GET" | "POST" | "PUT" | "PATCH",
   path: string,
   body: unknown,
   parse: (v: unknown) => T | null,
@@ -192,6 +198,30 @@ export const deleteSchedule = async (id: string): Promise<ScheduleResult<true>> 
   );
   return result.ok ? { ok: true, data: true } : { ok: false, code: mapError(result.error) };
 };
+
+/**
+ * 제목 수정 — `12-c` 편집 모드. **날짜도 함께 보낸다**(`ScheduleRequest` 가 둘 다
+ * 필수). 날짜는 그날 그대로라 옮기는 뜻이 아니다.
+ */
+export const patchScheduleTitle = (
+  id: string,
+  date: string,
+  title: string,
+): Promise<ScheduleResult<Schedule>> =>
+  call("PATCH", `${SCHEDULES_PATH}/${encodeURIComponent(id)}`, { date, title }, toSchedule);
+
+/**
+ * 순서. **그날의 id 를 원하는 차례대로 통째로 보낸다**(`ScheduleOrderRequest`) —
+ * 「몇 번째로 옮겼다」가 아니라 결과 목록이라, 두 번 눌러도 마지막 것이 이긴다.
+ *
+ * ⚠ **서버 id 는 정수다.** 방금 만들어 아직 서버 id 를 못 받은 줄(임시 id)이
+ * 섞여 있으면 보낼 수 없다 — 호출부가 그때는 부르지 않는다(`day.ts` `moveSchedule`).
+ */
+export const patchScheduleOrder = (
+  date: string,
+  scheduleIds: number[],
+): Promise<ScheduleResult<true>> =>
+  call("PATCH", `${SCHEDULES_PATH}/order`, { date, scheduleIds }, () => true);
 
 /**
  * 마침·감정. **서버가 둘을 묶어 놨다** — `completed=false` 인데 감정을 보내면

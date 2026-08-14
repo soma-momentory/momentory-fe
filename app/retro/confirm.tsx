@@ -1,16 +1,18 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
+import { RetroButton } from "@/components/chat/RetroButton";
+import { RetroScene } from "@/components/chat/RetroScene";
 import { EmotionPill } from "@/components/common/EmotionPill";
 import { RetroNav } from "@/components/common/RetroNav";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { PencilIcon, SunIcon } from "@/components/icons/LineIcons";
-import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { paperColors, paperRadius, paperTypography } from "@/design/paper";
 import theme from "@/design/theme";
-import { fill, home } from "@/design/tokens.mvp";
+import { home } from "@/design/tokens.mvp";
 import {
   doneCountLabel,
   useDay,
@@ -51,16 +53,15 @@ export default function RetroConfirm() {
   const openDetail = (id: string) => router.push(`/home/schedule/${id}`);
 
   return (
-    <ScreenBackground>
-      <RetroNav title="오늘 정리" />
+    <ScreenBackground variant="paperFlat">
+      <RetroScene />
+      <RetroNav variant="paper" title="오늘 정리" />
 
       <View style={styles.head}>
-        <AppText tone="strong" weight="600" style={styles.title}>
+        <AppText weight="700" style={styles.title}>
           오늘 하루를 정리해봤어요.
         </AppText>
-        <AppText tone="caption" style={styles.sub}>
-          탭해서 고치고, 회고를 시작해볼까요?
-        </AppText>
+        <AppText style={styles.sub}>탭해서 고치고, 회고를 시작해볼까요?</AppText>
       </View>
 
       <ScrollView
@@ -69,23 +70,19 @@ export default function RetroConfirm() {
         showsVerticalScrollIndicator={false}
       >
         {/* 날씨 — 오늘이 어떤 날이었는지의 가장 바깥 테두리 */}
-        <Card style={styles.weatherCard}>
-          <SunIcon size={16} />
-          <AppText tone="strong" weight="500" style={styles.weatherLabel}>
+        <Card variant="paperSoft" style={styles.weatherCard}>
+          <SunIcon size={16} color={paperColors.text.greenStrong} />
+          <AppText weight="700" style={styles.weatherLabel}>
             오늘 날씨
           </AppText>
-          <AppText variant="caption" tone="caption">
-            {`${weather.label} · ${weather.celsius}℃`}
-          </AppText>
+          <AppText style={styles.weatherValue}>{`${weather.label} · ${weather.celsius}℃`}</AppText>
         </Card>
 
         {/* 오늘 일정 — 홈과 같은 카드 */}
-        <Card style={styles.card}>
+        <Card variant="paperSoft" style={styles.card}>
           <View style={styles.dayHead}>
-            <SectionLabel>오늘 일정</SectionLabel>
-            <AppText tone="caption" weight="500" style={styles.count}>
-              {doneCountLabel(schedules)}
-            </AppText>
+            <SectionLabel variant="paper">오늘 일정</SectionLabel>
+            <AppText style={styles.count}>{doneCountLabel(schedules)}</AppText>
           </View>
 
           <View style={styles.list}>
@@ -93,6 +90,7 @@ export default function RetroConfirm() {
               <ScheduleRow
                 key={s.id}
                 schedule={s}
+                variant="paper"
                 onToggleDone={toggleDone}
                 onOpen={openDetail}
                 // 비어 있는 줄을 밤에 한 번 훑어 채우는 자리다
@@ -106,63 +104,65 @@ export default function RetroConfirm() {
             style={styles.addButton}
             onPress={() => router.push("/home/schedule/new")}
           >
-            <AppText tone="onDark" weight="700" style={styles.addLabel}>
+            <AppText weight="700" style={styles.addLabel}>
               ＋ 일정 추가하기
             </AppText>
           </Pressable>
         </Card>
 
         {/* 오늘의 순간 — 시각을 붙이지 않는다 */}
-        <Card style={styles.card}>
-          <SectionLabel>오늘의 순간</SectionLabel>
+        <Card variant="paperSoft" style={styles.card}>
+          <SectionLabel variant="paper">오늘의 순간</SectionLabel>
 
           {moments.map((m) => (
             <View key={m.id} style={styles.momentRow}>
               <View style={styles.momentIcon}>
-                <PencilIcon size={14} color={semantic.textMuted} />
+                <PencilIcon size={14} color={paperColors.text.greenStrong} />
               </View>
-              <AppText tone="strong" weight="500" style={styles.momentText}>
-                {m.text}
-              </AppText>
+              <AppText style={styles.momentText}>{m.text}</AppText>
             </View>
           ))}
 
-          <Pressable
-            accessibilityRole="button"
-            style={styles.momentButton}
-            onPress={() => router.push("/home/moment/new")}
-          >
-            <PencilIcon size={14} />
-            <AppText tone="caption" weight="500" style={styles.momentLabel}>
-              지금 떠오른 걸 한 줄로 적어요
-            </AppText>
-          </Pressable>
+          {/*
+            ⚠ 「지금 떠오른 걸 한 줄로 적어요」 줄을 뺐다 — 순간 입력(`12-d`)이
+            2026-08-14 에 사라져(`PLAN.md` D9) 갈 곳이 없어졌다. 눌리는데 아무 일도
+            없는 줄을 두지 않는다(`CLAUDE.md`). **읽기는 그대로** 남는다 —
+            순간을 만들 길이 생기면 이 자리에 다시 붙인다.
+          */}
         </Card>
 
         {/* 오늘 기록한 감정 — 줄에 달린 것을 그대로 모은다 */}
         {emotions.length > 0 ? (
-          <Card style={styles.card}>
-            <SectionLabel>오늘 기록한 감정</SectionLabel>
+          <Card variant="paperSoft" style={styles.card}>
+            <SectionLabel variant="paper">오늘 기록한 감정</SectionLabel>
             <View style={styles.emotionRow}>
               {emotions.map((e, i) => (
-                <EmotionPill key={`${e}-${i}`} id={e} />
+                <EmotionPill key={`${e}-${i}`} id={e} variant="paper" />
               ))}
             </View>
           </Card>
         ) : null}
       </ScrollView>
 
-      <AppButton label="다음" onPress={() => router.push("/retro/emotion")} />
+      <RetroButton label="다음" onPress={() => router.push("/retro/emotion")} />
     </ScreenBackground>
   );
 }
 
-const { semantic } = theme.colors;
+const { styles: type } = paperTypography;
 
 const styles = StyleSheet.create({
-  head: { paddingTop: 10, paddingBottom: theme.layout.gap.section },
-  title: { fontSize: 15.5, lineHeight: 23.25 },
-  sub: { fontSize: 13, lineHeight: 19.5 },
+  head: { paddingTop: 10, paddingBottom: theme.layout.gap.section, gap: 4 },
+  title: {
+    fontSize: type.bodyLg.fontSize,
+    lineHeight: type.bodyLg.lineHeight,
+    color: paperColors.text.primary,
+  },
+  sub: {
+    fontSize: type.bodySm.fontSize,
+    lineHeight: type.bodySm.lineHeight,
+    color: paperColors.text.greenStrong,
+  },
 
   stack: { flex: 1, marginHorizontal: -theme.layout.screenMargin },
   // 카드 넷이 다 들어가지 않으면 이 안만 스크롤된다 (RULES 「812 프레임」)
@@ -173,39 +173,52 @@ const styles = StyleSheet.create({
   },
 
   weatherCard: { flexDirection: "row", alignItems: "center", gap: 10 },
-  weatherLabel: { flex: 1, fontSize: 13.5, lineHeight: 18.9 },
+  weatherLabel: {
+    flex: 1,
+    fontSize: type.bodySm.fontSize,
+    lineHeight: type.bodySm.lineHeight,
+    color: paperColors.text.primary,
+  },
+  weatherValue: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.text.mutedWarmText,
+  },
 
   card: { gap: 10 },
   dayHead: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  count: { flex: 1, textAlign: "right", fontSize: 11.5, lineHeight: 11.5 },
+  count: {
+    flex: 1,
+    textAlign: "right",
+    fontSize: type.label.fontSize,
+    lineHeight: type.label.lineHeight,
+    color: paperColors.text.mutedWarmText,
+  },
   list: { gap: home.list.gap },
 
+  // 흰 글자가 얹히는 초록 면은 `greenDark` 다 — `brand.green` 은 2.7 (paper.ts)
   addButton: {
     minHeight: home.addButton.minHeight,
-    borderRadius: home.addButton.radius,
-    backgroundColor: fill.primaryDeep,
+    borderRadius: paperRadius.pill,
+    backgroundColor: paperColors.brand.greenDark,
     alignItems: "center",
     justifyContent: "center",
   },
-  addLabel: { fontSize: home.addButton.fontSize, lineHeight: home.addButton.fontSize },
+  addLabel: {
+    fontSize: type.bodySm.fontSize,
+    lineHeight: type.bodySm.lineHeight,
+    color: paperColors.text.onFill,
+  },
 
   // .mr1 — 아이콘 자리를 22 로 고정해 본문 시작점이 줄마다 흔들리지 않게
   momentRow: { flexDirection: "row", alignItems: "flex-start", gap: 11 },
   momentIcon: { width: 22, alignItems: "center" },
-  momentText: { flex: 1, fontSize: 13.5, lineHeight: 19.6 },
-
-  momentButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: home.momentButton.gap,
-    minHeight: home.momentButton.minHeight,
-    paddingHorizontal: home.momentButton.paddingHorizontal,
-    borderRadius: home.momentButton.radius,
-    backgroundColor: home.momentButton.background,
-    borderWidth: 1,
-    borderColor: home.momentButton.border,
+  momentText: {
+    flex: 1,
+    fontSize: type.bodySm.fontSize,
+    lineHeight: type.bodySm.lineHeight,
+    color: paperColors.text.primary,
   },
-  momentLabel: { flex: 1, fontSize: home.momentButton.fontSize, lineHeight: 18.9 },
 
   emotionRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
 });

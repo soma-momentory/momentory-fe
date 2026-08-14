@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { CheckCircleIcon } from "@/components/icons/LineIcons";
 import { AppText } from "@/components/primitives/AppText";
+import { paperColors, paperEmotionColor, paperRadius, paperTypography } from "@/design/paper";
 import theme, { type EmotionId } from "@/design/theme";
 import { emotionGrid } from "@/design/tokens.mvp";
 
@@ -33,10 +34,56 @@ type Props = {
    * 테두리·굵기만으로는 어느 것이 켜졌는지 훑기 어렵다.
    */
   showCheck?: boolean;
+  /**
+   * 새 디자인 — **감정색으로 채운 3×3 타일**
+   * (`docs/design/prototype/홈.dc.html` 감정 시트). 고른 칸은 면이 진해지고
+   * **잉크 2px 테두리**가 둘린다 — 선택을 색만으로 표시하지 않는 규칙은 그대로다.
+   * 아이콘은 두지 않는다 — 시안의 이 시트는 면 색이고, 얼굴 아이콘은 보관함 몫이다.
+   */
+  variant?: "default" | "paper";
 };
 
-export function EmotionGrid({ selected, onToggle, size = "default", showCheck = false }: Props) {
+export function EmotionGrid({
+  selected,
+  onToggle,
+  size = "default",
+  showCheck = false,
+  variant = "default",
+}: Props) {
   const big = size === "big";
+
+  if (variant === "paper") {
+    return (
+      <View style={styles.paperGrid}>
+        {theme.emotions.map((e) => {
+          const on = selected.includes(e.id);
+          const base = paperEmotionColor(e.id);
+          return (
+            <Pressable
+              key={e.id}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={e.name}
+              onPress={() => onToggle(e.id)}
+              style={[
+                styles.paperCell,
+                { backgroundColor: on ? base : `${base}8C` },
+                on ? styles.paperCellOn : null,
+              ]}
+            >
+              {/* 얼굴 아이콘을 두지 않는다 — 시안의 감정 시트는 **면 색**이고,
+                  이름이 늘 함께 있어 색만으로 판단하게 되지 않는다.
+                  ⚠ `numberOfLines` 를 빼면 「행복함」의 끝 글자가 잘린다 — 칸 폭은
+                  남는데 한글이 글자 단위로 접히면서 둘째 줄이 그려지지 않는다 */}
+              <AppText numberOfLines={1} weight={on ? "700" : "400"} style={styles.paperLabel}>
+                {e.name}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.grid, big ? styles.gridBig : null]}>
@@ -129,4 +176,30 @@ const styles = StyleSheet.create({
   },
   label: { fontSize: emotionGrid.cell.fontSize, lineHeight: emotionGrid.cell.fontSize * 1.3 },
   check: { position: "absolute", top: 5, right: 5 },
+
+  // ── 새 디자인 — 3×3 얼굴 타일 ────────────────────────────────────────
+  paperGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  paperCell: {
+    // 3열 — 넷째가 들어올 수 없는 기준 폭(30%)을 주고 남는 만큼 늘린다.
+    // `flexBasis: 0` 이면 아홉이 한 줄에 다 들어가 버린다
+    flexBasis: "30%",
+    flexGrow: 1,
+    minWidth: 0,
+    // 아이콘이 빠진 만큼 낮아진다 — 44 타깃은 넉넉히 넘는다
+    minHeight: 56,
+    borderRadius: paperRadius.field,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    // 꺼진 칸에도 테두리 자리를 잡아 둔다 — 켤 때 글자가 밀리지 않는다
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  paperCellOn: { borderColor: paperColors.line.ink },
+  paperLabel: {
+    fontSize: paperTypography.styles.label.fontSize,
+    lineHeight: paperTypography.styles.label.lineHeight,
+    color: paperColors.text.primary,
+  },
 });

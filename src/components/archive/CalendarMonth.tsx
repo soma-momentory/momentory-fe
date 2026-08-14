@@ -1,22 +1,27 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 
+import { MOOD_ICONS } from "@/components/icons/moodIcons";
 import { AppText } from "@/components/primitives/AppText";
-import theme from "@/design/theme";
-import { archive } from "@/design/tokens.mvp";
+import { paperCalendar, paperColors, paperTypography } from "@/design/paper";
 import { calendarCells, type CalendarCell } from "@/features/archive/model/archive";
 import type { Diary } from "@/features/diary/model/diary";
 
 /**
- * 보관함 달력 — `A1`. `momentory.css` `.cd` · `.cdd` · `.cdo`.
+ * 보관함 달력 — `A1` · 새 디자인(`docs/design/prototype/보관함.dc.html` ·
+ * `design-system.md` §4.6).
  *
  * **달력으로 언제, 목록으로 어떤 마음이었는지 찾는다**(`A1.md`).
  *
- * - **일기가 있는 날에만 점**이 찍히고 **하루 최대 3개**다. 넘으면 늘리지 않는다
- * - **색만으로 감정을 판단하게 하지 않는다** — 날짜를 누르면 아래 카드가
- *   이름을 글자로 보여준다. 그래서 이 컴포넌트는 점만 그리고 판단하지 않는다
- * - 오늘은 **굵게**, 앞으로 올 날은 **흐리게**. 선택된 날은 **테두리 2px + 면**
- *   — 셋이 서로 다른 표시라 겹쳐도 구분된다
- * - 감정 태그가 없는 일기는 **중립색 점 하나**(기록은 있었다는 표시)
+ * 옛 판의 **감정 점 3개**는 **감정 얼굴 아이콘 하나**로 바뀌었다(시안 §4.6) —
+ * 22px 얼굴이 54 짜리 칸 안에 들어간다. 나머지 규칙은 그대로다:
+ *
+ * - **색만으로 감정을 판단하게 하지 않는다** — 얼굴은 그날이 있었다는 표시일
+ *   뿐이고, 이름은 날짜를 눌렀을 때 아래 기록 카드가 글자로 보여준다
+ * - 기록이 있는 날은 면이 밝고(`paperCalendar.recorded`) 없는 날은
+ *   가라앉는다(`empty`). **선택일은 잉크 면 + 밝은 글자 + 테두리 2px + 굵기** —
+ *   색 하나로만 고른 날을 말하지 않는다(`RULES.md` · `PLAN.md` §3-1)
+ * - 오늘은 **굵게**, 앞으로 올 날은 **흐리게**(`A1.md`)
+ * - 감정 태그가 없는 일기는 얼굴 없이 **밝은 면**만 남는다 — 기록이 있었다는 표시
  */
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
@@ -31,33 +36,53 @@ type Props = {
 };
 
 export function CalendarMonth({ diaries, month, today, selected, onSelect }: Props) {
-  const cells = calendarCells(diaries, month);
+  const weeks = byWeek(calendarCells(diaries, month));
 
   return (
-    <View>
-      <View style={styles.weekdays}>
-        {WEEKDAYS.map((d) => (
-          <AppText key={d} tone="caption" style={styles.weekday}>
+    <View style={styles.root}>
+      <View style={styles.week}>
+        {WEEKDAYS.map((d, i) => (
+          <AppText
+            key={d}
+            style={[
+              styles.weekday,
+              i === 0 ? styles.sunday : null,
+              i === WEEKDAYS.length - 1 ? styles.saturday : null,
+            ]}
+          >
             {d}
           </AppText>
         ))}
       </View>
 
-      <View style={styles.grid}>
-        {cells.map((cell, i) => (
-          <Cell
-            key={cell.day ?? `blank-${i}`}
-            cell={cell}
-            today={cell.day != null && cell.day === today}
-            // 앞으로 올 날 — 오늘이 그달에 있을 때만 판단할 수 있다
-            future={today != null && cell.day != null && cell.day > today}
-            selected={cell.day != null && cell.day === selected}
-            onSelect={onSelect}
-          />
-        ))}
-      </View>
+      {weeks.map((week, w) => (
+        <View key={`week-${w}`} style={styles.row}>
+          {week.map((cell, i) => (
+            <Cell
+              key={cell?.day ?? `blank-${w}-${i}`}
+              cell={cell}
+              today={cell?.day != null && cell.day === today}
+              // 앞으로 올 날 — 오늘이 그달에 있을 때만 판단할 수 있다
+              future={today != null && cell?.day != null && cell.day > today}
+              selected={cell?.day != null && cell.day === selected}
+              onSelect={onSelect}
+            />
+          ))}
+        </View>
+      ))}
     </View>
   );
+}
+
+/** 7칸씩 끊고 마지막 줄의 남는 칸은 `null` 로 채운다 — 줄마다 폭이 같아야 달력이다 */
+function byWeek(cells: readonly CalendarCell[]) {
+  const weeks: (CalendarCell | null)[][] = [];
+  for (let i = 0; i < cells.length; i += WEEKDAYS.length) {
+    const week: (CalendarCell | null)[] = cells.slice(i, i + WEEKDAYS.length);
+    while (week.length < WEEKDAYS.length) week.push(null);
+    weeks.push(week);
+  }
+  return weeks;
 }
 
 function Cell({
@@ -67,17 +92,16 @@ function Cell({
   selected,
   onSelect,
 }: {
-  cell: CalendarCell;
+  cell: CalendarCell | null;
   today: boolean;
   future: boolean;
   selected: boolean;
   onSelect: (day: number) => void;
 }) {
-  if (cell.day == null) return <View style={styles.cell} />;
+  if (cell?.day == null) return <View style={styles.cell} />;
 
   const day = cell.day;
-  // 감정 태그가 없는 일기도 기록이 있었다는 표시는 남긴다
-  const dots = cell.hasDiary && cell.emotions.length === 0 ? [null] : cell.emotions;
+  const face = cell.emotions[0];
 
   return (
     <Pressable
@@ -85,62 +109,77 @@ function Cell({
       accessibilityLabel={`${day}일`}
       accessibilityState={{ selected }}
       onPress={() => onSelect(day)}
-      style={[styles.cell, selected ? styles.cellSelected : null]}
+      style={[
+        styles.cell,
+        cell.hasDiary ? styles.cellRecorded : styles.cellEmpty,
+        selected ? styles.cellSelected : null,
+      ]}
     >
       <AppText
-        tone={future ? "caption" : selected || today ? "strong" : "body"}
-        weight={selected || today ? "700" : "500"}
-        style={styles.number}
+        weight={selected || today ? "700" : "400"}
+        style={[
+          styles.number,
+          future ? styles.numberFuture : null,
+          selected ? styles.numberSelected : null,
+        ]}
       >
         {day}
       </AppText>
 
-      {/* 점은 자리를 늘 차지한다 — 있고 없고에 따라 숫자가 위아래로 흔들리지 않게 */}
-      <View style={styles.dots}>
-        {dots.map((e, i) => (
-          <View
-            key={`${e ?? "none"}-${i}`}
-            style={[
-              styles.dot,
-              { backgroundColor: e == null ? semantic.textMuted : theme.emotions[e - 1]?.base },
-            ]}
-          />
-        ))}
-      </View>
+      {face != null ? (
+        <Image
+          source={MOOD_ICONS[face]}
+          style={styles.face}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+        />
+      ) : null}
     </Pressable>
   );
 }
 
-const { semantic } = theme.colors;
+const { styles: type } = paperTypography;
+const { cell } = paperCalendar;
 
 const styles = StyleSheet.create({
-  weekdays: { flexDirection: "row", paddingBottom: 6 },
+  root: { gap: cell.gap },
+
+  week: { flexDirection: "row", gap: cell.gap },
   weekday: {
     flex: 1,
     textAlign: "center",
-    fontSize: archive.calendar.weekdaySize,
-    lineHeight: 16,
+    fontSize: paperCalendar.dayHeaderSize,
+    lineHeight: paperCalendar.dayHeaderSize + 5,
+    // 시안의 평일 `#8A8474` 는 카드 위 4.2 로 미달 — 같은 역할의 보정 토큰을 쓴다
+    color: paperColors.text.mutedWarmText,
   },
-  grid: { flexDirection: "row", flexWrap: "wrap" },
-  // 7열 — 폭을 비율로 주고 정사각으로 만든다(시안의 aspect-ratio 1)
+  sunday: { color: paperColors.text.sunday },
+  saturday: { color: paperColors.text.saturday },
+
+  row: { flexDirection: "row", gap: cell.gap },
+  // 폭은 7등분(시안의 `repeat(7,1fr)`)이고 높이만 54 로 고정이다
   cell: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
+    flex: 1,
+    height: cell.size,
+    borderRadius: cell.radius,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
+    gap: 3,
   },
+  cellRecorded: { backgroundColor: paperCalendar.recorded },
+  cellEmpty: { backgroundColor: paperCalendar.empty },
+  // 고른 날 — 면·글자색만이 아니라 테두리 2px 과 굵기가 함께 바뀐다
   cellSelected: {
-    borderWidth: archive.calendar.selectedBorderWidth,
-    borderColor: semantic.accent, // primary — 장식 전용 색이 맞는 자리
-    borderRadius: archive.calendar.selectedRadius,
-    backgroundColor: semantic.surfaceTone,
+    backgroundColor: paperCalendar.selected,
+    borderWidth: 2,
+    borderColor: paperColors.brand.greenBorder,
   },
-  number: { fontSize: archive.calendar.numberSize, lineHeight: archive.calendar.numberSize },
-  dots: { flexDirection: "row", gap: archive.calendar.dotGap, height: archive.calendar.dot },
-  dot: {
-    width: archive.calendar.dot,
-    height: archive.calendar.dot,
-    borderRadius: archive.calendar.dot / 2,
+  number: {
+    fontSize: type.label.fontSize,
+    lineHeight: type.label.fontSize + 4,
+    color: paperColors.text.primary,
   },
+  numberFuture: { color: paperColors.text.faint },
+  numberSelected: { color: paperCalendar.onSelected },
+  face: { width: cell.icon, height: cell.icon },
 });

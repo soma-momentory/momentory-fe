@@ -12,6 +12,7 @@ import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { InputRow } from "@/components/primitives/InputRow";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { paperColors, paperTypography } from "@/design/paper";
 import theme from "@/design/theme";
 import { useProfile, useSettings } from "@/features/my/model/settings";
 import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
@@ -57,6 +58,13 @@ import { ONBOARDING_FAILURE_MESSAGES } from "@/features/onboarding/model/submit"
  * **저장은 서버까지 간다** — `PUT /api/v1/users/me/onboarding`(온보딩 완료와
  * 같은 엔드포인트). 그전에는 이 화면의 저장이 기기 메모리에만 남아서, 앱을
  * 껐다 켜면 고친 값이 사라졌다. 실패하면 **닫지 않고** 버튼 아래 한 줄로 말한다.
+ *
+ * ## 새 디자인 (2026-08-14 · `PLAN.md` Phase 3-7)
+ *
+ * 종이 배경 + 상단 · 카드 · 확인을 새 톤으로 바꿨다(`variant="paper"` opt-in).
+ * ⚠ **아직 옛 톤인 것 셋** — 칩(`ChipFlow`) · 입력 줄(`InputRow`) · 저장 버튼
+ * (`AppButton`). 셋 다 온보딩과 공유하는 컴포넌트라 여기서 기본값을 바꾸면
+ * 리스킨 전 화면이 함께 바뀐다(`PLAN.md` Phase 2 — 아직 변형이 없다).
  */
 
 /** 접혀 있을 때 함께 보이는 개수 — 나머지는 `[＋ 더 고르기]` 로 편다 */
@@ -213,20 +221,18 @@ export default function ProfileEdit() {
     : restItemsAll.filter((item, i) => i < REST_PREVIEW_COUNT || restMethods.includes(item.id));
 
   return (
-    <ScreenBackground>
-      <RetroNav title="회고 프로필" rest={false} onBack={leave} />
+    <ScreenBackground variant="paperFlat">
+      <RetroNav title="회고 프로필" rest={false} variant="paper" onBack={leave} />
 
       <ScrollView
         style={styles.stack}
         contentContainerStyle={styles.stackContent}
         showsVerticalScrollIndicator={false}
       >
-        <AppText variant="caption" tone="caption">
-          여기서 고친 값은 바바의 다음 대화부터 반영돼요
-        </AppText>
+        <AppText style={styles.hint}>여기서 고친 값은 바바의 다음 대화부터 반영돼요</AppText>
 
-        <Card style={styles.card}>
-          <SectionLabel>닉네임</SectionLabel>
+        <Card variant="paperOpaque" style={styles.card}>
+          <SectionLabel variant="paper">닉네임</SectionLabel>
           <InputRow
             value={nickname}
             onChangeText={setNickname}
@@ -236,10 +242,10 @@ export default function ProfileEdit() {
           />
         </Card>
 
-        <Card style={styles.card}>
+        <Card variant="paperOpaque" style={styles.card}>
           <View style={styles.head}>
-            <SectionLabel>관심 분야</SectionLabel>
-            <AppText tone="caption" style={styles.count}>
+            <SectionLabel variant="paper">관심 분야</SectionLabel>
+            <AppText style={styles.count}>
               {`최대 ${MAX_INTERESTS}개 · ${interests.length}개 선택`}
             </AppText>
           </View>
@@ -261,12 +267,10 @@ export default function ProfileEdit() {
         </Card>
 
         {/* 온보딩 07 에서 물은 것이라 편집 경로가 여기 있어야 한다 */}
-        <Card style={styles.card}>
+        <Card variant="paperOpaque" style={styles.card}>
           <View style={styles.head}>
-            <SectionLabel>쉬는 방법</SectionLabel>
-            <AppText tone="caption" style={styles.count}>
-              {`${restMethods.length}개 선택`}
-            </AppText>
+            <SectionLabel variant="paper">쉬는 방법</SectionLabel>
+            <AppText style={styles.count}>{`${restMethods.length}개 선택`}</AppText>
           </View>
           <ChipFlow
             items={restItems}
@@ -291,9 +295,9 @@ export default function ProfileEdit() {
         </Card>
 
         {/* 온보딩 05-b 에서 물은 것 — M1 의 「기본 정보」 줄이 여기로 온다 */}
-        <Card style={styles.card}>
-          <SectionLabel>기본 정보</SectionLabel>
-          <AppText variant="caption" tone="caption">
+        <Card variant="paperOpaque" style={styles.card}>
+          <SectionLabel variant="paper">기본 정보</SectionLabel>
+          <AppText style={styles.hint}>
             답변은 질문을 조금 더 잘 맞추는 데만 사용하며, 다른 사람에게 공개되지 않아요.
           </AppText>
           <InputRow
@@ -320,15 +324,12 @@ export default function ProfileEdit() {
         />
 
         {/* 실패는 버튼 아래 한 줄 — 화면을 닫지 않는다. 다시 누를 곳은 CTA 하나다 */}
-        {error != null ? (
-          <AppText variant="caption" tone="accent" style={styles.error}>
-            {error}
-          </AppText>
-        ) : null}
+        {error != null ? <AppText style={styles.error}>{error}</AppText> : null}
 
         {/* 고치고 저장하지 않은 채 나가려 할 때만 — 나가기 버튼을 따로 두지 않는다 */}
         {confirmLeave ? (
           <ConfirmCard
+            variant="paper"
             title="고친 내용을 저장하지 않고 나갈까요?"
             caption="저장하지 않으면 바꾼 값이 사라져요."
             cancelLabel="계속 고치기"
@@ -345,6 +346,8 @@ export default function ProfileEdit() {
   );
 }
 
+const { styles: type } = paperTypography;
+
 const styles = StyleSheet.create({
   stack: { flex: 1, marginHorizontal: -theme.layout.screenMargin },
   stackContent: {
@@ -354,6 +357,22 @@ const styles = StyleSheet.create({
   },
   card: { gap: 10 },
   head: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  count: { flex: 1, textAlign: "right", fontSize: 11.5, lineHeight: 14 },
-  error: { lineHeight: 20 },
+  hint: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.text.green,
+  },
+  count: {
+    flex: 1,
+    textAlign: "right",
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.text.green,
+  },
+  // 실패는 경고 아이콘도 모달도 없이 **글자 한 줄**이다 — 면을 채우지 않는다
+  error: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight * 1.2,
+    color: paperColors.accent.dangerFill,
+  },
 });

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { paperColors } from "@/design/paper";
 import theme from "@/design/theme";
 import { toggle } from "@/design/tokens.mvp";
 
@@ -18,9 +19,13 @@ type Props = {
   value: boolean;
   onChange: (next: boolean) => void;
   accessibilityLabel: string;
+  /** 새 디자인 — 켜짐 `brand.green` · 꺼짐 `line.toggleOff` (시안 마이의 스위치) */
+  variant?: "default" | "paper";
 };
 
-export function Toggle({ value, onChange, accessibilityLabel }: Props) {
+export function Toggle({ value, onChange, accessibilityLabel, variant = "default" }: Props) {
+  const paper = variant === "paper";
+
   return (
     <Pressable
       accessibilityRole="switch"
@@ -29,9 +34,19 @@ export function Toggle({ value, onChange, accessibilityLabel }: Props) {
       // 28 이라 44 를 hitSlop 으로 채운다
       hitSlop={8}
       onPress={() => onChange(!value)}
-      style={[styles.track, value ? styles.trackOn : styles.trackOff]}
+      style={[
+        styles.track,
+        value ? styles.trackOn : styles.trackOff,
+        paper ? (value ? styles.trackOnPaper : styles.trackOffPaper) : null,
+      ]}
     >
-      <View style={[styles.knob, value ? styles.knobOn : styles.knobOff]} />
+      <View
+        style={[
+          styles.knob,
+          value ? styles.knobOn : styles.knobOff,
+          paper ? styles.knobPaper : null,
+        ]}
+      />
     </Pressable>
   );
 }
@@ -55,4 +70,8 @@ const styles = StyleSheet.create({
   },
   knobOn: { right: toggle.inset },
   knobOff: { left: toggle.inset },
+
+  trackOnPaper: { backgroundColor: paperColors.brand.green },
+  trackOffPaper: { backgroundColor: paperColors.line.toggleOff },
+  knobPaper: { backgroundColor: paperColors.text.onFill },
 });

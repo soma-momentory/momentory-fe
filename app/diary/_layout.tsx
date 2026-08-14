@@ -1,6 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 import { useEffect } from "react";
 
+import { paperColors } from "@/design/paper";
 import theme from "@/design/theme";
 import { useAuth } from "@/features/auth/model/auth";
 
@@ -11,6 +12,9 @@ import { useAuth } from "@/features/auth/model/auth";
  * 필요 없고, 닫으면 보던 보관함 자리로 돌아와야 하기 때문이다.
  *
  * **라우트 가드가 최종 권한을 갖는다**(`ARCHITECTURE §3-3`) — 다른 스택과 같다.
+ *
+ * 스택의 바닥색은 화면이 쓰는 **`paperFlat`** 과 같은 종이색이다 — 화면 전환
+ * 사이에 옛 배경색이 한 프레임 비치지 않게(`PLAN.md` Phase 3-8).
  */
 export default function DiaryLayout() {
   const status = useAuth((s) => s.status);
@@ -28,7 +32,7 @@ export default function DiaryLayout() {
         headerShown: false,
         animation: "fade",
         animationDuration: theme.motion.spec.screen.duration,
-        contentStyle: { backgroundColor: theme.colors.semantic.background },
+        contentStyle: { backgroundColor: paperColors.bg.flat },
       }}
     />
   );

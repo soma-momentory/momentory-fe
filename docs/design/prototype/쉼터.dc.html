@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+body{margin:0;background:#E6E1D6;font-family:'Pretendard',-apple-system,sans-serif}
+a{color:#8C9A76;text-decoration:none}a:hover{color:#6E7B5C}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;box-sizing:border-box">
+<div style="position:relative;width:390px;height:803px;border-radius:46px;background:#161512;padding:5px;box-sizing:border-box;box-shadow:0 30px 70px rgba(60,56,48,.3)">
+<div style="position:relative;width:100%;height:100%;border-radius:41px;overflow:hidden;background:linear-gradient(#D6E8F0,#E4EEF4 26%,#F2ECE0 46%,#F7F4ED 62%);display:flex;flex-direction:column">
+
+  <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 26px 2px;font-size:12px;color:#9AA8AD">
+    <span>9:41</span>
+    <span style="display:flex;gap:4px;align-items:center">
+      <span style="width:4px;height:9px;border-radius:1px;background:#9AA8AD;display:inline-block"></span>
+      <span style="width:4px;height:9px;border-radius:1px;background:#9AA8AD;display:inline-block"></span>
+      <span style="width:4px;height:9px;border-radius:1px;background:#9AA8AD;display:inline-block;opacity:.4"></span>
+    </span>
+  </div>
+
+  <sc-if value="{{ isHub }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;animation:fadeIn .28s ease">
+
+      <div style="flex:none;padding:8px 20px 2px;font-family:'Pretendard',sans-serif;font-weight:700;font-size:24px;color:#3C3830">쉼터</div>
+
+      <button onClick="{{ openCards }}" style="flex:none;margin:10px 18px 0;border:none;text-align:left;border-radius:18px;padding:18px 20px;background:linear-gradient(135deg,#8FA28A 0%,#A8B99E 100%);display:flex;flex-direction:column;gap:6px;box-shadow:0 3px 12px rgba(60,56,48,.12);cursor:pointer">
+        <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:21px;color:#fff">행동카드</span>
+        <span style="font-size:13px;line-height:1.5;color:rgba(255,255,255,.88)">{{ cardsSubtitle }}</span>
+        <span style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span style="font-size:12px;color:rgba(255,255,255,.7)">지난 카드는 캘린더에서</span>
+          <span style="font-size:13px;color:#fff;background:rgba(255,255,255,.22);border-radius:14px;padding:5px 14px">보러가기 ›</span>
+        </span>
+      </button>
+
+      <div style="flex:none;height:34px;position:relative;overflow:hidden;margin-top:16px">
+        <div style="position:absolute;left:-20%;top:6px;width:140%;height:64px;background:#C7D3C0;border-radius:50% 50% 0 0 / 100% 100% 0 0"></div>
+      </div>
+
+      <div style="flex:1;min-height:0;background:#C7D3C0;padding:0 16px;display:flex;flex-direction:column">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="4">
+            <button onClick="{{ t.open }}" style="border:{{ t.border }};text-align:left;border-radius:18px;aspect-ratio:1;padding:16px;display:flex;flex-direction:column;justify-content:space-between;background:{{ t.bg }};box-shadow:{{ t.shadow }};cursor:{{ t.cursor }}">
+              <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:19px;color:{{ t.titleColor }}">{{ t.title }}</span>
+              <span style="font-size:12px;line-height:1.45;color:#8F9A83">{{ t.desc }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isCards }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;animation:fadeIn .28s ease">
+
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 20px 2px">
+        <button onClick="{{ backHub }}" style="border:none;background:none;font-size:18px;color:#3C3830;cursor:pointer;padding:2px 2px">←</button>
+        <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:22px;color:#3C3830">행동카드</span>
+        <span style="margin-left:auto;font-size:12px;color:#8F9A83">{{ selectedLabel }}</span>
+      </div>
+
+      <div onClick="{{ openDetail }}" style="flex:none;margin:10px 16px 0;border-radius:16px;padding:13px 16px 14px;background:rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(60,56,48,.07);display:flex;flex-direction:column;gap:11px;cursor:pointer" style-hover="box-shadow:0 4px 14px rgba(60,56,48,.12)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:16px;color:#3C3830;white-space:nowrap">{{ selectedLabel }} 카드</span>
+          <span style="margin-left:auto;font-size:15px;color:#B9B2A2">›</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:13px;color:#8FA28A">상황</span>
+          <span style="font-size:12px;line-height:1.5;color:#3C3830;word-break:keep-all">{{ card.situation }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:13px;color:#C8A96B">제안된 행동</span>
+          <span style="font-size:12px;line-height:1.5;color:#3C3830;word-break:keep-all">{{ card.action }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onClick="{{ toggleDoneStop }}" style="width:24px;height:24px;border-radius:7px;border:2px solid #8FA28A;background:{{ doneBg }};display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;padding:0;color:{{ doneColor }};font-size:14px;line-height:1">✓</button>
+          <span style="font-size:12px;color:{{ doneTextColor }}">{{ doneLabel }}</span>
+        </div>
+        <input value="{{ note }}" onChange="{{ onNote }}" onClick="{{ stop }}" placeholder="느낀 점을 남겨보세요…" style="border-radius:10px;background:#F7F4ED;border:1px solid #E7E1D2;padding:9px 12px;font-family:'Pretendard',sans-serif;font-size:12px;color:#3C3830;outline:none"></input>
+      </div>
+
+      <div style="flex:none;height:30px;position:relative;overflow:hidden;margin-top:12px">
+        <div style="position:absolute;left:-20%;top:4px;width:140%;height:58px;background:#C7D3C0;border-radius:50% 50% 0 0 / 100% 100% 0 0"></div>
+      </div>
+
+      <div style="flex:1;min-height:0;background:#C7D3C0;padding:0 16px 10px;display:flex;flex-direction:column">
+        <div style="flex:1;min-height:0;border-radius:16px;padding:13px 14px;background:rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(60,56,48,.06);display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <button onClick="{{ prevMonth }}" style="border:none;background:none;color:#8F9A83;font-size:17px;cursor:pointer;padding:0 6px">‹</button>
+            <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:17px;color:#3C3830">{{ monthLabel }}</span>
+            <button onClick="{{ nextMonth }}" style="border:none;background:none;color:#8F9A83;font-size:17px;cursor:pointer;padding:0 6px">›</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;color:#B9B2A2">
+            <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="35">
+              <button onClick="{{ d.pick }}" style="border:{{ d.border }};height:27px;border-radius:8px;background:{{ d.bg }};color:{{ d.color }};font-family:'Pretendard',sans-serif;font-size:11px;cursor:{{ d.cursor }};padding:0;display:flex;align-items:center;justify-content:center">{{ d.label }}</button>
+            </sc-for>
+          </div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:5px;font-size:11px;color:#8F9A83">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:#8FA28A;display:inline-block"></span>행동카드가 만들어진 날</span>
+            <span style="color:#B9B2A2">날짜를 누르면 그날의 카드를 볼 수 있어요</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;background:#C7D3C0;padding:8px 14px 12px;box-sizing:border-box;animation:fadeIn .28s ease">
+
+      <div style="flex:none;display:flex;align-items:center;gap:9px;padding:2px 4px 9px">
+        <button onClick="{{ backCards }}" style="border:none;background:none;font-size:18px;color:#3C3830;cursor:pointer;padding:2px">←</button>
+        <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:20px;color:#3C3830">행동카드</span>
+        <span style="margin-left:auto;font-size:12px;color:#5F6B4D">{{ selectedLabel }}</span>
+      </div>
+
+      <div style="flex:1;min-height:0;border-radius:22px;background:#FDFBF5;box-shadow:0 8px 22px rgba(60,56,48,.16);display:flex;flex-direction:column;overflow:hidden;animation:cardIn .3s cubic-bezier(.3,.9,.3,1)">
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 18px 20px;display:flex;flex-direction:column;gap:13px">
+
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:14px;color:#8FA28A">상황</span>
+            <span style="font-size:13px;line-height:1.6;color:#3C3830;word-break:keep-all">{{ card.situation }}</span>
+          </div>
+          <div style="height:1px;background:#EFE9DA"></div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:14px;color:#C8A96B">제안된 행동</span>
+            <span style="font-size:13px;line-height:1.6;color:#3C3830;word-break:keep-all">{{ card.action }}</span>
+          </div>
+          <div style="height:1px;background:#EFE9DA"></div>
+
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <button onClick="{{ toggleDone }}" style="width:24px;height:24px;border-radius:7px;border:2px solid #8FA28A;background:{{ doneBg }};display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;padding:0;color:{{ doneColor }};font-size:14px;line-height:1">✓</button>
+              <span style="font-size:12px;color:{{ doneTextColor }}">{{ doneLabel }}</span>
+            </div>
+            <input value="{{ note }}" onChange="{{ onNote }}" placeholder="느낀 점을 남겨보세요…" style="border-radius:10px;background:#F7F4ED;border:1px solid #E7E1D2;padding:10px 12px;font-family:'Pretendard',sans-serif;font-size:12px;color:#3C3830;outline:none"></input>
+          </div>
+
+          <div style="height:1px;background:#EFE9DA;margin-top:3px"></div>
+
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:15px;color:#3C3830">지난 기록</span>
+            <span style="font-size:11px;color:#B9B2A2">{{ logCount }}</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ log }}" as="l" hint-placeholder-count="4">
+              <div style="display:flex;gap:11px;align-items:flex-start;border-radius:12px;background:#F7F4ED;padding:11px 12px">
+                <span style="flex:none;width:18px;height:18px;border-radius:6px;border:1.5px solid {{ l.markBorder }};background:{{ l.markBg }};color:{{ l.markColor }};font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;margin-top:2px">✓</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                  <span style="display:flex;align-items:baseline;gap:7px">
+                    <span style="font-size:12px;color:#3C3830">{{ l.date }}</span>
+                    <span style="font-size:11px;color:{{ l.stateColor }}">{{ l.state }}</span>
+                  </span>
+                  <span style="font-size:12px;line-height:1.55;color:{{ l.noteColor }};word-break:keep-all">{{ l.note }}</span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSoon }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;background:#C7D3C0;animation:fadeIn .28s ease">
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:10px 20px 8px;background:#F7F4ED">
+        <button onClick="{{ backHub }}" style="border:none;background:none;font-size:18px;color:#3C3830;cursor:pointer;padding:2px">←</button>
+        <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:22px;color:#3C3830">{{ roomTitle }}</span>
+      </div>
+      <div style="flex:none;height:30px;position:relative;overflow:hidden;background:#F7F4ED">
+        <div style="position:absolute;left:-20%;top:2px;width:140%;height:58px;background:#C7D3C0;border-radius:50% 50% 0 0 / 100% 100% 0 0"></div>
+      </div>
+
+      <sc-if value="{{ isBamboo }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:4px 18px 14px">
+          <span style="font-size:12px;color:#5C6552;word-break:keep-all">여기에 하고 싶은 말을 적으면, 잠시 머벅다 사라짐에요.</span>
+          <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ shouts }}" as="sh" hint-placeholder-count="2">
+              <div style="flex:none;border-radius:14px;background:rgba(255,255,255,.9);padding:12px 14px;font-size:13px;line-height:1.6;color:#3C3830;opacity:{{ sh.opacity }};transition:opacity 1.2s ease;word-break:keep-all">{{ sh.text }}</div>
+            </sc-for>
+            <sc-if value="{{ noShouts }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:none;border-radius:14px;background:rgba(255,255,255,.5);padding:20px 14px;text-align:center;font-size:13px;color:#8F9A83">아직 비어 있어요</div>
+            </sc-if>
+          </div>
+          <div style="flex:none;display:flex;gap:8px;align-items:center">
+            <input value="{{ shoutDraft }}" onChange="{{ onShout }}" onKeyDown="{{ onShoutKey }}" placeholder="하고 싶은 말…" style="flex:1;min-width:0;border:none;outline:none;border-radius:14px;background:#FDFBF5;padding:12px 14px;font-family:'Pretendard',sans-serif;font-size:13px;color:#3C3830"></input>
+            <button onClick="{{ shout }}" style="flex:none;border:none;border-radius:14px;background:#8FA28A;color:#fff;padding:12px 16px;font-family:'Pretendard',sans-serif;font-size:13px;cursor:pointer">외치기</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPond }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 24px 16px">
+          <div style="width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center">
+            <div style="width:{{ ringSize }};height:{{ ringSize }};border-radius:50%;background:#8FA28A;display:flex;align-items:center;justify-content:center;transition:width 1s linear,height 1s linear">
+              <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:30px;color:#fff">{{ breathCount }}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+            <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:22px;color:#3C3830">{{ breathPhase }}</span>
+            <span style="font-size:12px;color:#5C6552">{{ breathHint }}</span>
+          </div>
+          <button onClick="{{ toggleBreath }}" style="border:none;border-radius:16px;background:{{ breathBtnBg }};color:#fff;padding:13px 30px;font-family:'Pretendard',sans-serif;font-size:14px;cursor:pointer">{{ breathBtn }}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBox }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:4px 18px 14px">
+          <div style="flex:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:#5C6552">담아둔 걱정 {{ worryCount }}</span>
+            <button onClick="{{ toggleBox }}" style="margin-left:auto;border:none;background:none;font-family:'Pretendard',sans-serif;font-size:12px;color:#5F6B4D;cursor:pointer;padding:2px 4px">{{ boxToggle }}</button>
+            <button onClick="{{ emptyBox }}" style="border:none;background:none;font-family:'Pretendard',sans-serif;font-size:12px;color:#B9B2A2;cursor:pointer;padding:2px 4px">모두 버리기</button>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+            <sc-if value="{{ boxOpen }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ worries }}" as="w" hint-placeholder-count="2">
+                <div style="flex:none;border-radius:14px;background:rgba(255,255,255,.9);padding:12px 14px;display:flex;gap:10px;align-items:flex-start">
+                  <span style="flex:1;min-width:0;font-size:13px;line-height:1.6;color:#3C3830;word-break:keep-all">{{ w.text }}</span>
+                  <button onClick="{{ w.remove }}" style="flex:none;border:none;background:none;font-size:13px;color:#B9B2A2;cursor:pointer;padding:0 2px">✕</button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noWorries }}" hint-placeholder-val="{{ true }}">
+                <div style="flex:none;border-radius:14px;background:rgba(255,255,255,.5);padding:20px 14px;text-align:center;font-size:13px;color:#8F9A83">상자가 비어 있어요</div>
+              </sc-if>
+            </sc-if>
+            <sc-if value="{{ boxClosed }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:none;border-radius:16px;background:rgba(255,255,255,.7);padding:28px 16px;text-align:center;font-size:13px;line-height:1.7;color:#8F9A83;word-break:keep-all">상자를 닫었어요.<br>지금은 그냥 여기 맡개 둠셔도 괜싮습니다.</div>
+            </sc-if>
+          </div>
+          <div style="flex:none;display:flex;gap:8px;align-items:center">
+            <input value="{{ worryDraft }}" onChange="{{ onWorry }}" onKeyDown="{{ onWorryKey }}" placeholder="지금 걱정되는 일…" style="flex:1;min-width:0;border:none;outline:none;border-radius:14px;background:#FDFBF5;padding:12px 14px;font-family:'Pretendard',sans-serif;font-size:13px;color:#3C3830"></input>
+            <button onClick="{{ addWorry }}" style="flex:none;border:none;border-radius:14px;background:#8FA28A;color:#fff;padding:12px 16px;font-family:'Pretendard',sans-serif;font-size:13px;cursor:pointer">넣어두기</button>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </sc-if>
+
+  <div style="flex:none;display:flex;justify-content:space-around;align-items:center;padding:9px 8px 14px;background:#FDFBF5;border-top:1px solid #EFEADE">
+    <a href="홈.dc.html" style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <span style="width:22px;height:22px;border:1.5px solid #C3C1B6;border-radius:7px;display:block"></span>
+      <span style="font-size:11px;color:#95928A">홈</span>
+    </a>
+    <a href="쉼터.dc.html" style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <span style="width:22px;height:22px;border:1.5px solid #8C9A76;border-radius:7px;background:rgba(143,162,138,.14);display:block"></span>
+      <span style="font-size:11px;color:#5F6B4D">쉼터</span>
+    </a>
+    <a href="보관함.dc.html" style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <span style="width:22px;height:22px;border:1.5px solid #C3C1B6;border-radius:7px;display:block"></span>
+      <span style="font-size:11px;color:#95928A">보관함</span>
+    </a>
+    <a href="리포트.dc.html" style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <span style="width:22px;height:22px;border:1.5px solid #C3C1B6;border-radius:7px;display:block"></span>
+      <span style="font-size:11px;color:#95928A">리포트</span>
+    </a>
+    <a href="마이.dc.html" style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <span style="width:22px;height:22px;border:1.5px solid #C3C1B6;border-radius:7px;display:block"></span>
+      <span style="font-size:11px;color:#95928A">마이</span>
+    </a>
+  </div>
+
+</div>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:470,&quot;height&quot;:924},&quot;cardsSubtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;오늘의 카드 1장이 도착했어요&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;쉼터&quot;,&quot;행동카드&quot;,&quot;행동카드 자세히&quot;],&quot;default&quot;:&quot;쉼터&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const TILES=[
+  {title:'대나무 숲',desc:'하고 싶은 말\n털어놓기'},
+  {title:'감각 연못',desc:'소리·호흡으로\n가라앉히기'},
+  {title:'걱정 상자',desc:'걱정 적어\n잠시 맡겨두기'}
+];
+class Component extends DCLogic {
+  state={view:'hub',selected:13,ym:'2026-8',notes:{},done:{},room:null,ready:false,
+    shouts:[],shoutDraft:'',worries:[{id:1,text:'다음 주 발표가 자꾸 생각난다'}],worryDraft:'',boxOpen:true,
+    breathOn:false,breathT:0};
+  componentDidMount(){
+    import('./data.js').then(m=>{this.D=m;this.setState({ready:true});});
+    const q=window.location.search||'';
+    const sv=this.props.startView??'쉼터';
+    if(q.indexOf('view=card')>=0||sv==='행동카드 자세히')this.setState({view:'detail'});
+    else if(q.indexOf('view=cards')>=0||sv==='행동카드')this.setState({view:'cards'});
+  }
+  ymd(){const [y,m]=this.state.ym.split('-').map(Number);return [y,m];}
+  cardOf(d){
+    if(!this.D)return null;
+    const [y,m]=this.ymd();
+    const g=this.D.getDay(y,m,d);
+    return g?g.card:null;
+  }
+  key(d){return this.state.ym+'-'+d;}
+
+  openCards=()=>this.setState({view:'cards'});
+  backHub=()=>this.setState({view:'hub',room:null});
+  openRoom=(kind)=>this.setState({view:'room',room:kind});
+  onShout=(e)=>this.setState({shoutDraft:e.target.value});
+  onShoutKey=(e)=>{if(e.key==='Enter'){e.preventDefault();this.shout();}};
+  shout=()=>{
+    const v=(this.state.shoutDraft||'').trim();if(!v)return;
+    const id=Date.now();
+    this.setState(s=>({shouts:[{id,text:v,fading:false},...(s.shouts||[])].slice(0,8),shoutDraft:''}));
+    setTimeout(()=>this.setState(s=>({shouts:(s.shouts||[]).map(x=>x.id===id?{id:x.id,text:x.text,fading:true}:x)})),2600);
+    setTimeout(()=>this.setState(s=>({shouts:(s.shouts||[]).filter(x=>x.id!==id)})),4200);
+  };
+  onWorry=(e)=>this.setState({worryDraft:e.target.value});
+  onWorryKey=(e)=>{if(e.key==='Enter'){e.preventDefault();this.addWorry();}};
+  addWorry=()=>{
+    const v=(this.state.worryDraft||'').trim();if(!v)return;
+    this.setState(s=>({worries:[{id:Date.now(),text:v},...(s.worries||[])],worryDraft:'',boxOpen:true}));
+  };
+  removeWorry=(id)=>this.setState(s=>({worries:(s.worries||[]).filter(w=>w.id!==id)}));
+  emptyBox=()=>this.setState({worries:[]});
+  toggleBox=()=>this.setState(s=>({boxOpen:!s.boxOpen}));
+  toggleBreath=()=>{
+    if(this.state.breathOn){clearInterval(this._bt);this.setState({breathOn:false});return;}
+    this.setState({breathOn:true,breathT:0});
+    this._bt=setInterval(()=>this.setState(s=>({breathT:(s.breathT||0)+1})),1000);
+  };
+  componentWillUnmount(){clearInterval(this._bt);}
+  openDetail=()=>this.setState({view:'detail'});
+  backCards=()=>this.setState({view:'cards'});
+  isDone(d){const k=this.key(d);if(this.state.done[k]!==undefined)return this.state.done[k];const c=this.cardOf(d);return c?c.done:false;}
+  noteOf(d){const k=this.key(d);if(this.state.notes[k]!==undefined)return this.state.notes[k];const c=this.cardOf(d);return c?c.note:'';}
+  toggleDone=()=>this.setState(s=>({done:Object.assign({},s.done,{[this.key(s.selected)]:!this.isDone(s.selected)})}));
+  toggleDoneStop=(e)=>{e.stopPropagation();this.toggleDone();};
+  stop=(e)=>e.stopPropagation();
+  onNote=(e)=>{const v=e.target.value;this.setState(s=>({notes:Object.assign({},s.notes,{[this.key(s.selected)]:v})}));};
+  pickDay=(d)=>{if(this.cardOf(d))this.setState({selected:d});};
+  shiftMonth=(step)=>{
+    let [y,m]=this.ymd();
+    m+=step;if(m<1){m=12;y--;}if(m>12){m=1;y++;}
+    if(y<2025||(y===2025&&m<8))return;
+    if(y>2026||(y===2026&&m>8))return;
+    const sel=this.D?(this.D.latestCardDay(y,m)||1):1;
+    this.setState({ym:y+'-'+m,selected:sel});
+  };
+  prevMonth=()=>this.shiftMonth(-1);
+  nextMonth=()=>this.shiftMonth(1);
+
+  renderVals(){
+    const s=this.state;
+    const [year,month]=this.ymd();
+    const days=[];
+    const first=new Date(year,month-1,1).getDay();
+    const len=new Date(year,month,0).getDate();
+    for(let i=0;i<first;i++)days.push({label:'',bg:'transparent',color:'transparent',border:'none',cursor:'default',pick:()=>{}});
+    for(let d=1;d<=len;d++){
+      const has=!!this.cardOf(d);
+      const sel=d===s.selected;
+      days.push({
+        label:String(d),
+        bg:sel?'#3C3830':(has?'#8FA28A':'rgba(247,244,237,.7)'),
+        color:sel?'#F7F4ED':(has?'#fff':'#3C3830'),
+        border:sel?'1.5px solid #3C3830':'1.5px solid transparent',
+        cursor:has?'pointer':'default',
+        pick:()=>this.pickDay(d)
+      });
+    }
+    const card=this.cardOf(s.selected)||{situation:'이 날은 받은 카드가 없어요',action:'캘린더에서 색이 칠해진 날을 골라보세요'};
+    const isDone=this.isDone(s.selected);
+    const log=(this.D?this.D.cardLog(year,month,s.selected,6):[]).map(e=>{
+      const done=e.card.done;
+      const n=e.card.note;
+      return {date:(e.y===2026?'':String(e.y%100)+'년 ')+e.m+'월 '+e.d+'일',
+        state:done?'수행함':'수행 안 함',
+        stateColor:done?'#6E7B5C':'#B9B2A2',
+        note:n||'남긴 느낀 점이 없어요',
+        noteColor:n?'#3C3830':'#B9B2A2',
+        markBg:done?'#8FA28A':'transparent',
+        markBorder:done?'#8FA28A':'#D8D2C2',
+        markColor:done?'#fff':'transparent'};
+    });
+    const cyc=(s.breathT||0)%19;
+    const inhale=cyc<4, hold=cyc>=4&&cyc<11;
+    const bPhase=!s.breathOn?'준비됐나요?':(inhale?'들이쉬기':hold?'멈추기':'내쉬기');
+    const bHint=!s.breathOn?'4초 들이쉬고 7초 멈춘 뒤 8초 내쉬어요':(inhale?'코로 천천히':hold?'그대로 유지':'입으로 길게');
+    const bLeft=!s.breathOn?'—':String(inhale?4-cyc:hold?11-cyc:19-cyc);
+    const bSize=!s.breathOn?'120px':(inhale?'176px':hold?'176px':'110px');
+    return {
+      isHub:s.view==='hub', isCards:s.view==='cards', isDetail:s.view==='detail', isSoon:s.view==='room',
+      openDetail:this.openDetail, backCards:this.backCards,
+      log, logCount:log.length+'건',
+      doneLabel:isDone?'오늘 수행했어요':'아직 수행하지 않았어요',
+      doneTextColor:isDone?'#6E7B5C':'#B9B2A2',
+      cardsSubtitle:this.props.cardsSubtitle??'오늘의 카드 1장이 도착했어요',
+      openCards:this.openCards, backHub:this.backHub,
+      tiles:TILES.map(t=>({
+        title:t.title,desc:t.desc,bg:'rgba(255,255,255,.82)',border:'none',
+        shadow:'0 2px 8px rgba(60,56,48,.06)',cursor:'pointer',titleColor:'#3C3830',
+        open:()=>this.openRoom(t.title)
+      })),
+      selectedLabel:month+'월 '+s.selected+'일',
+      card, note:this.noteOf(s.selected), onNote:this.onNote, toggleDone:this.toggleDone,
+      toggleDoneStop:this.toggleDoneStop, stop:this.stop,
+      doneBg:isDone?'#8FA28A':'transparent', doneColor:isDone?'#fff':'transparent',
+      monthLabel:year+'년 '+month+'월',
+      prevMonth:this.prevMonth, nextMonth:this.nextMonth, days,
+      roomTitle:s.room||'',
+      isBamboo:s.room==='대나무 숲', isPond:s.room==='감각 연못', isBox:s.room==='걱정 상자',
+      shouts:(s.shouts||[]).map(x=>({text:x.text,opacity:x.fading?0:1})),
+      noShouts:(s.shouts||[]).length===0,
+      shoutDraft:s.shoutDraft||'', onShout:this.onShout, onShoutKey:this.onShoutKey, shout:this.shout,
+      worries:(s.worries||[]).map(w=>({text:w.text,remove:()=>this.removeWorry(w.id)})),
+      noWorries:(s.worries||[]).length===0, worryCount:(s.worries||[]).length+'개',
+      worryDraft:s.worryDraft||'', onWorry:this.onWorry, onWorryKey:this.onWorryKey, addWorry:this.addWorry,
+      boxOpen:!!s.boxOpen, boxClosed:!s.boxOpen, toggleBox:this.toggleBox, emptyBox:this.emptyBox,
+      boxToggle:s.boxOpen?'상자 닫기':'상자 열기',
+      breathPhase:bPhase, breathHint:bHint, breathCount:bLeft, ringSize:bSize,
+      breathBtn:s.breathOn?'멈추기':'시작하기', breathBtnBg:s.breathOn?'#B7AE9F':'#8FA28A',
+      toggleBreath:this.toggleBreath
+    };
+  }
+}
+</script>
+</body>
+</html>

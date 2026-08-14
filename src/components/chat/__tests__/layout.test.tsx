@@ -1,6 +1,7 @@
 import { AccessibilityInfo, Animated, Text } from "react-native";
 import { render, waitFor } from "@testing-library/react-native";
 
+import { paperChat } from "@/design/paper";
 import theme from "@/design/theme";
 
 import { Avatar } from "../Avatar";
@@ -74,6 +75,33 @@ describe("TypingDots", () => {
 
     await waitFor(() => expect(stop).toHaveBeenCalled());
     loop.mockRestore();
+  });
+
+  it("paper 변형은 6px 점 셋에 바바 면을 쓴다 — 기본값은 그대로다", async () => {
+    // 회고만 켠다(PLAN.md D2). 온보딩은 위의 62×35 기본값을 계속 본다
+    const { getByRole, getAllByTestId } = await render(<TypingDots variant="paper" />);
+    const s = flatten(getByRole("progressbar").props.style);
+    const dot = flatten(getAllByTestId("typing-dot")[0]?.props.style);
+
+    expect(s.width).toBeUndefined(); // 점 셋만큼만 넓다
+    expect(s.backgroundColor).toBe(paperChat.baba.background);
+    expect(s.borderBottomLeftRadius).toBe(4);
+    expect(dot.width).toBe(6);
+    expect(dot.backgroundColor).toBe(paperChat.dot);
+  });
+});
+
+describe("ChatLayout — paper 변형", () => {
+  it("말풍선 사이가 9 로 좁아지고 상단 정렬은 그대로다", async () => {
+    const { getByTestId } = await render(
+      <ChatLayout testID="conv" variant="paper">
+        <Text>안녕</Text>
+      </ChatLayout>,
+    );
+    const content = flatten(getByTestId("conv").props.contentContainerStyle);
+
+    expect(content.gap).toBe(9);
+    expect(content.justifyContent).toBe("flex-start");
   });
 });
 

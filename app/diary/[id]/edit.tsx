@@ -3,13 +3,13 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { EmotionGrid } from "@/components/common/EmotionGrid";
-import { RetroNav } from "@/components/common/RetroNav";
-import { AppButton } from "@/components/primitives/AppButton";
+import { CloseIcon } from "@/components/icons/LineIcons";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { paperColors, paperRadius, paperTypography } from "@/design/paper";
 import theme, { type EmotionId } from "@/design/theme";
-import { diaryBody, home, text as textColor, warnRow } from "@/design/tokens.mvp";
+import { diaryBody } from "@/design/tokens.mvp";
 import { useDiary } from "@/features/diary/model/diary";
 
 /**
@@ -25,10 +25,11 @@ import { useDiary } from "@/features/diary/model/diary";
  *
  * - 제목이 **"이날의 감정"이 아니라 "이 일기의 감정 태그"** 인 이유 — 원본 감정을
  *   고치는 것처럼 보이면 안 된다. 고쳐지는 것은 목록·필터에 쓰는 값뿐이다
- * - 고른 칩에는 **체크**를 붙여 색에 기대지 않게 한다
+ * - 고른 칩은 **면이 진해지고 잉크 2px 테두리 + 굵기**로 함께 바뀐다(`EmotionGrid`
+ *   `paper`) — 선택을 색만으로 표시하지 않는다
  * - **`[이 회고 삭제]` 는 무엇이 사라지는지 먼저 말한다.** 라벨이 「이 일기
  *   삭제」가 아닌 것은 지워지는 것이 일기 한 면이 아니라 **회고 한 벌**이기 때문
- * - **`dangerInk` 는 글자에만** 얹고 면을 채우지 않는다(`R-40`). 테두리는
+ * - **위험색은 글자에만** 얹고 면을 채우지 않는다(`R-40`). 테두리는
  *   `[취소]` 와 같은 중립이다 — 되돌릴 수 없는 동작이 누르기 쉬워지면 안 된다
  */
 export default function DiaryEdit() {
@@ -58,27 +59,41 @@ export default function DiaryEdit() {
   };
 
   return (
-    <ScreenBackground>
-      <RetroNav title="일기 수정" rest={false} />
+    <ScreenBackground variant="paperFlat">
+      <View style={styles.header}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="닫기"
+          hitSlop={12}
+          onPress={() => router.back()}
+          style={styles.headerSide}
+        >
+          <CloseIcon size={18} color={paperColors.text.primary} />
+        </Pressable>
+        <AppText weight="700" style={styles.title}>
+          일기 수정
+        </AppText>
+        <View style={styles.headerSide} />
+      </View>
 
       <ScrollView
         style={styles.stack}
         contentContainerStyle={styles.stackContent}
         showsVerticalScrollIndicator={false}
       >
-        <Card style={styles.card}>
+        <Card variant="paperSoft" style={styles.card}>
           {/* 「이날의 감정」이 아니다 — 원본 감정을 고치는 것처럼 보이면 안 된다 */}
-          <AppText tone="accent" weight="600" style={styles.section}>
+          <AppText weight="700" style={styles.section}>
             이 일기의 감정 태그
           </AppText>
-          <AppText variant="caption" tone="caption">
+          <AppText style={styles.caption}>
             목록과 필터에 표시할 감정이에요 · 여러 개 선택할 수 있어요
           </AppText>
-          <EmotionGrid selected={emotions} onToggle={toggle} showCheck />
+          <EmotionGrid selected={emotions} onToggle={toggle} variant="paper" />
         </Card>
 
-        <Card style={styles.card}>
-          <AppText tone="accent" weight="600" style={styles.section}>
+        <Card variant="paperSoft" style={styles.card}>
+          <AppText weight="700" style={styles.section}>
             일기 내용
           </AppText>
           <TextInput
@@ -86,15 +101,15 @@ export default function DiaryEdit() {
             onChangeText={setBody}
             multiline
             maxLength={diaryBody.maxLength}
-            selectionColor={semantic.accentInk}
+            selectionColor={paperColors.brand.greenDark}
             style={styles.body}
             accessibilityLabel="일기 내용"
           />
         </Card>
 
         {/* 무엇이 안 바뀌는지를 먼저 말한다 */}
-        <View style={styles.warn}>
-          <AppText tone="accent" weight="500" style={styles.warnText}>
+        <View style={styles.note}>
+          <AppText style={styles.noteText}>
             {
               "수정한 내용은 '내가 남긴 오늘'에만 반영돼요. 바바의 문장과 행동 카드는 회고를 마친 당시 내용 그대로 남아요."
             }
@@ -102,16 +117,28 @@ export default function DiaryEdit() {
         </View>
 
         <View style={styles.actions}>
-          <AppButton
-            label="취소"
-            variant="ghost"
-            style={styles.action}
+          <Pressable
+            accessibilityRole="button"
             onPress={() => router.back()}
-          />
-          <AppButton label="저장" style={styles.action} onPress={save} />
+            style={[styles.action, styles.quiet]}
+          >
+            <AppText weight="700" style={styles.actionLabel}>
+              취소
+            </AppText>
+          </Pressable>
+          {/* 채운 면에는 흰 글자가 얹히므로 `green`(2.7)이 아니라 `greenDark`(4.52) 다 */}
+          <Pressable
+            accessibilityRole="button"
+            onPress={save}
+            style={[styles.action, styles.primary]}
+          >
+            <AppText weight="700" style={[styles.actionLabel, styles.primaryLabel]}>
+              저장
+            </AppText>
+          </Pressable>
         </View>
 
-        {/* dangerInk 는 글자에만 — 면도 테두리도 채우지 않는다 */}
+        {/* 위험색은 글자에만 — 면도 테두리도 채우지 않는다 */}
         {!confirmDelete ? (
           <Pressable
             accessibilityRole="button"
@@ -119,32 +146,36 @@ export default function DiaryEdit() {
             onPress={() => setConfirmDelete(true)}
             style={styles.deleteButton}
           >
-            <AppText weight="500" style={styles.deleteLabel}>
+            <AppText weight="700" style={styles.deleteLabel}>
               이 회고 삭제
             </AppText>
           </Pressable>
         ) : (
-          <Card style={styles.confirm}>
-            <AppText tone="strong" weight="600" style={styles.confirmTitle}>
+          <Card variant="paperSoft" style={styles.confirm}>
+            <AppText weight="700" style={styles.confirmTitle}>
               이 회고를 삭제할까요?
             </AppText>
             {/* 무엇이 사라지는지 먼저 말한다 */}
-            <AppText variant="caption" tone="caption">
+            <AppText style={styles.caption}>
               내 문장, 바바의 문장, 행동 카드가 함께 삭제돼요.
             </AppText>
             <View style={styles.confirmActions}>
-              <AppButton
-                label="취소"
-                variant="ghost"
-                style={styles.action}
+              <Pressable
+                accessibilityRole="button"
                 onPress={() => setConfirmDelete(false)}
-              />
+                style={[styles.action, styles.quiet]}
+              >
+                <AppText weight="700" style={styles.actionLabel}>
+                  취소
+                </AppText>
+              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 onPress={confirmRemove}
-                style={styles.deleteConfirm}
+                // 중립 테두리 — [취소] 와 같다. 색으로 구분하지 않는다
+                style={[styles.action, styles.quiet]}
               >
-                <AppText weight="600" style={styles.deleteLabel}>
+                <AppText weight="700" style={[styles.actionLabel, styles.deleteLabel]}>
                   회고 삭제
                 </AppText>
               </Pressable>
@@ -156,43 +187,93 @@ export default function DiaryEdit() {
   );
 }
 
-const { semantic } = theme.colors;
+const { styles: type } = paperTypography;
+const FULL_BLEED = -theme.layout.screenMargin;
 
 const styles = StyleSheet.create({
-  stack: { flex: 1, marginHorizontal: -theme.layout.screenMargin },
-  stackContent: {
-    gap: theme.layout.gap.element,
-    paddingHorizontal: theme.layout.screenMargin,
-    paddingVertical: theme.layout.gap.element,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    minHeight: theme.touch.minTarget,
+  },
+  headerSide: { width: 28, alignItems: "center", justifyContent: "center" },
+  title: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 21,
+    lineHeight: 28,
+    color: paperColors.text.primary,
   },
 
-  card: { gap: 10 },
-  section: {
-    fontSize: home.sectionLabel.fontSize,
-    lineHeight: home.sectionLabel.fontSize,
-    letterSpacing: home.sectionLabel.letterSpacing,
+  stack: { flex: 1, marginHorizontal: FULL_BLEED },
+  stackContent: {
+    gap: 11,
+    paddingHorizontal: theme.layout.screenMargin,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
+
+  card: { gap: 10, paddingVertical: 16, paddingHorizontal: 18 },
+  section: {
+    fontSize: type.cardTitle.fontSize,
+    lineHeight: type.cardTitle.lineHeight,
+    color: paperColors.text.primary,
+  },
+  caption: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    color: paperColors.text.mutedWarmText,
+  },
+
   // 본문이 길면 함께 늘어난다 — min-height 150 (A4.md)
   body: {
     minHeight: 150,
-    fontFamily: "Pretendard-Regular",
-    fontSize: diaryBody.fontSize,
-    lineHeight: diaryBody.lineHeight,
-    color: semantic.textPrimary,
-    padding: 0,
+    padding: 12,
+    borderRadius: paperRadius.field,
+    backgroundColor: paperColors.bg.field,
+    borderWidth: 1,
+    borderColor: paperColors.line.soft,
+    fontFamily: paperTypography.fontFamily.regular,
+    fontSize: type.body.fontSize,
+    lineHeight: Math.round(type.body.fontSize * 1.75),
+    color: paperColors.text.primary,
     textAlignVertical: "top",
   },
 
-  warn: {
-    borderRadius: warnRow.radius,
-    paddingVertical: warnRow.paddingVertical,
-    paddingHorizontal: warnRow.paddingHorizontal,
-    backgroundColor: warnRow.background,
+  note: {
+    borderRadius: paperRadius.field,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: paperColors.bg.field,
   },
-  warnText: { fontSize: warnRow.fontSize, lineHeight: warnRow.fontSize * 1.55 },
+  // 반드시 읽혀야 하는 줄이라 장식용 `muted`(2.9) 가 아니라 `green`(5.5) 이다
+  noteText: {
+    fontSize: type.caption.fontSize,
+    lineHeight: Math.round(type.caption.fontSize * 1.55),
+    color: paperColors.text.green,
+  },
 
   actions: { flexDirection: "row", gap: 9 },
-  action: { flex: 1 },
+  action: {
+    flex: 1,
+    minHeight: theme.touch.minTarget,
+    borderRadius: paperRadius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quiet: {
+    borderWidth: 1,
+    borderColor: paperColors.line.detail,
+    backgroundColor: paperColors.bg.cardOpaque,
+  },
+  primary: { backgroundColor: paperColors.brand.greenDark },
+  actionLabel: {
+    fontSize: type.bodyLg.fontSize,
+    lineHeight: type.bodyLg.lineHeight,
+    color: paperColors.text.primary,
+  },
+  primaryLabel: { color: paperColors.text.onFill },
 
   // 면도 테두리도 없다 — 되돌릴 수 없는 동작이 누르기 쉬워지면 안 된다
   deleteButton: {
@@ -201,19 +282,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     justifyContent: "center",
   },
-  deleteConfirm: {
-    flex: 1,
-    minHeight: 48,
-    borderRadius: theme.radius.pill,
-    borderWidth: 1,
-    // 중립 테두리 — [취소] 와 같다. 색으로 구분하지 않는다
-    borderColor: `${semantic.textPrimary}2E`,
-    alignItems: "center",
-    justifyContent: "center",
+  deleteLabel: {
+    fontSize: type.bodySm.fontSize,
+    lineHeight: type.bodySm.lineHeight,
+    color: paperColors.accent.dangerFill,
   },
-  deleteLabel: { fontSize: 13.5, lineHeight: 13.5, color: textColor.danger },
 
-  confirm: { gap: 8, backgroundColor: semantic.surfaceTone, borderColor: "transparent" },
-  confirmTitle: { fontSize: 14, lineHeight: 20 },
+  confirm: { gap: 8, paddingVertical: 16, paddingHorizontal: 18 },
+  confirmTitle: {
+    fontSize: type.bodyLg.fontSize,
+    lineHeight: type.bodyLg.lineHeight,
+    color: paperColors.text.primary,
+  },
   confirmActions: { flexDirection: "row", gap: 9, alignItems: "center", paddingTop: 4 },
 });
