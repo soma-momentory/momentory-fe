@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+body{margin:0;background:#1F1E1B;font-family:'Pretendard',-apple-system,sans-serif}
+a{color:#C7D3C0;text-decoration:none}a:hover{color:#EDE7DA}
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+<div style="min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:34px 20px 40px">
+
+  <div style="display:flex;align-items:baseline;gap:11px">
+    <span style="font-family:'Pretendard',sans-serif;font-weight:700;font-size:24px;color:#F2F0E8">전체 화면</span>
+    <span style="font-size:13px;color:rgba(242,240,232,.45)">하나의 앱처럼 — 하단 탭과 화면 안의 요소로 이동합니다</span>
+  </div>
+
+  <div style="width:430px;height:883px;border-radius:52px;overflow:hidden">
+    <iframe ref="{{ frameRef }}" src="{{ src }}" onLoad="{{ onLoad }}" title="앱 프로토타입" style="width:430px;height:883px;border:none;display:block;background:#1F1E1B"></iframe>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:center;max-width:560px">
+    <span style="font-size:11px;color:rgba(242,240,232,.35);margin-right:3px">바로 가기</span>
+    <sc-for list="{{ jumps }}" as="j" hint-placeholder-count="7">
+      <button onClick="{{ j.go }}" style="border:1px solid {{ j.border }};background:{{ j.bg }};color:{{ j.color }};border-radius:999px;padding:5px 12px 6px;font-family:'Pretendard',sans-serif;font-size:12px;cursor:pointer" style-hover="border-color:#8FA28A">{{ j.name }}</button>
+    </sc-for>
+    <button onClick="{{ restart }}" style="margin-left:5px;border:none;background:none;color:rgba(242,240,232,.4);font-family:'Pretendard',sans-serif;font-size:12px;cursor:pointer;padding:5px 4px" style-hover="color:#EDE7DA">처음부터 ↺</button>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:520,&quot;height&quot;:1010}}">
+const SCREENS=[
+  ['홈','홈.dc.html'],['회고','회고.dc.html'],['일기','일기.dc.html'],['쉼터','쉼터.dc.html'],
+  ['보관함','보관함.dc.html'],['리포트','리포트.dc.html'],['마이','마이.dc.html']
+];
+
+class Component extends DCLogic {
+  state={src:'홈.dc.html',current:'홈.dc.html'};
+  frameRef=React.createRef();
+
+  go=(file)=>{
+    const f=this.frameRef.current;
+    if(f&&f.contentWindow){f.contentWindow.location.replace(file);this.setState({current:file});}
+    else this.setState({src:file,current:file});
+  };
+  restart=()=>this.go('홈.dc.html');
+  onLoad=()=>{
+    const f=this.frameRef.current;
+    try{
+      const p=decodeURIComponent(f.contentWindow.location.pathname);
+      const name=p.slice(p.lastIndexOf('/')+1);
+      if(name)this.setState({current:name});
+    }catch(e){}
+  };
+
+  renderVals(){
+    const cur=this.state.current;
+    return {
+      src:this.state.src, frameRef:this.frameRef, onLoad:this.onLoad, restart:this.restart,
+      jumps:SCREENS.map(s=>{
+        const on=s[1]===cur;
+        return {name:s[0],go:()=>this.go(s[1]),
+          bg:on?'rgba(143,162,138,.22)':'transparent',
+          border:on?'#8FA28A':'rgba(242,240,232,.16)',
+          color:on?'#DCE7D6':'rgba(242,240,232,.6)'};
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

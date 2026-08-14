@@ -2,9 +2,17 @@
 
 모멘토리 앱의 React Native 프론트. **MVP 40화면**을 만든다 (2026-08-06 상류 v2 개정 — 30 → 40).
 
-**이 저장소만으로 개발·검증이 전부 된다** — 화면 스펙·값·상태 기계는 저장소 안
-[`docs/spec/`](docs/spec/SNAPSHOT.md)(상류 반입 스냅샷 · 직접 수정 금지)에 있다.
-상류 접근이 필요한 일은 재반입과 `sync:theme` 뿐이고 담당자 전용이다.
+**이 저장소만으로 개발·검증이 전부 된다** — 화면 스펙·상태 기계·문안은 저장소 안
+[`docs/spec/`](docs/spec/SNAPSHOT.md)(동결 스냅샷 · 직접 수정 금지), 시각 값은
+[`docs/design/`](docs/design/IMPORT.md)(새 디자인 스냅샷)에 있다.
+**상류 접근은 더 이상 전제하지 않는다** (2026-08-14 D8 — [`PLAN.md`](PLAN.md) §0).
+재반입·`sync:theme` 은 폐기 수순이고, 규칙·값의 후속 결정은 이 저장소에서 한다.
+
+> 🎨 **디자인 전면 변경 진행 중** (2026-08-14 착수 — 로그인·온보딩 제외).
+> 계획·결정은 [`PLAN.md`](PLAN.md), 새 디자인 정본 스냅샷은 [`docs/design/`](docs/design/IMPORT.md).
+> 닫힌 결정: **탭 5개(쉼터 편입) · 회고는 시각만 · 새 토큰 정본 [`src/design/paper.ts`](src/design/paper.ts) ·
+> 상류 동기화 중단(이 저장소가 정본)**. 시각 값의 정본은 이제 `docs/design/` + `paper.ts` 다 —
+> 아직 옮기지 않은 화면만 옛 토큰(`theme.ts`·`tokens.mvp.ts`)을 임시로 유지한다.
 
 ## 먼저 읽을 것 — 순서대로
 
@@ -17,20 +25,22 @@
 5. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — 이 저장소의 기술 설계
 6. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — 커밋 · 브랜치 · PR · 품질 게이트 · 시크릿 · 생성물
 
-> ⚠ MVP 범위 밖 화면 — 예외(`E*` `X*`)·쉼터(`R*`) — 의 스펙은 상류 `01_화면설계/` 에만 있다.
-> **규칙이 사라진 것은 아니다** — 마주치면 담당자에게 요청한다. 상류에는 MVP 와
-> **같은 ID 로 내용이 다른** 문서가 있으니(특히 `C4-b`), 스펙은 항상 `docs/spec/` 것을 쓴다.
+> ⚠ **쉼터는 범위에 들어왔다** (2026-08-14 D1) — 스펙 정본은
+> [`docs/design/app-flow.md`](docs/design/app-flow.md) §2.4 + 프로토타입이다(상류 `R*` 아님).
+> 예외 화면(`E*` `X*`)은 여전히 범위 밖 — 마주치면 `PLAN.md` 에 결정을 기록하고 진행한다.
+> 스펙 ID 가 겹치면(특히 `C4-b`) 항상 `docs/spec/` 것을 쓴다.
 
-## 값을 찾는 순서 — MVP 먼저
+## 값을 찾는 순서 — 새 디자인 먼저 (2026-08-14 개정)
 
 색·크기·반경·여백을 정할 때다. **위에서부터 보고, 없을 때만 아래로 내려간다.**
 
-|     | 어디                                                                    | 무엇                                                 |
-| --- | ----------------------------------------------------------------------- | ---------------------------------------------------- |
-| 1   | [`docs/spec/screens/<ID>.md`](docs/spec/screens/)                       | 그 화면의 규칙·문안                                  |
-| 2   | [`docs/spec/momentory.css`](docs/spec/momentory.css)                    | **MVP 값 정본** — 색·크기·반경·여백                  |
-| 3   | (상류 전용 — 담당자 경유) `05_도구/flows/9-mvp.mjs` · `ui.mjs`          | MVP 40화면 조립 (2번의 figma 번역)                   |
-| 4   | [`docs/spec/COMPONENTS.md`](docs/spec/COMPONENTS.md) · (상류) `lib.mjs` | ⚠ **원본 기준.** 위에 없을 때만 — 배너를 먼저 읽는다 |
+|     | 어디                                                           | 무엇                                                                  |
+| --- | -------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1   | [`docs/spec/screens/<ID>.md`](docs/spec/screens/)              | 그 화면의 규칙·**문안** (문안은 항상 여기 — 프로토타입 오탈자 주의)   |
+| 2   | [`src/design/paper.ts`](src/design/paper.ts)                   | **새 디자인 토큰 정본** — 코드에서 쓰는 값                            |
+| 3   | [`docs/design/design-system.md`](docs/design/design-system.md) | 새 디자인 스펙 — 값 충돌 시 `docs/design/prototype/*.dc.html` 이 이김 |
+| 4   | [`docs/spec/momentory.css`](docs/spec/momentory.css)           | ⚠ **옛 값 정본** — 로그인·온보딩(리스킨 제외 범위) 전용               |
+| 5   | [`docs/spec/COMPONENTS.md`](docs/spec/COMPONENTS.md)           | ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다                     |
 
 **`COMPONENTS.md` 의 P0 스펙 표는 원본을 서술한다.** 그대로 만들면 어긋난다 — 실제로 셋이 어긋났다:
 
@@ -69,12 +79,14 @@
 
 ## 생성물·반입물 — 직접 고치지 말 것
 
-- `src/design/theme.ts` ← 상류 `05_도구/lib.mjs`. 재생성은 담당자(`npm run sync:theme` — [SNAPSHOT.md](docs/spec/SNAPSHOT.md))
-- `docs/spec/**` ← 상류 반입 스냅샷. 재반입 절차로만 갱신
+- `src/design/theme.ts` ← **동결** (옛 상류 생성물 — CI `check:theme` 가 무변경을 검증).
+  새 값은 [`src/design/paper.ts`](src/design/paper.ts) 에만 쓴다
+- `docs/spec/**` ← 동결 스냅샷 · `docs/design/**` ← 새 디자인 반입 스냅샷 — 둘 다 직접 수정 금지
 - `ios/` `android/` ← `app.config.ts`. `npx expo prebuild`
 
-`src/design/tokens.mvp.ts` 는 **임시**다 — 상류가 semantic 6토큰을 `lib.mjs` 에
-흡수하면 지운다. 오버라이드를 화면 코드에 흩지 않는다.
+`src/design/tokens.mvp.ts` 와 `theme.ts` 는 **마이그레이션 완료 시 삭제한다**
+(`PLAN.md` Phase 5 — 참조 0 확인 후 `scripts/sync-theme.mjs`·`check:theme` 도 함께).
+그때까지 새 화면 작업은 `paper.ts` 만 참조하고, 오버라이드를 화면 코드에 흩지 않는다.
 
 ## BE 는 마지막에 붙인다 (2026-08-07 결정)
 
@@ -117,8 +129,9 @@ app/_layout.tsx  app/index.tsx (S0)  app/(auth)/login.tsx (S1)
 app/(onboarding)/{_layout, welcome, nickname, profile, interests, rest, retro-time, calendar, done}.tsx
                   = 03 · 04 · 05-b · 06(+06-b·06-c) · 07 · 08 · 09 · 10(+10-b)
 app/(tabs)/{_layout, home, archive, report, my}.tsx = 12 · 12-b · A1 · A2 · W1 · M1 (한 파일이 두 상태씩)
-app/home/{_layout, schedule/[id], schedule/new, moment/new}.tsx
-                                          = 12-c · 12-e · 12-d — 투명 모달 시트
+app/home/{_layout, schedule/[id], schedule/new}.tsx
+                                          = 12-c · 12-e — 투명 모달 시트
+                                          (12-d 순간 입력은 2026-08-14 삭제 — PRODUCT.md #18)
 app/retro/{_layout, intro, confirm, emotion, talk, draft, done}.tsx = C1~C7 (회고 12장)
                                           talk = C4~C4-e · draft = C6·C6-b (세그먼트 두 면)
 app/diary/{_layout, [id]/index, [id]/edit}.tsx = A3 · A3-b · A3-c · A4
@@ -233,5 +246,5 @@ npm run test         npm run format:check
 npm run check:theme  # 생성물 자기 검증 — 상류 없이 돈다
 npm run sync:api     # 서버 OpenAPI 계약 재반입 — docs/api/README.md
 npm run android      # 공식 개발 환경인 dev client 빌드 — Expo Go 는 지원하지 않는다
-npm run sync:theme   # 담당자 전용 — docs/spec/SNAPSHOT.md
+npm run sync:theme   # ⚠ 폐기 수순 (D8) — 돌리지 않는다. theme.ts 는 동결
 ```
