@@ -6,6 +6,8 @@ import {
   createSchedule,
   deleteSchedule,
   fetchSchedules,
+  patchScheduleOrder,
+  patchScheduleTitle,
   putCompletion,
   type ScheduleFailureCode,
 } from "@/features/home/data/scheduleApi";
@@ -49,6 +51,12 @@ import { clock } from "@/lib/clock";
  */
 type DayStore = {
   schedules: Schedule[];
+  /**
+   * 오늘의 순간 — **읽기만 남았다.** 만드는 화면(`12-d`)이 새 홈에서 사라져
+   * `addMoment` 도 함께 지웠다(2026-08-14 · `docs/PRODUCT.md` 「상류와 차이」 #18).
+   * 회고 인트로(`C1`)의 「순간 n개」와 확인(`C2`)의 목록이 아직 이 값을 읽으므로
+   * 모델·샘플은 남긴다 — **다시 만들 길이 생기기 전까지 샘플 밖의 순간은 없다.**
+   */
   moments: Moment[];
   /** 서버 답으로 그리고 있는가 — 아직 못 받았으면 목록이 비어 있을 뿐이다 */
   loaded: boolean;
@@ -64,8 +72,15 @@ type DayStore = {
   remove: (id: string) => void;
   /** `12-e` 직접 추가 — **제목 하나만** 받는다. `time` 은 항상 `null` */
   addSchedule: (title: string) => void;
-  /** `12-d` 순간 — 한 줄이면 충분하다 (아직 서버로 가지 않는다) */
-  addMoment: (text: string) => void;
+  /** `12-c` 편집 — 제목만 고친다. 가져온 일정은 화면이 부르지 않는다 */
+  renameSchedule: (id: string, title: string) => void;
+  /**
+   * 순서 — 보이는 목록에서 한 칸 위/아래로. **손잡이를 잡을 수 없는 사람**을 위한
+   * 접근성 동작이 이걸 부른다(`PLAN.md` D10).
+   */
+  moveSchedule: (id: string, direction: "up" | "down") => void;
+  /** 순서 — 끌어 놓은 자리(보이는 목록 기준 index)로 옮긴다 */
+  reorderSchedule: (id: string, toIndex: number) => void;
   /** 로그아웃이 부른다 — 앞 사람의 하루가 다음 사람에게 남지 않게 */
   reset: () => void;
 };
@@ -209,20 +224,50 @@ export const useDay = create<DayStore>((set, get) => ({
     });
   },
 
-  addMoment: (text) =>
-    set((s) => ({
-      moments: [
-        ...s.moments,
-        {
-          id: nextId("m"),
-          createdAt: clock.now().toISOString(),
-          date: clock.today(),
-          text: text.trim(),
-          // 항상 기기에 먼저 저장하고 연결되면 올린다 — 실패로 표시하지 않는다
-          syncState: "local",
-        },
-      ],
-    })),
+  renameSchedule: (id, title) => {
+    const before = get().schedules.find((x) => x.id === id);
+    const name = title.trim();
+    if (before == null || name.length === 0 || name === before.title) return;
+
+    set((s) => ({ schedules: replace(s.schedules, id, { title: name }) }));
+
+    void patchScheduleTitle(id, before.date, name).then((result) => {
+      if (result.ok || !serverRefused(result.code)) return;
+      set((s) => ({ schedules: replace(s.schedules, id, { title: before.title }) }));
+    });
+  },
+
+  moveSchedule: (id, direction) => {
+    const shown = visibleSchedules(get().schedules);
+    const at = shown.findIndex((x) => x.id === id);
+    if (at < 0) return;
+    get().reorderSchedule(id, direction === "up" ? at - 1 : at + 1);
+  },
+
+  reorderSchedule: (id, toIndex) => {
+    const before = get().schedules;
+    // 보이는 줄끼리만 자리를 옮긴다 — 숨긴 줄은 화면에 없으니 자리를 세지 않는다
+    const shown = visibleSchedules(before);
+    const at = shown.findIndex((x) => x.id === id);
+    if (at < 0 || toIndex < 0 || toIndex >= shown.length || toIndex === at) return;
+
+    // 보이는 목록에서 뽑아 넣은 뒤, **숨긴 줄의 자리는 그대로 두고** 다시 엮는다
+    const moved = [...shown];
+    moved.splice(toIndex, 0, moved.splice(at, 1)[0]!);
+    let k = 0;
+    const next = before.map((x) => (x.hidden ? x : moved[k++]!));
+    set({ schedules: next });
+
+    // 서버에는 **그날의 결과 목록**을 통째로 보낸다. 임시 id(아직 서버가 모르는
+    // 줄)가 섞여 있으면 보내지 않는다 — 다음 `load` 가 서버 순서로 되돌린다
+    const ids = next.filter((x) => !x.hidden).map((x) => Number(x.id));
+    if (ids.some((n) => !Number.isInteger(n))) return;
+
+    void patchScheduleOrder(clock.today(), ids).then((result) => {
+      if (result.ok || !serverRefused(result.code)) return;
+      set({ schedules: before });
+    });
+  },
 
   reset: () => {
     inFlight = null;
