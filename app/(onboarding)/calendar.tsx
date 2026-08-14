@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useRef } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Avatar } from "@/components/chat/Avatar";
@@ -9,7 +10,10 @@ import { AppButton } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
+import { currentUserId } from "@/features/auth/model/auth";
+import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDraft } from "@/features/onboarding/model/draft";
+import { requestCalendarAccess } from "@/lib/calendar";
 
 /**
  * `09` · 캘린더 (온보딩 6/6 · 선택)
@@ -28,15 +32,38 @@ import { useDraft } from "@/features/onboarding/model/draft";
  * - `[나중에 할게요]` 는 `quiet` 로 두되 **숨기지 않는다.** 거절 경로가 보이지
  *   않으면 허용이 강요가 된다
  *
- * ⚠ 실제 권한 요청은 OS 다이얼로그가 그린다(`expo-calendar`, M2 도입 예정).
- * 지금은 붙이지 않으므로 **연결했다고 표시만** 하고 넘어간다.
+ * 실제 권한 요청은 **OS 다이얼로그가 그린다**(`expo-calendar`) — 커스텀 권한
+ * 화면을 만들지 않는다(`RULES`). 이 화면이 하는 일은 그 앞에 이유를 놓는 것뿐이다.
+ *
+ * ⚠ **거부해도 막지 않는다.** 허용하지 않았으면 `calendarLinked` 는 `false` 이고
+ * 완료 화면은 `10-b` 가 된다 — 연결되지 않았는데 「연결했어요」라고 말할 수는 없다
+ * (「안내는 실제 처리와 같은 말이어야 한다」). `09.md` 는 `10-b` 를
+ * 「`[나중에 할게요]` 로 건너뛴 경우」로만 적어 뒀지만, 거부도 결과가 같으므로
+ * 같은 화면으로 보낸다.
  */
 export default function CalendarLink() {
   const set = useDraft((s) => s.set);
+  // OS 다이얼로그가 떠 있는 동안의 두 번째 누름 — 다이얼로그를 두 번 열지 않는다
+  const asking = useRef(false);
 
-  const link = () => {
-    // TODO expo-calendar — OS 권한 다이얼로그. 커스텀 화면을 만들지 않는다(RULES)
-    set("calendarLinked", true);
+  const link = async () => {
+    if (asking.current) return;
+    asking.current = true;
+
+    const access = await requestCalendarAccess();
+    set("calendarLinked", access.granted);
+
+    if (access.granted) {
+      // 첫 적재 — **기다리지 않는다.** 이 화면은 동기화를 위한 곳이 아니고,
+      // 실패해도 다음 실행이 같은 것을 다시 보낸다(화해는 멱등이다).
+      // 온보딩 커밋(`10`)보다 먼저 갈 수 있지만 순서는 상관없다 — 서버는
+      // `externalId` 로 upsert 한다.
+      void currentUserId().then((userId) => {
+        if (userId != null) void useCalendarSync.getState().sync(userId);
+      });
+    }
+
+    asking.current = false;
     router.push("/done");
   };
 
@@ -66,7 +93,7 @@ export default function CalendarLink() {
           </AppText>
         </Card>
 
-        <AppButton label="캘린더 연결하기" onPress={link} />
+        <AppButton label="캘린더 연결하기" onPress={() => void link()} />
         <AppButton label="나중에 할게요" variant="quiet" onPress={later} />
       </View>
     </ScreenBackground>

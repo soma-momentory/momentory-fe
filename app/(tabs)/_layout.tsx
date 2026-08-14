@@ -2,7 +2,8 @@ import { Redirect, Stack } from "expo-router";
 import { useEffect } from "react";
 
 import theme from "@/design/theme";
-import { useAuth } from "@/features/auth/model/auth";
+import { currentUserId, useAuth } from "@/features/auth/model/auth";
+import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 
 /**
  * 탭 스택. **하단 탭은 여기서 그리지 않는다** — 각 화면이 `TabScreen` 으로
@@ -23,6 +24,25 @@ export default function TabsLayout() {
   useEffect(() => {
     if (useAuth.getState().status === "hydrating") void useAuth.getState().hydrate();
   }, []);
+
+  /**
+   * 기기 캘린더 화해의 **콜드 스타트 자리.** 온보딩을 마친 사용자가 앱에 들어오는
+   * 길은 결국 여기를 지난다.
+   *
+   * **바뀐 게 있는지 묻지 않고 그냥 한 번 읽는다.** 앱이 꺼져 있는 동안 구글
+   * 캘린더에서 고친 것은 어떤 알림으로도 알 수 없고, `expo-calendar` 는 변경 시각도
+   * (Android 에선) 주지 않는다. 읽는 데 실측 229ms 이고, **바뀐 게 없으면 서버는
+   * 부르지 않는다**(해시 비교 · `calendarSync.ts`).
+   *
+   * 기다리지 않는다 — 홈은 캘린더 없이도 그려진다. 실패는 조용하고 다음 실행이
+   * 다시 보낸다(`RULES.md` 4).
+   */
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    void currentUserId().then((userId) => {
+      if (userId != null) void useCalendarSync.getState().sync(userId);
+    });
+  }, [status]);
 
   // 판정 전에는 보호 라우트를 그리지 않는다 — 깜빡임보다 유출이 나쁘다
   if (status === "hydrating") return null;
