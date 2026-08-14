@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { StyleSheet, View, type ViewProps } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
+import { paperChat, paperShadows } from "@/design/paper";
 import theme from "@/design/theme";
 import { chat } from "@/design/tokens.mvp";
 
@@ -21,12 +22,27 @@ import { chat } from "@/design/tokens.mvp";
  */
 type Props = Omit<ViewProps, "children"> & {
   children: ReactNode;
+  /**
+   * 새 디자인 — **잉크 면 + 밝은 글자 · 라운드 14/14/4/14 · 최대 76%**
+   * (`paper.ts` `paperChat.me`). 회고 화면만 켠다 — 기본값은 그대로다.
+   */
+  variant?: "default" | "paper";
 };
 
-export function AnswerBubble({ children, style, ...rest }: Props) {
+export function AnswerBubble({ children, variant = "default", style, ...rest }: Props) {
+  const paper = variant === "paper";
+
   return (
-    <View accessibilityRole="text" {...rest} style={[styles.bubble, style]}>
-      <AppText tone="onDark" weight="500" style={styles.text}>
+    <View
+      accessibilityRole="text"
+      {...rest}
+      style={[styles.bubble, paper ? styles.bubblePaper : null, style]}
+    >
+      <AppText
+        tone="onDark"
+        weight={paper ? "400" : "500"}
+        style={[styles.text, paper ? styles.textPaper : null]}
+      >
         {children}
       </AppText>
     </View>
@@ -47,4 +63,23 @@ const styles = StyleSheet.create({
   },
   // css 14.5px/1.5 = 21.75. typography 에 없는 조합.
   text: { fontSize: 14.5, lineHeight: 21.75 },
+
+  // ── 새 디자인 ────────────────────────────────────────────────────────
+  bubblePaper: {
+    maxWidth: paperChat.me.maxWidth,
+    backgroundColor: paperChat.me.background,
+    borderTopLeftRadius: paperChat.me.radius.topLeft,
+    borderTopRightRadius: paperChat.me.radius.topRight,
+    borderBottomRightRadius: paperChat.me.radius.bottomRight,
+    borderBottomLeftRadius: paperChat.me.radius.bottomLeft,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    ...paperShadows.flat,
+  },
+  textPaper: {
+    fontSize: 14,
+    lineHeight: 22.4,
+    letterSpacing: -0.2,
+    color: paperChat.me.color,
+  },
 });

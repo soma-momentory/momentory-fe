@@ -1,6 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 import { useEffect } from "react";
 
+import { paperColors } from "@/design/paper";
 import theme from "@/design/theme";
 import { useAuth } from "@/features/auth/model/auth";
 
@@ -33,7 +34,9 @@ export default function RetroLayout() {
         headerShown: false,
         animation: "fade",
         animationDuration: theme.motion.spec.screen.duration,
-        contentStyle: { backgroundColor: theme.colors.semantic.background },
+        // 화면 사이 fade 동안 비치는 바닥 — 회고는 종이 베이스다(`paperFlat`).
+        // 옛 배경색이 남으면 전환 때 크림→테라코타가 한 번 번쩍인다
+        contentStyle: { backgroundColor: paperColors.bg.flat },
       }}
     />
   );

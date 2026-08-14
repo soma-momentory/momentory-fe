@@ -3,6 +3,7 @@ import { Animated, StyleSheet, type ViewProps } from "react-native";
 
 import { useReduceMotion } from "@/components/primitives/AppButton";
 import { AppText } from "@/components/primitives/AppText";
+import { paperChat, paperColors, paperShadows } from "@/design/paper";
 import theme from "@/design/theme";
 import { chat } from "@/design/tokens.mvp";
 
@@ -28,9 +29,19 @@ type Props = Omit<ViewProps, "children"> & {
   children: ReactNode;
   /** 연속 등장 순서. 0,1,2… 마다 +90ms 스태거 */
   index?: number;
+  /**
+   * 새 디자인의 말풍선 — **반투명 흰 면 · 라운드 14/14/14/4 · 최대 84%**
+   * (`docs/design/prototype/회고.dc.html` · `paper.ts` `paperChat.baba`).
+   * 테두리 대신 얕은 그림자로 떠 있고, 뒤의 언덕이 비쳐 보인다.
+   *
+   * ⚠ **온보딩(`04`~`09`)도 이 컴포넌트를 쓴다** — 리스킨 범위 밖이라 기본값을
+   * 바꾸지 않고, 회고 화면만 켠다(`PLAN.md` Phase 2 「화면이 opt-in 한다」).
+   */
+  variant?: "default" | "paper";
 };
 
-export function BabaBubble({ children, index = 0, style, ...rest }: Props) {
+export function BabaBubble({ children, index = 0, variant = "default", style, ...rest }: Props) {
+  const paper = variant === "paper";
   const reduceMotion = useReduceMotion();
   const [enter] = useState(() => new Animated.Value(0));
 
@@ -50,6 +61,7 @@ export function BabaBubble({ children, index = 0, style, ...rest }: Props) {
       {...rest}
       style={[
         styles.bubble,
+        paper ? styles.bubblePaper : null,
         {
           opacity: enter,
           transform: reduceMotion
@@ -66,7 +78,7 @@ export function BabaBubble({ children, index = 0, style, ...rest }: Props) {
         style,
       ]}
     >
-      <AppText style={styles.text}>{children}</AppText>
+      <AppText style={[styles.text, paper ? styles.textPaper : null]}>{children}</AppText>
     </Animated.View>
   );
 }
@@ -89,4 +101,26 @@ const styles = StyleSheet.create({
   },
   // css 는 15px/1.65 = 24.75. typography 에 없는 조합이라 여기서 맞춘다.
   text: { fontSize: 15, lineHeight: 24.75, color: semantic.textPrimary },
+
+  // ── 새 디자인 ────────────────────────────────────────────────────────
+  bubblePaper: {
+    maxWidth: paperChat.baba.maxWidth,
+    backgroundColor: paperChat.baba.background,
+    // 테두리 대신 얕은 그림자 하나다 (design-system.md §3)
+    borderWidth: 0,
+    borderTopLeftRadius: paperChat.baba.radius.topLeft,
+    borderTopRightRadius: paperChat.baba.radius.topRight,
+    borderBottomRightRadius: paperChat.baba.radius.bottomRight,
+    borderBottomLeftRadius: paperChat.baba.radius.bottomLeft,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    ...paperShadows.flat,
+  },
+  // 시안 `font-size:14;line-height:1.6;letter-spacing:-.2`
+  textPaper: {
+    fontSize: 14,
+    lineHeight: 22.4,
+    letterSpacing: -0.2,
+    color: paperColors.text.primary,
+  },
 });

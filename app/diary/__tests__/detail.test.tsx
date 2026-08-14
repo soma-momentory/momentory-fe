@@ -4,7 +4,7 @@ import { Redirect, router } from "expo-router";
 import DiaryEdit from "../[id]/edit";
 import DiaryDetail from "../[id]/index";
 
-import { text as textColor } from "@/design/tokens.mvp";
+import { paperColors } from "@/design/paper";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 
 /** 7월 27일 일기 — 바바의 면·근거·행동 카드가 다 붙어 있는 한 장 */
@@ -352,11 +352,13 @@ describe("A4 · 일기 수정", () => {
     expect(detail.getByText("회고 대화에서")).toBeTruthy();
   });
 
-  it("dangerInk 는 글자에만 얹는다 — 면도 테두리도 채우지 않는다 (R-40)", async () => {
+  it("위험색은 글자에만 얹는다 — 면도 테두리도 채우지 않는다 (R-40)", async () => {
+    // 새 디자인의 위험색은 `dangerFill` 이다 — 시안의 `danger #E4886C` 는 글자로
+    // 쓰면 2.6 이라 AA 미달이다 (PLAN.md Phase 1 대비 보정)
     const r = await render(<DiaryEdit />);
     const label = r.getByText("이 회고 삭제");
 
-    expect(flatten(label.props.style).color).toBe(textColor.danger);
+    expect(flatten(label.props.style).color).toBe(paperColors.accent.dangerFill);
     const button = label.parent;
     expect(flatten(button?.props.style).backgroundColor).toBeUndefined();
     expect(flatten(button?.props.style).borderWidth).toBeUndefined();

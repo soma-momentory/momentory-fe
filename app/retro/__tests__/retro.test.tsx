@@ -5,6 +5,7 @@ import RetroConfirm from "../confirm";
 import RetroEmotion from "../emotion";
 import RetroIntro from "../intro";
 
+import { paperColors } from "@/design/paper";
 import { useDay } from "@/features/home/model/day";
 import { useRetro } from "@/features/retro/model/retro";
 import { SAMPLE_MOMENTS, SAMPLE_SCHEDULES } from "@/mocks/sample";
@@ -184,14 +185,18 @@ describe("C3 · 지금 감정 고르기 — 필수다", () => {
     expect(flatten(r.getByText("회고 시작하기").parent?.props.style).opacity).toBeUndefined();
   });
 
-  it("선택을 색만으로 표시하지 않는다 — 테두리 2px + 굵기 600", async () => {
+  it("선택을 색만으로 표시하지 않는다 — 잉크 2px 테두리 + 굵기 700", async () => {
+    // 새 디자인의 3×3 타일(`EmotionGrid variant="paper"`)은 꺼진 칸에도 2px 자리를
+    // 비워 두고 **테두리 색**으로 켜짐을 말한다 — 켤 때 글자가 밀리지 않게(EmotionGrid).
     const r = await render(<RetroEmotion />);
 
-    expect(flatten(r.getByLabelText("우울함").props.style).borderWidth).toBe(1);
+    expect(flatten(r.getByLabelText("우울함").props.style).borderColor).toBe("transparent");
     await fireEvent.press(r.getByLabelText("우울함"));
 
-    expect(flatten(r.getByLabelText("우울함").props.style).borderWidth).toBe(2);
-    expect(flatten(r.getByText("우울함").props.style).fontFamily).toBe("Pretendard-SemiBold");
+    const cell = flatten(r.getByLabelText("우울함").props.style);
+    expect(cell.borderWidth).toBe(2);
+    expect(cell.borderColor).toBe(paperColors.line.ink);
+    expect(flatten(r.getByText("우울함").props.style).fontFamily).toBe("Pretendard-Bold");
   });
 
   it("강도 척도·임상 용어를 쓰지 않는다", async () => {

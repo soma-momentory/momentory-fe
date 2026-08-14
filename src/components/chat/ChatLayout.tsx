@@ -37,9 +37,20 @@ type Props = Omit<ViewProps, "children"> & {
    * 온보딩은 질문마다 대화를 비우므로 필요 없다.
    */
   stickToEnd?: boolean;
+  /**
+   * 새 디자인 — 말풍선 사이가 **9** 로 좁다(`회고.dc.html` `gap:9px`).
+   * 온보딩도 이 컴포넌트를 쓰므로 기본값(11)은 그대로 두고 회고만 켠다.
+   */
+  variant?: "default" | "paper";
 };
 
-export function ChatLayout({ children, stickToEnd = false, style, ...rest }: Props) {
+export function ChatLayout({
+  children,
+  stickToEnd = false,
+  variant = "default",
+  style,
+  ...rest
+}: Props) {
   const ref = useRef<ScrollView>(null);
 
   return (
@@ -47,7 +58,7 @@ export function ChatLayout({ children, stickToEnd = false, style, ...rest }: Pro
       ref={ref}
       {...rest}
       style={[styles.area, style]}
-      contentContainerStyle={styles.conv}
+      contentContainerStyle={[styles.conv, variant === "paper" ? styles.convPaper : null]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       onContentSizeChange={() => {
@@ -68,4 +79,6 @@ const styles = StyleSheet.create({
     paddingTop: chat.convTop.paddingTop,
     paddingBottom: chat.convTop.paddingBottom,
   },
+  // ── 새 디자인 — 시안 `gap:9px` ─────────────────────────────────────
+  convPaper: { gap: 9 },
 });

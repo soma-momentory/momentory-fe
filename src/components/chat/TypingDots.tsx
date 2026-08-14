@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Animated, StyleSheet, View, type ViewProps } from "react-native";
 
 import { useReduceMotion } from "@/components/primitives/AppButton";
+import { paperChat, paperShadows } from "@/design/paper";
 import theme from "@/design/theme";
 import { chat } from "@/design/tokens.mvp";
 
@@ -19,8 +20,17 @@ import { chat } from "@/design/tokens.mvp";
  */
 const PULSE = theme.motion.duration.slow;
 
-export function TypingDots({ style, ...rest }: Omit<ViewProps, "children">) {
+type Props = Omit<ViewProps, "children"> & {
+  /**
+   * 새 디자인 — **6px 점 셋**이 바바 말풍선과 같은 반투명 흰 면 안에 든다
+   * (`paperChat.dot` · `회고.dc.html`). 회고 화면만 켠다.
+   */
+  variant?: "default" | "paper";
+};
+
+export function TypingDots({ variant = "default", style, ...rest }: Props) {
   const reduceMotion = useReduceMotion();
+  const paper = variant === "paper";
 
   return (
     <View
@@ -28,16 +38,24 @@ export function TypingDots({ style, ...rest }: Omit<ViewProps, "children">) {
       accessible
       accessibilityLabel="답장을 쓰는 중"
       {...rest}
-      style={[styles.bubble, style]}
+      style={[styles.bubble, paper ? styles.bubblePaper : styles.bubbleDefault, style]}
     >
       {[0, 1, 2].map((i) => (
-        <Dot key={i} index={i} reduceMotion={reduceMotion} />
+        <Dot key={i} index={i} reduceMotion={reduceMotion} paper={paper} />
       ))}
     </View>
   );
 }
 
-function Dot({ index, reduceMotion }: { index: number; reduceMotion: boolean }) {
+function Dot({
+  index,
+  reduceMotion,
+  paper,
+}: {
+  index: number;
+  reduceMotion: boolean;
+  paper: boolean;
+}) {
   const [opacity] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
@@ -57,20 +75,29 @@ function Dot({ index, reduceMotion }: { index: number; reduceMotion: boolean }) 
     return () => loop.stop();
   }, [opacity, index, reduceMotion]);
 
-  return <Animated.View testID="typing-dot" style={[styles.dot, { opacity }]} />;
+  return (
+    <Animated.View
+      testID="typing-dot"
+      style={[styles.dot, paper ? styles.dotPaper : null, { opacity }]}
+    />
+  );
 }
 
 const { semantic } = theme.colors;
 
+const PAPER_DOT = 6;
+
 const styles = StyleSheet.create({
   bubble: {
     alignSelf: "flex-start",
-    width: chat.typing.width,
-    height: chat.typing.height,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: chat.typing.dotGap,
+  },
+  bubbleDefault: {
+    width: chat.typing.width,
+    height: chat.typing.height,
     backgroundColor: semantic.surface,
     borderWidth: 1,
     borderColor: `${semantic.textPrimary}1A`, // ink 10%
@@ -85,5 +112,23 @@ const styles = StyleSheet.create({
     height: chat.typing.dot,
     borderRadius: chat.typing.dot / 2,
     backgroundColor: semantic.textMuted,
+  },
+
+  // ── 새 디자인 — 바바 말풍선과 같은 면·모서리, 시안 padding 14/15 ──────
+  bubblePaper: {
+    backgroundColor: paperChat.baba.background,
+    borderTopLeftRadius: paperChat.baba.radius.topLeft,
+    borderTopRightRadius: paperChat.baba.radius.topRight,
+    borderBottomRightRadius: paperChat.baba.radius.bottomRight,
+    borderBottomLeftRadius: paperChat.baba.radius.bottomLeft,
+    paddingVertical: 14,
+    paddingHorizontal: 15,
+    ...paperShadows.flat,
+  },
+  dotPaper: {
+    width: PAPER_DOT,
+    height: PAPER_DOT,
+    borderRadius: PAPER_DOT / 2,
+    backgroundColor: paperChat.dot,
   },
 });
