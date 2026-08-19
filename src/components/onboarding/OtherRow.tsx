@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { AppText } from "@/components/primitives/AppText";
 import theme from "@/design/theme";
 import { clearButton, otherRow } from "@/design/tokens.mvp";
+import { MAX_OTHER_LENGTH } from "@/features/onboarding/model/draft";
 
 /**
  * `.othr` — 「기타」 인라인 입력 줄 (`06-b`).
@@ -31,7 +32,7 @@ export function OtherRow({
   onChangeText: (v: string) => void;
   onCommit: () => void;
 }) {
-  const atLimit = value.length >= otherRow.maxLength;
+  const atLimit = value.length >= MAX_OTHER_LENGTH;
 
   return (
     <View style={styles.othr}>
@@ -44,7 +45,7 @@ export function OtherRow({
           onChangeText={onChangeText}
           placeholder="직접 입력"
           placeholderTextColor={semantic.textSlogan}
-          maxLength={otherRow.maxLength}
+          maxLength={MAX_OTHER_LENGTH}
           returnKeyType="done"
           onSubmitEditing={onCommit}
           onBlur={onCommit}
@@ -58,7 +59,7 @@ export function OtherRow({
           tone={atLimit ? "accent" : "caption"}
           style={styles.othCounter}
         >
-          {`${value.length}/${otherRow.maxLength}`}
+          {`${value.length}/${MAX_OTHER_LENGTH}`}
         </AppText>
         {value.length > 0 ? (
           <Pressable

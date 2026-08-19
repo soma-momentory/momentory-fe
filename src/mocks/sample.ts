@@ -1,4 +1,4 @@
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 import type { Moment, Schedule, Weather } from "@/features/home/model/types";
 import type { WeekAnalysis } from "@/features/report/model/report";
 import { SAMPLE_TODAY } from "@/lib/clock";

@@ -3,8 +3,9 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { CheckCircleIcon } from "@/components/icons/LineIcons";
 import { AppText } from "@/components/primitives/AppText";
 import { paperColors, paperEmotionColor, paperRadius, paperTypography } from "@/design/paper";
-import theme, { type EmotionId } from "@/design/theme";
+import theme from "@/design/theme";
 import { emotionGrid } from "@/design/tokens.mvp";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
  * 감정 9종 격자 — `momentory.css` `.egrid` · `.em` · `.emBig` · `.emOn` · `.emd`.

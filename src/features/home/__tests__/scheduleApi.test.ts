@@ -1,5 +1,5 @@
+import { EMOTIONS } from "@/features/emotion/model/emotion";
 import { SCHEDULE_EMOTIONS, toSchedule } from "@/features/home/data/scheduleApi";
-import { emotions } from "@/design/theme";
 
 /**
  * 일정 계약의 **경계**를 고정한다 — 서버 모양이 스키마와 다른 자리들이라
@@ -49,7 +49,7 @@ describe("ScheduleResponse → 스키마 Schedule", () => {
 
 describe("감정 표 — 회고와 다른 어휘다", () => {
   it("9종을 빠짐없이 덮는다", () => {
-    for (const e of emotions) expect(SCHEDULE_EMOTIONS[e.id]).toBeTruthy();
+    for (const e of EMOTIONS) expect(SCHEDULE_EMOTIONS[e.id]).toBeTruthy();
     expect(new Set(Object.values(SCHEDULE_EMOTIONS)).size).toBe(9);
   });
 
@@ -59,7 +59,7 @@ describe("감정 표 — 회고와 다른 어휘다", () => {
     expect(SCHEDULE_EMOTIONS[3]).toBe("ANGRY_FRUSTRATED");
   });
 
-  it("순서가 theme.emotions 와 같다 — 1 불안함 … 9 평온함", () => {
+  it("순서가 EMOTIONS 와 같다 — 1 불안함 … 9 평온함", () => {
     expect(SCHEDULE_EMOTIONS[1]).toBe("ANXIOUS");
     expect(SCHEDULE_EMOTIONS[9]).toBe("CALM");
   });

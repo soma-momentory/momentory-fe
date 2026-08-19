@@ -1,6 +1,6 @@
-import type { EmotionId } from "@/design/theme";
 import { countEmotions } from "@/features/archive/model/archive";
 import type { ActionCard, Diary } from "@/features/diary/model/diary";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
  * 주간 리포트가 세는 것 — **관찰이지 평가가 아니다**(`W1.md`).

@@ -12,9 +12,10 @@ import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "@/components/icon
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { paperColors, paperRadius, paperTypography } from "@/design/paper";
-import theme, { type EmotionId } from "@/design/theme";
+import theme from "@/design/theme";
 import { byLatest, dayOf, diariesInMonth, monthOf } from "@/features/archive/model/archive";
 import { useDiary } from "@/features/diary/model/diary";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 import { clock } from "@/lib/clock";
 
 /**

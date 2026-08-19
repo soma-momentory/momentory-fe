@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 import type { Reply, ReplyActionCard, ReplyDiary } from "@/features/retro/data/retroApi";
 
 /**
@@ -113,7 +113,8 @@ export const useRetro = create<RetroStore>((set) => ({
 }));
 
 /**
- * 감정 id(1~9) → 서버 감정 키. **순서가 `theme.emotions` 와 BE `Emotion` 이 같다**
+ * 감정 id(1~9) → 서버 감정 키. **순서가 `features/emotion` 의 `EMOTIONS` 와
+ * BE `Emotion` 이 같다**
  * (1 불안함=anxious … 9 평온함=calm) — 그래도 번호가 아니라 키로 명시해 둔다.
  * 순서 가정이 코드 한 곳에만 남으면 한쪽이 바뀔 때 조용히 어긋난다.
  */

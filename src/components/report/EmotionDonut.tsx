@@ -10,7 +10,7 @@ import {
   paperReport,
   paperTypography,
 } from "@/design/paper";
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";
 
 /**

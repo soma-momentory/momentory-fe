@@ -2,8 +2,9 @@ import { StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
 import { paperColors, paperEmotionColor, paperRadius } from "@/design/paper";
-import theme, { type EmotionId } from "@/design/theme";
+import theme from "@/design/theme";
 import { emotionPill } from "@/design/tokens.mvp";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
  * 감정 알약 — `momentory.css` `.epill`.

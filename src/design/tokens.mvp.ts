@@ -205,7 +205,8 @@ export const otherRow = {
   fontSize: 14,
   /** `.othc` 카운터 — 11px caption */
   counterSize: 11,
-  maxLength: 12,
+  // 글자 상한은 제품 규칙이라 여기가 아니라
+  // `features/onboarding/model/draft.ts` 의 `MAX_OTHER_LENGTH` 에 있다
 } as const;
 
 /**
@@ -299,8 +300,8 @@ export const home = {
   },
   /** `.it` — 일정 제목. **긴 제목은 한 줄 말줄임** */
   itemTitle: { fontSize: 14, lineHeight: 21 },
-  /** 목록이 5개를 넘으면 5까지 펼치고 `[n개 더 보기]` 로 접는다 (`12.md`) */
-  maxVisibleSchedules: 5,
+  // 「5개까지 펼치고 접는다」는 제품 규칙이라 여기가 아니라
+  // `features/home/model/day.ts` 의 `MAX_VISIBLE_SCHEDULES` 에 있다
 } as const;
 
 /**
@@ -559,10 +560,11 @@ export const actionCard = {
 } as const;
 
 /**
- * 일기 본문 — `C6` 초안 · `A4` 수정.
- * **500자 상한**이고 카운터만 둔다. **최소 글자 수를 요구하지 않는다**(`C6.md`).
+ * 일기 본문 — `C6` 초안 · `A4` 수정. **크기·행간만** 여기 있다.
+ * 500자 상한은 제품 규칙이라 `features/diary/model/types.ts` 의
+ * `DIARY_BODY_MAX_LENGTH` 로 옮겼다.
  */
-export const diaryBody = { maxLength: 500, fontSize: 15, lineHeight: 27 } as const;
+export const diaryBody = { fontSize: 15, lineHeight: 27 } as const;
 
 /**
  * `.dirchip` · `.dirchipb` — 대화 가운데에 남는 방향 칩(`C4-d`).

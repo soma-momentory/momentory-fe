@@ -1,4 +1,4 @@
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 import type { Schedule } from "@/features/home/model/types";
 import { authedRequest, type HttpError } from "@/lib/http";
 
@@ -58,7 +58,7 @@ export const SCHEDULES_TIMEOUT_MS = 8_000;
  * (`retrospect/Emotion` 소문자 키 · `schedule/ScheduleEmotion` 대문자 enum)
  * **3번의 이름이 서로 다르다**(`angry` vs `ANGRY_FRUSTRATED`). 한쪽을 재사용하면
  * 그 한 감정만 조용히 400 이 된다 — 그래서 표를 따로 둔다.
- * 순서는 `theme.emotions` 와 같지만 번호가 아니라 코드로 명시한다.
+ * 순서는 `features/emotion` 의 `EMOTIONS` 와 같지만 번호가 아니라 코드로 명시한다.
  */
 export const SCHEDULE_EMOTIONS: Record<EmotionId, string> = {
   1: "ANXIOUS",

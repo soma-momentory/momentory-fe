@@ -1,4 +1,4 @@
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 import { SAMPLE_ALL_TIME_EMOTIONS } from "@/mocks/sample";
 
 /**

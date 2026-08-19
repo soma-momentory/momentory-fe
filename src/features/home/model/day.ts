@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 import { initialMoments, todayWeather } from "@/features/home/data/sampleRepository";
 import {
   createSchedule,
@@ -290,6 +290,15 @@ export const useTodayContext = (): { date: string; weather: Weather } => ({
 /** 목록에 보이는 일정 — 숨긴 것은 빼고 센다 */
 export const visibleSchedules = (schedules: readonly Schedule[]) =>
   schedules.filter((s) => !s.hidden);
+
+/**
+ * 목록이 이 수를 넘으면 여기까지만 펼치고 `[n개 더 보기]` 로 접는다(`12.md`).
+ *
+ * ⚠ **디자인 값이 아니라 제품 규칙이다.** 오랫동안 `design/tokens.mvp.ts` 의
+ * `home.maxVisibleSchedules` 로 있었는데, 그러면 토큰 파일을 지우는 순간 규칙이
+ * 조용히 사라진다 — 디자인 세대가 바뀌어도 「5개까지 펼친다」는 그대로다.
+ */
+export const MAX_VISIBLE_SCHEDULES = 5;
 
 /**
  * 「2/4 마침」. **진행률·배지가 아니라 사실**이다(`12.md`) — 퍼센트로 바꾸거나
