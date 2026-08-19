@@ -1,0 +1,41 @@
+{
+  "_comment": "Codex 자동 리뷰 게이트 설정. 자세한 것은 .claude/hooks/README.md",
+  "enabled": true,
+  "model": null,
+  "codexTimeoutMs": 480000,
+  "gateTimeoutMs": 600000,
+  "maxBlocksPerSession": 3,
+  "maxPatchBytes": 180000,
+  "maxUntrackedFiles": 60,
+  "maxUntrackedInlineBytes": 60000,
+  "maxUntrackedInlineBytesPerFile": 20000,
+  "runGates": true,
+  "runTests": true,
+  "gates": [
+    { "name": "typecheck", "args": ["run", "typecheck"] },
+    { "name": "lint", "args": ["run", "lint"] },
+    { "name": "test", "args": ["test", "--", "--silent"], "requires": "runTests" }
+  ],
+  "codePathPattern": "\\.(ts|tsx|js|jsx|mjs|cjs)$",
+  "excludePathspecs": [
+    "*.zip",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.webp",
+    "*.pdf",
+    "*.ttf",
+    "*.otf",
+    "*.woff",
+    "*.woff2",
+    "package-lock.json",
+    "ios",
+    "android"
+  ],
+  "designSsotPaths": [
+    "design-reference/design.md",
+    "docs/design/design-system.md",
+    "docs/design/prototype"
+  ]
+}
