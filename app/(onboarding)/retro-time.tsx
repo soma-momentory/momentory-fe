@@ -1,56 +1,57 @@
-import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Avatar } from "@/components/chat/Avatar";
-import { BabaBubble } from "@/components/chat/BabaBubble";
-import { ChatLayout } from "@/components/chat/ChatLayout";
-import { OnboardingTopBar } from "@/components/onboarding/OnboardingTopBar";
-import { AppButton } from "@/components/primitives/AppButton";
-import { AppText } from "@/components/primitives/AppText";
-import { ScreenBackground } from "@/components/primitives/ScreenBackground";
-import theme from "@/design/theme";
-import { timeField } from "@/design/tokens.mvp";
+import { BottomSheet, Button, Icon, Text, WheelPicker } from "@/components/ds";
+import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
+import { background, hairline, label as labelColor, radius, space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { requestNotificationPermission } from "@/lib/notifications";
-import { dateAtTime, formatKoreanTime, toHHMM } from "@/lib/time";
+import { toHHMM } from "@/lib/time";
 
 /**
- * `08` · 회고 시간 (온보딩 5/6)
+ * `08` · 회고 시간
  *
  * **알림을 켜지 않아도 끝까지 갈 수 있다.** 시간을 고르는 것과 알림을 받는 것은
  * 다른 결정이라, 같은 화면에 `[다음]` 과 `[알림 없이 쓸게요]` 를 함께 둔다(`08.md`).
+ * 새 디자인은 그 보조 행동을 **CTA 아래**로 옮겼다(`Onboarding.dc.html`
+ * 「보조 액션(알림 없이·나중에)을 우상단 → 메인 CTA 아래로 이동」).
+ *
+ * ## OS 피커에서 커스텀 휠로
+ *
+ * 옛 화면은 `@react-native-community/datetimepicker` 를 열었다. 시안이 **자체 휠
+ * 3열**(오전·오후 / 시 1~12 / 분 5분 단위)을 정의하므로 `WheelPicker` 로 바꿨다 —
+ * **마이(`M2`)가 같은 것을 쓴다**. 시간 칩을 누르면 바텀시트가 열리고 `완료`로 닫는다.
+ *
+ * ⚠ `datetimepicker` 의존성은 **여기서 지우지 않는다** — 마이가 아직 쓴다.
  *
  * - **"마지막으로,"를 쓰지 않는다** — 바로 다음 `09` 가 "마지막으로 하나만 더"라
- *   충돌한다. 마지막이라는 말은 캘린더 한 곳에만 둔다(`08.md`)
- * - 시간 선택은 **OS 피커**로 연다. 커스텀 휠을 만들지 않는다
- * - `[알림 없이 쓸게요]` 를 골라도 **회고 시각은 저장된다** — `notifyRetro` 만
- *   끄고, 홈의 「밤 9:30엔 제가 먼저 말 걸어요」 문구는 시각을 계속 쓴다
- * - 여기서 정한 시각은 `10` 완료 카드 · `M1` 프로필 · `M3` 알림 **세 곳이 같은
- *   값**을 본다 — 그래서 초안 `retroTime` 하나에만 쓴다
- * - **저장 직후의 OS 권한 다이얼로그(`P*`)는 OS 가 그린다** — 커스텀 화면을
- *   만들지 않는다(`08.md` · `RULES.md`). `[다음]` 을 누르면 여기서 한 번 묻는다
+ *   충돌한다(`08.md`)
+ * - `[알림 없이 쓸게요]` 를 골라도 **회고 시각은 저장된다** — `notifyRetro` 만 끈다
+ * - **저장 직후의 OS 권한 다이얼로그는 OS 가 그린다** — 커스텀 권한 화면 없음
  * - **거부해도 온보딩은 멈추지 않는다.** 거부는 오류가 아니라 답이라, 안내도
- *   재시도도 없이 `notifyRetro` 만 끄고 그대로 `09` 로 간다 — 결과가
- *   `[알림 없이 쓸게요]` 와 같아지고, `10` 은 그 답대로 시간 줄을 지운다
+ *   재시도도 없이 `notifyRetro` 만 끄고 그대로 `09` 로 간다
  */
+// 휠은 **문자열**을 다룬다 — 표시와 값을 하나로 두면 열마다 변환이 생기지 않는다
+const PERIODS = ["오전", "오후"];
+const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+/** 분은 5분 단위 — 시안이 정한 눈금 */
+const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
+
 export default function RetroTime() {
   const retroTime = useDraft((s) => s.retroTime);
   const set = useDraft((s) => s.set);
-  const [showPicker, setShowPicker] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   /** 다이얼로그가 뜨기 전 한 번 더 눌리면 권한 요청이 둘이 된다 */
   const [asking, setAsking] = useState(false);
   // 초안의 21:30 은 스키마 기본값이라 「고른 것」이 아니다 — 고르기 전에는
-  // placeholder 를 보인다(시안의 「선택 전」). 고르면 그 값이 자리를 채운다.
+  // 「시간 선택」 칩을 보이고, 고르면 그 값이 답변 버블로 남는다
   const [picked, setPicked] = useState(false);
 
-  const onPick = (_e: DateTimePickerEvent, date?: Date) => {
-    setShowPicker(false);
-    if (date) {
-      set("retroTime", toHHMM(date));
-      setPicked(true);
-    }
+  const wheel = toWheel(retroTime);
+  const setWheel = (next: Partial<WheelValue>) => {
+    set("retroTime", fromWheel({ ...wheel, ...next }));
+    setPicked(true);
   };
 
   const goNext = async (notify: boolean) => {
@@ -64,8 +65,7 @@ export default function RetroTime() {
     }
 
     setAsking(true);
-    // 권한이 곧 답이다 — 켜겠다고 했지만 OS 에서 거부하면 알림은 꺼진 것이다.
-    // (계측 `onb_permission_result` 는 track() 파사드가 생길 때 여기서 남긴다)
+    // 권한이 곧 답이다 — 켜겠다고 했지만 OS 에서 거부하면 알림은 꺼진 것이다
     const { granted } = await requestNotificationPermission();
     set("notifyRetro", granted);
     setAsking(false);
@@ -73,66 +73,114 @@ export default function RetroTime() {
   };
 
   return (
-    <ScreenBackground>
-      <OnboardingTopBar step={4} onBack={() => router.back()} />
-
-      <ChatLayout>
-        <Avatar />
-        <BabaBubble index={0}>하루를 언제 돌아보면 가장 편안할까요?</BabaBubble>
-        <BabaBubble index={1}>
-          바쁜 하루 속에서도 부담 없이 기록할 수 있도록, 당신이 편한 시간에 찾아갈게요.
-        </BabaBubble>
-      </ChatLayout>
-
-      <View style={styles.bottom}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="시간 선택"
-          onPress={() => setShowPicker(true)}
-          style={styles.timeRow}
-        >
-          <AppText tone={picked ? "strong" : "caption"} style={styles.timeLabel}>
-            {picked ? formatKoreanTime(retroTime) : "시간 선택"}
-          </AppText>
-          <AppText variant="caption" tone="caption">
-            ▾
-          </AppText>
-        </Pressable>
-
-        {showPicker ? (
-          <DateTimePicker mode="time" value={dateAtTime(retroTime)} onChange={onPick} />
-        ) : null}
-
-        <AppText variant="caption" tone="legal" style={styles.hint}>
-          탭하면 시간을 고를 수 있어요
-        </AppText>
-
-        {/* 고르지 않아도 넘어간다 — 초안이 스키마 기본값 21:30 을 들고 있다 */}
-        <AppButton label="다음" onPress={() => void goNext(true)} />
-
+    <>
+      <OnboardingChat
+        step="retroTime"
+        onBack={() => router.back()}
+        // 고른 뒤에는 답변 버블이 대화에 남으므로 칩을 지운다 — 같은 답이 두 번 보이지 않게
+        inline={picked ? null : <TimeChip onPress={() => setSheetOpen(true)} />}
+      >
+        <Text variant="caption1" color={labelColor.alternative} style={styles.hint}>
+          편한 시간은 나중에도 바꿀 수 있어요.
+        </Text>
+        <Button label="다음" fill disabled={!picked} onPress={() => void goNext(true)} />
         {/* 거절을 같은 화면에 둔다. 골라도 회고 시각은 저장된다 */}
-        <AppButton label="알림 없이 쓸게요" variant="quiet" onPress={() => void goNext(false)} />
-      </View>
-    </ScreenBackground>
+        <View style={styles.secondary}>
+          <Button label="알림 없이 쓸게요" variant="text" onPress={() => void goNext(false)} />
+        </View>
+      </OnboardingChat>
+
+      {sheetOpen ? (
+        <BottomSheet title="시간 선택" onDismiss={() => setSheetOpen(false)}>
+          {/* 세 열이 하이라이트 밴드 **하나**를 공유한다 — 열마다 그리면 사이가 끊긴다 */}
+          <WheelPicker
+            columns={[
+              {
+                key: "period",
+                label: "오전 오후",
+                items: PERIODS,
+                value: wheel.period,
+                onChange: (period) => setWheel({ period }),
+                width: 88,
+              },
+              {
+                key: "hour",
+                label: "시",
+                items: HOURS,
+                value: wheel.hour,
+                onChange: (hour) => setWheel({ hour }),
+                width: 72,
+                format: (h) => `${h}시`,
+              },
+              {
+                key: "minute",
+                label: "분",
+                items: MINUTES,
+                value: wheel.minute,
+                onChange: (minute) => setWheel({ minute }),
+                width: 72,
+                format: (m) => `${m}분`,
+              },
+            ]}
+          />
+          <Button label="완료" fill onPress={() => setSheetOpen(false)} />
+        </BottomSheet>
+      ) : null}
+    </>
   );
 }
 
-const { semantic } = theme.colors;
+/** 시간을 아직 안 골랐을 때 대화에 붙는 답장 칩 — 누르면 시트가 열린다 */
+function TimeChip({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="시간 선택"
+      onPress={onPress}
+      style={styles.timeChip}
+    >
+      <Icon name="clock" size={16} color={labelColor.alternative} />
+      <Text variant="body2" color={labelColor.neutral}>
+        시간 선택
+      </Text>
+    </Pressable>
+  );
+}
+
+type WheelValue = { period: string; hour: string; minute: string };
+
+/** `"21:30"` → `{ 오후, "9", "30" }`. 시각의 표기는 `lib/time` 이 쥐고 여기선 눈금만 만든다 */
+function toWheel(hhmm: string): WheelValue {
+  const [h = "21", m = "30"] = hhmm.split(":");
+  const hour24 = Number(h);
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  // 5분 눈금 밖의 값(서버가 준 21:37 같은 것)은 가장 가까운 눈금으로 내린다
+  const nearest = MINUTES.reduce((best, v) =>
+    Math.abs(Number(v) - Number(m)) < Math.abs(Number(best) - Number(m)) ? v : best,
+  );
+  return { period: hour24 < 12 ? "오전" : "오후", hour: String(hour12), minute: nearest };
+}
+
+function fromWheel({ period, hour, minute }: WheelValue): string {
+  const base = Number(hour) % 12;
+  const hour24 = period === "오전" ? base : base + 12;
+  // 날짜는 버린다 — `toHHMM` 이 시각만 읽는다
+  return toHHMM(new Date(2026, 0, 1, hour24, Number(minute)));
+}
 
 const styles = StyleSheet.create({
-  bottom: { gap: 11 },
-  // 08 의 시간 칸 — `.tfield` 가 아니라 r16 · ink 14% · 1px (tokens.timeField)
-  timeRow: {
-    height: timeField.height,
-    borderRadius: timeField.radius,
-    borderWidth: timeField.borderWidth,
-    borderColor: timeField.border,
-    backgroundColor: semantic.surface,
-    paddingHorizontal: timeField.paddingHorizontal,
+  // 답장 pill 과 같은 모양의 작은 칩 — 누르면 시트가 열린다
+  timeChip: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: space.sm,
+    paddingVertical: 9,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.full,
+    backgroundColor: background.elevated,
+    ...hairline.neutral,
   },
-  timeLabel: { fontSize: timeField.fontSize, lineHeight: timeField.fontSize * 1.2 },
   hint: { textAlign: "center" },
+  secondary: { alignItems: "center" },
 });

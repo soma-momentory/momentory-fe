@@ -1,44 +1,32 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
-import { Avatar } from "@/components/chat/Avatar";
-import { BabaBubble } from "@/components/chat/BabaBubble";
-import { ChatLayout } from "@/components/chat/ChatLayout";
-import { ChipFlow } from "@/components/chat/ChipFlow";
-import { OnboardingTopBar } from "@/components/onboarding/OnboardingTopBar";
-import { OtherRow } from "@/components/onboarding/OtherRow";
-import { AppButton } from "@/components/primitives/AppButton";
-import { AppText } from "@/components/primitives/AppText";
-import { ScreenBackground } from "@/components/primitives/ScreenBackground";
-import { warnRow } from "@/design/tokens.mvp";
+import { Button, Text } from "@/components/ds";
+import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
+import { OtherReplyInput } from "@/components/onboarding/OtherReplyInput";
+import { QuickReplies } from "@/components/onboarding/QuickReplies";
+import { label as labelColor, space } from "@/design/ds";
 import { MAX_INTERESTS, OTHER_INTEREST, useDraft } from "@/features/onboarding/model/draft";
 import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
- * `06` · 관심 분야 (온보딩 3/6 · 필수 · 복수) + `06-b`/`06-c` 기타 입력
+ * `06` · 관심 분야 (필수 · 복수) + `06-b`/`06-c` 기타 입력
  *
- * **칩 8개를 한 화면에 다 보인다.** 스크롤로 감추면 뒤쪽은 선택되지 않는다.
+ * **칩은 질문 바로 아래 왼쪽, 대화 영역 안**이다(`Onboarding.dc.html` 「대화 문법」).
  *
  * **최대 3개.** 넷째부터는 눌러도 켜지지 않는다 — 다 고르면 아무것도 안 고른
  * 것과 같다(`06.md`). 제한 경고를 미리 띄우지 않고 안내는 몇 개를 골랐는지
  * **사실만** 말한다(`06-c.md`).
  *
- * **[기타]를 누르면 칩 바로 아래에 한 줄 입력이 열린다**(`06-b.md`) — 별도
- * 화면·시트로 보내지 않는다. 고른 칩들을 보면서 적어야 무엇을 더할지 판단할
- * 수 있다.
- *
  * - 기타를 켠 채 비워 두면 `[다음]` 이 잠긴다 — 켠 것은 "적을 게 있다"는 뜻
  * - 빠져나가는 길은 둘뿐 — **적거나, 기타를 끄거나**
- * - 확정 기준은 셋 — 키보드 `[완료]` · 입력 줄 밖 탭 · `[다음]`. 전부 trim 한
- *   값을 쓰고, **공백뿐이면 확정하지 않고 기타 선택을 취소한다**(`06-c.md`)
- * - 12자 상한 — 넘기면 더 입력되지 않고 오류 문구 없이 **카운터 색만** 바뀐다
+ * - 확정은 `[확인]` 이다(`design.md` §7 「전송/확인 — 값이 비면 비활성」). 키보드
+ *   `완료` 와 `[다음]` 도 같은 확정을 지나고, **공백뿐이면 확정하지 않고 기타
+ *   선택을 취소한다**(`06-c.md`)
  *
- * **칩 목록은 서버가 준다**(`GET /api/v1/onboarding/options`). 못 받았으면
- * 대역(`model/options.ts`)으로 그린다 — 선택지를 기다리느라 온보딩을 멈추지
- * 않는다. 상한 3 은 서버가 말하지 않아 여기 남는다.
+ * **칩 목록은 서버가 준다.** 못 받았으면 대역으로 그린다 — 선택지를 기다리느라
+ * 온보딩을 멈추지 않는다. 상한 3 은 서버가 말하지 않아 여기 남는다.
  */
-const MAX = MAX_INTERESTS;
-
 export default function Interests() {
   const items = useOnboardingOptions((s) => s.interestAreas);
   const picked = useDraft((s) => s.interests);
@@ -61,14 +49,15 @@ export default function Interests() {
       return;
     }
     // 넷째부터는 눌러도 켜지지 않는다 — 경고를 미리 띄우지 않는다 (06.md · 06-c.md)
-    if (picked.length >= MAX) return;
+    if (picked.length >= MAX_INTERESTS) return;
     set("interests", [...picked, id]);
   };
 
   /**
-   * 기타 값 확정 — 키보드 완료 · 입력 줄 밖 탭(blur) · `[다음]` 세 경로가
-   * 전부 여기를 지난다. 공백뿐이면 확정하지 않고 기타 선택을 취소한다 —
-   * 빈 칩을 만들지 않는다(`06-c.md`).
+   * 기타 값 확정 — `[확인]` · 키보드 `완료` · `[다음]` 이 여기를 지난다.
+   * **입력 줄 밖 탭(blur)은 더 이상 확정이 아니다** — 확정 버튼을 둔 이상
+   * 「눌러야 확정된다」가 하나여야 한다(`design.md` §7).
+   * 공백뿐이면 확정하지 않고 기타 선택을 취소한다 — 빈 칩을 만들지 않는다(`06-c.md`).
    */
   const commitOther = () => {
     if (otherTrimmed.length === 0) {
@@ -88,66 +77,46 @@ export default function Interests() {
   };
 
   return (
-    <ScreenBackground>
-      <OnboardingTopBar step={2} onBack={() => router.back()} />
-
-      <ChatLayout>
-        <Avatar />
-        <BabaBubble index={0}>요즘 마음이 가장 자주 머무는 곳은 어디인가요?</BabaBubble>
-        <BabaBubble index={1}>
-          관심 있는 이야기를 골라주시면, 당신의 하루와 가까운 질문을 건넬게요.
-        </BabaBubble>
-      </ChatLayout>
-
-      <View style={styles.bottom}>
-        <ChipFlow items={items} selected={picked} onToggle={toggle} />
-
-        {etcOn ? (
-          <OtherRow
-            value={other}
-            onChangeText={(v) => set("interestOther", v)}
-            onCommit={commitOther}
+    <OnboardingChat
+      step="interests"
+      onBack={() => router.back()}
+      inline={
+        <View style={styles.replies}>
+          <QuickReplies
+            items={items}
+            selected={picked}
+            onToggle={toggle}
+            full={picked.length >= MAX_INTERESTS}
           />
-        ) : null}
-
-        {/* 기타를 켠 채 비어 있을 때만 붙는 한 줄 경고 — 모달이 아니고 입력을 막지 않는다 */}
-        {etcOn && otherTrimmed.length === 0 ? (
-          <View style={styles.warn}>
-            <AppText tone="accent" style={styles.warnText}>
-              기타에 무엇을 적을지 알려주세요.
-            </AppText>
-          </View>
-        ) : null}
-
-        <AppText variant="caption" tone="legal">
-          {hintOf(picked.length, etcOn, otherTrimmed.length > 0)}
-        </AppText>
-
-        <AppButton label="다음" disabled={!ready} onPress={goNext} />
-      </View>
-    </ScreenBackground>
+          {etcOn ? (
+            <OtherReplyInput
+              value={other}
+              onChangeText={(v) => set("interestOther", v)}
+              onCommit={commitOther}
+            />
+          ) : null}
+        </View>
+      }
+    >
+      <Text variant="caption1" color={labelColor.alternative} style={styles.hint}>
+        {hintOf(picked.length, etcOn, otherTrimmed.length > 0)}
+      </Text>
+      <Button label="다음" fill disabled={!ready} onPress={goNext} />
+    </OnboardingChat>
   );
 }
 
 /**
  * 안내는 몇 개를 골랐는지 **사실만** 말한다(`06-c.md`) — "3개까지예요" 같은
  * 제한 경고를 미리 띄우지 않는다. 기타 입력 중에는 확정 방법을 말한다.
- * 선택 후 문구는 `07` 과 같은 형식("N개 선택됨 · …")이다.
  */
 function hintOf(count: number, etcOn: boolean, etcFilled: boolean) {
   if (count === 0) return "하나 이상 골라주세요";
-  if (etcOn && etcFilled) return `${count}개 선택됨 · 완료를 누르면 칩이 됩니다`;
+  if (etcOn && etcFilled) return `${count}개 선택됨 · 확인을 누르면 저장돼요`;
   return `${count}개 선택됨 · 다시 누르면 취소돼요`;
 }
 
 const styles = StyleSheet.create({
-  // 칩 → (기타 줄) → (경고) → 안내 → 버튼. 시안 간격 11
-  bottom: { gap: 11 },
-  warn: {
-    borderRadius: warnRow.radius,
-    paddingVertical: warnRow.paddingVertical,
-    paddingHorizontal: warnRow.paddingHorizontal,
-    backgroundColor: warnRow.background,
-  },
-  warnText: { fontSize: warnRow.fontSize, lineHeight: warnRow.fontSize * 1.55 },
+  replies: { alignSelf: "stretch", gap: space.md },
+  hint: { textAlign: "center" },
 });
