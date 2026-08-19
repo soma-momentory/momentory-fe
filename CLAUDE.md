@@ -168,8 +168,12 @@ M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](do
 
 ```
 app/_layout.tsx  app/index.tsx (S0)  app/(auth)/login.tsx (S1)
-app/(onboarding)/{_layout, welcome, nickname, profile, interests, rest, retro-time, calendar, done}.tsx
-                  = 03 · 04 · 05-b · 06(+06-b·06-c) · 07 · 08 · 09 · 10(+10-b)
+app/(onboarding)/{_layout, welcome, nickname, age, gender, interests, rest, retro-time, calendar, done}.tsx
+                  = 03 · 04 · 05-a · 05-c · 06(+06-b·06-c) · 07 · 08 · 09 · 10(+10-b)
+                  ← ⚠ 옛 `profile.tsx`(나이+성별 한 화면)가 **age · gender 둘로 갈렸다**
+                    (2026-08-20 · 대화형은 질문 하나에 답 하나다 — PLAN.md A-9).
+                    대화는 `features/onboarding/model/conversation.ts` 가 파생시키고
+                    껍데기는 `components/onboarding/OnboardingChat` 하나다
 app/(tabs)/{_layout, home, archive, report, my}.tsx = 12 · 12-b · A1 · A2 · W1 · M1 (한 파일이 두 상태씩)
 app/home/{_layout, schedule/[id], schedule/new}.tsx
                                           = 12-c · 12-e — 투명 모달 시트
