@@ -619,6 +619,34 @@ lib/notifications.ts                ← expo-notifications 를 부르는 유일�
   **실기기 확인은 M6 E2E 에서** 한 번 본다
 - Prettier 전체 적용 + `format:check` CI 단계
 
+### 2026-08-20 · `auth` ↔ `http` 순환 참조 — 지금은 두고, 근거만 적는다
+
+에뮬레이터에서 dev client 를 띄우면 Metro 가 매번 이 경고를 낸다:
+
+```
+WARN Require cycle: src/features/auth/model/auth.ts
+                 -> src/features/auth/data/meApi.ts
+                 -> src/lib/http.ts
+                 -> src/features/auth/model/auth.ts
+```
+
+`http.ts` 가 매 요청마다 `auth.ts` 의 `getAccessToken()` 을 읽고(토큰의 정본은
+SecureStore 세션이므로 캐시하지 않는다), `meApi.ts` 는 다시 `http.ts` 를 지나기
+때문이다 — **세 파일 각자의 규칙은 맞는데 셋이 모이면 고리가 된다.**
+
+**지금 고치지 않는 이유**: 타입·테스트·실기기 전부 정상이고, 순환의 실제 위험인
+「초기화 전 값 참조」가 일어나려면 모듈 로드 시점에 `getAccessToken` 을 불러야 하는데
+`http.ts` 는 **함수 안에서만** 부른다. 즉 지금 구조에서는 터지지 않는다.
+
+**그래도 적어 두는 이유**: 무해한 것이 아니라 **무해하게 유지되고 있는 것**이다.
+누가 `http.ts` 상단에서 토큰을 한 번 읽어 상수로 두는 순간(캐싱은 자연스러운 유혹이다)
+`undefined` 가 조용히 박힌다. 오류를 화면에 띄우지 않는 설계(규칙 5)라 그 사실은
+「로그인이 가끔 풀린다」로만 드러난다.
+
+**푸는 방법**: 토큰 접근자만 `src/lib/` 쪽 작은 모듈로 빼면 `http.ts → auth.ts`
+간선이 사라진다. `auth.ts` 는 그 모듈에 쓰고, `http.ts` 는 그 모듈에서 읽는다.
+급하지 않으므로 **인증 주변을 손대는 PR 이 생길 때 묶어서** 한다.
+
 ### ⛔ BE 연결 전에 반드시 걷어내야 하는 것
 
 **`FOLLOW_UPS`(`src/features/retro/model/retro.ts`) 는 화면 우선 단계의 임시
