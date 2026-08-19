@@ -65,6 +65,28 @@ describe("비텍스트 UI — 3.0", () => {
   });
 });
 
+describe("비활성 버튼 — 꺼져 있어도 읽혀야 한다", () => {
+  /**
+   * WCAG 는 비활성 컨트롤을 대비 기준에서 **면제**하지만, 그것은 「기준을 안 재도 된다」이지
+   * 「안 보여도 된다」가 아니다. 시안 값(`#A3B5A9` on `#DDE7E0` = 1.70)은 실기기에서
+   * **글자가 없는 것처럼** 보였다 — 「다음에 무엇이 오는지 보이게 두려고」 비활성 버튼을
+   * 남기는 것인데(`04.md`) 라벨이 사라지면 그 이유가 통째로 없어진다.
+   */
+  it("비활성 라벨이 비활성 면 위에서 읽힌다", () => {
+    expect(contrast(label.disabled, interaction.disabled)).toBeGreaterThanOrEqual(4);
+    // 시안 값이 왜 못 쓰이는지 함께 고정한다 — 되돌리면 여기가 깨진다
+    expect(contrast("#A3B5A9", interaction.disabled)).toBeLessThan(2);
+  });
+
+  it("그래도 활성보다 약하다 — 면 색이 상태를 말한다", () => {
+    // 활성 solid 는 진한 초록 면 + 흰 글자(5.03), 비활성은 연한 면 + muted 글자.
+    // 글자 대비가 활성 쪽을 넘어서면 어느 것이 눌리는지 뒤집힌다
+    expect(contrast(label.disabled, interaction.disabled)).toBeLessThan(
+      contrast(label.onFill, primary.heavy),
+    );
+  });
+});
+
 describe("색 면 위 흰 글자", () => {
   it("주 CTA 는 primary.heavy 다 — design.md 의 primary.normal(2.9)로 되돌리면 깨진다", () => {
     expect(contrast(label.onFill, primary.heavy)).toBeGreaterThanOrEqual(4.5);

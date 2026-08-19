@@ -54,6 +54,23 @@ export function OnboardingChat({ step, onBack, trailing, inline, children }: Pro
 
   const scroll = useRef<ScrollView>(null);
 
+  /**
+   * 대화의 **맨 아래**로 — 새 질문이 입력창 바로 위에 오게 한다(`design.md` 「온보딩」).
+   *
+   * ⚠ **세 신호를 다 받아야 한다.** `onContentSizeChange` 만 걸었더니 칩이 많은 화면
+   * (`06` 8개 · `07` 15개)에서 **위쪽에 멈춰 있었다** — 내용이 커진 시점에 ScrollView 의
+   * 뷰포트 높이가 아직 0 이라 `scrollToEnd` 가 0 으로 계산된다. `onLayout` 은 그 높이가
+   * 잡힌 순간이라, 둘을 함께 걸어야 두 순서 어느 쪽으로 와도 바닥에 선다.
+   *
+   * 그래도 **칩이 줄바꿈하는 화면은 한 줄만큼 모자랐다** — `scrollToEnd` 가 그 순간
+   * 아는 콘텐츠 높이는 칩이 접히기 **전** 것이라 딱 한 줄이 남는다. 그래서 다음
+   * 프레임에 한 번 더 부른다. 값이 같으면 두 번째는 아무 일도 하지 않는다.
+   */
+  const toBottom = () => {
+    scroll.current?.scrollToEnd({ animated: false });
+    requestAnimationFrame(() => scroll.current?.scrollToEnd({ animated: false }));
+  };
+
   return (
     <Screen>
       {onBack != null || trailing != null ? (
@@ -74,8 +91,8 @@ export function OnboardingChat({ step, onBack, trailing, inline, children }: Pro
           // 대화는 아래 정렬 — 적을 때도 바닥에 붙어 있고 위가 빈다
           contentContainerStyle={styles.conversation}
           showsVerticalScrollIndicator={false}
-          // 새 질문이 나타나면 입력창 바로 위까지 (`design.md` 「온보딩」)
-          onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: false })}
+          onContentSizeChange={toBottom}
+          onLayout={toBottom}
         >
           {past.map((t) => (
             <ChatBubble key={t.key} variant={t.role} past>

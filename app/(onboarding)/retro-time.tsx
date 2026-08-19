@@ -7,7 +7,7 @@ import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
 import { background, hairline, label as labelColor, radius, space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { requestNotificationPermission } from "@/lib/notifications";
-import { toHHMM } from "@/lib/time";
+import { formatKoreanTime, toHHMM } from "@/lib/time";
 
 /**
  * `08` · 회고 시간
@@ -45,13 +45,25 @@ export default function RetroTime() {
   /** 다이얼로그가 뜨기 전 한 번 더 눌리면 권한 요청이 둘이 된다 */
   const [asking, setAsking] = useState(false);
   // 초안의 21:30 은 스키마 기본값이라 「고른 것」이 아니다 — 고르기 전에는
-  // 「시간 선택」 칩을 보이고, 고르면 그 값이 답변 버블로 남는다
+  // 칩이 「시간 선택」이고, 고르고 나서야 그 값을 든다
   const [picked, setPicked] = useState(false);
 
   const wheel = toWheel(retroTime);
-  const setWheel = (next: Partial<WheelValue>) => {
+  // 굴리는 동안에는 값만 옮긴다 — **확정은 `[완료]` 다**
+  const setWheel = (next: Partial<WheelValue>) =>
     set("retroTime", fromWheel({ ...wheel, ...next }));
+
+  /**
+   * `[완료]` — **지금 휠에 서 있는 값을 그대로 확정한다.**
+   *
+   * ⚠ 굴린 순간(`onChange`)에 확정하면 **기본값을 그대로 고른 사람이 넘어가지 못한다** —
+   * 초안이 이미 21:30 이라 휠을 움직이지 않으면 `onChange` 가 한 번도 울리지 않는다.
+   * 실기기에서 「완료를 눌러도 아무 일이 없다」로 드러난 자리다.
+   */
+  const confirmTime = () => {
+    set("retroTime", fromWheel(wheel));
     setPicked(true);
+    setSheetOpen(false);
   };
 
   const goNext = async (notify: boolean) => {
@@ -77,8 +89,15 @@ export default function RetroTime() {
       <OnboardingChat
         step="retroTime"
         onBack={() => router.back()}
-        // 고른 뒤에는 답변 버블이 대화에 남으므로 칩을 지운다 — 같은 답이 두 번 보이지 않게
-        inline={picked ? null : <TimeChip onPress={() => setSheetOpen(true)} />}
+        // 고르고 나면 **칩이 고른 시각을 든다.** 답변 버블은 다음 화면부터 쌓이므로
+        // (`conversation.ts` `turnsBefore` — 자기 단계는 빼고 그린다) 여기서 칩을
+        // 지우면 방금 고른 시각이 화면 어디에도 남지 않는다. 칩은 그대로 눌러서 고친다
+        inline={
+          <TimeChip
+            label={picked ? formatKoreanTime(retroTime) : "시간 선택"}
+            onPress={() => setSheetOpen(true)}
+          />
+        }
       >
         <Text variant="caption1" color={labelColor.alternative} style={styles.hint}>
           편한 시간은 나중에도 바꿀 수 있어요.
@@ -123,25 +142,26 @@ export default function RetroTime() {
               },
             ]}
           />
-          <Button label="완료" fill onPress={() => setSheetOpen(false)} />
+          <Button label="완료" fill onPress={confirmTime} />
         </BottomSheet>
       ) : null}
     </>
   );
 }
 
-/** 시간을 아직 안 골랐을 때 대화에 붙는 답장 칩 — 누르면 시트가 열린다 */
-function TimeChip({ onPress }: { onPress: () => void }) {
+/** 대화에 붙는 답장 칩 — 고르기 전에는 「시간 선택」, 고른 뒤에는 고른 시각을 든다 */
+function TimeChip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="시간 선택"
+      accessibilityLabel={label}
+      accessibilityHint="시간 다시 고르기"
       onPress={onPress}
       style={styles.timeChip}
     >
       <Icon name="clock" size={16} color={labelColor.alternative} />
       <Text variant="body2" color={labelColor.neutral}>
-        시간 선택
+        {label}
       </Text>
     </Pressable>
   );

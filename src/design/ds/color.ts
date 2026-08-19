@@ -35,7 +35,8 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
  *
  * - `label.assistive`(2.08 · 플레이스홀더) — **플레이스홀더에 다른 데서 못 얻는
  *   정보를 담지 않는다**는 조건으로 둔다. 라벨·헬퍼가 늘 함께 있어야 한다
- * - `label.disabled` + `interaction.disabled`(1.70) — WCAG 비활성 컨트롤 예외
+ * - ~~`label.disabled` + `interaction.disabled`(1.70) — WCAG 비활성 컨트롤 예외~~
+ *   → **되돌렸다.** 실기기에서 라벨이 아예 안 보였다. `label.disabled` 를 보정했다(위 표 참조)
  * - **감정 9색의 원색 도트·링**(1.46~3.31) — 일곱이 3:1 미만이다. 감정을 **색만으로
  *   판단하게 하지 않고 이름을 늘 함께 쓴다**(`RULES.md` 「보관함」)는 규칙이 이걸
  *   떠받친다. 이름 없는 감정 도트를 만들면 그때 이 예외가 깨진다
@@ -61,8 +62,18 @@ export const label = {
   alternative: "#7C6C5B",
   /** ⚠ AA 미달(2.08). 플레이스홀더 전용 — 여기에만 있는 정보를 담지 않는다 */
   assistive: "#B9B2A2",
-  /** WCAG 비활성 예외. `interaction.disabled` 면 위에만 얹는다 */
-  disabled: "#A3B5A9",
+  /**
+   * ⚠ 시안 `#A3B5A9`(1.70) 보정 — **비활성 버튼의 글자가 실제로 읽히지 않았다.**
+   * 에뮬레이터에서 「다음」·「확인」이 **글자가 없는 것처럼** 보인다는 보고를 받고 고쳤다.
+   *
+   * WCAG 는 비활성 컨트롤을 대비 기준에서 **면제**하지만, 그것은 「기준을 안 재도 된다」이지
+   * 「안 보여도 된다」가 아니다. **다음에 무엇이 오는지 보이게 두려고** 비활성 버튼을
+   * 남기는 것인데(`04.md`), 라벨이 사라지면 그 이유가 통째로 없어진다.
+   *
+   * 비활성이라는 사실은 **면**(`interaction.disabled` 연한 초록)이 이미 말한다 —
+   * 활성은 진한 초록 면에 흰 글자다. 그래서 글자를 읽히게 해도 둘이 헷갈리지 않는다.
+   */
+  disabled: "#5D7364",
   /** 색 면 위 글자 — `primary.heavy`(5.03) · `status.negative`(4.99) 에서만 통과 */
   onFill: "#FFFDF8",
 } as const;
@@ -96,7 +107,7 @@ export const status = {
 export const interaction = {
   /** ⚠ 시안 `#C2BAAA`(1.72) 보정 — 비활성 탭은 비활성 컨트롤이 아니라 갈 수 있는 곳이다 */
   inactive: "#796D57",
-  /** 비활성 버튼 배경. 라벨은 `label.disabled` (WCAG 예외) */
+  /** 비활성 버튼 배경. 이 면 위의 글자가 `label.disabled` 다 */
   disabled: "#DDE7E0",
 } as const;
 

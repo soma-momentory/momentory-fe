@@ -62,7 +62,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.full,
-    overflow: "hidden",
   },
   scrim: { backgroundColor: overlay.pressLight, borderRadius: radius.full },
 });
