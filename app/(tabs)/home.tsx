@@ -1,66 +1,88 @@
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { TabScreen } from "@/components/common/TabScreen";
-import { CloudIcon, MoonIcon, RainIcon, SunIcon } from "@/components/icons/LineIcons";
-import { AppText } from "@/components/primitives/AppText";
 import {
-  paperColors,
-  paperHomeCard,
-  paperRadius,
-  paperTypography,
-  paperWeatherOf,
-} from "@/design/paper";
-import theme from "@/design/theme";
+  BottomNavigation,
+  Button,
+  Card,
+  Icon,
+  IconButton,
+  Menu,
+  Modal,
+  Screen,
+  SectionHeader,
+  Text,
+  Toast,
+  type MenuAction,
+  type TabItem,
+} from "@/components/ds";
+import { background, label as labelColor, layout, size, space, status } from "@/design/ds";
+import { useDiary } from "@/features/diary/model/diary";
 import {
-  doneCountLabel,
   MAX_VISIBLE_SCHEDULES,
+  remainingLabel,
   useDay,
   useTodayContext,
   visibleSchedules,
+  weekStartOf,
 } from "@/features/home/model/day";
 import { ScheduleList } from "@/features/home/ui/ScheduleList";
-import { WeatherScene } from "@/features/home/ui/WeatherScene";
+import { WeekEmotionStrip } from "@/features/home/ui/WeekEmotionStrip";
 import { useSettings } from "@/features/my/model/settings";
-import { formatKoreanDate } from "@/lib/day";
+import { weekDays, weekEnd } from "@/features/report/model/report";
+import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
 import { formatKoreanTime } from "@/lib/time";
 
 /**
  * `12` · 홈 · 일정을 가져온 상태 + `12-b` · 일정이 없는 경우
  *
- * ## 새 디자인 (2026-08-14 · `PLAN.md` Phase 3-1)
+ * ## 새 디자인 (2026-08-20 · `PLAN.md` A Phase 4)
  *
- * **날씨와 일정, 둘뿐이다**(`docs/design/prototype/홈.dc.html`):
- * 날짜·날씨 줄 → 날씨 씬(하늘·언덕·카피바라·병아리) → 잔디 위 「오늘 일정」 카드.
+ * 날씨 씬(하늘·언덕·카피바라·병아리)이 **전부 사라지고** 네 칸이 남았다
+ * (`Home Sample.dc.html` · `design.md` 「홈」):
+ * **날짜 + 알림 → 하루 돌아보기 CTA → 이번 주 감정 → 오늘 일정.**
  *
- * 옛 구조에서 **뺀 것 둘** — 사용자 결정(2026-08-14), 기록은 `PLAN.md` D9:
- * - **「오늘의 순간」(메모)** — 시안에 없다. `12-d` 시트로 가는 문이 사라졌다
- * - **「지금 하루 돌아보기」 줄** — 회고는 이제 **씬의 병아리**가 연다
- *   (`docs/design/app-flow.md` §1 「홈 ─ 병아리 탭 ─▶ 하루 회고」).
- *   갈 곳과 정한 시각은 병아리의 말풍선이 말한다
+ * 2세대에서 뺐던 「하루 돌아보기」가 **되돌아왔다** — 이번엔 줄이 아니라 카드 안의
+ * Solid Primary CTA 이고, **화면에서 유일한 solid 버튼**이다(`design.md` §6).
+ * 회고를 여는 병아리가 없어졌으니 문이 다시 글자로 돌아온 셈이다.
  *
- * 그래서 `RULES.md` 「세 칸의 순서가 하루의 순서다」는 이 화면에서 더 이상 성립하지
- * 않는다 — 칸이 하나다. 남은 규칙은 그대로 지킨다:
+ * ## 지키는 규칙
  *
- * - **`12-b` 는 별도 레이아웃이 아니다** — 카드도 추가 버튼도 자리를 지키고
+ * - **`12-b` 는 별도 레이아웃이 아니다** — 머리도 `＋ 추가`도 자리를 지키고
  *   **목록 슬롯의 줄만 초대 문구로 바뀐다**
- * - **일러스트·안내 그림을 두지 않는다** — 비어 있는 것은 문제가 아니라 시작이다.
- *   씬의 캐릭터는 빈 상태를 달래는 그림이 아니라 늘 있는 배경이다
- * - **진행률·연속 배지·점수를 두지 않는다.** "2/4 마침"은 사실이지 성취가 아니다
- * - **한 줄에 터치가 둘이다** — 체크 원은 마침, 제목은 상세 시트. 힌트 줄이 그걸 말한다
+ * - **일러스트·안내 그림을 두지 않는다** — 비어 있는 것은 문제가 아니라 시작이다
+ * - **진행률·연속 배지·점수를 두지 않는다.** 「N개 남음」은 **남은 수**이지
+ *   달성률이 아니다(`design.md` 「홈」이 「2/4 마침」을 이 말로 바꿨다)
+ * - **완료에 감정을 묻지 않는다**(N7 · `PLAN.md` A-8). 체크박스 한 번으로 끝나고
+ *   마친 줄은 **취소선 + `label.neutral`** 로 목록에 남는다
+ * - 일정 순서는 **꾹 눌러 끈다**(`ScheduleList`), 수정·삭제는 **⋮ 메뉴**(시안 4-2)
  *
- * 일정 순서는 **손잡이를 꾹 눌러 끈다**(`ScheduleList` · D10). 날씨는 아직
- * 샘플이다 — 실제 소스는 Phase 5(`PLAN.md` D5).
+ * ## 메뉴·모달·토스트는 상태이고, 입력 바는 라우트다
+ *
+ * 고르면 사라지는 것(⋮ 메뉴 · 확인 모달 · 토스트)은 이력에 남을 것이 없어 화면이
+ * 상태로 든다. 반대로 **입력 바(`12-c`·`12-e`)는 라우트**다 — 뒤로가기가 닫기여야
+ * 하기 때문이다(`PLAN.md` A-4).
  */
 export default function Home() {
   const schedules = useDay((s) => s.schedules);
   const toggleDone = useDay((s) => s.toggleDone);
   const moveSchedule = useDay((s) => s.moveSchedule);
   const reorderSchedule = useDay((s) => s.reorderSchedule);
+  const hide = useDay((s) => s.hide);
+  const remove = useDay((s) => s.remove);
   const load = useDay((s) => s.load);
+  const diaries = useDiary((s) => s.diaries);
+  const insets = useSafeAreaInsets();
+
   const [dragging, setDragging] = useState(false);
-  const { date: today, weather } = useTodayContext();
+  const [expanded, setExpanded] = useState(false);
+  const [menu, setMenu] = useState<{ id: string; top: number } | null>(null);
+  const [asking, setAsking] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const { date: today } = useTodayContext();
   // 알림 설정(M3)과 같은 store 를 본다 — 홈이 다른 시각을 말하면 안 된다
   const retroNotify = useSettings((s) => s.notify.retro);
 
@@ -72,221 +94,244 @@ export default function Home() {
 
   const shown = visibleSchedules(schedules);
   const empty = shown.length === 0;
+  const folded = !expanded && shown.length > MAX_VISIBLE_SCHEDULES;
+  const rows = folded ? shown.slice(0, MAX_VISIBLE_SCHEDULES) : shown;
+  const allDone = !empty && shown.every((s) => s.done);
 
-  /**
-   * 원 탭 — **켤 때만 감정 시트가 뜬다**(`design-system.md` §4.2).
-   * 다시 눌러 끄는 것은 되돌리는 동작이라 아무것도 묻지 않는다.
-   */
-  const completeAndAsk = (id: string) => {
-    const turningOn = schedules.find((s) => s.id === id)?.done === false;
-    toggleDone(id);
-    if (turningOn) router.push({ pathname: "/home/emotion/[id]", params: { id } });
-  };
-  const sky = paperWeatherOf(weather.label);
-  const WeatherIcon = ICONS[weather.label] ?? SunIcon;
+  // 이번 주(월~일)의 감정 — 일기가 남긴 값을 리포트와 **같은 계산**으로 본다.
+  // 두 화면이 같은 주를 다르게 세면 어느 쪽이 맞는지 알 수 없게 된다
+  const week = useMemo(() => {
+    const start = weekStartOf(today);
+    return weekDays(diaries, start, weekEnd(start));
+  }, [diaries, today]);
+
+  const target = schedules.find((s) => s.id === menu?.id) ?? null;
+  const actions: MenuAction[] =
+    target == null
+      ? []
+      : target.source === "manual"
+        ? [
+            {
+              label: "수정하기",
+              icon: "pencil",
+              onPress: () => {
+                setMenu(null);
+                router.push(`/home/schedule/${target.id}`);
+              },
+            },
+            {
+              label: "삭제하기",
+              icon: "trash",
+              negative: true,
+              onPress: () => {
+                setMenu(null);
+                setAsking(target.id);
+              },
+            },
+          ]
+        : [
+            // 가져온 일정은 지울 것이 여기 없다 — 캘린더 원본을 건드리지 않는다(`12-c`).
+            // 되돌릴 수 있는 동작이라 위험색도 확인 모달도 쓰지 않는다
+            {
+              label: "홈에서 숨기기",
+              icon: "close",
+              onPress: () => {
+                setMenu(null);
+                hide(target.id);
+                setToast("홈에서만 보이지 않게 돼요 · 캘린더 원본은 그대로 있어요");
+              },
+            },
+          ];
 
   return (
-    <TabScreen active="홈" background="paperHome" surfaceColor={sky.top}>
-      {/* 날짜 · 날씨 — 하늘색 위에 앉는다. 글자색은 그 하늘에 맞춰 바뀐다 */}
-      <View style={[styles.header, { backgroundColor: sky.top }]}>
-        <AppText weight="700" style={[styles.date, { color: sky.ink }]}>
-          {formatKoreanDate(today)}
-        </AppText>
-        <View style={styles.weather}>
-          <WeatherIcon color={sky.sub} />
-          <AppText style={[styles.weatherText, { color: sky.sub }]}>
-            {`${weather.label} · ${weather.celsius}°`}
-          </AppText>
-        </View>
-      </View>
-
-      <View style={styles.fullBleed}>
-        <WeatherScene
-          weatherLabel={weather.label}
-          bubbleTitle="지금 하루 돌아보기"
-          bubbleCaption={
-            // 알림을 켜지 않은 사람에게 정하지 않은 시각을 말하지 않는다 (12.md)
-            retroNotify.enabled && retroNotify.time != null
-              ? `${formatKoreanTime(retroNotify.time)}엔 제가 먼저 말 걸어요`
-              : "편할 때 언제든 돌아볼 수 있어요"
-          }
-          onRetroPress={() => router.push("/retro/intro")}
-        />
-      </View>
-
-      {/* 잔디 — 씬의 앞 언덕과 같은 색으로 이어진다 */}
+    <Screen padded={false} edges={["top"]}>
       <ScrollView
-        style={styles.grass}
-        contentContainerStyle={styles.grassContent}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         // 줄을 끄는 동안에는 스크롤을 멈춘다 — 손가락 하나가 두 일을 하지 않게
         scrollEnabled={!dragging}
       >
-        <View style={styles.dayCard}>
-          <View style={styles.dayHead}>
-            <AppText weight="700" style={styles.dayTitle}>
-              오늘 일정
-            </AppText>
-            {empty ? null : <AppText style={styles.count}>{doneCountLabel(schedules)}</AppText>}
-            {/* 추가는 카드 머리의 알약이다 — 있든 없든 같은 자리·크기·모양 */}
-            <Pressable
-              accessibilityRole="button"
-              style={styles.addButton}
-              onPress={() => router.push("/home/schedule/new")}
-            >
-              <AppText style={styles.addLabel}>＋ 추가</AppText>
-            </Pressable>
+        <View style={styles.head}>
+          <View>
+            <Text variant="title3" color={labelColor.strong}>
+              {formatKoreanDateShort(today)}
+            </Text>
+            <Text variant="caption1" color={labelColor.alternative}>
+              {`${koreanWeekday(today)}요일`}
+            </Text>
           </View>
+          {/* 알림 **목록** 화면은 MVP 에 없다 — 종은 알림을 정하는 곳으로 보낸다.
+              갈 곳 없는 줄을 만들지 않는다(`CLAUDE.md` 「마이의 편집 경로」) */}
+          <IconButton
+            name="bell"
+            accessibilityLabel="알림 설정"
+            color={labelColor.normal}
+            onPress={() => router.push("/my/notify")}
+            style={styles.bell}
+          />
+        </View>
 
-          <View style={styles.list}>
-            {empty ? (
-              // 12-b — 목록 슬롯의 줄만 초대 문구로 바뀐다
-              <AppText weight="700" style={styles.invite}>
-                오늘 하루를 차곡차곡 담아볼까요?
-              </AppText>
-            ) : (
-              <ScheduleList
-                schedules={shown.slice(0, MAX_VISIBLE_SCHEDULES)}
-                onToggleDone={completeAndAsk}
-                onOpen={(id) => router.push(`/home/schedule/${id}`)}
-                onMove={moveSchedule}
-                onReorder={reorderSchedule}
-                onDragStateChange={setDragging}
+        <Card padding="loose" style={styles.cta}>
+          <View style={styles.ctaText}>
+            <Text variant="body1" color={labelColor.normal}>
+              오늘 하루는 어땠어요?
+            </Text>
+            <Text variant="body2Reading" color={labelColor.alternative}>
+              {/* 알림을 켜지 않은 사람에게 정하지 않은 시각을 말하지 않는다 (12.md) */}
+              {retroNotify.enabled && retroNotify.time != null
+                ? `${formatKoreanTime(retroNotify.time)}엔 제가 먼저 말 걸어요`
+                : "편할 때 언제든 돌아볼 수 있어요"}
+            </Text>
+          </View>
+          {/* 이 화면의 유일한 Solid Primary — 하루의 주 행동이다 (`design.md` §6) */}
+          <Button label="지금 하루 돌아보기" fill onPress={() => router.push("/retro/intro")} />
+        </Card>
+
+        <View style={styles.section}>
+          <WeekEmotionStrip days={week} today={today} onSeeAll={() => router.replace("/report")} />
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader
+            title="오늘 일정"
+            description={empty ? undefined : remainingLabel(schedules)}
+            trailing={
+              // 추가는 3순위가 아니라 **머리의 행동**이다 — 면을 채우지 않는 Text Button.
+              // 글리프(＋)는 문안에 이미 있으므로 아이콘을 겹쳐 붙이지 않는다
+              <Button
+                label="＋ 추가"
+                variant="text"
+                size="small"
+                onPress={() => router.push("/home/schedule/new")}
               />
-            )}
-            {shown.length > MAX_VISIBLE_SCHEDULES ? (
-              // 5개까지 펼치고 나머지는 접는다 (12.md)
-              <Pressable accessibilityRole="button">
-                <AppText style={styles.more}>
-                  {`${shown.length - MAX_VISIBLE_SCHEDULES}개 더 보기`}
-                </AppText>
-              </Pressable>
-            ) : null}
-          </View>
+            }
+          />
 
-          <AppText style={[styles.hint, empty ? styles.hintCenter : null]}>
-            {empty
-              ? "일정을 추가하면 하루를 돌아볼 때 더 풍부한 대화를 나눌 수 있어요."
-              : "체크하면 마침과 감정을 남겨요 · 제목을 누르면 고치거나 지울 수 있어요 · 손잡이를 꾹 눌러 순서를 바꿔요"}
-          </AppText>
+          {empty ? (
+            // 12-b — 목록 슬롯의 줄만 초대 문구로 바뀐다
+            <View style={styles.invite}>
+              <Text variant="body1" color={labelColor.normal} style={styles.centered}>
+                오늘 하루를 차곡차곡 담아볼까요?
+              </Text>
+              <Text variant="caption1" color={labelColor.alternative} style={styles.centered}>
+                일정을 추가하면 하루를 돌아볼 때 더 풍부한 대화를 나눌 수 있어요.
+              </Text>
+            </View>
+          ) : (
+            <ScheduleList
+              schedules={rows}
+              onToggleDone={toggleDone}
+              // 누른 지점(창 기준) → 메뉴가 사는 레이어(상단 inset 아래) 기준으로
+              // 옮긴다. 안 그러면 상태바 높이만큼 아래에 뜬다
+              onMore={(id, atY) => setMenu({ id, top: atY - insets.top + space.md })}
+              onMove={moveSchedule}
+              onReorder={reorderSchedule}
+              onDragStateChange={setDragging}
+            />
+          )}
+
+          {folded ? (
+            // 5개까지 펼치고 나머지는 접는다 (12.md) — 누르면 실제로 펼쳐진다
+            <Button
+              label={`${shown.length - MAX_VISIBLE_SCHEDULES}개 더 보기`}
+              variant="text"
+              size="small"
+              onPress={() => setExpanded(true)}
+              style={styles.more}
+            />
+          ) : null}
+
+          {allDone ? (
+            <View style={styles.done}>
+              <Icon name="circle-check" size={size.icon.md} color={status.positive} />
+              <Text variant="label1" color={status.positive}>
+                오늘 일정을 모두 마쳤어요.
+              </Text>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
-    </TabScreen>
+
+      <BottomNavigation
+        items={TABS}
+        active="홈"
+        onPress={(tab) => {
+          if (tab !== "홈") router.replace(ROUTES[tab]);
+        }}
+      />
+      {/* 탭바 아래 홈 인디케이터 자리 — 탭바와 같은 면으로 이어 둔다.
+          `Screen` 의 bottom edge 를 쓰면 탭바가 떠 있는 것처럼 보인다 */}
+      <View style={[styles.underTab, { height: insets.bottom }]} />
+
+      {menu != null && actions.length > 0 ? (
+        <Menu actions={actions} top={menu.top} onDismiss={() => setMenu(null)} />
+      ) : null}
+
+      {asking != null ? (
+        <Modal
+          title="이 일정을 삭제할까요?"
+          description="삭제한 일정은 되돌릴 수 없어요."
+          cancelLabel="취소"
+          confirmLabel="삭제"
+          destructive
+          onCancel={() => setAsking(null)}
+          onConfirm={() => {
+            remove(asking);
+            setAsking(null);
+            setToast("일정을 삭제했어요.");
+          }}
+        />
+      ) : null}
+
+      {toast != null ? (
+        <Toast message={toast} variant="positive" onDismiss={() => setToast(null)} />
+      ) : null}
+    </Screen>
   );
 }
 
-const ICONS: Record<string, typeof SunIcon> = {
-  맑음: SunIcon,
-  흐림: CloudIcon,
-  비: RainIcon,
-  밤: MoonIcon,
-};
+type TabName = "홈" | "쉼터" | "보관함" | "리포트" | "마이";
 
-const { styles: type } = paperTypography;
-const FULL_BLEED = -theme.layout.screenMargin;
-// 홈 카드는 그림자 대신 잉크 테두리 + 오프셋이다 (design-system.md §3)
-const inkBorder = {
-  borderWidth: paperHomeCard.borderWidth,
-  borderColor: paperHomeCard.borderColor,
+/** `design.md` §10 — 다섯 칸. 없는 글리프를 추측하지 않는다(`person` 은 없다) */
+const TABS: readonly TabItem<TabName>[] = [
+  { name: "홈", icon: "home", label: "홈" },
+  { name: "쉼터", icon: "heart", label: "쉼터" },
+  { name: "보관함", icon: "folder-job", label: "보관함" },
+  { name: "리포트", icon: "document", label: "리포트" },
+  { name: "마이", icon: "nav-my-page", label: "마이" },
+];
+
+/** `replace` 인 이유 — 탭은 쌓이는 화면이 아니다 */
+const ROUTES: Record<TabName, "/home" | "/rest" | "/archive" | "/report" | "/my"> = {
+  홈: "/home",
+  쉼터: "/rest",
+  보관함: "/archive",
+  리포트: "/report",
+  마이: "/my",
 };
 
 const styles = StyleSheet.create({
-  fullBleed: { marginHorizontal: FULL_BLEED },
-
-  header: {
+  content: {
+    paddingHorizontal: layout.screenPadding,
+    // 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 (`design.md` §3)
+    paddingBottom: layout.scrollClearance,
+  },
+  head: {
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    marginHorizontal: FULL_BLEED,
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 10,
+    gap: space.md,
+    paddingBottom: space.md,
   },
-  date: {
-    fontSize: type.homeDate.fontSize,
-    lineHeight: type.homeDate.lineHeight,
-    letterSpacing: type.homeDate.letterSpacing,
-  },
-  weather: { flexDirection: "row", alignItems: "center", gap: 5, paddingBottom: 3 },
-  weatherText: { fontSize: type.bodySm.fontSize, lineHeight: type.bodySm.lineHeight },
-
-  grass: { flex: 1, marginHorizontal: FULL_BLEED, backgroundColor: paperColors.bg.hillHome },
-  // 카드는 **잔디의 아래쪽**에 붙는다 — 탭바와 20 을 띄운다. 남는 잔디는 위로 간다
-  grassContent: {
-    flexGrow: 1,
-    justifyContent: "flex-end",
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 20,
-  },
-
-  dayCard: {
-    borderRadius: paperRadius.cardHome,
-    backgroundColor: paperColors.bg.card,
-    overflow: "hidden",
-    ...inkBorder,
-    ...paperHomeCard.shadow,
-  },
-  dayHead: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingTop: 16,
-    paddingBottom: 10,
-    paddingHorizontal: 20,
-  },
-  dayTitle: {
-    fontSize: type.screenTitle.fontSize - 2,
-    lineHeight: type.screenTitle.lineHeight - 2,
-    color: paperColors.text.primaryHome,
-  },
-  count: {
-    flex: 1,
-    textAlign: "right",
-    fontSize: type.label.fontSize,
-    lineHeight: type.label.lineHeight,
-    color: paperColors.text.mutedWarmText,
-  },
-  // 시안의 추가는 **채운 버튼이 아니라 테두리 알약**이다 (PLAN.md D9)
-  addButton: {
-    minHeight: theme.touch.minTarget - 12,
-    justifyContent: "center",
-    borderRadius: paperRadius.pill,
-    paddingHorizontal: 13,
-    backgroundColor: paperColors.bg.card,
-    ...inkBorder,
-  },
-  addLabel: {
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.primaryHome,
-  },
-
-  // 시안의 목록 칸은 **높이 206 고정**이다 — 일정 수에 따라 카드가 커졌다 작아지면
-  // 잔디 위에서 카드의 자리가 흔들린다. 넘치면 이 안만 스크롤된다
-  list: { paddingHorizontal: 20, gap: 4, minHeight: 206 },
-  divider: { height: 1, backgroundColor: paperColors.line.soft },
-  invite: {
-    fontSize: type.bodyLg.fontSize,
-    lineHeight: type.bodyLg.lineHeight,
-    textAlign: "center",
-    paddingVertical: 18,
-    color: paperColors.text.primaryHome,
-  },
-  more: {
-    paddingVertical: 8,
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.mutedWarmText,
-  },
-
-  hint: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-    fontSize: type.caption.fontSize,
-    lineHeight: type.caption.lineHeight,
-    color: paperColors.text.mutedWarmText,
-  },
-  hintCenter: { textAlign: "center" },
+  // 44 히트는 지키되 날짜 줄의 높이를 밀지 않게 오른쪽으로 당긴다
+  bell: { marginRight: -space.md },
+  cta: { gap: 22 },
+  ctaText: { gap: space.sm },
+  // 섹션 ↔ 섹션 (`design.md` §3 — 20~28)
+  section: { paddingTop: space.xl },
+  invite: { paddingVertical: space.xl, gap: space.sm },
+  centered: { textAlign: "center" },
+  more: { alignSelf: "flex-start", paddingHorizontal: 0 },
+  done: { flexDirection: "row", alignItems: "center", gap: space.sm, paddingTop: space.md },
+  underTab: { backgroundColor: background.elevated },
 });

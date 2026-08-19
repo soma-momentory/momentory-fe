@@ -4,7 +4,7 @@ import {
   fetchSchedules as fetchSchedulesApi,
   putCompletion as putCompletionApi,
 } from "@/features/home/data/scheduleApi";
-import { useDay } from "@/features/home/model/day";
+import { remainingLabel, useDay, weekStartOf } from "@/features/home/model/day";
 import type { Schedule } from "@/features/home/model/types";
 
 jest.mock("@/features/home/data/scheduleApi", () => ({
@@ -93,6 +93,17 @@ describe("먼저 화면을 바꾸고 서버에 보낸다", () => {
     expect(putCompletion).toHaveBeenCalledWith("7", true, null);
   });
 
+  it("마침에 감정을 실어 보내지 않는다 — 화면이 묻지 않으므로(N7)", () => {
+    // 서버에 남아 있던 감정도 함께 비운다. 보내는 값과 기기의 값이 어긋나면
+    // 다음 `load()` 에 조용히 사라진다 (`PLAN.md` A-8)
+    useDay.setState({ schedules: [row({ emotions: [4] })] });
+
+    useDay.getState().toggleDone("7");
+
+    expect(putCompletion).toHaveBeenCalledWith("7", true, null);
+    expect(useDay.getState().schedules[0]?.emotions).toEqual([]);
+  });
+
   it("서버가 거부하면 되돌린다", async () => {
     useDay.setState({ schedules: [row()] });
     putCompletion.mockResolvedValue({ ok: false, code: "server" });
@@ -149,6 +160,26 @@ describe("감정 — 서버 계약이 좁힌 두 자리", () => {
 
     expect(useDay.getState().schedules[0]?.emotions).toEqual([]);
     expect(putCompletion).toHaveBeenCalledWith("7", false, null);
+  });
+});
+
+describe("홈 머리가 세는 것", () => {
+  it("「N개 남음」은 미완료 수다 — 마친 수가 아니다 (design.md 「홈」)", () => {
+    expect(remainingLabel([row({ id: "1" }), row({ id: "2", done: true })])).toBe("1개 남음");
+  });
+
+  it("다 마치면 수 대신 사실을 말한다", () => {
+    expect(remainingLabel([row({ id: "1", done: true })])).toBe("모두 완료");
+  });
+
+  it("숨긴 줄은 세지 않는다", () => {
+    expect(remainingLabel([row({ id: "1" }), row({ id: "2", hidden: true })])).toBe("1개 남음");
+  });
+
+  it("주는 월요일에 시작하고 일요일은 그 주의 끝이다", () => {
+    expect(weekStartOf("2026-07-27")).toBe("2026-07-27"); // 월요일
+    expect(weekStartOf("2026-07-30")).toBe("2026-07-27");
+    expect(weekStartOf("2026-08-02")).toBe("2026-07-27"); // 일요일 — 앞선 월요일에 붙는다
   });
 });
 

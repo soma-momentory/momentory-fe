@@ -15,6 +15,18 @@ export function formatKoreanDate(iso: string) {
 }
 
 /**
+ * `"2026-07-27"` → `"월"` — 요일 한 글자.
+ *
+ * 홈 상단이 날짜(`7월 27일`)와 요일(`월요일`)을 **두 줄로 나눠** 쓰고
+ * (`Home Sample.dc.html`), 이번 주 감정 줄이 요일 한 글자를 쓴다.
+ * `formatKoreanDate` 와 같은 표를 봐야 두 곳이 어긋나지 않는다.
+ */
+export function koreanWeekday(iso: string) {
+  const [y = "0", m = "1", d = "1"] = iso.split("-");
+  return WEEKDAYS[new Date(Number(y), Number(m) - 1, Number(d)).getDay()] ?? "";
+}
+
+/**
  * `"2026-07-28"` → `"7월 28일"` — 문장 안에 들어가는 짧은 형태.
  * 「회고 대화에서 작성 · **7월 28일** 수정」처럼 요일이 문장을 늘어뜨리는 자리에 쓴다.
  */

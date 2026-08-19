@@ -12,9 +12,11 @@
  *
  * ## 아직 없는 것
  *
- * Slider(척도) · Calendar · ListCell · Toast · Menu(⋮) · 채팅 입력 —
- * 쓰는 화면을 만들 때 함께 만든다. 미리 만들어 두면 실제로 필요한 모양과
- * 어긋난 채 굳는다.
+ * Slider(척도) · Calendar · 채팅 입력 — 쓰는 화면을 만들 때 함께 만든다.
+ * 미리 만들어 두면 실제로 필요한 모양과 어긋난 채 굳는다.
+ *
+ * `ListCell`·`SectionHeader`·`Menu`·`Toast` 는 홈·일정에서 만들었고
+ * **보관함·마이가 재사용한다**(`ListCell` 은 설정 목록, `Menu` 는 일기 상세의 ⋮).
  *
  * `ChatBubble`·`WheelPicker` 는 온보딩에서 만들었고 **일기(대화)와 마이(알림 설정)가
  * 재사용한다** — 시안에선 두 파일에 각각 인라인이었다(`EXPORT_MANIFEST` §4).
@@ -26,6 +28,10 @@ export { Button, type ButtonSize, type ButtonVariant } from "./Button";
 export { IconButton } from "./IconButton";
 export { SocialButton, type SocialProvider } from "./SocialButton";
 export { Card, InfoBlock } from "./Card";
+export { ListCell, type ListCellProps } from "./ListCell";
+export { SectionHeader } from "./SectionHeader";
+export { Menu, type MenuAction } from "./Menu";
+export { Toast } from "./Toast";
 export { TextField } from "./TextField";
 export { Chip } from "./Chip";
 export { ChatBubble } from "./ChatBubble";
