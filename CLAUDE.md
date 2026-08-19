@@ -181,7 +181,13 @@ app/home/{_layout, schedule/[id], schedule/new}.tsx
 app/retro/{_layout, intro, confirm, emotion, talk, draft, done}.tsx = C1~C7 (회고 12장)
                                           talk = C4~C4-e · draft = C6·C6-b (세그먼트 두 면)
 app/diary/{_layout, [id]/index, [id]/edit}.tsx = A3 · A3-b · A3-c · A4
-app/my/{_layout, profile, notify}.tsx     = M2 · M3
+app/my/{_layout, profile, nickname, age, gender, interests, rest}.tsx
+                                          = M3(목록) · M4~M8(항목별 수정)
+                                          ← ⚠ 옛 `profile.tsx`(다섯 항목 일괄 편집)가
+                                            **목록 + 다섯 라우트**로 갈렸다 (2026-08-20 ·
+                                            PLAN.md A-10). 알림 설정은 화면이 아니라
+                                            **시트**라 `app/(tabs)/my.tsx` 안에서 열린다
+                                            (옛 `notify.tsx` 는 사라졌다)
 src/design/ds/{color,typography,metrics,index}.ts
                                           ← **3세대 토큰 정본** — 여기만 hex 를 든다.
                                             다크 없음(N1) · 시안 값 여섯은 대비 보정됨
@@ -208,7 +214,9 @@ src/components/common/{TabBar, TabScreen, EmotionPill, Sheet, EmotionGrid, Toggl
 src/components/onboarding/{OnboardingTopBar, OtherRow}.tsx
                                           ← OtherRow = 「기타」 인라인 입력 줄.
                                             06-b · 07 · M2 가 나눠 쓴다
-src/components/my/SettingRow.tsx
+src/components/my/{SettingRow, BasicInfoEditor}.tsx
+                                          ← 설정 한 줄(⚠ 공용 `ListCell` 이 오면 갈아탄다) +
+                                            M4~M8 이 공유하는 껍데기(상단바 · 저장 · 실패 한 줄)
 src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이모지 금지)
 src/components/archive/{CalendarMonth, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionRow, ActionCardSection, DiaryBabaFace}.tsx ← C6-b·A3 공유
@@ -230,13 +238,16 @@ src/features/diary/{model/{diary,types,selectors}.ts, data/sampleAdapter.ts}
                                             타입·selector·샘플 seed 가 store 와 분리돼 있다
 src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 세지 않는다
 src/features/report/{model/report.ts, data/sampleRepository.ts} ← 주간 집계 · 해석 공급 경계
-src/features/my/model/{settings,stats,reminders}.ts
+src/features/my/model/{settings,stats,reminders,basicInfo}.ts
                                           ← 알림/프로필 설정 · 전체 기간 집계 ·
                                             **설정 ↔ OS 예약 화해**. store 는 순수하게
                                             두고 reminders 가 구독해서 예약을 맞춘다 —
                                             화면이 예약을 부르지 않는다(값이 바뀌는
                                             자리가 넷이라 하나를 빠뜨린다).
-                                            알림 문안도 여기 산다
+                                            알림 문안도 여기 산다.
+                                            basicInfo = **한 항목만 고쳐도 통째로 보낸다** —
+                                            서버가 덮어쓰는 PUT 이라 M4~M8 이 각자
+                                            나머지를 조립하면 하나가 조용히 지워진다
 src/features/onboarding/{model/{draft, completion, options, submit}.ts,
                          data/{optionsApi, completeOnboardingApi}.ts}
                                           ← 답안 초안 · 완료 플래그(진입 분기) ·
