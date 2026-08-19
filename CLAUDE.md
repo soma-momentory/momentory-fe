@@ -8,11 +8,38 @@
 **상류 접근은 더 이상 전제하지 않는다** (2026-08-14 D8 — [`PLAN.md`](PLAN.md) §0).
 재반입·`sync:theme` 은 폐기 수순이고, 규칙·값의 후속 결정은 이 저장소에서 한다.
 
-> 🎨 **디자인 전면 변경 진행 중** (2026-08-14 착수 — 로그인·온보딩 제외).
-> 계획·결정은 [`PLAN.md`](PLAN.md), 새 디자인 정본 스냅샷은 [`docs/design/`](docs/design/IMPORT.md).
-> 닫힌 결정: **탭 5개(쉼터 편입) · 회고는 시각만 · 새 토큰 정본 [`src/design/paper.ts`](src/design/paper.ts) ·
-> 상류 동기화 중단(이 저장소가 정본)**. 시각 값의 정본은 이제 `docs/design/` + `paper.ts` 다 —
-> 아직 옮기지 않은 화면만 옛 토큰(`theme.ts`·`tokens.mvp.ts`)을 임시로 유지한다.
+> 🎨 **디자인 체계가 다시 바뀐다 — 3세대 「Momentory DS」** (2026-08-20 착수).
+> **SSOT 는 [`design-reference/design.md`](design-reference/design.md) 하나다**
+> (Wanted DS 구조 + Momentory 색). 값 검증용 참조는 `design-reference/styles/momentory-tokens.css`,
+> 화면별 소스는 `design-reference/*.dc.html` — 셋 다 **반입 스냅샷이라 직접 고치지 않는다**.
+>
+> 이번 전환은 2세대 「손그림 다이어리」(`PLAN.md` · `src/design/paper.ts` · `docs/design/`)를
+> **덧붙이는 게 아니라 대체한다.** 2세대는 화면 8장까지 적용된 상태에서 멈췄다 —
+> 그래서 **한동안 토큰이 3세대 공존**한다(`theme.ts` 웜 · `tokens.mvp.ts` 옛 오버라이드 ·
+> `paper.ts` 손그림). 새 작업은 **variant 를 더 얹지 말고** 새 컴포넌트로 갈아탄 뒤
+> 참조 0 이 된 옛 것을 지운다 — variant 를 더하면 `Card` 가 8종이 된다.
+>
+> **반입 디자인이 우선이다**(결정 N0) — `design-reference/` 와 `docs/spec/` 이
+> **시각·상호작용**에서 부딪히면 `design.md` 가 이긴다. 그래서 **확인 모달이 열렸다**(N2).
+> ⚠ 단 「**오류**는 한 줄로 흡수 · 모달 금지」는 그대로다 — 모달은 되돌릴 수 없는
+> **행동의 확인**에만 쓴다. **문안 정본은 여전히 `docs/spec/screens/`** 다.
+>
+> ✅ **Phase 4-0 — 로그인 이관 완료 (2026-08-20)**. **기준 화면**이다: 여기서 정한 판정
+> (`PLAN.md` A-7 표 — 워드마크 크기 · 마크 20 · 간격 · 문안 규칙)을 다음 화면들이 그대로 따른다.
+> `SocialButton`·`GoogleMark`·`ds/color.ts` 의 `social` 이 함께 생겼다.
+> **인증 로직은 손대지 않았다** — 기존 테스트 6개가 수정 없이 통과한다.
+>
+> ✅ **Phase 3 완료 (2026-08-20)** — 공용 컴포넌트 [`src/components/ds/`](src/components/ds/index.ts)
+> 13개 + Wanted 아이콘 26개 + Google 마크. 화면은 이제 여기서 조립한다.
+>
+> ✅ **Phase 2 완료 (2026-08-20)** — 새 토큰 [`src/design/ds/`](src/design/ds/index.ts).
+> **다크 모드는 넣지 않는다**(결정 N1). 대비 검수에서 **시안 값 여섯을 보정**했다 —
+> `PLAN.md` A-5 표를 먼저 보고 쓴다.
+>
+> ✅ **Phase 1 완료 (2026-08-20)** — 도메인이 디자인에서 떨어졌다.
+> `EmotionId`·감정 9종 이름의 정본은 이제 [`src/features/emotion/`](src/features/emotion/model/emotion.ts) 이고,
+> `features/**`·`src/mocks/` 는 **`@/design/` 을 하나도 import 하지 않는다**(`features/*/ui/` 제외).
+> 토큰에 섞여 있던 제품 규칙 셋(일정 5개 접기 · 「기타」 12자 · 일기 500자)도 도메인으로 옮겼다.
 
 ## 먼저 읽을 것 — 순서대로
 
@@ -30,17 +57,27 @@
 > 예외 화면(`E*` `X*`)은 여전히 범위 밖 — 마주치면 `PLAN.md` 에 결정을 기록하고 진행한다.
 > 스펙 ID 가 겹치면(특히 `C4-b`) 항상 `docs/spec/` 것을 쓴다.
 
-## 값을 찾는 순서 — 새 디자인 먼저 (2026-08-14 개정)
+## 값을 찾는 순서 — Momentory DS 먼저 (2026-08-20 개정)
 
 색·크기·반경·여백을 정할 때다. **위에서부터 보고, 없을 때만 아래로 내려간다.**
 
-|     | 어디                                                           | 무엇                                                                  |
-| --- | -------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 1   | [`docs/spec/screens/<ID>.md`](docs/spec/screens/)              | 그 화면의 규칙·**문안** (문안은 항상 여기 — 프로토타입 오탈자 주의)   |
-| 2   | [`src/design/paper.ts`](src/design/paper.ts)                   | **새 디자인 토큰 정본** — 코드에서 쓰는 값                            |
-| 3   | [`docs/design/design-system.md`](docs/design/design-system.md) | 새 디자인 스펙 — 값 충돌 시 `docs/design/prototype/*.dc.html` 이 이김 |
-| 4   | [`docs/spec/momentory.css`](docs/spec/momentory.css)           | ⚠ **옛 값 정본** — 로그인·온보딩(리스킨 제외 범위) 전용               |
-| 5   | [`docs/spec/COMPONENTS.md`](docs/spec/COMPONENTS.md)           | ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다                     |
+|     | 어디                                                         | 무엇                                                                            |
+| --- | ------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| 1   | [`docs/spec/screens/<ID>.md`](docs/spec/screens/)            | 그 화면의 규칙·**문안** (문안은 항상 여기 — 프로토타입 오탈자 주의)             |
+| 2   | [`src/design/ds/`](src/design/ds/index.ts)                   | **3세대 토큰 정본** — 코드에서 쓰는 값. `color` · `typography` · `metrics`      |
+| 3   | [`design-reference/design.md`](design-reference/design.md)   | **디자인 SSOT.** `ds/` 에 없는 값·규칙은 여기서 확인하고 `ds/` 에 이름을 만든다 |
+| 4   | `design-reference/styles/momentory-tokens.css` · `*.dc.html` | 값 검증·구조 참고. ⚠ **어긋나면 `design.md` 가 이긴다**(EXPORT_MANIFEST §1)     |
+| 5   | [`src/design/paper.ts`](src/design/paper.ts)                 | ⚠ **2세대(손그림) 토큰** — 아직 안 옮긴 화면 8장 전용. 새 화면에 쓰지 않는다    |
+| 6   | [`docs/spec/momentory.css`](docs/spec/momentory.css)         | ⚠ **1세대 값** — 로그인·온보딩 등 아직 안 옮긴 화면 전용                        |
+| 7   | [`docs/spec/COMPONENTS.md`](docs/spec/COMPONENTS.md)         | ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다                               |
+
+**`ds/` 가 `design.md` 와 일부러 다른 자리가 있다** — 대비 검수에서 시안 값 여섯이
+WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말). **특히 주 CTA 면은
+`primary.heavy` 다** — 시안의 `#7C9E86` + 흰 글자는 2.91 이라 못 쓴다.
+되돌리면 `ds/__tests__/contrast.test.ts` 가 깨진다.
+
+**색은 여전히 하드코딩하지 않는다** — 린터가 `src/design/**` 밖의 hex 를 막는다.
+새 색이 필요하면 `ds/` 에 **이름을 먼저 만들고** 쓴다.
 
 **`COMPONENTS.md` 의 P0 스펙 표는 원본을 서술한다.** 그대로 만들면 어긋난다 — 실제로 셋이 어긋났다:
 
@@ -79,14 +116,19 @@
 
 ## 생성물·반입물 — 직접 고치지 말 것
 
-- `src/design/theme.ts` ← **동결** (옛 상류 생성물 — CI `check:theme` 가 무변경을 검증).
-  새 값은 [`src/design/paper.ts`](src/design/paper.ts) 에만 쓴다
-- `docs/spec/**` ← 동결 스냅샷 · `docs/design/**` ← 새 디자인 반입 스냅샷 — 둘 다 직접 수정 금지
+- `src/design/theme.ts` ← **동결** (1세대 상류 생성물 — CI `check:theme` 가 무변경을 검증)
+- `design-reference/**` ← **3세대 Momentory DS 반입 패키지** — 디자인 확정 상태를 그대로
+  보존한 것이라 리팩터·리포맷 금지(`.prettierignore` 에 있다). SSOT 는 그 안의 `design.md`
+- `docs/spec/**` ← 동결 스냅샷 · `docs/design/**` ← 2세대 반입 스냅샷 — 둘 다 직접 수정 금지
 - `ios/` `android/` ← `app.config.ts`. `npx expo prebuild`
 
-`src/design/tokens.mvp.ts` 와 `theme.ts` 는 **마이그레이션 완료 시 삭제한다**
-(`PLAN.md` Phase 5 — 참조 0 확인 후 `scripts/sync-theme.mjs`·`check:theme` 도 함께).
-그때까지 새 화면 작업은 `paper.ts` 만 참조하고, 오버라이드를 화면 코드에 흩지 않는다.
+**세 세대의 토큰이 다 지워질 때까지가 이 전환이다** — `theme.ts` · `tokens.mvp.ts` ·
+`paper.ts` 셋 다 최종적으로 삭제된다(`scripts/sync-theme.mjs`·`check:theme` 도 함께).
+그때까지 **한 화면 안에 두 체계를 섞지 않는다** — 화면 단위로 통째로 갈아탄다.
+
+⚠ **디자인 파일에 제품 규칙을 넣지 않는다.** 토큰이 지워질 때 규칙이 조용히 사라진다 —
+실제로 `tokens.mvp.ts` 안에 일정 접기(5) · 「기타」 12자 · 일기 500자가 섞여 있었고
+2026-08-20 에 도메인으로 꺼냈다. 색·크기·시간만 `src/design/` 에 둔다.
 
 ## BE 는 마지막에 붙인다 (2026-08-07 결정)
 
@@ -136,9 +178,23 @@ app/retro/{_layout, intro, confirm, emotion, talk, draft, done}.tsx = C1~C7 (회
                                           talk = C4~C4-e · draft = C6·C6-b (세그먼트 두 면)
 app/diary/{_layout, [id]/index, [id]/edit}.tsx = A3 · A3-b · A3-c · A4
 app/my/{_layout, profile, notify}.tsx     = M2 · M3
-src/design/{theme.ts, tokens.mvp.ts}
+src/design/ds/{color,typography,metrics,index}.ts
+                                          ← **3세대 토큰 정본** — 여기만 hex 를 든다.
+                                            다크 없음(N1) · 시안 값 여섯은 대비 보정됨
+                                            (contrast.test.ts 가 고정한다)
+src/design/{theme.ts, tokens.mvp.ts, paper.ts}
+                                          ← 1·1.5·2세대. 안 옮긴 화면이 아직 쓴다 — 최종 삭제 대상
+src/components/ds/{Text, Screen, GridBackground, Button, IconButton, SocialButton,
+                   Card, TextField, Chip, TopNavigation, BottomNavigation,
+                   BottomSheet, Modal}.tsx + icons/{Icon.tsx, paths.ts, GoogleMark.tsx}
+                                          ← **3세대 공용 컴포넌트.** 새 화면은 여기서 조립한다.
+                                            아이콘 26개는 Wanted 세트를 그대로 옮긴 것 —
+                                            **없는 글리프를 만들지 않는다**(person 없음 → nav-my-page).
+                                            Slider·WheelPicker·Calendar·Toast·Menu 는
+                                            **쓰는 화면을 만들 때** 함께 만든다
 src/components/primitives/{ScreenBackground, AppText, AppButton, Card,
                            InputRow, ProgressDots, BackChevron}.tsx
+                                          ← 1·2세대 프리미티브. 안 옮긴 화면이 쓴다 — 삭제 대상
 src/components/chat/{ChatLayout, BabaBubble, AnswerBubble, Avatar, TypingDots, ChipFlow,
                      DirectionChip, ChatInput, MeasureInput}.tsx
                                           ← 방향 칩 = 대화의 경계선 · 빠른 답변 칩 금지.
@@ -153,7 +209,14 @@ src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이
 src/components/archive/{CalendarMonth, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionRow, ActionCardSection, DiaryBabaFace}.tsx ← C6-b·A3 공유
 src/components/report/{WeeklySummaryCard, WeeklyEmotionGrid, ActionInsightCard}.tsx
+src/features/emotion/model/emotion.ts     ← **감정 9종의 도메인 정본** — id·이름·EmotionId.
+                                            **색은 여기 두지 않는다**(디자인 몫 · 세대마다 바뀐다).
+                                            번호는 서버 enum 두 벌(retro EMOTION_KEYS ·
+                                            home SCHEDULE_EMOTIONS)과 맞물려 있다 —
+                                            바꾸면 그 두 표를 함께 고친다
 src/features/home/{model/{day,types}.ts, data/sampleRepository.ts, ui/ScheduleRow.tsx}
+                                          ← day.ts 가 MAX_VISIBLE_SCHEDULES(5) 도 든다 —
+                                            「5개까지 펼치고 접는다」는 디자인이 아니라 제품 규칙
 src/features/retro/{model/retro.ts, data/retroApi.ts}
                                           ← 대화는 서버가 주도한다 — store 는 시작 감정 ·
                                             세션 id · 버블 · 서버의 마지막 응답만 든다.
