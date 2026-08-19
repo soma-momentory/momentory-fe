@@ -1,4 +1,4 @@
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, waitFor, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import Login from "../login";
@@ -84,6 +84,48 @@ describe("실패 안내 — 한 줄로 흡수한다", () => {
     const { queryByText } = await render(<Login />);
 
     expect(queryByText(/다시 시도해 주세요/)).toBeNull();
+  });
+});
+
+describe("Momentory DS 이관 — 구조가 바뀌었다", () => {
+  it("브랜드는 워드마크 + 태그라인 한 줄이다 — 캐릭터·제목 2줄·소개 3덩어리는 사라졌다", async () => {
+    const { getByText, queryByText, queryByLabelText } = await render(<Login />);
+
+    expect(getByText("모멘토리")).toBeTruthy();
+    expect(getByText("오늘을 돌아보고, 내일을 조금 다르게.")).toBeTruthy();
+
+    // 반입 패키지가 캐릭터 일러스트를 전부 뺐다 (EXPORT_MANIFEST §5)
+    expect(queryByLabelText("바바")).toBeNull();
+    expect(queryByText(/돌아보는 작은 쉼터/)).toBeNull();
+    expect(queryByText(/매일 쓰지 않아도/)).toBeNull();
+  });
+
+  it("소셜 3종 순서가 시안대로 카카오 → Google → Apple 이다", async () => {
+    const { getAllByRole } = await render(<Login />);
+    const buttons = getAllByRole("button");
+
+    expect(buttons).toHaveLength(3);
+    expect(buttons.map((b) => within(b).getByText(/계속하기$/).props.children)).toEqual([
+      "카카오로 계속하기",
+      "Google로 계속하기",
+      "Apple로 계속하기",
+    ]);
+  });
+
+  // 약관 줄은 옛 화면에도 새 시안에도 있는 슬롯이라 **문안 정본(docs/spec/screens/S1.md)**
+  // 을 따른다 — 시안의 「계속하면 서비스 이용약관과…」로 바꾸지 않았다
+  it("약관 문안은 정본 그대로다 — 「로그인하면」이 동의가 걸리는 행위를 가리킨다", async () => {
+    const { getByText } = await render(<Login />);
+
+    expect(getByText(/로그인하면/)).toBeTruthy();
+    expect(getByText("이용약관")).toBeTruthy();
+    expect(getByText("개인정보 처리방침")).toBeTruthy();
+    expect(getByText(/마이에서 언제든 다시 확인할 수 있어요/)).toBeTruthy();
+  });
+
+  it("동의 체크박스를 두지 않는다 — 로그인 행위가 동의다", async () => {
+    const { queryByRole } = await render(<Login />);
+    expect(queryByRole("checkbox")).toBeNull();
   });
 });
 

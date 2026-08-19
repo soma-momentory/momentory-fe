@@ -8,9 +8,10 @@ import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { ScreenBackground } from "@/components/primitives/ScreenBackground";
 import { paperColors, paperRadius, paperTypography } from "@/design/paper";
-import theme, { type EmotionId } from "@/design/theme";
-import { diaryBody } from "@/design/tokens.mvp";
+import theme from "@/design/theme";
 import { useDiary } from "@/features/diary/model/diary";
+import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
  * `A4` · 일기 수정 · 본문 + 감정 태그
@@ -100,7 +101,7 @@ export default function DiaryEdit() {
             value={body}
             onChangeText={setBody}
             multiline
-            maxLength={diaryBody.maxLength}
+            maxLength={DIARY_BODY_MAX_LENGTH}
             selectionColor={paperColors.brand.greenDark}
             style={styles.body}
             accessibilityLabel="일기 내용"

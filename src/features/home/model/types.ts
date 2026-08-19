@@ -5,7 +5,7 @@
  * 샘플 값만** 제공한다. mock 이 타입을 소유하면 서버가 붙을 때 mock 을 지우며
  * 타입까지 사라진다(`docs/CODE-REVIEW.md` P1).
  */
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 
 export type ScheduleSource = "calendar" | "manual";
 

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/fig-tokens.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/typography.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/foundations.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/aliases.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/styles.css">
+<script src="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/_ds_bundle.js"></script>
+<style>
+:root{
+  --blue-50:#7c9e86;--blue-45:#688a72;--blue-40:#56755f;--blue-55:#8fae98;--blue-60:#a3bfab;
+  --blue-90:#dbe6de;--blue-95:#eaf1ec;--blue-99:#fbfcfb;
+  --wds-primary:#7c9e86;--wds-primary-strong:#688a72;--wds-primary-heavy:#56755f;
+  --wds-label-strong:#241f19;--wds-label-normal:#3c2e22;--wds-label-neutral:#6b5c4a;
+  --wds-label-alternative:#8c7a66;--wds-label-assistive:#b9b2a2;--wds-label-disable:#cfc6b6;
+  --wds-background:#f7f4ed;--wds-background-alternative:#f7f1e7;--wds-background-elevated:#fffdf8;
+  --wds-inverse-background:#3c2e22;--wds-inverse-label:#fffdf8;
+  --wds-fill-alternative:rgba(140,122,102,0.06);--wds-fill-normal:rgba(140,122,102,0.10);--wds-fill-strong:rgba(140,122,102,0.18);
+  --wds-line-alternative:rgba(140,122,102,0.14);--wds-line-neutral:rgba(140,122,102,0.24);--wds-line-normal:rgba(140,122,102,0.34);--wds-line-strong:rgba(74,59,44,0.62);
+  --hairline-alternative:inset 0 0 0 1px rgba(140,122,102,0.14);
+  --hairline-neutral:inset 0 0 0 1px rgba(140,122,102,0.24);
+  --hairline-normal:inset 0 0 0 1px rgba(140,122,102,0.34);
+  --hairline-strong:inset 0 0 0 1px rgba(74,59,44,0.62);
+  --wds-status-positive:#6f9a58;--wds-status-cautionary:#d98a3f;--wds-status-negative:#cf6247;
+  --wds-interaction-inactive:#c2baaa;--wds-interaction-disable:#ece4d4;
+  --wds-dimmer:rgba(48,38,28,0.32);
+  --interaction-overlay:rgb(60,46,34);
+}
+body{margin:0}
+/* DS 버튼이 var() 배경을 트랜지션하다 멈춰 비활성→활성 색이 안 바뀌는 문제 회피 */
+button{transition-property:opacity,transform,box-shadow!important}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#f7f4ed;padding:40px 24px 80px">
+<div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:24px">
+
+<header style="display:flex;flex-direction:column;gap:12px;padding:8px 4px 4px">
+  <nav style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="00 Foundations.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">00 Foundations</a>
+    <a href="01 Core Components.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">01 Core Components</a>
+    <a href="02 Momentory Components.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">02 Momentory Components</a>
+    <a href="03 Patterns.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;background:#3c2e22;color:#fffdf8;text-decoration:none">03 Patterns</a>
+    <a href="04 Playground.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">04 Playground</a>
+  </nav>
+  <h1 class="wds-title-2" style="color:#241f19">Patterns</h1>
+  <p class="wds-body-2-reading wds-w-regular" style="color:#6b5c4a;max-width:640px">새 Primitive 없이, 앞의 컴포넌트를 조합한 반복 UI 패턴이에요.</p>
+</header>
+
+<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="Form Pattern">
+  <h2 class="wds-label-1" style="color:#6b5c4a">Form — Top Navigation + Input + Bottom Action</h2>
+  <div style="position:relative;width:380px;height:560px;background:#f7f4ed;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);overflow:hidden;display:flex;flex-direction:column">
+    <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="일정 추가" dc-props="{{ tnCloseSave }}" hint-size="100%,44px"></x-import>
+    <div style="flex:1;display:flex;flex-direction:column;gap:20px;padding:24px 20px">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TextField" label="일정" placeholder="예) 아침 산책 30분" hint-size="100%,76px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TextField" label="시간 (선택)" placeholder="오전 8:00" hint-size="100%,76px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Switch" label="회고에서 함께 돌아보기" active="{{ true }}" hint-size="100%,32px"></x-import>
+    </div>
+    <div style="padding:12px 20px 24px"><x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" hint-size="100%,48px">추가하기</x-import></div>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="Settings Pattern">
+  <h2 class="wds-label-1" style="color:#6b5c4a">Settings — Top Navigation + Section Header + List Cells</h2>
+  <div style="position:relative;width:380px;height:560px;background:#f7f4ed;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);overflow:hidden;display:flex;flex-direction:column">
+    <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="알림 설정" dc-props="{{ tnBack }}" hint-size="100%,44px"></x-import>
+    <div style="display:flex;flex-direction:column;padding:8px 0">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.SectionHeader" platform="mobile" size="small" title="회고" hint-size="100%,48px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="회고 리마인더" description="매일 저녁 9시" dc-props="{{ swOn }}" hint-size="100%,64px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="리마인더 시간" value="21:00" chevron="{{ true }}" hint-size="100%,56px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.SectionHeader" platform="mobile" size="small" title="일정" hint-size="100%,48px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="아침 브리핑" description="하루 시작 전에 일정 알림" dc-props="{{ swOff }}" hint-size="100%,64px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="캘린더 연결" description="Google 캘린더" dc-props="{{ tbDisconnect }}" hint-size="100%,64px"></x-import>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="Selection Pattern">
+  <h2 class="wds-label-1" style="color:#6b5c4a">Selection — Description + Items + Bottom Action</h2>
+  <div style="position:relative;width:380px;height:560px;background:#f7f4ed;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);overflow:hidden;display:flex;flex-direction:column">
+    <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="리마인더 주기" dc-props="{{ tnBack2 }}" hint-size="100%,44px"></x-import>
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding:20px 20px 0">
+      <p class="wds-body-2-reading wds-w-regular" style="color:#6b5c4a;margin:0 0 8px">회고를 권하는 주기를 골라 주세요.<br>마이에서 언제든 바꿀 수 있어요.</p>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="매일" description="꾸준히 돌아보고 싶어요" dc-props="{{ rOn }}" hint-size="100%,64px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="평일만" description="주말은 쉬어 갈래요" dc-props="{{ rOff1 }}" hint-size="100%,64px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="주 3회" description="가볍게 시작할래요" dc-props="{{ rOff2 }}" hint-size="100%,64px"></x-import>
+    </div>
+    <div style="padding:12px 20px 24px"><x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" hint-size="100%,48px">저장</x-import></div>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="Bottom Sheet Selection Pattern">
+  <h2 class="wds-label-1" style="color:#6b5c4a">Bottom Sheet Selection — 감정 선택</h2>
+  <div style="position:relative;width:380px;height:560px;background:#f7f1e7;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);overflow:hidden">
+    <x-import component-from-global-scope="WantedDesignSystem_cd71f6.BottomSheet" title="지금 마음에 가까운 감정은요?" platform="ios" dc-props="{{ emoSheet }}" hint-size="100%,100%">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px 8px;padding:8px 0 4px;justify-items:center">
+        <sc-for list="{{ emotions }}" as="em" hint-placeholder-count="9">
+          <button onClick="{{ em.pick }}" style="display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent" style-active="transform:scale(0.96)">
+            <span style="width:52px;height:52px;border-radius:999px;background:{{ em.tint }};box-shadow:{{ em.ring }};transition:box-shadow 120ms cubic-bezier(0.4,0,0.2,1)"></span>
+            <span style="font-size:13px;line-height:18px;letter-spacing:0.0194em;font-weight:{{ em.weight }};color:{{ em.labelColor }};font-family:var(--font-sans)">{{ em.name }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </x-import>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="Empty State Pattern">
+  <h2 class="wds-label-1" style="color:#6b5c4a">Empty State — Icon + Heading + Description + CTA</h2>
+  <div style="position:relative;width:380px;height:560px;background:#f7f4ed;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);overflow:hidden;display:flex;flex-direction:column">
+    <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="보관함" hint-size="100%,44px"></x-import>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:0 40px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:999px;background:rgba(140,122,102,0.10);color:#b9b2a2;margin-bottom:12px"><x-import component-from-global-scope="WantedDesignSystem_cd71f6.Icon" name="folder-job" size="28" hint-size="28px,28px"></x-import></span>
+      <p class="wds-headline-1" style="color:#241f19;margin:0">아직 기록이 없어요</p>
+      <p class="wds-label-1-reading wds-w-regular" style="color:#8c7a66;margin:0">오늘 회고를 마치면<br>첫 기록이 여기에 쌓여요.</p>
+      <div style="margin-top:16px"><x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="medium" hint-size="140px,40px">회고 시작하기</x-import></div>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="Reflection Chat Pattern">
+  <h2 class="wds-label-1" style="color:#6b5c4a">Reflection Chat — Question + Response + Input</h2>
+  <div style="position:relative;width:380px;height:560px;background:#f7f4ed;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);overflow:hidden;display:flex;flex-direction:column">
+    <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="오늘의 회고" dc-props="{{ tnClose }}" hint-size="100%,44px"></x-import>
+    <div style="flex:1;display:flex;flex-direction:column;gap:20px;padding:20px;overflow:hidden">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:4px;padding-top:2px">
+          <p class="wds-body-1-reading wds-w-regular" style="color:#3c2e22;margin:0;max-width:260px">오늘 하루는 어땠어요? 편하게 이야기해 주세요.</p>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <p class="wds-body-1-reading wds-w-regular" style="color:#3c2e22;background:rgba(140,122,102,0.10);border-radius:16px 16px 4px 16px;padding:12px 16px;max-width:260px;margin:0">바쁜 하루였지만 저녁에 잠깐 쉬어서 좋았어요.</p>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:4px;padding-top:2px">
+          <p class="wds-body-1-reading wds-w-regular" style="color:#3c2e22;margin:0;max-width:260px">쉬는 시간에 무엇을 했는지 궁금해요.</p>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 16px 20px">
+      <div style="display:flex;gap:8px;align-items:center;background:#fffdf8;border-radius:999px;padding:6px 6px 6px 18px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24), 0 0 6px rgba(0,0,0,0.08)">
+        <input value="{{ chatText }}" onChange="{{ onChat }}" placeholder="답을 적어 주세요" style="flex:1;border:0;outline:none;background:none;font-family:var(--font-sans);font-size:16px;letter-spacing:0.0057em;color:#3c2e22;min-width:0">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.IconButton" variant="solid" round="{{ true }}" disabled="{{ sendDisabled }}" dc-props="{{ ibSend }}" hint-size="40px,40px"></x-import>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { emotion: null, chat: '' };
+  componentDidMount() {
+    if (!window.WantedDesignSystem_cd71f6) {
+      this._t = setInterval(() => {
+        if (window.WantedDesignSystem_cd71f6) { clearInterval(this._t); this.forceUpdate(); }
+      }, 80);
+    }
+  }
+  componentWillUnmount() { if (this._t) clearInterval(this._t); }
+  renderVals() {
+    const W = window.WantedDesignSystem_cd71f6 || {};
+    const E = React.createElement;
+    const I = (n, s) => (W.Icon ? E(W.Icon, { name: n, size: s || 20 }) : null);
+    const noop = () => {};
+    const EMO = [
+      ['기쁨', '#f3d07a'], ['평온', '#a8c79b'], ['설렘', '#efa76b'],
+      ['슬픔', '#b4c3cc'], ['우울', '#a9b5d9'], ['걱정', '#7a96b0'],
+      ['피곤', '#c9afa6'], ['무덤덤', '#c7c1b6'], ['화남/답답', '#c2796a'],
+    ];
+    const hexA = (h, a) => 'rgba(' + parseInt(h.slice(1, 3), 16) + ',' + parseInt(h.slice(3, 5), 16) + ',' + parseInt(h.slice(5, 7), 16) + ',' + a + ')';
+    const emotions = EMO.map(([name, hex]) => {
+      const sel = this.state.emotion === name;
+      return {
+        name, tint: hexA(hex, 0.55),
+        ring: sel ? ('inset 0 0 0 2px ' + hex + ', 0 0 0 4px ' + hexA(hex, 0.25)) : ('inset 0 0 0 1.5px ' + hexA(hex, 0.9)),
+        weight: sel ? 600 : 500,
+        labelColor: sel ? '#3c2e22' : '#8c7a66',
+        pick: () => this.setState({ emotion: name }),
+      };
+    });
+    const back = W.IconButton ? E(W.IconButton, { variant: 'normal', 'aria-label': '뒤로' }, I('arrow-left', 22)) : null;
+    const close = W.IconButton ? E(W.IconButton, { variant: 'normal', 'aria-label': '닫기' }, I('close', 22)) : null;
+    return {
+      ctaFull: { style: { width: '100%' } },
+      tnCloseSave: { leading: close, trailing: W.TextButton ? E(W.TextButton, { color: 'primary' }, '저장') : null },
+      tnBack: { leading: back },
+      tnBack2: { leading: back },
+      tnClose: { leading: close },
+      swOn: { trailing: W.Switch ? E(W.Switch, { active: true, onChange: noop }) : null },
+      swOff: { trailing: W.Switch ? E(W.Switch, { onChange: noop }) : null },
+      tbDisconnect: { trailing: W.TextButton ? E(W.TextButton, { color: 'assistive', size: 'small' }, '연결 해제') : null },
+      rOn: { trailing: W.Radio ? E(W.Radio, { checked: true, onChange: noop }) : null },
+      rOff1: { trailing: W.Radio ? E(W.Radio, { onChange: noop }) : null },
+      rOff2: { trailing: W.Radio ? E(W.Radio, { onChange: noop }) : null },
+      emoSheet: {
+        actions: W.Button ? [
+          E(W.Button, { key: 's', variant: 'solid', color: 'assistive', size: 'large', style: { flex: 1 } }, '감정 없이 완료'),
+          E(W.Button, { key: 'p', variant: 'solid', color: 'primary', size: 'large', style: { flex: 2 }, disabled: !this.state.emotion }, '완료'),
+        ] : null,
+        open: true, onClose: noop,
+      },
+      emotions,
+      chatText: this.state.chat,
+      onChat: (e) => this.setState({ chat: e.target.value }),
+      sendDisabled: this.state.chat.trim().length === 0,
+      ibSend: { children: I('send', 20), 'aria-label': '보내기' },
+    };
+  }
+}
+</script>
+</body>
+</html>

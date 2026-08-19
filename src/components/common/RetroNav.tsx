@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { EmotionPill } from "@/components/common/EmotionPill";
 import { AppText } from "@/components/primitives/AppText";
 import { paperColors, paperTypography } from "@/design/paper";
-import { type EmotionId } from "@/design/theme";
+import { type EmotionId } from "@/features/emotion/model/emotion";
 import { retroNav } from "@/design/tokens.mvp";
 
 /**

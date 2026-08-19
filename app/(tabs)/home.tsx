@@ -13,9 +13,9 @@ import {
   paperWeatherOf,
 } from "@/design/paper";
 import theme from "@/design/theme";
-import { home } from "@/design/tokens.mvp";
 import {
   doneCountLabel,
+  MAX_VISIBLE_SCHEDULES,
   useDay,
   useTodayContext,
   visibleSchedules,
@@ -146,7 +146,7 @@ export default function Home() {
               </AppText>
             ) : (
               <ScheduleList
-                schedules={shown.slice(0, home.maxVisibleSchedules)}
+                schedules={shown.slice(0, MAX_VISIBLE_SCHEDULES)}
                 onToggleDone={completeAndAsk}
                 onOpen={(id) => router.push(`/home/schedule/${id}`)}
                 onMove={moveSchedule}
@@ -154,11 +154,11 @@ export default function Home() {
                 onDragStateChange={setDragging}
               />
             )}
-            {shown.length > home.maxVisibleSchedules ? (
+            {shown.length > MAX_VISIBLE_SCHEDULES ? (
               // 5개까지 펼치고 나머지는 접는다 (12.md)
               <Pressable accessibilityRole="button">
                 <AppText style={styles.more}>
-                  {`${shown.length - home.maxVisibleSchedules}개 더 보기`}
+                  {`${shown.length - MAX_VISIBLE_SCHEDULES}개 더 보기`}
                 </AppText>
               </Pressable>
             ) : null}

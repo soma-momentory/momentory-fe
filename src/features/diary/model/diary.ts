@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
-import type { EmotionId } from "@/design/theme";
 import { initialDiaryData } from "@/features/diary/data/sampleAdapter";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 import { clock } from "@/lib/clock";
 
 import { actionCardOf } from "./selectors";

@@ -1,6 +1,6 @@
 import type { ImageSourcePropType } from "react-native";
 
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
  * 감정 얼굴 아이콘 9종 — 새 디자인 팔레트의 카피바라 얼굴

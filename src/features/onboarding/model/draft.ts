@@ -131,3 +131,12 @@ export const useDraft = create<DraftStore>((setState) => ({
 
 /** 관심 분야 상한 — `06` 과 `M2` 가 같은 규칙을 쓴다 (`06.md`) */
 export const MAX_INTERESTS = 3;
+
+/**
+ * 「기타」 인라인 입력의 글자 상한 — `06-b` · `07` · `M2` 가 같은 줄을 나눠 쓴다.
+ * 상한에 닿으면 **오류 문구 없이 카운터 색만** 바뀐다(`06-c.md`).
+ *
+ * ⚠ **디자인 값이 아니라 제품 규칙이다** — `design/tokens.mvp.ts` 의
+ * `otherRow.maxLength` 에서 옮겨 왔다(토큰 파일과 함께 사라지면 안 된다).
+ */
+export const MAX_OTHER_LENGTH = 12;

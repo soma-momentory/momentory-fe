@@ -1,0 +1,53 @@
+/* Wanted Design System — non-colour foundations.
+   Values transcribed from the source .fig (component geometry + Variable collections). */
+:root{
+  /* Corner radii, as used by the component set */
+  --radius-2:2px; --radius-4:4px; --radius-5:5px; --radius-6:6px; --radius-8:8px;
+  --radius-10:10px; --radius-12:12px; --radius-14:14px; --radius-16:16px;
+  --radius-20:20px; --radius-24:24px; --radius-32:32px; --radius-full:9999px;
+
+  /* Elevation — the file uses soft, spread-only shadows plus 1px inset hairlines */
+  --shadow-field:0 1px 2px 0 rgba(0,0,0,0.03);
+  --shadow-emphasize:0 1px 2px -1px rgba(23,23,23,0.1);
+  --shadow-normal:0 0 6px 0 rgba(0,0,0,0.08);
+  --shadow-strong:0 0 12px 0 rgba(0,0,0,0.16);
+  --shadow-heavy:0 0 60px 0 rgba(23,23,23,0.1);
+  --shadow-knob:0 3px 8px 0 rgba(0,0,0,0.15),0 3px 1px 0 rgba(0,0,0,0.06);
+  /* Hairlines are drawn as inset box-shadows, never as `border`, so they never
+     take part in layout. */
+  --hairline-alternative: inset 0 0 0 1px rgba(112,115,124,0.08); /* @kind shadow */
+  --hairline-neutral: inset 0 0 0 1px rgba(112,115,124,0.16); /* @kind shadow */
+  --hairline-normal: inset 0 0 0 1px rgba(112,115,124,0.22); /* @kind shadow */
+  --hairline-strong: inset 0 0 0 1px rgba(112,115,124,0.52); /* @kind shadow */
+
+  /* Interaction overlay — a #171719 scrim laid over the whole control.
+     Three intensities pair with the three surface weights. */
+  --interaction-overlay: rgb(23,23,25); /* @kind color */
+  --interaction-light-hover: 0.038; /* @kind other */
+  --interaction-light-press: 0.09; /* @kind other */
+  --interaction-normal-hover: 0.05; /* @kind other */
+  --interaction-normal-focus: 0.08; /* @kind other */
+  --interaction-normal-press: 0.12; /* @kind other */
+  --interaction-strong-hover: 0.075; /* @kind other */
+  --interaction-strong-press: 0.18; /* @kind other */
+
+  /* Motion — the file specifies no easing curves; these are the conservative
+     defaults used by the recreations here. */
+  --ease-standard: cubic-bezier(0.4,0,0.2,1); /* @kind other */
+  --duration-fast: 120ms; /* @kind other */
+  --duration-normal: 200ms; /* @kind other */
+
+  /* Breakpoints (Grid page) */
+  --bp-sm:768px; --bp-md:992px; --bp-lg:1200px; --bp-xl:1600px;
+  --viewport-lg:1100px; --viewport-xl:1440px;
+
+  /* Platform safe areas (Spacing element) */
+  --safe-top-ios:44px;  --safe-bottom-ios:34px;
+  --safe-top-android:36px; --safe-bottom-android:14px;
+  --safe-top-web:0px;   --safe-bottom-web:0px;
+
+  /* Layout margins (Modal collection, Medium mode) */
+  --margin-navigation:20px;
+  --margin-content:20px;
+  --margin-action-horizontal:20px;
+}

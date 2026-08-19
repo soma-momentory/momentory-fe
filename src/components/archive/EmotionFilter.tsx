@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet } from "react-native";
 
 import { AppText } from "@/components/primitives/AppText";
 import { paperColors, paperEmotions, paperRadius, paperTypography } from "@/design/paper";
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
  * 감정 필터 — `A2` · 새 디자인(`design-system.md` §4.4 · `보관함.dc.html`).

@@ -6,7 +6,7 @@ import { CloudIcon, MoonIcon, RainIcon, SunIcon } from "@/components/icons/LineI
 import { AppText } from "@/components/primitives/AppText";
 import { Card } from "@/components/primitives/Card";
 import { paperColors, paperRadius, paperTypography } from "@/design/paper";
-import { type EmotionId } from "@/design/theme";
+import { type EmotionId } from "@/features/emotion/model/emotion";
 import type { Diary } from "@/features/diary/model/diary";
 import { formatKoreanDateShort } from "@/lib/day";
 

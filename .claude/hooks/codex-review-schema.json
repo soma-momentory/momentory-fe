@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CodexReviewResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "summary", "findings"],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["pass", "fail"],
+      "description": "P0/P1/P2 finding 이 하나라도 있으면 fail, 없으면 pass."
+    },
+    "summary": {
+      "type": "string",
+      "description": "리뷰 결과 한두 문장 요약."
+    },
+    "findings": {
+      "type": "array",
+      "description": "실질적인 문제만. 취향·포매팅·cosmetic nit 은 넣지 않는다.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "file", "message", "reason", "suggestion"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2"],
+            "description": "P0 데이터 손실·크래시·보안, P1 명확한 버그·회귀, P2 실질적 결함이지만 영향 제한적."
+          },
+          "file": {
+            "type": "string",
+            "description": "저장소 기준 상대 경로. 가능하면 path:line 형태."
+          },
+          "message": { "type": "string", "description": "무엇이 문제인가." },
+          "reason": { "type": "string", "description": "왜 문제가 되는가 — 재현 조건이나 영향." },
+          "suggestion": { "type": "string", "description": "짧은 수정 방향. 없으면 빈 문자열." }
+        }
+      }
+    }
+  }
+}

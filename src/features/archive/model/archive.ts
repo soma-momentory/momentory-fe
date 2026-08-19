@@ -1,5 +1,5 @@
-import theme, { type EmotionId } from "@/design/theme";
 import type { Diary } from "@/features/diary/model/diary";
+import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 import { SAMPLE_LAST_MONTH_EMOTIONS } from "@/mocks/sample";
 
 /**
@@ -84,8 +84,7 @@ export function monthChange(
 }
 
 /** 감정 이름에서 「/」 뒤를 떼어 짧게 — 「화남/답답」 → 「화남」 (좁은 칸용) */
-export const shortEmotionName = (id: EmotionId) =>
-  (theme.emotions[id - 1]?.name ?? "").split("/")[0] ?? "";
+export const shortEmotionName = (id: EmotionId) => emotionName(id).split("/")[0] ?? "";
 
 /**
  * 문장에 넣는 어간 — 「불안함」 → **「불안」**.

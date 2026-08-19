@@ -4,7 +4,17 @@
  * 서버가 붙으면 store 와 data 어댑터 안쪽만 갈리고 화면은 그대로다
  * (`CLAUDE.md` 「BE 는 마지막에 붙인다」).
  */
-import type { EmotionId } from "@/design/theme";
+import type { EmotionId } from "@/features/emotion/model/emotion";
+
+/**
+ * 일기 본문 상한 — `C6` 초안과 `A4` 수정이 같은 값을 쓴다.
+ * **최소 글자 수를 요구하지 않는다**(`C6.md`) — 카운터만 둔다.
+ *
+ * ⚠ **디자인 값이 아니라 제품 규칙이다** — `design/tokens.mvp.ts` 의
+ * `diaryBody.maxLength` 에서 옮겨 왔다(토큰 파일과 함께 사라지면 안 된다).
+ * 본문의 크기·행간은 여전히 디자인 몫이라 `diaryBody` 쪽에 남아 있다.
+ */
+export const DIARY_BODY_MAX_LENGTH = 500;
 
 export type Diary = {
   id: string;

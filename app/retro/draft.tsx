@@ -16,6 +16,7 @@ import { paperColors, paperTypography } from "@/design/paper";
 import theme from "@/design/theme";
 import { diaryBody } from "@/design/tokens.mvp";
 import { useDiary } from "@/features/diary/model/diary";
+import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { useTodayContext } from "@/features/home/model/day";
 import { useRetro } from "@/features/retro/model/retro";
 import { formatKoreanDate } from "@/lib/day";
@@ -117,7 +118,7 @@ export default function RetroDraft() {
               value={body}
               onChangeText={setBody}
               multiline
-              maxLength={diaryBody.maxLength}
+              maxLength={DIARY_BODY_MAX_LENGTH}
               selectionColor={paperColors.brand.greenDark}
               style={styles.body}
               accessibilityLabel="일기 본문"
@@ -128,7 +129,7 @@ export default function RetroDraft() {
               </AppText>
               {/* 카운터만 둔다 — 최소 글자 수를 요구하지 않는다 */}
               <AppText style={[styles.foot, styles.counter]}>
-                {`${body.length} / ${diaryBody.maxLength}`}
+                {`${body.length} / ${DIARY_BODY_MAX_LENGTH}`}
               </AppText>
             </View>
           </Card>
