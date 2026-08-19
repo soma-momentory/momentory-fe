@@ -1,0 +1,5 @@
+@import "./tokens/fig-tokens.css";
+@import "./tokens/fonts.css";
+@import "./tokens/typography.css";
+@import "./tokens/foundations.css";
+@import "./tokens/aliases.css";

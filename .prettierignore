@@ -20,5 +20,10 @@ docs/design/design-system.md
 docs/design/app-flow.md
 docs/design/data-model.md
 
+# Momentory DS 반입 패키지 — 디자인 확정 상태를 **그대로 보존**한 것이라
+# 리포맷하지 않는다 (design-reference/EXPORT_MANIFEST.md §1).
+# SSOT 는 design-reference/design.md 이고 .claude/hooks 의 Codex 리뷰도 이 경로를 읽는다.
+design-reference/
+
 # 서버에서 받은 API 계약 — 서식은 scripts/sync-api.mjs 가 정한다 (docs/api/README.md).
 docs/api/openapi.json

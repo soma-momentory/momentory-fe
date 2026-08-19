@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/fig-tokens.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/typography.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/foundations.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/aliases.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/styles.css">
+<script src="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/_ds_bundle.js"></script>
+<style>
+:root{
+  --blue-50:#7c9e86;--blue-45:#688a72;--blue-40:#56755f;--blue-55:#8fae98;--blue-60:#a3bfab;
+  --blue-90:#dbe6de;--blue-95:#eaf1ec;--blue-99:#fbfcfb;
+  --wds-primary:#7c9e86;--wds-primary-strong:#688a72;--wds-primary-heavy:#56755f;
+  --wds-label-strong:#241f19;--wds-label-normal:#3c2e22;--wds-label-neutral:#6b5c4a;
+  --wds-label-alternative:#8c7a66;--wds-label-assistive:#b9b2a2;
+  --wds-background:#f7f4ed;--wds-background-alternative:#f7f1e7;--wds-background-elevated:#fffdf8;
+  --wds-inverse-background:#3c2e22;--wds-inverse-label:#fffdf8;
+  --wds-fill-alternative:rgba(140,122,102,0.06);--wds-fill-normal:rgba(140,122,102,0.10);--wds-fill-strong:rgba(140,122,102,0.18);
+  --wds-line-alternative:rgba(140,122,102,0.14);--wds-line-neutral:rgba(140,122,102,0.24);--wds-line-normal:rgba(140,122,102,0.34);--wds-line-strong:rgba(74,59,44,0.62);
+  --hairline-alternative:inset 0 0 0 1px rgba(140,122,102,0.14);
+  --hairline-neutral:inset 0 0 0 1px rgba(140,122,102,0.24);
+  --hairline-normal:inset 0 0 0 1px rgba(140,122,102,0.34);
+  --hairline-strong:inset 0 0 0 1px rgba(74,59,44,0.62);
+  --wds-status-positive:#6f9a58;--wds-status-cautionary:#d98a3f;--wds-status-negative:#cf6247;
+  --wds-interaction-inactive:#c2baaa;--wds-interaction-disable:#dde7e0;--wds-label-disable:#a3b5a9;
+  --wds-dimmer:rgba(48,38,28,0.32);
+  --interaction-overlay:rgb(60,46,34);
+  --cool-neutral-98:#fffdf8;
+}
+body{margin:0}
+/* DS 버튼이 var() 배경을 트랜지션하다 멈춰 비활성→활성 색이 안 바뀌는 문제 회피 */
+button{transition-property:opacity,transform,box-shadow!important}
+[data-noscrollbar]::-webkit-scrollbar{width:0;height:0}
+[data-noscrollbar]{scrollbar-width:none}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#f7f4ed;padding:40px 24px 80px">
+<div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:24px">
+
+<header style="display:flex;flex-direction:column;gap:12px;padding:8px 4px 4px">
+  <nav style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="Home Sample.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">홈</a>
+    <a href="Diary.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">일기</a>
+    <a href="Rest.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">쉼터</a>
+    <a href="Archive.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">보관함</a>
+    <a href="Report.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">리포트</a>
+    <a href="My.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;background:#3c2e22;color:#fffdf8;text-decoration:none">마이</a>
+  </nav>
+  <h1 class="wds-title-2" style="color:#241f19">마이</h1>
+  <p class="wds-body-2-reading wds-w-regular" style="color:#6b5c4a;max-width:700px">원본 M1·M2 항목만 유지했어요. 설정 목록은 Core List Cell 하나로 통일하고, 상세 설정은 온보딩에서 쓴 선택 컴포넌트를 재사용해요.</p>
+</header>
+
+<div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="마이 기본">
+  <span class="wds-label-2" style="color:#8c7a66">M1 · 마이 기본</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><defs><pattern id="myGrid" width="32" height="32" patternUnits="userSpaceOnUse"><g fill="none" stroke="rgba(140,122,102,0.07)" stroke-width="1"><path d="M0 0.5 H32"></path><path d="M0.5 0 V32"></path></g></pattern></defs><rect width="375" height="812" fill="url(#myGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <div style="padding:8px 20px 20px">
+        <h2 class="wds-title-3" style="color:#241f19;margin:0">마이</h2>
+      </div>
+      <div data-noscrollbar="true" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:24px;padding:0 20px 20px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:999px;background:rgba(140,122,102,0.10);box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);flex:none;font-family:var(--font-sans);font-size:20px;font-weight:600;color:#6b5c4a">모</span>
+          <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+            <span class="wds-heading-1" style="color:#241f19">모모</span>
+            <span class="wds-caption-1 wds-w-regular" style="color:#8c7a66">일기 12일 기록</span>
+          </div>
+        </div>
+
+        <sc-for list="{{ sections }}" as="s" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span class="wds-label-2" style="color:#8c7a66;padding-left:4px">{{ s.title }}</span>
+            <div style="border-radius:16px;background:#fffdf8;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);padding:4px 16px">
+              <sc-for list="{{ s.rows }}" as="r" hint-placeholder-count="2">
+                <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="{{ r.title }}" value="{{ r.value }}" chevron="{{ r.chevron }}" dc-props="{{ r.props }}" hint-size="100%,56px"></x-import>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+
+        <div style="display:flex;justify-content:center;padding-top:4px">
+          <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TextButton" color="assistive" size="small" hint-size="70px,20px">회원 탈퇴</x-import>
+        </div>
+      </div>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.BottomNavigation" platform="web" dc-props="{{ navMy }}" hint-size="100%,56px"></x-import>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="마이 알림 설정">
+  <span class="wds-label-2" style="color:#8c7a66">M2 · 알림 설정 시트</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#myGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <div style="padding:8px 20px 20px">
+        <h2 class="wds-title-3" style="color:#241f19;margin:0">마이</h2>
+      </div>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:24px;padding:0 20px 20px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:999px;background:rgba(140,122,102,0.10);box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);flex:none;font-family:var(--font-sans);font-size:20px;font-weight:600;color:#6b5c4a">모</span>
+          <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+            <span class="wds-heading-1" style="color:#241f19">모모</span>
+            <span class="wds-caption-1 wds-w-regular" style="color:#8c7a66">일기 12일 기록</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span class="wds-label-2" style="color:#8c7a66;padding-left:4px">앱 설정</span>
+          <div style="border-radius:16px;background:#fffdf8;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);padding:4px 16px">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="알림 설정" value="{{ notiValue }}" chevron="{{ true }}" dc-props="{{ rowActive }}" hint-size="100%,56px"></x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="기본 정보 수정" chevron="{{ true }}" hint-size="100%,56px"></x-import>
+          </div>
+        </div>
+      </div>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.BottomNavigation" platform="web" dc-props="{{ navMy }}" hint-size="100%,56px"></x-import>
+    </div>
+    <div style="position:absolute;inset:0;z-index:3">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.BottomSheet" title="알림 설정" platform="ios" dc-props="{{ notiSheet }}" hint-size="100%,100%">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0 4px">
+          <span class="wds-label-2" style="color:#8c7a66">알림 시간</span>
+          <div style="position:relative;display:flex;justify-content:center;gap:4px;padding:0 0 4px">
+            <span aria-hidden="true" style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:40px;border-radius:10px;background:rgba(140,122,102,0.10);pointer-events:none"></span>
+            <div data-noscrollbar="true" ref="{{ periodRef }}" style="position:relative;width:88px;height:200px;overflow-y:auto;scroll-snap-type:y mandatory">
+              <div style="height:80px"></div>
+              <sc-for list="{{ periodWheel }}" as="w" hint-placeholder-count="2">
+                <button onClick="{{ w.pick }}" style="display:flex;align-items:center;justify-content:center;width:100%;height:40px;scroll-snap-align:center;border:0;background:none;cursor:pointer;font-family:var(--font-sans);font-size:17px;line-height:24px;letter-spacing:0em;font-weight:{{ w.weight }};color:{{ w.color }}">{{ w.label }}</button>
+              </sc-for>
+              <div style="height:80px"></div>
+            </div>
+            <div data-noscrollbar="true" ref="{{ hourRef }}" style="position:relative;width:72px;height:200px;overflow-y:auto;scroll-snap-type:y mandatory">
+              <div style="height:80px"></div>
+              <sc-for list="{{ hourWheel }}" as="w" hint-placeholder-count="12">
+                <button onClick="{{ w.pick }}" style="display:flex;align-items:center;justify-content:center;width:100%;height:40px;scroll-snap-align:center;border:0;background:none;cursor:pointer;font-family:var(--font-sans);font-size:17px;line-height:24px;letter-spacing:0em;font-weight:{{ w.weight }};color:{{ w.color }}">{{ w.label }}</button>
+              </sc-for>
+              <div style="height:80px"></div>
+            </div>
+            <div data-noscrollbar="true" ref="{{ minuteRef }}" style="position:relative;width:72px;height:200px;overflow-y:auto;scroll-snap-type:y mandatory">
+              <div style="height:80px"></div>
+              <sc-for list="{{ minuteWheel }}" as="w" hint-placeholder-count="12">
+                <button onClick="{{ w.pick }}" style="display:flex;align-items:center;justify-content:center;width:100%;height:40px;scroll-snap-align:center;border:0;background:none;cursor:pointer;font-family:var(--font-sans);font-size:17px;line-height:24px;letter-spacing:0em;font-weight:{{ w.weight }};color:{{ w.color }}">{{ w.label }}</button>
+              </sc-for>
+              <div style="height:80px"></div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="M3 · 기본 정보 수정">
+  <span class="wds-label-2" style="color:#8c7a66">M3 · 기본 정보 수정</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#myGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="기본 정보 수정" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackOnly }}" hint-size="100%,44px"></x-import>
+      <div data-noscrollbar="true" style="flex:1;min-height:0;overflow-y:auto;padding:12px 20px 20px">
+        <div style="border-radius:16px;background:#fffdf8;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);padding:4px 16px">
+          <sc-for list="{{ basicRows }}" as="r" hint-placeholder-count="5">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="{{ r.title }}" value="{{ r.value }}" chevron="{{ true }}" dc-props="{{ r.props }}" hint-size="100%,56px"></x-import>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="M4 · 닉네임 수정">
+  <span class="wds-label-2" style="color:#8c7a66">M4 · 닉네임 수정</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#myGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="닉네임" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackOnly }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px 20px 0">
+        <div style="display:flex;align-items:center;gap:8px;background:#fffdf8;border-radius:999px;padding:11px 18px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.20)">
+          <input value="{{ nick }}" onChange="{{ onNick }}" placeholder="이름 또는 별명" style="flex:1;border:0;outline:none;background:none;font-family:var(--font-sans);font-size:16px;line-height:24px;letter-spacing:0.0057em;color:#3c2e22;min-width:0">
+        </div>
+      </div>
+      <div style="padding:0 20px 12px">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" disabled="{{ nickUnchanged }}" dc-props="{{ saveNick }}" hint-size="100%,48px">저장</x-import>
+      </div>
+      <div style="height:291px;background:#efe7d9;box-shadow:inset 0 1px 0 rgba(140,122,102,0.24);display:flex;flex-direction:column;justify-content:center;gap:8px;padding:10px 4px 24px">
+        <sc-for list="{{ keyRows }}" as="row" hint-placeholder-count="3">
+          <div style="display:flex;justify-content:center;gap:6px">
+            <sc-for list="{{ row.keys }}" as="k" hint-placeholder-count="10">
+              <span style="display:flex;align-items:center;justify-content:center;width:{{ k.w }};height:42px;border-radius:5px;background:#fffdf8;box-shadow:0 1px 0 rgba(140,122,102,0.35);font-family:var(--font-sans);font-size:15px;color:#3c2e22">{{ k.label }}</span>
+            </sc-for>
+          </div>
+        </sc-for>
+        <div style="display:flex;justify-content:center;gap:6px;padding-top:2px">
+          <span style="display:flex;align-items:center;justify-content:center;width:44px;height:42px;border-radius:5px;background:rgba(140,122,102,0.18);font-family:var(--font-sans);font-size:12px;color:#6b5c4a">한/영</span>
+          <span style="display:flex;align-items:center;justify-content:center;width:152px;height:42px;border-radius:5px;background:#fffdf8;box-shadow:0 1px 0 rgba(140,122,102,0.35);font-family:var(--font-sans);font-size:13px;color:#8c7a66">space</span>
+          <span style="display:flex;align-items:center;justify-content:center;width:70px;height:42px;border-radius:5px;background:rgba(140,122,102,0.18);font-family:var(--font-sans);font-size:13px;font-weight:600;color:#8c7a66">완료</span>
+        </div>
+      </div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="M5 · 나이 수정">
+  <span class="wds-label-2" style="color:#8c7a66">M5 · 나이 수정</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#myGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="나이" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackOnly }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px 20px 0">
+        <div style="display:flex;align-items:center;gap:8px;background:#fffdf8;border-radius:999px;padding:11px 18px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.20)">
+          <input value="{{ age }}" onChange="{{ onAge }}" placeholder="나이" inputMode="numeric" style="flex:1;border:0;outline:none;background:none;font-family:var(--font-sans);font-size:16px;line-height:24px;letter-spacing:0.0057em;color:#3c2e22;min-width:0">
+          <span class="wds-body-2 wds-w-regular" style="color:#b9b2a2;flex:none">세</span>
+        </div>
+      </div>
+      <div style="padding:0 20px 12px">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" disabled="{{ ageUnchanged }}" dc-props="{{ saveAge }}" hint-size="100%,48px">저장</x-import>
+      </div>
+      <div style="height:291px;background:#efe7d9;box-shadow:inset 0 1px 0 rgba(140,122,102,0.24);display:flex;flex-direction:column;justify-content:center;gap:8px;padding:10px 4px 24px">
+        <sc-for list="{{ keyRows }}" as="row" hint-placeholder-count="3">
+          <div style="display:flex;justify-content:center;gap:6px">
+            <sc-for list="{{ row.keys }}" as="k" hint-placeholder-count="10">
+              <span style="display:flex;align-items:center;justify-content:center;width:{{ k.w }};height:42px;border-radius:5px;background:#fffdf8;box-shadow:0 1px 0 rgba(140,122,102,0.35);font-family:var(--font-sans);font-size:15px;color:#3c2e22">{{ k.label }}</span>
+            </sc-for>
+          </div>
+        </sc-for>
+        <div style="display:flex;justify-content:center;gap:6px;padding-top:2px">
+          <span style="display:flex;align-items:center;justify-content:center;width:44px;height:42px;border-radius:5px;background:rgba(140,122,102,0.18);font-family:var(--font-sans);font-size:12px;color:#6b5c4a">한/영</span>
+          <span style="display:flex;align-items:center;justify-content:center;width:152px;height:42px;border-radius:5px;background:#fffdf8;box-shadow:0 1px 0 rgba(140,122,102,0.35);font-family:var(--font-sans);font-size:13px;color:#8c7a66">space</span>
+          <span style="display:flex;align-items:center;justify-content:center;width:70px;height:42px;border-radius:5px;background:rgba(140,122,102,0.18);font-family:var(--font-sans);font-size:13px;font-weight:600;color:#8c7a66">완료</span>
+        </div>
+      </div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="M6 · 성별 수정">
+  <span class="wds-label-2" style="color:#8c7a66">M6 · 성별 수정</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#myGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="성별" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackOnly }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px 20px 0">
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ genders }}" as="c" hint-placeholder-count="3">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" state="{{ c.state }}" dc-props="{{ c.props }}" hint-size="64px,36px">{{ c.label }}</x-import>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding:0 20px">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" disabled="{{ genderUnchanged }}" dc-props="{{ saveGender }}" hint-size="100%,48px">저장</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="M7 · 관심 분야 수정">
+  <span class="wds-label-2" style="color:#8c7a66">M7 · 관심 분야 수정</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#myGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="관심 분야" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackOnly }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px 20px 0">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start">
+          <sc-for list="{{ topics }}" as="c" hint-placeholder-count="8">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" state="{{ c.state }}" dc-props="{{ c.props }}" hint-size="72px,36px">{{ c.label }}</x-import>
+          </sc-for>
+        </div>
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0">{{ topicHint }}</p>
+        <div style="flex:1;min-height:0"></div>
+      </div>
+      <div style="padding:0 20px">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" disabled="{{ topicUnchanged }}" dc-props="{{ saveTopic }}" hint-size="100%,48px">저장</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="M8 · 쉬는 방법 수정">
+  <span class="wds-label-2" style="color:#8c7a66">M8 · 쉬는 방법 수정</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#myGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="쉬는 방법" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackOnly }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px 20px 0">
+        <div data-noscrollbar="true" style="max-height:520px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start">
+          <sc-for list="{{ rests }}" as="c" hint-placeholder-count="15">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" state="{{ c.state }}" dc-props="{{ c.props }}" hint-size="84px,36px">{{ c.label }}</x-import>
+          </sc-for>
+        </div>
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0">{{ restHint }}</p>
+        <div style="flex:1;min-height:0"></div>
+      </div>
+      <div style="padding:0 20px">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" disabled="{{ restUnchanged }}" dc-props="{{ saveRest }}" hint-size="100%,48px">저장</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="width:320px;display:flex;flex-direction:column;gap:16px">
+  <div style="background:#fffdf8;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.14);padding:20px;display:flex;flex-direction:column;gap:10px">
+    <span class="wds-label-1" style="color:#241f19">규칙</span>
+    <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px">
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">섹션 3개(앱 설정·지원·계정) — 모든 행은 Core List Cell</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">프로필은 이니셜 아바타 + 기록 일수 (캐릭터 없음)</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">「총 회고 12회」 → 「일기 12일 기록」 — 내부 용어 제거</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">알림 설정 시트는 시간 변경 하나만 — 온보딩의 세로 휠 피커 재사용</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">기본 정보 수정: 현재 값 목록 → 항목 선택 → 그 항목만 수정 → 저장</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">수정 상세에는 건너뛰기·다음·설명 문구 없음 — 기존 값이 채워진 상태로 시작</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">저장은 full-width 하단 고정 — 값이 그대로면 비활성, 하나라도 바뀌면 활성 → 저장 후 M3 복귀</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">닉네임·나이는 키보드가 올라오면 저장 버튼이 키보드 바로 위에 붙고, 키보드가 내려가면 하단 CTA 위치(좌우 20 · Safe Area 34 위)로 돌아와요</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">활성 저장은 M2 「완료」와 같은 초록(#7C9E86) · 라벨 #FFFDF8, 비활성은 #DDE7E0 · #A3B5A9</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">온보딩 입력 컴포넌트(pill 입력·칩)는 재사용, 온보딩 플로우는 재사용하지 않음</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">회원 탈퇴만 목록 밖 Text Button으로 낮춤</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">새 설정 UI 패턴을 만들지 않았어요</li>
+    </ul>
+  </div>
+  <div style="background:#fffdf8;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.14);padding:20px;display:flex;flex-direction:column;gap:10px">
+    <span class="wds-label-1" style="color:#241f19">판단이 필요한 부분</span>
+    <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px">
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">M8 쉬는 방법은 M7과 같은 구조 — 목록이 길어 칩 영역만 스크롤돼요</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">닉네임 수정도 「기본 정보 수정」 안에서 처리 — 상단 진입점은 제거했어요</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">로그아웃·탈퇴 확인 모달은 예외 단계에서</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    period: '오후', hour: 9, minute: 0,
+    nick: '모모', age: '25', gender: '여성',
+    topics: ['일·직장생활', '건강'],
+    rests: ['음악 듣기', '산책하기'],
+  };
+  wheelRef(key, list, current) {
+    this._els = this._els || {};
+    return (el) => {
+      this._els[key] = el;
+      if (!el) return;
+      const i = list.indexOf(current);
+      const top = (i < 0 ? 0 : i) * 40;
+      if (Math.abs(el.scrollTop - top) > 2) el.scrollTop = top;
+    };
+  }
+  componentDidMount() {
+    if (!window.WantedDesignSystem_cd71f6) {
+      this._t = setInterval(() => {
+        if (window.WantedDesignSystem_cd71f6) { clearInterval(this._t); this.forceUpdate(); }
+      }, 80);
+    }
+  }
+  componentWillUnmount() { if (this._t) clearInterval(this._t); }
+  renderVals() {
+    const W = window.WantedDesignSystem_cd71f6 || {};
+    const E = React.createElement;
+    const I = (n, s) => (W.Icon ? E(W.Icon, { name: n, size: s || 20 }) : null);
+    const noop = () => {};
+    const rowStyle = { minHeight: 0, alignItems: 'center', paddingTop: 16, paddingBottom: 16 };
+    const valueRowStyle = Object.assign({}, rowStyle, {
+      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', gap: 8,
+    });
+    // 활성/비활성 배경을 리터럴로 지정 — var() 트랜지션이 멈추는 문제 회피
+    const saveSkin = (unchanged) => ({
+      style: {
+        width: '100%', transition: 'none',
+        background: unchanged ? '#dde7e0' : '#7c9e86',
+        color: unchanged ? '#a3b5a9' : '#fffdf8',
+      },
+    });
+    const ICONS = (W.iconData || W.icons || {});
+    const lead = (n) => {
+      if (Object.keys(ICONS).length && !ICONS[n]) console.warn('[My] unknown icon glyph: ' + n);
+      return {
+        leading: E('span', { style: { display: 'inline-flex', width: 20, height: 20, flex: 'none', color: '#8c7a66' } }, I(n, 20)),
+        style: rowStyle,
+      };
+    };
+
+    const navItems = [
+      { value: 'home', label: '홈', icon: I('home', 24) },
+      { value: 'rest', label: '쉼터', icon: I('heart', 24) },
+      { value: 'archive', label: '보관함', icon: I('folder-job', 24) },
+      { value: 'report', label: '리포트', icon: I('document', 24) },
+      { value: 'my', label: '마이', icon: I('nav-my-page', 24) },
+    ];
+
+    const h24 = this.state.period === '오후'
+      ? (this.state.hour === 12 ? 12 : this.state.hour + 12)
+      : (this.state.hour === 12 ? 0 : this.state.hour);
+    const notiValue = '매일 ' + String(h24).padStart(2, '0') + ':' + String(this.state.minute).padStart(2, '0');
+
+    const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
+    const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
+    const wheel = (list, current, pick, fmt) => list.map((v) => ({
+      label: fmt ? fmt(v) : String(v),
+      weight: v === current ? 600 : 400,
+      color: v === current ? '#241f19' : '#b9b2a2',
+      pick: () => pick(v),
+    }));
+
+    const TOPICS = ['학업', '취업·진로', '일·직장생활', '인간관계', '가족', '나 자신', '건강', '기타'];
+    const chipSkin = (on) => (on
+      ? { background: 'rgba(124,158,134,0.18)', boxShadow: 'inset 0 0 0 2px #7c9e86', color: '#241f19', fontWeight: 600 }
+      : { background: '#fffdf8', boxShadow: 'inset 0 0 0 1px rgba(140,122,102,0.24)', color: '#6b5c4a' });
+    const picked = this.state.topics;
+    const brief = (list) => (list.length === 0 ? '선택 안 함'
+      : list.length === 1 ? list[0]
+      : (list[0] + ' 외 ' + (list.length - 1) + '개'));
+    const summary = brief(picked);
+    const restSummary = brief(this.state.rests);
+
+    return {
+      notiValue,
+      navBackOnly: { leading: W.IconButton ? E(W.IconButton, { variant: 'normal', 'aria-label': '뒤로' }, I('arrow-left', 22)) : null },
+      basicRows: [
+        { title: '닉네임', value: this.state.nick, props: { style: valueRowStyle } },
+        { title: '나이', value: this.state.age ? (this.state.age + '세') : '선택 안 함', props: { style: valueRowStyle } },
+        { title: '성별', value: this.state.gender, props: { style: valueRowStyle } },
+        { title: '관심 분야', value: summary, props: { style: valueRowStyle } },
+        { title: '쉬는 방법', value: restSummary, props: { style: valueRowStyle } },
+      ],
+      nick: this.state.nick,
+      onNick: (e) => this.setState({ nick: e.target.value }),
+      nickUnchanged: this.state.nick.trim().length === 0 || this.state.nick === '모모',
+      saveNick: saveSkin(this.state.nick.trim().length === 0 || this.state.nick === '모모'),
+      saveAge: saveSkin(this.state.age.length === 0 || this.state.age === '25'),
+      saveGender: saveSkin(this.state.gender === '여성'),
+      saveTopic: saveSkin(picked.length === 0 || (picked.length === 2 && picked.indexOf('일·직장생활') >= 0 && picked.indexOf('건강') >= 0)),
+      saveRest: saveSkin(this.state.rests.length === 0 || (this.state.rests.length === 2 && this.state.rests.indexOf('음악 듣기') >= 0 && this.state.rests.indexOf('산책하기') >= 0)),
+      keyRows: [
+        { keys: 'ㅂㅈㄷㄱㅅㅛㅕㅑㅐㅔ'.split('').map((label) => ({ label, w: '32px' })) },
+        { keys: 'ㅁㄴㅇㄹㅎㅗㅓㅏㅣ'.split('').map((label) => ({ label, w: '32px' })) },
+        { keys: 'ㅋㅌㅊㅍㅠㅜㅡ'.split('').map((label) => ({ label, w: '32px' })) },
+      ],
+      age: this.state.age,
+      onAge: (e) => this.setState({ age: e.target.value.replace(/[^0-9]/g, '').slice(0, 3) }),
+      ageUnchanged: this.state.age.length === 0 || this.state.age === '25',
+      genderUnchanged: this.state.gender === '여성',
+      topicUnchanged: picked.length === 0 || (picked.length === 2 && picked.indexOf('일·직장생활') >= 0 && picked.indexOf('건강') >= 0),
+      genders: ['남성', '여성', '선택 안 함'].map((label) => {
+        const on = this.state.gender === label;
+        return { label, state: on ? 'selected' : 'default', props: { onClick: () => this.setState({ gender: label }), style: chipSkin(on) } };
+      }),
+      topics: TOPICS.map((label) => {
+        const on = picked.indexOf(label) >= 0;
+        return {
+          label, state: on ? 'selected' : 'default',
+          props: {
+            onClick: () => this.setState((st) => ({
+              topics: st.topics.indexOf(label) >= 0 ? st.topics.filter((x) => x !== label) : st.topics.concat([label]),
+            })),
+            style: chipSkin(on),
+          },
+        };
+      }),
+      topicHint: picked.length > 0 ? (picked.length + '개 선택됨 · 다시 누르면 선택이 해제돼요') : '하나 이상 골라주세요',
+      rests: ['잠자기', '명상하기', '맛있는 음식 먹기', '음악 듣기', '영화·드라마 보기', '독서하기', '글쓰기', '카페 가기', '산책하기', '가까운 사람과 대화하기', '운동하기', '게임하기', '그때마다 달라요', '멍하니 쉬기', '기타'].map((label) => {
+        const on = this.state.rests.indexOf(label) >= 0;
+        return {
+          label, state: on ? 'selected' : 'default',
+          props: {
+            onClick: () => this.setState((st) => ({
+              rests: st.rests.indexOf(label) >= 0 ? st.rests.filter((x) => x !== label) : st.rests.concat([label]),
+            })),
+            style: chipSkin(on),
+          },
+        };
+      }),
+      restHint: this.state.rests.length > 0 ? (this.state.rests.length + '개 선택됨 · 다시 누르면 선택이 해제돼요') : '하나 이상 골라주세요',
+      restUnchanged: this.state.rests.length === 0 || (this.state.rests.length === 2 && this.state.rests.indexOf('음악 듣기') >= 0 && this.state.rests.indexOf('산책하기') >= 0),
+      topicNone: picked.length === 0,
+      periodRef: this.wheelRef('period', ['오전', '오후'], this.state.period),
+      hourRef: this.wheelRef('hour', HOURS, this.state.hour),
+      minuteRef: this.wheelRef('minute', MINUTES, this.state.minute),
+      periodWheel: wheel(['오전', '오후'], this.state.period, (v) => this.setState({ period: v })),
+      hourWheel: wheel(HOURS, this.state.hour, (v) => this.setState({ hour: v })),
+      minuteWheel: wheel(MINUTES, this.state.minute, (v) => this.setState({ minute: v }), (v) => String(v).padStart(2, '0')),
+      sections: [
+        {
+          title: '앱 설정',
+          rows: [
+            { title: '알림 설정', value: notiValue, chevron: true, props: lead('bell') },
+            { title: '기본 정보 수정', value: '', chevron: true, props: lead('nav-my-page') },
+          ],
+        },
+        {
+          title: '지원',
+          rows: [
+            { title: '문의하기', value: '', chevron: true, props: lead('send') },
+            { title: '정책 · 약관', value: '', chevron: true, props: lead('document') },
+          ],
+        },
+        {
+          title: '계정',
+          rows: [
+            { title: '로그아웃', value: '', chevron: true, props: lead('arrow-left') },
+          ],
+        },
+      ],
+      rowActive: Object.assign({}, lead('bell'), { style: Object.assign({}, rowStyle, { background: 'rgba(140,122,102,0.06)', borderRadius: 8 }) }),
+      navMy: { items: navItems, value: 'my', onChange: noop, style: { paddingBottom: 9, alignItems: 'flex-start' } },
+      notiSheet: {
+        open: true,
+        onClose: noop,
+        actions: W.Button ? E(W.Button, { variant: 'solid', color: 'primary', size: 'large', style: { width: '100%' } }, '완료') : null,
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

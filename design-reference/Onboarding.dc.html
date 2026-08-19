@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/fig-tokens.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/typography.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/foundations.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/tokens/aliases.css">
+<link rel="stylesheet" href="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/styles.css">
+<script src="_ds/wanted-design-system-cd71f67a-fbb8-42c0-8b07-3faa2a3c8b75/_ds_bundle.js"></script>
+<style>
+:root{
+  --blue-50:#7c9e86;--blue-45:#688a72;--blue-40:#56755f;--blue-55:#8fae98;--blue-60:#a3bfab;
+  --blue-90:#dbe6de;--blue-95:#eaf1ec;--blue-99:#fbfcfb;
+  --wds-primary:#7c9e86;--wds-primary-strong:#688a72;--wds-primary-heavy:#56755f;
+  --wds-label-strong:#241f19;--wds-label-normal:#3c2e22;--wds-label-neutral:#6b5c4a;
+  --wds-label-alternative:#8c7a66;--wds-label-assistive:#b9b2a2;
+  --wds-background:#f7f4ed;--wds-background-alternative:#f7f1e7;--wds-background-elevated:#fffdf8;
+  --wds-inverse-background:#3c2e22;--wds-inverse-label:#fffdf8;
+  --wds-fill-alternative:rgba(140,122,102,0.06);--wds-fill-normal:rgba(140,122,102,0.10);--wds-fill-strong:rgba(140,122,102,0.18);
+  --wds-line-alternative:rgba(140,122,102,0.14);--wds-line-neutral:rgba(140,122,102,0.24);--wds-line-normal:rgba(140,122,102,0.34);--wds-line-strong:rgba(74,59,44,0.62);
+  --hairline-alternative:inset 0 0 0 1px rgba(140,122,102,0.14);
+  --hairline-neutral:inset 0 0 0 1px rgba(140,122,102,0.24);
+  --hairline-normal:inset 0 0 0 1px rgba(140,122,102,0.34);
+  --hairline-strong:inset 0 0 0 1px rgba(74,59,44,0.62);
+  --wds-status-positive:#6f9a58;--wds-status-cautionary:#d98a3f;--wds-status-negative:#cf6247;
+  --wds-interaction-inactive:#c2baaa;--wds-interaction-disable:#dde7e0;--wds-label-disable:#a3b5a9;
+  --wds-dimmer:rgba(48,38,28,0.32);
+  --interaction-overlay:rgb(60,46,34);
+  --cool-neutral-98:#fffdf8;
+}
+body{margin:0}
+/* DS 버튼이 var() 배경을 트랜지션하다 멈춰 비활성→활성 색이 안 바뀌는 문제 회피 */
+button{transition-property:opacity,transform,box-shadow!important}
+[data-noscrollbar]::-webkit-scrollbar{width:0;height:0}
+[data-noscrollbar]{scrollbar-width:none}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#f7f4ed;padding:40px 24px 80px">
+<div style="max-width:1720px;margin:0 auto;display:flex;flex-direction:column;gap:24px">
+
+<header style="display:flex;flex-direction:column;gap:12px;padding:8px 4px 4px">
+  <nav style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="00 Foundations.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">00 Foundations</a>
+    <a href="01 Core Components.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">01 Core Components</a>
+    <a href="02 Momentory Components.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">02 Momentory Components</a>
+    <a href="Login.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">1단계 · 로그인</a>
+    <a href="Onboarding.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;background:#3c2e22;color:#fffdf8;text-decoration:none">2단계 · 온보딩</a>
+    <a href="Home Sample.dc.html" style="font-size:13px;font-weight:600;letter-spacing:0.0194em;padding:6px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.34);color:#6b5c4a;text-decoration:none">3단계 · 홈</a>
+  </nav>
+  <h1 class="wds-title-2" style="color:#241f19">2단계 — 온보딩 · 대화형</h1>
+  <p class="wds-body-2-reading wds-w-regular" style="color:#6b5c4a;max-width:700px">질문은 왼쪽에서 건네고 답은 오른쪽으로 돌아와요. 제목·설명을 분리하지 않고 한 문장 흐름으로 묶고, 지난 대화는 위에 강도를 낮춰 남겨요. 메신저 UI를 모방하지 않고 여백·격자·타이포는 그대로예요. 타이핑·전송 애니메이션은 넣지 않았어요.</p>
+</header>
+
+<div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="03 첫 메시지">
+  <span class="wds-label-2" style="color:#8c7a66">03 · 첫 메시지</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><defs><pattern id="obcGrid" width="32" height="32" patternUnits="userSpaceOnUse"><g fill="none" stroke="rgba(140,122,102,0.07)" stroke-width="1"><path d="M0 0.5 H32"></path><path d="M0.5 0 V32"></path></g></pattern></defs><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">안녕하세요. 모멘토리예요.<br>앞으로 하루를 조금 더 편하게 돌아볼 수 있도록 몇 가지만 여쭤볼게요.</p>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0;text-align:center">금방 끝나요 · 답변은 마이에서 언제든 바꿀 수 있어요</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" hint-size="100%,48px">시작하기</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="04-a 닉네임 입력 전">
+  <span class="wds-label-2" style="color:#8c7a66">04-a · 닉네임 입력 전</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.7">안녕하세요. 모멘토리예요.<br>앞으로 하루를 조금 더 편하게 돌아볼 수 있도록 몇 가지만 여쭤볼게요.</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">어떻게 불러드리면 좋을까요?<br>실명도, 별명도 괜찮아요.</p>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px;background:#fffdf8;border-radius:999px;padding:9px 16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.20)">
+          <input value="" readOnly="{{ true }}" placeholder="이름 또는 별명" style="flex:1;border:0;outline:none;background:none;font-family:var(--font-sans);font-size:15px;line-height:22px;letter-spacing:0.0096em;color:#3c2e22;min-width:0">
+        </div>
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0;text-align:center">같은 이름을 사용하는 분이 있어도 괜찮아요.</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ true }}" hint-size="100%,48px">이렇게 불러주세요</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="04-b 닉네임 입력 후">
+  <span class="wds-label-2" style="color:#8c7a66">04-b · 닉네임 입력 후</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.7">안녕하세요. 모멘토리예요.<br>앞으로 하루를 조금 더 편하게 돌아볼 수 있도록 몇 가지만 여쭤볼게요.</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">어떻게 불러드리면 좋을까요?<br>실명도, 별명도 괜찮아요.</p>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px;background:#fffdf8;border-radius:999px;padding:9px 16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.20)">
+          <input value="{{ nick }}" onChange="{{ onNick }}" placeholder="이름 또는 별명" style="flex:1;border:0;outline:none;background:none;font-family:var(--font-sans);font-size:15px;line-height:22px;letter-spacing:0.0096em;color:#3c2e22;min-width:0">
+        </div>
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0;text-align:center">같은 이름을 사용하는 분이 있어도 괜찮아요.</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ nickEmpty }}" hint-size="100%,48px">이렇게 불러주세요</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="05-a 나이 입력 전">
+  <span class="wds-label-2" style="color:#8c7a66">05-a · 나이 입력 전</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackSkipAge }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">어떻게 불러드리면 좋을까요?<br>실명도, 별명도 괜찮아요.</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">모모</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">모모님, 나이는 어떻게 되나요?<br>질문을 조금 더 잘 맞추는 데만 사용할게요.</p>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px;background:#fffdf8;border-radius:999px;padding:9px 16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.20)">
+          <input value="" readOnly="{{ true }}" placeholder="나이" style="flex:1;border:0;outline:none;background:none;font-family:var(--font-sans);font-size:15px;line-height:22px;letter-spacing:0.0096em;color:#3c2e22;min-width:0">
+          <span class="wds-body-2 wds-w-regular" style="color:#b9b2a2;flex:none">세</span>
+        </div>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ true }}" hint-size="100%,48px">다음</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="05-b 나이 입력 후">
+  <span class="wds-label-2" style="color:#8c7a66">05-b · 나이 입력 후</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackSkipAge }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">어떻게 불러드리면 좋을까요?<br>실명도, 별명도 괜찮아요.</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">모모</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">모모님, 나이는 어떻게 되나요?<br>질문을 조금 더 잘 맞추는 데만 사용할게요.</p>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px;background:#fffdf8;border-radius:999px;padding:9px 16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.20)">
+          <input value="{{ age }}" onChange="{{ onAge }}" placeholder="나이" style="flex:1;border:0;outline:none;background:none;font-family:var(--font-sans);font-size:15px;line-height:22px;letter-spacing:0.0096em;color:#3c2e22;min-width:0">
+          <span class="wds-body-2 wds-w-regular" style="color:#b9b2a2;flex:none">세</span>
+        </div>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ ageEmpty }}" hint-size="100%,48px">다음</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="05-c 성별 선택 전">
+  <span class="wds-label-2" style="color:#8c7a66">05-c · 성별 선택 전</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackSkipAge }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.7">모모님, 나이는 어떻게 되나요?<br>질문을 조금 더 잘 맞추는 데만 사용할게요.</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">25세</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">성별도 알려주실래요?<br>질문을 조금 더 잘 맞추는 데만 쓰고, 다른 사람에게 공개하지 않아요.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">남성</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">여성</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">선택 안 함</x-import>
+        </div>
+      </div>
+      <div style="padding:0 20px">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ true }}" hint-size="100%,48px">다음</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="05-d 성별 선택 후">
+  <span class="wds-label-2" style="color:#8c7a66">05-d · 성별 선택 후</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBackSkipAge }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.7">모모님, 나이는 어떻게 되나요?<br>질문을 조금 더 잘 맞추는 데만 사용할게요.</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">25세</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">성별도 알려주실래요?<br>질문을 조금 더 잘 맞추는 데만 쓰고, 다른 사람에게 공개하지 않아요.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start">
+          <sc-for list="{{ genders }}" as="c" hint-placeholder-count="3">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" state="{{ c.state }}" dc-props="{{ c.props }}" hint-size="64px,36px">{{ c.label }}</x-import>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding:0 20px">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" hint-size="100%,48px">다음</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="06-a 관심 분야 선택 전">
+  <span class="wds-label-2" style="color:#8c7a66">06-a · 관심 분야 선택 전</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.7">성별도 알려주실래요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">여성</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">요즘 마음이 가장 자주 머무는 곳은 어디인가요?<br>가까운 이야기를 골라주시면 그에 맞는 질문을 건넬게요.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">학업</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">취업·진로</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">일·직장생활</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">인간관계</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">가족</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">나 자신</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">건강</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">기타</x-import>
+        </div>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0;text-align:center">가까운 것을 하나 이상 골라주세요.</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ true }}" hint-size="100%,48px">다음</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="06-b 관심 분야 선택 후">
+  <span class="wds-label-2" style="color:#8c7a66">06-b · 관심 분야 선택 후</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.7">성별도 알려주실래요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">여성</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">요즘 마음이 가장 자주 머무는 곳은 어디인가요?<br>가까운 이야기를 골라주시면 그에 맞는 질문을 건넬게요.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start">
+          <sc-for list="{{ topics }}" as="c" hint-placeholder-count="8">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" state="{{ c.state }}" dc-props="{{ c.props }}" hint-size="72px,36px">{{ c.label }}</x-import>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0;text-align:center">{{ topicHint }}</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ topicNone }}" hint-size="100%,48px">다음</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="07-a 쉬는 방법 선택 전">
+  <span class="wds-label-2" style="color:#8c7a66">07-a · 쉬는 방법 선택 전</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">요즘 마음이 가장 자주 머무는 곳은 어디인가요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">일·직장생활, 나 자신</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">마음이 지치거나 스트레스를 받을 때, 어떤 방법이 가장 도움이 되나요?<br>지쳐 보이는 날 이걸 먼저 권해드릴게요.</p>
+        <div data-noscrollbar="true" style="display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start;max-height:264px;overflow-y:auto;align-content:flex-start">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">잠자기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">명상하기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">맛있는 음식 먹기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">음악 듣기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">영화·드라마 보기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">독서하기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">글쓰기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">카페 가기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">산책하기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">가까운 사람과 대화하기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">운동하기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">게임하기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">그때마다 달라요</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">멍하니 쉬기</x-import>
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" hint-size="72px,36px">기타</x-import>
+        </div>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0;text-align:center">도움이 되는 방법을 하나 이상 골라주세요.</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ true }}" hint-size="100%,48px">다음</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="07-b 쉬는 방법 선택 후">
+  <span class="wds-label-2" style="color:#8c7a66">07-b · 쉬는 방법 선택 후</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">요즘 마음이 가장 자주 머무는 곳은 어디인가요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">일·직장생활, 나 자신</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">마음이 지치거나 스트레스를 받을 때, 어떤 방법이 가장 도움이 되나요?<br>지쳐 보이는 날 이걸 먼저 권해드릴게요.</p>
+        <div data-noscrollbar="true" style="display:flex;flex-wrap:wrap;gap:8px;align-self:flex-start;max-height:264px;overflow-y:auto;align-content:flex-start">
+          <sc-for list="{{ rests }}" as="c" hint-placeholder-count="15">
+            <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ChipFilter" state="{{ c.state }}" dc-props="{{ c.props }}" hint-size="84px,36px">{{ c.label }}</x-import>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0;text-align:center">{{ restHint }}</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ restNone }}" hint-size="100%,48px">다음</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="08-a 시간 미선택">
+  <span class="wds-label-2" style="color:#8c7a66">08-a · 시간 미선택</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">마음이 지치거나 스트레스를 받을 때, 어떤 방법이 가장 도움이 되나요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">음악 듣기, 산책하기</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">하루를 언제 돌아보면 가장 편안할까요?<br>바쁜 하루에도 부담 없도록 편한 시간에 찾아갈게요.</p>
+        <button onClick="{{ noop }}" style="align-self:flex-start;display:flex;align-items:center;gap:8px;padding:9px 16px;border:0;border-radius:999px;background:#fffdf8;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);cursor:pointer" style-hover="background:#fffefb">
+          <span style="display:inline-flex;color:#8c7a66;flex:none"><x-import component-from-global-scope="WantedDesignSystem_cd71f6.Icon" name="clock" size="16" hint-size="16px,16px"></x-import></span>
+          <span class="wds-body-2" style="color:#6b5c4a">시간 선택</span>
+        </button>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:4px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0 0 8px;text-align:center">편한 시간은 나중에도 바꿀 수 있어요.</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ true }}" hint-size="100%,48px">다음</x-import>
+        <div style="display:flex;align-items:center;justify-content:center;min-height:44px">
+          <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TextButton" color="assistive" size="medium" hint-size="110px,24px">알림 없이 쓸게요</x-import>
+        </div>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="08-b 시간 선택 열림">
+  <span class="wds-label-2" style="color:#8c7a66">08-b · 시간 선택 (바텀시트)</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">마음이 지치거나 스트레스를 받을 때, 어떤 방법이 가장 도움이 되나요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">음악 듣기, 산책하기</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">하루를 언제 돌아보면 가장 편안할까요?<br>바쁜 하루에도 부담 없도록 편한 시간에 찾아갈게요.</p>
+        <button onClick="{{ noop }}" style="align-self:flex-start;display:flex;align-items:center;gap:8px;padding:9px 16px;border:0;border-radius:999px;background:#fffdf8;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);cursor:pointer" style-hover="background:#fffefb">
+          <span style="display:inline-flex;color:#8c7a66;flex:none"><x-import component-from-global-scope="WantedDesignSystem_cd71f6.Icon" name="clock" size="16" hint-size="16px,16px"></x-import></span>
+          <span class="wds-body-2" style="color:#6b5c4a">시간 선택</span>
+        </button>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:4px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0 0 8px;text-align:center">편한 시간은 나중에도 바꿀 수 있어요.</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" disabled="{{ true }}" hint-size="100%,48px">다음</x-import>
+        <div style="display:flex;align-items:center;justify-content:center;min-height:44px">
+          <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TextButton" color="assistive" size="medium" hint-size="110px,24px">알림 없이 쓸게요</x-import>
+        </div>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <div style="position:absolute;inset:0;z-index:3">
+    <x-import component-from-global-scope="WantedDesignSystem_cd71f6.BottomSheet" title="시간 선택" platform="ios" dc-props="{{ timeSheet }}" hint-size="100%,100%">
+        <div style="position:relative;display:flex;justify-content:center;gap:4px;padding:4px 0 8px">
+          <span aria-hidden="true" style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:40px;border-radius:10px;background:rgba(140,122,102,0.10);pointer-events:none"></span>
+          <div data-noscrollbar="true" ref="{{ periodRef }}" style="position:relative;width:88px;height:200px;overflow-y:auto;scroll-snap-type:y mandatory">
+            <div style="height:80px"></div>
+            <sc-for list="{{ periodWheel }}" as="w" hint-placeholder-count="2">
+              <button onClick="{{ w.pick }}" style="display:flex;align-items:center;justify-content:center;width:100%;height:40px;scroll-snap-align:center;border:0;background:none;cursor:pointer;font-family:var(--font-sans);font-size:17px;line-height:24px;letter-spacing:0em;font-weight:{{ w.weight }};color:{{ w.color }}">{{ w.label }}</button>
+            </sc-for>
+            <div style="height:80px"></div>
+          </div>
+          <div data-noscrollbar="true" ref="{{ hourRef }}" style="position:relative;width:72px;height:200px;overflow-y:auto;scroll-snap-type:y mandatory">
+            <div style="height:80px"></div>
+            <sc-for list="{{ hourWheel }}" as="w" hint-placeholder-count="12">
+              <button onClick="{{ w.pick }}" style="display:flex;align-items:center;justify-content:center;width:100%;height:40px;scroll-snap-align:center;border:0;background:none;cursor:pointer;font-family:var(--font-sans);font-size:17px;line-height:24px;letter-spacing:0em;font-weight:{{ w.weight }};color:{{ w.color }}">{{ w.label }}</button>
+            </sc-for>
+            <div style="height:80px"></div>
+          </div>
+          <div data-noscrollbar="true" ref="{{ minuteRef }}" style="position:relative;width:72px;height:200px;overflow-y:auto;scroll-snap-type:y mandatory">
+            <div style="height:80px"></div>
+            <sc-for list="{{ minuteWheel }}" as="w" hint-placeholder-count="12">
+              <button onClick="{{ w.pick }}" style="display:flex;align-items:center;justify-content:center;width:100%;height:40px;scroll-snap-align:center;border:0;background:none;cursor:pointer;font-family:var(--font-sans);font-size:17px;line-height:24px;letter-spacing:0em;font-weight:{{ w.weight }};color:{{ w.color }}">{{ w.label }}</button>
+            </sc-for>
+            <div style="height:80px"></div>
+          </div>
+        </div>
+    </x-import>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="08-c 시간 선택 완료">
+  <span class="wds-label-2" style="color:#8c7a66">08-c · 시간 선택 완료</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">마음이 지치거나 스트레스를 받을 때, 어떤 방법이 가장 도움이 되나요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">음악 듣기, 산책하기</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">하루를 언제 돌아보면 가장 편안할까요?<br>바쁜 하루에도 부담 없도록 편한 시간에 찾아갈게요.</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22">{{ answerTime }}</p>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:4px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0 0 8px;text-align:center">편한 시간은 나중에도 바꿀 수 있어요.</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" hint-size="100%,48px">다음</x-import>
+        <div style="display:flex;align-items:center;justify-content:center;min-height:44px">
+          <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TextButton" color="assistive" size="medium" hint-size="110px,24px">알림 없이 쓸게요</x-import>
+        </div>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="09 일정 참고">
+  <span class="wds-label-2" style="color:#8c7a66">09 · 일정 참고 (메시지 + 정보 카드)</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TopNavigation" platform="ios" title="" transparent="{{ true }}" divider="{{ false }}" dc-props="{{ navBack }}" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">하루를 언제 돌아보면 가장 편안할까요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">{{ answerTime }}</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">마지막으로 하나만 더 부탁드릴게요.<br>오늘 있었던 일을 더 쉽게 떠올릴 수 있도록 일정을 참고해도 될까요?</p>
+        <div style="align-self:flex-start;max-width:288px;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:#fffdf8;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="display:inline-flex;color:#688a72"><x-import component-from-global-scope="WantedDesignSystem_cd71f6.Icon" name="calendar" size="20" hint-size="20px,20px"></x-import></span>
+            <span class="wds-label-1" style="color:#241f19">일정은 이렇게 사용해요</span>
+          </div>
+          <p class="wds-label-1-reading wds-w-regular" style="color:#6b5c4a;margin:0">일정 제목만 회고 질문을 만드는 데 사용해요. 원본 일정은 수정하지 않고, 다른 사람에게 공유하지 않아요.</p>
+        </div>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:4px">
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" hint-size="100%,48px">일정 가져오기</x-import>
+        <div style="display:flex;align-items:center;justify-content:center;min-height:44px">
+          <x-import component-from-global-scope="WantedDesignSystem_cd71f6.TextButton" color="assistive" size="medium" hint-size="90px,24px">나중에 할게요</x-import>
+        </div>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px" data-screen-label="10 완료">
+  <span class="wds-label-2" style="color:#8c7a66">10 · 마지막 메시지 + 요약</span>
+  <div style="position:relative;width:375px;height:812px;background:#f7f4ed;border-radius:28px;overflow:hidden">
+    <svg aria-hidden="true" width="375" height="812" viewBox="0 0 375 812" style="position:absolute;inset:0;z-index:0;pointer-events:none"><rect width="375" height="812" fill="url(#obcGrid)"></rect></svg>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <x-import component-from-global-scope="WantedDesignSystem_cd71f6.StatusBar" platform="ios" time="9:41" hint-size="100%,44px"></x-import>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:0 20px 16px">
+        <p class="wds-body-1-reading wds-w-regular" style="margin:0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22;opacity:0.55">오늘 있었던 일을 더 쉽게 떠올릴 수 있도록 일정을 참고해도 될까요?</p>
+        <p class="wds-body-1 wds-w-medium" style="margin:0;align-self:flex-end;max-width:260px;padding:12px 16px;border-radius:16px 16px 4px 16px;background:rgba(124,158,134,0.22);color:#3c2e22;opacity:0.7">좋아요</p>
+        <p class="wds-body-1-reading wds-w-regular" style="margin:14px 0 0;align-self:flex-start;max-width:288px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:rgba(140,122,102,0.06);color:#3c2e22">고마워요.<br>이제 당신에게 편한 방식으로 하루를 함께 기억해볼게요.</p>
+        <div style="align-self:flex-start;width:288px;border-radius:16px;background:#fffdf8;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);padding:4px 16px">
+          <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="일정 참고" description="오늘 있었던 일을 떠올릴 때 참고할게요." dc-props="{{ doneCal }}" hint-size="100%,64px"></x-import>
+          <x-import component-from-global-scope="WantedDesignSystem_cd71f6.ListCell" title="돌아보는 시간" value="{{ answerTime }}" hint-size="100%,56px"></x-import>
+        </div>
+      </div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+        <p class="wds-caption-1 wds-w-regular" style="color:#8c7a66;margin:0;text-align:center">마이에서 언제든 바꿀 수 있어요.</p>
+        <x-import component-from-global-scope="WantedDesignSystem_cd71f6.Button" variant="solid" color="primary" size="large" dc-props="{{ ctaFull }}" hint-size="100%,48px">모멘토리 시작하기</x-import>
+      </div>
+      <div style="height:34px"></div>
+    </div>
+    <span aria-hidden="true" style="position:absolute;inset:0;z-index:2;border-radius:28px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.24);pointer-events:none"></span>
+  </div>
+</div>
+
+<div style="width:320px;display:flex;flex-direction:column;gap:16px">
+  <div style="background:#fffdf8;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.14);padding:20px;display:flex;flex-direction:column;gap:10px">
+    <span class="wds-label-1" style="color:#241f19">대화 문법</span>
+    <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px">
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">질문 = 왼쪽 · Fill Alternative 6% · Radius 16/16/16/4 · 최대 288</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">답변 = 오른쪽 · Primary 22% 틴트 · Radius 16/16/4/16 · 최대 260</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">직전 턴만 남김 — 질문 opacity 0.55 · 답변 0.70 (색은 그대로)</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">꼬리·아바타·화자 이름 없음 · 메시지 간격 14, 대화 턴 사이 28</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">대화는 아래 정렬 — 위쪽 여백이 대화가 진행될 공간</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">빠른 답장은 Core ChipFilter 그대로, 질문 바로 아래 왼쪽</li>
+    </ul>
+  </div>
+  <div style="background:#fffdf8;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.14);padding:20px;display:flex;flex-direction:column;gap:10px">
+    <span class="wds-label-1" style="color:#241f19">설문형에서 바뀐 것</span>
+    <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px">
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">Heading 1 제목 + 설명 분리 → 한 메시지 안의 두 문장</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">05의 나이·성별 폼 2개 → 05-a 나이 · 05-b 성별 두 화면으로 분리</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">닉네임 Text Field → 답장 입력 pill</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">성별 Segmented → 빠른 답장 칩</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">시간 = 작은 답변 pill + 바텀시트 휠 · 08-a·b·c 3상태로 분리</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">09 안내 문구 → 메시지 아래 정보 카드</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">03·10의 큰 제목 → 첫·마지막 메시지</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">보조 액션(알림 없이·나중에)을 우상단 → 메인 CTA 아래로 이동</li>
+    </ul>
+  </div>
+  <div style="background:#fffdf8;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(140,122,102,0.14);padding:20px;display:flex;flex-direction:column;gap:10px">
+    <span class="wds-label-1" style="color:#241f19">판단이 필요한 부분</span>
+    <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px">
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">05를 두 화면으로 나눴어요 — 한 화면에 몰아도 되면 되돌릴 수 있어요</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">나이는 답장 입력으로 받았어요 — 칩(20대·30대…)이 나으면 바꿀 수 있어요</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">분은 5분 단위예요 — 10분 단위로 줄일 수도 있어요</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">지난 대화 opacity 0.62 — 더 낮추거나 올릴 여지가 있어요</li>
+      <li class="wds-caption-1 wds-w-regular" style="color:#6b5c4a">「기타」 선택 시 답장 입력을 여는 흐름은 아직 없어요</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    nick: '모모',
+    age: '25',
+    gender: '여성',
+    topics: ['일·직장생활', '나 자신'],
+    rests: ['음악 듣기', '산책하기'],
+    period: '오후', hour: 9, minute: 30, timeSheetOpen: false, timePicked: false,
+  };
+  componentDidMount() {
+    if (!window.WantedDesignSystem_cd71f6) {
+      this._t = setInterval(() => {
+        if (window.WantedDesignSystem_cd71f6) { clearInterval(this._t); this.forceUpdate(); }
+      }, 80);
+    }
+  }
+  componentWillUnmount() { if (this._t) clearInterval(this._t); }
+  toggle(key, v) {
+    this.setState((s) => {
+      const cur = s[key];
+      return { [key]: cur.indexOf(v) >= 0 ? cur.filter((x) => x !== v) : cur.concat([v]) };
+    });
+  }
+  wheelRef(key, list, current) {
+    this._els = this._els || {};
+    return (el) => {
+      this._els[key] = el;
+      if (!el) return;
+      const i = list.indexOf(current);
+      const top = (i < 0 ? 0 : i) * 40;
+      if (Math.abs(el.scrollTop - top) > 2) el.scrollTop = top;
+    };
+  }
+  componentDidUpdate(prev) {
+    if (!this.state.timeSheetOpen) return;
+    const lists = {
+      period: ['오전', '오후'],
+      hour: Array.from({ length: 12 }, (_, i) => i + 1),
+      minute: Array.from({ length: 12 }, (_, i) => i * 5),
+    };
+    Object.keys(lists).forEach((k) => {
+      const el = this._els && this._els[k];
+      if (!el) return;
+      const i = lists[k].indexOf(this.state[k]);
+      const top = (i < 0 ? 0 : i) * 40;
+      if (Math.abs(el.scrollTop - top) > 2) el.scrollTop = top;
+    });
+  }
+  renderVals() {
+    const W = window.WantedDesignSystem_cd71f6 || {};
+    const E = React.createElement;
+    const I = (n, s) => (W.Icon ? E(W.Icon, { name: n, size: s || 20 }) : null);
+    const back = W.IconButton ? E(W.IconButton, { variant: 'normal', 'aria-label': '뒤로' }, I('arrow-left', 22)) : null;
+    const skip = (label) => (W.TextButton
+      ? E(W.TextButton, { color: 'assistive', size: 'small', style: { color: '#8c7a66', fontWeight: 500 } }, label)
+      : null);
+    const navStyle = { backdropFilter: 'none', WebkitBackdropFilter: 'none', background: 'transparent' };
+
+    const GENDERS = ['남성', '여성', '선택 안 함'];
+    const TOPICS = ['학업', '취업·진로', '일·직장생활', '인간관계', '가족', '나 자신', '건강', '기타'];
+    const RESTS = ['잠자기', '명상하기', '맛있는 음식 먹기', '음악 듣기', '영화·드라마 보기', '독서하기', '글쓰기', '카페 가기', '산책하기', '가까운 사람과 대화하기', '운동하기', '게임하기', '그때마다 달라요', '멍하니 쉬기', '기타'];
+
+    const single = (list, key) => list.map((label) => ({
+      label,
+      state: this.state[key] === label ? 'selected' : 'default',
+      props: { onClick: () => this.setState({ [key]: label }) },
+    }));
+    const wheel = (list, current, pick, fmt) => list.map((v) => ({
+      label: fmt ? fmt(v) : String(v),
+      weight: v === current ? 600 : 400,
+      color: v === current ? '#241f19' : '#8c7a66',
+      pick: () => pick(v),
+    }));
+    const multi = (list, key) => list.map((label) => ({
+      label,
+      state: this.state[key].indexOf(label) >= 0 ? 'selected' : 'default',
+      props: { onClick: () => this.toggle(key, label) },
+    }));
+
+    const timeLabel = this.state.period + ' ' + this.state.hour + ':' + String(this.state.minute).padStart(2, '0');
+    const topicCount = this.state.topics.length;
+    const restCount = this.state.rests.length;
+    return {
+      ctaFull: { style: { width: '100%' } },
+      navBack: { leading: back, style: navStyle },
+      navBackSkipAge: { leading: back, trailing: skip('건너뛰기'), style: navStyle },
+      age: this.state.age,
+      onAge: (e) => this.setState({ age: e.target.value.replace(/[^0-9]/g, '').slice(0, 3) }),
+      ageEmpty: !(parseInt(this.state.age, 10) > 0),
+      nick: this.state.nick,
+      onNick: (e) => this.setState({ nick: e.target.value }),
+      nickEmpty: this.state.nick.trim().length === 0,
+      genders: single(GENDERS, 'gender'),
+      topics: multi(TOPICS, 'topics'),
+      rests: multi(RESTS, 'rests'),
+      noop: () => {},
+      answerTime: timeLabel,
+      timeSheetOpen: this.state.timeSheetOpen,
+      timeSheet: {
+        open: true,
+        onClose: () => {},
+        actions: W.Button ? [
+          E(W.Button, { key: 'c', variant: 'solid', color: 'assistive', size: 'large', style: { flex: 1 } }, '취소'),
+          E(W.Button, { key: 'd', variant: 'solid', color: 'primary', size: 'large', style: { flex: 2 } }, '완료'),
+        ] : null,
+      },
+      periodRef: this.wheelRef('period', ['오전', '오후'], this.state.period),
+      hourRef: this.wheelRef('hour', Array.from({ length: 12 }, (_, i) => i + 1), this.state.hour),
+      minuteRef: this.wheelRef('minute', Array.from({ length: 12 }, (_, i) => i * 5), this.state.minute),
+      periodWheel: wheel(['오전', '오후'], this.state.period, (v) => this.setState({ period: v })),
+      hourWheel: wheel(
+        Array.from({ length: 12 }, (_, i) => i + 1),
+        this.state.hour,
+        (v) => this.setState({ hour: v })
+      ),
+      minuteWheel: wheel(
+        Array.from({ length: 12 }, (_, i) => i * 5),
+        this.state.minute,
+        (v) => this.setState({ minute: v }),
+        (v) => String(v).padStart(2, '0')
+      ),
+      topicHint: topicCount > 0
+        ? (topicCount + '개 골랐어요. 다시 누르면 뺄 수 있어요.')
+        : '가까운 것을 하나 이상 골라주세요.',
+      topicNone: topicCount === 0,
+      restHint: restCount > 0
+        ? (restCount + '개 골랐어요. 다시 누르면 뺄 수 있어요.')
+        : '도움이 되는 방법을 하나 이상 골라주세요.',
+      restNone: restCount === 0,
+      doneCal: { leading: E('span', { style: { display: 'inline-flex', color: '#6f9a58' } }, I('circle-check', 22)) },
+    };
+  }
+}
+</script>
+</body>
+</html>
