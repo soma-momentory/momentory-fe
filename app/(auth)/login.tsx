@@ -1,31 +1,45 @@
 import { router } from "expo-router";
-import { Image, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { AppButton } from "@/components/primitives/AppButton";
-import { AppText } from "@/components/primitives/AppText";
-import { ScreenBackground } from "@/components/primitives/ScreenBackground";
-import theme from "@/design/theme";
+import { Screen, SocialButton, Text } from "@/components/ds";
+import { label as labelColor, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 
 /**
- * `S1` · 로그인 · 소셜 3종
+ * `S1` · 로그인 · 소셜 3종 — Momentory DS 이관 (2026-08-20 · `PLAN.md` A Phase 4).
  *
- * **계정을 만들라고 하지 않는다.** 이메일·비밀번호 가입 경로를 두지 않아 첫 마찰을 없앤다.
- * 제목·설명·약속 세 줄은 **서로 다른 질문에 답한다** — 어떤 앱인지 / 무엇을 하는지 /
- * 어떤 마음으로 쓰는지. 사용자는 3~5초만 보므로 세 줄이 같은 말을 나눠 하면 하나도 남지 않는다.
+ * 시각 정본은 [`design-reference/design.md`](../../design-reference/design.md) 「로그인」 +
+ * `Login.dc.html`. **인증 로직은 그대로다** — store·라우팅·실패 처리에 손대지 않았다.
  *
- * 규격은 `09_MVP/docs/S1.md`.
+ * ## 구조가 바뀌었다
+ *
+ * 옛 화면은 바바 117 + 제목 2줄 + 소개 3덩어리였다. 새 디자인은
+ * **워드마크 + 태그라인 한 줄**뿐이다 — 반입 패키지가 캐릭터 일러스트를 전부 뺐고
+ * (`EXPORT_MANIFEST` §5) 브랜드를 텍스트 워드마크로 정했다.
+ *
+ * 그래서 `docs/spec/screens/S1.md` 의 제목·소개 문안은 **놓을 자리가 없어졌다**.
+ * 워드마크·태그라인은 정본에 없는 새 슬롯이라 시안 문안을 쓴다. 반면 **약관 줄은
+ * 두 곳에 다 있는 슬롯**이라 문안 정본 규칙대로 `S1.md` 것을 그대로 둔다
+ * (「계속하면 서비스 이용약관과…」가 아니라 「로그인하면 이용약관과…」) —
+ * "동의가 걸리는 행위를 정확히 가리킨다"는 근거가 `S1.md` 에 적혀 있다.
+ *
+ * ## 그대로 지킨 것
+ *
+ * - **계정을 만들라고 하지 않는다** — 이메일·비밀번호 가입 경로가 없다
+ * - **동의 체크박스를 두지 않는다** — 로그인 행위가 동의다
+ * - **실패는 한 줄로 흡수한다** — 모달·재시도 버튼·경고 아이콘 없음(`RULES.md` 4)
+ * - **취소는 아무 일도 일으키지 않는다**
  */
+
 /**
  * **아직 SDK 가 없는 두 줄**(Apple·Google)의 개발 통로. **개발 빌드에서만 열린다.**
  *
  * `router.push` 로 건너뛰지 않는다 — `(onboarding)` 레이아웃의 라우트 가드가
  * 세션 없는 진입을 즉시 로그인으로 되돌린다(M2-0). 그래서 `signInDev` 가
  * SecureStore 에 가짜 세션을 만들고 나서 이동한다. 릴리스에서는 `__DEV__` 가
- * false 라 버튼이 비활성으로 남고 `signInDev` 도 아무것도 하지 않는다 —
- * 두 겹 다 세션 없이 보호 흐름에 들어가지 않는 쪽으로 닫힌다.
+ * false 라 두 줄이 비활성으로 남는다 — 세션 없이 보호 흐름에 들어가지 않는다.
  *
- * 카카오는 이 통로를 쓰지 않는다 — **실제 로그인이 붙었다**(아래 `signInKakao`).
+ * 카카오는 이 통로를 쓰지 않는다 — **실제 로그인이 붙었다**.
  */
 const DEV_SKIP_AUTH = __DEV__;
 const skipAuth = async () => {
@@ -44,12 +58,8 @@ export default function Login() {
    * 카카오 로그인 (M2-1). 다음 화면은 **서버가 정한다** —
    * `onboardingRequired` 가 true 면 온보딩, false 면 홈이다.
    *
-   * - **취소는 아무 일도 일으키지 않는다.** 사용자가 스스로 닫은 것을
-   *   실패로 말하지 않는다(`RULES.md` 4).
-   * - 실패는 store 가 한 줄로 들고 있고 아래 안내 줄이 그것을 그린다 —
-   *   모달·재시도 버튼을 띄우지 않는다.
-   * - 중복 클릭은 store 의 `signingIn` 이 막는다. 버튼도 함께 잠기지만,
-   *   **자물쇠는 화면이 아니라 store 에 있다** — 두 곳에서 눌려도 한 번이다.
+   * 중복 클릭은 store 의 `signingIn` 이 막는다. 버튼도 함께 잠기지만
+   * **자물쇠는 화면이 아니라 store 에 있다** — 두 곳에서 눌려도 한 번이다.
    */
   const signInKakao = async () => {
     const outcome = await useAuth.getState().signInWithKakao();
@@ -58,141 +68,102 @@ export default function Login() {
   };
 
   return (
-    <ScreenBackground variant="entry">
-      <View style={styles.root}>
-        <View style={styles.hero}>
-          <Image
-            source={require("../../assets/baba/sitting-greeting.png")}
-            style={styles.baba}
-            resizeMode="contain"
-            accessibilityRole="image"
-            accessibilityLabel="바바"
-          />
-
-          <AppText variant="title" tone="strong" style={styles.centered}>
-            하루를 함께{"\n"}돌아보는 작은 쉼터
-          </AppText>
-
-          {/* 소개는 2덩어리다. "잘 해내지 않아도 괜찮아요"는 뺐다 —
-              같은 말을 세 번 하면 안심이 아니라 변명으로 읽힌다 (S1.md) */}
-          <AppText variant="body" tone="body" style={[styles.centered, styles.intro]}>
-            바바와 짧게 이야기하며{"\n"}오늘을 천천히 돌아보는 공간이에요.{"\n"}매일 쓰지 않아도
-            괜찮아요.
-          </AppText>
-        </View>
-
-        <View style={styles.actions}>
-          {/*
-            shape="oauth" — `.oauth` 44 · r12 (v2 에서 54 → 44). 공식 마크는
-            왼쪽 16 절대 정렬 자리(`leading`)가 예약돼 있고, 실제 브랜드 마크
-            SVG 는 M2-1 소셜 SDK 와 함께 넣는다.
-
-            ⚠ **개발 빌드에서만 인증을 건너뛴다.** 화면만 만드는 동안 온보딩에
-            도달할 길이 필요해서인데, 릴리스에서는 `__DEV__` 가 false 라 비활성으로
-            남는다 — 세션 없이 보호 흐름에 들어가지 않는다.
-            실제 흐름(소셜 SDK → 세션 교환 → 진입 판정)은 M2-0 에서 붙이고,
-            그때 이 세 줄이 각자의 provider 를 부른다.
-          */}
-          <AppButton
-            label="카카오로 계속하기"
-            variant="kakao"
-            shape="oauth"
-            loading={signingIn}
-            onPress={signInKakao}
-          />
-          <AppButton
-            label="Apple로 계속하기"
-            variant="apple"
-            shape="oauth"
-            disabled={!DEV_SKIP_AUTH || signingIn}
-            onPress={skipAuth}
-          />
-          <AppButton
-            label="Google로 계속하기"
-            variant="google"
-            shape="oauth"
-            disabled={!DEV_SKIP_AUTH || signingIn}
-            onPress={skipAuth}
-          />
-
-          {/*
-            실패 안내는 **한 줄**이다 — 모달·재시도 버튼·경고 아이콘을 두지 않고,
-            버튼 바로 아래에서 흡수한다(`RULES.md` 4 · `S1.md` 「실패는 원본 X1」).
-            사용자 취소에는 뜨지 않는다. `accessibilityLiveRegion` 으로 보조기술에도
-            같은 순간에 읽힌다 — 화면을 보지 않는 사용자가 눌린 결과를 놓치지 않게.
-          */}
-          {signInError ? (
-            <AppText
-              variant="footnote"
-              tone="accent"
-              style={styles.centered}
-              accessibilityLiveRegion="polite"
-              accessibilityRole="alert"
-            >
-              {signInError}
-            </AppText>
-          ) : null}
-
-          {/*
-            동의 체크박스를 두지 않는다 — 로그인 행위가 동의다.
-            "시작하면"이 아니라 "로그인하면" — 동의가 걸리는 행위를 정확히 가리킨다.
-            **암호화 문구를 쓰지 않는다** — 전송·저장 암호화 범위가 확정되기
-            전에는 지킬 수 없는 약속이다 (S1.md · RULES "확정 범위가 아닌 약속").
-          */}
-          <AppText variant="footnote" tone="legal" style={styles.centered}>
-            로그인하면 <LegalLink label="이용약관" />과 <LegalLink label="개인정보 처리방침" />에
-            동의하게 돼요. 마이에서 언제든 다시 확인할 수 있어요.
-          </AppText>
-        </View>
+    <Screen>
+      {/* 로고 영역이 남은 높이를 다 차지하고 **광학 중앙**에 온다 —
+          아래 96 을 비워 시각적 무게를 위로 올린다 (`Login.dc.html` 「수직 균형」) */}
+      <View style={styles.hero}>
+        <Text variant="title2" color={labelColor.strong}>
+          모멘토리
+        </Text>
+        <Text variant="body2Reading" color={labelColor.neutral}>
+          오늘을 돌아보고, 내일을 조금 다르게.
+        </Text>
       </View>
-    </ScreenBackground>
+
+      {/* 순서는 시안대로 카카오 → Google → Apple */}
+      <View style={styles.actions}>
+        <SocialButton
+          provider="kakao"
+          label="카카오로 계속하기"
+          disabled={signingIn}
+          onPress={signInKakao}
+        />
+        <SocialButton
+          provider="google"
+          label="Google로 계속하기"
+          disabled={!DEV_SKIP_AUTH || signingIn}
+          onPress={skipAuth}
+        />
+        <SocialButton
+          provider="apple"
+          label="Apple로 계속하기"
+          disabled={!DEV_SKIP_AUTH || signingIn}
+          onPress={skipAuth}
+        />
+      </View>
+
+      {/*
+        실패 안내는 **한 줄**이다 — 모달·재시도 버튼·경고 아이콘을 두지 않고
+        버튼 바로 아래에서 흡수한다(`RULES.md` 4). 사용자 취소에는 뜨지 않는다.
+        `accessibilityLiveRegion` 으로 보조기술에도 같은 순간에 읽힌다 —
+        화면을 보지 않는 사용자가 눌린 결과를 놓치지 않게.
+      */}
+      {signInError ? (
+        <Text
+          variant="caption1"
+          color={status.negative}
+          style={styles.centered}
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+        >
+          {signInError}
+        </Text>
+      ) : null}
+
+      <View style={styles.legal}>
+        <Text variant="caption2" color={labelColor.alternative} style={styles.centered}>
+          로그인하면 <LegalLink label="이용약관" />과 <LegalLink label="개인정보 처리방침" />에
+          동의하게 돼요. 마이에서 언제든 다시 확인할 수 있어요.
+        </Text>
+      </View>
+    </Screen>
   );
 }
 
 /**
  * ⚠ 현재는 눌리지 않는다.
  *
- * `L1`(이용약관)·`L2`(개인정보 처리방침)는 **MVP 40화면에 없다.** 문안도 법률 검토 중이라
- * (`S1.md` 의 "링크로 연다"는 문안 확정 뒤에야 지킬 수 있다 — `TASKS.md` 참조)
- * (`06_운영문서/OPEN-ISSUES.md` R-10~R-15) 지금 링크를 살릴 근거가 없다.
- * 밑줄·색은 유지해 "여기에 원문이 있다"는 사실은 전한다.
+ * `L1`(이용약관)·`L2`(개인정보 처리방침)는 **MVP 40화면에 없다.** 문안도 법률 검토
+ * 중이라 지금 링크를 살릴 근거가 없다. 색만 유지해 "여기에 원문이 있다"는 사실은 전한다.
  *
- * TODO 문안이 확정되면 `01_화면설계/1. SPLASH/docs/L1.md`·`L2.md` 를 화면으로 만들거나,
- *      웹 약관 URL 이 생기면 `Linking.openURL` 로 연결한다.
+ * TODO 웹 약관 URL 이 생기면 `Linking.openURL` 로 연결한다.
  */
 function LegalLink({ label }: { label: string }) {
   return (
-    <AppText
-      variant="footnote"
-      tone="accent"
-      style={styles.link}
+    <Text
+      variant="caption2"
+      color={labelColor.neutral}
       accessibilityRole="link"
       accessibilityState={{ disabled: true }}
     >
       {label}
-    </AppText>
+    </Text>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "space-between",
-    paddingTop: 48,
-    // 약관 줄과 홈 인디케이터 사이 최소 20 — 하단 패딩 52 (S1.md)
-    paddingBottom: 52,
-  },
   hero: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    gap: theme.layout.gap.element,
+    justifyContent: "center",
+    // 워드마크 ↔ 태그라인. 시안은 11 이지만 `design.md` §3 의 10단 스케일이 이긴다
+    gap: space.md,
+    // 광학 중앙 — 이 화면에서만 쓰는 값이라 스케일에 올리지 않는다
+    paddingBottom: 96,
   },
-  baba: { width: 117, height: 117, marginBottom: 8 },
-  centered: { textAlign: "center" },
-  // 소개 2덩어리 — 14/1.7 · 폭 280 (9-mvp.mjs)
-  intro: { width: 280, fontSize: 14, lineHeight: 23.8 },
-  // .col10 — 버튼 사이 10
+  // `design.md` 「로그인」이 소셜 3종 간격을 10 으로 못박는다 (스케일 밖 · 이 화면 전용)
   actions: { gap: 10 },
-  link: { textDecorationLine: "underline" },
+  centered: { textAlign: "center" },
+  // 약관은 버튼보다 좁게 — 좌우 20(Screen) + 12 = 32 (`Login.dc.html`)
+  legal: { paddingTop: space.xl, paddingHorizontal: space.md },
 });
