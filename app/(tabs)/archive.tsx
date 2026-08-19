@@ -1,51 +1,65 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { CalendarMonth } from "@/components/archive/CalendarMonth";
+import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { DiaryPreviewCard } from "@/components/archive/DiaryPreviewCard";
 import { EmotionFilter } from "@/components/archive/EmotionFilter";
-import { Hill } from "@/components/common/Hill";
-import { SegBar } from "@/components/common/SegBar";
-import { TabScreen } from "@/components/common/TabScreen";
-import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "@/components/icons/LineIcons";
-import { AppText } from "@/components/primitives/AppText";
-import { Card } from "@/components/primitives/Card";
-import { paperColors, paperRadius, paperTypography } from "@/design/paper";
-import theme from "@/design/theme";
-import { byLatest, dayOf, diariesInMonth, monthOf } from "@/features/archive/model/archive";
+import {
+  Calendar,
+  Card,
+  InfoBlock,
+  SearchField,
+  TabScreen,
+  Text,
+  ViewSwitcher,
+  type CalendarMark,
+  type ViewOption,
+} from "@/components/ds";
+import {
+  elevation,
+  emotion as emotionColor,
+  label as labelColor,
+  primary,
+  space,
+} from "@/design/ds";
+import { byLatest, diariesInMonth, monthOf } from "@/features/archive/model/archive";
 import { useDiary } from "@/features/diary/model/diary";
 import type { EmotionId } from "@/features/emotion/model/emotion";
+import { useDay, visibleSchedules } from "@/features/home/model/day";
 import { clock } from "@/lib/clock";
+import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
 
 /**
  * `A1` 보관함 · 달력 + `A2` 보관함 · 목록 + 감정 필터
  *
- * ## 새 디자인 (`PLAN.md` Phase 3-2 · `docs/design/prototype/보관함.dc.html`)
+ * ## 새 디자인 (`PLAN.md` A Phase 4 · `design-reference/Archive.dc.html`)
  *
- * 스카이 그라디언트 위에 **월 카드**를 얹고, **곡선 언덕**으로 잘라 그 아래
- * 초록 면에 「그날의 기록」을 둔다. 목록 면도 같은 구조다 — 검색·칩·월 라벨이
- * 하늘 위, 항목 카드가 언덕 아래.
+ * 격자 위에 카드가 뜨는 3세대 DS 다. 2세대의 **스카이 그라디언트·곡선 언덕·감정
+ * 얼굴 PNG 가 전부 사라졌고**, 달력/목록 전환이 **세그먼트 바 → 제목 우측 아이콘
+ * 스위처**로 바뀌었다(`design.md` 「보관함」).
  *
- * **탭 이름은 「달력」이다**(`A1.md`) — 외부 캘린더 앱과 구분하려고 "캘린더"라고
- * 쓰지 않는다. 시안의 세그먼트는 「캘린더 / 리스트」지만 **문안의 정본은
- * `docs/spec/` 이다**(`PLAN.md` §0 — "문안은 예외"). **달력으로 언제, 목록으로
- * 어떤 마음이었는지** 찾는다.
+ * **탭 이름은 「달력」·「목록」이다**(`A1.md`) — 외부 캘린더 앱과 구분하려고
+ * "캘린더"라고 쓰지 않는다. 시안의 「캘린더/리스트」를 따르지 않는 것은 **문안의
+ * 정본이 `docs/spec/` 이기 때문**이다(`PLAN.md` A §0). 아이콘 스위처라 그 말은
+ * 이제 낭독기 이름에서 산다 — 「달력으로 보기」·「목록으로 보기」.
  *
- * 옛 구조에서 **뺀 것**(시안에 없다 — `PLAN.md` D9 의 홈과 같은 결정이 필요하다):
- * - **요약 3칸**(「12편 / 이번 달 기록」·「가장 많이 기록」·「지난달과 비교」) —
- *   달력 칸이 54 로 커지면서 자리가 없어졌다. 세던 값은
- *   `features/archive/model/archive.ts` 에 그대로 있다
+ * `A1` 은 **선택한 날의 일기 + 일정**이다(`design.md` 「보관함」) — 그래서 일기가
+ * 없는 날도 고를 수 있다(시안 주석은 「기록 없는 날은 비활성」이지만 `design.md`
+ * 가 이긴다 · `Calendar` 주석).
  *
  * 지키는 규칙:
  * - **연속 일수를 세지 않는다** — 세는 것은 **장수**다
  * - 목록은 **최신순 고정**이고 정렬 옵션을 두지 않는다
  * - 필터는 **한 번에 하나만**. 미리보기는 **두 줄 말줄임**
- * - **색만으로 판단하게 하지 않는다** — 달력의 얼굴이 아니라 기록 카드의
- *   감정 칩이 이름을 글자로 말한다
+ * - **색만으로 판단하게 하지 않는다** — 달력의 점이 아니라 기록 카드의 감정
+ *   이름이 무엇이었는지를 말한다
  * - 빈 날·빈 결과는 **전용 레이아웃이 아니라 같은 자리의 한 장**이다(`A1.md`)
  */
-const FACES: readonly [string, string] = ["달력", "목록"];
+const VIEWS: readonly ViewOption<"calendar" | "list">[] = [
+  { name: "calendar", icon: "calendar", accessibilityLabel: "달력으로 보기" },
+  { name: "list", icon: "list-ordered", accessibilityLabel: "목록으로 보기" },
+];
 
 /**
  * 되돌리기 줄이 머무는 시간. **"잠시"**(`A4.md`)를 숫자로 옮긴 것이고, 이 뒤에는
@@ -53,12 +67,8 @@ const FACES: readonly [string, string] = ["달력", "목록"];
  */
 const UNDO_MS = 6000;
 
-/** `2026-07` → `2026년 7월` */
-const monthLabel = (month: string) =>
-  `${Number(month.slice(0, 4))}년 ${Number(month.slice(5, 7))}월`;
-
 /** `2026-07` 에서 `step` 달만큼 옮긴 달 */
-function shift(month: string, step: number) {
+function shiftMonth(month: string, step: number) {
   const moved = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + step, 1);
   return `${moved.getFullYear()}-${String(moved.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -68,20 +78,20 @@ export default function Archive() {
   const recentlyDeleted = useDiary((s) => s.recentlyDeleted);
   const undoRemove = useDiary((s) => s.undoRemove);
   const clearRecentlyDeleted = useDiary((s) => s.clearRecentlyDeleted);
+  const schedules = useDay((s) => s.schedules);
 
   const todayDate = clock.today();
 
-  const [face, setFace] = useState<0 | 1>(0);
+  const [view, setView] = useState<"calendar" | "list">("calendar");
   // 보관함이 여는 달은 오늘이 속한 달이다 — `‹ ›` 로 옮기면 두 면이 함께 따라간다
   const [month, setMonth] = useState(monthOf(todayDate));
-  const [selectedDay, setSelectedDay] = useState<number>(dayOf(todayDate));
+  const [selectedDate, setSelectedDate] = useState(todayDate);
   const [filter, setFilter] = useState<EmotionId | null>(null);
   const [query, setQuery] = useState("");
 
   const monthly = diariesInMonth(diaries, month);
-  const today = month === monthOf(todayDate) ? dayOf(todayDate) : null;
-
-  const selectedDiary = monthly.find((d) => dayOf(d.date) === selectedDay) ?? null;
+  const selectedDiary = monthly.find((d) => d.date === selectedDate) ?? null;
+  const daySchedules = visibleSchedules(schedules).filter((s) => s.date === selectedDate);
 
   const keyword = query.trim();
   const listed = byLatest(
@@ -94,10 +104,23 @@ export default function Archive() {
 
   const open = (id: string) => router.push(`/diary/${id}`);
 
+  /**
+   * 달력 칸의 표시 규칙 — **일기가 있는 날에만 점**이 찍히고 그 날짜만 진해진다
+   * (`A1.md`). 점은 대표 감정 하나다: 한 칸에 셋을 찍으면 38px 안에서 서로
+   * 구분되지 않는다. 감정 태그가 없는 일기는 **중립색 점 하나**(`A1.md`).
+   */
+  const markOf = (date: string): CalendarMark => {
+    const diary = monthly.find((d) => d.date === date);
+    if (diary == null) return {};
+    const top = diary.emotions[0];
+    return { emphasized: true, dotColor: top == null ? labelColor.assistive : emotionColor[top] };
+  };
+
   // 달을 옮기면 고른 날도 그달의 첫날로 간다 — 31일이 없는 달로 넘어가지 않게
-  const goMonth = (step: number) => {
-    setMonth((m) => shift(m, step));
-    setSelectedDay(1);
+  const goMonth = (step: -1 | 1) => {
+    const next = shiftMonth(month, step);
+    setMonth(next);
+    setSelectedDate(`${next}-01`);
   };
 
   // 잠시 뒤 스스로 사라진다 — 남겨두면 지운 것이 지워지지 않은 것처럼 보인다
@@ -108,122 +131,109 @@ export default function Archive() {
   }, [recentlyDeleted, clearRecentlyDeleted]);
 
   return (
-    <TabScreen active="보관함" background="paperSky">
+    <TabScreen active="보관함">
+      {/* 탭 루트라 상단 내비 제목을 두지 않는다 — 본문의 Title 3 가 제목이다(`design.md` §10) */}
       <View style={styles.header}>
-        <AppText weight="700" style={styles.title}>
+        <Text variant="title3" color={labelColor.strong}>
           보관함
-        </AppText>
-        {/* 시안의 세그먼트는 제목 옆의 작은 알약이다 — 폭을 잡아 오른쪽에 붙인다 */}
-        <View style={styles.seg}>
-          <SegBar items={FACES} activeIndex={face} onChange={setFace} variant="paper" />
-        </View>
+        </Text>
+        <ViewSwitcher options={VIEWS} active={view} onChange={setView} />
       </View>
 
-      {face === 0 ? (
-        <>
-          <Card variant="paperSoft" style={styles.calendarCard}>
-            <View style={styles.monthRow}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="이전 달"
-                hitSlop={12}
-                onPress={() => goMonth(-1)}
-              >
-                <ChevronLeftIcon color={paperColors.text.green} />
-              </Pressable>
-              <AppText weight="700" style={styles.monthLabel}>
-                {monthLabel(month)}
-              </AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="다음 달"
-                hitSlop={12}
-                onPress={() => goMonth(1)}
-              >
-                <ChevronRightIcon color={paperColors.text.green} />
-              </Pressable>
-            </View>
-
-            <CalendarMonth
-              diaries={diaries}
+      {view === "calendar" ? (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Card>
+            <Calendar
               month={month}
-              today={today}
-              selected={selectedDay}
-              onSelect={setSelectedDay}
+              selectedDate={selectedDate}
+              onSelect={setSelectedDate}
+              onMonthStep={goMonth}
+              markOf={markOf}
             />
           </Card>
 
-          {/* 곡선 언덕이 하늘과 기록을 가른다 */}
-          <Hill color={paperColors.bg.hill} style={styles.hill} />
-          <View style={styles.hillBody}>
-            <ScrollView
-              contentContainerStyle={styles.hillContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <AppText weight="700" style={styles.recordTitle}>
-                {`${Number(month.slice(5, 7))}월 ${selectedDay}일의 기록`}
-              </AppText>
+          <View style={styles.section}>
+            <Text variant="label1" color={labelColor.neutral}>
+              {`${formatKoreanDateShort(selectedDate)}의 기록`}
+            </Text>
 
-              {/* 색만으로 판단하게 하지 않는다 — 고른 날의 감정을 이름으로 보여준다 */}
-              {selectedDiary != null ? (
-                <DiaryPreviewCard diary={selectedDiary} onOpen={open} showOpenLink />
-              ) : (
-                <Note>{"이 날은 기록이 없어요.\n비어 있어도 괜찮은 날이에요."}</Note>
-              )}
-            </ScrollView>
+            {selectedDiary != null ? (
+              <DiaryPreviewCard diary={selectedDiary} onOpen={open} showOpenLink />
+            ) : (
+              <Note>{"이 날은 기록이 없어요.\n비어 있어도 괜찮은 날이에요."}</Note>
+            )}
+
+            {/* 일기와 일정을 두 섹션으로 나누지 않는다 — 그날의 기록 한 덩이다 */}
+            <DayScheduleList schedules={daySchedules} />
           </View>
-        </>
+        </ScrollView>
       ) : (
         <>
           <View style={styles.listTop}>
-            <View style={styles.search}>
-              <SearchIcon color={paperColors.text.faint} />
-              <TextInput
-                style={styles.searchInput}
-                value={query}
-                onChangeText={setQuery}
-                placeholder="일기 내용 검색"
-                placeholderTextColor={paperColors.text.faint}
-                accessibilityLabel="일기 내용 검색"
-                returnKeyType="search"
-              />
+            <SearchField
+              value={query}
+              onChangeText={setQuery}
+              placeholder="일기 내용 검색"
+              accessibilityLabel="일기 내용 검색"
+            />
+
+            {/* 칩 줄은 **화면 끝까지 흐른다** — 좌우 20 을 되돌리고 그만큼을
+                스크롤 내용의 여백으로 옮긴다. 감싸는 View 에 패딩을 주면 칩이
+                20px 지점에서 잘린다 */}
+            <View style={styles.bleed}>
+              <EmotionFilter selected={filter} onSelect={setFilter} edgePadding={space.xl} />
             </View>
 
-            <EmotionFilter selected={filter} onSelect={setFilter} />
-
-            <AppText style={styles.listMonth}>{monthLabel(month)}</AppText>
+            <View style={styles.countRow}>
+              <Text variant="body2" color={labelColor.neutral}>
+                {`기록 ${listed.length}건`}
+              </Text>
+              <Text variant="body2" color={labelColor.alternative}>
+                {formatKoreanMonth(month)}
+              </Text>
+            </View>
           </View>
 
-          <Hill color={paperColors.bg.hill} style={styles.hill} />
-          <View style={styles.hillBody}>
-            <ScrollView
-              contentContainerStyle={styles.hillContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {listed.length === 0 ? (
-                <Note>조건에 맞는 일기가 없어요.</Note>
-              ) : (
-                listed.map((d) => <DiaryPreviewCard key={d.id} diary={d} onOpen={open} />)
-              )}
-            </ScrollView>
-          </View>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {listed.length === 0 ? (
+              <Note>조건에 맞는 일기가 없어요.</Note>
+            ) : (
+              listed.map((d) => <DiaryPreviewCard key={d.id} diary={d} onOpen={open} />)
+            )}
+          </ScrollView>
         </>
       )}
 
       {/*
         지운 직후에만 잠시 뜬다(`A4.md`). 확인 모달을 두지 않는 대신 되돌릴 길을
         남기는 쪽이다 — 되돌릴 수 있게 만든다는 규칙(`RULES.md`)이 여기까지 온다.
-        언덕 면 위에 떠 있어서 아래 목록의 자리를 밀지 않는다.
+        목록 위에 떠 있어서 아래 카드의 자리를 밀지 않는다.
+
+        ⚠ 아직 `Toast` 가 없다(`components/ds` 「아직 없는 것」) — 어두운 알약을
+        만들려면 반전 면 토큰이 필요한데 `design.md` 는 다크를 빼고 왔다. 그래서
+        같은 팔레트 안에서 **떠 있는 카드**로 그린다(`elevation.floating` · §5).
       */}
       {recentlyDeleted != null ? (
-        <View style={styles.undo}>
-          <AppText style={styles.undoLabel}>삭제했어요</AppText>
+        <Card padding="none" style={styles.undo}>
+          <Text variant="body2" color={labelColor.normal} style={styles.undoLabel}>
+            삭제했어요
+          </Text>
           <Pressable accessibilityRole="button" hitSlop={10} onPress={undoRemove}>
-            <AppText weight="700" style={styles.undoAction}>
+            <Text variant="label1" color={primary.heavy}>
               되돌리기
-            </AppText>
+            </Text>
           </Pressable>
-        </View>
+        </Card>
       ) : null}
     </TabScreen>
   );
@@ -231,123 +241,55 @@ export default function Archive() {
 
 /**
  * 빈 날·빈 결과의 한 장. **빈 상태 전용 레이아웃을 만들지 않는다**(`A1.md`) —
- * 기록 카드가 있던 자리에 같은 모양의 카드가 그대로 앉는다.
+ * 기록 카드가 있던 자리에 같은 폭의 안내가 그대로 앉는다.
+ *
+ * 카드가 아니라 `InfoBlock` 이다 — **안내문은 카드가 아니다**(`design.md` §8).
+ * 카드와 같은 테두리를 주면 「기록이 있는 것」과 같은 위계로 읽힌다.
  */
 function Note({ children }: { children: string }) {
   return (
-    <Card variant="paperSoft" style={styles.note}>
-      <AppText style={styles.noteText}>{children}</AppText>
-    </Card>
+    <InfoBlock style={styles.note}>
+      <Text variant="body2Reading" color={labelColor.neutral} style={styles.noteText}>
+        {children}
+      </Text>
+    </InfoBlock>
   );
 }
-
-const { styles: type } = paperTypography;
-const FULL_BLEED = -theme.layout.screenMargin;
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
-    paddingTop: 6,
-    paddingBottom: 10,
-  },
-  // 시안 23 — 토큰의 화면 제목(24)에서 한 단 내린다
-  title: {
-    fontSize: type.screenTitle.fontSize - 1,
-    lineHeight: type.screenTitle.lineHeight,
-    letterSpacing: -0.44,
-    color: paperColors.text.primary,
-  },
-  seg: { width: 160 },
-
-  calendarCard: { padding: 14, gap: 7, borderRadius: paperRadius.card },
-  monthRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  // 시안 17 — 토큰 대역에 17 이 없어 카드 제목(16)을 쓴다
-  monthLabel: {
-    fontSize: type.cardTitle.fontSize,
-    lineHeight: type.cardTitle.lineHeight,
-    color: paperColors.text.primary,
+    gap: space.md,
+    paddingTop: space.sm,
+    paddingBottom: space.lg,
   },
 
-  listTop: { gap: 11 },
-  search: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 9,
-    minHeight: theme.touch.minTarget,
-    paddingHorizontal: 14,
-    borderRadius: paperRadius.sheet,
-    backgroundColor: paperColors.bg.cardSoft,
-  },
-  searchInput: {
-    flex: 1,
-    minWidth: 0,
-    padding: 0,
-    fontFamily: paperTypography.fontFamily.regular,
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.primary,
-  },
-  listMonth: {
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.primary,
-  },
+  // 남은 높이를 다 쓰고 그 안에서만 스크롤한다 — 안 잡으면 내용 높이만큼 자라 넘친다
+  scroll: { flex: 1, minHeight: 0 },
+  content: { gap: space.lg, paddingBottom: space.xl },
+  section: { gap: space.md },
 
-  // 언덕과 그 아래 초록 면은 화면 끝까지 간다
-  hill: { marginHorizontal: FULL_BLEED, marginTop: 12 },
-  hillBody: {
-    flex: 1,
-    minHeight: 0,
-    marginHorizontal: FULL_BLEED,
-    backgroundColor: paperColors.bg.hill,
-  },
-  hillContent: {
-    gap: 9,
-    paddingHorizontal: theme.layout.screenMargin,
-    paddingBottom: 12,
-  },
-  // 시안 18 — 토큰 대역에 18 이 없어 시트 제목(19)을 쓴다. 언덕 위 잉크 글자다
-  recordTitle: {
-    fontSize: type.sheetTitle.fontSize,
-    lineHeight: type.sheetTitle.lineHeight,
-    color: paperColors.text.primary,
-  },
+  listTop: { gap: space.md, paddingBottom: space.md },
+  // 화면 좌우 20 을 되돌려 칩 줄이 끝까지 흐르게 한다
+  bleed: { marginHorizontal: -space.xl },
+  countRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
 
-  note: { padding: 22, borderRadius: paperRadius.card },
-  noteText: {
-    textAlign: "center",
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight + 2,
-    // 시안 `#8F9A83` 은 카드 위 2.9 미달 — 초록 계열의 글자용 토큰으로 (PLAN §4)
-    color: paperColors.text.green,
-  },
+  note: { padding: space.xl },
+  noteText: { textAlign: "center" },
 
-  // 목록 위에 떠 있는 한 줄 — 탭바를 가리지 않게 그 위에 둔다
   undo: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 10,
+    bottom: space.md,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: space.md,
     minHeight: 48,
-    paddingHorizontal: 16,
-    borderRadius: paperRadius.toast,
-    backgroundColor: paperColors.overlay.toastBg,
+    paddingHorizontal: space.lg,
+    ...elevation.floating,
   },
-  undoLabel: {
-    flex: 1,
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.onDark,
-  },
-  undoAction: {
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.onDark,
-  },
+  undoLabel: { flex: 1 },
 });

@@ -70,18 +70,67 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
   });
 
   it("[수정하기] 는 실제 화면으로 이어진다 — 갈 곳 없는 줄을 두지 않는다", async () => {
+    // 새 디자인에서 수정은 바닥 알약이 아니라 ⋮ 메뉴에 있다 (design.md 「보관함」)
     const r = await render(<DiaryDetail />);
 
+    await fireEvent.press(r.getByLabelText("더보기"));
     await fireEvent.press(r.getByText("수정하기"));
 
     expect(jest.mocked(router.push)).toHaveBeenCalledWith(`/diary/${ID}/edit`);
   });
 
+  it("⋮ 는 열고 닫는다 — 바깥을 탭해도 닫힌다", async () => {
+    const r = await render(<DiaryDetail />);
+
+    await fireEvent.press(r.getByLabelText("더보기"));
+    expect(r.getByText("삭제하기")).toBeTruthy();
+
+    await fireEvent.press(r.getByLabelText("메뉴 닫기"));
+    expect(r.queryByText("삭제하기")).toBeNull();
+  });
+
   it("바바의 면에서는 수정으로 가지 않는다 — 고칠 수 있는 것은 내 면뿐이다", async () => {
     const r = await render(<DiaryDetail />);
     await fireEvent.press(r.getByText("바바가 함께 본 오늘"));
+    await fireEvent.press(r.getByLabelText("더보기"));
 
     expect(r.queryByText("수정하기")).toBeNull();
+    // 삭제는 두 면에서 같다 — 지워지는 것은 한 벌이다
+    expect(r.getByText("삭제하기")).toBeTruthy();
+  });
+
+  it("⋮ 삭제는 무엇이 사라지는지 먼저 말한다 — 문안은 A4 와 같다", async () => {
+    const r = await render(<DiaryDetail />);
+
+    await fireEvent.press(r.getByLabelText("더보기"));
+    await fireEvent.press(r.getByText("삭제하기"));
+
+    expect(r.getByText("이 회고를 삭제할까요?")).toBeTruthy();
+    expect(r.getByText("내 문장, 바바의 문장, 행동 카드가 함께 삭제돼요.")).toBeTruthy();
+  });
+
+  it("확인하면 일기와 행동 카드가 함께 사라지고 보관함으로 돌아간다", async () => {
+    const r = await render(<DiaryDetail />);
+
+    await fireEvent.press(r.getByLabelText("더보기"));
+    await fireEvent.press(r.getByText("삭제하기"));
+    await fireEvent.press(r.getByText("회고 삭제"));
+
+    expect(useDiary.getState().diaries.find((x) => x.id === ID)).toBeUndefined();
+    expect(actionCardOf(useDiary.getState().actionCards, ID)).toBeNull();
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/archive");
+    // 지운 한 벌은 되돌릴 수 있게 잠시 남는다
+    expect(useDiary.getState().recentlyDeleted?.diary.id).toBe(ID);
+  });
+
+  it("확인에서 그대로 두면 지워지지 않는다", async () => {
+    const r = await render(<DiaryDetail />);
+
+    await fireEvent.press(r.getByLabelText("더보기"));
+    await fireEvent.press(r.getByText("삭제하기"));
+    await fireEvent.press(r.getByText("그대로 두기"));
+
+    expect(useDiary.getState().diaries.find((x) => x.id === ID)).toBeTruthy();
   });
 
   it("지워진 일기를 열면 보관함으로 되돌린다", async () => {

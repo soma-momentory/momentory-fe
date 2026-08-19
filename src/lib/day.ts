@@ -14,6 +14,12 @@ export function formatKoreanDate(iso: string) {
   return `${Number(m)}월 ${Number(d)}일 ${weekday}요일`;
 }
 
+/** `"2026-07"` → `"2026년 7월"` — 달력·목록의 달 라벨 */
+export function formatKoreanMonth(month: string) {
+  const [y = "0", m = "1"] = month.split("-");
+  return `${Number(y)}년 ${Number(m)}월`;
+}
+
 /**
  * `"2026-07-28"` → `"7월 28일"` — 문장 안에 들어가는 짧은 형태.
  * 「회고 대화에서 작성 · **7월 28일** 수정」처럼 요일이 문장을 늘어뜨리는 자리에 쓴다.

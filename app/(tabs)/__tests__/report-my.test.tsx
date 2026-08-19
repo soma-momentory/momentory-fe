@@ -99,27 +99,26 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.queryByText(/실행률|달성률|연속|최고 기록/)).toBeNull();
   });
 
-  it("감정 도넛은 비율과 이름을 함께 말한다 — 색만으로 판단하게 하지 않는다", async () => {
-    // 7/20 주 — 평온함 3 · 그 밖 7 (감정 기록 10개). 가운데는 최다 감정으로 연다
+  it("도넛·비율·범례를 쓰지 않는다 — 감정은 7일 흐름으로만 말한다", async () => {
+    // design.md 「리포트」 — 「도넛·비율·범례 없이 7일 감정 흐름 + 요약 2줄」.
+    // 완료율·%·분석 같은 표현도 쓰지 않는다
     const r = await render(<Report />);
 
-    expect(r.getByLabelText(/주간 감정 비율/)).toBeTruthy();
-    expect(r.getByText("30%")).toBeTruthy();
-    // 범례 칩 — 고른 칩은 면·테두리·굵기가 함께 바뀐다
-    expect(r.getByLabelText("평온함 30%").props.accessibilityState.selected).toBe(true);
+    expect(r.queryByText(/%/)).toBeNull();
+    expect(r.queryByLabelText(/비율/)).toBeNull();
+    expect(r.queryByText(/완료율|실행률|분석|평균/)).toBeNull();
   });
 
-  it("범례를 누르면 도넛 가운데가 그 감정으로 바뀐다", async () => {
+  it("지표는 값 하나로 말한다 — 분모를 붙이지 않는다", async () => {
+    // 「5회 / 7일 중」이 되는 순간 비율이 읽히고, 비율은 평가가 된다
     const r = await render(<Report />);
-    const second = r.getByLabelText("뿌듯함 20%");
 
-    await fireEvent.press(second);
-
-    expect(second.props.accessibilityState.selected).toBe(true);
-    expect(r.getByText("20%")).toBeTruthy();
+    expect(r.getByText("한 주 한눈에")).toBeTruthy();
+    expect(r.getByText("5회")).toBeTruthy();
+    expect(r.queryByText(/중 \d+|\/\s*\d+/)).toBeNull();
   });
 
-  it("초록 통계 패널이 근거 수치를 모아 말한다", async () => {
+  it("보조 행동으로 그 주의 기록을 보러 간다", async () => {
     const r = await render(<Report />);
 
     expect(r.getByText("이 주의 기록 보러가기")).toBeTruthy();
