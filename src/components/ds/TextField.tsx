@@ -13,6 +13,7 @@ import {
   text,
 } from "@/design/ds";
 
+import { IconButton } from "./IconButton";
 import { Text } from "./Text";
 
 /**
@@ -47,6 +48,12 @@ type Props = Omit<TextInputProps, "style"> & {
   showCounter?: boolean;
   /** 기본 `large`(52). `pill` 은 radius Full · 패딩 11/18 */
   variant?: "large" | "medium" | "pill";
+  /** 값 뒤에 붙는 단위 — 나이의 「세」처럼 **입력의 일부로 읽혀야 하는** 말 */
+  suffix?: string;
+  /** 값이 있을 때 지우기 × 를 붙인다. 없으면 두지 않는다 */
+  onClear?: () => void;
+  /** 지우기의 낭독기 이름 — 「기타 지우기」처럼 **무엇을** 지우는지 밝힌다 */
+  clearLabel?: string;
 };
 
 export function TextField({
@@ -54,6 +61,9 @@ export function TextField({
   helper,
   showCounter = false,
   variant = "large",
+  suffix,
+  onClear,
+  clearLabel = "지우기",
   multiline = false,
   ...rest
 }: Props) {
@@ -68,27 +78,49 @@ export function TextField({
         </Text>
       ) : null}
 
-      <TextInput
-        {...rest}
-        multiline={multiline}
-        placeholderTextColor={labelColor.assistive}
-        selectionColor={primary.normal}
-        onFocus={(e) => {
-          setFocused(true);
-          rest.onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setFocused(false);
-          rest.onBlur?.(e);
-        }}
+      {/* 면·테두리는 **바깥이 든다** — 접미(「세」)가 붙어도 같은 칸 안에 있어야
+          한 칸으로 읽힌다. 입력만 감싸면 접미가 칸 밖으로 나간다 */}
+      <View
         style={[
-          styles.input,
+          styles.field,
           VARIANT[variant],
-          // 여러 줄은 높이를 고정하지 않는다 — 3줄까지 늘고 그 뒤 내부 스크롤(§7)
           multiline ? styles.multiline : null,
           focused ? styles.focused : null,
         ]}
-      />
+      >
+        <TextInput
+          {...rest}
+          multiline={multiline}
+          placeholderTextColor={labelColor.assistive}
+          selectionColor={primary.normal}
+          onFocus={(e) => {
+            setFocused(true);
+            rest.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            rest.onBlur?.(e);
+          }}
+          style={styles.input}
+        />
+        {suffix != null ? (
+          <Text variant="body2" color={labelColor.assistive}>
+            {suffix}
+          </Text>
+        ) : null}
+        {/* 값이 있을 때만 붙는 지우기 — **선택을 되돌릴 길이 없으면 선택이 아니다**
+            (`05-b.md`). 시안에 없는 조각이지만 제품 규칙이라 옮겨 왔다 */}
+        {onClear != null && value.length > 0 ? (
+          <IconButton
+            name="close"
+            size={16}
+            accessibilityLabel={clearLabel}
+            color={labelColor.assistive}
+            onPress={onClear}
+            style={styles.clear}
+          />
+        ) : null}
+      </View>
 
       {helper != null || showCounter ? (
         <View style={styles.foot}>
@@ -122,20 +154,34 @@ const VARIANT = {
 
 const styles = StyleSheet.create({
   wrap: { gap: space.sm },
-  input: {
+  field: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
     backgroundColor: background.elevated,
     paddingHorizontal: space.lg,
+    ...hairline.alternative,
+  },
+  input: {
+    flex: 1,
     // 입력값은 Regular 400 — 본문(500)과 다르다
     fontFamily: fontFamily.regular,
     fontSize: text.body1Reading.fontSize,
     lineHeight: text.body1Reading.lineHeight,
     color: labelColor.normal,
-    ...hairline.alternative,
+    // 높이는 바깥(`field`)이 잡는다 — 안에서 또 잡으면 접미와 세로가 어긋난다
+    padding: 0,
   },
-  // 3줄 = lineHeight 26 × 3 + 상하 패딩
-  multiline: { maxHeight: text.body1Reading.lineHeight * size.input.maxLines + space.xl2 },
+  // 3줄 = lineHeight 26 × 3 + 상하 패딩. 여러 줄은 위에서부터 쌓인다
+  multiline: {
+    alignItems: "flex-start",
+    paddingVertical: space.md,
+    maxHeight: text.body1Reading.lineHeight * size.input.maxLines + space.xl2,
+  },
   // 포커스는 테두리 색·두께로만 말한다 — 링을 겹쳐 그리지 않는다
   focused: { borderWidth: 1, borderColor: primary.normal },
+  // 히트 44 는 유지하되 칸 높이를 밀지 않게 음수 여백으로 당긴다
+  clear: { width: 24, height: 24, marginRight: -4 },
   foot: { flexDirection: "row", alignItems: "center", gap: space.sm },
   helper: { flex: 1 },
 });
