@@ -3,7 +3,10 @@ import { router } from "expo-router";
 
 import Archive from "../archive";
 
+import { label as labelColor, primary } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
+import { useDay } from "@/features/home/model/day";
+import type { Schedule } from "@/features/home/model/types";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -13,19 +16,55 @@ jest.mock("expo-router", () => ({
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
 
+/** 일정 store 는 서버에서 채워진다 — 화면 테스트에서는 필요한 줄만 직접 넣는다 */
+const schedule = (id: string, date: string, title: string, done: boolean): Schedule => ({
+  id,
+  date,
+  title,
+  time: null,
+  source: "manual",
+  externalId: null,
+  done,
+  doneAt: done ? `${date}T11:20:00` : null,
+  emotions: [],
+  hidden: false,
+});
+
 beforeEach(() => {
   useDiary.getState().reset(); // 샘플 12편으로 되돌린다
+  useDay.setState({ schedules: [] });
   jest.clearAllMocks();
 });
 
 describe("A1 · 보관함 달력", () => {
-  it("탭 이름은 「달력」이다 — 「캘린더」라고 쓰지 않는다", async () => {
-    // 외부 캘린더 앱과 구분한다 (A1.md) — 시안의 「캘린더/리스트」를 따르지 않는다
-    const { getByText, queryByText } = await render(<Archive />);
+  it("보는 방법은 「달력」과 「목록」이다 — 「캘린더」·「리스트」라고 쓰지 않는다", async () => {
+    // 외부 캘린더 앱과 구분한다 (A1.md) — 시안의 「캘린더/리스트」를 따르지 않는다.
+    // 세그먼트가 아이콘 스위처로 바뀌면서 그 말은 낭독기 이름에서 산다
+    const r = await render(<Archive />);
 
-    expect(getByText("달력")).toBeTruthy();
-    expect(getByText("목록")).toBeTruthy();
-    expect(queryByText("캘린더")).toBeNull();
+    expect(r.getByLabelText("달력으로 보기")).toBeTruthy();
+    expect(r.getByLabelText("목록으로 보기")).toBeTruthy();
+    expect(r.queryByLabelText(/캘린더|리스트/)).toBeNull();
+    expect(r.queryByText(/캘린더|리스트/)).toBeNull();
+  });
+
+  it("지금 보고 있는 쪽을 낭독기도 안다 — 색으로만 말하지 않는다", async () => {
+    const r = await render(<Archive />);
+
+    expect(r.getByLabelText("달력으로 보기").props.accessibilityState.selected).toBe(true);
+    expect(r.getByLabelText("목록으로 보기").props.accessibilityState.selected).toBe(false);
+
+    await fireEvent.press(r.getByLabelText("목록으로 보기"));
+
+    expect(r.getByLabelText("목록으로 보기").props.accessibilityState.selected).toBe(true);
+  });
+
+  it("그날 일정도 함께 보인다 — A1 은 그날의 일기 + 일정이다", async () => {
+    // design.md 「보관함」 — 일기가 없어도 일정이 있는 날이 있다
+    useDay.setState({ schedules: [schedule("s-a1", "2026-07-27", "팀 회의", true)] });
+    const r = await render(<Archive />);
+
+    expect(r.getByText("팀 회의")).toBeTruthy();
   });
 
   it("연속 일수를 세지 않고 화살표로 압박하지 않는다", async () => {
@@ -98,7 +137,7 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
   /** 감정 이름은 알약에도 나온다 — 필터 안에서만 찾는다 */
   const openList = async () => {
     const r = await render(<Archive />);
-    await fireEvent.press(r.getByText("목록"));
+    await fireEvent.press(r.getByLabelText("목록으로 보기"));
     const filter = within(r.getByTestId("emotion-filter"));
     return { r, filter, chip: (name: string) => filter.getByText(name).parent };
   };
@@ -147,16 +186,27 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     expect(chip("평온함")?.props.accessibilityState.selected).toBe(true);
   });
 
-  it("고른 칩은 색뿐 아니라 테두리·글자 굵기로도 표시한다", async () => {
+  it("고른 칩은 색뿐 아니라 테두리 굵기·글자색으로도 표시한다", async () => {
+    // 새 DS 의 칩은 면 + 테두리 1→2px + 글자색 셋을 함께 바꾼다 (design.md §9)
     const { filter, chip } = await openList();
 
-    expect(flatten(filter.getByText("평온함").props.style).fontFamily).toBe("Pretendard-Regular");
     expect(flatten(chip("평온함")?.props.style).borderWidth).toBe(1);
+    expect(flatten(filter.getByText("평온함").props.style).color).toBe(labelColor.neutral);
 
     await fireEvent.press(filter.getByText("평온함"));
 
-    expect(flatten(filter.getByText("평온함").props.style).fontFamily).toBe("Pretendard-Bold");
     expect(flatten(chip("평온함")?.props.style).borderWidth).toBe(2);
+    expect(flatten(filter.getByText("평온함").props.style).color).toBe(labelColor.strong);
+  });
+
+  it("감정 칩에 감정색을 쓰지 않는다 — 브랜드 초록으로 통일한다", async () => {
+    // design.md §1 — 시안은 칩마다 감정색을 칠했지만 정본이 이긴다.
+    // 「무슨 감정인가」와 「골랐는가」가 같은 채널을 쓰면 둘 다 흐려진다
+    const { filter, chip } = await openList();
+
+    await fireEvent.press(filter.getByText("평온함"));
+
+    expect(flatten(chip("평온함")?.props.style).borderColor).toBe(primary.normal);
   });
 
   it("기본 정렬은 최신순이고 정렬 옵션을 두지 않는다", async () => {
@@ -224,7 +274,7 @@ describe("삭제 되돌리기 — 확인 모달 대신 되돌릴 길을 남긴�
   it("되돌리면 일기가 목록으로 돌아온다", async () => {
     useDiary.getState().remove(ID);
     const r = await render(<Archive />);
-    await fireEvent.press(r.getByText("목록"));
+    await fireEvent.press(r.getByLabelText("목록으로 보기"));
     expect(r.queryByText("7월 27일 월요일")).toBeNull();
 
     await fireEvent.press(r.getByText("되돌리기"));
