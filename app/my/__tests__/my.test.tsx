@@ -1,15 +1,23 @@
-import { render, fireEvent, act, waitFor } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
-import NotifySettings from "../notify";
-import ProfileEdit from "../profile";
+import AgeEdit from "../age";
+import GenderEdit from "../gender";
+import InterestsEdit from "../interests";
+import NicknameEdit from "../nickname";
+import BasicInfoList from "../profile";
+import RestEdit from "../rest";
 
 import { useProfile, useSettings } from "@/features/my/model/settings";
 import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
 
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+}));
+
 /**
- * `M2` 의 저장은 서버까지 간다 — **어댑터 아래는 `completeOnboardingApi.test`**.
- * 여기서 보는 것은 「성공해야 닫는다 · 실패하면 한 줄」이라는 화면의 규칙이다.
+ * 저장은 서버까지 간다 — **어댑터 아래는 `completeOnboardingApi.test`** 가 본다.
+ * 여기서 보는 것은 「성공해야 목록으로 돌아간다 · 실패하면 한 줄」이라는 화면의 규칙이다.
  */
 jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
   completeOnboarding: jest.fn(),
@@ -17,314 +25,241 @@ jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
 
 const submit = jest.mocked(completeOnboarding);
 
-/** `beforeRemove` 가 받는 이벤트 — 실제 타입의 필요한 부분만 */
-type LeaveEvent = { preventDefault: jest.Mock; data: { action: { type: string } } };
-
-const mockNavDispatch = jest.fn();
-const mockNavListeners: Record<string, (e: LeaveEvent) => void> = {};
-
-jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
-  // 화면이 라우트 수준 이탈 보호(beforeRemove)를 걸 수 있어야 한다
-  useNavigation: () => ({
-    addListener: (type: string, cb: (e: LeaveEvent) => void) => {
-      mockNavListeners[type] = cb;
-      return () => {};
-    },
-    dispatch: mockNavDispatch,
-  }),
-}));
-
-/** `M3` 의 스위치가 보는 OS 권한. 기본은 허용이고, 각 테스트가 거부로 바꾼다 */
-const notifications = jest.requireMock("expo-notifications") as {
-  getPermissionsAsync: jest.Mock;
-  requestPermissionsAsync: jest.Mock;
-};
-
-const flatten = (style: unknown) =>
-  Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
-
 beforeEach(() => {
   useProfile.getState().reset();
   useSettings.getState().reset();
   jest.clearAllMocks();
-  notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
-  notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   submit.mockResolvedValue({ ok: true, data: { onboardingRequired: false } });
 });
 
-describe("M2 · 저장은 바꾼 것이 있을 때만", () => {
-  it("바꾼 것이 없으면 저장이 잠긴다", async () => {
-    // 누를 수 있는 저장 버튼은 「뭔가 바뀌었다」는 신호다 (M2.md)
-    const r = await render(<ProfileEdit />);
+/**
+ * 「잠긴다」를 **동작으로** 본다 — 옛 테스트가 보던 `opacity 0.36` 은 디자인이
+ * 바뀌면 같이 깨지는 단언이었다. 새 DS 의 비활성은 `accessibilityState.disabled` 다
+ * (온보딩 테스트와 같은 손잡이).
+ */
+const disabled = (labelNode: { parent: unknown }) => {
+  const pressable = labelNode.parent as { props?: { accessibilityState?: { disabled?: boolean } } };
+  return pressable?.props?.accessibilityState?.disabled === true;
+};
 
-    expect(flatten(r.getByText("저장하기").parent?.props.style).opacity).toBe(0.36);
+const save = (r: Awaited<ReturnType<typeof render>>) => r.getByText("저장");
+
+describe("M3 · 기본 정보 수정 목록", () => {
+  it("지금 값을 한 줄로 보여준다", async () => {
+    const r = await render(<BasicInfoList />);
+
+    expect(r.getByText("지현")).toBeTruthy();
+    expect(r.getByText("25세")).toBeTruthy();
+    expect(r.getByText("여성")).toBeTruthy();
+    // 여러 개인 것은 접는다 — 무엇인지를 먼저 말하고 나머지는 수로 센다
+    expect(r.getByText("인간관계 외 1개")).toBeTruthy();
+    expect(r.getByText("🎵 음악 듣기 외 1개")).toBeTruthy();
   });
 
-  it("고치면 열리고 저장하면 남는다", async () => {
-    const r = await render(<ProfileEdit />);
-    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+  it("항목을 누르면 그 항목만 고치는 화면으로 간다", async () => {
+    // 새 디자인은 한 화면 일괄 편집이 아니라 목록 → 항목 하나다 (design.md 「마이」)
+    const r = await render(<BasicInfoList />);
+    const routes = [
+      ["닉네임", "/my/nickname"],
+      ["나이", "/my/age"],
+      ["성별", "/my/gender"],
+      ["관심 분야", "/my/interests"],
+      ["쉬는 방법", "/my/rest"],
+    ] as const;
 
-    expect(flatten(r.getByText("저장하기").parent?.props.style).opacity).toBeUndefined();
-
-    await fireEvent.press(r.getByText("저장하기"));
-
-    // 저장은 서버까지 갔다 와야 끝난다 — 누른 직후가 아니라 답이 온 뒤에 본다
-    await waitFor(() => expect(useProfile.getState().nickname).toBe("지현이"));
-    expect(jest.mocked(router.back)).toHaveBeenCalled();
+    for (const [label, href] of routes) {
+      await fireEvent.press(r.getByText(label));
+      expect(jest.mocked(router.push)).toHaveBeenCalledWith(href);
+    }
   });
 
-  it("바꾼 것이 없으면 뒤로가기가 바로 나간다", async () => {
-    const r = await render(<ProfileEdit />);
+  it("목록에는 저장이 없다 — 고치는 자리가 아니다", async () => {
+    const r = await render(<BasicInfoList />);
 
-    await fireEvent.press(r.getByLabelText("뒤로"));
-
-    expect(jest.mocked(router.back)).toHaveBeenCalled();
-    expect(r.queryByText("고친 내용을 저장하지 않고 나갈까요?")).toBeNull();
+    expect(r.queryByText("저장")).toBeNull();
   });
 
-  it("고치고 나가려 하면 확인을 묻는다", async () => {
-    // 나가기 버튼을 따로 두지 않고 상단 뒤로가기로 통일한다 (my.invariants)
-    const r = await render(<ProfileEdit />);
-    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+  it("비어 있는 답도 빈칸으로 두지 않는다", async () => {
+    useProfile.getState().set({ age: "", gender: null });
+    const r = await render(<BasicInfoList />);
 
-    await fireEvent.press(r.getByLabelText("뒤로"));
-
-    expect(r.getByText("고친 내용을 저장하지 않고 나갈까요?")).toBeTruthy();
-    expect(jest.mocked(router.back)).not.toHaveBeenCalled();
-  });
-
-  it("확인에서 계속 고치기를 누르면 남는다", async () => {
-    const r = await render(<ProfileEdit />);
-    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
-    await fireEvent.press(r.getByLabelText("뒤로"));
-
-    await fireEvent.press(r.getByText("계속 고치기"));
-
-    expect(r.queryByText("고친 내용을 저장하지 않고 나갈까요?")).toBeNull();
-    expect(jest.mocked(router.back)).not.toHaveBeenCalled();
-  });
-
-  it("나가기를 누르면 고친 값이 저장되지 않는다", async () => {
-    const r = await render(<ProfileEdit />);
-    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
-    await fireEvent.press(r.getByLabelText("뒤로"));
-
-    await fireEvent.press(r.getByText("나가기"));
-
-    expect(useProfile.getState().nickname).toBe("지현");
-    expect(jest.mocked(router.back)).toHaveBeenCalled();
-  });
-
-  it("[변경하지 않고 나가기] 버튼을 두지 않는다", async () => {
-    const r = await render(<ProfileEdit />);
-
-    expect(r.queryByText(/변경하지 않고/)).toBeNull();
+    expect(r.getAllByText("선택 안 함")).toHaveLength(2);
   });
 });
 
-describe("M2 · 이탈 보호는 라우트 수준이다 — Android back·스와이프도 같은 정책", () => {
-  // OS 뒤로가기(하드웨어 back·스와이프)가 라우트를 벗어나려는 순간을 흉내 낸다
-  const osBack = async (): Promise<LeaveEvent> => {
-    const e: LeaveEvent = { preventDefault: jest.fn(), data: { action: { type: "GO_BACK" } } };
-    await act(async () => mockNavListeners.beforeRemove?.(e));
-    return e;
-  };
+describe("M4 · 닉네임 — 저장의 세 상태", () => {
+  it("그대로면 잠기고 · 바꾸면 열리고 · 되돌리면 다시 잠긴다", async () => {
+    // 「건드렸는가」가 아니라 「값이 다른가」로 판단한다 (design.md 「마이」)
+    const r = await render(<NicknameEdit />);
+    expect(disabled(save(r))).toBe(true);
 
-  it("바꾼 것이 없으면 OS 뒤로가기를 막지 않는다", async () => {
-    const r = await render(<ProfileEdit />);
-
-    const e = await osBack();
-
-    expect(e.preventDefault).not.toHaveBeenCalled();
-    expect(r.queryByText("고친 내용을 저장하지 않고 나갈까요?")).toBeNull();
-  });
-
-  it("고친 채 OS 뒤로가기를 하면 막고 상단 뒤로가기와 같은 확인을 묻는다", async () => {
-    const r = await render(<ProfileEdit />);
     await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+    expect(disabled(save(r))).toBe(false);
 
-    const e = await osBack();
-
-    expect(e.preventDefault).toHaveBeenCalled();
-    expect(r.getByText("고친 내용을 저장하지 않고 나갈까요?")).toBeTruthy();
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현");
+    expect(disabled(save(r))).toBe(true);
   });
 
-  it("확인의 [나가기]는 막아 둔 네비게이션을 이어서 실행하고 값은 버려진다", async () => {
-    const r = await render(<ProfileEdit />);
-    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
-    await osBack();
+  it("앞뒤 공백만 더한 것은 같은 답이다", async () => {
+    const r = await render(<NicknameEdit />);
 
-    await fireEvent.press(r.getByText("나가기"));
+    await fireEvent.changeText(r.getByLabelText("닉네임"), " 지현 ");
 
-    expect(mockNavDispatch).toHaveBeenCalledWith({ type: "GO_BACK" });
-    expect(useProfile.getState().nickname).toBe("지현");
+    expect(disabled(save(r))).toBe(true);
   });
 
-  it("[계속 고치기]를 누르면 화면에 남고 아무것도 실행되지 않는다", async () => {
-    const r = await render(<ProfileEdit />);
-    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
-    await osBack();
+  it("비우면 저장할 수 없다", async () => {
+    const r = await render(<NicknameEdit />);
 
-    await fireEvent.press(r.getByText("계속 고치기"));
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "");
 
-    expect(r.queryByText("고친 내용을 저장하지 않고 나갈까요?")).toBeNull();
-    expect(mockNavDispatch).not.toHaveBeenCalled();
-    expect(jest.mocked(router.back)).not.toHaveBeenCalled();
-  });
-});
-
-describe("M2 · 선택 표시와 상한", () => {
-  it("고른 칩에 체크가 붙는다 — 색·굵기만으로 표시하지 않는다", async () => {
-    const r = await render(<ProfileEdit />);
-
-    // 「인간관계」는 이미 골라져 있고 「가족」은 아니다
-    expect(r.getByText("인간관계").parent?.props.accessibilityState.selected).toBe(true);
-    expect(r.getByTestId("chip-check-RELATIONSHIP")).toBeTruthy();
-    expect(r.queryByTestId("chip-check-FAMILY")).toBeNull();
-
-    await fireEvent.press(r.getByText("가족"));
-
-    expect(r.getByTestId("chip-check-FAMILY")).toBeTruthy();
+    expect(disabled(save(r))).toBe(true);
   });
 
-  it("쉬는 방법과 성별 칩에도 체크가 붙는다", async () => {
-    const r = await render(<ProfileEdit />);
+  it("금지어는 한 줄로 말하고 저장을 잠근다 — 모달을 띄우지 않는다", async () => {
+    const r = await render(<NicknameEdit />);
 
-    // 칩 id 는 서버 코드다 — 이모지 라벨이 아니다
-    expect(r.getByTestId("chip-check-LISTENING_TO_MUSIC")).toBeTruthy();
-    expect(r.getByTestId("chip-check-FEMALE")).toBeTruthy();
-  });
-
-  it("관심 분야는 최대 3개 — 넷째는 눌러도 켜지지 않는다", async () => {
-    const r = await render(<ProfileEdit />);
-    // 시작이 둘(인간관계·나 자신)이라 하나 더하면 셋이다
-    await fireEvent.press(r.getByText("가족"));
-    expect(r.getByText("최대 3개 · 3개 선택")).toBeTruthy();
-
-    await fireEvent.press(r.getByText("건강"));
-
-    expect(r.getByText("최대 3개 · 3개 선택")).toBeTruthy();
-    expect(r.getByText("건강").parent?.props.accessibilityState.selected).toBe(false);
-  });
-
-  it("쉬는 방법은 접혀 있고 [＋ 더 고르기] 로 편다", async () => {
-    const r = await render(<ProfileEdit />);
-    expect(r.queryByText("🎮 게임하기")).toBeNull();
-
-    await fireEvent.press(r.getByText("＋ 더 고르기"));
-
-    expect(r.getByText("🎮 게임하기")).toBeTruthy();
-    expect(r.queryByText("＋ 더 고르기")).toBeNull();
-  });
-});
-
-describe("M2 · 기본 정보 — 온보딩 05-b 의 편집 경로", () => {
-  it("나이와 성별을 고쳐 저장한다", async () => {
-    const r = await render(<ProfileEdit />);
-
-    await fireEvent.changeText(r.getByLabelText("나이"), "26");
-    await fireEvent.press(r.getByText("남성"));
-    await fireEvent.press(r.getByText("저장하기"));
-
-    await waitFor(() => expect(useProfile.getState().age).toBe("26"));
-    expect(useProfile.getState().gender).toBe("MALE");
-  });
-
-  it("성별은 다시 누르면 미선택으로 돌아간다 — 선택 항목이다", async () => {
-    const r = await render(<ProfileEdit />);
-
-    await fireEvent.press(r.getByText("여성")); // 이미 골라져 있던 것
-    await fireEvent.press(r.getByText("저장하기"));
-
-    await waitFor(() => expect(useProfile.getState().gender).toBeNull());
-  });
-
-  it("개인정보 문구는 실제 처리와 같은 말을 쓴다", async () => {
-    const r = await render(<ProfileEdit />);
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "바바");
 
     expect(
-      r.getByText("답변은 질문을 조금 더 잘 맞추는 데만 사용하며, 다른 사람에게 공개되지 않아요."),
+      r.getByText("바바와 모멘토리는 이미 있는 이름이에요. 다른 이름을 알려주세요."),
     ).toBeTruthy();
-  });
-});
-
-describe("M2 · 저장은 서버까지 간다", () => {
-  it("고친 값을 서버에 보낸다 — 기기에만 남기지 않는다", async () => {
-    const r = await render(<ProfileEdit />);
-    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
-
-    await fireEvent.press(r.getByText("저장하기"));
-
-    await waitFor(() =>
-      expect(submit).toHaveBeenCalledWith(expect.objectContaining({ nickname: "지현이" })),
-    );
+    expect(disabled(save(r))).toBe(true);
   });
 
-  it("이 화면이 묻지 않는 값(회고 시각·알림)도 지금 값으로 함께 보낸다", async () => {
-    // 서버가 통째로 덮어쓰는 엔드포인트다 — 빼고 보내면 08 에서 정한 시각이 지워진다
-    const r = await render(<ProfileEdit />);
+  it("저장하면 서버로 가고 목록으로 돌아간다", async () => {
+    const r = await render(<NicknameEdit />);
     await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
 
-    await fireEvent.press(r.getByText("저장하기"));
+    await fireEvent.press(save(r));
+
+    await waitFor(() => expect(useProfile.getState().nickname).toBe("지현이"));
+    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ nickname: "지현이" }));
+    expect(jest.mocked(router.back)).toHaveBeenCalled();
+  });
+
+  it("고치지 않은 값도 지금 값 그대로 함께 보낸다", async () => {
+    // 서버가 통째로 덮어쓰는 엔드포인트다 — 빼고 보내면 다른 답이 지워진다
+    const r = await render(<NicknameEdit />);
+    await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
+
+    await fireEvent.press(save(r));
 
     await waitFor(() =>
       expect(submit).toHaveBeenCalledWith(
-        expect.objectContaining({ retroTime: "21:30", notifyRetro: true }),
+        expect.objectContaining({
+          age: "25",
+          gender: "FEMALE",
+          interests: ["RELATIONSHIP", "SELF"],
+          retroTime: "21:30",
+          notifyRetro: true,
+          calendarLinked: true,
+        }),
       ),
     );
   });
 
   it("보내지 못하면 화면을 닫지 않고 한 줄로 말한다", async () => {
     submit.mockResolvedValue({ ok: false, code: "network" });
-    const r = await render(<ProfileEdit />);
+    const r = await render(<NicknameEdit />);
     await fireEvent.changeText(r.getByLabelText("닉네임"), "지현이");
 
-    await fireEvent.press(r.getByText("저장하기"));
+    await fireEvent.press(save(r));
 
     await waitFor(() =>
       expect(r.getByText("지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.")).toBeTruthy(),
     );
     expect(jest.mocked(router.back)).not.toHaveBeenCalled();
-    // 고친 값은 화면에 남는다 — 다시 누르면 그대로 간다
+    // 서버가 받지 못한 값은 기기에도 남지 않는다
     expect(useProfile.getState().nickname).toBe("지현");
     expect(r.queryByText(/다시 시도하기|재시도/)).toBeNull();
   });
 });
 
-describe("M2 · 「기타」도 고칠 수 있다 — 온보딩에서 물은 답이다", () => {
-  it("관심 분야 기타를 켜면 적을 자리가 열린다", async () => {
-    const r = await render(<ProfileEdit />);
+describe("M5 · 나이", () => {
+  it("숫자만 들어오고 되돌리면 다시 잠긴다", async () => {
+    const r = await render(<AgeEdit />);
+    expect(disabled(save(r))).toBe(true);
+
+    await fireEvent.changeText(r.getByLabelText("나이"), "26살");
+    expect(disabled(save(r))).toBe(false);
+
+    await fireEvent.changeText(r.getByLabelText("나이"), "25");
+    expect(disabled(save(r))).toBe(true);
+  });
+
+  it("비우는 것도 하나의 답이다 — 선택 항목이라 되돌릴 길이 있다", async () => {
+    const r = await render(<AgeEdit />);
+
+    await fireEvent.press(r.getByLabelText("나이 지우기"));
+    await fireEvent.press(save(r));
+
+    await waitFor(() => expect(useProfile.getState().age).toBe(""));
+    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ age: "" }));
+  });
+});
+
+describe("M6 · 성별", () => {
+  it("다시 누르면 미선택으로 돌아간다 — 선택 항목이다", async () => {
+    const r = await render(<GenderEdit />);
+
+    await fireEvent.press(r.getByText("여성")); // 이미 골라져 있던 것
+    expect(disabled(save(r))).toBe(false);
+
+    await fireEvent.press(save(r));
+
+    await waitFor(() => expect(useProfile.getState().gender).toBeNull());
+  });
+
+  it("골라 둔 것을 다시 고르면 저장이 잠긴다", async () => {
+    const r = await render(<GenderEdit />);
+
+    await fireEvent.press(r.getByText("남성"));
+    await fireEvent.press(r.getByText("여성"));
+
+    expect(disabled(save(r))).toBe(true);
+  });
+});
+
+describe("M7 · 관심 분야", () => {
+  it("최대 3개 — 넷째는 눌러도 켜지지 않는다", async () => {
+    const r = await render(<InterestsEdit />);
+    // 시작이 둘(인간관계·나 자신)이라 하나 더하면 셋이다
+    await fireEvent.press(r.getByText("가족"));
+    expect(r.getByText("3개 선택됨 · 다시 누르면 선택이 해제돼요")).toBeTruthy();
+
+    await fireEvent.press(r.getByText("건강"));
+
+    expect(r.getByText("건강").parent?.props.accessibilityState.selected).toBe(false);
+  });
+
+  it("껐다 다시 켜면 같은 답이라 저장이 잠긴 채다", async () => {
+    const r = await render(<InterestsEdit />);
+
+    await fireEvent.press(r.getByText("인간관계"));
+    expect(disabled(save(r))).toBe(false);
+
+    await fireEvent.press(r.getByText("인간관계"));
+
+    expect(disabled(save(r))).toBe(true);
+  });
+
+  it("기타를 켜면 적을 자리가 열리고, 비워 두면 저장이 잠긴다", async () => {
+    // 서버가 OTHER 와 함께 직접 입력 값을 요구한다 (DISCUSSION §1-7)
+    const r = await render(<InterestsEdit />);
 
     await fireEvent.press(r.getByText("기타"));
 
-    expect(r.getByLabelText("관심 분야 기타 직접 입력")).toBeTruthy();
+    expect(r.getByLabelText("기타 직접 입력")).toBeTruthy();
+    expect(disabled(save(r))).toBe(true);
   });
 
-  it("쉬는 방법 기타도 같은 자리를 연다", async () => {
-    const r = await render(<ProfileEdit />);
-    await fireEvent.press(r.getByText("＋ 더 고르기"));
-
-    // 「기타」가 관심 분야에도 있다 — 쉬는 방법 카드의 것이 뒤에 온다
-    await fireEvent.press(r.getAllByText("기타")[1]!);
-
-    expect(r.getByLabelText("쉬는 방법 기타 직접 입력")).toBeTruthy();
-  });
-
-  it("기타를 켠 채 비워 두면 저장이 잠긴다 — 서버가 거절하는 모양이다", async () => {
-    const r = await render(<ProfileEdit />);
-
+  it("적으면 그 값이 서버로 간다", async () => {
+    const r = await render(<InterestsEdit />);
     await fireEvent.press(r.getByText("기타"));
 
-    expect(flatten(r.getByText("저장하기").parent?.props.style).opacity).toBe(0.36);
-  });
-
-  it("적으면 열리고 그 값이 서버로 간다", async () => {
-    const r = await render(<ProfileEdit />);
-    await fireEvent.press(r.getByText("기타"));
-
-    await fireEvent.changeText(r.getByLabelText("관심 분야 기타 직접 입력"), "반려동물");
-    await fireEvent.press(r.getByText("저장하기"));
+    await fireEvent.changeText(r.getByLabelText("기타 직접 입력"), "반려동물");
+    await fireEvent.press(save(r));
 
     await waitFor(() =>
       expect(submit).toHaveBeenCalledWith(expect.objectContaining({ interestOther: "반려동물" })),
@@ -332,166 +267,38 @@ describe("M2 · 「기타」도 고칠 수 있다 — 온보딩에서 물은 답
   });
 
   it("기타를 끄면 적던 값도 함께 비운다", async () => {
-    const r = await render(<ProfileEdit />);
+    const r = await render(<InterestsEdit />);
     await fireEvent.press(r.getByText("기타"));
-    await fireEvent.changeText(r.getByLabelText("관심 분야 기타 직접 입력"), "반려동물");
+    await fireEvent.changeText(r.getByLabelText("기타 직접 입력"), "반려동물");
 
-    await fireEvent.press(r.getAllByText("기타")[0]!);
+    await fireEvent.press(r.getByText("기타"));
 
-    expect(r.queryByLabelText("관심 분야 기타 직접 입력")).toBeNull();
+    expect(r.queryByLabelText("기타 직접 입력")).toBeNull();
   });
 });
 
-describe("M3 · 알림 설정", () => {
-  it("한 행이 시각과 켜짐을 함께 담는다", async () => {
-    // 하나의 설정을 두 줄로 나누지 않는다 (M3.md)
-    const r = await render(<NotifySettings />);
+describe("M8 · 쉬는 방법", () => {
+  it("열다섯 개를 접지 않고 다 보인다 — 접으면 뒤쪽은 선택되지 않는다", async () => {
+    const r = await render(<RestEdit />);
 
-    expect(r.getByText("회고 시간 알림")).toBeTruthy();
-    expect(r.getByText("매일 밤 9:30")).toBeTruthy();
-    expect(r.getByLabelText("회고 시간 알림")).toBeTruthy(); // 스위치
+    expect(r.getByText("🎮 게임하기")).toBeTruthy();
+    expect(r.queryByText("＋ 더 고르기")).toBeNull();
   });
 
-  it("스위치는 켜고 끄기만 한다 — 시각을 건드리지 않는다", async () => {
-    const r = await render(<NotifySettings />);
+  it("상한이 없다 — 더 골라도 잠기지 않는다", async () => {
+    const r = await render(<RestEdit />);
 
-    await fireEvent.press(r.getByLabelText("회고 시간 알림"));
-
-    expect(useSettings.getState().notify.retro.enabled).toBe(false);
-    // 껐다고 값을 지우면 다시 켜는 일이 다시 설정하는 일이 된다
-    expect(useSettings.getState().notify.retro.time).toBe("21:30");
-    expect(r.getByText("매일 밤 9:30")).toBeTruthy();
-  });
-
-  it("꺼도 설정한 시각은 남는다 — 다시 켜면 그 시각 그대로", async () => {
-    const r = await render(<NotifySettings />);
-    const sw = r.getByLabelText("주간 돌아보기");
-
-    await fireEvent.press(sw); // 끔
-    await fireEvent.press(sw); // 다시 켬 — 이때 OS 권한을 한 번 확인한다
+    await fireEvent.press(r.getByText("🧘 명상하기"));
+    await fireEvent.press(r.getByText("📖 독서하기"));
+    await fireEvent.press(save(r));
 
     await waitFor(() =>
-      expect(useSettings.getState().notify.weekly).toMatchObject({
-        enabled: true,
-        time: "21:00",
-      }),
+      expect(useProfile.getState().restMethods).toEqual([
+        "LISTENING_TO_MUSIC",
+        "WALKING",
+        "MEDITATION",
+        "READING",
+      ]),
     );
-  });
-
-  it("행을 누르면 시각을 고친다", async () => {
-    const r = await render(<NotifySettings />);
-
-    await fireEvent.press(r.getByText("회고 시간 알림"));
-
-    // 피커가 열리고, 고른 값이 store 에 남는다
-    await act(async () => {
-      useSettings.getState().setTime("retro", "22:00");
-    });
-
-    expect(useSettings.getState().notify.retro.time).toBe("22:00");
-    expect(r.getByText("매일 밤 10:00")).toBeTruthy();
-  });
-
-  it("시각이 없는 [새로운 소식] 은 눌리지 않는다", async () => {
-    // 누를 곳이 없는 표식을 만들지 않는다 (M3.md)
-    const r = await render(<NotifySettings />);
-    const row = r.getByText("새로운 소식").parent;
-
-    expect(row?.parent?.props.accessibilityRole).not.toBe("button");
-    // 스위치는 있다 — 켜고 끄기는 된다
-    expect(r.getByLabelText("새로운 소식")).toBeTruthy();
-  });
-
-  it("캘린더를 이 화면에 두지 않는다", async () => {
-    const r = await render(<NotifySettings />);
-
-    expect(r.queryByText(/캘린더/)).toBeNull();
-  });
-
-  it("앱 잠금·축하 토글을 두지 않는다", async () => {
-    const r = await render(<NotifySettings />);
-
-    expect(r.queryByText(/앱 잠금|나만의 공간|축하/)).toBeNull();
-  });
-
-  it("보호 안내는 확정된 범위만 말한다", async () => {
-    const r = await render(<NotifySettings />);
-
-    expect(r.getByText("기록 보호 방식은 개인정보 처리방침에서 확인할 수 있어요")).toBeTruthy();
-    expect(r.queryByText(/나만 볼 수 있|암호화/)).toBeNull();
-  });
-});
-
-describe("M3 · 스위치를 켜는 것과 알림이 오는 것", () => {
-  const BLOCKED_NOTE = "기기 설정에서 알림을 켜면 이 시간에 찾아갈게요.";
-
-  it("켤 때 OS 권한을 묻는다", async () => {
-    // 아직 한 번도 묻지 않은 기기 — 스위치가 곧 그 물음이다
-    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
-    useSettings.getState().toggle("retro"); // 꺼 둔 상태에서 시작
-    const r = await render(<NotifySettings />);
-
-    await fireEvent.press(r.getByLabelText("회고 시간 알림"));
-
-    // 스위치는 OS 의 답을 기다린다 — 누른 직후가 아니라 답이 온 뒤에 본다
-    await waitFor(() => expect(useSettings.getState().notify.retro.enabled).toBe(true));
-    expect(notifications.requestPermissionsAsync).toHaveBeenCalled();
-  });
-
-  it("끌 때는 묻지 않는다 — 끄는 데는 권한이 필요 없다", async () => {
-    const r = await render(<NotifySettings />);
-
-    await fireEvent.press(r.getByLabelText("회고 시간 알림"));
-
-    expect(notifications.requestPermissionsAsync).not.toHaveBeenCalled();
-    expect(useSettings.getState().notify.retro.enabled).toBe(false);
-  });
-
-  it("권한을 받지 못하면 스위치가 켜지지 않는다", async () => {
-    // 켜진 채 아무 알림도 안 오면 사용자가 확인할 방법이 없다 (ARCHITECTURE §8 과 같은 이유)
-    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
-    notifications.requestPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: false });
-    useSettings.getState().toggle("retro");
-    const r = await render(<NotifySettings />);
-
-    await fireEvent.press(r.getByLabelText("회고 시간 알림"));
-
-    // 물었다는 것까지 확인한 뒤에 본다 — 아직 안 물어서 꺼져 있는 것과 구별한다
-    await waitFor(() => expect(notifications.requestPermissionsAsync).toHaveBeenCalled());
-    expect(useSettings.getState().notify.retro.enabled).toBe(false);
-  });
-
-  it("다시 물을 수 없을 때만 한 줄로 길을 알려준다 — 모달도 재시도 버튼도 없다", async () => {
-    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: false });
-    const r = await render(<NotifySettings />);
-
-    expect(await r.findByText(BLOCKED_NOTE)).toBeTruthy();
-    expect(r.queryByText(/다시 시도|허용하기/)).toBeNull();
-  });
-
-  it("아직 물을 수 있으면 안내하지 않는다 — 스위치가 곧 그 물음이다", async () => {
-    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
-    const r = await render(<NotifySettings />);
-
-    await act(async () => {});
-
-    expect(r.queryByText(BLOCKED_NOTE)).toBeNull();
-  });
-
-  it("권한이 켜져 있으면 아무 말도 하지 않는다", async () => {
-    const r = await render(<NotifySettings />);
-
-    await act(async () => {});
-
-    expect(r.queryByText(BLOCKED_NOTE)).toBeNull();
-  });
-
-  it("[새로운 소식] 은 권한을 묻지 않는다 — 서버 푸시가 필요한 설정이다", async () => {
-    const r = await render(<NotifySettings />);
-
-    await fireEvent.press(r.getByLabelText("새로운 소식")); // 꺼짐 → 켬
-
-    await waitFor(() => expect(useSettings.getState().notify.news.enabled).toBe(true));
-    expect(notifications.requestPermissionsAsync).not.toHaveBeenCalled();
   });
 });

@@ -44,3 +44,38 @@ export function toHHMM(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+/**
+ * 시간 휠(`design.md` §11 「시간 선택」)의 눈금 — **오전·오후 / 1~12시 / 5분 단위**.
+ *
+ * **온보딩 `08` 과 마이 `M2` 가 같은 휠을 연다.** 눈금과 변환을 화면마다 들면
+ * 한쪽만 고쳐졌을 때 같은 시각이 두 화면에서 다른 칸에 선다 — 시각을 부분으로
+ * 가르는 곳이 여기 하나라는 규칙(`parseHHMM` 주석)의 연장이다.
+ *
+ * 휠은 **문자열**을 다룬다 — 표시와 값을 하나로 두면 열마다 변환이 생기지 않는다.
+ */
+export const WHEEL_PERIODS = ["오전", "오후"] as const;
+export const WHEEL_HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+export const WHEEL_MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
+
+export type WheelTime = { period: string; hour: string; minute: string };
+
+/** `"21:30"` → `{ 오후, "9", "30" }`. 읽지 못한 부분은 기본 회고 시각으로 메운다 */
+export function toWheelTime(hhmm: string): WheelTime {
+  const [h = "21", m = "30"] = hhmm.split(":");
+  const hour24 = Number(h);
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  // 5분 눈금 밖의 값(서버가 준 21:37 같은 것)은 가장 가까운 눈금으로 내린다
+  const nearest = WHEEL_MINUTES.reduce((best, v) =>
+    Math.abs(Number(v) - Number(m)) < Math.abs(Number(best) - Number(m)) ? v : best,
+  );
+  return { period: hour24 < 12 ? "오전" : "오후", hour: String(hour12), minute: nearest };
+}
+
+/** `{ 오후, "9", "30" }` → `"21:30"` */
+export function fromWheelTime({ period, hour, minute }: WheelTime): string {
+  const base = Number(hour) % 12;
+  const hour24 = period === "오전" ? base : base + 12;
+  // 날짜는 버린다 — `toHHMM` 이 시각만 읽는다
+  return toHHMM(new Date(2026, 0, 1, hour24, Number(minute)));
+}
