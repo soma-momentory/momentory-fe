@@ -1,0 +1,209 @@
+import type { EmotionId } from "@/features/emotion/model/emotion";
+
+/**
+ * Momentory DS — 색. 정본은 [`design-reference/design.md`](../../../design-reference/design.md) §1.
+ *
+ * **컴포넌트는 semantic 층만 참조한다.** 화면마다 새 값을 만들지 않는다 —
+ * 그것이 이 파일이 하나뿐인 이유다.
+ *
+ * **다크 모드는 없다** (2026-08-20 결정 N1 · `PLAN.md` A-2). `design.md` §1 의 다크
+ * 팔레트는 구현하지 않는다 — `useColorScheme()` 분기를 만들지 말고, 테마 객체를
+ * 두 벌로 만들지도 않는다. 나중에 켤 일이 생기면 이 파일이 갈리는 지점이다.
+ *
+ * ## ⚠ 시안에서 이탈한 값 — 대비 검수 결과 (2026-08-20)
+ *
+ * `docs/spec/RULES.md` 「접근성」과 WCAG 2.1 AA(본문 4.5 · 비텍스트 3.0)로
+ * 전 조합을 실측했더니 **시안 값 여섯이 미달**이었다. 색조·채도는 유지하고 명도만
+ * 내려 보정했고, **세 배경(`normal` `alternative` `elevated`) 전부에서** 기준을 넘는다.
+ *
+ * | 역할                 | design.md | 최저 대비 | 채택        | 보정 후  |
+ * | -------------------- | --------- | --------- | ----------- | -------- |
+ * | Label/Alternative    | `#8C7A66` | 3.67      | `#7C6C5B`   | **4.50** |
+ * | Interaction/Inactive | `#C2BAAA` | 1.72      | `#796D57`   | **4.52** |
+ * | Status/Negative      | `#CF6247` | 3.67      | `#B94C30`   | **4.52** |
+ * | Status/Cautionary    | `#D98A3F` | 2.63      | `#A15E20`   | **4.52** |
+ * | Status/Positive      | `#6F9A58` | 2.90      | `#6D9757`   | **3.01** |
+ * | Primary/Normal       | `#7C9E86` | 2.64      | `#6F947A`   | **3.02** |
+ *
+ * **주 버튼 면은 `primary.heavy` 다.** `design.md` §6 은 배경 `#7C9E86` + 라벨
+ * `#FFFDF8` 을 지정하는데 그 조합이 **2.91** 이라 large·bold 기준(3.0)에도 못 미친다.
+ * 흰 글자가 얹히는 초록 면은 `primary.heavy #56755F`(**5.03**) 하나뿐이다 —
+ * 이 저장소가 오래 지켜 온 규칙과 같다(`CLAUDE.md` 규칙 2: 「primary 는 장식 전용,
+ * 글자가 얹히는 면은 deep」). `primary.normal` 은 **선택 링·아이콘·틴트 전용**이다.
+ *
+ * ## 기준을 못 넘지만 그대로 두는 것 — 이유가 있다
+ *
+ * - `label.assistive`(2.08 · 플레이스홀더) — **플레이스홀더에 다른 데서 못 얻는
+ *   정보를 담지 않는다**는 조건으로 둔다. 라벨·헬퍼가 늘 함께 있어야 한다
+ * - `label.disabled` + `interaction.disabled`(1.70) — WCAG 비활성 컨트롤 예외
+ * - **감정 9색의 원색 도트·링**(1.46~3.31) — 일곱이 3:1 미만이다. 감정을 **색만으로
+ *   판단하게 하지 않고 이름을 늘 함께 쓴다**(`RULES.md` 「보관함」)는 규칙이 이걸
+ *   떠받친다. 이름 없는 감정 도트를 만들면 그때 이 예외가 깨진다
+ */
+
+/** 면 — 앱 기본 · 구분 영역 · 카드/시트/입력 */
+export const background = {
+  normal: "#F7F4ED",
+  alternative: "#F7F1E7",
+  elevated: "#FFFDF8",
+} as const;
+
+/**
+ * 글자. **여섯 단이고 새로 만들지 않는다.**
+ * `strong` 큰 타이틀 · `normal` 기본 · `neutral` 본문 보조 · `alternative` 설명·메타·헬퍼 ·
+ * `assistive` 플레이스홀더 · `disabled` 비활성 라벨.
+ */
+export const label = {
+  strong: "#241F19",
+  normal: "#3C2E22",
+  neutral: "#6B5C4A",
+  /** ⚠ 시안 `#8C7A66`(3.67) 보정 — 설명·헬퍼는 읽혀야 하는 글자다 */
+  alternative: "#7C6C5B",
+  /** ⚠ AA 미달(2.08). 플레이스홀더 전용 — 여기에만 있는 정보를 담지 않는다 */
+  assistive: "#B9B2A2",
+  /** WCAG 비활성 예외. `interaction.disabled` 면 위에만 얹는다 */
+  disabled: "#A3B5A9",
+  /** 색 면 위 글자 — `primary.heavy`(5.03) · `status.negative`(4.99) 에서만 통과 */
+  onFill: "#FFFDF8",
+} as const;
+
+/**
+ * 브랜드 초록.
+ * - `normal` 선택 링 · 아이콘 · 틴트 바탕 — **글자를 얹지 않는다**(흰 글자 2.9)
+ * - `strong` press (그런데 `design.md` §6 은 press 에서 fill 을 바꾸지 않고
+ *   스크림을 얹는다 — `overlay.press*` 를 쓴다. 이 값은 예외용으로만 둔다)
+ * - `heavy` **글자 · 흰 글자가 얹히는 면**(주 CTA)
+ */
+export const primary = {
+  /** ⚠ 시안 `#7C9E86`(2.64) 보정 — 선택 링이 배경에서 보여야 한다 */
+  normal: "#6F947A",
+  strong: "#688A72",
+  heavy: "#56755F",
+} as const;
+
+/** 완료·하이라이트. 글자를 얹으면 `label.strong`(10.98) */
+export const secondary = { normal: "#F3D07A" } as const;
+
+export const status = {
+  /** 완료 체크 — **아이콘 전용**(3.01). 글자로 쓰지 않는다 */
+  positive: "#6D9757",
+  /** 현재 쓰는 자리가 없다. 쓰게 되면 글자로도 통과한다(4.52) */
+  cautionary: "#A15E20",
+  /** 삭제 — 글자(4.52)와 **흰 글자가 얹히는 면**(4.99) 둘 다 이 값 하나다 */
+  negative: "#B94C30",
+} as const;
+
+export const interaction = {
+  /** ⚠ 시안 `#C2BAAA`(1.72) 보정 — 비활성 탭은 비활성 컨트롤이 아니라 갈 수 있는 곳이다 */
+  inactive: "#796D57",
+  /** 비활성 버튼 배경. 라벨은 `label.disabled` (WCAG 예외) */
+  disabled: "#DDE7E0",
+} as const;
+
+/**
+ * 채움·선 — 전부 `rgba(140,122,102,α)` 한 색조다.
+ * **경계는 border 가 아니라 hairline 이다**(`metrics.ts` `hairline`).
+ */
+const WARM = "140,122,102";
+export const fill = {
+  alternative: `rgba(${WARM},0.06)`,
+  normal: `rgba(${WARM},0.10)`,
+  strong: `rgba(${WARM},0.18)`,
+} as const;
+
+export const line = {
+  alternative: `rgba(${WARM},0.14)`,
+  neutral: `rgba(${WARM},0.24)`,
+  normal: `rgba(${WARM},0.34)`,
+} as const;
+
+/**
+ * 덮개.
+ * - `dimmer` 시트·모달 뒤
+ * - `press*` **버튼은 자기 fill 을 바꾸지 않고 이 스크림을 얹는다**(`design.md` §6).
+ *   웹의 `transition-property` 회피책은 RN 에 필요 없다
+ */
+export const overlay = {
+  dimmer: "rgba(48,38,28,0.32)",
+  pressLight: "rgba(60,46,34,0.09)",
+  pressNormal: "rgba(60,46,34,0.12)",
+  pressStrong: "rgba(60,46,34,0.18)",
+} as const;
+
+/** 배경 격자 — 32px 정격자. 기기 프레임에 고정되고 스크롤과 무관하다 */
+export const grid = { stroke: `rgba(${WARM},0.07)`, size: 32 } as const;
+
+/**
+ * 소셜 로그인 — **모멘토리 팔레트 밖이다.**
+ *
+ * `design.md` 「로그인」: 「소셜 3종 공식 색·마크 유지」 ·
+ * `Login.dc.html` 주석: 「공통은 높이·Radius·간격만 — **색·로고는 손대지 않음**」.
+ * 각 플랫폼이 브랜드 가이드로 고정한 값이라 **대비 보정도 하지 않는다** —
+ * 우리가 정한 값이 아니라서 바꿀 권한이 없다.
+ *
+ * 그래서 여기 있다: 린터가 `src/design/**` 밖의 hex 를 막으므로 화면이 직접 적을 수 없다.
+ * semantic 층이 아니므로 **다른 화면이 가져다 쓰지 않는다** — 로그인 전용이다.
+ */
+export const social = {
+  kakao: { background: "#FEE500", label: "rgba(0,0,0,0.85)" },
+  /**
+   * 흰 판 + 회색 1px 테두리 (공식 가이드).
+   * `mark` 는 4색 「G」 — Wanted 세트에 없어 공식 마크를 그대로 쓴다
+   * (`EXPORT_MANIFEST` §5). **틴트를 허용하지 않는다.**
+   */
+  google: {
+    background: "#FFFFFF",
+    label: "#1F1F1F",
+    border: "#747775",
+    mark: { red: "#EA4335", blue: "#4285F4", yellow: "#FBBC05", green: "#34A853" },
+  },
+  /** 라이트에서 검정 판 + 흰 글자 (공식 규정) */
+  apple: { background: "#000000", label: "#FFFFFF" },
+} as const;
+
+/**
+ * 감정 9색. **id 는 도메인이 쥔다**(`features/emotion`) — 여기는 색만 붙인다.
+ * `Record<EmotionId, …>` 라서 감정이 늘면 컴파일러가 빠진 칸을 잡는다.
+ *
+ * 쓰는 법(`design.md` §1): 도트·캡슐은 **55% 틴트 면 + 원색 1.5px 링**.
+ * **감정 선택 칩에는 감정색을 쓰지 않는다** — 브랜드 초록 18% + 초록 2px 로 통일한다.
+ */
+export const emotion: Record<EmotionId, string> = {
+  1: "#7A96B0", // 불안함
+  2: "#A9B5D9", // 우울함
+  3: "#C2796A", // 화남/답답
+  4: "#F3D07A", // 행복함
+  5: "#B4C3CC", // 막막함
+  6: "#C7C1B6", // 무기력
+  7: "#C9AFA6", // 피곤함
+  8: "#EFA76B", // 뿌듯함
+  9: "#A8C79B", // 평온함
+};
+
+/** `#RRGGBB` → `rgba(r,g,b,α)`. 화면이 hex 를 문자열로 잇지 않게 한다 */
+export function withAlpha(hex: string, alpha: number): string {
+  const v = hex.replace("#", "");
+  const n = parseInt(v, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
+/** 감정 면 — 원색 55% 틴트. 이 위의 글자는 `label.normal` 로 6.96 이상이다 */
+export const emotionTint = (id: EmotionId) => withAlpha(emotion[id], 0.55);
+
+/** 선택 칩 배경 — 브랜드 초록 18% (`design.md` §9) */
+export const selectedTint = withAlpha(primary.normal, 0.18);
+
+export const color = {
+  background,
+  label,
+  primary,
+  secondary,
+  status,
+  interaction,
+  fill,
+  line,
+  overlay,
+  grid,
+  social,
+  emotion,
+} as const;
