@@ -27,6 +27,11 @@ const event = (over: Partial<CalendarEvent> = {}): CalendarEvent => ({
   start: new Date("2026-08-05T10:00:00"),
   end: null,
   allDay: false,
+  originalStart: null,
+  creationDate: null,
+  isDetached: false,
+  originalId: null,
+  recurring: false,
   ...over,
 });
 

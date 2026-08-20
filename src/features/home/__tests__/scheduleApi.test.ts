@@ -13,21 +13,34 @@ describe("ScheduleResponse → 스키마 Schedule", () => {
     completed: true,
     emotion: "ANXIOUS",
     displayOrder: 3,
+    source: "MANUAL",
+    hidden: false,
   };
 
   it("id 를 문자열로 바꾼다 — 스키마가 그렇고 아웃박스의 ULID 가 이 자리에 온다", () => {
     expect(toSchedule(raw)?.id).toBe("12");
   });
 
-  it("서버가 주지 않는 넷을 메운다 — source·externalId·hidden·doneAt", () => {
+  it("서버 enum·숨김 상태를 옮기고, 없는 externalId·doneAt만 메운다", () => {
     const s = toSchedule(raw);
 
-    // 캘린더 연동 전이라 서버 일정은 전부 앱에서 만든 것이다
     expect(s?.source).toBe("manual");
     expect(s?.externalId).toBeNull();
     expect(s?.hidden).toBe(false);
     // 마친 시각을 서버가 돌려주지 않는다
     expect(s?.doneAt).toBeNull();
+  });
+
+  it("가져온 일정과 숨김 상태를 서버 응답 그대로 구분한다", () => {
+    const s = toSchedule({ ...raw, source: "CALENDAR", hidden: true });
+
+    expect(s?.source).toBe("calendar");
+    expect(s?.hidden).toBe(true);
+  });
+
+  it("출처·숨김 계약이 없거나 모르면 그 줄을 버린다", () => {
+    expect(toSchedule({ ...raw, source: "OTHER" })).toBeNull();
+    expect(toSchedule({ ...raw, hidden: null })).toBeNull();
   });
 
   it("감정 하나를 배열로 담는다 — 타입은 스키마대로 배열이다", () => {

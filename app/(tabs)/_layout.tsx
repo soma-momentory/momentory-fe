@@ -5,6 +5,7 @@ import { background, motion } from "@/design/ds";
 import { currentUserId, useAuth } from "@/features/auth/model/auth";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDiary } from "@/features/diary/model/diary";
+import { useDay } from "@/features/home/model/day";
 
 /**
  * 탭 스택. **하단 탭은 여기서 그리지 않는다** — 각 화면이 `TabScreen` 으로
@@ -40,8 +41,10 @@ export default function TabsLayout() {
    */
   useEffect(() => {
     if (status !== "authenticated") return;
-    void currentUserId().then((userId) => {
-      if (userId != null) void useCalendarSync.getState().sync(userId);
+    void currentUserId().then(async (userId) => {
+      if (userId == null) return;
+      const outcome = await useCalendarSync.getState().sync(userId);
+      if (outcome.kind === "synced") await useDay.getState().reload();
     });
   }, [status]);
 

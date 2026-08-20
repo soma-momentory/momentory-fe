@@ -1,5 +1,6 @@
 import { makeExternalId } from "@/features/calendar/model/externalId";
 import type { Occurrence, SyncRange } from "@/features/calendar/model/types";
+import type { CalendarEventIdentity } from "@/features/calendar/model/identity";
 import type { CalendarEvent } from "@/lib/calendar";
 import { dayFrom } from "@/lib/clock";
 
@@ -34,9 +35,9 @@ const nextDay = (date: string): string => {
 /**
  * 그 일정이 **사용자 눈에 걸쳐 보이는 마지막 날.**
  *
- * ⚠ **종일 일정의 `end` 는 「다음 날 자정」이다**(exclusive end). 2026-08-14 실측:
- * 하루짜리 `광복절`이 `08-15T00:00Z ~ 08-16T00:00Z` 로 왔다. 24시간을 빼지 않으면
- * **모든 공휴일·생일·종일 일정이 하루씩 길어진다.**
+ * ⚠ Android 의 종일 `end` 는 시작과 같은 시각의 다음 날(exclusive), iOS 실기기는
+ * 그날 23:59:59 로 왔다. 시작·끝의 시각이 같을 때만 하루를 빼고, 그 밖에는 끝에서
+ * 1ms만 뺀다. 무조건 24시간을 빼면 iOS 일정은 하루 짧아진다.
  *
  * 시각이 있는 일정은 빼지 않는다 — 끝 시각 자체가 마지막 순간이고, 자정을 넘긴
  * 일정은 `dayFrom` 이 04:00 경계로 알아서 접는다(새벽 1시에 끝나면 「어제」다).
@@ -45,7 +46,13 @@ const nextDay = (date: string): string => {
  */
 const lastDateOf = (event: CalendarEvent, first: string): string => {
   if (event.end == null) return first;
-  const last = dayFrom(event.allDay ? new Date(event.end.getTime() - DAY_MS) : event.end);
+  const sameTimeOfDay =
+    event.start.getHours() === event.end.getHours() &&
+    event.start.getMinutes() === event.end.getMinutes() &&
+    event.start.getSeconds() === event.end.getSeconds() &&
+    event.start.getMilliseconds() === event.end.getMilliseconds();
+  const allDayEnd = new Date(event.end.getTime() - (sameTimeOfDay ? DAY_MS : 1));
+  const last = dayFrom(event.allDay ? allDayEnd : event.end);
   // 끝이 시작보다 앞서면(망가진 값) 하루짜리로 접는다
   return last < first ? first : last;
 };
@@ -63,8 +70,26 @@ const lastDateOf = (event: CalendarEvent, first: string): string => {
  * 날짜는 전부 `dayFrom` 을 지난다 → **사용자 로컬 기준 `YYYY-MM-DD`** 다.
  * UTC 로 바꾸지 않으므로 `2026-08-05 00:00 KST` 가 8/4 로 밀리지 않는다.
  */
-export const expandCalendarEventByDate = (event: CalendarEvent, range: SyncRange): Occurrence[] => {
+const dayNumber = (date: string): number => {
+  const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
+  return Date.UTC(year, month - 1, day) / DAY_MS;
+};
+
+const shiftDay = (date: string, amount: number): string => {
+  const shifted = new Date((dayNumber(date) + amount) * DAY_MS);
+  return shifted.toISOString().slice(0, 10);
+};
+
+export const expandCalendarEventByDate = (
+  event: CalendarEvent,
+  range: SyncRange,
+  identity: CalendarEventIdentity = {
+    seriesId: event.originalId ?? event.eventId,
+    originalStart: event.originalStart ?? event.start,
+  },
+): Occurrence[] => {
   const first = dayFrom(event.start);
+  const originalFirst = dayFrom(identity.originalStart);
   const last = lastDateOf(event, first);
   if (last < range.from || first > range.to) return [];
 
@@ -77,13 +102,13 @@ export const expandCalendarEventByDate = (event: CalendarEvent, range: SyncRange
     out.push({
       externalId: makeExternalId({
         calendarId: event.calendarId,
-        eventId: event.eventId,
-        date,
+        eventId: identity.seriesId,
+        date: shiftDay(originalFirst, dayNumber(date) - dayNumber(first)),
       }),
       date,
       title: event.title,
       calendarId: event.calendarId,
-      eventId: event.eventId,
+      eventId: identity.seriesId,
     });
   }
   return out;

@@ -57,6 +57,7 @@ beforeEach(() => {
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   submit.mockResolvedValue({ ok: true, data: { onboardingRequired: false } });
   calendarAccess.mockResolvedValue({ granted: true, canAskAgain: false });
+  mockCalendarSync.mockResolvedValue({ kind: "unchanged" });
 });
 
 /**

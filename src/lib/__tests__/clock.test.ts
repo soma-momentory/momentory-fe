@@ -31,7 +31,7 @@ describe("하루의 경계 — 자정이 아니라 새벽 4:00 이다 (RULES.md)
 });
 
 describe("시계 공급자", () => {
-  it("기본값은 SampleClock — 화면 데모의 고정 하루다", () => {
+  it("Jest 기본값은 SampleClock — 테스트의 고정 하루다", () => {
     expect(clock.today()).toBe(SAMPLE_TODAY);
   });
 
