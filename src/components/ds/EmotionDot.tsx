@@ -4,7 +4,7 @@ import { emotion as emotionColor, emotionTint, fill, line, radius } from "@/desi
 import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
- * 감정 도트 — `design.md` §1 「도트·캡슐은 **55% 틴트 + 원색 1.5px 링**」.
+ * 감정 도트 — `DESIGN.md` §1 「도트·캡슐은 **55% 틴트 + 원색 1.5px 링**」.
  *
  * 그 한 문장이 보관함 달력 · 일기 미리보기 · 리포트 7일 흐름 · 기록 상세에
  * 네 번 나오므로 여기 한 곳에 둔다. 네 곳이 각자 그리면 링 두께가 넷으로 갈린다.

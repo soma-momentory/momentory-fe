@@ -37,15 +37,15 @@ import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
  *
  * 격자 위에 카드가 뜨는 3세대 DS 다. 2세대의 **스카이 그라디언트·곡선 언덕·감정
  * 얼굴 PNG 가 전부 사라졌고**, 달력/목록 전환이 **세그먼트 바 → 제목 우측 아이콘
- * 스위처**로 바뀌었다(`design.md` 「보관함」).
+ * 스위처**로 바뀌었다(`DESIGN.md` 「보관함」).
  *
  * **탭 이름은 「달력」·「목록」이다**(`A1.md`) — 외부 캘린더 앱과 구분하려고
  * "캘린더"라고 쓰지 않는다. 시안의 「캘린더/리스트」를 따르지 않는 것은 **문안의
  * 정본이 `docs/spec/` 이기 때문**이다(`PLAN.md` A §0). 아이콘 스위처라 그 말은
  * 이제 낭독기 이름에서 산다 — 「달력으로 보기」·「목록으로 보기」.
  *
- * `A1` 은 **선택한 날의 일기 + 일정**이다(`design.md` 「보관함」) — 그래서 일기가
- * 없는 날도 고를 수 있다(시안 주석은 「기록 없는 날은 비활성」이지만 `design.md`
+ * `A1` 은 **선택한 날의 일기 + 일정**이다(`DESIGN.md` 「보관함」) — 그래서 일기가
+ * 없는 날도 고를 수 있다(시안 주석은 「기록 없는 날은 비활성」이지만 `DESIGN.md`
  * 가 이긴다 · `Calendar` 주석).
  *
  * 지키는 규칙:
@@ -132,7 +132,7 @@ export default function Archive() {
 
   return (
     <TabScreen active="보관함">
-      {/* 탭 루트라 상단 내비 제목을 두지 않는다 — 본문의 Title 3 가 제목이다(`design.md` §10) */}
+      {/* 탭 루트라 상단 내비 제목을 두지 않는다 — 본문의 Title 3 가 제목이다(`DESIGN.md` §10) */}
       <View style={styles.header}>
         <Text variant="title3" color={labelColor.strong}>
           보관함
@@ -220,7 +220,7 @@ export default function Archive() {
         목록 위에 떠 있어서 아래 카드의 자리를 밀지 않는다.
 
         ⚠ 아직 `Toast` 가 없다(`components/ds` 「아직 없는 것」) — 어두운 알약을
-        만들려면 반전 면 토큰이 필요한데 `design.md` 는 다크를 빼고 왔다. 그래서
+        만들려면 반전 면 토큰이 필요한데 `DESIGN.md` 는 다크를 빼고 왔다. 그래서
         같은 팔레트 안에서 **떠 있는 카드**로 그린다(`elevation.floating` · §5).
       */}
       {recentlyDeleted != null ? (
@@ -243,7 +243,7 @@ export default function Archive() {
  * 빈 날·빈 결과의 한 장. **빈 상태 전용 레이아웃을 만들지 않는다**(`A1.md`) —
  * 기록 카드가 있던 자리에 같은 폭의 안내가 그대로 앉는다.
  *
- * 카드가 아니라 `InfoBlock` 이다 — **안내문은 카드가 아니다**(`design.md` §8).
+ * 카드가 아니라 `InfoBlock` 이다 — **안내문은 카드가 아니다**(`DESIGN.md` §8).
  * 카드와 같은 테두리를 주면 「기록이 있는 것」과 같은 위계로 읽힌다.
  */
 function Note({ children }: { children: string }) {

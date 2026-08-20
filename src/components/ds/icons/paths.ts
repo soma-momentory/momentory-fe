@@ -5,7 +5,7 @@
  * 평행이동이라 `translate(x,y)` 로 폈고, 회전이 섞인 `arrow-left` 만 `matrix` 를 남겼다
  * (`react-native-svg` 는 transform 목록을 연달아 주면 첫 개만 먹는 경우가 있다).
  *
- * ⚠ **없는 글리프를 추측해서 만들지 않는다**(`design.md` §10) — `person` 은 없고
+ * ⚠ **없는 글리프를 추측해서 만들지 않는다**(`DESIGN.md` §10) — `person` 은 없고
  * `nav-my-page` 를 쓴다. 새 글리프가 필요하면 Wanted 세트에서 꺼내 여기에 추가한다.
  */
 export type IconPath = {

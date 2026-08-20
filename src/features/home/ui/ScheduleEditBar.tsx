@@ -28,7 +28,7 @@ import {
 
 /**
  * 일정 입력 바 — **추가(`12-e`)와 수정(`12-c`)이 같은 바를 쓴다**
- * (`Schedule.dc.html` 4-1·4-3 · `design.md` 「일정」).
+ * (`Schedule.dc.html` 4-1·4-3 · `DESIGN.md` 「일정」).
  *
  * 시안의 규칙 그대로:
  * - **추가**: `＋ 추가` → 하단 알약 + 키보드. 확정은 **바 안의 ＋ 또는 키보드
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   barEditing: { borderWidth: 1, borderColor: primary.normal },
   input: {
     flex: 1,
-    // 입력값은 Regular 400 (`design.md` §2)
+    // 입력값은 Regular 400 (`DESIGN.md` §2)
     fontFamily: fontFamily.regular,
     fontSize: text.body1Reading.fontSize,
     lineHeight: text.body1Reading.lineHeight,

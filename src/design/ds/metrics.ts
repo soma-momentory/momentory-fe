@@ -9,7 +9,7 @@ import { line } from "./color";
  */
 
 /**
- * 스페이싱 **10단만** 쓴다(`design.md` §3). 사이 값을 만들지 않는다 —
+ * 스페이싱 **10단만** 쓴다(`DESIGN.md` §3). 사이 값을 만들지 않는다 —
  * 하나 만들면 화면마다 하나씩 는다.
  *
  * 관계별 기준: 텍스트↔텍스트 4~8 · 아이콘↔텍스트 4~8 · 컴포넌트 내부 12~22 ·
@@ -28,7 +28,7 @@ export const space = {
   xl5: 48,
 } as const;
 
-/** `design.md` §4 */
+/** `DESIGN.md` §4 */
 export const radius = {
   small: 8, //   칩, 작은 버튼
   medium: 12, // 버튼, 입력 필드, 정보 블록
@@ -39,7 +39,7 @@ export const radius = {
 } as const;
 
 /**
- * 말풍선만 라운드가 비대칭이다(`design.md` §4) —
+ * 말풍선만 라운드가 비대칭이다(`DESIGN.md` §4) —
  * 질문 `16 16 16 4` / 답변 `16 16 4 16`. 온보딩과 일기가 같은 값을 쓴다.
  */
 export const bubbleRadius = {
@@ -58,7 +58,7 @@ export const bubbleRadius = {
 } as const;
 
 /**
- * 화면 틀(`design.md` §3·§10).
+ * 화면 틀(`DESIGN.md` §3·§10).
  *
  * `statusBar`·`safeArea` 는 시안의 고정값이다 — **구현에서는
  * `react-native-safe-area-context` 의 실제 inset 을 쓰고** 이 숫자는 시안 대조용으로만 둔다.
@@ -82,7 +82,7 @@ export const layout = {
 } as const;
 
 /**
- * `design.md` §5 — **경계는 border 가 아니라 hairline** 이다.
+ * `DESIGN.md` §5 — **경계는 border 가 아니라 hairline** 이다.
  *
  * 웹은 `inset 0 0 0 1px` 로 그리지만 RN 에는 inset shadow 가 없다 →
  * `StyleSheet.hairlineWidth` 테두리로 옮긴다(`EXPORT_MANIFEST` §7).
@@ -96,7 +96,7 @@ export const hairline = {
 } as const satisfies Record<string, ViewStyle>;
 
 /**
- * 그림자 두 단(`design.md` §5). **카드에는 그림자가 없다** — hairline 만 쓴다.
+ * 그림자 두 단(`DESIGN.md` §5). **카드에는 그림자가 없다** — hairline 만 쓴다.
  *
  * CSS blur 를 RN 으로 옮길 때 `shadowRadius ≈ blur / 2` 로 잡는다(관례적 근사).
  * Android 는 `elevation` 근사라 색·offset 이 무시된다.
@@ -121,7 +121,7 @@ export const elevation = {
 } as const;
 
 /**
- * 쌓임 순서 — `design.md` §11 「z-index」.
+ * 쌓임 순서 — `DESIGN.md` §11 「z-index」.
  *
  * 시트·모달은 **콘텐츠보다 위(3)** 이고 프레임 hairline 이 2 다.
  * 오버레이가 이 값을 들고 **스스로 절대 배치**해야 형제 요소와 자리를 나눠 갖지 않는다.
@@ -134,7 +134,7 @@ export const zIndex = {
 } as const;
 
 /**
- * 컴포넌트 치수 — `design.md` §6~11 이 **시스템 차원에서** 정한 값만 둔다.
+ * 컴포넌트 치수 — `DESIGN.md` §6~11 이 **시스템 차원에서** 정한 값만 둔다.
  * 화면 하나에서만 쓰는 숫자는 그 화면에 두고 여기로 올리지 않는다.
  */
 export const size = {
@@ -153,7 +153,7 @@ export const size = {
 } as const;
 
 /**
- * 움직임. **`design.md` 에 모션 절이 없다** — 시안이 CSS 로 적어 둔 값만 있다:
+ * 움직임. **`DESIGN.md` 에 모션 절이 없다** — 시안이 CSS 로 적어 둔 값만 있다:
  * `transition: background 120ms cubic-bezier(0.4,0,0.2,1)` (칩·버튼의 상태 전환).
  *
  * 그래서 **하나뿐이다.** 화면 전환도 같은 값을 쓴다 — 시안이 화면 전환 시간을

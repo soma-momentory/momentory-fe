@@ -8,7 +8,7 @@ import type { Schedule } from "@/features/home/model/types";
  * 그날 일정 — 읽기 전용. `A1` 선택 날짜와 `A3` 기록 상세가 **같은 줄**을 쓴다
  * (`Archive.dc.html` A1·A3 이 실제로 같은 마크업이다).
  *
- * - 완료: **초록 체크 + 취소선 + `Label/Neutral`**. `design.md` §1 이 Label/Neutral 을
+ * - 완료: **초록 체크 + 취소선 + `Label/Neutral`**. `DESIGN.md` §1 이 Label/Neutral 을
  *   「완료 일정」 자리로 못박았다 — 시안의 `Label/Alternative` 보다 이쪽을 따른다
  * - 미완료: 체크 자리만큼 들여쓴다 — 체크 대신 빈 동그라미를 두지 않는다.
  *   **안 한 일에 표식을 붙이면 목록이 미달의 목록이 된다**(`RULES.md` 「숫자로 압박 금지」와 같은 결)

@@ -15,7 +15,7 @@ import { choiceHint, useOnboardingOptions } from "@/features/onboarding/model/op
  *
  * 온보딩 `06` 과 같은 칩·같은 규칙이다 — **최대 3개**, 넷째부터는 눌러도 켜지지
  * 않는다(`06.md`). 제한 경고를 미리 띄우지 않고 안내는 몇 개를 골랐는지 **사실만**
- * 말한다(`design.md` §9).
+ * 말한다(`DESIGN.md` §9).
  *
  * **「기타」 입력 줄은 시안에 없다.** 서버가 `OTHER` 와 함께 직접 입력 값을
  * 요구하고(`DISCUSSION.md` §1-7) 온보딩 `06-b` 에서 물은 답이라 고칠 자리가 여기

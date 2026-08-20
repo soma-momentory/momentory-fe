@@ -44,7 +44,7 @@ import {
  * - 「총 회고 12회」 → **「일기 12일 기록」**. 「회고」는 내부 용어라 밖으로 내보내지 않는다.
  *   **세는 대상도 다르다** — 편수가 아니라 **기록이 남은 날 수**다
  * - 「회고 프로필」·「기본 정보」 두 줄이 **「기본 정보 수정」 한 줄**로 합쳐졌다(`M3` 목록)
- * - **알림 설정이 화면이 아니라 시트다** — 휠 + `완료` 하나(`design.md` §11 「시간 선택」).
+ * - **알림 설정이 화면이 아니라 시트다** — 휠 + `완료` 하나(`DESIGN.md` §11 「시간 선택」).
  *   옛 화면의 알림 네 줄(회고·낮 기록·주간·새로운 소식) 중 시안이 남긴 것은 회고 시각뿐이다
  * - 「연결 관리」 줄이 없어졌다 — 시안의 목록에 없다. 캘린더 연결은 온보딩 `09` 에서
  *   정하고 지금은 그 값을 읽기로 보여 주기만 했다(누를 곳이 없는 줄이었다)
@@ -67,7 +67,7 @@ export default function My() {
   const toggle = useSettings((s) => s.toggle);
   const signOut = useAuth((s) => s.signOut);
 
-  /** 시트를 여는 동안만 사는 값 — **`완료` 를 눌러야 설정이 된다**(`design.md` §11) */
+  /** 시트를 여는 동안만 사는 값 — **`완료` 를 눌러야 설정이 된다**(`DESIGN.md` §11) */
   const [editingTime, setEditingTime] = useState<string | null>(null);
   /** `null` 은 아직 모르는 상태 — 모르는 채로 안내를 띄우지 않는다 */
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
@@ -116,7 +116,7 @@ export default function My() {
     <TabScreen
       active="마이"
       /*
-        `M2` — **하나의 결정만 담는다**(`design.md` §11). 시트에 설정 줄을 늘리지 않고
+        `M2` — **하나의 결정만 담는다**(`DESIGN.md` §11). 시트에 설정 줄을 늘리지 않고
         시각 하나만 고른다. 라우트가 아니라 이 화면 안에서 열리는 것은 시안이 마이
         위에 겹쳐 그리기 때문이고, 온보딩 `08` 의 시간 시트와 같은 방식이다.
 
@@ -166,7 +166,7 @@ export default function My() {
               ⚠ 시안에 없는 줄이다. 옛 알림 화면에는 스위치가 있었고 시안은 그 화면을
               통째로 시트로 줄이면서 **끄는 길을 그리지 않았다** — 그대로 옮기면 한 번 켠
               알림을 앱 안에서 끌 수 없게 된다. 켜져 있을 때만 나타나는 3순위 텍스트
-              버튼으로 뒀다(`design.md` §6 CTA 위계 · 온보딩 `08` 의 「알림 없이 쓸게요」와 같은 자리).
+              버튼으로 뒀다(`DESIGN.md` §6 CTA 위계 · 온보딩 `08` 의 「알림 없이 쓸게요」와 같은 자리).
             */}
             {retro.enabled ? (
               <View style={styles.secondary}>
@@ -185,7 +185,7 @@ export default function My() {
         ) : null
       }
     >
-      {/* 탭 루트라 상단바가 없다 — 본문의 Title 3 이 제목 노릇을 한다(`design.md` §10) */}
+      {/* 탭 루트라 상단바가 없다 — 본문의 Title 3 이 제목 노릇을 한다(`DESIGN.md` §10) */}
       <View style={styles.head}>
         <Text variant="title3" color={labelColor.strong}>
           마이

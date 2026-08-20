@@ -8,7 +8,7 @@ import { useProfile, useSettings } from "./settings";
  * 기본 정보 수정(`M3`~`M8`)의 공통 부분 — **한 항목만 고치고 저장한다.**
  *
  * 새 디자인은 한 화면 일괄 편집을 **목록 → 항목 하나 → 저장**으로 쪼갰다
- * (`design.md` 「마이」). 그런데 **서버는 통째로 덮어쓴다**
+ * (`DESIGN.md` 「마이」). 그런데 **서버는 통째로 덮어쓴다**
  * (`PUT /api/v1/users/me/onboarding` — 온보딩 `10` 과 같은 엔드포인트라
  * 한 필드만 보내는 길이 없다). 그래서 다섯 화면이 각자 「지금 값 + 내가 고친 것」을
  * 조립하게 두지 않고 여기 한 곳에 뒀다 — 화면마다 조립하면 한 화면이
@@ -66,7 +66,7 @@ export async function saveBasicInfo(patch: Partial<BasicInfo>): Promise<SaveResu
 
 /**
  * **「바뀌었는가」는 값으로 판단한다** — 「건드렸는가」로 보면 원래 값으로
- * 되돌려 놓고도 저장이 열린 채로 남는다(`design.md` 「마이」).
+ * 되돌려 놓고도 저장이 열린 채로 남는다(`DESIGN.md` 「마이」).
  * 복수 선택은 순서가 달라도 같은 답이다.
  */
 export const sameChoices = (a: readonly string[], b: readonly string[]) =>

@@ -33,7 +33,7 @@ import { formatKoreanDateShort } from "@/lib/day";
  *
  * ## 새 디자인 (`PLAN.md` A Phase 4 · `docs/DESIGN.md` 「리포트」)
  *
- * ⚠ **감정 도넛이 사라졌다.** `design.md` 「리포트」가 「도넛·비율·범례 **없이**
+ * ⚠ **감정 도넛이 사라졌다.** `DESIGN.md` 「리포트」가 「도넛·비율·범례 **없이**
  * 7일 감정 흐름 + 요약 2줄, 지표는 `9개 완료` 형태」라고 못박고 「완료율·%·분석
  * 같은 표현을 쓰지 않는다」를 덧붙인다. 그래서 `EmotionDonut`(범례·비율 계산
  * 포함)과 초록 통계 패널(`WeekStatsPanel`)을 지웠고, 화면은 세 덩이가 됐다:
@@ -104,7 +104,7 @@ export default function Report() {
 
   /**
    * 요약 3칸(`W1.md`). **분모를 붙이지 않는다** — 「5회 / 7일 중」이 되는 순간
-   * 비율이 읽히고, 비율은 관찰이 아니라 평가다(`design.md` 「리포트」).
+   * 비율이 읽히고, 비율은 관찰이 아니라 평가다(`DESIGN.md` 「리포트」).
    */
   const stats: readonly WeekStat[] = [
     {
@@ -182,7 +182,7 @@ export default function Report() {
           done={actions.done}
         />
 
-        {/* 보조 행동이라 Outlined 다 — 이 화면에 Solid Primary 는 없다(`design.md` §6).
+        {/* 보조 행동이라 Outlined 다 — 이 화면에 Solid Primary 는 없다(`DESIGN.md` §6).
             탭은 쌓이는 화면이 아니라 **옮겨간다**(`TabScreen` 과 같은 이유) */}
         <Button
           label="이 주의 기록 보러가기"

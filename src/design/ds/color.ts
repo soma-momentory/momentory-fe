@@ -6,7 +6,7 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
  * **컴포넌트는 semantic 층만 참조한다.** 화면마다 새 값을 만들지 않는다 —
  * 그것이 이 파일이 하나뿐인 이유다.
  *
- * **다크 모드는 없다** (2026-08-20 결정 N1 · `PLAN.md` A-2). `design.md` §1 의 다크
+ * **다크 모드는 없다** (2026-08-20 결정 N1 · `PLAN.md` A-2). `DESIGN.md` §1 의 다크
  * 팔레트는 구현하지 않는다 — `useColorScheme()` 분기를 만들지 말고, 테마 객체를
  * 두 벌로 만들지도 않는다. 나중에 켤 일이 생기면 이 파일이 갈리는 지점이다.
  *
@@ -25,7 +25,7 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
  * | Status/Positive      | `#6F9A58` | 2.90      | `#6D9757`   | **3.01** |
  * | Primary/Normal       | `#7C9E86` | 2.64      | `#6F947A`   | **3.02** |
  *
- * **주 버튼 면은 `primary.heavy` 다.** `design.md` §6 은 배경 `#7C9E86` + 라벨
+ * **주 버튼 면은 `primary.heavy` 다.** `DESIGN.md` §6 은 배경 `#7C9E86` + 라벨
  * `#FFFDF8` 을 지정하는데 그 조합이 **2.91** 이라 large·bold 기준(3.0)에도 못 미친다.
  * 흰 글자가 얹히는 초록 면은 `primary.heavy #56755F`(**5.03**) 하나뿐이다 —
  * 이 저장소가 오래 지켜 온 규칙과 같다(`CLAUDE.md` 규칙 2: 「primary 는 장식 전용,
@@ -81,7 +81,7 @@ export const label = {
 /**
  * 브랜드 초록.
  * - `normal` 선택 링 · 아이콘 · 틴트 바탕 — **글자를 얹지 않는다**(흰 글자 2.9)
- * - `strong` press (그런데 `design.md` §6 은 press 에서 fill 을 바꾸지 않고
+ * - `strong` press (그런데 `DESIGN.md` §6 은 press 에서 fill 을 바꾸지 않고
  *   스크림을 얹는다 — `overlay.press*` 를 쓴다. 이 값은 예외용으로만 둔다)
  * - `heavy` **글자 · 흰 글자가 얹히는 면**(주 CTA)
  */
@@ -131,7 +131,7 @@ export const line = {
 /**
  * 덮개.
  * - `dimmer` 시트·모달 뒤
- * - `press*` **버튼은 자기 fill 을 바꾸지 않고 이 스크림을 얹는다**(`design.md` §6).
+ * - `press*` **버튼은 자기 fill 을 바꾸지 않고 이 스크림을 얹는다**(`DESIGN.md` §6).
  *   웹의 `transition-property` 회피책은 RN 에 필요 없다
  */
 export const overlay = {
@@ -147,7 +147,7 @@ export const grid = { stroke: `rgba(${WARM},0.07)`, size: 32 } as const;
 /**
  * 소셜 로그인 — **모멘토리 팔레트 밖이다.**
  *
- * `design.md` 「로그인」: 「소셜 3종 공식 색·마크 유지」 ·
+ * `DESIGN.md` 「로그인」: 「소셜 3종 공식 색·마크 유지」 ·
  * `Login.dc.html` 주석: 「공통은 높이·Radius·간격만 — **색·로고는 손대지 않음**」.
  * 각 플랫폼이 브랜드 가이드로 고정한 값이라 **대비 보정도 하지 않는다** —
  * 우리가 정한 값이 아니라서 바꿀 권한이 없다.
@@ -176,7 +176,7 @@ export const social = {
  * 감정 9색. **id 는 도메인이 쥔다**(`features/emotion`) — 여기는 색만 붙인다.
  * `Record<EmotionId, …>` 라서 감정이 늘면 컴파일러가 빠진 칸을 잡는다.
  *
- * 쓰는 법(`design.md` §1): 도트·캡슐은 **55% 틴트 면 + 원색 1.5px 링**.
+ * 쓰는 법(`DESIGN.md` §1): 도트·캡슐은 **55% 틴트 면 + 원색 1.5px 링**.
  * **감정 선택 칩에는 감정색을 쓰지 않는다** — 브랜드 초록 18% + 초록 2px 로 통일한다.
  */
 export const emotion: Record<EmotionId, string> = {
@@ -201,7 +201,7 @@ export function withAlpha(hex: string, alpha: number): string {
 /** 감정 면 — 원색 55% 틴트. 이 위의 글자는 `label.normal` 로 6.96 이상이다 */
 export const emotionTint = (id: EmotionId) => withAlpha(emotion[id], 0.55);
 
-/** 선택 칩 배경 — 브랜드 초록 18% (`design.md` §9) */
+/** 선택 칩 배경 — 브랜드 초록 18% (`DESIGN.md` §9) */
 export const selectedTint = withAlpha(primary.normal, 0.18);
 
 export const color = {

@@ -54,7 +54,7 @@ export default function Rest() {
 
   /**
    * 기타 값 확정 — `[확인]` · 키보드 `완료` · `[다음]` 이 여기를 지난다.
-   * **밖 탭(blur)은 확정이 아니다**(`design.md` §7). 공백뿐이면 확정하지 않고
+   * **밖 탭(blur)은 확정이 아니다**(`DESIGN.md` §7). 공백뿐이면 확정하지 않고
    * 기타 선택을 취소한다(`06-c.md`).
    */
   const commitOther = () => {

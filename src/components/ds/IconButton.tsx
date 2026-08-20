@@ -5,10 +5,10 @@ import { interaction, label as labelColor, layout, overlay, radius } from "@/des
 import { Icon, type IconName } from "./icons/Icon";
 
 /**
- * 아이콘만 있는 버튼 — 알림 종 · 전송 · ⋮ · 월 이동(`design.md` §10).
+ * 아이콘만 있는 버튼 — 알림 종 · 전송 · ⋮ · 월 이동(`DESIGN.md` §10).
  *
  * **히트 영역은 44 다.** 아이콘이 20~24 라도 눌리는 면은 44×44 로 잡는다
- * (`design.md` §10 「44×44 히트 영역」 · `RULES.md` 터치 최소 44).
+ * (`DESIGN.md` §10 「44×44 히트 영역」 · `RULES.md` 터치 최소 44).
  *
  * ⚠ **`accessibilityLabel` 이 필수다.** 글자가 없는 버튼이라 이름이 없으면
  * 낭독기에 「버튼」으로만 읽힌다. 그래서 optional 로 두지 않았다.

@@ -18,7 +18,7 @@ import {
 import type { ActionCard } from "@/features/diary/model/types";
 
 /**
- * 행동 카드 한 장 (`Rest.dc.html` R2 · `design.md` 「쉼터」).
+ * 행동 카드 한 장 (`Rest.dc.html` R2 · `DESIGN.md` 「쉼터」).
  *
  * ## 체크박스가 없다
  *
@@ -36,7 +36,7 @@ import type { ActionCard } from "@/features/diary/model/types";
  * - **느낀 점은 선택이다** — 「남기지 않아도 괜찮아요.」. 비워 둬도 수행은 수행이다
  * - 저장하면 읽기 블록 + `고치기`. 입력창은 1줄(52)에서 **최대 3줄**까지만 자라고
  *   읽기 블록도 3줄에서 잘린다 — 전체는 「자세히 보기」에서 본다
- * - **`수행 취소` 로 되돌리면 입력도 초기화된다**(`design.md` 「쉼터」)
+ * - **`수행 취소` 로 되돌리면 입력도 초기화된다**(`DESIGN.md` 「쉼터」)
  * - **수행률·연속 일수를 세지 않는다**(`RULES.md` 4)
  */
 type Props = {

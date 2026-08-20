@@ -17,7 +17,7 @@ import { IconButton } from "./IconButton";
 import { Text } from "./Text";
 
 /**
- * 한 줄·여러 줄 입력 — `design.md` §7.
+ * 한 줄·여러 줄 입력 — `DESIGN.md` §7.
  *
  * | 항목       | 값                                                              |
  * | ---------- | --------------------------------------------------------------- |
@@ -29,7 +29,7 @@ import { Text } from "./Text";
  *
  * ## 입력값은 Regular 400 이다
  *
- * 본문 기본은 Medium 500 이지만 **입력값·플레이스홀더는 Regular** 다(`design.md` §2).
+ * 본문 기본은 Medium 500 이지만 **입력값·플레이스홀더는 Regular** 다(`DESIGN.md` §2).
  * 그래서 여기서 `body1Reading`(16/26 400)을 쓴다 — `body1`(500)을 쓰면 입력칸만
  * 본문보다 무거워진다.
  *
@@ -143,7 +143,7 @@ export function TextField({
 const VARIANT = {
   large: { minHeight: size.input.large, borderRadius: radius.medium },
   medium: { minHeight: size.input.medium, borderRadius: radius.medium },
-  // 입력 pill — 패딩 11/18 · radius Full (`design.md` §7)
+  // 입력 pill — 패딩 11/18 · radius Full (`DESIGN.md` §7)
   pill: {
     minHeight: size.input.medium,
     borderRadius: radius.full,

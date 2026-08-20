@@ -44,7 +44,7 @@ import { formatKoreanDateShort } from "@/lib/day";
  * ## 새 디자인 (`PLAN.md` A Phase 4 · `docs/DESIGN.md` 「보관함」 A3)
  *
  * 뒤로 + ⋮ 상단 내비 → 날짜 제목 → 감정·날씨 한 줄 → 두 면 → 일기 카드 →
- * 행동 카드 → 그날 일정. **읽기 레이아웃**이고 `design.md` 「보관함」이 정한
+ * 행동 카드 → 그날 일정. **읽기 레이아웃**이고 `DESIGN.md` 「보관함」이 정한
  * 「A3 상세는 읽기 레이아웃 + **⋮ 수정·삭제**」를 따른다.
  *
  * ⚠ **`[수정하기]` 가 바닥 알약에서 ⋮ 메뉴로 옮겨갔다.** 갈 곳은 그대로 `A4` 다
@@ -99,7 +99,7 @@ export default function DiaryDetail() {
             name="more-vertical"
             accessibilityLabel="더보기"
             accessibilityState={{ expanded: menuOpen }}
-            // ⋮ 를 다시 누르면 닫힌다 (`design.md` 「일정」의 ⋮ 문법과 같다)
+            // ⋮ 를 다시 누르면 닫힌다 (`DESIGN.md` 「일정」의 ⋮ 문법과 같다)
             onPress={() => setMenuOpen((open) => !open)}
           />
         }
@@ -178,7 +178,7 @@ export default function DiaryDetail() {
       </ScrollView>
 
       {/*
-        ⋮ 메뉴. **바깥을 탭하면 닫힌다**(`design.md` 「일정」) — 딤을 깔지 않고
+        ⋮ 메뉴. **바깥을 탭하면 닫힌다**(`DESIGN.md` 「일정」) — 딤을 깔지 않고
         투명한 면으로 받는다. 메뉴는 결정이 아니라 길이라 어둡게 덮지 않는다.
 
         ⚠ 공용 `Menu` 를 아직 만들지 않았다(`components/ds` 「아직 없는 것」) —

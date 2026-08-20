@@ -18,7 +18,7 @@ import { formatKoreanDateShort } from "@/lib/day";
  *
  * ## 3세대 DS (2026-08-20)
  *
- * 라벨-값 블록의 짜임(`design.md` §8 · `Diary.dc.html` ④-d2)을 따랐다.
+ * 라벨-값 블록의 짜임(`DESIGN.md` §8 · `Diary.dc.html` ④-d2)을 따랐다.
  * 되돌리기 확인은 그 자리에 열리던 카드에서 **`Modal`** 로 바뀌었다 —
  * 되돌릴 수 없는 행동의 확인은 모달이 맡는다(`PLAN.md` A-2 N2). 오류를 모달로
  * 띄우지 않는다는 `RULES.md` 규칙은 그대로 살아 있다.

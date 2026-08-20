@@ -5,7 +5,7 @@ import { bubbleRadius, fill, label as labelColor, primary, space, withAlpha } fr
 import { Text } from "./Text";
 
 /**
- * 대화 말풍선 — `design.md` §4 + `Onboarding.dc.html` 「대화 문법」.
+ * 대화 말풍선 — `DESIGN.md` §4 + `Onboarding.dc.html` 「대화 문법」.
  *
  * | 역할 | 정렬   | 면                | Radius        | 최대 폭 | 타이포          |
  * | ---- | ------ | ----------------- | ------------- | ------- | --------------- |
@@ -17,12 +17,12 @@ import { Text } from "./Text";
  *
  * ## 지난 턴은 흐려지되 색은 그대로다
  *
- * `past` 를 켜면 **투명도만** 내린다(`design.md` 「온보딩」 — 질문 0.48 / 답변 0.62).
+ * `past` 를 켜면 **투명도만** 내린다(`DESIGN.md` 「온보딩」 — 질문 0.48 / 답변 0.62).
  * 색을 회색으로 바꾸지 않는 이유: 지난 답도 여전히 내가 한 말이고, 색을 바꾸면
  * 「취소된 것」처럼 읽힌다.
  *
  * ⚠ 시안(`.dc.html`)은 0.55 / 0.70 을 쓰고 프레임마다 0.55·0.7 이 섞여 있다.
- * **`design.md` 값을 따랐다** — 값이 어긋나면 `design.md` 가 이긴다(`EXPORT_MANIFEST` §1).
+ * **`DESIGN.md` 값을 따랐다** — 값이 어긋나면 `DESIGN.md` 가 이긴다(`EXPORT_MANIFEST` §1).
  *
  * 온보딩과 일기가 **같은 것을 쓴다**(`EXPORT_MANIFEST` §4 — 시안에선 두 파일에
  * 각각 인라인이었다). 스펙이 같은 것을 두 번 만들지 않는다.
@@ -36,7 +36,7 @@ type Props = {
   style?: ViewStyle;
 };
 
-/** `design.md` 「온보딩」 — 지난 질문 0.48 · 지난 답변 0.62 */
+/** `DESIGN.md` 「온보딩」 — 지난 질문 0.48 · 지난 답변 0.62 */
 const PAST_OPACITY = { question: 0.48, answer: 0.62 } as const;
 
 export function ChatBubble({ children, variant = "question", past = false, style }: Props) {

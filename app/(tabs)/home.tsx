@@ -39,11 +39,11 @@ import { formatKoreanTime } from "@/lib/time";
  * ## 새 디자인 (2026-08-20 · `PLAN.md` A Phase 4)
  *
  * 날씨 씬(하늘·언덕·카피바라·병아리)이 **전부 사라지고** 네 칸이 남았다
- * (`Home Sample.dc.html` · `design.md` 「홈」):
+ * (`Home Sample.dc.html` · `DESIGN.md` 「홈」):
  * **날짜 + 알림 → 하루 돌아보기 CTA → 이번 주 감정 → 오늘 일정.**
  *
  * 2세대에서 뺐던 「하루 돌아보기」가 **되돌아왔다** — 이번엔 줄이 아니라 카드 안의
- * Solid Primary CTA 이고, **화면에서 유일한 solid 버튼**이다(`design.md` §6).
+ * Solid Primary CTA 이고, **화면에서 유일한 solid 버튼**이다(`DESIGN.md` §6).
  * 회고를 여는 병아리가 없어졌으니 문이 다시 글자로 돌아온 셈이다.
  *
  * ## 지키는 규칙
@@ -52,7 +52,7 @@ import { formatKoreanTime } from "@/lib/time";
  *   **목록 슬롯의 줄만 초대 문구로 바뀐다**
  * - **일러스트·안내 그림을 두지 않는다** — 비어 있는 것은 문제가 아니라 시작이다
  * - **진행률·연속 배지·점수를 두지 않는다.** 「N개 남음」은 **남은 수**이지
- *   달성률이 아니다(`design.md` 「홈」이 「2/4 마침」을 이 말로 바꿨다)
+ *   달성률이 아니다(`DESIGN.md` 「홈」이 「2/4 마침」을 이 말로 바꿨다)
  * - **완료에 감정을 묻지 않는다**(N7 · `PLAN.md` A-8). 체크박스 한 번으로 끝나고
  *   마친 줄은 **취소선 + `label.neutral`** 로 목록에 남는다
  * - 일정 순서는 **꾹 눌러 끈다**(`ScheduleList`), 수정·삭제는 **⋮ 메뉴**(시안 4-2)
@@ -212,7 +212,7 @@ export default function Home() {
                 : "편할 때 언제든 돌아볼 수 있어요"}
             </Text>
           </View>
-          {/* 이 화면의 유일한 Solid Primary — 하루의 주 행동이다 (`design.md` §6) */}
+          {/* 이 화면의 유일한 Solid Primary — 하루의 주 행동이다 (`DESIGN.md` §6) */}
           <Button label="지금 하루 돌아보기" fill onPress={() => router.push("/retro/confirm")} />
         </Card>
 
@@ -287,7 +287,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   // 좌우 20 은 `TabScreen` 이 잡는다 — 여기서 또 잡으면 두 겹이 된다
   content: {
-    // 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 (`design.md` §3)
+    // 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 (`DESIGN.md` §3)
     paddingBottom: layout.scrollClearance,
   },
   head: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   bell: { marginRight: -space.md },
   cta: { gap: 22 },
   ctaText: { gap: space.sm },
-  // 섹션 ↔ 섹션 (`design.md` §3 — 20~28)
+  // 섹션 ↔ 섹션 (`DESIGN.md` §3 — 20~28)
   section: { paddingTop: space.xl },
   invite: { paddingVertical: space.xl, gap: space.sm },
   centered: { textAlign: "center" },

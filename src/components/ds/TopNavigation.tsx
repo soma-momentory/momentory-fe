@@ -8,7 +8,7 @@ import { Text } from "./Text";
 import type { IconName } from "./icons/Icon";
 
 /**
- * 상단 내비 — `design.md` §10.
+ * 상단 내비 — `DESIGN.md` §10.
  *
  * **높이 44 · 투명 배경 · divider 없다.** 배경을 칠하면 뒤의 32px 격자가 거기서
  * 끊긴다 — 격자가 프레임에 고정돼 이어지는 것이 이 디자인의 바닥이다(§5).
@@ -17,7 +17,7 @@ import type { IconName } from "./icons/Icon";
  * - trailing: Text Button(건너뛰기·저장) 또는 Icon Button
  * - 제목: **하위 화면만** 표시한다. 탭 루트는 본문의 Title 3 가 제목 노릇을 한다
  *
- * 뒤로와 닫기는 뜻이 다르다(`design.md` 공통) — **뒤로는 플로우 안에서 한 단계**,
+ * 뒤로와 닫기는 뜻이 다르다(`DESIGN.md` 공통) — **뒤로는 플로우 안에서 한 단계**,
  * **닫기는 플로우를 끝내고 홈으로**. 그래서 `leading` 을 아이콘 이름으로 받는다.
  */
 type Props = {

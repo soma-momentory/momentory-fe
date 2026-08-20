@@ -15,7 +15,7 @@ import { Button } from "./Button";
 import { Text } from "./Text";
 
 /**
- * 확인 모달 — `design.md` §11. **radius 20 · 제목 + 설명 + 액션 2개.**
+ * 확인 모달 — `DESIGN.md` §11. **radius 20 · 제목 + 설명 + 액션 2개.**
  *
  * ## 왜 모달이 있나 — 규칙이 하나 바뀌었다
  *
@@ -114,7 +114,7 @@ export function Modal({
 }
 
 const styles = StyleSheet.create({
-  // 시트와 같은 이유로 스스로 화면 전체를 덮는다 (`BottomSheet` 주석 · `design.md` §11)
+  // 시트와 같은 이유로 스스로 화면 전체를 덮는다 (`BottomSheet` 주석 · `DESIGN.md` §11)
   root: {
     position: "absolute",
     top: 0,

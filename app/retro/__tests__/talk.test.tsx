@@ -203,7 +203,7 @@ describe("행동 추천 — 이전 카드 배지 + 직접 입력", () => {
     await waitFor(() => expect(r.getByText("내가 직접 정할래요")).toBeTruthy());
     await fireEvent.press(r.getByText("내가 직접 정할래요"));
 
-    // 「직접 쓸게요」를 고르면 칩이 접히고 **입력창으로 전환된다**(`design.md` 「일기」 3)
+    // 「직접 쓸게요」를 고르면 칩이 접히고 **입력창으로 전환된다**(`DESIGN.md` 「일기」 3)
     const input = r.getByLabelText("직접 입력한 행동");
     await fireEvent.changeText(input, "자기 전에 오늘 답변 한 줄 적어보기");
     await act(async () => {

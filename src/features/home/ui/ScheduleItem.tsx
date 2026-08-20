@@ -24,7 +24,7 @@ import type { Schedule } from "@/features/home/model/types";
  * ## 한 줄에 터치가 둘이다 — 그리고 제목은 이제 터치가 아니다
  *
  * - **체크박스** → 마침 토글. **감정을 묻지 않는다**(N7 · `PLAN.md` A-8).
- *   마친 줄은 **취소선 + `label.neutral`** 로 목록에 남는다(`design.md` 「홈」)
+ *   마친 줄은 **취소선 + `label.neutral`** 로 목록에 남는다(`DESIGN.md` 「홈」)
  * - **⋮** → 수정 / 삭제 메뉴. 옛 디자인에서 **제목 탭**이 하던 일이 여기로 왔다
  * - **제목을 꾹 누르면** 줄이 들려 순서가 바뀐다(`ScheduleList`) — 시안의
  *   「순서 변경: 꾹 누름」이다. 그래서 제목은 눌러도 아무 일이 없다
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     // 제목 첫 줄(행간 24)의 가운데에 맞춘다 — 줄이 길어져도 위에 남는다
     marginTop: (24 - CHECK) / 2,
   },
-  // 켜짐은 면으로 말한다 — 「완료 체크」의 색(`design.md` §1 Status/Positive)
+  // 켜짐은 면으로 말한다 — 「완료 체크」의 색(`DESIGN.md` §1 Status/Positive)
   checkOn: { backgroundColor: status.positive },
   checkOff: { backgroundColor: background.elevated, borderWidth: 1.5, borderColor: line.normal },
   // 시안의 일정 제목은 본문 크기에 600 이다 — 스케일에 13번째 단을 만들지 않고

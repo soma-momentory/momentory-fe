@@ -7,7 +7,7 @@ import { ICON_PATHS, type IconName } from "./paths";
 export type { IconName };
 
 /**
- * Wanted 아이콘 하나. **24 그리드 · 크기 3단**(16 / 20 / 24 — `design.md` §10).
+ * Wanted 아이콘 하나. **24 그리드 · 크기 3단**(16 / 20 / 24 — `DESIGN.md` §10).
  *
  * **이모지를 쓰지 않는다**(`RULES.md`). 없는 글리프를 만들어 내지도 않는다 —
  * 필요한 것이 세트에 없으면 **만들지 않는다** — 반입 자산은 지웠고(A-18) 세트가
@@ -19,7 +19,7 @@ export type { IconName };
  */
 type Props = {
   name: IconName;
-  /** 기본 24. `design.md` 가 정한 3단만 쓴다 */
+  /** 기본 24. `DESIGN.md` 가 정한 3단만 쓴다 */
   size?: 16 | 20 | 24;
   /** `@/design/ds` 의 색 토큰. 기본은 본문색 */
   color?: string;

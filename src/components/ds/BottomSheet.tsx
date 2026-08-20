@@ -17,7 +17,7 @@ import {
 import { Text } from "./Text";
 
 /**
- * 바텀 시트 — `design.md` §11.
+ * 바텀 시트 — `DESIGN.md` §11.
  *
  * 딤 `overlay.dimmer` · 상단 radius 20 · Elevated 면 · handle · 제목 Heading 1.
  *
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   // **스스로 화면 전체를 덮는다.** `flex: 1` 만 두면 일반 화면 트리 안에서
   // 조건부로 그렸을 때 형제와 자리를 나눠 가져, 딤이 기존 콘텐츠를 못 덮고
   // 시트가 화면 하단이 아니라 「할당된 칸」 하단에 붙는다.
-  // z 값은 `design.md` §11 —— 시트·모달은 콘텐츠보다 위(3)다.
+  // z 값은 `DESIGN.md` §11 —— 시트·모달은 콘텐츠보다 위(3)다.
   // 네 변을 직접 적는다 — `StyleSheet.absoluteFillObject` 를 펼치면 값이 남지 않는 환경이 있다
   root: {
     position: "absolute",

@@ -4,7 +4,7 @@ import { Text } from "@/components/ds";
 import { label as labelColor, layout } from "@/design/ds";
 
 /**
- * 우상단 건너뛰기 — `design.md` 「온보딩」: **「선택사항 항목은 우상단 건너뛰기」**.
+ * 우상단 건너뛰기 — `DESIGN.md` 「온보딩」: **「선택사항 항목은 우상단 건너뛰기」**.
  *
  * 옛 화면은 「선택사항」 배지로 선택 항목임을 말했는데, 새 디자인은 **빠져나갈 길을
  * 보여주는 것**으로 대신한다. 배지는 "안 해도 된다"고 말만 하고, 이 버튼은 그 길이다.

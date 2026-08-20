@@ -23,7 +23,7 @@ import {
 import { Text } from "./Text";
 
 /**
- * Momentory DS — 버튼 (`design.md` §6).
+ * Momentory DS — 버튼 (`DESIGN.md` §6).
  *
  * | 속성   | 값                                                    |
  * | ------ | ----------------------------------------------------- |
@@ -36,7 +36,7 @@ import { Text } from "./Text";
  *
  * ## 누름은 **면 색을 바꾸지 않는다**
  *
- * `design.md` §6 대로 자기 fill 은 그대로 두고 **스크림을 얹는다.** 그래서
+ * `DESIGN.md` §6 대로 자기 fill 은 그대로 두고 **스크림을 얹는다.** 그래서
  * 활성/비활성 색과 누름 표현이 서로 간섭하지 않는다(웹에서 `var()` 트랜지션이
  * 멈춰 색이 안 바뀌던 문제의 원인이 그 간섭이었다). RN 에는 트랜지션이 없으므로
  * 회피책은 필요 없고, **스크림 방식만 그대로 가져왔다.**
@@ -54,11 +54,11 @@ import { Text } from "./Text";
  *
  * ## ⚠ solid 의 면은 `primary.heavy` 다
  *
- * `design.md` 는 `#7C9E86` + 흰 라벨을 지정하는데 그 조합이 **2.91** 로 AA 미달이다.
+ * `DESIGN.md` 는 `#7C9E86` + 흰 라벨을 지정하는데 그 조합이 **2.91** 로 AA 미달이다.
  * 흰 글자가 얹히는 초록 면은 `primary.heavy`(5.03) 하나뿐이다 —
  * `src/design/ds/color.ts` 머리말 · `PLAN.md` A-5.
  *
- * **한 화면에 solid 는 하나다**(`design.md` §6 CTA 위계). 보조는 `outlined`,
+ * **한 화면에 solid 는 하나다**(`DESIGN.md` §6 CTA 위계). 보조는 `outlined`,
  * 3순위는 `text` — 코드가 강제할 수 없으니 화면에서 지킨다.
  */
 export type ButtonVariant = "solid" | "outlined" | "text" | "destructive";
@@ -70,7 +70,7 @@ type Props = Omit<PressableProps, "style" | "children"> & {
   size?: ButtonSize;
   /** 라벨 왼쪽 아이콘 */
   leading?: ReactNode;
-  /** 좌우로 꽉 채운다. 기본은 hug (`design.md` §6 「Hug 또는 Fill」) */
+  /** 좌우로 꽉 채운다. 기본은 hug (`DESIGN.md` §6 「Hug 또는 Fill」) */
   fill?: boolean;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -148,7 +148,7 @@ const VARIANTS: Record<ButtonVariant, Variant> = {
     labelColor: primary.heavy,
     scrim: overlay.pressLight,
   },
-  // `design.md` §11 — 되돌릴 수 없는 확인의 **확인 버튼만** 위험색이다
+  // `DESIGN.md` §11 — 되돌릴 수 없는 확인의 **확인 버튼만** 위험색이다
   destructive: {
     container: { backgroundColor: status.negative },
     labelColor: labelColor.onFill,
