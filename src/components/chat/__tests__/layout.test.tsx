@@ -2,9 +2,7 @@ import { AccessibilityInfo, Animated, Text } from "react-native";
 import { render, waitFor } from "@testing-library/react-native";
 
 import { paperChat } from "@/design/paper";
-import theme from "@/design/theme";
 
-import { Avatar } from "../Avatar";
 import { ChatLayout } from "../ChatLayout";
 import { TypingDots } from "../TypingDots";
 
@@ -102,46 +100,5 @@ describe("ChatLayout — paper 변형", () => {
 
     expect(content.gap).toBe(9);
     expect(content.justifyContent).toBe("flex-start");
-  });
-});
-
-// .ba{width:52px;border-radius:50%;box-shadow:0 0 0 10px rgba(251,246,236,.5), ...}
-describe("Avatar", () => {
-  // 아바타는 통째로 접근성 트리에서 숨긴 요소라 기본 쿼리로는 찾히지 않는다.
-  const hidden = { includeHiddenElements: true } as const;
-
-  it("lg 는 52, sm 은 34 이고 원이다", async () => {
-    const lg = await render(<Avatar />);
-    const sm = await render(<Avatar size="sm" />);
-
-    const faceOf = (r: typeof lg) => flatten(r.getByTestId("avatar-face", hidden).props.style);
-    expect(faceOf(lg).width).toBe(52);
-    expect(faceOf(lg).borderRadius).toBe(26);
-    expect(faceOf(sm).width).toBe(34);
-    expect(faceOf(sm).borderRadius).toBe(17);
-  });
-
-  it("바깥 링은 그림자가 아니라 10px 테두리 고리다", async () => {
-    // box-shadow 의 첫 값은 흐림 0 · 확산 10px — RN 은 spread 를 못 그려 padding 으로 만든다.
-    const { getByTestId } = await render(<Avatar testID="a" />);
-    const s = flatten(getByTestId("a", hidden).props.style);
-
-    expect(s.padding).toBe(10);
-    expect(s.backgroundColor).toBe(`${theme.colors.semantic.textOnDark}80`); // 50%
-  });
-
-  it("ring 을 끄면 고리가 사라진다", async () => {
-    const { getByTestId } = await render(<Avatar testID="a" ring={false} />);
-    const s = flatten(getByTestId("a", hidden).props.style);
-
-    expect(s.padding).toBeUndefined();
-  });
-
-  it("얼굴은 장식이라 보조기술이 읽지 않는다", async () => {
-    const { getByTestId, queryByTestId } = await render(<Avatar testID="a" />);
-
-    expect(getByTestId("a", hidden).props.accessibilityElementsHidden).toBe(true);
-    // 숨김을 포함하지 않으면 아예 잡히지 않는다 = 낭독기가 지나친다
-    expect(queryByTestId("a")).toBeNull();
   });
 });

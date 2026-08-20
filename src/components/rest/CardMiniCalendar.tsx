@@ -9,8 +9,9 @@ import { paperCalendar, paperColors, paperRadius, paperTypography } from "@/desi
  * **카드가 있는 날만 고를 수 있다**(`app-flow.md` §2.4 — "카드 없는 날은
  * `cursor:default`"). 없는 날을 누를 수 있게 두면 빈 화면으로 데려가게 된다.
  *
- * 보관함의 `CalendarMonth`(셀 54)와 **다른 컴포넌트**다 — 여기 셀은 27 이고
- * 감정 아이콘 대신 **채움만** 쓴다.
+ * 보관함의 달력과 **다른 컴포넌트**다 — 여기 셀은 27 이고 감정 아이콘 대신
+ * **채움만** 쓴다. ⚠ 보관함은 3세대 `components/ds/Calendar` 로 갈아탔다.
+ * 쉼터가 새 DS 로 넘어올 때 **이것도 거기로 합칠 수 있는지 먼저 본다**.
  */
 type Props = {
   /** `2026-07` */
