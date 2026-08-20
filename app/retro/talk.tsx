@@ -66,6 +66,8 @@ import { emotionKeyOf, useRetro } from "@/features/retro/model/retro";
 /** 실패 사유 → 화면 한 줄. 사용자가 할 수 있는 일이 같으면 문구도 같다 */
 const FAILURE_MESSAGES: Record<RetroFailureCode, string> = {
   invalid_request: "지금은 회고를 이어갈 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  // 하루 한 번 — 다시 시도로 풀리지 않으므로 "잠시 뒤 다시" 라고 말하지 않는다
+  already_today: "오늘은 이미 회고를 마쳤어요. 회고는 하루에 한 번이에요.",
   session_not_found: "회고를 이어갈 수 없어요. 처음부터 다시 시작해 주세요.",
   unauthenticated: "로그인이 만료됐어요. 다시 로그인해 주세요.",
   network: "지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.",
@@ -117,7 +119,14 @@ export default function RetroTalk() {
   const applyServerReply = (reply: Reply) => {
     applyReply(reply);
     setPickedId(null);
-    setMeasureValues({});
+    // 측정 슬라이더는 **가운데(중앙값)에서 시작**한다 — 0~10 이면 5.
+    // 미리 채워 두면 사용자가 슬라이더를 건드리지 않아도 그 값이 서버로 실린다
+    // (빈 채로 두면 `measureValues` 에 키가 없어 그 측정이 통째로 빠진다).
+    setMeasureValues(
+      reply.ui === UI_MEASURE && reply.measures != null
+        ? Object.fromEntries(reply.measures.map((m) => [m.id, Math.round((m.min + m.max) / 2)]))
+        : {},
+    );
     setDraftText("");
   };
 

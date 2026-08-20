@@ -91,6 +91,8 @@ export type TurnInput = {
 export type RetroFailureCode =
   /** 400 — 우리가 잘못 보냈다(감정 키 오류 등) */
   | "invalid_request"
+  /** 409 — 오늘 이미 회고를 마쳤다(하루 한 번 가드) */
+  | "already_today"
   /** 404 — 세션이 없거나 남의 것 */
   | "session_not_found"
   /** 401 · 토큰 없음 — 세션 만료 */
@@ -111,6 +113,7 @@ const RETROSPECT_PATH = "/api/v1/retrospect";
 /** 서버가 본문에 실어 주는 오류 코드 → 우리 사유. 상태 코드보다 이쪽이 정확하다 */
 const BODY_CODES: Record<string, RetroFailureCode> = {
   INVALID_REQUEST: "invalid_request",
+  ALREADY_RETROSPECTED_TODAY: "already_today",
   RETROSPECT_SESSION_NOT_FOUND: "session_not_found",
   AUTHENTICATION_REQUIRED: "unauthenticated",
 };
@@ -243,12 +246,22 @@ export const toReply = (v: unknown): Reply | null => {
 
 // ── 호출 ────────────────────────────────────────────────────────────────
 
+/**
+ * 회고 턴 타임아웃 — 서버가 Gemini 를 부르고 오므로 기본 조회(25초)보다 길게 잡는다.
+ * 로컬·혼잡 시 한 턴이 25초를 넘겨 "연결이 불안정" 으로 끊기던 것을 늘려 흡수한다.
+ * 무한 대기는 입력칸이 영영 잠기는 것과 같아 상한은 둔다.
+ */
+const RETRO_TIMEOUT_MS = 45_000;
+
 /** 회고 세션을 만들고 첫 응답을 받는다 */
 export async function startRetro(
   input: StartInput,
   options?: { signal?: AbortSignal },
 ): Promise<RetroResult<StartResponse>> {
-  const result = await authedRequest<unknown>("POST", RETROSPECT_PATH, input, options);
+  const result = await authedRequest<unknown>("POST", RETROSPECT_PATH, input, {
+    ...options,
+    timeoutMs: RETRO_TIMEOUT_MS,
+  });
   // 아직 세션이 없다 — 여기서의 404 는 서버가 이 길을 열어두지 않았다는 뜻이다
   if (!result.ok) return { ok: false, code: mapError(result.error, "server") };
 
@@ -269,7 +282,7 @@ export async function sendTurn(
     "POST",
     `${RETROSPECT_PATH}/${sessionId}/messages`,
     input,
-    options,
+    { ...options, timeoutMs: RETRO_TIMEOUT_MS },
   );
   if (!result.ok) return { ok: false, code: mapError(result.error, "session_not_found") };
 
