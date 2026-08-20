@@ -31,7 +31,7 @@ import { formatKoreanDateShort } from "@/lib/day";
  * **리포트는 평가가 아니라 관찰이다**(`W1.md`) — 점수·등급·연속 일수·실행률·
  * 최고 기록을 쓰지 않는다.
  *
- * ## 새 디자인 (`PLAN.md` A Phase 4 · `design-reference/Report.dc.html`)
+ * ## 새 디자인 (`PLAN.md` A Phase 4 · `docs/DESIGN.md` 「리포트」)
  *
  * ⚠ **감정 도넛이 사라졌다.** `design.md` 「리포트」가 「도넛·비율·범례 **없이**
  * 7일 감정 흐름 + 요약 2줄, 지표는 `9개 완료` 형태」라고 못박고 「완료율·%·분석

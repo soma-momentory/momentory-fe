@@ -10,7 +10,7 @@ export type { IconName };
  * Wanted 아이콘 하나. **24 그리드 · 크기 3단**(16 / 20 / 24 — `design.md` §10).
  *
  * **이모지를 쓰지 않는다**(`RULES.md`). 없는 글리프를 만들어 내지도 않는다 —
- * 필요한 것이 세트에 없으면 `design-reference/assets/icons/` 에서 꺼내
+ * 필요한 것이 세트에 없으면 **만들지 않는다** — 반입 자산은 지웠고(A-18) 세트가
  * `paths.ts` 에 추가한다.
  *
  * 아이콘 자체는 **장식이다** — 낭독기에 읽히지 않는다(`accessibilityElementsHidden`).

@@ -3,7 +3,7 @@ import { StyleSheet, type ViewStyle } from "react-native";
 import { line } from "./color";
 
 /**
- * Momentory DS — 크기. 정본은 `design-reference/design.md` §3~5, §6~11.
+ * Momentory DS — 크기. 정본은 `docs/DESIGN.md` §3~5, §6~11.
  *
  * 프레임 기준 375×812, **좌우 패딩 20 고정.**
  */

@@ -1,7 +1,7 @@
 import type { TextStyle } from "react-native";
 
 /**
- * Momentory DS — 타이포. 정본은 `design-reference/design.md` §2.
+ * Momentory DS — 타이포. 정본은 `docs/DESIGN.md` §2.
  *
  * Pretendard 4웨이트(400·500·600·700). Wanted 19단 스케일에서 앱이 쓰는 **12단만** 꺼냈다
  * (`design.md` 본문은 「11단」이라 적었지만 표에는 12줄이 있다 — 표를 따랐다).

@@ -8,21 +8,22 @@
 **상류 접근은 더 이상 전제하지 않는다** (2026-08-14 D8 — [`PLAN.md`](PLAN.md) §0).
 재반입은 폐기됐고(`sync:theme` 은 2026-08-20 삭제), 규칙·값의 후속 결정은 이 저장소에서 한다.
 
-> 🎨 **디자인 체계가 다시 바뀐다 — 3세대 「Momentory DS」** (2026-08-20 착수).
-> **SSOT 는 [`design-reference/design.md`](design-reference/design.md) 하나다**
-> (Wanted DS 구조 + Momentory 색). 값 검증용 참조는 `design-reference/styles/momentory-tokens.css`,
-> 화면별 소스는 `design-reference/*.dc.html` — 셋 다 **반입 스냅샷이라 직접 고치지 않는다**.
+> 🎨 **3세대 「Momentory DS」 전환이 끝났다** (2026-08-20 · `PLAN.md` A).
+> **SSOT 는 [`docs/DESIGN.md`](docs/DESIGN.md) 하나다** (Wanted DS 구조 + Momentory 색).
+> 화면 40장이 전부 3세대이고, 1·2세대 토큰과 반입 패키지는 지웠다.
 >
-> 이번 전환은 2세대 「손그림 다이어리」(`PLAN.md` · `src/design/paper.ts` · `docs/design/`)를
-> **덧붙이는 게 아니라 대체한다.** 2세대는 화면 8장까지 적용된 상태에서 멈췄다 —
-> 그래서 **한동안 토큰이 3세대 공존**한다(`theme.ts` 웜 · `tokens.mvp.ts` 옛 오버라이드 ·
-> `paper.ts` 손그림). 새 작업은 **variant 를 더 얹지 말고** 새 컴포넌트로 갈아탄 뒤
-> 참조 0 이 된 옛 것을 지운다 — variant 를 더하면 `Card` 가 8종이 된다.
->
-> **반입 디자인이 우선이다**(결정 N0) — `design-reference/` 와 `docs/spec/` 이
-> **시각·상호작용**에서 부딪히면 `design.md` 가 이긴다. 그래서 **확인 모달이 열렸다**(N2).
+> **`DESIGN.md` 가 우선이다**(결정 N0·N6) — `docs/spec/` 과 부딪히면 **문안까지 포함해**
+> `DESIGN.md` 가 이긴다. 그래서 **확인 모달이 열렸고**(N2) `C1`·`A4` 가 사라졌다.
 > ⚠ 단 「**오류**는 한 줄로 흡수 · 모달 금지」는 그대로다 — 모달은 되돌릴 수 없는
-> **행동의 확인**에만 쓴다. **문안 정본은 여전히 `docs/spec/screens/`** 다.
+> **행동의 확인**에만 쓴다.
+>
+> ⚠ **`DESIGN.md` 가 말하지 않는 것은 `docs/spec/screens/` 에서 찾는다.** 시안은 화면
+> 흐름과 시각을 정하지만 **화면별 문안 전부를 담고 있지는 않다** — 겹치면 시안이 이기고,
+> 시안에 없으면 스펙이 유일한 출처다.
+>
+> ⚠ **반입 패키지(`*.dc.html` · 토큰 CSS · 아이콘 원본)는 지웠다**(A-18). 코드 주석에
+> 남은 `Onboarding.dc.html` 같은 이름은 **그 판단이 어디서 왔는지의 출처 표시**이고,
+> 파일은 더 이상 없다. 새 판단은 `DESIGN.md` 로 한다.
 >
 > ✅ **Phase 4-0 — 로그인 이관 완료 (2026-08-20)**. **기준 화면**이다: 여기서 정한 판정
 > (`PLAN.md` A-7 표 — 워드마크 크기 · 마크 20 · 간격 · 문안 규칙)을 다음 화면들이 그대로 따른다.
@@ -61,15 +62,12 @@
 
 색·크기·반경·여백을 정할 때다. **위에서부터 보고, 없을 때만 아래로 내려간다.**
 
-|     | 어디                                                         | 무엇                                                                            |
-| --- | ------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| 1   | [`docs/spec/screens/<ID>.md`](docs/spec/screens/)            | 그 화면의 규칙·**문안** (문안은 항상 여기 — 프로토타입 오탈자 주의)             |
-| 2   | [`src/design/ds/`](src/design/ds/index.ts)                   | **3세대 토큰 정본** — 코드에서 쓰는 값. `color` · `typography` · `metrics`      |
-| 3   | [`design-reference/design.md`](design-reference/design.md)   | **디자인 SSOT.** `ds/` 에 없는 값·규칙은 여기서 확인하고 `ds/` 에 이름을 만든다 |
-| 4   | `design-reference/styles/momentory-tokens.css` · `*.dc.html` | 값 검증·구조 참고. ⚠ **어긋나면 `design.md` 가 이긴다**(EXPORT_MANIFEST §1)     |
-| 5   | [`src/design/paper.ts`](src/design/paper.ts)                 | ⚠ **2세대(손그림) 토큰** — 아직 안 옮긴 화면 8장 전용. 새 화면에 쓰지 않는다    |
-| 6   | [`docs/spec/momentory.css`](docs/spec/momentory.css)         | ⚠ **1세대 값** — 로그인·온보딩 등 아직 안 옮긴 화면 전용                        |
-| 7   | [`docs/spec/COMPONENTS.md`](docs/spec/COMPONENTS.md)         | ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다                               |
+|     | 어디                                                 | 무엇                                                                            |
+| --- | ---------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 1   | [`docs/spec/screens/<ID>.md`](docs/spec/screens/)    | 그 화면의 규칙·**문안** — ⚠ `DESIGN.md` 와 겹치면 그쪽이 이긴다(N6)             |
+| 2   | [`src/design/ds/`](src/design/ds/index.ts)           | **3세대 토큰 정본** — 코드에서 쓰는 값. `color` · `typography` · `metrics`      |
+| 3   | [`docs/DESIGN.md`](docs/DESIGN.md)                   | **디자인 SSOT.** `ds/` 에 없는 값·규칙은 여기서 확인하고 `ds/` 에 이름을 만든다 |
+| 4   | [`docs/spec/COMPONENTS.md`](docs/spec/COMPONENTS.md) | ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다                               |
 
 **`ds/` 가 `design.md` 와 일부러 다른 자리가 있다** — 대비 검수에서 시안 값 여섯이
 WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말). **특히 주 CTA 면은
@@ -116,8 +114,8 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 
 ## 생성물·반입물 — 직접 고치지 말 것
 
-- `design-reference/**` ← **3세대 Momentory DS 반입 패키지** — 디자인 확정 상태를 그대로
-  보존한 것이라 리팩터·리포맷 금지(`.prettierignore` 에 있다). SSOT 는 그 안의 `design.md`
+- `docs/DESIGN.md` ← **디자인 SSOT.** 반입 스냅샷이었으나 패키지를 지우면서
+  **이 저장소가 소유한다**(A-18) — 값·규칙이 바뀌면 여기를 고친다
 - `docs/spec/**` ← 동결 스냅샷 · `docs/design/**` ← 2세대 반입 스냅샷 — 둘 다 직접 수정 금지
 - `ios/` `android/` ← `app.config.ts`. `npx expo prebuild`
 

@@ -8,8 +8,7 @@ import { useAuth } from "@/features/auth/model/auth";
 /**
  * `S1` · 로그인 · 소셜 3종 — Momentory DS 이관 (2026-08-20 · `PLAN.md` A Phase 4).
  *
- * 시각 정본은 [`design-reference/design.md`](../../design-reference/design.md) 「로그인」 +
- * `Login.dc.html`. **인증 로직은 그대로다** — store·라우팅·실패 처리에 손대지 않았다.
+ * 시각 정본은 [`docs/DESIGN.md`](../../docs/DESIGN.md) 「로그인」. **인증 로직은 그대로다** — store·라우팅·실패 처리에 손대지 않았다.
  *
  * ## 구조가 바뀌었다
  *

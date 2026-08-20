@@ -1,9 +1,8 @@
 /**
  * Momentory DS — **3세대 토큰 정본** (2026-08-20 · `PLAN.md` A).
  *
- * SSOT 는 [`design-reference/design.md`](../../../design-reference/design.md) 하나다.
- * `design-reference/styles/momentory-tokens.css` 와 `*.dc.html` 은 값 검증·구조
- * 참고용이고, **어긋나면 `design.md` 가 이긴다**(`EXPORT_MANIFEST.md` §1).
+ * SSOT 는 [`docs/DESIGN.md`](../../../docs/DESIGN.md) 하나다 — 반입 패키지의 나머지
+ * (`*.dc.html` · 토큰 CSS · 아이콘 원본)는 이관이 끝나면서 지웠다(`PLAN.md` A-18).
  *
  * ## 이 파일들만 hex 를 든다
  *

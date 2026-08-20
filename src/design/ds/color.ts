@@ -1,7 +1,7 @@
 import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
- * Momentory DS — 색. 정본은 [`design-reference/design.md`](../../../design-reference/design.md) §1.
+ * Momentory DS — 색. 정본은 [`docs/DESIGN.md`](../../../docs/DESIGN.md) §1.
  *
  * **컴포넌트는 semantic 층만 참조한다.** 화면마다 새 값을 만들지 않는다 —
  * 그것이 이 파일이 하나뿐인 이유다.

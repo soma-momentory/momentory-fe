@@ -33,7 +33,7 @@ import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
 /**
  * `A1` 보관함 · 달력 + `A2` 보관함 · 목록 + 감정 필터
  *
- * ## 새 디자인 (`PLAN.md` A Phase 4 · `design-reference/Archive.dc.html`)
+ * ## 새 디자인 (`PLAN.md` A Phase 4 · `docs/DESIGN.md` 「보관함」)
  *
  * 격자 위에 카드가 뜨는 3세대 DS 다. 2세대의 **스카이 그라디언트·곡선 언덕·감정
  * 얼굴 PNG 가 전부 사라졌고**, 달력/목록 전환이 **세그먼트 바 → 제목 우측 아이콘

@@ -1,5 +1,5 @@
 /**
- * Wanted 아이콘 세트 — `design-reference/assets/icons/` 26개를 그대로 옮겼다.
+ * Wanted 아이콘 세트 — 반입 자산 26개를 그대로 옮긴 것이다(원본은 A-18 에서 지웠다).
  *
  * 전부 **24 그리드 · `currentColor`** 다. 원본 SVG 의 `transform` 은 대부분 단순
  * 평행이동이라 `translate(x,y)` 로 폈고, 회전이 섞인 `arrow-left` 만 `matrix` 를 남겼다
