@@ -12,8 +12,9 @@
  *
  * ## 아직 없는 것
  *
- * Slider(척도) · 채팅 입력 — 쓰는 화면을 만들 때 함께 만든다.
- * 미리 만들어 두면 실제로 필요한 모양과 어긋난 채 굳는다.
+ * 없다. 마지막까지 남아 있던 `Slider`·채팅 입력은 회고(일기)에서 만들었다 —
+ * `Slider`(척도) · `ChatDock`(입력 알약 + 보내기) · `ChoiceGrid`(3열 감정 선택) ·
+ * `Spinner`(정리 중).
  *
  * `ListCell`·`SectionHeader`·`Menu`·`Toast` 는 홈·일정에서 만들었고
  * **보관함·마이가 재사용한다**(`ListCell` 은 설정 목록, `Menu` 는 일기 상세의 ⋮).
@@ -41,7 +42,12 @@ export { Chip } from "./Chip";
 export { Calendar, type CalendarMark } from "./Calendar";
 export { EmotionDot } from "./EmotionDot";
 export { ViewSwitcher, type ViewOption } from "./ViewSwitcher";
+export { ChatScaffold } from "./ChatScaffold";
+export { ChoiceGrid, type Choice } from "./ChoiceGrid";
 export { ChatBubble } from "./ChatBubble";
+export { ChatDock } from "./ChatDock";
+export { Slider } from "./Slider";
+export { Spinner } from "./Spinner";
 export { WheelPicker, type WheelColumn } from "./WheelPicker";
 export { TopNavigation } from "./TopNavigation";
 export { BottomNavigation, type TabItem } from "./BottomNavigation";

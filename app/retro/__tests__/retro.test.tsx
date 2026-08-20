@@ -3,13 +3,20 @@ import { router } from "expo-router";
 
 import RetroConfirm from "../confirm";
 import RetroEmotion from "../emotion";
-import RetroIntro from "../intro";
 
-import { paperColors } from "@/design/paper";
+import { interaction, primary, selectedTint } from "@/design/ds";
 import { useDay } from "@/features/home/model/day";
 import { useRetro } from "@/features/retro/model/retro";
 import { SAMPLE_MOMENTS, SAMPLE_SCHEDULES } from "@/mocks/sample";
 
+/**
+ * ⚠ **`C1`(인트로)은 사라졌다** — 새 시안의 「일기」 흐름은 일정 확인부터 시작한다
+ * (`design.md` 「일기」 1~5). 홈 CTA 가 곧바로 `C2` 를 연다.
+ *
+ * 여기 남은 단언은 **규칙**이다. 옛 화면의 모양을 재던 것(요약 카드 문구 ·
+ * 감정 추가 점선 칩 · 「오늘의 순간」 · `잠시 쉬기`)은 시안이 그 기능을 없애서
+ * 함께 사라졌고, **없앤 것을 지키는 단언**으로 바꿔 뒀다.
+ */
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
 }));
@@ -26,102 +33,45 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe("C1 · 회고 인트로 — 떠올리기가 아니라 고르기", () => {
-  it("바바가 기억해둔 재료를 먼저 보여준다", async () => {
-    // 샘플 하루 = 스키마 정본: 일정 4 · 순간 2 · 감정 기록 3
-    // (화남/답답 · 행복함 · 불안함 — 「면접 스터디 · 불안함」은 마침 없이 감정만 있다)
-    const { getByText } = await render(<RetroIntro />);
-
-    expect(getByText("오늘 바바가 기억해둔 것")).toBeTruthy();
-    expect(getByText("일정 4개 · 순간 2개 · 감정 기록 3개")).toBeTruthy();
-  });
-
-  it("재료는 홈과 같은 값을 본다 — 하드코딩하지 않는다", async () => {
-    useDay.getState().selectEmotion("s4", 9); // 운동 가기에 평온함 추가
-    const { getByText } = await render(<RetroIntro />);
-
-    expect(getByText("일정 4개 · 순간 2개 · 감정 기록 4개")).toBeTruthy();
-  });
-
-  it("숨긴 일정은 재료에서도 빠진다 — 그 줄의 감정까지", async () => {
-    useDay.getState().hide("s3"); // 면접 스터디 = 불안함
-    const { getByText } = await render(<RetroIntro />);
-
-    expect(getByText("일정 3개 · 순간 2개 · 감정 기록 2개")).toBeTruthy();
-  });
-
-  it("몇 분 걸린다고 말하지 않고 진행률도 두지 않는다", async () => {
-    // 대화 길이는 사용자가 정한다 (C1.md)
-    const { queryByText } = await render(<RetroIntro />);
-
-    expect(queryByText(/\d+\s*분/)).toBeNull();
-    expect(queryByText(/%/)).toBeNull();
-    expect(queryByText(/단계/)).toBeNull();
-  });
-
-  it("[시작하기] 가 오늘 정리로 간다", async () => {
-    const { getByText } = await render(<RetroIntro />);
-
-    await fireEvent.press(getByText("시작하기"));
-
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/retro/confirm");
-  });
-});
-
-describe("C2 · 오늘 정리 확인 — 홈과 같은 카드", () => {
-  it("홈과 같은 제목·버튼을 쓴다 — 새 컴포넌트를 배우게 하지 않는다", async () => {
+describe("C2 · 오늘 일정 확인 — 읽기 전용이다", () => {
+  it("오늘 일정을 그대로 보여준다", async () => {
     const { getByText } = await render(<RetroConfirm />);
 
-    expect(getByText("오늘 일정")).toBeTruthy();
-    expect(getByText("오늘의 순간")).toBeTruthy();
-    expect(getByText("＋ 일정 추가하기")).toBeTruthy();
+    expect(getByText("오늘 있었던 일을 잠깐 떠올려봐요.")).toBeTruthy();
+    expect(getByText("팀 회의")).toBeTruthy();
+    expect(getByText("운동 가기")).toBeTruthy();
   });
 
-  it("순간을 시각 없이 라벨 아래 모은다", async () => {
-    const { getByText, queryByText } = await render(<RetroConfirm />);
+  it("여기서 일정을 고치거나 더하지 못한다 — 고치는 자리는 홈 하나다", async () => {
+    const { queryByText, queryByLabelText } = await render(<RetroConfirm />);
 
-    expect(getByText("발표 자료 피드백 정리하기")).toBeTruthy();
-    expect(getByText("생각보다 반응이 좋았다.")).toBeTruthy();
-    // 시각을 붙이지 않는다 (C2.md)
-    expect(queryByText(/\d{1,2}:\d{2}/)).toBeNull();
+    expect(queryByText("＋ 일정 추가하기")).toBeNull();
+    // 마침 토글도 감정 추가 칩도 없다 — 회고 도중 화면 밖으로 새는 길을 만들지 않는다
+    expect(queryByLabelText("면접 스터디 마침")).toBeNull();
+    expect(queryByLabelText("운동 가기 감정 추가")).toBeNull();
   });
 
-  it("감정이 비어 있는 줄에만 [감정 추가] 점선 칩이 붙는다", async () => {
-    const { getByLabelText, queryByLabelText } = await render(<RetroConfirm />);
+  it("완료만 초록 체크로 말한다 — 안 한 일에 표식을 붙이지 않는다", async () => {
+    const { getByText } = await render(<RetroConfirm />);
 
-    // 「운동 가기」는 아직 마치지 않았고 감정도 없다 — **마침을 요구하지 않는다** (C2.md)
-    expect(getByLabelText("운동 가기 감정 추가")).toBeTruthy();
-
-    // 감정이 있는 줄에는 붙지 않는다. 「면접 스터디」는 마치지 않았어도 감정이 있다
-    expect(queryByLabelText("팀 회의 감정 추가")).toBeNull();
-    expect(queryByLabelText("면접 스터디 감정 추가")).toBeNull();
+    // 마친 줄은 취소선으로 남고, 안 한 줄에는 아무 표식이 없다
+    expect(flatten(getByText("팀 회의").props.style).textDecorationLine).toBe("line-through");
+    expect(flatten(getByText("운동 가기").props.style).textDecorationLine).toBeUndefined();
   });
 
-  it("감정 3개를 모은다 — 화남/답답 · 행복함 · 불안함", async () => {
-    // C2.md 의 「감정 3개」. 마침 여부와 무관하게 줄에 달린 감정을 그대로 모은다
-    const { getAllByText } = await render(<RetroConfirm />);
+  it("숨긴 일정은 여기서도 빠진다", async () => {
+    useDay.getState().hide("s3");
+    const { queryByText } = await render(<RetroConfirm />);
 
-    for (const name of ["화남/답답", "행복함", "불안함"]) {
-      expect(getAllByText(name).length).toBeGreaterThanOrEqual(1);
-    }
+    expect(queryByText("면접 스터디")).toBeNull();
   });
 
-  it("여기서 고친 것은 곧바로 홈에도 반영된다 — 같은 Schedule 이다", async () => {
-    const { getByLabelText, getByText } = await render(<RetroConfirm />);
+  it("숫자로 압박하지 않는다 — 마침 개수도 단계 번호도 없다", async () => {
+    const { queryByText } = await render(<RetroConfirm />);
 
-    await fireEvent.press(getByLabelText("면접 스터디 마침"));
-
-    expect(useDay.getState().schedules.find((s) => s.id === "s3")?.done).toBe(true);
-    expect(getByText("3/4 마침")).toBeTruthy();
-  });
-
-  it("오늘 기록한 감정을 이름과 함께 모은다", async () => {
-    // 줄에 붙은 알약과 요약 카드에 각각 한 번씩 — 같은 감정을 두 자리에서 본다
-    const { getByText, getAllByText } = await render(<RetroConfirm />);
-
-    expect(getByText("오늘 기록한 감정")).toBeTruthy();
-    expect(getAllByText("화남/답답")).toHaveLength(2);
-    expect(getAllByText("행복함")).toHaveLength(2);
+    expect(queryByText(/\d\/\d 마침/)).toBeNull();
+    expect(queryByText(/\d\/\d단계/)).toBeNull();
+    expect(queryByText(/%/)).toBeNull();
   });
 
   it("[다음] 이 감정 고르기로 간다", async () => {
@@ -131,20 +81,31 @@ describe("C2 · 오늘 정리 확인 — 홈과 같은 카드", () => {
 
     expect(jest.mocked(router.push)).toHaveBeenCalledWith("/retro/emotion");
   });
+
+  it("나가는 길은 닫기 하나다 — 회고는 한 줄이다", async () => {
+    const { getByLabelText } = await render(<RetroConfirm />);
+
+    await fireEvent.press(getByLabelText("닫기"));
+
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
+  });
 });
 
-describe("C3 · 지금 감정 고르기 — 필수다", () => {
+describe("C3 · 시작 감정 고르기 — 필수다", () => {
   it("통과 버튼을 두지 않고, 고르기 전에는 CTA 가 잠긴다", async () => {
-    const { getByText, queryByText } = await render(<RetroEmotion />);
+    const { getByRole, queryByText } = await render(<RetroEmotion />);
 
     expect(queryByText("잘 모르겠어요")).toBeNull();
     expect(queryByText(/건너뛰/)).toBeNull();
-    // 사라지지 않고 흐려진다
-    expect(flatten(getByText("회고 시작하기").parent?.props.style).opacity).toBe(0.36);
+
+    // 사라지지 않고 잠긴다 — 다음이 있다는 사실은 남는다
+    const cta = getByRole("button", { name: "이야기 시작하기" });
+    expect(cta.props.accessibilityState.disabled).toBe(true);
+    expect(flatten(cta.props.style).backgroundColor).toBe(interaction.disabled);
   });
 
   it("9종을 한 화면에 다 보인다", async () => {
-    const { getByLabelText } = await render(<RetroEmotion />);
+    const { getByText } = await render(<RetroEmotion />);
 
     for (const name of [
       "불안함",
@@ -157,46 +118,59 @@ describe("C3 · 지금 감정 고르기 — 필수다", () => {
       "뿌듯함",
       "평온함",
     ]) {
-      expect(getByLabelText(name)).toBeTruthy();
+      expect(getByText(name)).toBeTruthy();
     }
   });
 
   it("하나만 고른다 — 다른 것을 누르면 옮겨간다", async () => {
-    const { getByLabelText } = await render(<RetroEmotion />);
+    const { getByRole } = await render(<RetroEmotion />);
 
-    await fireEvent.press(getByLabelText("우울함"));
+    await fireEvent.press(getByRole("button", { name: "우울함" }));
     expect(useRetro.getState().startEmotion).toBe(2);
 
-    await fireEvent.press(getByLabelText("평온함"));
+    await fireEvent.press(getByRole("button", { name: "평온함" }));
     expect(useRetro.getState().startEmotion).toBe(9);
-    expect(getByLabelText("우울함").props.accessibilityState.selected).toBe(false);
+    expect(getByRole("button", { name: "우울함" }).props.accessibilityState.selected).toBe(false);
   });
 
-  it("고르면 요약 카드가 되돌릴 수 있음을 말한다", async () => {
+  it("고른 뒤에는 CTA 가 열린다", async () => {
     const r = await render(<RetroEmotion />);
-    expect(r.queryByText(/시작할게요/)).toBeNull(); // 고르기 전엔 없다
 
-    await fireEvent.press(r.getByLabelText("우울함"));
+    await fireEvent.press(r.getByRole("button", { name: "우울함" }));
 
-    expect(r.getByText("우울함으로 시작할게요")).toBeTruthy();
-    expect(
-      r.getByText("이 감정으로 오늘 대화를 시작해요 · 지금 다시 골라도 괜찮아요."),
-    ).toBeTruthy();
-    expect(flatten(r.getByText("회고 시작하기").parent?.props.style).opacity).toBeUndefined();
+    const cta = r.getByRole("button", { name: "이야기 시작하기" });
+    expect(cta.props.accessibilityState.disabled).toBe(false);
+    expect(flatten(cta.props.style).backgroundColor).toBe(primary.heavy);
   });
 
-  it("선택을 색만으로 표시하지 않는다 — 잉크 2px 테두리 + 굵기 700", async () => {
-    // 새 디자인의 3×3 타일(`EmotionGrid variant="paper"`)은 꺼진 칸에도 2px 자리를
-    // 비워 두고 **테두리 색**으로 켜짐을 말한다 — 켤 때 글자가 밀리지 않게(EmotionGrid).
+  it("선택을 색만으로 표시하지 않는다 — 테두리 2px + 글자 굵기", async () => {
     const r = await render(<RetroEmotion />);
 
-    expect(flatten(r.getByLabelText("우울함").props.style).borderColor).toBe("transparent");
-    await fireEvent.press(r.getByLabelText("우울함"));
+    const off = flatten(r.getByRole("button", { name: "우울함" }).props.style);
+    const offLabel = flatten(r.getByText("우울함").props.style).fontFamily;
 
-    const cell = flatten(r.getByLabelText("우울함").props.style);
-    expect(cell.borderWidth).toBe(2);
-    expect(cell.borderColor).toBe(paperColors.line.ink);
-    expect(flatten(r.getByText("우울함").props.style).fontFamily).toBe("Pretendard-Bold");
+    await fireEvent.press(r.getByRole("button", { name: "우울함" }));
+
+    const on = flatten(r.getByRole("button", { name: "우울함" }).props.style);
+    expect(off.borderWidth).toBe(1);
+    expect(on.borderWidth).toBe(2);
+    expect(on.borderColor).toBe(primary.normal);
+    expect(flatten(r.getByText("우울함").props.style).fontFamily).not.toBe(offLabel);
+  });
+
+  it("감정색을 쓰지 않는다 — 아홉이 같은 브랜드 초록으로 켜진다", async () => {
+    // `design.md` §1 — 아홉을 각자 제 색으로 칠하면 고른 것이 색의 밝기 싸움이 된다
+    const r = await render(<RetroEmotion />);
+
+    await fireEvent.press(r.getByRole("button", { name: "행복함" }));
+    expect(flatten(r.getByRole("button", { name: "행복함" }).props.style).backgroundColor).toBe(
+      selectedTint,
+    );
+
+    await fireEvent.press(r.getByRole("button", { name: "평온함" }));
+    expect(flatten(r.getByRole("button", { name: "평온함" }).props.style).backgroundColor).toBe(
+      selectedTint,
+    );
   });
 
   it("강도 척도·임상 용어를 쓰지 않는다", async () => {
@@ -206,37 +180,63 @@ describe("C3 · 지금 감정 고르기 — 필수다", () => {
     expect(queryByText(/점수/)).toBeNull();
     expect(queryByText(/우울증|불안장애|증상/)).toBeNull();
   });
+
+  it("[이야기 시작하기] 가 대화로 간다", async () => {
+    const { getByRole } = await render(<RetroEmotion />);
+
+    await fireEvent.press(getByRole("button", { name: "평온함" }));
+    await fireEvent.press(getByRole("button", { name: "이야기 시작하기" }));
+
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/retro/talk");
+  });
 });
 
-describe("회고 상단 — 진행률을 노출하지 않는다", () => {
-  it("[잠시 쉬기] 는 중단을 묻지 않고 홈으로 나간다", async () => {
-    // 확인 모달을 두지 않는다 (C1.md). 영속 저장은 아직 아니다 — retro.ts 주석
-    const { getByText } = await render(<RetroIntro />);
+describe("회고 상단 — 진행률도 저장 약속도 두지 않는다", () => {
+  it("단계 번호·진행률을 두지 않는다", async () => {
+    const { queryByText } = await render(<RetroEmotion />);
 
-    await fireEvent.press(getByText("잠시 쉬기"));
-
-    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
+    expect(queryByText(/\d\/\d단계/)).toBeNull();
+    expect(queryByText(/%/)).toBeNull();
   });
 
-  it("나갔다 와도 이 세션 동안은 값이 남는다 — 다만 영속은 아니다", async () => {
-    // 앱이 떠 있는 동안만이다. 화면에 「저장했어요」류 문구를 두지 않는 이유다
-    useRetro.getState().setStartEmotion(2);
-    const { getByText } = await render(<RetroIntro />);
-    await fireEvent.press(getByText("잠시 쉬기"));
-
-    expect(useRetro.getState().startEmotion).toBe(2);
-  });
-
-  it("저장을 약속하는 문구를 화면에 두지 않는다", async () => {
-    const { queryByText } = await render(<RetroIntro />);
+  it("저장을 약속하는 문구를 두지 않는다 — 아직 기기에 남기지 않는다", async () => {
+    const { queryByText } = await render(<RetroConfirm />);
 
     expect(queryByText(/저장/)).toBeNull();
     expect(queryByText(/이어서 하기|이어가기/)).toBeNull();
   });
 
-  it("단계 번호를 두지 않는다", async () => {
+  it("나갔다 와도 이 세션 동안은 값이 남는다 — 다만 영속은 아니다", async () => {
+    useRetro.getState().setStartEmotion(2);
+    const { getByLabelText } = await render(<RetroConfirm />);
+
+    await fireEvent.press(getByLabelText("닫기"));
+
+    expect(useRetro.getState().startEmotion).toBe(2);
+  });
+});
+
+// 옛 화면에만 있던 라벨 — 시안이 그 기능을 없앴다는 사실을 여기서 고정한다
+describe("시안이 걷어낸 것들", () => {
+  it("C2 에 순간·날씨·감정 요약 카드를 두지 않는다", async () => {
     const { queryByText } = await render(<RetroConfirm />);
 
-    expect(queryByText(/\d\/\d단계/)).toBeNull();
+    expect(queryByText("오늘의 순간")).toBeNull();
+    expect(queryByText("오늘 날씨")).toBeNull();
+    expect(queryByText("오늘 기록한 감정")).toBeNull();
+  });
+
+  it("C3 에 요약 카드를 두지 않는다 — 고른 타일이 이미 말한다", async () => {
+    const r = await render(<RetroEmotion />);
+
+    await fireEvent.press(r.getByRole("button", { name: "우울함" }));
+
+    expect(r.queryByText(/시작할게요/)).toBeNull();
+  });
+
+  it("[잠시 쉬기] 가 사라졌다 — 나가는 길은 닫기 하나다", async () => {
+    const { queryByText } = await render(<RetroConfirm />);
+
+    expect(queryByText("잠시 쉬기")).toBeNull();
   });
 });

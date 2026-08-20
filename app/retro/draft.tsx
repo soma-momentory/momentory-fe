@@ -2,56 +2,56 @@ import { Redirect, router } from "expo-router";
 import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, TextInput, View } from "react-native";
 
-import { RetroButton } from "@/components/chat/RetroButton";
-import { RetroScene } from "@/components/chat/RetroScene";
-import { EmotionPill } from "@/components/common/EmotionPill";
-import { RetroNav } from "@/components/common/RetroNav";
-import { SectionLabel } from "@/components/common/SectionLabel";
-import { SegBar } from "@/components/common/SegBar";
-import { ActionRow } from "@/components/diary/ActionRow";
-import { AppText } from "@/components/primitives/AppText";
-import { Card } from "@/components/primitives/Card";
-import { ScreenBackground } from "@/components/primitives/ScreenBackground";
-import { paperColors, paperTypography } from "@/design/paper";
-import theme from "@/design/theme";
-import { diaryBody } from "@/design/tokens.mvp";
+import { DayScheduleList } from "@/components/archive/DayScheduleList";
+import { Button, Card, EmotionDot, Screen, Text, TopNavigation } from "@/components/ds";
+import { label as labelColor, space, text } from "@/design/ds";
+import { emotionName } from "@/features/emotion/model/emotion";
 import { useDiary } from "@/features/diary/model/diary";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
-import { useTodayContext } from "@/features/home/model/day";
+import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { useRetro } from "@/features/retro/model/retro";
-import { formatKoreanDate } from "@/lib/day";
+import { formatKoreanDateShort } from "@/lib/day";
 
 /**
- * `C6` 일기 초안 · 내 문장 + `C6-b` 바바가 함께 본 오늘 + 행동 카드
+ * `C6` · 완성된 일기 확인
  *
- * **일기는 서버가 대화를 읽고 쓴다.** 초안(`diary.diary`)은 대화에서 옮겨 적은
- * 것이라 고칠 수 있고, 고친 결과가 보관함의 「내가 남긴 오늘」이 된다(`C6.md`).
+ * `design.md` 「일기」 4번: 「정리 중 → **일기 확인(제목 없음, 날짜·날씨·감정 +
+ * 본문 + 그날 일정)** → `일기 저장하기` / `직접 고치기`」
  *
- * **두 면은 있을 때만 있다** — 서버가 리프레이밍 일기(`reframedDiary`)와 행동
- * 카드를 함께 주면 세그먼트로 두 면을 오간다. 짧은 기록형은 리프레이밍도 행동
- * 카드도 없어 **한 면(내 문장)만** 그린다(`C6-b.md` — 카드는 한 장 또는 없음).
+ * ## 여기서 대화 문법이 끝난다
+ *
+ * 시안 주석: 「여기서 대화 문법을 끝내고 **읽기 레이아웃으로 전환**(말풍선 없음)」 ·
+ * 「**대화 원문은 결과 화면에 다시 보여주지 않아요** — 대화는 과정, 일기는 결과」.
+ * 그래서 이 화면만 `ChatScaffold` 를 쓰지 않는다.
+ *
+ * ## 기본은 읽기다 — 고치기는 모드다
+ *
+ * 옛 화면은 처음부터 `TextInput` 이었다. 시안은 **읽기로 보여주고 `직접 고치기`**
+ * 로 편집에 들어간다(④-c). 「새 화면 문법을 만들지 않고 입력 컴포넌트만 재사용」
+ * 이라 라우트를 늘리지 않고 같은 자리에서 모드만 바꾼다.
  *
  * - **감정 `[+]` 더하기를 두지 않는다** — 감정은 `C3` 시작 감정에서만 온다
  * - 본문은 **상한**이 있고 **최소 글자 수를 요구하지 않는다**
  * - 저장하면 `Diary` 한 장(+ 행동 카드가 있으면 한 장)이 남고 `C7` 로 간다
  * - **한 문장 요약·점수·배지를 만들지 않는다**
+ *
+ * 옛 세그먼트(「내가 남긴 오늘 / 바바가 함께 본 오늘」)는 뺐다 — 시안에 없고,
+ * `reframedDiary` 는 **저장된 일기 상세(`A3`)가 `DiaryBabaFace` 로 이어 보여준다**.
+ * 행동 카드도 여기가 아니라 저장 완료(`C7`)가 보여준다(시안 5번).
  */
-const FACES: readonly [string, string] = ["내가 남긴 오늘", "바바가 함께 본 오늘"];
-
 export default function RetroDraft() {
   const startEmotion = useRetro((s) => s.startEmotion);
   const diary = useRetro((s) => s.diary);
   const actionCard = useRetro((s) => s.actionCard);
   // 서버 회고 세션 id — 저장하는 일기에 실어 두면 나중에 서버 저장분을 되불러온다
   const sessionId = useRetro((s) => s.sessionId);
-  const resetRetro = useRetro((s) => s.reset);
   const saveDiary = useDiary((s) => s.save);
-  // 홈·회고 확인과 같은 「오늘」 — 일기의 날짜·날씨가 여기서 온다
+  const schedules = useDay((s) => s.schedules);
+  // 홈·일정 확인과 같은 「오늘」 — 일기의 날짜·날씨가 여기서 온다
   const { date: today, weather } = useTodayContext();
 
-  const [face, setFace] = useState<0 | 1>(0);
-  // `diary` 는 완료 시 store 에 담긴 서버 초안이다
   const [body, setBody] = useState<string>(diary?.diary ?? "");
+  const [editing, setEditing] = useState(false);
   /**
    * 저장은 **한 번뿐**이다. 버튼을 빠르게 두 번 누르면 `router.replace` 가 돌기
    * 전에 `save` 가 두 번 들어와 일기가 두 장 생긴다. ref 인 이유는 같은 틱 안에서
@@ -63,17 +63,13 @@ export default function RetroDraft() {
   if (startEmotion == null) return <Redirect href="/retro/emotion" />;
   if (diary == null) return <Redirect href="/retro/talk" />;
 
-  // 「바바가 함께 본 오늘」 면 — 리프레이밍 일기나 행동 카드가 있을 때만 존재한다
-  const reframed = diary.reframedDiary;
-  const hasBabaFace = reframed != null || actionCard != null;
-
   const save = () => {
     if (saving.current) return;
     saving.current = true;
     saveDiary({
       date: today,
       body,
-      babaView: reframed,
+      babaView: diary.reframedDiary,
       babaViewBasis: null,
       emotions: [startEmotion],
       storyEmotion: null,
@@ -84,127 +80,104 @@ export default function RetroDraft() {
       retrospectId: sessionId != null ? String(sessionId) : null,
       edited: body !== diary.diary,
     });
-    // 회고 한 벌은 여기까지가 수명이다 — 다음 회고에 앞 대화가 섞이지 않게
-    resetRetro();
+    // 회고 한 벌은 여기까지가 수명이다 — 다음 회고에 앞 대화가 섞이지 않게…
+    // 단, `C7` 이 행동 카드를 보여주므로 **그 화면이 읽고 나서** 비운다
     router.replace("/retro/done");
   };
 
-  // 첫 면(내 문장). 두 번째 면이 없으면 여기서 바로 저장한다
-  const showEditor = face === 0 || !hasBabaFace;
-
   return (
-    <ScreenBackground variant="paperFlat">
-      <RetroScene />
-      <RetroNav variant="paper" title="오늘의 일기" rest={false} />
+    <Screen>
+      {/* 고치는 중에는 뒤로가기가 읽기로 되돌린다(시안 ④-c 「뒤로가기로 나가고」) */}
+      <TopNavigation
+        leading={editing ? "arrow-left" : "close"}
+        onLeadingPress={() => (editing ? setEditing(false) : router.replace("/home"))}
+      />
 
       <View style={styles.head}>
-        <AppText style={styles.date}>{`${formatKoreanDate(today)} · 오늘의 회고`}</AppText>
-        {/* 감정을 더하는 [+] 를 두지 않는다 — 여기서 만들면 리포트가 두 갈래가 된다 */}
-        <EmotionPill id={startEmotion} variant="paper" />
+        <Text variant="title3" color={labelColor.strong}>
+          {`${formatKoreanDateShort(today)}의 일기`}
+        </Text>
+        <Text variant="caption1" color={labelColor.alternative}>
+          {weather.label}
+        </Text>
       </View>
-
-      {hasBabaFace ? (
-        <SegBar variant="paper" items={FACES} activeIndex={face} onChange={setFace} />
-      ) : null}
 
       <ScrollView
         style={styles.stack}
         contentContainerStyle={styles.stackContent}
         showsVerticalScrollIndicator={false}
       >
-        {showEditor ? (
-          <Card variant="paperOpaque" style={styles.card}>
-            <TextInput
-              value={body}
-              onChangeText={setBody}
-              multiline
-              maxLength={DIARY_BODY_MAX_LENGTH}
-              selectionColor={paperColors.brand.greenDark}
-              style={styles.body}
-              accessibilityLabel="일기 본문"
-            />
-            <View style={styles.footRow}>
-              <AppText style={[styles.foot, styles.footFlex]}>
-                대화를 바탕으로 적어봤어요 · 고쳐도 괜찮아요
-              </AppText>
-              {/* 카운터만 둔다 — 최소 글자 수를 요구하지 않는다 */}
-              <AppText style={[styles.foot, styles.counter]}>
-                {`${body.length} / ${DIARY_BODY_MAX_LENGTH}`}
-              </AppText>
-            </View>
-          </Card>
-        ) : (
-          <>
-            {/* 회고를 마친 당시의 고정 스냅샷 — 저장 뒤에는 다시 만들지 않는다 */}
-            {reframed != null ? (
-              <Card variant="paperSoft" style={styles.card}>
-                <AppText style={styles.body}>{reframed}</AppText>
-                <AppText style={styles.foot}>
-                  바바의 관점은 제안일 뿐이에요 · 내 문장이 우선이에요
-                </AppText>
-              </Card>
-            ) : null}
+        <Card padding="loose" style={styles.card}>
+          <View style={styles.emotionRow}>
+            <EmotionDot id={startEmotion} />
+            <Text variant="caption1" color={labelColor.normal}>
+              {emotionName(startEmotion)}
+            </Text>
+          </View>
 
-            {actionCard != null ? (
-              <Card variant="paperOpaque" style={styles.card}>
-                <SectionLabel variant="paper">오늘 만든 행동 카드</SectionLabel>
-                <ActionRow label="상황" value={actionCard.situation} />
-                <ActionRow label="목표 행동" value={actionCard.action} />
-                <AppText style={styles.foot}>저장하면 이 일기 아래에 함께 남아요</AppText>
-              </Card>
-            ) : null}
-          </>
-        )}
+          {editing ? (
+            <>
+              <TextInput
+                value={body}
+                onChangeText={setBody}
+                multiline
+                maxLength={DIARY_BODY_MAX_LENGTH}
+                style={styles.input}
+                accessibilityLabel="일기 본문"
+              />
+              {/* 카운터만 둔다 — 최소 글자 수를 요구하지 않는다 */}
+              <Text variant="caption1" color={labelColor.alternative} style={styles.counter}>
+                {`${body.length} / ${DIARY_BODY_MAX_LENGTH}`}
+              </Text>
+            </>
+          ) : (
+            <Text variant="body1Reading" color={labelColor.normal}>
+              {body}
+            </Text>
+          )}
+        </Card>
+
+        {/* 본문 아래 「오늘 일정」을 함께 기록 — 원본 구조 그대로다 */}
+        <View style={styles.schedules}>
+          <DayScheduleList schedules={visibleSchedules(schedules)} title="오늘 일정" />
+        </View>
       </ScrollView>
 
-      {/* 저장은 마지막 면에서 한 번뿐이다 — 세그먼트는 면을 바꿀 뿐 저장하지 않는다 */}
-      {hasBabaFace && face === 0 ? (
-        <RetroButton label="다음" onPress={() => setFace(1)} />
-      ) : (
-        <RetroButton label="오늘 일기 저장하기" onPress={save} />
-      )}
-    </ScreenBackground>
+      <View style={styles.dock}>
+        <Button label="일기 저장하기" fill onPress={save} />
+        {/* 고치는 중에는 되돌릴 곳이 상단 `‹` 하나라 보조 버튼을 두지 않는다 */}
+        {editing ? null : (
+          <View style={styles.secondary}>
+            <Button label="직접 고치기" variant="text" onPress={() => setEditing(true)} />
+          </View>
+        )}
+      </View>
+    </Screen>
   );
 }
-
-const { styles: type } = paperTypography;
 
 const styles = StyleSheet.create({
   head: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    paddingTop: 10,
-    paddingBottom: theme.layout.gap.element,
-  },
-  date: {
-    flex: 1,
-    fontSize: type.label.fontSize,
-    lineHeight: type.label.lineHeight,
-    color: paperColors.text.greenStrong,
+    justifyContent: "space-between",
+    gap: space.md,
+    paddingBottom: space.md,
   },
 
-  stack: { flex: 1, marginHorizontal: -theme.layout.screenMargin },
+  stack: { flex: 1, marginHorizontal: -space.xl },
   stackContent: {
-    gap: theme.layout.gap.element,
-    paddingHorizontal: theme.layout.screenMargin,
-    paddingVertical: theme.layout.gap.element,
+    gap: space.lg,
+    paddingHorizontal: space.xl,
+    paddingBottom: space.lg,
   },
 
-  card: { gap: 10 },
-  body: {
-    fontFamily: paperTypography.fontFamily.regular,
-    fontSize: diaryBody.fontSize,
-    lineHeight: diaryBody.lineHeight,
-    color: paperColors.text.primary,
-    padding: 0,
-  },
-  footRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
-  foot: {
-    fontSize: type.caption.fontSize,
-    lineHeight: type.caption.lineHeight,
-    color: paperColors.text.mutedWarmText,
-  },
-  footFlex: { flex: 1 },
-  counter: { fontVariant: ["tabular-nums"] },
+  card: { gap: space.md },
+  emotionRow: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
+  input: { ...text.body1Reading, color: labelColor.normal, padding: 0 },
+  counter: { textAlign: "right", fontVariant: ["tabular-nums"] },
+  schedules: { paddingHorizontal: space.xs },
+
+  dock: { gap: space.xs },
+  secondary: { alignItems: "center" },
 });

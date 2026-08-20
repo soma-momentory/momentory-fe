@@ -46,8 +46,9 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     const { getByText, getByRole } = await render(<Home />);
 
     expect(getByText("오늘 하루는 어땠어요?")).toBeTruthy();
+    // 인사 화면(`C1`)이 사라져 **곧바로 일정 확인**으로 간다(`design.md` 「일기」 1)
     await fireEvent.press(getByRole("button", { name: "지금 하루 돌아보기" }));
-    expect(router.push).toHaveBeenCalledWith("/retro/intro");
+    expect(router.push).toHaveBeenCalledWith("/retro/confirm");
   });
 
   it("알림을 켠 사람에게만 정한 시각을 말한다", async () => {
@@ -59,8 +60,9 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
   it("종은 갈 곳이 있다 — 알림 설정으로 간다", async () => {
     const { getByLabelText } = await render(<Home />);
 
+    // 옛 `/my/notify` 는 마이 이관에서 **시트가 됐다** — 그 시트를 여는 곳이 `M1` 이다
     await fireEvent.press(getByLabelText("알림 설정"));
-    expect(router.push).toHaveBeenCalledWith("/my/notify");
+    expect(router.push).toHaveBeenCalledWith("/my");
   });
 
   it("이번 주 감정은 요일마다 한 칸이고, 이름을 낭독기에 준다", async () => {

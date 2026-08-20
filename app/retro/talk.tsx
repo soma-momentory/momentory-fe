@@ -1,58 +1,66 @@
 import { Redirect, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { AnswerBubble } from "@/components/chat/AnswerBubble";
-import { BabaBubble } from "@/components/chat/BabaBubble";
-import { ChatInput } from "@/components/chat/ChatInput";
-import { ChatLayout } from "@/components/chat/ChatLayout";
-import { DirectionChip } from "@/components/chat/DirectionChip";
-import { MeasureInput } from "@/components/chat/MeasureInput";
-import { RetroButton } from "@/components/chat/RetroButton";
-import { RetroScene } from "@/components/chat/RetroScene";
-import { TypingDots } from "@/components/chat/TypingDots";
-import { DirectionSheet, type DirectionChoice } from "@/components/common/DirectionSheet";
-import { RetroNav } from "@/components/common/RetroNav";
-import { AppText } from "@/components/primitives/AppText";
-import { ScreenBackground } from "@/components/primitives/ScreenBackground";
-import { paperColors, paperTypography } from "@/design/paper";
-import theme from "@/design/theme";
+import {
+  Button,
+  ChatBubble,
+  ChatDock,
+  ChatScaffold,
+  Chip,
+  Slider,
+  Spinner,
+  Text,
+} from "@/components/ds";
+import {
+  background,
+  label as labelColor,
+  line,
+  primary,
+  radius,
+  selectedTint,
+  space,
+} from "@/design/ds";
+import { visibleSchedules, useDay } from "@/features/home/model/day";
+import { useProfile } from "@/features/my/model/settings";
 import {
   PHASE_ENDED,
   UI_MEASURE,
   sendTurn,
   startRetro,
   type Reply,
+  type ReplyOption,
   type RetroFailureCode,
   type StartScheduleItem,
   type TurnInput,
 } from "@/features/retro/data/retroApi";
-import { visibleSchedules, useDay } from "@/features/home/model/day";
 import { emotionKeyOf, useRetro } from "@/features/retro/model/retro";
-import { useProfile } from "@/features/my/model/settings";
 
 /**
- * 회고 대화 — **서버가 주도한다**(`C4`~`C4-e`). 옛 고정 스크립트(`FOLLOW_UPS`)는
- * BE 연결로 사라졌다: 화면은 `startRetro`/`sendTurn` 을 부르고 **응답의 형태를 보고
- * 무엇을 그릴지 정할** 뿐이다.
+ * `C4` 회고 대화 — **서버가 주도한다.** 화면은 `startRetro`/`sendTurn` 을 부르고
+ * **응답의 형태를 보고 무엇을 그릴지 정할** 뿐이다. phase 가 아니라 형태로 분기한다.
  *
- * - `options` 있음 → 방향/세부/일정 **선택 시트**(`DirectionSheet`)
- * - `ui==="measure"` → **0~10 눈금**(`MeasureInput`)
- * - 그 밖의 텍스트 질문 → **자유 입력**(`ChatInput`)
- * - `done` → 일기가 있으면 `[일기 보러 가기]`(`draft`), 없으면 안전 종료(`ended`)
+ * `design.md` 「일기」 3번:
+ * 「대화: 자유 입력 / 선택형 / 척도 3종. **선택형·척도에서는 입력창을 숨기고
+ * `보내기` 로 확정**. 「직접 쓸게요」를 고르면 입력창으로 전환」
  *
- * phase 가 아니라 **형태로 분기**한다 — 같은 `script` phase 에서도 셋이 번갈아 온다.
+ * ## 바텀시트가 사라졌다
+ *
+ * 옛 화면은 선택지가 오면 **시트**(`DirectionSheet`)를 띄웠다. 새 시안은 선택지를
+ * **대화 안의 칩**으로 두고 아래 `보내기` 로 확정한다 — 고르는 일이 대화에서
+ * 떨어져 나가지 않고, 시트를 닫았을 때 「무엇도 확정되지 않은 상태」라는 애매한
+ * 자리도 없어진다.
+ *
+ * ⚠ **선택지가 설명을 들고 오면 칩이 아니라 줄로 편다.** 시안의 선택지는 라벨
+ * 하나짜리라 칩 줄이 맞지만, 서버는 `hint`(예: 「지난 비슷한 상황에서 정한 행동」)와
+ * `description` 을 함께 주는 턴이 있다(행동 추천). 칩 줄에는 그 두 줄을 얹을 자리가
+ * 없어서 **고르기 전에 안 보이게 된다** — 고르는 데 쓰라고 준 맥락이라 감추면
+ * 기능이 준다. 그래서 라벨만 있는 턴은 칩, 설명이 있는 턴은 줄이다.
  *
  * 공통으로 지키는 것:
  * - **지난 버블을 삭제하지 않는다** — `turns` 는 쌓기만 한다
- * - **방향을 고른 지점에 경계 칩**을 남긴다(`C4-d.md`) — 선택 라벨을 그대로
  * - **오류는 한 줄로 흡수한다** — 모달·경고 아이콘을 두지 않는다(`RULES.md` 4).
  *   대화 중 실패는 입력을 잠그지 않고 다시 말할 수 있게 둔다
- *
- * 새 디자인(`PLAN.md` D2 — 흐름은 그대로, 시각만): 언덕·카피바라 배경
- * (`RetroScene`) 위에 말풍선 둘과 **입력 독**이 뜬다. **바바 얼굴(`Avatar`)은
- * 뺐다** — 배경의 카피바라가 그 자리를 대신하고, 말풍선 위에 얼굴을 한 번 더
- * 얹으면 같은 캐릭터가 두 번 나온다.
  */
 
 /** 실패 사유 → 화면 한 줄. 사용자가 할 수 있는 일이 같으면 문구도 같다 */
@@ -85,7 +93,11 @@ export default function RetroTalk() {
 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [draftText, setDraftText] = useState("");
+  /** 이번 턴에 고른 선택지 — `보내기` 를 누를 때까지 확정되지 않는다 */
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  /** 척도 값 — 눈금별로 하나씩 */
+  const [measureValues, setMeasureValues] = useState<Record<string, number>>({});
   // 시작 요청을 한 번만 보낸다 — 첫 렌더의 이펙트가 두 번 돌아도 세션이 둘 생기지 않게
   const starting = useRef(false);
 
@@ -98,13 +110,15 @@ export default function RetroTalk() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startEmotion, sessionId]);
 
-  // 감정 없이 들어올 수 없다 — C3 이 필수이기 때문이다(C3.md)
+  // 감정 없이 들어올 수 없다 — C3 이 필수이기 때문이다(서버도 required 다)
   if (startEmotion == null) return <Redirect href="/retro/emotion" />;
 
+  /** 새 응답이 오면 이번 턴의 입력 상태를 비운다 — 앞 턴의 선택이 남지 않게 */
   const applyServerReply = (reply: Reply) => {
     applyReply(reply);
-    // 선택지가 오면 시트를 연다 — 뒤 대화(방금 온 질문 버블)가 스크림 너머로 보인다
-    setSheetOpen((reply.options?.length ?? 0) > 0);
+    setPickedId(null);
+    setMeasureValues({});
+    setDraftText("");
   };
 
   async function runStart(emotion: NonNullable<typeof startEmotion>) {
@@ -123,10 +137,8 @@ export default function RetroTalk() {
     });
     setPending(false);
 
-    if (result.ok) {
-      beginSession(result.data.sessionId, result.data.reply);
-      setSheetOpen((result.data.reply.options?.length ?? 0) > 0);
-    } else {
+    if (result.ok) beginSession(result.data.sessionId, result.data.reply);
+    else {
       // 다시 시도할 수 있게 자물쇠를 푼다
       starting.current = false;
       setError(FAILURE_MESSAGES[result.code]);
@@ -143,136 +155,257 @@ export default function RetroTalk() {
     else setError(FAILURE_MESSAGES[result.code]);
   };
 
-  const sendText = (text: string) => {
+  const sendText = () => {
+    const text = draftText.trim();
+    if (text.length === 0) return;
     addMyTurn(text);
     void runTurn({ content: text });
   };
 
-  const confirmChoice = (choice: DirectionChoice) => {
-    setSheetOpen(false);
-    // "직접 입력" 옵션 — 사용자가 적은 행동을 내가 한 말로 남기고 자유 텍스트로 보낸다
-    if ("content" in choice) {
-      addMyTurn(choice.content);
-      void runTurn({ content: choice.content });
-      return;
-    }
-    const { optionId } = choice;
-    const phase = lastReply?.phase ?? "";
-    const option = lastReply?.options?.find((o) => o.id === optionId);
+  /** 고른 선택지를 확정한다 — 「직접 입력」은 여기 오지 않고 입력창으로 넘어간다 */
+  const sendPicked = () => {
+    if (pickedId == null) return;
+    const option = lastReply?.options?.find((o) => o.id === pickedId);
     if (option != null) {
       // 방향 선택은 경계 칩으로, 일정 선택 등은 내가 한 말로 남긴다
-      if (isDirectionPhase(phase)) addChipTurn(option.label);
+      if (isDirectionPhase(lastReply?.phase ?? "")) addChipTurn(option.label);
       else addMyTurn(option.label);
     }
-    void runTurn({ optionId });
+    void runTurn({ optionId: pickedId });
   };
 
-  const submitMeasures = (values: Record<string, number>) => {
+  const sendMeasures = () => {
     // 요약은 서버가 다음 응답에 담아준다 — 여기서 내 버블을 지어내지 않는다
-    void runTurn({ measures: values });
+    void runTurn({ measures: measureValues });
   };
 
   const retryStart = () => {
-    if (startEmotion == null) return;
     starting.current = true;
     void runStart(startEmotion);
   };
 
   const done = lastReply?.done === true;
   const ended = done && lastReply?.phase === PHASE_ENDED;
-  const hasOptions = (lastReply?.options?.length ?? 0) > 0;
-  const isMeasure = lastReply?.ui === UI_MEASURE && (lastReply?.measures?.length ?? 0) > 0;
+  const options = lastReply?.options ?? null;
+  const measures = lastReply?.measures ?? null;
+  const isMeasure = lastReply?.ui === UI_MEASURE && (measures?.length ?? 0) > 0;
   const startFailed = sessionId == null && error != null;
+  const picked = options?.find((o) => o.id === pickedId) ?? null;
+  /** 「직접 쓸게요」를 고르면 칩을 접고 입력창으로 넘어간다(`design.md` 「일기」 3) */
+  const customPicked = picked?.input === true;
+  const showOptions = !done && options != null && options.length > 0 && !customPicked;
 
   return (
-    <ScreenBackground variant="paperFlat">
-      <RetroScene />
-      <RetroNav variant="paper" emotion={startEmotion} />
-
-      <KeyboardAvoidingView
-        style={styles.fill}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ChatLayout variant="paper" stickToEnd>
-          {turns.map((t) => {
-            if (t.who === "me")
-              return (
-                <AnswerBubble key={t.id} variant="paper">
-                  {t.text}
-                </AnswerBubble>
-              );
-            if (t.who === "chip")
-              return <DirectionChip key={t.id} variant="paper" label={t.text} />;
-            return (
-              <BabaBubble key={t.id} variant="paper">
-                {t.text}
-              </BabaBubble>
-            );
-          })}
-
-          {pending ? <TypingDots variant="paper" /> : null}
-        </ChatLayout>
-
-        <View style={styles.bottom}>
-          {/* 대화 중 실패는 한 줄로 흡수하고 입력을 잠그지 않는다 */}
-          {error != null && !startFailed ? <AppText style={styles.error}>{error}</AppText> : null}
-
-          {startFailed ? (
-            <>
-              <AppText style={styles.error}>{error}</AppText>
-              <RetroButton label="다시 시도" onPress={retryStart} disabled={pending} />
-            </>
-          ) : ended ? (
-            // 안전 종료 — 마지막 바바 버블이 안내를 담고, 여기선 나가는 길만 둔다
-            <RetroButton label="홈으로 돌아가기" onPress={() => router.replace("/home")} />
-          ) : done ? (
-            // 입력칸을 내리고 하나만 둔다 — 대화가 끝났다는 것을 자리로 알린다
-            <RetroButton label="일기 보러 가기" onPress={() => router.push("/retro/draft")} />
-          ) : isMeasure && lastReply?.measures != null ? (
-            <MeasureInput
-              variant="paper"
-              measures={lastReply.measures}
-              onSubmit={submitMeasures}
-              disabled={pending}
-            />
-          ) : hasOptions && !sheetOpen ? (
-            // 시트를 닫았을 때 다시 여는 길 — 닫으면 아무것도 확정되지 않는다(C4-c2.md)
-            <RetroButton label="이야기 이어가기" onPress={() => setSheetOpen(true)} />
-          ) : hasOptions ? (
-            // 시트가 열려 있는 동안 하단은 비운다
-            <View />
-          ) : (
-            <ChatInput variant="paper" onSend={sendText} disabled={pending} />
-          )}
-        </View>
-      </KeyboardAvoidingView>
-
-      {sheetOpen && lastReply?.options != null ? (
-        <DirectionSheet
-          options={lastReply.options}
-          onConfirm={confirmChoice}
-          onDismiss={() => setSheetOpen(false)}
+    <ChatScaffold
+      leading="close"
+      onLeadingPress={() => router.replace("/home")}
+      dock={
+        <RetroDock
+          startFailed={startFailed}
+          error={error}
+          ended={ended}
+          done={done}
+          pending={pending}
+          onRetry={retryStart}
+          showOptions={showOptions}
+          canSendPicked={pickedId != null}
+          onSendPicked={sendPicked}
+          isMeasure={isMeasure && !customPicked}
+          onSendMeasures={sendMeasures}
+          draftText={draftText}
+          onChangeDraft={setDraftText}
+          onSendText={sendText}
+          customPicked={customPicked}
         />
+      }
+    >
+      {turns.map((t) => (
+        <ChatBubble key={t.id} variant={t.who === "baba" ? "question" : "answer"}>
+          {t.text}
+        </ChatBubble>
+      ))}
+
+      {/* 선택지는 질문 바로 아래, 대화 안에 붙는다 — 시트로 떼어내지 않는다 */}
+      {showOptions && options != null ? (
+        rich(options) ? (
+          <View style={styles.rows}>
+            {options.map((o) => (
+              <OptionRow
+                key={o.id}
+                option={o}
+                selected={o.id === pickedId}
+                onPress={() => setPickedId(o.id)}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.chips}>
+            {options.map((o) => (
+              <Chip
+                key={o.id}
+                label={o.label}
+                selected={o.id === pickedId}
+                onPress={() => setPickedId(o.id)}
+              />
+            ))}
+          </View>
+        )
       ) : null}
-    </ScreenBackground>
+
+      {/* 척도 — 슬라이더가 주인공이고 숫자는 결과값이다 */}
+      {isMeasure && !customPicked && measures != null ? (
+        <View style={styles.measures}>
+          {measures.map((m) => (
+            <View key={m.id} style={styles.measure}>
+              <Text variant="body2" color={labelColor.neutral}>
+                {m.label}
+              </Text>
+              <Slider
+                accessibilityLabel={m.label}
+                value={measureValues[m.id] ?? m.min}
+                onChange={(v) => setMeasureValues((prev) => ({ ...prev, [m.id]: v }))}
+                min={m.min}
+                max={m.max}
+                minLabel="아쉬웠어요"
+                maxLabel="충분했어요"
+                disabled={pending}
+              />
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {/* 기다리는 동안 — 진행률도 남은 시간도 말하지 않는다 */}
+      {pending ? (
+        <View style={styles.pending}>
+          <Spinner />
+        </View>
+      ) : null}
+    </ChatScaffold>
+  );
+}
+
+/** 설명을 들고 온 선택지가 하나라도 있으면 줄로 편다 */
+const rich = (options: readonly ReplyOption[]) =>
+  options.some((o) => o.hint != null || o.description != null);
+
+/**
+ * 설명이 붙는 선택지 한 줄. **배지(`hint`)가 라벨 위**에 온다 — 「지난 비슷한
+ * 상황에서 정한 행동」처럼 **고르는 데 쓰라고 준 맥락**이라 고르기 전에 보여야 한다.
+ */
+function OptionRow({
+  option,
+  selected,
+  onPress,
+}: {
+  option: ReplyOption;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[styles.row, selected ? styles.rowOn : styles.rowOff]}
+    >
+      {option.hint != null ? (
+        <Text variant="label2" color={labelColor.alternative}>
+          {option.hint}
+        </Text>
+      ) : null}
+      <Text variant="body1" color={labelColor.strong}>
+        {option.label}
+      </Text>
+      {option.description != null ? (
+        <Text variant="caption1" color={labelColor.neutral}>
+          {option.description}
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+}
+
+/**
+ * 하단 독 — **이번 턴에 무엇을 할 수 있는지 하나만** 보여준다.
+ * 선택형·척도에서는 입력창을 숨긴다(`design.md` 「일기」 3).
+ */
+type DockProps = {
+  startFailed: boolean;
+  error: string | null;
+  ended: boolean;
+  done: boolean;
+  pending: boolean;
+  onRetry: () => void;
+  showOptions: boolean;
+  canSendPicked: boolean;
+  onSendPicked: () => void;
+  isMeasure: boolean;
+  onSendMeasures: () => void;
+  draftText: string;
+  onChangeDraft: (v: string) => void;
+  onSendText: () => void;
+  /** 「직접 쓸게요」로 열린 입력창 — 낭독기에 무엇을 적는 자리인지 말한다 */
+  customPicked: boolean;
+};
+
+function RetroDock(p: DockProps) {
+  // 시작 실패는 대화가 없는 상태라 다시 시도 하나만 둔다
+  if (p.startFailed) {
+    return (
+      <>
+        <Text variant="caption1" color={labelColor.neutral}>
+          {p.error}
+        </Text>
+        <Button label="다시 시도" fill onPress={p.onRetry} disabled={p.pending} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {/* 대화 중 실패는 한 줄로 흡수하고 입력을 잠그지 않는다 */}
+      {p.error != null ? (
+        <Text variant="caption1" color={labelColor.neutral}>
+          {p.error}
+        </Text>
+      ) : null}
+
+      {p.ended ? (
+        // 안전 종료 — 마지막 버블이 안내를 담고, 여기선 나가는 길만 둔다
+        <Button label="홈으로 돌아가기" fill onPress={() => router.replace("/home")} />
+      ) : p.done ? (
+        <Button label="일기로 정리하기" fill onPress={() => router.push("/retro/draft")} />
+      ) : p.showOptions ? (
+        <Button
+          label="보내기"
+          fill
+          disabled={!p.canSendPicked || p.pending}
+          onPress={p.onSendPicked}
+        />
+      ) : p.isMeasure ? (
+        <Button label="보내기" fill disabled={p.pending} onPress={p.onSendMeasures} />
+      ) : (
+        <ChatDock
+          value={p.draftText}
+          onChangeText={p.onChangeDraft}
+          onSend={p.onSendText}
+          disabled={p.pending}
+          accessibilityLabel={p.customPicked ? "직접 입력한 행동" : "답변"}
+          placeholder={p.customPicked ? "직접 적어 주세요" : undefined}
+        />
+      )}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  bottom: {
-    paddingTop: theme.layout.gap.element,
-    paddingBottom: theme.layout.gap.element,
-    gap: theme.layout.gap.element,
-  },
-  /**
-   * 한 줄 안내는 **경고색을 쓰지 않는다**(`RULES.md` 4 — 오류는 흡수한다).
-   * 게다가 이 줄은 화면 아래, 언덕(`bg/hill`) 위에 앉는다 — 위험색
-   * `dangerFill` 은 그 면에서 3.2 로 AA 미달이라 잉크 톤이 맞다.
-   */
-  error: {
-    fontSize: paperTypography.styles.bodySm.fontSize,
-    lineHeight: paperTypography.styles.bodySm.lineHeight,
-    color: paperColors.text.primary,
-  },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, alignSelf: "flex-start" },
+  rows: { gap: space.sm },
+  row: { gap: 2, padding: space.lg, borderRadius: radius.medium },
+  rowOff: { backgroundColor: background.elevated, borderWidth: 1, borderColor: line.neutral },
+  rowOn: { backgroundColor: selectedTint, borderWidth: 2, borderColor: primary.normal },
+  measures: { gap: space.xl },
+  measure: { gap: space.sm },
+  pending: { alignSelf: "flex-start", paddingVertical: space.sm },
 });

@@ -1,8 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 import { useEffect } from "react";
 
-import { paperColors } from "@/design/paper";
-import theme from "@/design/theme";
+import { background } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 
 /**
@@ -10,7 +9,7 @@ import { useAuth } from "@/features/auth/model/auth";
  *
  * **전체화면 모달 스택**이다(`ARCHITECTURE §3`) — 탭바를 두지 않는다. 회고는
  * 시작하면 끝까지 가는 한 줄이고, 중간에 보관함으로 새는 길을 만들지 않는다.
- * 나가는 길은 상단의 `‹` 와 `[잠시 쉬기]` 둘뿐이다.
+ * 나가는 길은 상단의 `✕` 하나다 — `[잠시 쉬기]` 는 시안에 없어 사라졌다.
  *
  * `C7` 에서 홈으로 pop 하고 `Diary` 한 장이 남는다 — **완료 화면은 허브가
  * 아니다**(`RULES.md` 「회고」).
@@ -33,10 +32,9 @@ export default function RetroLayout() {
       screenOptions={{
         headerShown: false,
         animation: "fade",
-        animationDuration: theme.motion.spec.screen.duration,
-        // 화면 사이 fade 동안 비치는 바닥 — 회고는 종이 베이스다(`paperFlat`).
-        // 옛 배경색이 남으면 전환 때 크림→테라코타가 한 번 번쩍인다
-        contentStyle: { backgroundColor: paperColors.bg.flat },
+        // 화면 사이 fade 동안 비치는 바닥 — 앱 기본 면이다.
+        // 옛 배경색이 남으면 전환 때 한 번 번쩍인다
+        contentStyle: { backgroundColor: background.normal },
       }}
     />
   );
