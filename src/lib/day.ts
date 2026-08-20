@@ -14,6 +14,12 @@ export function formatKoreanDate(iso: string) {
   return `${Number(m)}월 ${Number(d)}일 ${weekday}요일`;
 }
 
+/** `"2026-07"` → `"2026년 7월"` — 달력·목록의 달 라벨 */
+export function formatKoreanMonth(month: string) {
+  const [y = "0", m = "1"] = month.split("-");
+  return `${Number(y)}년 ${Number(m)}월`;
+}
+
 /**
  * `"2026-07-27"` → `"월"` — 요일 한 글자.
  *

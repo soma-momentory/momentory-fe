@@ -1,115 +1,79 @@
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { EmotionPill } from "@/components/common/EmotionPill";
-import { MOOD_ICONS, MOOD_ICON_SIZE } from "@/components/icons/moodIcons";
-import { AppText } from "@/components/primitives/AppText";
-import { Card } from "@/components/primitives/Card";
-import { paperColors, paperRadius, paperTypography } from "@/design/paper";
+import { Card, EmotionDot, Icon, Text } from "@/components/ds";
+import { label as labelColor, space } from "@/design/ds";
 import type { Diary } from "@/features/diary/model/diary";
+import { emotionName } from "@/features/emotion/model/emotion";
 import { formatKoreanDate } from "@/lib/day";
 
 /**
  * 일기 한 장의 미리보기 — `A1` 선택 날짜 카드 · `A2` 목록.
  *
- * 새 디자인(`보관함.dc.html`)의 항목은 **감정 얼굴 아바타 + 날짜 + 발췌 +
- * 감정 칩**이다. 반투명 흰 면(`Card variant="paperSoft"`) 위에 앉는다.
+ * 새 디자인(`Archive.dc.html`)의 항목은 **감정 도트 + 감정 이름 + 날짜 + 발췌**다.
+ * 시안이 도트를 왼쪽에 세우고 그 옆에 이름을 붙인 것이 이 카드의 핵심이다 —
+ * **달력이 못 하는 일을 여기서 한다**: 색으로 찍힌 점의 뜻을 글자로 말한다
+ * (`A1.md` 「색만으로 감정을 판단하게 하지 않는다」).
  *
- * **미리보기는 두 줄 말줄임**이다(`A2.md`) — 길이가 들쭉날쭉하면 목록이 아니라
- * 벽이 된다.
- *
- * **색만으로 감정을 판단하게 하지 않는다** — 달력의 얼굴이 못 하는 일을 여기서
- * 한다. 감정 칩이 이름을 글자로 보여준다(`A1.md`).
- *
- * 링크는 `전체 일기 보기` 가 아니라 **`일기 열어보기`** 다 — 여는 것은 그날의
- * 일기 **한 장**이다(`A1.md` — 문안 그대로).
+ * - 날짜 문안은 **`docs/spec` 이 정본**이라 「7월 22일 수요일」이다 —
+ *   시안의 「8월 13일의 일기」가 아니다(`A1.md`)
+ * - **미리보기는 두 줄 말줄임**이다(`A2.md`) — 시안은 A1 3줄 / A2 1줄로 갈랐지만
+ *   길이가 자리마다 다르면 같은 카드로 읽히지 않는다. 스펙 값 하나로 맞춘다
+ * - 링크는 `전체 일기 보기` 가 아니라 **`일기 열어보기`** 다 — 여는 것은 그날의
+ *   일기 **한 장**이다(`A1.md` — 문안 그대로)
  */
 type Props = {
   diary: Diary;
   onOpen: (id: string) => void;
-  /** `A1` 선택 날짜 카드에만 붙는다 — 목록은 카드 자체가 링크다 */
+  /** `A1` 선택 날짜 카드에만 붙는다 — 목록은 카드 자체가 링크라 `›` 로 말한다 */
   showOpenLink?: boolean;
 };
 
 export function DiaryPreviewCard({ diary, onOpen, showOpenLink = false }: Props) {
-  const face = diary.emotions[0];
-
   return (
     <Pressable accessibilityRole="button" onPress={() => onOpen(diary.id)}>
-      <Card variant="paperSoft" style={styles.card}>
-        {/* 아바타 원은 감정이 없어도 자리를 지킨다 — 줄마다 글의 시작이 어긋나지 않게 */}
-        <View style={styles.avatar}>
-          {face != null ? (
-            <Image
-              source={MOOD_ICONS[face]}
-              style={styles.face}
-              resizeMode="contain"
-              accessibilityIgnoresInvertColors
-            />
-          ) : null}
+      <Card style={styles.card}>
+        <View style={styles.head}>
+          <Text variant="headline1" color={labelColor.strong} numberOfLines={1} style={styles.date}>
+            {formatKoreanDate(diary.date)}
+          </Text>
+          {/* 여는 길을 가리키는 표식은 카드마다 하나다 — 목록은 `›`, 선택 카드는 아래 링크 */}
+          {showOpenLink ? null : (
+            <Icon name="chevron-right" size={16} color={labelColor.assistive} />
+          )}
         </View>
 
-        <View style={styles.main}>
-          <View style={styles.head}>
-            <AppText weight="700" numberOfLines={1} style={styles.date}>
-              {formatKoreanDate(diary.date)}
-            </AppText>
+        {/* 도트 옆에는 늘 이름이 붙는다 — 감정 원색은 대비가 낮아 색만으로 읽히지 않는다 */}
+        {diary.emotions.length > 0 ? (
+          <View style={styles.tags}>
             {diary.emotions.map((e, i) => (
-              <EmotionPill key={`${e}-${i}`} id={e} variant="paper" />
+              <View key={`${e}-${i}`} style={styles.tag}>
+                <EmotionDot id={e} />
+                <Text variant="caption1" color={labelColor.neutral}>
+                  {emotionName(e)}
+                </Text>
+              </View>
             ))}
           </View>
+        ) : null}
 
-          <AppText numberOfLines={2} style={styles.body}>
-            {diary.body}
-          </AppText>
+        <Text variant="body2Reading" color={labelColor.neutral} numberOfLines={2}>
+          {diary.body}
+        </Text>
 
-          {showOpenLink ? (
-            <AppText weight="700" style={styles.link}>
-              일기 열어보기 ›
-            </AppText>
-          ) : null}
-        </View>
+        {showOpenLink ? (
+          <Text variant="label2" color={labelColor.alternative}>
+            일기 열어보기 ›
+          </Text>
+        ) : null}
       </Card>
     </Pressable>
   );
 }
 
-const { styles: type } = paperTypography;
-const AVATAR = 44;
-
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    padding: 12,
-    borderRadius: paperRadius.card,
-  },
-  avatar: {
-    width: AVATAR,
-    height: AVATAR,
-    borderRadius: AVATAR / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: paperColors.bg.fieldAlt,
-  },
-  face: { width: MOOD_ICON_SIZE.listAvatar, height: MOOD_ICON_SIZE.listAvatar },
-
-  main: { flex: 1, minWidth: 0, gap: 6 },
-  head: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
-  date: {
-    fontSize: type.body.fontSize,
-    lineHeight: type.body.lineHeight,
-    color: paperColors.text.primary,
-  },
-  body: {
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    // 시안의 발췌 `#8F9A83` 은 카드 위 2.9 미달 — 글자용 보정 토큰으로 (PLAN §4)
-    color: paperColors.text.mutedWarmText,
-  },
-  link: {
-    fontSize: type.caption.fontSize,
-    lineHeight: type.caption.lineHeight,
-    color: paperColors.text.green,
-  },
+  card: { gap: space.sm },
+  head: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  date: { flex: 1, minWidth: 0 },
+  tags: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm },
+  tag: { flexDirection: "row", alignItems: "center", gap: space.xs },
 });
