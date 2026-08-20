@@ -82,12 +82,27 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
   });
 
-  it("슬로건을 보이고 진행 바·퍼센트를 두지 않는다", async () => {
-    const { getByText, queryByText } = await render(<Splash />);
+  it("로그인과 같은 워드마크·태그라인을 같은 자리에 둔다", async () => {
+    // `S0` → `S1` 이 깜빡이지 않게 **같은 문안·같은 블록**을 쓴다(`index.tsx` 머리말).
+    // 옛 슬로건(「오늘도 잠시 쉬어가도 괜찮아요.」)은 캐릭터와 함께 사라졌다
+    const { getByText } = await render(<Splash />);
 
-    expect(getByText("오늘도 잠시 쉬어가도 괜찮아요.")).toBeTruthy();
+    expect(getByText("모멘토리")).toBeTruthy();
+    expect(getByText("오늘을 돌아보고, 내일을 조금 다르게.")).toBeTruthy();
+  });
+
+  it("진행 바·퍼센트·로딩 문구를 두지 않는다 — 기다림 표시 하나다", async () => {
+    const { getByLabelText, queryByText } = await render(<Splash />);
+
+    expect(getByLabelText("준비 중")).toBeTruthy();
     expect(queryByText(/%/)).toBeNull();
     expect(queryByText(/로딩|불러오는/)).toBeNull();
+  });
+
+  it("로그인 버튼을 두지 않는다 — 아직 무엇을 누를지 정하기 전이다", async () => {
+    const { queryByText } = await render(<Splash />);
+
+    expect(queryByText(/카카오로 계속하기|Google로 계속하기|Apple로 계속하기/)).toBeNull();
   });
 });
 

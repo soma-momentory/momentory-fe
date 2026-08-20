@@ -194,16 +194,12 @@ export default function DiaryDetail() {
             style={styles.menuScrim}
           />
           <Card padding="none" style={styles.menu}>
-            {/* 이 면의 본문만 고칠 수 있다 — 바바의 면에서는 수정으로 가지 않는다 */}
-            {face === 0 ? (
-              <MenuItem
-                label="수정하기"
-                onPress={() => {
-                  setMenuOpen(false);
-                  router.push(`/diary/${diary.id}/edit`);
-                }}
-              />
-            ) : null}
+            {/*
+              ⚠ **「수정하기」가 사라졌다** (2026-08-20). 저장된 일기를 고치는 화면
+              (`A4`)은 **기능이 아니다** — 고칠 기회는 저장 전(`C6` 의 `직접 고치기`)
+              하나이고, 저장한 뒤의 일기는 그날의 기록으로 남는다.
+              메뉴에 남은 것은 삭제뿐이다.
+            */}
             <MenuItem
               label="삭제하기"
               destructive

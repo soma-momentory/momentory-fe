@@ -1,33 +1,33 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Animated, StyleSheet, View } from "react-native";
-import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from "react-native-svg";
+import { StyleSheet, View } from "react-native";
 
-import { AppText } from "@/components/primitives/AppText";
-import { useReduceMotion } from "@/components/primitives/AppButton";
-import { ScreenBackground } from "@/components/primitives/ScreenBackground";
-import theme from "@/design/theme";
-import { babaShadow } from "@/design/tokens.mvp";
+import { Screen, Spinner, Text } from "@/components/ds";
+import { label as labelColor, space } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 
 /**
  * `S0` · 스플래시 = `entry` 상태 기계의 `route` 판정 자리.
  *
- * **첫 화면은 아무것도 묻지 않는다.** 바바 하나와 워드마크, 문장 하나(`S0.md`).
- * 로딩을 숨기려고 진행 바를 그리면 기다림이 더 길게 느껴진다 — 광원과 호흡으로
- * "살아 있다"만 전한다.
+ * ## 로그인과 같은 화면에서 버튼만 뺀 것이다 (2026-08-20)
  *
- * - **워드마크도 Pretendard 하나** — 서체를 늘리는 대신 크기(34)와 자간(.055em)으로
- *   위계를 만든다. 자간은 .145 → **.055em**(2026-08-06) — 넓은 자간이 낱글자로 읽혔다
- * - **연결선·먼지 없음** — 선이 워드마크와 슬로건을 갈라놨다. 여백 26 으로 대신한다
- * - 그림자는 **92×8 / 24% 를 발밑에** — 크면 캐릭터가 떠 보인다
- * - 모션은 `breathe`(scale 1→1.015 · 4.6s) · `glowPulse`(5.6s). **Reduce Motion
- *   에서 전부 정지**한다
- * - **최소 0.8초**를 보장하고 준비되면 즉시 넘어간다. 진행 바·퍼센트 없음.
- *   1.5초 지연 상태(`S0-b`)는 MVP 범위 밖이다
+ * 새 시안에 `S0` 프레임이 **없다**(결정 N4). 없는 것을 지어내는 대신 **바로 다음에
+ * 올 화면(`S1` 로그인)과 같은 자리에 같은 것**을 두고, 아직 정하지 못한 것(로그인
+ * 수단)만 비웠다. 그 자리에 기다림 표시가 앉는다.
+ *
+ * 그래서 `S0` → `S1` 이 **깜빡이지 않는다** — 워드마크와 태그라인이 같은 자리에
+ * 있고 아래만 버튼으로 바뀐다. 옛 화면은 캐릭터 · 광원 · 호흡 애니메이션 · 발밑
+ * 그림자를 그렸는데, 반입 패키지가 캐릭터를 전부 뺐고(N8) **마지막 캐릭터 자산이
+ * 여기 있었다**.
+ *
+ * - **아무것도 묻지 않는다** — 워드마크 · 태그라인 · 기다림 하나
+ * - **진행률·퍼센트를 두지 않는다** — 얼마나 걸리는지 모르는 일에 숫자를 붙이면
+ *   그 숫자가 틀렸을 때 신뢰가 깎인다(`Spinner` 머리말 · `RULES.md` 4)
+ * - **최소 0.8초**를 보장하고 준비되면 즉시 넘어간다. 1.5초 지연 상태(`S0-b`)는
+ *   MVP 범위 밖이다
  * - **`max(0.8s, 준비완료)`** — 그 사이 SecureStore 세션을 비동기로 복원한다
- *   (`hydrating` 동안 보이는 것이 곧 S0 다, §3). 판정 셋:
+ *   (`hydrating` 동안 보이는 것이 곧 S0 다, `ARCHITECTURE §3`). 판정 셋:
  *
  * ```
  * 세션 없음                    → (auth)/login
@@ -42,16 +42,11 @@ import { useOnboardingCompletion } from "@/features/onboarding/model/completion"
  * 분기 자체는 여기 있고, 영속이 붙어도 이 파일은 바뀌지 않는다.
  */
 const MIN_SPLASH_MS = 800;
-const BABA = 147;
-const GLOW = 176;
 
 export default function Splash() {
-  const reduceMotion = useReduceMotion();
   const status = useAuth((s) => s.status);
   const completed = useOnboardingCompletion((s) => s.completed);
   const [minDone, setMinDone] = useState(false);
-  const [breathe] = useState(() => new Animated.Value(1));
-  const [glow] = useState(() => new Animated.Value(0.62));
 
   useEffect(() => {
     void useAuth.getState().hydrate();
@@ -67,103 +62,42 @@ export default function Splash() {
       return;
     }
     // 온보딩을 마친 사람은 홈으로 — 매번 온보딩을 다시 보게 하지 않는다.
-    // 이 값은 `hydrate` 가 서버에 물어 적어둔 것이다(위 주석).
+    // 이 값은 `hydrate` 가 서버에 물어 적어둔 것이다(위 주석)
     router.replace(completed ? "/home" : "/welcome");
   }, [minDone, status, completed]);
 
-  useEffect(() => {
-    if (reduceMotion) {
-      breathe.setValue(1);
-      glow.setValue(0.62);
-      return;
-    }
-    const loops = [
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(breathe, { toValue: 1.015, duration: 2300, useNativeDriver: true }),
-          Animated.timing(breathe, { toValue: 1, duration: 2300, useNativeDriver: true }),
-        ]),
-      ),
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glow, { toValue: 0.4, duration: 2800, useNativeDriver: true }),
-          Animated.timing(glow, { toValue: 0.62, duration: 2800, useNativeDriver: true }),
-        ]),
-      ),
-    ];
-    loops.forEach((l) => l.start());
-    return () => loops.forEach((l) => l.stop());
-  }, [reduceMotion, breathe, glow]);
-
   return (
-    <ScreenBackground variant="entry">
-      <View style={styles.center}>
-        <View style={styles.stage}>
-          {/* 광원 176 / .62 — 바바 뒤에서 숨 쉬는 빛 */}
-          <Animated.View style={[styles.glow, { opacity: glow }]} pointerEvents="none">
-            <Svg width={GLOW} height={GLOW}>
-              <Defs>
-                <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
-                  <Stop offset="0%" stopColor={white} stopOpacity="1" />
-                  <Stop offset="100%" stopColor={white} stopOpacity="0" />
-                </RadialGradient>
-              </Defs>
-              <Circle cx={GLOW / 2} cy={GLOW / 2} r={GLOW / 2} fill="url(#glow)" />
-            </Svg>
-          </Animated.View>
-
-          {/* 발밑 그림자 92×8 / 24% — 캐릭터가 뜨지 않게 발에 붙인다 */}
-          <Svg width={92} height={8} style={styles.shadow} pointerEvents="none">
-            <Ellipse
-              cx={46}
-              cy={4}
-              rx={46}
-              ry={4}
-              fill={babaShadow.color}
-              opacity={babaShadow.opacity}
-            />
-          </Svg>
-
-          <Animated.Image
-            source={require("../assets/baba/sitting-greeting.png")}
-            style={[styles.baba, { transform: [{ scale: breathe }] }]}
-            resizeMode="contain"
-          />
-        </View>
-
-        <View style={styles.wordmarkBlock}>
-          <AppText tone="strong" style={styles.wordmark}>
-            모멘토리
-          </AppText>
-          <AppText style={styles.slogan}>오늘도 잠시 쉬어가도 괜찮아요.</AppText>
-        </View>
+    <Screen>
+      {/* 로그인과 **같은 블록**이다 — 자리·간격·아래 96 까지(`login.tsx` `hero`) */}
+      <View style={styles.hero}>
+        <Text variant="title2" color={labelColor.strong}>
+          모멘토리
+        </Text>
+        <Text variant="body2Reading" color={labelColor.neutral}>
+          오늘을 돌아보고, 내일을 조금 다르게.
+        </Text>
       </View>
-    </ScreenBackground>
+
+      {/* 로그인이라면 소셜 3종이 서는 자리 — 아직 무엇을 누를지 정하기 전이다 */}
+      <View style={styles.waiting} accessibilityLabel="준비 중" accessibilityRole="progressbar">
+        <Spinner />
+      </View>
+    </Screen>
   );
 }
 
-const { semantic } = theme.colors;
-const white = theme.colors.palette.white;
-
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 30 },
-  stage: { width: GLOW, height: BABA + 10, alignItems: "center", justifyContent: "flex-end" },
-  glow: {
-    position: "absolute",
-    // 광원 중심을 바바 몸통(높이의 46%)에 맞춘다 (9-mvp.mjs)
-    top: (BABA + 10) * 0.46 - GLOW / 2,
-    alignSelf: "center",
+  hero: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.md,
+    // 광학 중앙 — 로그인과 같은 값이라야 두 화면이 이어질 때 흔들리지 않는다
+    paddingBottom: 96,
   },
-  shadow: { position: "absolute", bottom: 0 },
-  baba: { width: BABA, height: BABA },
-  // 워드마크 ↔ 슬로건 여백 26 — 연결선을 두지 않는다 (S0.md)
-  wordmarkBlock: { alignItems: "center", gap: 26 },
-  // 34 · 자간 .055em (= 34 × 0.055 ≈ 1.87) · Pretendard 하나로
-  wordmark: {
-    fontFamily: "Pretendard-Regular",
-    fontSize: 34,
-    lineHeight: 39.4,
-    letterSpacing: 1.87,
-  },
-  slogan: { fontSize: 13.5, lineHeight: 21.6, color: semantic.textBody },
+  /**
+   * 소셜 3종(48×3 + 간격 10×2 = 164)이 서던 자리를 그대로 비워 둔다 —
+   * 높이를 맞춰 두면 `S1` 로 넘어갈 때 워드마크가 위아래로 튀지 않는다.
+   */
+  waiting: { height: 164, alignItems: "center", justifyContent: "center" },
 });
