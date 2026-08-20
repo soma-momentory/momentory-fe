@@ -12,9 +12,12 @@
  *
  * ## 아직 없는 것
  *
- * Slider(척도) · Calendar · ListCell · Toast · Menu(⋮) · 채팅 입력 —
+ * Slider(척도) · ListCell · Toast · Menu(⋮) · 채팅 입력 —
  * 쓰는 화면을 만들 때 함께 만든다. 미리 만들어 두면 실제로 필요한 모양과
  * 어긋난 채 굳는다.
+ *
+ * `Calendar`·`SearchField`·`ViewSwitcher`·`EmotionDot`·`TabScreen` 은 보관함·리포트에서
+ * 만들었다 — `Calendar` 는 쉼터(R2)가, `EmotionDot`·`TabScreen` 은 나머지 탭이 재사용한다.
  *
  * `ChatBubble`·`WheelPicker` 는 온보딩에서 만들었고 **일기(대화)와 마이(알림 설정)가
  * 재사용한다** — 시안에선 두 파일에 각각 인라인이었다(`EXPORT_MANIFEST` §4).
@@ -27,11 +30,16 @@ export { IconButton } from "./IconButton";
 export { SocialButton, type SocialProvider } from "./SocialButton";
 export { Card, InfoBlock } from "./Card";
 export { TextField } from "./TextField";
+export { SearchField } from "./SearchField";
 export { Chip } from "./Chip";
+export { Calendar, type CalendarMark } from "./Calendar";
+export { EmotionDot } from "./EmotionDot";
+export { ViewSwitcher, type ViewOption } from "./ViewSwitcher";
 export { ChatBubble } from "./ChatBubble";
 export { WheelPicker, type WheelColumn } from "./WheelPicker";
 export { TopNavigation } from "./TopNavigation";
 export { BottomNavigation, type TabItem } from "./BottomNavigation";
+export { TabScreen, type TabName } from "./TabScreen";
 export { BottomSheet } from "./BottomSheet";
 export { Modal } from "./Modal";
 export { Icon, type IconName } from "./icons/Icon";

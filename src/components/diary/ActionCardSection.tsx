@@ -1,15 +1,9 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { SectionLabel } from "@/components/common/SectionLabel";
-import { AppText } from "@/components/primitives/AppText";
-import { Card } from "@/components/primitives/Card";
-import { paperColors, paperRadius, paperTypography } from "@/design/paper";
-import theme from "@/design/theme";
+import { Button, Card, Icon, Modal, Text, TextField } from "@/components/ds";
+import { label as labelColor, space, status } from "@/design/ds";
 import type { ActionCard } from "@/features/diary/model/diary";
 import { formatKoreanDateShort } from "@/lib/day";
-
-import { ActionRow } from "./ActionRow";
 
 /**
  * `A3` 행동 카드 + `A3-c` 해본 뒤 — **그 일기 아래**에 붙고 따로 목록을 만들지 않는다.
@@ -22,17 +16,27 @@ import { ActionRow } from "./ActionRow";
  * - **되돌릴 때만 확인을 묻는다** — 완료 기록과 느낀 점이 함께 지워지므로
  * - **실행 횟수·연속 일수를 세지 않는다**
  *
- * 새 디자인(`design-system.md` §4.5)은 라벨이 값 위로 올라간 블록이고 라벨색이
- * 역할을 나눈다 — 상황(초록) · 목표 행동(모래). 쉼터의 `RestActionCard` 와
- * **다른 컴포넌트**인 것은 그대로다: 저쪽은 날짜를 오가며 보는 목록의 한 장이고
- * 여기는 일기 아래 붙는 한 장이라 `[해봤어요]` 가 체크박스가 아니라 버튼이다.
+ * ## 3세대 DS (2026-08-20)
+ *
+ * 라벨-값 블록의 짜임(`design.md` §8 · `Diary.dc.html` ④-d2)을 따랐다.
+ * 되돌리기 확인은 그 자리에 열리던 카드에서 **`Modal`** 로 바뀌었다 —
+ * 되돌릴 수 없는 행동의 확인은 모달이 맡는다(`PLAN.md` A-2 N2). 오류를 모달로
+ * 띄우지 않는다는 `RULES.md` 규칙은 그대로 살아 있다.
+ *
+ * ⚠ 그 모달은 **이 컴포넌트가 그리지 않는다** — `UndoActionConfirm` 을 화면이
+ * 스크롤 **밖**에 놓는다. 오버레이는 스스로 절대 배치되므로 스크롤 안에 두면
+ * 화면이 아니라 **콘텐츠 높이**를 덮어 보이지 않는 곳에 뜬다. 문안은 여기 남는다.
+ *
+ * 라벨 문안은 스펙 그대로 「목표 행동」이다 — 시안의 「제안된 행동」은 쉼터 카드의
+ * 말이다(`C6-b.md` · 문안은 `docs/spec` 우선).
  */
 type Props = {
   card: ActionCard;
   /** 카드가 만들어진 회고의 날짜 — 「7월 27일 회고에서 만들어졌어요」 */
   diaryDate: string;
   onMarkDone?: (cardId: string) => void;
-  onUndoDone?: (cardId: string) => void;
+  /** 되돌리기는 **묻고 나서** 실행된다 — 확인은 화면이 그린다 */
+  onRequestUndo?: (cardId: string) => void;
   onSetReflection?: (cardId: string, text: string) => void;
   /**
    * 읽기 전용 — 서버에서 불러온(store 에 없는) 카드일 때. 「해봤어요」·되돌리기·느낀
@@ -46,207 +50,111 @@ export function ActionCardSection({
   card,
   diaryDate,
   onMarkDone,
-  onUndoDone,
+  onRequestUndo,
   onSetReflection,
   readOnly = false,
 }: Props) {
-  const [confirmUndo, setConfirmUndo] = useState(false);
-
   return (
-    <>
-      <Card variant="paperSoft" style={styles.card}>
-        <SectionLabel variant="paper">이 일기의 행동 카드</SectionLabel>
-        {/* 라벨 문안은 스펙 그대로 「목표 행동」이다 — 시안의 「제안된 행동」은
-            쉼터 카드의 말이다(`C6-b.md` · 문안은 docs/spec 우선) */}
-        <ActionRow variant="paper" tone="situation" label="상황" value={card.situation} />
-        <ActionRow variant="paper" tone="action" label="목표 행동" value={card.targetAction} />
+    <View style={styles.section}>
+      <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>
+        이 일기의 행동 카드
+      </Text>
+
+      <Card padding="loose" style={styles.card}>
+        <Field label="상황" value={card.situation} />
+        <Field label="목표 행동" value={card.targetAction} />
 
         {card.done ? (
           <>
             {/* 채워진 상태 + 해본 날짜. 실행 횟수를 세지 않는다 */}
-            <Pressable
-              accessibilityRole="button"
+            <Button
+              label={`해봤어요 · ${card.doneAt == null ? "" : formatKoreanDateShort(card.doneAt.slice(0, 10))}`}
+              variant="outlined"
+              fill
+              leading={<Icon name="circle-check" size={20} color={status.positive} />}
               accessibilityLabel="해봤어요 되돌리기"
-              onPress={readOnly ? undefined : () => setConfirmUndo(true)}
               disabled={readOnly}
-              style={[styles.doneButton, styles.doneButtonOn]}
-            >
-              {/* 체크 표시 — 이모지 대신 두 변만 남긴 사각형을 돌려 만든다 */}
-              <View style={styles.checkMark} />
-              <AppText weight="700" style={[styles.doneLabel, styles.doneLabelOn]}>
-                {`해봤어요 · ${card.doneAt == null ? "" : formatKoreanDateShort(card.doneAt.slice(0, 10))}`}
-              </AppText>
-            </Pressable>
+              onPress={() => onRequestUndo?.(card.id)}
+            />
 
             {/* 느낀 점은 **선택**이다 — 완료한 뒤에야 자리가 열린다 */}
             {readOnly && (card.reflection ?? "").length === 0 ? null : (
-              <ActionRow variant="paper" label="느낀 점" value={card.reflection ?? ""}>
-                <TextInput
-                  value={card.reflection ?? ""}
-                  onChangeText={(t) => onSetReflection?.(card.id, t)}
-                  editable={!readOnly}
-                  placeholder="한 줄 남겨도 좋아요"
-                  placeholderTextColor={paperColors.text.faint}
-                  multiline
-                  selectionColor={paperColors.brand.greenDark}
-                  style={styles.reflection}
-                  accessibilityLabel="느낀 점"
-                />
-              </ActionRow>
+              <TextField
+                fieldLabel="느낀 점"
+                accessibilityLabel="느낀 점"
+                value={card.reflection ?? ""}
+                onChangeText={(t) => onSetReflection?.(card.id, t)}
+                editable={!readOnly}
+                placeholder="한 줄 남겨도 좋아요"
+                multiline
+              />
             )}
 
-            <AppText style={styles.footnote}>
+            <Text variant="caption1" color={labelColor.alternative}>
               {`${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요`}
-            </AppText>
+            </Text>
           </>
         ) : (
           <>
             {/* 서버 카드(읽기 전용)는 아직 「해봤어요」를 눌러도 저장할 곳이 없어 버튼을 닫는다 */}
             {readOnly ? null : (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => onMarkDone?.(card.id)}
-                style={styles.doneButton}
-              >
-                <View style={styles.checkBox} />
-                <AppText weight="700" style={styles.doneLabel}>
-                  해봤어요
-                </AppText>
-              </Pressable>
+              <Button label="해봤어요" fill onPress={() => onMarkDone?.(card.id)} />
             )}
-            <AppText style={styles.footnote}>
+            <Text variant="caption1" color={labelColor.alternative}>
               {readOnly
                 ? `${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요`
                 : `${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요 · 해본 뒤에 한 줄 남길 수 있어요`}
-            </AppText>
+            </Text>
           </>
         )}
       </Card>
-
-      {/* 되돌릴 때만 확인을 묻는다 — 완료 기록과 느낀 점이 함께 사라진다.
-          **모달이 아니라 그 자리에 열리는 카드**이고, 두 버튼의 무게는 같다 —
-          실행 쪽을 채우거나 위험색 면으로 만들지 않는다(`ConfirmCard` 와 같은 규칙).
-          공용 `ConfirmCard` 는 아직 옛 톤이라 여기서 새 톤으로 그린다(`PLAN.md` Phase 2) */}
-      {confirmUndo && !readOnly ? (
-        <Card variant="paperSoft" style={styles.confirm}>
-          <AppText weight="700" style={styles.confirmTitle}>
-            해본 기록을 지울까요?
-          </AppText>
-          <AppText style={styles.footnote}>해본 날짜와 느낀 점이 함께 지워져요.</AppText>
-          <View style={styles.confirmActions}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setConfirmUndo(false)}
-              style={styles.confirmButton}
-            >
-              <AppText weight="700" style={styles.confirmLabel}>
-                그대로 두기
-              </AppText>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                onUndoDone?.(card.id);
-                setConfirmUndo(false);
-              }}
-              style={styles.confirmButton}
-            >
-              <AppText weight="700" style={[styles.confirmLabel, styles.confirmDanger]}>
-                지우기
-              </AppText>
-            </Pressable>
-          </View>
-        </Card>
-      ) : null}
-    </>
+    </View>
   );
 }
 
-const { styles: type } = paperTypography;
+/**
+ * 되돌리기 확인 — **되돌릴 때만 묻는다.** 완료 기록과 느낀 점이 함께 사라지므로
+ * 잃는 것이 있고, 잃는 것이 있을 때만 모달을 쓴다(`components/ds/Modal`).
+ *
+ * 화면이 **스크롤 밖에서** 그린다 — 위 주석 참조.
+ */
+export function UndoActionConfirm({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <Modal
+      title="해본 기록을 지울까요?"
+      description="해본 날짜와 느낀 점이 함께 지워져요."
+      cancelLabel="그대로 두기"
+      confirmLabel="지우기"
+      destructive
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
+  );
+}
+
+/** 라벨이 값 위에 선다 — 카드 안에서 역할과 내용이 두 줄로 갈린다(`Diary.dc.html` ④-d2) */
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.field}>
+      <Text variant="label2" color={labelColor.alternative}>
+        {label}
+      </Text>
+      <Text variant="body1" color={labelColor.normal}>
+        {value}
+      </Text>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  card: { gap: 14, paddingVertical: 16, paddingHorizontal: 18 },
-
-  reflection: {
-    minHeight: 44,
-    padding: 12,
-    borderRadius: paperRadius.field,
-    backgroundColor: paperColors.bg.field,
-    borderWidth: 1,
-    borderColor: paperColors.line.soft,
-    fontFamily: paperTypography.fontFamily.regular,
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.primary,
-    textAlignVertical: "top",
-  },
-
-  doneButton: {
-    minHeight: theme.touch.minTarget,
-    borderRadius: paperRadius.pill,
-    borderWidth: 1.5,
-    // 초록은 장식이다 — 글자를 얹지 않는 테두리·체크에만 쓴다
-    borderColor: paperColors.brand.green,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  // 채운 면에는 흰 글자가 얹히므로 `green`(2.7)이 아니라 `greenDark`(4.52) 다
-  doneButtonOn: {
-    backgroundColor: paperColors.brand.greenDark,
-    borderColor: paperColors.brand.greenDark,
-  },
-  checkBox: {
-    width: 15,
-    height: 15,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: paperColors.brand.green,
-  },
-  checkMark: {
-    width: 6,
-    height: 11,
-    marginTop: -3,
-    borderRightWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: paperColors.text.onFill,
-    transform: [{ rotate: "45deg" }],
-  },
-  doneLabel: {
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.primary,
-  },
-  doneLabelOn: { color: paperColors.text.onFill },
-
-  footnote: {
-    fontSize: type.caption.fontSize,
-    lineHeight: type.caption.lineHeight,
-    color: paperColors.text.mutedWarmText,
-  },
-
-  confirm: { gap: 8, paddingVertical: 16, paddingHorizontal: 18 },
-  confirmTitle: {
-    fontSize: type.bodyLg.fontSize,
-    lineHeight: type.bodyLg.lineHeight,
-    color: paperColors.text.primary,
-  },
-  confirmActions: { flexDirection: "row", gap: 9, paddingTop: 4 },
-  confirmButton: {
-    flex: 1,
-    minHeight: theme.touch.minTarget,
-    borderRadius: paperRadius.pill,
-    borderWidth: 1,
-    borderColor: paperColors.line.detail,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  confirmLabel: {
-    fontSize: type.bodySm.fontSize,
-    lineHeight: type.bodySm.lineHeight,
-    color: paperColors.text.primary,
-  },
-  // 위험색은 **글자에만** 얹는다 — 면도 테두리도 채우지 않는다(`R-40`)
-  confirmDanger: { color: paperColors.accent.dangerFill },
+  section: { gap: space.md },
+  sectionLabel: { paddingLeft: space.xs },
+  card: { gap: space.lg },
+  field: { gap: space.xs },
 });

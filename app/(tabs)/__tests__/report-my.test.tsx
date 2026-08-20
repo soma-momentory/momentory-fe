@@ -1,10 +1,9 @@
-import { render, fireEvent, within } from "@testing-library/react-native";
+import { render, fireEvent, waitFor, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import My from "../my";
 import Report from "../report";
 
-import { paperColors } from "@/design/paper";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
 
@@ -13,11 +12,19 @@ jest.mock("expo-router", () => ({
   Stack: jest.fn(() => null),
 }));
 
+/** `M2` 시트가 보는 OS 권한. 기본은 허용이고, 각 테스트가 거부로 바꾼다 */
+const notifications = jest.requireMock("expo-notifications") as {
+  getPermissionsAsync: jest.Mock;
+  requestPermissionsAsync: jest.Mock;
+};
+
 beforeEach(() => {
   useDiary.getState().reset();
   useSettings.getState().reset();
   useProfile.getState().reset();
   jest.clearAllMocks();
+  notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
+  notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
 });
 
 describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
@@ -92,27 +99,26 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.queryByText(/실행률|달성률|연속|최고 기록/)).toBeNull();
   });
 
-  it("감정 도넛은 비율과 이름을 함께 말한다 — 색만으로 판단하게 하지 않는다", async () => {
-    // 7/20 주 — 평온함 3 · 그 밖 7 (감정 기록 10개). 가운데는 최다 감정으로 연다
+  it("도넛·비율·범례를 쓰지 않는다 — 감정은 7일 흐름으로만 말한다", async () => {
+    // design.md 「리포트」 — 「도넛·비율·범례 없이 7일 감정 흐름 + 요약 2줄」.
+    // 완료율·%·분석 같은 표현도 쓰지 않는다
     const r = await render(<Report />);
 
-    expect(r.getByLabelText(/주간 감정 비율/)).toBeTruthy();
-    expect(r.getByText("30%")).toBeTruthy();
-    // 범례 칩 — 고른 칩은 면·테두리·굵기가 함께 바뀐다
-    expect(r.getByLabelText("평온함 30%").props.accessibilityState.selected).toBe(true);
+    expect(r.queryByText(/%/)).toBeNull();
+    expect(r.queryByLabelText(/비율/)).toBeNull();
+    expect(r.queryByText(/완료율|실행률|분석|평균/)).toBeNull();
   });
 
-  it("범례를 누르면 도넛 가운데가 그 감정으로 바뀐다", async () => {
+  it("지표는 값 하나로 말한다 — 분모를 붙이지 않는다", async () => {
+    // 「5회 / 7일 중」이 되는 순간 비율이 읽히고, 비율은 평가가 된다
     const r = await render(<Report />);
-    const second = r.getByLabelText("뿌듯함 20%");
 
-    await fireEvent.press(second);
-
-    expect(second.props.accessibilityState.selected).toBe(true);
-    expect(r.getByText("20%")).toBeTruthy();
+    expect(r.getByText("한 주 한눈에")).toBeTruthy();
+    expect(r.getByText("5회")).toBeTruthy();
+    expect(r.queryByText(/중 \d+|\/\s*\d+/)).toBeNull();
   });
 
-  it("초록 통계 패널이 근거 수치를 모아 말한다", async () => {
+  it("보조 행동으로 그 주의 기록을 보러 간다", async () => {
     const r = await render(<Report />);
 
     expect(r.getByText("이 주의 기록 보러가기")).toBeTruthy();
@@ -135,15 +141,17 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
   });
 });
 
-describe("M1 · 마이 홈", () => {
-  it("프로필은 닉네임과 회고 수 한 줄이다 — 통계 3칸은 새 디자인에서 빠졌다", async () => {
+describe("M1 · 마이 기본", () => {
+  it("프로필은 이니셜 · 닉네임 · 기록 일수 한 줄이다", async () => {
+    // 「총 회고 12회」는 내부 용어였다 — 새 디자인은 「일기 12일 기록」이다
     const r = await render(<My />);
 
     expect(r.getByText("지현")).toBeTruthy();
-    expect(r.getByText("총 회고 12회")).toBeTruthy();
+    expect(r.getByText("일기 12일 기록")).toBeTruthy();
+    expect(r.queryByText(/회고 \d+회/)).toBeNull();
   });
 
-  it("연속 일수·점수·배지를 쓰지 않는다 — 「총 회고 12회」다", async () => {
+  it("연속 일수·점수·배지를 쓰지 않는다", async () => {
     const r = await render(<My />);
 
     expect(r.queryByText(/일째|연속|점수|배지/)).toBeNull();
@@ -157,25 +165,10 @@ describe("M1 · 마이 홈", () => {
     }
   });
 
-  it("온보딩 여섯 질문의 편집 경로가 빠짐없이 있다", async () => {
-    const r = await render(<My />);
-
-    for (const label of ["회고 프로필", "기본 정보", "알림 설정", "연결 관리"]) {
-      expect(r.getByText(label)).toBeTruthy();
-    }
-  });
-
   it("앱 잠금·내보내기 줄을 두지 않는다 — 갈 곳 없는 줄을 만들지 않는다", async () => {
     const r = await render(<My />);
 
     expect(r.queryByText(/앱 잠금|나만의 공간|내보내기/)).toBeNull();
-  });
-
-  it("캘린더는 [연결 관리] 한 곳뿐이다", async () => {
-    const r = await render(<My />);
-
-    expect(r.getByText("연결 관리")).toBeTruthy();
-    expect(r.getAllByText(/캘린더/)).toHaveLength(1);
   });
 
   it("눌러도 아무 일도 없는 줄을 두지 않는다", async () => {
@@ -183,56 +176,132 @@ describe("M1 · 마이 홈", () => {
     const r = await render(<My />);
     const rowOf = (label: string) => r.getByText(label).parent;
 
-    // 갈 곳이 있는 줄 — 눌린다
-    for (const label of ["회고 프로필", "기본 정보", "알림 설정", "로그아웃"]) {
-      expect(rowOf(label)?.parent?.props.accessibilityRole).toBe("button");
+    for (const label of ["알림 설정", "기본 정보 수정", "로그아웃"]) {
+      expect(rowOf(label)?.props.accessibilityRole).toBe("button");
     }
-    // 아직 갈 곳이 없는 줄 — 눌리지 않는다
-    for (const label of ["연결 관리", "약관 및 정책", "문의하기"]) {
-      expect(rowOf(label)?.parent?.props.accessibilityRole).not.toBe("button");
+    // 약관 문안·문의 채널이 아직 정해지지 않았다
+    for (const label of ["문의하기", "정책 · 약관"]) {
+      expect(rowOf(label)?.props.accessibilityRole).not.toBe("button");
+      expect(r.getAllByText("준비 중").length).toBeGreaterThanOrEqual(1);
     }
   });
 
-  it("회원 탈퇴는 확인 화면이 없어 아직 실행되지 않는다", async () => {
-    // 되돌릴 수 없는 동작을 확인 없이 실행하지 않는다 (my.pendingStates).
-    // 시안의 바닥 밑줄 텍스트 자리에 있지만 **아직 눌리지 않고**, 왜 그런지를
-    // 바로 아래 한 줄이 말한다
+  it("온보딩에서 답한 것은 [기본 정보 수정] 한 줄 뒤에 모여 있다", async () => {
+    const r = await render(<My />);
+
+    await fireEvent.press(r.getByText("기본 정보 수정"));
+
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/my/profile");
+  });
+
+  it("회원 탈퇴는 목록 밖에 홀로 있고 아직 실행되지 않는다", async () => {
+    // 되돌릴 수 없는 동작을 확인 없이 실행하지 않는다 (my.pendingStates)
     const r = await render(<My />);
 
     expect(r.getByText("회원 탈퇴")).toBeTruthy();
-    expect(r.getByText("회원 탈퇴").parent?.parent?.props.accessibilityRole).not.toBe("button");
-    expect(r.getAllByText("준비 중").length).toBeGreaterThanOrEqual(1);
+    expect(r.getByText("회원 탈퇴").parent?.props.accessibilityRole).not.toBe("button");
   });
 
-  it("기본 정보도 편집 화면으로 이어진다", async () => {
+  it("알림 설정 줄이 지금 시각을 말하고, 끄면 「꺼짐」이 된다", async () => {
     const r = await render(<My />);
-    await fireEvent.press(r.getByText("기본 정보"));
+    expect(r.getByText("매일 밤 9:30")).toBeTruthy();
 
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/my/profile");
+    useSettings.getState().toggle("retro");
+
+    expect(await r.findByText("꺼짐")).toBeTruthy();
   });
+});
 
-  it("회원 탈퇴는 계정 카드 밖에 홀로 있다 — 로그아웃과 같은 무게로 보이지 않게", async () => {
-    // 시안의 위험 동작은 면을 채우지 않고 바닥의 한 줄이다.
-    // 언덕(#C7D3C0) 위라 글자는 greenStrong 이다 — danger 계열은 이 면에서 AA 미달
+describe("M2 · 알림 설정 시트 — 하나의 결정만 담는다", () => {
+  /** 시트 제목과 줄 이름이 같은 말이다 — 줄은 목록에 먼저 있다 */
+  const row = (r: Awaited<ReturnType<typeof render>>) => r.getAllByText("알림 설정")[0]!;
+
+  it("줄을 누르면 시각을 고르는 시트가 열린다", async () => {
     const r = await render(<My />);
-    const style = [r.getByText("회원 탈퇴").props.style].flat(Infinity).filter(Boolean);
 
-    expect(r.getByText("로그아웃")).toBeTruthy();
-    expect(Object.assign({}, ...style).color).toBe(paperColors.text.greenStrong);
+    await fireEvent.press(row(r));
+
+    expect(r.getByText("알림 시간")).toBeTruthy();
+    expect(r.getByText("완료")).toBeTruthy();
+    // 시트에 설정 요소를 늘리지 않는다 (design.md §11)
+    expect(r.queryByText(/낮 기록|주간 돌아보기|새로운 소식/)).toBeNull();
   });
 
-  it("회고 프로필로 갈 수 있다", async () => {
+  it("[완료] 를 눌러야 시각이 정해진다", async () => {
+    // 휠을 굴린 것만으로 설정이 바뀌면 시트를 열어 본 것과 고른 것이 같아진다
     const r = await render(<My />);
-    await fireEvent.press(r.getByText("회고 프로필"));
+    await fireEvent.press(row(r));
 
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/my/profile");
+    await fireEvent.press(r.getByText("10시"));
+    expect(useSettings.getState().notify.retro.time).toBe("21:30");
+
+    await fireEvent.press(r.getByText("완료"));
+
+    await waitFor(() => expect(useSettings.getState().notify.retro.time).toBe("22:30"));
+    expect(r.queryByText("알림 시간")).toBeNull();
   });
 
-  it("알림을 끄면 설정 줄이 「꺼짐」이 된다", async () => {
+  it("딤을 누르면 고르던 값이 버려진다", async () => {
+    const r = await render(<My />);
+    await fireEvent.press(row(r));
+    await fireEvent.press(r.getByText("10시"));
+
+    await fireEvent.press(r.getByLabelText("닫기"));
+
+    expect(useSettings.getState().notify.retro.time).toBe("21:30");
+  });
+
+  it("꺼져 있었다면 [완료] 가 OS 권한을 묻고, 받아야 켠다", async () => {
+    // 켜진 채 아무 알림도 오지 않으면 사용자는 확인할 방법이 없다
+    useSettings.getState().toggle("retro"); // 꺼 둔 상태에서 시작
+    // 아직 한 번도 묻지 않은 기기 — `완료` 가 곧 그 물음이다
+    notifications.getPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
+    notifications.requestPermissionsAsync.mockResolvedValue({
+      granted: false,
+      canAskAgain: false,
+    });
+    const r = await render(<My />);
+    await fireEvent.press(row(r));
+
+    await fireEvent.press(r.getByText("완료"));
+
+    await waitFor(() => expect(notifications.requestPermissionsAsync).toHaveBeenCalled());
+    expect(useSettings.getState().notify.retro.enabled).toBe(false);
+    // 다시 물을 수 없을 때만 한 줄로 길을 알려준다 — 모달도 재시도 버튼도 없다
+    expect(await r.findByText("기기 설정에서 알림을 켜면 이 시간에 찾아갈게요.")).toBeTruthy();
+    expect(r.queryByText(/다시 시도|허용하기/)).toBeNull();
+  });
+
+  it("켜져 있으면 묻지 않는다 — 시각만 바꾼다", async () => {
+    const r = await render(<My />);
+    await fireEvent.press(row(r));
+
+    await fireEvent.press(r.getByText("완료"));
+
+    await waitFor(() => expect(r.queryByText("알림 시간")).toBeNull());
+    expect(notifications.requestPermissionsAsync).not.toHaveBeenCalled();
+  });
+
+  it("[알림 받지 않기] 로 끌 수 있고, 껐어도 시각은 남는다", async () => {
+    // 껐다고 값을 지우면 다시 켜는 일이 다시 설정하는 일이 된다 (M3.md)
+    const r = await render(<My />);
+    await fireEvent.press(row(r));
+
+    await fireEvent.press(r.getByText("알림 받지 않기"));
+
+    expect(useSettings.getState().notify.retro).toMatchObject({
+      enabled: false,
+      time: "21:30",
+    });
+  });
+
+  it("꺼져 있을 때는 끄는 줄을 두지 않는다", async () => {
     useSettings.getState().toggle("retro");
     const r = await render(<My />);
 
-    expect(r.getByText("꺼짐")).toBeTruthy();
+    await fireEvent.press(row(r));
+
+    expect(r.queryByText("알림 받지 않기")).toBeNull();
   });
 });
 

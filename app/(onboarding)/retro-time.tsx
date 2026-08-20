@@ -7,7 +7,15 @@ import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
 import { background, hairline, label as labelColor, radius, space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { requestNotificationPermission } from "@/lib/notifications";
-import { formatKoreanTime, toHHMM } from "@/lib/time";
+import {
+  formatKoreanTime,
+  fromWheelTime,
+  toWheelTime,
+  WHEEL_HOURS,
+  WHEEL_MINUTES,
+  WHEEL_PERIODS,
+  type WheelTime,
+} from "@/lib/time";
 
 /**
  * `08` · 회고 시간
@@ -22,8 +30,10 @@ import { formatKoreanTime, toHHMM } from "@/lib/time";
  * 옛 화면은 `@react-native-community/datetimepicker` 를 열었다. 시안이 **자체 휠
  * 3열**(오전·오후 / 시 1~12 / 분 5분 단위)을 정의하므로 `WheelPicker` 로 바꿨다 —
  * **마이(`M2`)가 같은 것을 쓴다**. 시간 칩을 누르면 바텀시트가 열리고 `완료`로 닫는다.
+ * 눈금·변환은 `lib/time` 이 쥔다 — 두 화면이 같은 시각을 같은 칸에 세워야 한다.
  *
- * ⚠ `datetimepicker` 의존성은 **여기서 지우지 않는다** — 마이가 아직 쓴다.
+ * ⚠ `datetimepicker` 는 마이까지 옮겨 오면서 **쓰는 곳이 없어졌다**. 지우면 dev
+ * client 재빌드가 필요해 `PLAN.md` A-0 Phase 5(삭제)에서 함께 뺀다.
  *
  * - **"마지막으로,"를 쓰지 않는다** — 바로 다음 `09` 가 "마지막으로 하나만 더"라
  *   충돌한다(`08.md`)
@@ -32,12 +42,7 @@ import { formatKoreanTime, toHHMM } from "@/lib/time";
  * - **거부해도 온보딩은 멈추지 않는다.** 거부는 오류가 아니라 답이라, 안내도
  *   재시도도 없이 `notifyRetro` 만 끄고 그대로 `09` 로 간다
  */
-// 휠은 **문자열**을 다룬다 — 표시와 값을 하나로 두면 열마다 변환이 생기지 않는다
-const PERIODS = ["오전", "오후"];
-const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1));
-/** 분은 5분 단위 — 시안이 정한 눈금 */
-const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
-
+// 눈금과 변환은 `lib/time` 에 있다 — **마이(`M2`)가 같은 휠을 연다**
 export default function RetroTime() {
   const retroTime = useDraft((s) => s.retroTime);
   const set = useDraft((s) => s.set);
@@ -48,10 +53,10 @@ export default function RetroTime() {
   // 칩이 「시간 선택」이고, 고르고 나서야 그 값을 든다
   const [picked, setPicked] = useState(false);
 
-  const wheel = toWheel(retroTime);
+  const wheel = toWheelTime(retroTime);
   // 굴리는 동안에는 값만 옮긴다 — **확정은 `[완료]` 다**
-  const setWheel = (next: Partial<WheelValue>) =>
-    set("retroTime", fromWheel({ ...wheel, ...next }));
+  const setWheel = (next: Partial<WheelTime>) =>
+    set("retroTime", fromWheelTime({ ...wheel, ...next }));
 
   /**
    * `[완료]` — **지금 휠에 서 있는 값을 그대로 확정한다.**
@@ -61,7 +66,7 @@ export default function RetroTime() {
    * 실기기에서 「완료를 눌러도 아무 일이 없다」로 드러난 자리다.
    */
   const confirmTime = () => {
-    set("retroTime", fromWheel(wheel));
+    set("retroTime", fromWheelTime(wheel));
     setPicked(true);
     setSheetOpen(false);
   };
@@ -117,7 +122,7 @@ export default function RetroTime() {
               {
                 key: "period",
                 label: "오전 오후",
-                items: PERIODS,
+                items: WHEEL_PERIODS,
                 value: wheel.period,
                 onChange: (period) => setWheel({ period }),
                 width: 88,
@@ -125,7 +130,7 @@ export default function RetroTime() {
               {
                 key: "hour",
                 label: "시",
-                items: HOURS,
+                items: WHEEL_HOURS,
                 value: wheel.hour,
                 onChange: (hour) => setWheel({ hour }),
                 width: 72,
@@ -134,7 +139,7 @@ export default function RetroTime() {
               {
                 key: "minute",
                 label: "분",
-                items: MINUTES,
+                items: WHEEL_MINUTES,
                 value: wheel.minute,
                 onChange: (minute) => setWheel({ minute }),
                 width: 72,
@@ -165,27 +170,6 @@ function TimeChip({ label, onPress }: { label: string; onPress: () => void }) {
       </Text>
     </Pressable>
   );
-}
-
-type WheelValue = { period: string; hour: string; minute: string };
-
-/** `"21:30"` → `{ 오후, "9", "30" }`. 시각의 표기는 `lib/time` 이 쥐고 여기선 눈금만 만든다 */
-function toWheel(hhmm: string): WheelValue {
-  const [h = "21", m = "30"] = hhmm.split(":");
-  const hour24 = Number(h);
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-  // 5분 눈금 밖의 값(서버가 준 21:37 같은 것)은 가장 가까운 눈금으로 내린다
-  const nearest = MINUTES.reduce((best, v) =>
-    Math.abs(Number(v) - Number(m)) < Math.abs(Number(best) - Number(m)) ? v : best,
-  );
-  return { period: hour24 < 12 ? "오전" : "오후", hour: String(hour12), minute: nearest };
-}
-
-function fromWheel({ period, hour, minute }: WheelValue): string {
-  const base = Number(hour) % 12;
-  const hour24 = period === "오전" ? base : base + 12;
-  // 날짜는 버린다 — `toHHMM` 이 시각만 읽는다
-  return toHHMM(new Date(2026, 0, 1, hour24, Number(minute)));
 }
 
 const styles = StyleSheet.create({
