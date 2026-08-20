@@ -251,7 +251,7 @@ describe("06 · 관심 분야 (+ 06-b·06-c 기타 입력)", () => {
     await pick(r, "가족", "건강");
 
     expect(disabled(r.getByText("다음"))).toBe(false);
-    expect(r.getByText("2개 선택됨 · 다시 누르면 취소돼요")).toBeTruthy();
+    expect(r.getByText("2개 선택됨 · 다시 누르면 선택이 해제돼요")).toBeTruthy();
   });
 
   it("넷째부터는 눌러도 켜지지 않는다 — 경고도 띄우지 않는다", async () => {
@@ -264,7 +264,7 @@ describe("06 · 관심 분야 (+ 06-b·06-c 기타 입력)", () => {
       expect(r.getByText(kept).parent?.props.accessibilityState.selected).toBe(true);
     }
     expect(r.queryByText(/최대/)).toBeNull();
-    expect(r.getByText("3개 선택됨 · 다시 누르면 취소돼요")).toBeTruthy();
+    expect(r.getByText("3개 선택됨 · 다시 누르면 선택이 해제돼요")).toBeTruthy();
   });
 
   it("[기타]를 누르면 칩 바로 아래에 한 줄 입력이 열린다", async () => {
@@ -371,10 +371,10 @@ describe("07 · 쉬는 방법", () => {
       await fireEvent.press(r.getByText(l));
     }
 
-    expect(r.getByText("4개 선택됨 · 다시 누르면 취소돼요")).toBeTruthy();
+    expect(r.getByText("4개 선택됨 · 다시 누르면 선택이 해제돼요")).toBeTruthy();
 
     await fireEvent.press(r.getByText("🧘 명상하기"));
-    expect(r.getByText("3개 선택됨 · 다시 누르면 취소돼요")).toBeTruthy();
+    expect(r.getByText("3개 선택됨 · 다시 누르면 선택이 해제돼요")).toBeTruthy();
     // **라벨이 아니라 서버 코드가 남는다** — 이모지 문자열을 id 로 쓰면 서버가
     // 받지 못하고, 항목을 늘렸을 때 그 칩만 조용히 사라진다
     expect(useDraft.getState().restMethods).toEqual(["LISTENING_TO_MUSIC", "WALKING", "SLEEP"]);

@@ -5,10 +5,10 @@ import { BasicInfoEditor } from "@/components/my/BasicInfoEditor";
 import { OtherReplyInput } from "@/components/onboarding/OtherReplyInput";
 import { QuickReplies } from "@/components/onboarding/QuickReplies";
 import { label as labelColor } from "@/design/ds";
-import { choiceHint, sameChoices } from "@/features/my/model/basicInfo";
+import { sameChoices } from "@/features/my/model/basicInfo";
 import { useProfile } from "@/features/my/model/settings";
 import { MAX_INTERESTS, OTHER_INTEREST } from "@/features/onboarding/model/draft";
-import { useOnboardingOptions } from "@/features/onboarding/model/options";
+import { choiceHint, useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * `M7` · 관심 분야 수정

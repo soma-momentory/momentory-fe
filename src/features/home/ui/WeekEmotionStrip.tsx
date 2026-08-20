@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Button, SectionHeader, Text } from "@/components/ds";
+import { Button, EmotionDot, SectionHeader, Text } from "@/components/ds";
 import {
   emotion as emotionColor,
   emotionTint,
@@ -109,17 +109,8 @@ export function WeekEmotionStrip({ days, today, onSeeAll }: Props) {
 
       {day != null ? (
         <View style={styles.detail}>
-          <View
-            style={[
-              styles.dot,
-              dayEmotion != null
-                ? {
-                    backgroundColor: emotionTint(dayEmotion),
-                    borderColor: withAlpha(emotionColor[dayEmotion], 0.9),
-                  }
-                : { backgroundColor: fill.normal, borderColor: line.normal },
-            ]}
-          />
+          {/* 도트는 하나다 — 보관함·리포트·일기가 쓰는 것과 같은 것을 쓴다 */}
+          <EmotionDot id={dayEmotion} size={space.md} />
           <Text variant="caption1" color={labelColor.normal}>
             {`${day.label}요일 · ${emotionName(dayEmotion).length > 0 ? emotionName(dayEmotion) : "기록 없음"}`}
           </Text>
@@ -148,5 +139,4 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: line.alternative,
   },
-  dot: { width: space.md, height: space.md, borderRadius: radius.full, borderWidth: 1.5 },
 });

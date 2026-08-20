@@ -277,6 +277,31 @@ describe("오버레이는 스스로 화면 전체를 덮는다", () => {
     expect(root.zIndex).toBe(zIndex.overlay);
     expect(root.zIndex).toBeGreaterThan(zIndex.content);
   });
+
+  it("Modal 은 네이티브 창에 그려진다 — ScrollView 안에서도 갇히지 않는다", async () => {
+    // 절대 배치만 쓰던 시절 보관함이 이 자리를 밟아 우회했다(`PLAN.md` A-12)
+    const onCancel = jest.fn();
+    const r = await render(
+      <Modal
+        title="지울까요?"
+        description="되돌릴 수 없어요."
+        cancelLabel="취소"
+        confirmLabel="삭제"
+        onCancel={onCancel}
+        onConfirm={() => {}}
+      />,
+    );
+    // 트리의 **가장 바깥**이 네이티브 `Modal` 이어야 부모 트리 밖에 그려진다
+    const native = r.toJSON() as { type: string; props: Record<string, unknown> };
+
+    expect(native.type).toBe("Modal");
+    expect(native.props.transparent).toBe(true);
+    // 딤이 상태바까지 덮는다 — 없으면 위쪽만 밝게 남아 덮개가 끊긴다
+    expect(native.props.statusBarTranslucent).toBe(true);
+    // Android 뒤로가기는 **취소**다 — 되돌릴 수 없는 행동을 실수로 실행하지 않는다
+    (native.props.onRequestClose as () => void)();
+    expect(onCancel).toHaveBeenCalled();
+  });
 });
 
 describe("BottomSheet", () => {

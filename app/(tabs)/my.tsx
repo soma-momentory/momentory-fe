@@ -3,17 +3,17 @@ import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import {
-  BottomNavigation,
   BottomSheet,
   Button,
   Card,
-  Screen,
+  Icon,
+  ListCell,
+  ListDivider,
+  TabScreen,
   Text,
   WheelPicker,
-  type TabItem,
 } from "@/components/ds";
-import { RowSeparator, SettingRow } from "@/components/my/SettingRow";
-import { fill, hairline, label as labelColor, layout, radius, space } from "@/design/ds";
+import { fill, hairline, label as labelColor, radius, space } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
@@ -59,22 +59,6 @@ import {
  * - **알림 예약을 화면이 부르지 않는다** — 설정 store 를 `features/my/model/reminders.ts`
  *   가 구독해 OS 예약을 맞춘다. 여기서는 값만 바꾼다
  */
-const TABS: readonly TabItem<"home" | "rest" | "archive" | "report" | "my">[] = [
-  { name: "home", icon: "home", label: "홈" },
-  { name: "rest", icon: "heart", label: "쉼터" },
-  { name: "archive", icon: "folder-job", label: "보관함" },
-  { name: "report", icon: "document", label: "리포트" },
-  { name: "my", icon: "nav-my-page", label: "마이" },
-];
-
-const TAB_ROUTES = {
-  home: "/home",
-  rest: "/rest",
-  archive: "/archive",
-  report: "/report",
-  my: "/my",
-} as const;
-
 export default function My() {
   const diaries = useDiary((s) => s.diaries);
   const nickname = useProfile((s) => s.nickname);
@@ -129,159 +113,169 @@ export default function My() {
     setEditingTime(fromWheelTime({ ...wheel, ...next }));
 
   return (
-    <>
-      <Screen padded={false}>
-        {/* 탭 루트라 상단바가 없다 — 본문의 Title 3 이 제목 노릇을 한다(`design.md` §10) */}
-        <View style={styles.head}>
-          <Text variant="title3" color={labelColor.strong}>
-            마이
-          </Text>
-        </View>
-
-        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-          <View style={styles.profile}>
-            {/* 그림이 아니라 이니셜이다 — 새 디자인에 캐릭터가 없다(N8) */}
-            <View style={styles.avatar} accessibilityElementsHidden>
-              <Text variant="headline1" color={labelColor.neutral}>
-                {initial}
-              </Text>
-            </View>
-            <View style={styles.profileCopy}>
-              <Text variant="heading1" color={labelColor.strong} numberOfLines={1}>
-                {nickname}
-              </Text>
-              {/* 연속 일수가 아니라 기록이 남은 날 수다 */}
-              <Text variant="caption1" color={labelColor.alternative}>
-                {`일기 ${recordedDays}일 기록`}
-              </Text>
-            </View>
-          </View>
-
-          {/* 거부는 카드 밖 한 줄로 흡수한다 — 모달도 재시도 버튼도 경고 아이콘도 없다 */}
-          <Group
-            label="앱 설정"
-            note={blocked ? "기기 설정에서 알림을 켜면 이 시간에 찾아갈게요." : undefined}
-          >
-            <SettingRow
-              label="알림 설정"
-              leading="bell"
-              value={notifyValue}
-              onPress={() => setEditingTime(retro.time ?? "21:30")}
-            />
-            <RowSeparator />
-            {/* 온보딩에서 답한 다섯 항목이 이 한 줄 뒤에 모여 있다 (`M3` 목록) */}
-            <SettingRow
-              label="기본 정보 수정"
-              leading="nav-my-page"
-              onPress={() => router.push("/my/profile")}
-            />
-          </Group>
-
-          {/*
-            ⚠ 약관·문의는 **갈 곳이 아직 없다.** 약관 문안은 법률 검토 중이고
-            (`OPEN-ISSUES.md` R-10~R-15) 문의 채널도 정해지지 않았다. 정해지면
-            `onPress` 가 붙는다 — 그때까지 표식을 두지 않는다.
-          */}
-          <Group label="지원">
-            <SettingRow label="문의하기" leading="send" value="준비 중" />
-            <RowSeparator />
-            <SettingRow label="정책 · 약관" leading="document" value="준비 중" />
-          </Group>
-
-          <Group label="계정">
-            <SettingRow label="로그아웃" leading="arrow-left" onPress={() => void signOut()} />
-          </Group>
-
-          {/*
-            위험 동작은 목록 밖 바닥에 홀로 둔다 — 로그아웃과 같은 무게로 보이지 않게.
-            ⚠ **확인 화면이 아직 없다**(`my.pendingStates`) — 그래서 아직 눌리지 않고,
-            왜 눌리지 않는지를 아래 한 줄이 말한다.
-          */}
-          <View style={styles.leave}>
-            <Text variant="label2" color={labelColor.assistive}>
-              회원 탈퇴
-            </Text>
-            <Text variant="caption1" color={labelColor.alternative}>
-              준비 중
-            </Text>
-          </View>
-        </ScrollView>
-
-        <BottomNavigation
-          items={TABS}
-          active="my"
-          // 탭은 쌓이는 화면이 아니다 — `push` 로 오가면 뒤로가기가 탭 이력을 되짚는다
-          onPress={(name) => name !== "my" && router.replace(TAB_ROUTES[name])}
-        />
-      </Screen>
-
-      {/*
+    <TabScreen
+      active="마이"
+      /*
         `M2` — **하나의 결정만 담는다**(`design.md` §11). 시트에 설정 줄을 늘리지 않고
         시각 하나만 고른다. 라우트가 아니라 이 화면 안에서 열리는 것은 시안이 마이
         위에 겹쳐 그리기 때문이고, 온보딩 `08` 의 시간 시트와 같은 방식이다.
 
-        ⚠ **`Screen` 밖이다** — 시트는 절대 배치로 부모를 덮는데, `Screen` 안에 두면
-        Safe Area 안쪽만 덮어 딤이 상태바·홈 인디케이터 자리에서 끊긴다.
-      */}
-      {editingTime != null ? (
-        <BottomSheet title="알림 설정" onDismiss={() => setEditingTime(null)}>
-          <Text variant="label2" color={labelColor.alternative}>
-            알림 시간
-          </Text>
-          {/* 세 열이 하이라이트 밴드 **하나**를 공유한다 — 열마다 그리면 사이가 끊긴다 */}
-          <WheelPicker
-            columns={[
-              {
-                key: "period",
-                label: "오전 오후",
-                items: WHEEL_PERIODS,
-                value: wheel.period,
-                onChange: (period) => setWheel({ period }),
-                width: 88,
-              },
-              {
-                key: "hour",
-                label: "시",
-                items: WHEEL_HOURS,
-                value: wheel.hour,
-                onChange: (hour) => setWheel({ hour }),
-                width: 72,
-                format: (h) => `${h}시`,
-              },
-              {
-                key: "minute",
-                label: "분",
-                items: WHEEL_MINUTES,
-                value: wheel.minute,
-                onChange: (minute) => setWheel({ minute }),
-                width: 72,
-                format: (m) => `${m}분`,
-              },
-            ]}
+        `overlay` 로 넘기는 이유는 **`Screen` 밖에 그려야 하기 때문**이다 — 시트는
+        절대 배치로 부모를 덮는데 `Screen` 안에 두면 Safe Area 안쪽만 덮어 딤이
+        상태바·홈 인디케이터 자리에서 끊긴다(`TabScreen` 머리말).
+      */
+      overlay={
+        editingTime != null ? (
+          <BottomSheet title="알림 설정" onDismiss={() => setEditingTime(null)}>
+            <Text variant="label2" color={labelColor.alternative}>
+              알림 시간
+            </Text>
+            {/* 세 열이 하이라이트 밴드 **하나**를 공유한다 — 열마다 그리면 사이가 끊긴다 */}
+            <WheelPicker
+              columns={[
+                {
+                  key: "period",
+                  label: "오전 오후",
+                  items: WHEEL_PERIODS,
+                  value: wheel.period,
+                  onChange: (period) => setWheel({ period }),
+                  width: 88,
+                },
+                {
+                  key: "hour",
+                  label: "시",
+                  items: WHEEL_HOURS,
+                  value: wheel.hour,
+                  onChange: (hour) => setWheel({ hour }),
+                  width: 72,
+                  format: (h) => `${h}시`,
+                },
+                {
+                  key: "minute",
+                  label: "분",
+                  items: WHEEL_MINUTES,
+                  value: wheel.minute,
+                  onChange: (minute) => setWheel({ minute }),
+                  width: 72,
+                  format: (m) => `${m}분`,
+                },
+              ]}
+            />
+            <Button label="완료" fill onPress={() => void confirmTime()} />
+            {/*
+              ⚠ 시안에 없는 줄이다. 옛 알림 화면에는 스위치가 있었고 시안은 그 화면을
+              통째로 시트로 줄이면서 **끄는 길을 그리지 않았다** — 그대로 옮기면 한 번 켠
+              알림을 앱 안에서 끌 수 없게 된다. 켜져 있을 때만 나타나는 3순위 텍스트
+              버튼으로 뒀다(`design.md` §6 CTA 위계 · 온보딩 `08` 의 「알림 없이 쓸게요」와 같은 자리).
+            */}
+            {retro.enabled ? (
+              <View style={styles.secondary}>
+                <Button
+                  label="알림 받지 않기"
+                  variant="text"
+                  onPress={() => {
+                    // 시각은 그대로 둔다 — 다시 켜면 그 시각이다
+                    toggle("retro");
+                    setEditingTime(null);
+                  }}
+                />
+              </View>
+            ) : null}
+          </BottomSheet>
+        ) : null
+      }
+    >
+      {/* 탭 루트라 상단바가 없다 — 본문의 Title 3 이 제목 노릇을 한다(`design.md` §10) */}
+      <View style={styles.head}>
+        <Text variant="title3" color={labelColor.strong}>
+          마이
+        </Text>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <View style={styles.profile}>
+          {/* 그림이 아니라 이니셜이다 — 새 디자인에 캐릭터가 없다(N8) */}
+          <View style={styles.avatar} accessibilityElementsHidden>
+            <Text variant="headline1" color={labelColor.neutral}>
+              {initial}
+            </Text>
+          </View>
+          <View style={styles.profileCopy}>
+            <Text variant="heading1" color={labelColor.strong} numberOfLines={1}>
+              {nickname}
+            </Text>
+            {/* 연속 일수가 아니라 기록이 남은 날 수다 */}
+            <Text variant="caption1" color={labelColor.alternative}>
+              {`일기 ${recordedDays}일 기록`}
+            </Text>
+          </View>
+        </View>
+
+        {/* 거부는 카드 밖 한 줄로 흡수한다 — 모달도 재시도 버튼도 경고 아이콘도 없다 */}
+        <Group
+          label="앱 설정"
+          note={blocked ? "기기 설정에서 알림을 켜면 이 시간에 찾아갈게요." : undefined}
+        >
+          <ListCell
+            title="알림 설정"
+            leading={<Icon name="bell" size={20} color={labelColor.alternative} />}
+            value={notifyValue}
+            onPress={() => setEditingTime(retro.time ?? "21:30")}
+            chevron
           />
-          <Button label="완료" fill onPress={() => void confirmTime()} />
-          {/*
-            ⚠ 시안에 없는 줄이다. 옛 알림 화면에는 스위치가 있었고 시안은 그 화면을
-            통째로 시트로 줄이면서 **끄는 길을 그리지 않았다** — 그대로 옮기면 한 번 켠
-            알림을 앱 안에서 끌 수 없게 된다. 켜져 있을 때만 나타나는 3순위 텍스트
-            버튼으로 뒀다(`design.md` §6 CTA 위계 · 온보딩 `08` 의 「알림 없이 쓸게요」와 같은 자리).
+          <ListDivider />
+          {/* 온보딩에서 답한 다섯 항목이 이 한 줄 뒤에 모여 있다 (`M3` 목록) */}
+          <ListCell
+            title="기본 정보 수정"
+            leading={<Icon name="nav-my-page" size={20} color={labelColor.alternative} />}
+            onPress={() => router.push("/my/profile")}
+            chevron
+          />
+        </Group>
+
+        {/*
+            ⚠ 약관·문의는 **갈 곳이 아직 없다.** 약관 문안은 법률 검토 중이고
+            (`OPEN-ISSUES.md` R-10~R-15) 문의 채널도 정해지지 않았다. 정해지면
+            `onPress` 가 붙는다 — 그때까지 표식을 두지 않는다.
           */}
-          {retro.enabled ? (
-            <View style={styles.secondary}>
-              <Button
-                label="알림 받지 않기"
-                variant="text"
-                onPress={() => {
-                  // 시각은 그대로 둔다 — 다시 켜면 그 시각이다
-                  toggle("retro");
-                  setEditingTime(null);
-                }}
-              />
-            </View>
-          ) : null}
-        </BottomSheet>
-      ) : null}
-    </>
+        <Group label="지원">
+          <ListCell
+            title="문의하기"
+            leading={<Icon name="send" size={20} color={labelColor.alternative} />}
+            value="준비 중"
+          />
+          <ListDivider />
+          <ListCell
+            title="정책 · 약관"
+            leading={<Icon name="document" size={20} color={labelColor.alternative} />}
+            value="준비 중"
+          />
+        </Group>
+
+        <Group label="계정">
+          <ListCell
+            title="로그아웃"
+            leading={<Icon name="arrow-left" size={20} color={labelColor.alternative} />}
+            onPress={() => void signOut()}
+            chevron
+          />
+        </Group>
+
+        {/*
+            위험 동작은 목록 밖 바닥에 홀로 둔다 — 로그아웃과 같은 무게로 보이지 않게.
+            ⚠ **확인 화면이 아직 없다**(`my.pendingStates`) — 그래서 아직 눌리지 않고,
+            왜 눌리지 않는지를 아래 한 줄이 말한다.
+          */}
+        <View style={styles.leave}>
+          <Text variant="label2" color={labelColor.assistive}>
+            회원 탈퇴
+          </Text>
+          <Text variant="caption1" color={labelColor.alternative}>
+            준비 중
+          </Text>
+        </View>
+      </ScrollView>
+    </TabScreen>
   );
 }
 
@@ -317,10 +311,10 @@ function Group({
 const AVATAR = 56;
 
 const styles = StyleSheet.create({
-  head: { paddingTop: space.sm, paddingBottom: space.xl, paddingHorizontal: layout.screenPadding },
+  // 좌우 20 은 `TabScreen` 이 잡는다 — 여기서 또 잡으면 두 겹이 된다
+  head: { paddingTop: space.sm, paddingBottom: space.xl },
   body: {
     gap: space.xl2,
-    paddingHorizontal: layout.screenPadding,
     paddingBottom: space.xl,
   },
 

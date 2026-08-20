@@ -6,10 +6,10 @@ import { BasicInfoEditor } from "@/components/my/BasicInfoEditor";
 import { OtherReplyInput } from "@/components/onboarding/OtherReplyInput";
 import { QuickReplies } from "@/components/onboarding/QuickReplies";
 import { label as labelColor, space } from "@/design/ds";
-import { choiceHint, sameChoices } from "@/features/my/model/basicInfo";
+import { sameChoices } from "@/features/my/model/basicInfo";
 import { useProfile } from "@/features/my/model/settings";
 import { OTHER_REST_METHOD } from "@/features/onboarding/model/draft";
-import { useOnboardingOptions } from "@/features/onboarding/model/options";
+import { choiceHint, useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * `M8` · 쉬는 방법 수정
