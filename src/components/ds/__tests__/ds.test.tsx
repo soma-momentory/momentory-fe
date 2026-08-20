@@ -20,7 +20,7 @@ import { interaction, label, primary, social, status, zIndex } from "@/design/ds
 
 /**
  * DS 컴포넌트가 **규칙을 지키는지** 본다 — 모양을 픽셀로 고정하지 않는다.
- * 여기서 단언하는 것은 `design.md` 와 `docs/spec/RULES.md` 가 요구하는 것들이다.
+ * 여기서 단언하는 것은 `DESIGN.md` 와 `docs/spec/RULES.md` 가 요구하는 것들이다.
  */
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
@@ -242,7 +242,7 @@ describe("TextField", () => {
 
 describe("오버레이는 스스로 화면 전체를 덮는다", () => {
   // `flex: 1` 만 두면 화면 트리 안에서 조건부로 그렸을 때 형제와 자리를 나눠 가져
-  // 딤이 콘텐츠를 못 덮는다. z 는 `design.md` §11 (시트·모달 = 3)
+  // 딤이 콘텐츠를 못 덮는다. z 는 `DESIGN.md` §11 (시트·모달 = 3)
   // 엘리먼트를 배열에 담지 않고 만드는 함수를 담는다 — 케이스마다 새로 그린다
   it.each([
     [

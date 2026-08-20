@@ -11,11 +11,11 @@ import { MAX_OTHER_LENGTH } from "@/features/onboarding/model/draft";
  * 「`기타` 선택 시 답장 입력을 여는 흐름은 아직 없어요」(`Onboarding.dc.html`).
  * 그런데 **서버가 `OTHER` 와 함께 직접 입력 값을 요구한다** — 없으면 온보딩 제출이
  * 400 이다(`DISCUSSION.md` §1-7). 디자인이 미룬 자리라 부딪히는 것이 아니고,
- * **모양은 `design.md` 를 그대로 따랐다**(2026-08-20 결정).
+ * **모양은 `DESIGN.md` 를 그대로 따랐다**(2026-08-20 결정).
  *
  * ## 확정은 `[확인]` 하나다
  *
- * `design.md` §7: **「전송/확인 — 값이 비면 비활성」.** 눌러서 열고, 적고,
+ * `DESIGN.md` §7: **「전송/확인 — 값이 비면 비활성」.** 눌러서 열고, 적고,
  * `[확인]` 을 눌러 확정한다. 키보드 `완료` 는 같은 동작이다 — 엄지로 끝낼 수 있어야 한다.
  *
  * **입력 줄 밖을 눌렀다고 확정하지 않는다.** 옛 화면은 blur 로도 확정했는데,
@@ -56,7 +56,7 @@ export function OtherReplyInput({ value, onChangeText, onCommit }: Props) {
             clearLabel="기타 지우기"
           />
         </View>
-        {/* 값이 비면 비활성 (`design.md` §7) — 빈 답을 확정할 수 없다 */}
+        {/* 값이 비면 비활성 (`DESIGN.md` §7) — 빈 답을 확정할 수 없다 */}
         <Button label="확인" size="medium" disabled={empty} onPress={onCommit} />
       </View>
 

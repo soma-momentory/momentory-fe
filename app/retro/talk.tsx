@@ -40,7 +40,7 @@ import { emotionKeyOf, useRetro } from "@/features/retro/model/retro";
  * `C4` 회고 대화 — **서버가 주도한다.** 화면은 `startRetro`/`sendTurn` 을 부르고
  * **응답의 형태를 보고 무엇을 그릴지 정할** 뿐이다. phase 가 아니라 형태로 분기한다.
  *
- * `design.md` 「일기」 3번:
+ * `DESIGN.md` 「일기」 3번:
  * 「대화: 자유 입력 / 선택형 / 척도 3종. **선택형·척도에서는 입력창을 숨기고
  * `보내기` 로 확정**. 「직접 쓸게요」를 고르면 입력창으로 전환」
  *
@@ -191,7 +191,7 @@ export default function RetroTalk() {
   const isMeasure = lastReply?.ui === UI_MEASURE && (measures?.length ?? 0) > 0;
   const startFailed = sessionId == null && error != null;
   const picked = options?.find((o) => o.id === pickedId) ?? null;
-  /** 「직접 쓸게요」를 고르면 칩을 접고 입력창으로 넘어간다(`design.md` 「일기」 3) */
+  /** 「직접 쓸게요」를 고르면 칩을 접고 입력창으로 넘어간다(`DESIGN.md` 「일기」 3) */
   const customPicked = picked?.input === true;
   const showOptions = !done && options != null && options.length > 0 && !customPicked;
 
@@ -328,7 +328,7 @@ function OptionRow({
 
 /**
  * 하단 독 — **이번 턴에 무엇을 할 수 있는지 하나만** 보여준다.
- * 선택형·척도에서는 입력창을 숨긴다(`design.md` 「일기」 3).
+ * 선택형·척도에서는 입력창을 숨긴다(`DESIGN.md` 「일기」 3).
  */
 type DockProps = {
   startFailed: boolean;

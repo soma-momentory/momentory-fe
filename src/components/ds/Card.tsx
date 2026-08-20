@@ -3,7 +3,7 @@ import { StyleSheet, View, type ViewProps } from "react-native";
 import { background, fill, hairline, radius, space } from "@/design/ds";
 
 /**
- * 카드 — `design.md` §8.
+ * 카드 — `DESIGN.md` §8.
  *
  * - 배경 **Elevated** + `line.neutral` hairline, **그림자 없음**, radius 16
  * - 내부 패딩 16~22 (기본 16, 넉넉히 쓸 땐 `padding="loose"`)
@@ -19,7 +19,7 @@ import { background, fill, hairline, radius, space } from "@/design/ds";
  * 그래서 면은 **불투명 Elevated** 다 — `backgroundColor` 를 덮어쓰지 않는다.
  */
 type Props = ViewProps & {
-  /** 기본 16 · `loose` 22 (`design.md` §8 의 16~22 대역 양 끝) */
+  /** 기본 16 · `loose` 22 (`DESIGN.md` §8 의 16~22 대역 양 끝) */
   padding?: "default" | "loose" | "none";
 };
 
@@ -34,7 +34,7 @@ const PADDING = {
 } as const;
 
 /**
- * 정보 블록 — 안내문(`design.md` §8 마지막 줄).
+ * 정보 블록 — 안내문(`DESIGN.md` §8 마지막 줄).
  *
  * **카드가 아니다.** `fill.alternative` 면 + radius 12 이고 **hairline 이 없다** —
  * 카드와 같은 테두리를 주면 같은 위계로 읽힌다.

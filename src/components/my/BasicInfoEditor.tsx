@@ -14,7 +14,7 @@ import { saveBasicInfo, type BasicInfo } from "@/features/my/model/basicInfo";
  * - **설명 문구도 건너뛰기도 다음도 없다** — 기존 값이 채워진 상태로 시작한다.
  *   온보딩의 **입력 컴포넌트**만 재사용하고 온보딩 **플로우**는 재사용하지 않는다
  * - `저장` 은 **하단 full-width** 고정이고, 키보드가 올라오면 그 바로 위에 붙는다
- *   (`design.md` §7 키보드 규칙 — `KeyboardAvoidingView` 가 맡는다)
+ *   (`DESIGN.md` §7 키보드 규칙 — `KeyboardAvoidingView` 가 맡는다)
  * - 저장이 끝나면 **`M3` 목록으로 돌아간다**
  *
  * ## 저장 버튼의 세 상태
@@ -54,7 +54,7 @@ export function BasicInfoEditor({ title, changed, ready = true, patch, children 
       setError(result.message);
       return;
     }
-    // 저장 후 M3 복귀 (`design.md` 「마이」)
+    // 저장 후 M3 복귀 (`DESIGN.md` 「마이」)
     router.back();
   };
 

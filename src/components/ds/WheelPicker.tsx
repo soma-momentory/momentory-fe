@@ -13,7 +13,7 @@ import { fill, fontFamily, label as labelColor, radius, size, space } from "@/de
 import { Text } from "./Text";
 
 /**
- * 세로 휠 — `design.md` §11 「시간 선택」.
+ * 세로 휠 — `DESIGN.md` §11 「시간 선택」.
  *
  * > 세로 휠 3개(오전·오후 / 시 1~12 / 분 5분 단위) · **40px 행** ·
  * > 중앙 하이라이트 밴드 · `완료`

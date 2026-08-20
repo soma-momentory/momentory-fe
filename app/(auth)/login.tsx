@@ -155,12 +155,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    // 워드마크 ↔ 태그라인. 시안은 11 이지만 `design.md` §3 의 10단 스케일이 이긴다
+    // 워드마크 ↔ 태그라인. 시안은 11 이지만 `DESIGN.md` §3 의 10단 스케일이 이긴다
     gap: space.md,
     // 광학 중앙 — 이 화면에서만 쓰는 값이라 스케일에 올리지 않는다
     paddingBottom: 96,
   },
-  // `design.md` 「로그인」이 소셜 3종 간격을 10 으로 못박는다 (스케일 밖 · 이 화면 전용)
+  // `DESIGN.md` 「로그인」이 소셜 3종 간격을 10 으로 못박는다 (스케일 밖 · 이 화면 전용)
   actions: { gap: 10 },
   centered: { textAlign: "center" },
   // 약관은 버튼보다 좁게 — 좌우 20(Screen) + 12 = 32 (`Login.dc.html`)

@@ -6,14 +6,14 @@ import { Icon, type IconName } from "./icons/Icon";
 import { Text } from "./Text";
 
 /**
- * 하단 탭 — `design.md` §10. **다섯 칸이다.**
+ * 하단 탭 — `DESIGN.md` §10. **다섯 칸이다.**
  *
  * 높이 56 · `paddingBottom: 9`. 아이콘은 Wanted 세트만 쓴다 —
  * **`person` 은 없고 `nav-my-page` 를 쓴다**(§10, 없는 글리프를 추측하지 않는다).
  *
  * ## 활성 표시가 색만이 아니다
  *
- * `design.md` 는 활성 = `label.normal` + 「아이콘 진하게」, 비활성 =
+ * `DESIGN.md` 는 활성 = `label.normal` + 「아이콘 진하게」, 비활성 =
  * `interaction.inactive` 로 둔다. 색만으로 상태를 말하지 않기 위해(`RULES.md`)
  * **라벨 굵기도 함께 바꾼다** — `caption1`(500) → `label2`(600).
  *

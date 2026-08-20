@@ -46,7 +46,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     const { getByText, getByRole } = await render(<Home />);
 
     expect(getByText("오늘 하루는 어땠어요?")).toBeTruthy();
-    // 인사 화면(`C1`)이 사라져 **곧바로 일정 확인**으로 간다(`design.md` 「일기」 1)
+    // 인사 화면(`C1`)이 사라져 **곧바로 일정 확인**으로 간다(`DESIGN.md` 「일기」 1)
     await fireEvent.press(getByRole("button", { name: "지금 하루 돌아보기" }));
     expect(router.push).toHaveBeenCalledWith("/retro/confirm");
   });
@@ -328,7 +328,7 @@ describe("하단 탭", () => {
 
     const weightOf = (tab: typeof home) =>
       flatten(within(tab!).getByText(/./).props.style).fontFamily;
-    // 활성 label2(600) / 비활성 caption1(500) — `design.md` §10
+    // 활성 label2(600) / 비활성 caption1(500) — `DESIGN.md` §10
     expect(weightOf(home)).toBe("Pretendard-SemiBold");
     expect(weightOf(archive)).toBe("Pretendard-Medium");
   });

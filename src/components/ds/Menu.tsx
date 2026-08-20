@@ -20,7 +20,7 @@ import { Text } from "./Text";
 /**
  * ⋮ 메뉴 — `01 Core Components.dc.html` 의 `Menu` · `MenuItem`.
  *
- * `design.md` 「일정」: 「⋮ 메뉴: **바깥 탭하면 닫힘**, ⋮ 다시 누르면 열림.
+ * `DESIGN.md` 「일정」: 「⋮ 메뉴: **바깥 탭하면 닫힘**, ⋮ 다시 누르면 열림.
  * 수정 / 삭제(negative)」. 두세 줄짜리 행동 목록이고 **설정을 담지 않는다** —
  * 담아야 하면 그건 메뉴가 아니라 시트다(`BottomSheet`).
  *

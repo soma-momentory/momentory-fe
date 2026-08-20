@@ -47,7 +47,7 @@ const ROUTES: Record<TabName, "/home" | "/rest" | "/archive" | "/report" | "/my"
   마이: "/my",
 };
 
-/** 아이콘은 Wanted 세트만 쓴다 — **`person` 은 없고 `nav-my-page`** 다(`design.md` §10) */
+/** 아이콘은 Wanted 세트만 쓴다 — **`person` 은 없고 `nav-my-page`** 다(`DESIGN.md` §10) */
 const TABS: readonly TabItem<TabName>[] = [
   { name: "홈", icon: "home", label: "홈" },
   { name: "쉼터", icon: "heart", label: "쉼터" },

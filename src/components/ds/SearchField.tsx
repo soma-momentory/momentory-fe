@@ -23,7 +23,7 @@ import { IconButton } from "./IconButton";
  * 어느 조합이 실제로 쓰이는지 알 수 없게 된다. 공유하는 것은 값(면·hairline·
  * 포커스 링·Regular 400)이지 컴포넌트가 아니다.
  *
- * - 면 Elevated · radius 12 · `line.neutral` hairline (`design.md` §7)
+ * - 면 Elevated · radius 12 · `line.neutral` hairline (`DESIGN.md` §7)
  * - 포커스는 **테두리 색·두께로만** 말한다 — 링을 겹쳐 그리지 않는다
  * - 입력값·플레이스홀더는 **Regular 400**(§2)
  * - 값이 있으면 지우기 × — **되돌릴 길이 없으면 선택이 아니다**
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     padding: 0,
-    // 입력값은 Regular 400 — 본문(500)과 다르다(`design.md` §2)
+    // 입력값은 Regular 400 — 본문(500)과 다르다(`DESIGN.md` §2)
     fontFamily: fontFamily.regular,
     fontSize: text.body2.fontSize,
     lineHeight: text.body2.lineHeight,

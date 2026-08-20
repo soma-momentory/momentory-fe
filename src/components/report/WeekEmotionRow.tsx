@@ -6,7 +6,7 @@ import { emotionName } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";
 
 /**
- * `W1` · **7일 감정 흐름** — `design.md` 「리포트」의 「도넛·비율·범례 **없이**
+ * `W1` · **7일 감정 흐름** — `DESIGN.md` 「리포트」의 「도넛·비율·범례 **없이**
  * 7일 감정 흐름」이 이 한 줄이다.
  *
  * **감정은 막대가 아니라 요일별 점**이다(`W1.md`) — 감정에 강도를 입력받지

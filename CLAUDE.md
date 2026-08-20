@@ -69,7 +69,7 @@
 | 3   | [`docs/DESIGN.md`](docs/DESIGN.md)                   | **디자인 SSOT.** `ds/` 에 없는 값·규칙은 여기서 확인하고 `ds/` 에 이름을 만든다 |
 | 4   | [`docs/spec/COMPONENTS.md`](docs/spec/COMPONENTS.md) | ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다                               |
 
-**`ds/` 가 `design.md` 와 일부러 다른 자리가 있다** — 대비 검수에서 시안 값 여섯이
+**`ds/` 가 `DESIGN.md` 와 일부러 다른 자리가 있다** — 대비 검수에서 시안 값 여섯이
 WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말). **특히 주 CTA 면은
 `primary.heavy` 다** — 시안의 `#7C9E86` + 흰 글자는 2.91 이라 못 쓴다.
 되돌리면 `ds/__tests__/contrast.test.ts` 가 깨진다.

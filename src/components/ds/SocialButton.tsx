@@ -15,7 +15,7 @@ import { GoogleMark } from "./icons/GoogleMark";
 import { Text } from "./Text";
 
 /**
- * 소셜 로그인 버튼 — `design.md` 「로그인」 · `Login.dc.html`.
+ * 소셜 로그인 버튼 — `DESIGN.md` 「로그인」 · `Login.dc.html`.
  *
  * > 소셜 3종(카카오·Google·Apple) **공식 색·마크 유지**, 높이 48 · 간격 10.
  * > 공통은 **높이·Radius·간격만** — 색·로고는 손대지 않는다.
@@ -87,8 +87,8 @@ export function SocialButton({
 }
 
 /**
- * 마크 20. 시안(`Login.dc.html`)은 18 이지만 `design.md` §10 이 아이콘을
- * **16 / 20 / 24 3단**으로 못박는다 — 값이 어긋나면 `design.md` 가 이긴다.
+ * 마크 20. 시안(`Login.dc.html`)은 18 이지만 `DESIGN.md` §10 이 아이콘을
+ * **16 / 20 / 24 3단**으로 못박는다 — 값이 어긋나면 `DESIGN.md` 가 이긴다.
  * 세 마크를 같은 단으로 맞춰야 줄마다 크기가 갈리지도 않는다.
  */
 const MARK = size.icon.md;
@@ -113,7 +113,7 @@ const PROVIDERS: Record<SocialProvider, { container: ViewStyle; labelColor: stri
 };
 
 /**
- * 라벨 15 / 600. `design.md` §2 의 12단에는 **15 + SemiBold 조합이 없다**
+ * 라벨 15 / 600. `DESIGN.md` §2 의 12단에는 **15 + SemiBold 조합이 없다**
  * (`body2` 는 15/22 Medium). 시안이 소셜 버튼에만 쓰는 한 칸이라 타입 스케일에
  * 13번째를 만들지 않고, 크기·행간은 `body2` 토큰에서 가져오고 굵기만 올린다.
  */

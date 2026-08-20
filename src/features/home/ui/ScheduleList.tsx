@@ -8,7 +8,7 @@ import { ScheduleItem } from "./ScheduleItem";
 
 /**
  * 홈의 일정 목록 — **꾹 눌러 끌어 순서를 바꾼다**
- * (`Schedule.dc.html` 4-5·4-6 · `design.md` 「일정」 · `PLAN.md` D10).
+ * (`Schedule.dc.html` 4-5·4-6 · `DESIGN.md` 「일정」 · `PLAN.md` D10).
  *
  * 제스처 라이브러리도 `PanResponder` 도 쓰지 않고 **RN 의 responder 속성**
  * (`onStartShouldSetResponder` 계열)을 제목에 바로 단다. 세로 한 방향의 끌기에
@@ -23,7 +23,7 @@ import { ScheduleItem } from "./ScheduleItem";
  *
  * 줄 높이는 고정(`ROW_PITCH`)이라 **몇 칸 옮겼는지를 이동 거리로 나눠 센다** —
  * 줄마다 높이를 재지 않아도 되고, 그래서 프레임마다 다시 그리지 않는다.
- * 새 디자인의 줄은 **제목 한 줄(24) + 줄 간격 20**(`design.md` §3 「리스트 행 간
+ * 새 디자인의 줄은 **제목 한 줄(24) + 줄 간격 20**(`DESIGN.md` §3 「리스트 행 간
  * (일정) 20」)이고, 그 합이 곧 한 칸이다.
  */
 const LONG_PRESS_MS = 220;

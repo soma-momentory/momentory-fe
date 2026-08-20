@@ -11,7 +11,7 @@ import { SAMPLE_MOMENTS, SAMPLE_SCHEDULES } from "@/mocks/sample";
 
 /**
  * ⚠ **`C1`(인트로)은 사라졌다** — 새 시안의 「일기」 흐름은 일정 확인부터 시작한다
- * (`design.md` 「일기」 1~5). 홈 CTA 가 곧바로 `C2` 를 연다.
+ * (`DESIGN.md` 「일기」 1~5). 홈 CTA 가 곧바로 `C2` 를 연다.
  *
  * 여기 남은 단언은 **규칙**이다. 옛 화면의 모양을 재던 것(요약 카드 문구 ·
  * 감정 추가 점선 칩 · 「오늘의 순간」 · `잠시 쉬기`)은 시안이 그 기능을 없애서
@@ -159,7 +159,7 @@ describe("C3 · 시작 감정 고르기 — 필수다", () => {
   });
 
   it("감정색을 쓰지 않는다 — 아홉이 같은 브랜드 초록으로 켜진다", async () => {
-    // `design.md` §1 — 아홉을 각자 제 색으로 칠하면 고른 것이 색의 밝기 싸움이 된다
+    // `DESIGN.md` §1 — 아홉을 각자 제 색으로 칠하면 고른 것이 색의 밝기 싸움이 된다
     const r = await render(<RetroEmotion />);
 
     await fireEvent.press(r.getByRole("button", { name: "행복함" }));

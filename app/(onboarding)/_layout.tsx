@@ -12,7 +12,7 @@ import { useOnboardingOptions } from "@/features/onboarding/model/options";
  * - `05-a` 나이 · `05-c` 성별 — 뒤로 + **우상단 건너뛰기**(선택 항목)
  * - 나머지 — 뒤로만
  *
- * **진행 표시(1/8)는 두지 않는다**(`design.md` 「온보딩」) — 옛 `ProgressDots` 는 빠졌다.
+ * **진행 표시(1/8)는 두지 않는다**(`DESIGN.md` 「온보딩」) — 옛 `ProgressDots` 는 빠졌다.
  * 상단바 자리는 `OnboardingChat` 이 고정한다.
  *
  * **라우트 가드가 최종 권한을 갖는다**(`ARCHITECTURE §3-3`) — 진입 판정(S0)

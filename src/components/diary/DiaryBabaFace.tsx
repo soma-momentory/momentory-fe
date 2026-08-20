@@ -22,7 +22,7 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 이름 「바바」는 회고와 `Diary.babaView` 에 그대로 남는다. 사라지는 것은 그림이다.
  *
  * ⚠ **날씨 아이콘도 없다.** Wanted 세트에 날씨 글리프가 없고 「없는 글리프를
- * 추측하지 않는다」(`design.md` §10) · 시안의 `☀︎` 는 이모지라 쓰지 않는다
+ * 추측하지 않는다」(`DESIGN.md` §10) · 시안의 `☀︎` 는 이모지라 쓰지 않는다
  * (`RULES.md`). 그래서 날씨는 **글자로만** 말한다.
  */
 export function DiaryBabaFace({ diary }: { diary: Diary }) {
@@ -34,7 +34,7 @@ export function DiaryBabaFace({ diary }: { diary: Diary }) {
         </Text>
 
         {/* 다시 만들기 버튼을 두지 않는다 — 스냅샷이 다시 생성되면 그때의 말이 사라진다.
-            안내문은 카드가 아니다(`design.md` §8) */}
+            안내문은 카드가 아니다(`DESIGN.md` §8) */}
         <InfoBlock>
           <Text variant="caption1" color={labelColor.neutral}>
             회고를 마친 당시의 대화를 바탕으로 작성됐어요. 이후 수정한 내 문장과 내용이 다를 수

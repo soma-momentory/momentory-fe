@@ -14,7 +14,7 @@ import { Text } from "./Text";
  * ## 크기 두 단만 둔다
  *
  * - `medium` — 제목 `headline1`(18/26 600). 시안 주석의 「22px Bold → Heading 2」가
- *   가리키는 자리인데 `design.md` §2 스케일에 Heading 2 가 없다. **스케일에
+ *   가리키는 자리인데 `DESIGN.md` §2 스케일에 Heading 2 가 없다. **스케일에
  *   13번째를 만들지 않는다**(로그인에서 정한 판정 · `PLAN.md` A-7)라 한 단 아래인
  *   `headline1` 을 쓴다 — 날짜(`title3` 24)와 본문(16) 사이의 자리다
  * - `small` — 제목 `label2`(13/18 600) · `label.alternative`. 카드 위가 아니라

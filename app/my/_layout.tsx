@@ -14,7 +14,7 @@ import { useAuth } from "@/features/auth/model/auth";
  * 더할 때 이 레이아웃 밖으로 나가지 않게 한다(`PLAN.md` A-4).
  *
  * 알림 설정(`M2`)은 라우트가 아니다 — 마이 기본 화면 위에 겹치는 **시트**라
- * `app/(tabs)/my.tsx` 안에서 열린다(`design.md` §11).
+ * `app/(tabs)/my.tsx` 안에서 열린다(`DESIGN.md` §11).
  */
 export default function MyLayout() {
   const status = useAuth((s) => s.status);
