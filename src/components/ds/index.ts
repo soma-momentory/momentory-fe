@@ -12,9 +12,11 @@
  *
  * ## 아직 없는 것
  *
- * Slider(척도) · ListCell · Toast · Menu(⋮) · 채팅 입력 —
- * 쓰는 화면을 만들 때 함께 만든다. 미리 만들어 두면 실제로 필요한 모양과
- * 어긋난 채 굳는다.
+ * Slider(척도) · 채팅 입력 — 쓰는 화면을 만들 때 함께 만든다.
+ * 미리 만들어 두면 실제로 필요한 모양과 어긋난 채 굳는다.
+ *
+ * `ListCell`·`SectionHeader`·`Menu`·`Toast` 는 홈·일정에서 만들었고
+ * **보관함·마이가 재사용한다**(`ListCell` 은 설정 목록, `Menu` 는 일기 상세의 ⋮).
  *
  * `Calendar`·`SearchField`·`ViewSwitcher`·`EmotionDot`·`TabScreen` 은 보관함·리포트에서
  * 만들었다 — `Calendar` 는 쉼터(R2)가, `EmotionDot`·`TabScreen` 은 나머지 탭이 재사용한다.
@@ -29,6 +31,10 @@ export { Button, type ButtonSize, type ButtonVariant } from "./Button";
 export { IconButton } from "./IconButton";
 export { SocialButton, type SocialProvider } from "./SocialButton";
 export { Card, InfoBlock } from "./Card";
+export { ListCell, type ListCellProps } from "./ListCell";
+export { SectionHeader } from "./SectionHeader";
+export { Menu, type MenuAction } from "./Menu";
+export { Toast } from "./Toast";
 export { TextField } from "./TextField";
 export { SearchField } from "./SearchField";
 export { Chip } from "./Chip";

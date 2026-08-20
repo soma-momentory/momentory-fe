@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { act, fireEvent, render } from "@testing-library/react-native";
 
 import {
   BottomNavigation,
@@ -6,10 +6,14 @@ import {
   Button,
   Chip,
   IconButton,
+  ListCell,
+  Menu,
   Modal,
+  SectionHeader,
   SocialButton,
   Text,
   TextField,
+  Toast,
 } from "@/components/ds";
 import { ICON_PATHS, type IconName } from "@/components/ds/icons/paths";
 import { interaction, label, primary, social, status, zIndex } from "@/design/ds";
@@ -306,6 +310,94 @@ describe("Modal", () => {
     );
     const fills = getAllByRole("button").map((b) => flatten(b.props.style).backgroundColor);
     expect(fills.filter((c) => c === status.negative)).toHaveLength(1);
+  });
+});
+
+describe("ListCell", () => {
+  it("누를 수 없는 줄은 버튼이 아니다 — 낭독기가 눌리는 줄로 읽지 않게", async () => {
+    const { queryByRole, getByText } = await render(<ListCell title="팀 회의" />);
+
+    expect(getByText("팀 회의")).toBeTruthy();
+    expect(queryByRole("button")).toBeNull();
+  });
+
+  it("비활성이면 눌리지 않고 상태를 알린다", async () => {
+    const onPress = jest.fn();
+    const { getByRole } = await render(
+      <ListCell title="데이터 내보내기" description="준비 중이에요" disabled onPress={onPress} />,
+    );
+
+    const row = getByRole("button");
+    expect(row.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(row);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+});
+
+describe("SectionHeader", () => {
+  it("설명은 제목 아래 한 줄이고 행동은 오른쪽에 선다", async () => {
+    const { getByText, getByRole } = await render(
+      <SectionHeader
+        title="오늘 일정"
+        description="3개 남음"
+        trailing={<Button label="＋ 추가" variant="text" size="small" onPress={() => {}} />}
+      />,
+    );
+
+    expect(getByText("오늘 일정")).toBeTruthy();
+    expect(getByText("3개 남음")).toBeTruthy();
+    expect(getByRole("button", { name: "＋ 추가" })).toBeTruthy();
+  });
+});
+
+describe("Menu", () => {
+  it("바깥을 누르면 닫힌다 — ⋮ 메뉴의 유일한 취소 길이다", async () => {
+    const onDismiss = jest.fn();
+    const { getByLabelText } = await render(
+      <Menu actions={[{ label: "수정하기", onPress: () => {} }]} top={100} onDismiss={onDismiss} />,
+    );
+
+    await fireEvent.press(getByLabelText("메뉴 닫기"));
+    expect(onDismiss).toHaveBeenCalled();
+  });
+
+  it("위험색은 되돌릴 수 없는 항목에만 얹는다", async () => {
+    const { getByText } = await render(
+      <Menu
+        actions={[
+          { label: "수정하기", onPress: () => {} },
+          { label: "삭제하기", negative: true, onPress: () => {} },
+        ]}
+        top={100}
+        onDismiss={() => {}}
+      />,
+    );
+
+    expect(flatten(getByText("삭제하기").props.style).color).toBe(status.negative);
+    expect(flatten(getByText("수정하기").props.style).color).toBe(label.normal);
+  });
+});
+
+describe("Toast", () => {
+  it("글자는 변형과 무관하게 반전 면 위에서 읽힌다 — 색만으로 말하지 않는다", async () => {
+    const { getByText } = await render(
+      <Toast message="저장에 실패했어요." variant="negative" onDismiss={() => {}} />,
+    );
+
+    expect(flatten(getByText("저장에 실패했어요.").props.style).color).toBe(label.onFill);
+  });
+
+  // 가짜 시계를 쓰므로 이 describe 의 **마지막**에 둔다 — 뒤따르는 비동기 render 가
+  // 멈춘 시계를 물려받으면 영영 끝나지 않는다
+  it("스스로 사라진다 — 화면마다 시간이 갈리지 않게", async () => {
+    jest.useFakeTimers();
+    const onDismiss = jest.fn();
+    await render(<Toast message="일정을 삭제했어요." onDismiss={onDismiss} />);
+
+    expect(onDismiss).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(2600));
+    expect(onDismiss).toHaveBeenCalled();
+    jest.useRealTimers();
   });
 });
 

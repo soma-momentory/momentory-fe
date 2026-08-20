@@ -9,15 +9,22 @@ import { addEmotionChip, home } from "@/design/tokens.mvp";
 import type { Schedule } from "@/features/home/model/types";
 
 /**
- * 일정 한 줄 — `momentory.css` `.ir` · `.chk` · `.it` · `.epill`.
+ * 일정 한 줄 — **2세대(옛 디자인)**. `momentory.css` `.ir` · `.chk` · `.it` · `.epill`.
  *
- * **한 줄에 터치가 셋이다**(`12.md` · `RULES.md` 「홈」 · 새 디자인 `PLAN.md` D11):
- * - **체크 원** → 마침 토글. **켤 때 감정 시트가 뜬다**(`/home/emotion/[id]`)
- * - **제목·행** → 수정·삭제 입력 바(`12-c`)
- * - **손잡이** → 꾹 눌러 순서 바꾸기(`ScheduleList`)
+ * ⚠ **홈은 더 이상 이걸 쓰지 않는다.** 3세대 홈·일정은
+ * [`ScheduleItem`](./ScheduleItem.tsx)(새 DS · `ListCell` 기반)으로 옮겨졌고,
+ * 이 파일은 **아직 옛 톤인 회고 확인(`C2` · `app/retro/confirm.tsx`)만** 쓴다 —
+ * 한 화면 안에 두 체계를 섞지 않으려고 남겼다(`components/ds/index.ts` 머리말).
+ * 회고가 넘어오면 이 파일은 사라진다.
  *
- * 카드 아래 힌트 줄이 그 셋을 그대로 말하므로, 여기서 둘을 합치면 화면의 설명이
- * 거짓이 된다.
+ * ⚠ **감정 시트(`/home/emotion/[id]`)는 삭제됐다**(N7 · `PLAN.md` A-8) — 아래
+ * 「켤 때 감정 시트가 뜬다」는 설명은 더 이상 어디에서도 참이 아니다. `C2` 는
+ * 마침 토글만 부른다.
+ *
+ * **한 줄에 터치가 셋이다**(`12.md` · `RULES.md` 「홈」 · `PLAN.md` D11):
+ * - **체크 원** → 마침 토글
+ * - **제목·행** → 수정 입력 바(`12-c`)
+ * - **손잡이** → 꾹 눌러 순서 바꾸기
  *
  * - **긴 제목은 한 줄 말줄임**(`.it`)이고 **감정 알약이 먼저 자리를 잡는다** —
  *   그래서 제목이 `flex:1`, 알약이 고정이다

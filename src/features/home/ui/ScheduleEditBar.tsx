@@ -8,58 +8,67 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText } from "@/components/primitives/AppText";
-import { paperColors, paperHomeCard, paperRadius, paperTypography } from "@/design/paper";
+import { Button, IconButton, Text } from "@/components/ds";
+import {
+  background,
+  elevation,
+  fontFamily,
+  hairline,
+  interaction,
+  label as labelColor,
+  layout,
+  primary,
+  radius,
+  size,
+  space,
+  text,
+} from "@/design/ds";
 
 /**
  * 일정 입력 바 — **추가(`12-e`)와 수정(`12-c`)이 같은 바를 쓴다**
- * (`docs/design/app-flow.md` §2.1 · `홈.dc.html`).
+ * (`Schedule.dc.html` 4-1·4-3 · `design.md` 「일정」).
  *
- * 시안은 시트가 아니라 **화면 아래에서 올라오는 알약 입력**이다:
- * `＋ 추가` 는 빈 바를, 제목 탭은 **기존 값이 담긴 바 + 🗑 삭제**를 연다.
- * 하나의 바가 둘을 다 하므로 「추가」와 「수정」의 조작이 갈리지 않는다.
+ * 시안의 규칙 그대로:
+ * - **추가**: `＋ 추가` → 하단 알약 + 키보드. 확정은 **바 안의 ＋ 또는 키보드
+ *   `완료`** 두 곳이고, **빈 값이면 둘 다 비활성**이다
+ * - **수정**: 같은 바에 **Primary 링 + `일정 수정` 캡션**만 더한다. 취소 / 저장
+ * - **삭제는 여기 없다.** 줄의 ⋮ 메뉴로 옮겼다(시안 4-2) — 지우는 길과 고치는
+ *   길이 한 자리에 있으면 고치러 왔다가 지우게 된다
  *
- * - 확정은 **완료 또는 키보드의 확인** 한 곳. 빈 제목이면 잠긴다
- * - 화면 아무 데나 누르면 닫힌다(`app-flow.md` §3 입력 레이어 규칙) —
- *   투명 오버레이가 바보다 **뒤에** 있어야 바 안쪽 탭이 먹힌다
- * - 삭제는 **확인을 한 번 묻는다**(시안의 확인 모달) — 되돌릴 수 없기 때문이다.
- *   가져온 일정은 지우는 것이 아니라 숨기는 것이라 묻지 않는다
+ * ## 화면이지만 시트다
+ *
+ * 라우트로 열리고 **닫기는 `router.back()`** 이다(`PLAN.md` A-4) — 기기 뒤로가기·
+ * 스와이프백이 그대로 닫기가 된다. 바깥 아무 데나 눌러도 닫힌다: 투명 레이어가
+ * 바보다 **뒤에** 있어야 바 안쪽 탭이 먹힌다.
  */
 type Props = {
-  /** 편집이면 기존 제목이 담겨 온다 */
+  /** `add` 는 빈 바 + ＋ · `edit` 는 값이 담긴 바 + 취소/저장 */
+  mode: "add" | "edit";
   initialTitle?: string;
-  /** 편집 모드의 지우기. 넘기지 않으면 🗑 을 그리지 않는다(추가 모드) */
-  onDelete?: () => void;
-  /** 지우기 확인 문구 — 「삭제」와 「숨기기」가 다른 말을 한다 */
-  deleteLabel?: string;
-  deleteConfirm?: string | null;
-  /** 제목을 고칠 수 없는 일정(캘린더에서 가져온 것) */
+  /** 캘린더에서 가져온 일정 — 제목을 고칠 수 없다(`12-c`) */
   readOnly?: boolean;
   onSubmit: (title: string) => void;
-  /** 바 왼쪽의 원 — 그 일정의 마침 상태를 그대로 비춘다 */
-  circleColor?: string;
-  hint: string;
+  /** 바 위 한 줄 — 수정이면 「일정 수정」, 추가면 어디에 저장되는지 */
+  caption: string;
 };
 
 export function ScheduleEditBar({
+  mode,
   initialTitle = "",
-  onDelete,
-  deleteLabel = "삭제",
-  deleteConfirm = null,
   readOnly = false,
   onSubmit,
-  circleColor,
-  hint,
+  caption,
 }: Props) {
   const [title, setTitle] = useState(initialTitle);
-  const [asking, setAsking] = useState(false);
-  const ready = title.trim().length > 0;
+  const insets = useSafeAreaInsets();
+  const editing = mode === "edit";
+  const ready = title.trim().length > 0 && !readOnly;
 
   const close = () => router.back();
   const submit = () => {
-    if (!ready || readOnly) return;
+    if (!ready) return;
     onSubmit(title);
     close();
   };
@@ -76,27 +85,13 @@ export function ScheduleEditBar({
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.dock}
+        style={[styles.dock, { paddingBottom: Math.max(insets.bottom, space.md) }]}
       >
-        {/* 바 아래를 종이로 덮는다 — 시안은 입력이 열리면 탭바가 내려가는데
-            시트가 라우트라 탭바를 내릴 수 없다. 대신 위쪽만 페이드로 흐린다
-            (`app-flow.md` §3-1 의 뜻을 같은 결과로 지킨다) */}
-        <Svg style={styles.fade} pointerEvents="none">
-          <Defs>
-            <LinearGradient id="editFade" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={paperColors.bg.paper} stopOpacity={0} />
-              <Stop offset="1" stopColor={paperColors.bg.paper} stopOpacity={1} />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#editFade)" />
-        </Svg>
+        <Text variant="caption1" color={labelColor.alternative} style={styles.caption}>
+          {caption}
+        </Text>
 
-        <AppText style={styles.hint}>{hint}</AppText>
-
-        <View style={styles.bar}>
-          <View
-            style={[styles.circle, circleColor != null ? { backgroundColor: circleColor } : null]}
-          />
+        <View style={[styles.bar, editing ? styles.barEditing : null]}>
           <TextInput
             value={title}
             onChangeText={setTitle}
@@ -104,206 +99,91 @@ export function ScheduleEditBar({
             autoFocus={!readOnly}
             returnKeyType="done"
             onSubmitEditing={submit}
-            placeholder="무엇을 할까요?"
-            placeholderTextColor={paperColors.text.faint}
-            selectionColor={paperColors.brand.greenDark}
+            placeholder={editing ? undefined : "어떤 일정을 더할까요?"}
+            placeholderTextColor={labelColor.assistive}
+            selectionColor={primary.normal}
             style={styles.input}
             accessibilityLabel="일정 제목"
           />
-          {onDelete != null ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={deleteLabel}
-              hitSlop={10}
-              onPress={() => (deleteConfirm != null ? setAsking(true) : onDelete())}
-              style={styles.trash}
-            >
-              {/* 🗑 대신 선으로 그린 통 — 이모지를 쓰지 않는다 */}
-              <View style={styles.trashLid} />
-              <View style={styles.trashBody} />
-            </Pressable>
-          ) : null}
+          {editing ? (
+            // 되돌릴 길 — 값이 있을 때만 붙는다(시안 4-3 의 지우기 ×)
+            title.length > 0 && !readOnly ? (
+              <IconButton
+                name="close"
+                size={size.icon.sm}
+                accessibilityLabel="제목 지우기"
+                color={labelColor.assistive}
+                onPress={() => setTitle("")}
+                style={styles.clear}
+              />
+            ) : null
+          ) : (
+            <IconButton
+              name="plus"
+              size={size.icon.md}
+              accessibilityLabel="일정 추가"
+              color={ready ? labelColor.onFill : labelColor.disabled}
+              disabled={!ready}
+              onPress={submit}
+              // 채운 원 — 비활성은 §6 의 비활성 면·라벨로 말한다
+              style={StyleSheet.flatten([
+                styles.add,
+                { backgroundColor: ready ? primary.heavy : interaction.disabled },
+              ])}
+            />
+          )}
         </View>
 
-        <View style={styles.actions}>
-          <Pressable accessibilityRole="button" hitSlop={8} onPress={close}>
-            <AppText style={styles.cancel}>취소</AppText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !ready || readOnly }}
-            disabled={!ready || readOnly}
-            onPress={submit}
-            style={[styles.done, !ready || readOnly ? styles.doneOff : null]}
-          >
-            <AppText weight="700" style={styles.doneLabel}>
-              완료
-            </AppText>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-
-      {/* 확인 모달 — 지우는 것은 되돌릴 수 없다 */}
-      {asking && deleteConfirm != null ? (
-        <View style={styles.modalRoot}>
-          <Pressable
-            style={[StyleSheet.absoluteFill, styles.modalDim]}
-            accessibilityRole="button"
-            accessibilityLabel="확인 닫기"
-            onPress={() => setAsking(false)}
-          />
-          <View style={styles.modal}>
-            <AppText weight="700" style={styles.modalTitle}>
-              {deleteConfirm}
-            </AppText>
-            <View style={styles.modalRow}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setAsking(false)}
-                style={[styles.modalButton, styles.modalCancel]}
-              >
-                <AppText weight="700" style={styles.modalCancelLabel}>
-                  그대로 둘게요
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                onPress={onDelete}
-                style={[styles.modalButton, styles.modalDelete]}
-              >
-                <AppText weight="700" style={styles.modalDeleteLabel}>
-                  {deleteLabel}
-                </AppText>
-              </Pressable>
-            </View>
+        {/* 수정에만 취소/저장이 붙는다 — 추가는 ＋ 하나로 끝난다 */}
+        {editing ? (
+          <View style={styles.actions}>
+            <Button label="취소" variant="outlined" onPress={close} style={styles.cancel} />
+            <Button label="저장" disabled={!ready} onPress={submit} style={styles.save} />
           </View>
-        </View>
-      ) : null}
+        ) : null}
+      </KeyboardAvoidingView>
     </View>
   );
 }
 
-const { styles: type } = paperTypography;
-
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
+  // 바 아래는 앱 배경으로 덮는다 — 시안은 바가 페이지 위에 앉아 있다
   dock: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 18,
-    gap: 10,
-    backgroundColor: paperColors.bg.paper,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: space.md,
+    gap: space.sm,
+    backgroundColor: background.normal,
   },
-  // 종이 면이 시작되는 자리를 부드럽게 — 뒤의 잔디에서 이어지는 것처럼
-  fade: { position: "absolute", left: 0, right: 0, top: -28, height: 28 },
-  hint: {
-    fontSize: type.caption.fontSize,
-    lineHeight: type.caption.lineHeight,
-    color: paperColors.text.mutedWarmText,
-    textAlign: "center",
-  },
-  // 알약 입력 — 홈의 카드와 같은 잉크 테두리라 같은 종이 위의 것으로 읽힌다
+  caption: { paddingLeft: space.xs2 + space.xs },
+  // 입력 pill — radius Full · 오른쪽에 버튼이 앉을 만큼만 여백을 준다(§7)
   bar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    minHeight: 56,
-    paddingHorizontal: 16,
-    borderRadius: paperRadius.pill,
-    backgroundColor: paperColors.bg.card,
-    borderWidth: paperHomeCard.borderWidth,
-    borderColor: paperHomeCard.borderColor,
-    ...paperHomeCard.shadow,
+    gap: space.sm,
+    minHeight: 60,
+    paddingLeft: 18,
+    paddingRight: space.sm,
+    borderRadius: radius.full,
+    backgroundColor: background.elevated,
+    ...hairline.neutral,
+    ...elevation.floating,
   },
-  circle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: paperColors.neutral.task,
-  },
+  // 수정임을 링 하나로 말한다 — 캡션과 함께 두 신호다(색만으로 말하지 않는다)
+  barEditing: { borderWidth: 1, borderColor: primary.normal },
   input: {
     flex: 1,
-    fontFamily: paperTypography.fontFamily.regular,
-    fontSize: type.cardTitle.fontSize,
-    lineHeight: type.cardTitle.lineHeight,
-    color: paperColors.text.primaryHome,
+    // 입력값은 Regular 400 (`design.md` §2)
+    fontFamily: fontFamily.regular,
+    fontSize: text.body1Reading.fontSize,
+    lineHeight: text.body1Reading.lineHeight,
+    color: labelColor.normal,
     padding: 0,
   },
-  trash: { width: 22, height: 22, alignItems: "center", justifyContent: "center", gap: 2 },
-  trashLid: {
-    width: 16,
-    height: 1.5,
-    borderRadius: 1,
-    backgroundColor: paperColors.accent.dangerFill,
-  },
-  trashBody: {
-    width: 12,
-    height: 13,
-    borderWidth: 1.5,
-    borderTopWidth: 0,
-    borderColor: paperColors.accent.dangerFill,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-  },
-
-  actions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  cancel: {
-    minHeight: 44,
-    lineHeight: 44,
-    fontSize: type.bodyLg.fontSize,
-    color: paperColors.text.mutedWarmText,
-  },
-  done: {
-    minHeight: 44,
-    justifyContent: "center",
-    paddingHorizontal: 22,
-    borderRadius: paperRadius.pill,
-    backgroundColor: paperColors.brand.greenDark,
-  },
-  doneOff: { opacity: 0.36 },
-  doneLabel: {
-    fontSize: type.bodyLg.fontSize,
-    lineHeight: type.bodyLg.lineHeight,
-    color: paperColors.text.onFill,
-  },
-
-  modalRoot: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalDim: { backgroundColor: paperColors.overlay.dim },
-  modal: {
-    left: 0,
-    right: 0,
-    marginHorizontal: 30,
-    alignSelf: "stretch",
-    gap: 16,
-    padding: 22,
-    borderRadius: paperRadius.cardHome,
-    backgroundColor: paperColors.bg.cardOpaque,
-  },
-  modalTitle: {
-    fontSize: type.cardTitle.fontSize,
-    lineHeight: type.cardTitle.lineHeight,
-    textAlign: "center",
-    color: paperColors.text.primary,
-  },
-  modalRow: { flexDirection: "row", gap: 10 },
-  modalButton: {
-    flex: 1,
-    minHeight: 46,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: paperRadius.pill,
-  },
-  modalCancel: { borderWidth: 1.5, borderColor: paperColors.neutral.tabInactiveBorder },
-  modalCancelLabel: { fontSize: type.bodySm.fontSize, color: paperColors.text.primary },
-  modalDelete: { backgroundColor: paperColors.accent.dangerFill },
-  modalDeleteLabel: { fontSize: type.bodySm.fontSize, color: paperColors.text.onFill },
+  clear: { width: size.icon.lg, height: size.icon.lg },
+  add: { width: layout.minTouch, height: layout.minTouch, borderRadius: radius.full },
+  actions: { flexDirection: "row", gap: space.sm },
+  // 시안의 1 : 2 — 머무는 쪽보다 나아가는 쪽이 넓다
+  cancel: { flex: 1 },
+  save: { flex: 2 },
 });

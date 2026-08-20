@@ -62,9 +62,22 @@ type DayStore = {
   loaded: boolean;
   /** 홈이 뜰 때 부른다. **여러 번 불러도 요청은 하나** */
   load: () => Promise<void>;
-  /** 체크 원 — 즉시 마침/취소. 확인을 묻지 않는다. **끄면 감정도 사라진다** */
+  /**
+   * 체크박스 — 즉시 마침/취소. 확인을 묻지 않는다.
+   *
+   * ⚠ **감정을 묻지 않는다**(2026-08-20 · N7 · `PLAN.md` A-8). `design.md` 「일정」이
+   * 「완료: 체크박스 한 번, **감정 입력 없음**」이라 감정 인자로 늘 `null` 을 보낸다.
+   * 서버가 `emotion:null` 을 받으면 그 일정의 감정을 지우므로 **기기에서도 함께
+   * 비운다** — 화면만 감정을 든 채로 두면 다음 `load()` 에 조용히 사라진다.
+   */
   toggleDone: (id: string) => void;
-  /** `12-c` 감정 — **하나만 남는다.** 같은 것을 다시 누르면 해제 */
+  /**
+   * `12-c` 감정 — **하나만 남는다.** 같은 것을 다시 누르면 해제.
+   *
+   * ⚠ **부르는 화면이 없다**(N7 로 감정 시트가 사라졌다). 서버 계약
+   * (`PUT /schedules/{id}/completion`)은 그대로라 **좁히지 않고 남긴다** —
+   * 계약을 지우면 되살릴 때 BE 를 다시 손대야 한다(`PLAN.md` A-8).
+   */
   selectEmotion: (id: string, emotion: EmotionId) => void;
   /** `12-c` 「홈에서 숨기기」 — 서버에 자리가 없어 **기기에만** 남는다 */
   hide: (id: string) => void;
@@ -133,14 +146,15 @@ export const useDay = create<DayStore>((set, get) => ({
     const before = get().schedules.find((x) => x.id === id);
     if (before == null) return;
     const done = !before.done;
-    // 마침을 끄면 감정도 함께 사라진다 — 서버가 그렇게 한다
-    const emotions = done ? before.emotions : [];
+    // 켜든 끄든 감정은 남지 않는다 — 이 화면이 감정을 더 이상 묻지 않으므로(N7)
+    // 서버에도 `null` 을 보낸다. 서버가 지우는 것을 기기가 그대로 비춘다
+    const emotions: EmotionId[] = [];
     // 마친 **시각**은 서버가 돌려주지 않는다(`scheduleApi.ts`) — 기기에만 남는다
     const doneAt = done ? clock.now().toISOString() : null;
 
     set((s) => ({ schedules: replace(s.schedules, id, { done, emotions, doneAt }) }));
 
-    void putCompletion(id, done, emotions[0] ?? null).then((result) => {
+    void putCompletion(id, done, null).then((result) => {
       if (result.ok || !serverRefused(result.code)) return;
       set((s) => ({
         schedules: replace(s.schedules, id, {
@@ -287,6 +301,21 @@ export const useTodayContext = (): { date: string; weather: Weather } => ({
   weather: todayWeather(),
 });
 
+/**
+ * 그 날짜가 든 주의 **월요일** — 홈의 「이번 주 감정」이 보는 창(`design.md` 「홈」).
+ *
+ * 주는 월요일에 시작한다(시안의 요일 줄이 `월…일` 이다). 일요일(`getDay()===0`)은
+ * **앞선 월요일**에 붙는다 — 그 주의 마지막 날이지 다음 주의 첫날이 아니다.
+ */
+export function weekStartOf(iso: string): string {
+  const [y = "2026", m = "1", d = "1"] = iso.split("-");
+  const at = new Date(Number(y), Number(m) - 1, Number(d));
+  const back = (at.getDay() + 6) % 7;
+  const monday = new Date(at.getFullYear(), at.getMonth(), at.getDate() - back);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${monday.getFullYear()}-${pad(monday.getMonth() + 1)}-${pad(monday.getDate())}`;
+}
+
 /** 목록에 보이는 일정 — 숨긴 것은 빼고 센다 */
 export const visibleSchedules = (schedules: readonly Schedule[]) =>
   schedules.filter((s) => !s.hidden);
@@ -303,8 +332,25 @@ export const MAX_VISIBLE_SCHEDULES = 5;
 /**
  * 「2/4 마침」. **진행률·배지가 아니라 사실**이다(`12.md`) — 퍼센트로 바꾸거나
  * 막대를 그리지 않는다.
+ *
+ * ⚠ **홈은 더 이상 이 말을 쓰지 않는다** — `design.md` 「홈」이 「`N개 남음` 은
+ * 미완료 수예요」로 바꿨다(아래 `remainingLabel`). 아직 옛 디자인인 회고 확인
+ * (`C2`)이 쓰고 있어 남긴다 — 그 화면이 넘어오면 함께 사라진다.
  */
 export const doneCountLabel = (schedules: readonly Schedule[]) => {
   const shown = visibleSchedules(schedules);
   return `${shown.filter((s) => s.done).length}/${shown.length} 마침`;
+};
+
+/**
+ * 「3개 남음」 — **남은(미완료) 수**다(`design.md` 「홈」).
+ *
+ * 마친 수를 세면 「얼마나 해냈는가」가 되고, 남은 수를 세면 「무엇이 남았는가」가
+ * 된다. 진행률·배지를 만들지 않는다는 규칙(`12.md`)은 그대로다 — 다 마쳤을 때도
+ * 점수 대신 **끝났다는 사실**만 말한다.
+ */
+export const remainingLabel = (schedules: readonly Schedule[]) => {
+  const shown = visibleSchedules(schedules);
+  const left = shown.filter((s) => !s.done).length;
+  return left > 0 ? `${left}개 남음` : "모두 완료";
 };
