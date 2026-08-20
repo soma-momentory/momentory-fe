@@ -4,7 +4,7 @@ import { EMOTIONS } from "@/features/emotion/model/emotion";
 /**
  * 대비 검수를 **테스트로 고정한다.**
  *
- * `design-reference/design.md` §1 의 값 여섯이 WCAG 2.1 AA 에 미달이라 보정했다
+ * `docs/DESIGN.md` §1 의 값 여섯이 WCAG 2.1 AA 에 미달이라 보정했다
  * (`src/design/ds/color.ts` 머리말의 표). 주석만 남기면 다음 사람이 "시안과 다르네"
  * 하고 되돌린다 — 되돌리면 여기가 깨진다.
  *

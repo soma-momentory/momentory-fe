@@ -41,7 +41,7 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 되돌릴 때만 확인)은 `ActionCardSection`, 바바 면의 규칙(고정 스냅샷 · 근거
  * 인용 · 그날의 기록 두 줄)은 `DiaryBabaFace` 에 있다.
  *
- * ## 새 디자인 (`PLAN.md` A Phase 4 · `design-reference/Archive.dc.html` A3)
+ * ## 새 디자인 (`PLAN.md` A Phase 4 · `docs/DESIGN.md` 「보관함」 A3)
  *
  * 뒤로 + ⋮ 상단 내비 → 날짜 제목 → 감정·날씨 한 줄 → 두 면 → 일기 카드 →
  * 행동 카드 → 그날 일정. **읽기 레이아웃**이고 `design.md` 「보관함」이 정한

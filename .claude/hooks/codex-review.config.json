@@ -33,9 +33,5 @@
     "ios",
     "android"
   ],
-  "designSsotPaths": [
-    "design-reference/design.md",
-    "docs/design/design-system.md",
-    "docs/design/prototype"
-  ]
+  "designSsotPaths": ["docs/DESIGN.md", "docs/design/design-system.md", "docs/design/prototype"]
 }

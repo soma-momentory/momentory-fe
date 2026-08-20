@@ -59,6 +59,6 @@ desktop.ini
 # Claude Code 로컬 설정 (기기별 권한 허용 목록)
 .claude/settings.local.json
 
-# 디자인 반입 원본 아카이브. 푼 내용이 design-reference/ 에 그대로 있으므로
-# 압축본까지 이력에 담지 않는다 (정본은 design-reference/design.md)
+# 디자인 반입 원본 아카이브 — 정본만 `docs/DESIGN.md` 로 남기고 나머지는 지웠다
+# (2026-08-20 · `PLAN.md` A-18). 압축본을 이력에 담지 않는 것은 그대로다
 /Momentory design system.zip

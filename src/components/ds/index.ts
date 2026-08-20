@@ -1,7 +1,7 @@
 /**
  * Momentory DS — 공용 컴포넌트 (3세대 · `PLAN.md` A Phase 3).
  *
- * 스펙 정본은 `design-reference/design.md` §6~11, 값은 `src/design/ds/`.
+ * 스펙 정본은 `docs/DESIGN.md` §6~11, 값은 `src/design/ds/`.
  *
  * ## 옛 컴포넌트에 변형을 더하지 않는다
  *
