@@ -245,6 +245,38 @@ describe("측정 턴 — 0~10 눈금", () => {
 
     expect(mockTurn).toHaveBeenCalledWith(7, { measures: { current_emotion: 6 } });
   });
+
+  it("건드리지 않아도 중앙값(0~10 이면 5)이 실린다 — 슬라이더가 처음부터 5", async () => {
+    // 대화 중(turn)에 측정이 온다 — 실제 흐름
+    mockTurn.mockResolvedValueOnce({
+      ok: true,
+      data: reply({
+        text: "지금 감정은 얼마나 강한가요?",
+        ui: "measure",
+        measures: [{ id: "current_emotion", label: "지금 감정", min: 0, max: 10 }],
+      }),
+    });
+    mockTurn.mockResolvedValueOnce({
+      ok: true,
+      data: reply({ text: "고마워요.", phase: "script" }),
+    });
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+
+    // 텍스트 답을 보내 측정 턴을 받는다
+    await fireEvent.changeText(r.getByLabelText("답변"), "괜찮아요.");
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("보내기"));
+    });
+    await waitFor(() => expect(r.getByLabelText("지금 감정")).toBeTruthy());
+
+    // 슬라이더를 건드리지 않고 바로 보낸다
+    await act(async () => {
+      await fireEvent.press(r.getByText("보내기"));
+    });
+
+    expect(mockTurn).toHaveBeenLastCalledWith(7, { measures: { current_emotion: 5 } });
+  });
 });
 
 describe("종료", () => {

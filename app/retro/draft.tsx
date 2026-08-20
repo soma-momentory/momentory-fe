@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { Button, Card, EmotionDot, Screen, Text, TopNavigation } from "@/components/ds";
 import { label as labelColor, space, text } from "@/design/ds";
+import { updateDiaryBody } from "@/features/diary/data/diaryApi";
 import { emotionName } from "@/features/emotion/model/emotion";
 import { useDiary } from "@/features/diary/model/diary";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
@@ -35,9 +36,10 @@ import { formatKoreanDateShort } from "@/lib/day";
  * - 저장하면 `Diary` 한 장(+ 행동 카드가 있으면 한 장)이 남고 `C7` 로 간다
  * - **한 문장 요약·점수·배지를 만들지 않는다**
  *
- * 옛 세그먼트(「내가 남긴 오늘 / 바바가 함께 본 오늘」)는 뺐다 — 시안에 없고,
- * `reframedDiary` 는 **저장된 일기 상세(`A3`)가 `DiaryBabaFace` 로 이어 보여준다**.
- * 행동 카드도 여기가 아니라 저장 완료(`C7`)가 보여준다(시안 5번).
+ * 옛 세그먼트(「내가 남긴 오늘 / 바바가 함께 본 오늘」)는 뺐다 — 이 화면은 본문 한 면만
+ * 보여준다. ⚠ **「바바가 함께 본 오늘」은 이제 어디에도 그려지지 않는다**(2026-08-20 · 상세
+ * A3 에서도 뺐다). `reframedDiary` 는 `Diary.babaView` 로 저장만 되고 화면에는 안 뜬다.
+ * 행동 카드는 여기가 아니라 저장 완료(`C7`)가 보여준다(시안 5번).
  */
 export default function RetroDraft() {
   const startEmotion = useRetro((s) => s.startEmotion);
@@ -66,6 +68,7 @@ export default function RetroDraft() {
   const save = () => {
     if (saving.current) return;
     saving.current = true;
+    const edited = body !== diary.diary;
     saveDiary({
       date: today,
       body,
@@ -78,8 +81,11 @@ export default function RetroDraft() {
       situation: actionCard?.situation ?? null,
       targetAction: actionCard?.action ?? null,
       retrospectId: sessionId != null ? String(sessionId) : null,
-      edited: body !== diary.diary,
+      edited,
     });
+    // 서버는 완료 때 이미 LLM 원본을 저장했다 — 사용자가 고쳤으면 그 회고의 일기 본문을
+    // 갱신한다(fail-quiet · 못 닿으면 다음 load 에 서버 값이 다시 비친다). 안 고쳤으면 보내지 않는다.
+    if (edited && sessionId != null) void updateDiaryBody(String(sessionId), body);
     // 회고 한 벌은 여기까지가 수명이다 — 다음 회고에 앞 대화가 섞이지 않게…
     // 단, `C7` 이 행동 카드를 보여주므로 **그 화면이 읽고 나서** 비운다
     router.replace("/retro/done");

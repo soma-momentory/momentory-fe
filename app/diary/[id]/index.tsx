@@ -3,18 +3,8 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
-import {
-  Card,
-  Chip,
-  EmotionDot,
-  IconButton,
-  Modal,
-  Screen,
-  Text,
-  TopNavigation,
-} from "@/components/ds";
-import { ActionCardSection, UndoActionConfirm } from "@/components/diary/ActionCardSection";
-import { DiaryBabaFace } from "@/components/diary/DiaryBabaFace";
+import { Card, EmotionDot, IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
+import { ActionCardSection } from "@/components/diary/ActionCardSection";
 import {
   background,
   elevation,
@@ -32,38 +22,36 @@ import { useDay, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
- * `A3` 내가 남긴 오늘 + 행동 카드 · `A3-b` 바바가 함께 본 오늘 · `A3-c` 해본 뒤
+ * `A3` 내가 남긴 오늘 + 행동 카드 (읽기 레이아웃)
  *
- * **일기 한 장은 두 면을 가진다**(`A3.md`) — 내가 쓴 문장과 바바가 함께 본 오늘.
- * **두 면을 한 화면에 섞지 않는다.**
+ * ⚠ **「바바가 함께 본 오늘」(`A3-b`) 면을 상세에서 뺐다**(2026-08-20 결정) — 상세는
+ * **내가 쓴 문장 한 면만** 보여준다. 그래서 면 전환 칩과 바바 면 컴포넌트를 지웠다.
+ * (서버 조회분은 `babaView` 가 `null` 이고, 이제 로컬 저장분의 바바 문장도 상세에서
+ * 그리지 않는다.)
  *
- * 이 파일은 **면 전환과 조합만** 한다 — 행동 카드의 규칙(`A3-c` 는 상태다 ·
- * 되돌릴 때만 확인)은 `ActionCardSection`, 바바 면의 규칙(고정 스냅샷 · 근거
- * 인용 · 그날의 기록 두 줄)은 `DiaryBabaFace` 에 있다.
+ * ⚠ **행동 카드는 읽기 전용이다**(2026-08-20 결정) — 「해봤어요」·되돌리기·느낀 점 편집은
+ * **쉼터(`R2`)에서** 한다(`docs/PRODUCT.md` 「상류와 차이」). 상세는 그날의 기록을 읽는
+ * 곳이라, 읽는 화면에서 "지울까요?" 같은 조작 확인이 뜨는 어색함을 없앴다.
+ *
+ * 이 파일은 **조합만** 한다 — 행동 카드는 `ActionCardSection` 을 `readOnly` 로 그린다.
  *
  * ## 새 디자인 (`PLAN.md` A Phase 4 · `docs/DESIGN.md` 「보관함」 A3)
  *
- * 뒤로 + ⋮ 상단 내비 → 날짜 제목 → 감정·날씨 한 줄 → 두 면 → 일기 카드 →
- * 행동 카드 → 그날 일정. **읽기 레이아웃**이고 `DESIGN.md` 「보관함」이 정한
- * 「A3 상세는 읽기 레이아웃 + **⋮ 수정·삭제**」를 따른다.
+ * 뒤로 + ⋮ 상단 내비 → 날짜 제목 → 감정·날씨 한 줄 → 일기 카드 → 행동 카드 →
+ * 그날 일정. **읽기 레이아웃**이고 `DESIGN.md` 「보관함」이 정한 「A3 상세는 읽기
+ * 레이아웃 + **⋮ 수정·삭제**」를 따른다.
  *
  * ⚠ **`[수정하기]` 가 바닥 알약에서 ⋮ 메뉴로 옮겨갔다.** 갈 곳은 그대로 `A4` 다
  * (`A3.md` 「`[수정하기]` 는 실제 화면으로 이어진다」) — 자리만 바뀌었다.
- * ⋮ 에 **삭제**가 함께 붙는 것도 시안이 정한 것이고, 삭제의 문안·되돌리기는
- * `A4` 와 같은 것을 쓴다(지워지는 것이 같은 한 벌이라 다른 말을 쓸 이유가 없다).
- *
- * ⚠ **캐릭터 그림·날씨 아이콘이 없다** — `DiaryBabaFace` 주석 참조.
- * 면의 이름은 시안이 아니라 스펙 문안이다(`A3.md`).
+ * ⋮ 에 **삭제**가 함께 붙는 것도 시안이 정한 것이다. 되돌리기는 `A4` 와 같지만,
+ * **지우는 것은 일기뿐**이라(행동 카드는 자기 보관함에 남는다 · `docs/PRODUCT.md`
+ * 「상류와 차이」) 문안이 「회고 한 벌」보다 좁다.
  */
-const FACES: readonly [string, string] = ["내가 남긴 오늘", "바바가 함께 본 오늘"];
 
 export default function DiaryDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const diary = useDiary((s) => s.diaries.find((d) => d.id === id));
   const card = useDiary((s) => actionCardOf(s.actionCards, id ?? ""));
-  const markDone = useDiary((s) => s.markActionDone);
-  const undoDone = useDiary((s) => s.undoActionDone);
-  const setReflection = useDiary((s) => s.setReflection);
   const remove = useDiary((s) => s.remove);
   /**
    * 그날 일정 — **그 날짜의 줄만** 골라 온다(`app-flow.md` §2.3). 지금 일정
@@ -73,14 +61,8 @@ export default function DiaryDetail() {
    */
   const schedules = useDay((s) => s.schedules);
 
-  const [face, setFace] = useState<0 | 1>(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  /**
-   * 되돌리기를 물어보는 중인 행동 카드. **오버레이는 스크롤 밖에 산다** —
-   * 스크롤 안에 두면 화면이 아니라 콘텐츠 높이를 덮어 보이지 않는 곳에 뜬다.
-   */
-  const [undoCardId, setUndoCardId] = useState<string | null>(null);
 
   // 지워진 일기를 열고 있었다면 보관함으로 — 오류 화면을 만들지 않는다
   if (diary == null) return <Redirect href="/archive" />;
@@ -132,48 +114,26 @@ export default function DiaryDetail() {
           </View>
         </View>
 
-        {/* 두 면은 고르는 것이라 칩이다 — 선택은 면 + 테두리 2px + 글자로 말한다 */}
-        <View style={styles.faces}>
-          {FACES.map((name, i) => (
-            <Chip
-              key={name}
-              label={name}
-              selected={face === i}
-              onPress={() => setFace(i === 0 ? 0 : 1)}
-            />
-          ))}
-        </View>
+        {/* 「내가 남긴 오늘」 한 면만 둔다 — 「바바가 함께 본 오늘」은 상세에서 뺐다(2026-08-20) */}
+        <Card padding="loose" style={styles.diaryCard}>
+          {/* 고친 뒤에는 언제 고쳤는지까지 말한다 — 「수정함」은 언제인지를 말하지 못한다 */}
+          <Text variant="caption1" color={labelColor.alternative}>
+            {diary.editedAt != null
+              ? `회고 대화에서 작성 · ${formatKoreanDateShort(diary.editedAt.slice(0, 10))} 수정`
+              : "회고 대화에서"}
+          </Text>
+          <Text variant="body1Reading" color={labelColor.normal}>
+            {diary.body}
+          </Text>
+        </Card>
 
-        {face === 0 ? (
-          <>
-            <Card padding="loose" style={styles.diaryCard}>
-              {/* 고친 뒤에는 언제 고쳤는지까지 말한다 — 「수정함」은 언제인지를 말하지 못한다 */}
-              <Text variant="caption1" color={labelColor.alternative}>
-                {diary.editedAt != null
-                  ? `회고 대화에서 작성 · ${formatKoreanDateShort(diary.editedAt.slice(0, 10))} 수정`
-                  : "회고 대화에서"}
-              </Text>
-              <Text variant="body1Reading" color={labelColor.normal}>
-                {diary.body}
-              </Text>
-            </Card>
+        {card != null ? (
+          // 일기 상세는 **읽는 곳**이라 행동 카드를 읽기 전용으로 둔다 — 해봤어요·되돌리기·
+          // 느낀 점 편집은 쉼터에서 한다(`docs/PRODUCT.md` 「상류와 차이」).
+          <ActionCardSection card={card} diaryDate={diary.date} readOnly />
+        ) : null}
 
-            {card != null ? (
-              <ActionCardSection
-                card={card}
-                diaryDate={diary.date}
-                onMarkDone={markDone}
-                onRequestUndo={setUndoCardId}
-                onSetReflection={setReflection}
-              />
-            ) : null}
-          </>
-        ) : (
-          <DiaryBabaFace diary={diary} />
-        )}
-
-        {/* 그날 일정 — **일정이 없는 날은 블록 자체를 숨긴다**(`app-flow.md` §2.3).
-            두 면 어느 쪽에서 보든 같은 하루의 사실이라 면 밖에 둔다 */}
+        {/* 그날 일정 — **일정이 없는 날은 블록 자체를 숨긴다**(`app-flow.md` §2.3) */}
         <DayScheduleList schedules={daySchedules} title="그날 일정" />
       </ScrollView>
 
@@ -212,30 +172,23 @@ export default function DiaryDetail() {
         </>
       ) : null}
 
-      {/* 되돌릴 때만 확인을 묻는다 — 완료 기록과 느낀 점이 함께 사라진다 */}
-      {undoCardId != null ? (
-        <UndoActionConfirm
-          onCancel={() => setUndoCardId(null)}
-          onConfirm={() => {
-            undoDone(undoCardId);
-            setUndoCardId(null);
-          }}
-        />
-      ) : null}
-
-      {/* 삭제는 **무엇이 사라지는지 먼저 말한다**(`A4.md`) — 문안은 `A4` 와 같다 */}
+      {/*
+        삭제는 **무엇이 사라지는지 먼저 말한다**(`A4.md`). 단 상류 스냅샷과 달리 **일기만**
+        지운다 — 행동 카드는 자기 보관함(쉼터)에 남는다(`docs/PRODUCT.md` 「상류와 차이」).
+        상세에서 바바 면을 뺐으므로 문안도 「바바의 문장」을 말하지 않는다.
+      */}
       {confirmDelete ? (
         <Modal
-          title="이 회고를 삭제할까요?"
-          description="내 문장, 바바의 문장, 행동 카드가 함께 삭제돼요."
+          title="이 일기를 삭제할까요?"
+          description="이 일기가 삭제돼요. 행동 카드는 보관함에 남아요."
           cancelLabel="그대로 두기"
-          confirmLabel="회고 삭제"
+          confirmLabel="일기 삭제"
           destructive
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => {
             setConfirmDelete(false);
             remove(diary.id);
-            // 지운 한 벌은 보관함의 되돌리기 줄이 잠시 들고 있는다
+            // 지운 일기는 보관함의 되돌리기 줄이 잠시 들고 있는다
             router.replace("/archive");
           }}
         />
@@ -271,8 +224,6 @@ const styles = StyleSheet.create({
   head: { gap: space.xs },
   meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm },
   metaItem: { flexDirection: "row", alignItems: "center", gap: space.xs },
-
-  faces: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
 
   diaryCard: { gap: space.md },
 

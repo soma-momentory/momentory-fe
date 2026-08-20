@@ -8,12 +8,19 @@ import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import type { ReplyActionCard, ReplyDiary } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
+import { authedRequest } from "@/lib/http";
 import { SAMPLE_SCHEDULES } from "@/mocks/sample";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Redirect: jest.fn(() => null),
 }));
+
+// 본문 수정이 서버로 나가는지 보려고 http 만 가짜로 둔다 — store 의 로컬 저장엔 영향 없다
+jest.mock("@/lib/http", () => ({
+  authedRequest: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+}));
+const mockedRequest = authedRequest as jest.MockedFunction<typeof authedRequest>;
 
 /** 서버가 완료 응답에 담아 준 값 — store 가 draft 로 넘긴다 */
 const SEED_DIARY: ReplyDiary = {
@@ -150,6 +157,31 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
     await save();
 
     expect(useDiary.getState().diaries[0]?.retrospectId).toBeNull();
+  });
+
+  it("본문을 고쳐 저장하면 그 회고의 일기 본문을 서버로 보낸다", async () => {
+    useRetro.setState({ sessionId: 42 });
+    await save("내가 다시 쓴 오늘.");
+
+    expect(mockedRequest).toHaveBeenCalledWith(
+      "PUT",
+      "/api/v1/diaries/by-retrospect/42",
+      { original: "내가 다시 쓴 오늘." },
+      expect.any(Object),
+    );
+  });
+
+  it("안 고치면 서버로 본문을 보내지 않는다 — 서버엔 이미 원본이 있다", async () => {
+    useRetro.setState({ sessionId: 42 });
+    await save(); // 편집 없음
+
+    expect(mockedRequest).not.toHaveBeenCalled();
+  });
+
+  it("세션 id 가 없으면(로컬만) 고쳐도 서버로 보내지 않는다", async () => {
+    await save("내가 다시 쓴 오늘.");
+
+    expect(mockedRequest).not.toHaveBeenCalled();
   });
 
   it("고치면 사용자의 것이 된다", async () => {

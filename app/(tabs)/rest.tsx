@@ -26,10 +26,9 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 누르게 하지 않는다(`CLAUDE.md`). 대신 회고가 먼저라는 사실만 말한다.
  */
 export default function Rest() {
-  const diaries = useDiary((s) => s.diaries);
   const cards = useDiary((s) => s.actionCards);
 
-  const all = useMemo(() => datedCards(diaries, cards), [diaries, cards]);
+  const all = useMemo(() => datedCards(cards), [cards]);
   const latest = latestCardDay(all);
   const today = clock.today();
   const hasToday = cardOn(all, today) != null;

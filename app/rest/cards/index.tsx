@@ -29,13 +29,13 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 카드가 없는 날은 **고를 수 없다** — 눌러도 빈 화면으로 데려갈 뿐이다.
  */
 export default function RestCards() {
-  const diaries = useDiary((s) => s.diaries);
   const cards = useDiary((s) => s.actionCards);
   const markDone = useDiary((s) => s.markActionDone);
   const undoDone = useDiary((s) => s.undoActionDone);
   const setReflection = useDiary((s) => s.setReflection);
+  const saveReflection = useDiary((s) => s.saveReflection);
 
-  const all = useMemo(() => datedCards(diaries, cards), [diaries, cards]);
+  const all = useMemo(() => datedCards(cards), [cards]);
   const [picked, setPicked] = useState<string | null>(null);
   const selected = picked ?? latestCardDay(all);
   const [month, setMonth] = useState<string | null>(null);
@@ -74,7 +74,11 @@ export default function RestCards() {
             date={formatKoreanDateShort(selected)}
             dateNote={selected === today ? "오늘" : undefined}
             onToggleDone={() => (card.done ? undoDone(card.id) : markDone(card.id))}
-            onSetReflection={(t) => setReflection(card.id, t)}
+            onSetReflection={(t) => {
+              // 쉼터는 저장 버튼에서 한 번에 커밋한다 — 로컬 반영 뒤 곧장 서버로
+              setReflection(card.id, t);
+              saveReflection(card.id);
+            }}
             onOpenTrail={() =>
               router.push({ pathname: "/rest/cards/[date]", params: { date: selected } })
             }

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://3.39.210.114",
+      "url": "http://localhost:8080",
       "description": "Generated server url"
     }
   ],
@@ -16,12 +16,20 @@
       "description": "인증 API"
     },
     {
+      "name": "ActionCards",
+      "description": "행동 카드 보관함 API"
+    },
+    {
       "name": "Schedules",
       "description": "홈 일정 API"
     },
     {
       "name": "Onboarding",
       "description": "온보딩 API"
+    },
+    {
+      "name": "Diaries",
+      "description": "일기 보관함 API"
     },
     {
       "name": "Users",
@@ -698,6 +706,25 @@
                     "value": {
                       "code": "AUTHENTICATION_REQUIRED",
                       "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "오늘 이미 회고 완료(하루 한 번)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "ALREADY_RETROSPECTED_TODAY": {
+                    "description": "ALREADY_RETROSPECTED_TODAY",
+                    "value": {
+                      "code": "ALREADY_RETROSPECTED_TODAY",
+                      "message": "오늘은 이미 회고를 완료했어요. 회고는 하루에 한 번만 할 수 있어요."
                     }
                   }
                 }
@@ -1432,83 +1459,6 @@
         ]
       }
     },
-    "/api/v1/retrospect/{id}/diary": {
-      "get": {
-        "tags": [
-          "Retrospect"
-        ],
-        "summary": "회고 일기 조회",
-        "description": "완료된 회고의 일기 본문과 (있으면) 행동 카드를 돌려준다.",
-        "operationId": "getDiary",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            },
-            "example": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "조회 성공",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RetrospectDiaryResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증 필요",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "AUTHENTICATION_REQUIRED": {
-                    "description": "AUTHENTICATION_REQUIRED",
-                    "value": {
-                      "code": "AUTHENTICATION_REQUIRED",
-                      "message": "인증이 필요합니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "세션을 찾을 수 없음",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "RETROSPECT_SESSION_NOT_FOUND": {
-                    "description": "RETROSPECT_SESSION_NOT_FOUND",
-                    "value": {
-                      "code": "RETROSPECT_SESSION_NOT_FOUND",
-                      "message": "회고 세션을 찾을 수 없습니다."
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
     "/api/v1/onboarding/options": {
       "get": {
         "tags": [
@@ -1540,6 +1490,332 @@
                     "value": {
                       "code": "AUTHENTICATION_REQUIRED",
                       "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/diaries": {
+      "get": {
+        "tags": [
+          "Diaries"
+        ],
+        "summary": "월별 일기 목록 조회",
+        "description": "연·월(KST 기준)에 작성된 일기를 최신순으로 돌려준다.",
+        "operationId": "getMonthly",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 2026
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 8
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 연·월",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/diaries/{id}": {
+      "get": {
+        "tags": [
+          "Diaries"
+        ],
+        "summary": "일기 단건 조회",
+        "operationId": "getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일기 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "DIARY_NOT_FOUND": {
+                    "description": "DIARY_NOT_FOUND",
+                    "value": {
+                      "code": "DIARY_NOT_FOUND",
+                      "message": "일기를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/action-cards": {
+      "get": {
+        "tags": [
+          "ActionCards"
+        ],
+        "summary": "월별 행동 카드 목록 조회",
+        "description": "연·월(KST 기준)에 만든 행동 카드를 최신순으로 돌려준다.",
+        "operationId": "getMonthly_1",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 2026
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 8
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionCardListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 연·월",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/action-cards/{id}": {
+      "get": {
+        "tags": [
+          "ActionCards"
+        ],
+        "summary": "행동 카드 단건 조회",
+        "operationId": "getOne_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionCardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "행동 카드 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "ACTION_CARD_NOT_FOUND": {
+                    "description": "ACTION_CARD_NOT_FOUND",
+                    "value": {
+                      "code": "ACTION_CARD_NOT_FOUND",
+                      "message": "행동 카드를 찾을 수 없습니다."
                     }
                   }
                 }
@@ -1887,6 +2163,12 @@
       "ScheduleItemRequest": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "schedules 테이블 일정 id(자유 입력이면 생략)",
+            "example": 42
+          },
           "name": {
             "type": "string",
             "description": "일정 이름",
@@ -1937,9 +2219,6 @@
             "type": "string"
           },
           "action": {
-            "type": "string"
-          },
-          "detail": {
             "type": "string"
           },
           "createdDate": {
@@ -2344,58 +2623,6 @@
           }
         }
       },
-      "ActionCard": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64",
-            "example": 1
-          },
-          "situation": {
-            "type": "string",
-            "example": "발표를 앞두고 긴장했던 상황"
-          },
-          "targetAction": {
-            "type": "string",
-            "example": "심호흡을 세 번 하고 시작하기"
-          },
-          "detail": {
-            "type": "string",
-            "example": "떨리는 건 준비를 잘했다는 신호라고 생각하기"
-          },
-          "createdDate": {
-            "type": "string",
-            "format": "date",
-            "example": "2026-08-10"
-          },
-          "done": {
-            "type": "boolean",
-            "example": false
-          },
-          "reflection": {
-            "type": "string",
-            "description": "느낀 점 — 해본 뒤에만 채워짐"
-          }
-        }
-      },
-      "RetrospectDiaryResponse": {
-        "type": "object",
-        "properties": {
-          "diary": {
-            "type": "string",
-            "description": "일기 본문"
-          },
-          "reframedDiary": {
-            "type": "string",
-            "description": "다시 본 오늘(리프레임) — 없을 수 있음"
-          },
-          "actionCard": {
-            "$ref": "#/components/schemas/ActionCard",
-            "description": "행동 카드 — 없을 수 있음"
-          }
-        }
-      },
       "NicknamePolicyResponse": {
         "type": "object",
         "properties": {
@@ -2456,6 +2683,125 @@
           },
           "label": {
             "type": "string"
+          }
+        }
+      },
+      "DiaryListResponse": {
+        "type": "object",
+        "properties": {
+          "diaries": {
+            "type": "array",
+            "description": "일기 목록(최신순)",
+            "items": {
+              "$ref": "#/components/schemas/DiaryResponse"
+            }
+          }
+        }
+      },
+      "DiaryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "일기 id",
+            "example": 1
+          },
+          "retrospectId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "그날의 회고 id — 행동 카드 조회에 쓴다",
+            "example": 10
+          },
+          "currentEmotion": {
+            "type": "string",
+            "description": "현재 감정 키",
+            "example": "depressed"
+          },
+          "scheduleEmotion": {
+            "type": "string",
+            "description": "일정 감정 키 — 없을 수 있음",
+            "example": "anxious"
+          },
+          "original": {
+            "type": "string",
+            "description": "일기 본문"
+          },
+          "reframed": {
+            "type": "string",
+            "description": "다시 본 오늘(리프레임) — 없을 수 있음"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "작성 시각(생성 시기)",
+            "example": "2026-08-14T02:23:47.850Z"
+          }
+        }
+      },
+      "ActionCardListResponse": {
+        "type": "object",
+        "properties": {
+          "actionCards": {
+            "type": "array",
+            "description": "행동 카드 목록(최신순)",
+            "items": {
+              "$ref": "#/components/schemas/ActionCardResponse"
+            }
+          }
+        }
+      },
+      "ActionCardResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "행동 카드 id",
+            "example": 1
+          },
+          "retrospectId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "그날의 회고 id — 일기 조회에 쓴다",
+            "example": 10
+          },
+          "situation": {
+            "type": "string",
+            "description": "상황",
+            "example": "발표를 앞두고 긴장했던 상황"
+          },
+          "targetAction": {
+            "type": "string",
+            "description": "목표 행동",
+            "example": "떨리는 건 준비를 잘했다는 신호라고 생각하며 심호흡을 세 번 하고 시작하기"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date",
+            "description": "만든 날짜",
+            "example": "2026-08-10"
+          },
+          "done": {
+            "type": "boolean",
+            "description": "해봤는지 여부",
+            "example": false
+          },
+          "doneAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "해본 시각 — 해본 뒤에만 채워짐",
+            "example": "2026-08-12T09:20:11Z"
+          },
+          "reflection": {
+            "type": "string",
+            "description": "느낀 점 — 해본 뒤에만 채워짐"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "생성 시각",
+            "example": "2026-08-10T02:23:47.850Z"
           }
         }
       }

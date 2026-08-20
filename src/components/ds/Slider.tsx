@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PanResponder, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
 import { background, fill, label as labelColor, primary, radius, space } from "@/design/ds";
@@ -52,21 +52,38 @@ export function Slider({
   disabled = false,
 }: Props) {
   const [width, setWidth] = useState(0);
+  /** 트랙의 화면 절대 좌(page X) — 터치의 pageX 에서 빼서 트랙 기준으로 옮긴다 */
+  const [trackLeft, setTrackLeft] = useState(0);
+  const trackRef = useRef<View>(null);
 
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+  const onLayout = (e: LayoutChangeEvent) => {
+    setWidth(e.nativeEvent.layout.width);
+    // 절대 위치도 잡아 둔다 — 엄지·채움 위를 눌러도 정확하려면 화면 좌표가 필요하다
+    trackRef.current?.measureInWindow((x) => setTrackLeft(x));
+  };
 
-  /** 손가락 x → 눈금. 엄지 반지름을 빼서 **양 끝이 실제로 닿는다** */
-  const valueAt = (x: number) => {
+  /**
+   * **화면 절대 x(pageX) → 눈금.** locationX(터치한 자식 기준 좌표)를 쓰면 엄지나 채움
+   * 위를 눌렀을 때 그 자식 기준(0~24)으로 잡혀 값이 0 으로 튄다. 그래서 트랙의 절대 좌를
+   * 빼서 트랙 기준으로 옮긴 뒤 계산한다. 엄지 반지름을 빼 **양 끝이 실제로 닿는다**.
+   */
+  const valueAt = (pageX: number) => {
     const usable = Math.max(1, width - THUMB);
-    const ratio = Math.min(1, Math.max(0, (x - THUMB / 2) / usable));
+    const local = pageX - trackLeft - THUMB / 2;
+    const ratio = Math.min(1, Math.max(0, local / usable));
     return Math.round(min + ratio * (max - min));
   };
 
   const responder = PanResponder.create({
     onStartShouldSetPanResponder: () => !disabled,
     onMoveShouldSetPanResponder: () => !disabled,
-    onPanResponderGrant: (e) => onChange(valueAt(e.nativeEvent.locationX)),
-    onPanResponderMove: (e) => onChange(valueAt(e.nativeEvent.locationX)),
+    // 채팅 ScrollView 안에서 끌 때 세로 스크롤이 제스처를 가로채지 않게 한다 —
+    // 이걸 막지 않으면 드래그가 도중에 끊겨 값이 뚝뚝 끊긴 것처럼 느껴진다
+    onPanResponderTerminationRequest: () => false,
+    onShouldBlockNativeResponder: () => true,
+    // gestureState 의 x0·moveX 는 **화면 절대 좌표**라 어느 자식을 눌러도 정확하다
+    onPanResponderGrant: (_e, g) => onChange(valueAt(g.x0)),
+    onPanResponderMove: (_e, g) => onChange(valueAt(g.moveX)),
   });
 
   const ratio = max === min ? 0 : (value - min) / (max - min);
@@ -85,6 +102,7 @@ export function Slider({
       </View>
 
       <View
+        ref={trackRef}
         style={styles.track}
         onLayout={onLayout}
         accessibilityRole="adjustable"

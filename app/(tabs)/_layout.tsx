@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { background, motion } from "@/design/ds";
 import { currentUserId, useAuth } from "@/features/auth/model/auth";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
+import { useDiary } from "@/features/diary/model/diary";
 
 /**
  * 탭 스택. **하단 탭은 여기서 그리지 않는다** — 각 화면이 `TabScreen` 으로
@@ -42,6 +43,16 @@ export default function TabsLayout() {
     void currentUserId().then((userId) => {
       if (userId != null) void useCalendarSync.getState().sync(userId);
     });
+  }, [status]);
+
+  /**
+   * 보관함·리포트·마이·쉼터가 읽는 일기·행동 카드를 **여기서 한 번** 받아 둔다 —
+   * 화면마다 부르면 탭을 옮길 때마다 조회가 나간다. `load()` 는 스스로 한 번만
+   * 돌고(로컬 옵티미스틱 변경 보호), 실패하면 다음 진입이 다시 시도한다.
+   */
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    void useDiary.getState().load();
   }, [status]);
 
   // 판정 전에는 보호 라우트를 그리지 않는다 — 깜빡임보다 유출이 나쁘다

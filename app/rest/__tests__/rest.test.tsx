@@ -32,8 +32,8 @@ beforeEach(() => {
 
 /** 화면과 **같은 기준**으로 고른다 — 최신 날짜의 카드다 (store 순서가 아니다) */
 const latest = () => {
-  const { diaries, actionCards } = useDiary.getState();
-  const first = datedCards(diaries, actionCards)[0];
+  const { actionCards } = useDiary.getState();
+  const first = datedCards(actionCards)[0];
   if (first == null) throw new Error("샘플에 행동 카드가 있어야 한다");
   return first.card;
 };
