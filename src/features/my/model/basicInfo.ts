@@ -91,18 +91,3 @@ export const summarize = (labels: readonly string[]) => {
 
 /** 나이는 단위와 함께 읽어야 뜻이 산다 — 「25」가 아니라 「25세」다 */
 export const ageText = (age: string) => (age.trim().length > 0 ? `${age.trim()}세` : NOT_CHOSEN);
-
-/**
- * 복수 선택(`M7`·`M8`)의 헬퍼 한 줄 — **몇 개를 골랐는지 사실만** 말한다.
- * 「3개까지예요」 같은 제한 경고를 미리 띄우지 않는다.
- *
- * 문안은 `design.md` §9 가 복수 선택 화면에 정한 것이다. ⚠ 온보딩은 같은 자리에
- * 「다시 누르면 취소돼요」를 쓴다 — 시안이 마이에 적어 둔 말과 달라 여기서는
- * `design.md` 를 따랐다(반입 디자인 우선 · `PLAN.md` N0).
- */
-export function choiceHint(count: number, etcOn: boolean, etcFilled: boolean) {
-  if (count === 0) return "하나 이상 골라주세요";
-  // 기타를 적는 중이면 무엇을 눌러야 확정되는지부터 말한다 (`06-c.md`)
-  if (etcOn && etcFilled) return `${count}개 선택됨 · 확인을 누르면 저장돼요`;
-  return `${count}개 선택됨 · 다시 누르면 선택이 해제돼요`;
-}

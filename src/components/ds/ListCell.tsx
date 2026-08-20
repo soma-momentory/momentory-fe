@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 import {
   interaction,
   label as labelColor,
+  line,
   overlay,
   radius,
   size,
@@ -120,6 +121,16 @@ export function ListCell({
   );
 }
 
+/**
+ * 줄 사이 — **카드 안에서만** 쓴다.
+ *
+ * 목록의 경계는 카드가 이미 그린다. 줄마다 선을 두르면 카드 안에 카드가 생긴다 —
+ * 그래서 첫 줄 위와 마지막 줄 아래에는 두지 않는다.
+ */
+export function ListDivider() {
+  return <View style={styles.divider} />;
+}
+
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
@@ -133,4 +144,5 @@ const styles = StyleSheet.create({
   // 제목이 남은 폭을 쓴다 — 값·꼬리가 먼저 자리를 잡는다
   body: { flex: 1, minWidth: 0, gap: space.xs2 },
   scrim: { backgroundColor: overlay.pressLight, borderRadius: radius.small },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: line.alternative },
 });

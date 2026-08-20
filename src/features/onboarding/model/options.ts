@@ -153,3 +153,21 @@ export const useOnboardingOptions = create<OptionsStore>((set, get) => ({
     set(EMPTY);
   },
 }));
+
+/**
+ * 복수 선택 화면의 헬퍼 한 줄 — **온보딩(`06`·`07`)과 마이(`M7`·`M8`)가 나눠 쓴다.**
+ *
+ * 같은 선택지를 같은 규칙으로 고르는 자리라 문안도 하나여야 한다. 실제로 한동안
+ * 갈려 있었다 — 온보딩은 「다시 누르면 취소돼요」, 마이는 「다시 누르면 선택이
+ * 해제돼요」였다(`PLAN.md` A-12). **`design.md` §9 가 정본이다**:
+ * 「복수 선택 화면에는 `N개 선택됨 · 다시 누르면 선택이 해제돼요` 헬퍼를 칩 바로 아래에」
+ *
+ * - **몇 개를 골랐는지 사실만** 말한다 — 「3개까지예요」 같은 제한 경고를 미리 띄우지
+ *   않는다(`06-c.md`). 상한은 넷째를 눌렀을 때 켜지지 않는 것으로 이미 말한다
+ * - 「기타」를 적는 중이면 **무엇을 눌러야 확정되는지**부터 말한다(`06-c.md`)
+ */
+export function choiceHint(count: number, etcOn: boolean, etcFilled: boolean) {
+  if (count === 0) return "하나 이상 골라주세요";
+  if (etcOn && etcFilled) return `${count}개 선택됨 · 확인을 누르면 저장돼요`;
+  return `${count}개 선택됨 · 다시 누르면 선택이 해제돼요`;
+}

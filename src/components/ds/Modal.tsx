@@ -1,4 +1,4 @@
-import { StyleSheet, View } from "react-native";
+import { Modal as RNModal, StyleSheet, View } from "react-native";
 
 import {
   background,
@@ -33,6 +33,22 @@ import { Text } from "./Text";
  * **파괴적 행동이면 확인 버튼만 위험색**이다(§11 「Destructive」) —
  * `destructive` 를 켜면 `status.negative` 면 + 흰 라벨(4.99 AA)이 된다.
  * 취소 쪽을 위험색으로 만들지 않는다.
+ *
+ * ## 화면 어디에 두든 화면 전체를 덮는다
+ *
+ * RN 의 네이티브 `Modal` 로 감싼다 — **부모 트리 밖의 창**에 그려지기 때문이다.
+ * 절대 배치만 썼을 때는 `ScrollView` 안에서 열면 **스크롤 내용에 갇혀 보이지 않았다**
+ * (보관함이 실제로 밟고 우회했다 · `PLAN.md` A-12). 이제 부르는 쪽이 어디에 두든
+ * 상관하지 않는다.
+ *
+ * `statusBarTranslucent` 은 Android 에서 **딤이 상태바까지 덮게** 한다 — 없으면
+ * 위쪽만 밝게 남아 덮개가 끊긴다.
+ *
+ * ## Android 뒤로가기
+ *
+ * RN 이 `onRequestClose` 를 요구하고, 그것을 **취소로 연결한다.** 하드웨어 뒤로가기가
+ * 아무 일도 하지 않으면 모달에 갇히고, 확인으로 연결하면 되돌릴 수 없는 행동이
+ * 실수로 실행된다. **딤을 눌러 닫는 것과는 다른 이야기다** — 딤은 여전히 안 눌린다.
  */
 type Props = {
   title: string;
@@ -56,31 +72,44 @@ export function Modal({
   destructive = false,
 }: Props) {
   return (
-    <View testID="ds-modal-overlay" style={styles.root}>
-      {/* 딤은 누를 수 없다 — 확인은 두 버튼 중 하나로만 끝난다 */}
-      <View
-        accessibilityViewIsModal
-        accessibilityRole="alert"
-        accessibilityLabel={`${title}. ${description}`}
-        style={styles.card}
-      >
-        <Text variant="heading1" color={labelColor.strong}>
-          {title}
-        </Text>
-        <Text variant="body2Reading" color={labelColor.neutral}>
-          {description}
-        </Text>
-        <View style={styles.actions}>
-          <Button label={cancelLabel} variant="outlined" onPress={onCancel} style={styles.action} />
-          <Button
-            label={confirmLabel}
-            variant={destructive ? "destructive" : "solid"}
-            onPress={onConfirm}
-            style={styles.action}
-          />
+    <RNModal
+      visible
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onCancel}
+    >
+      <View testID="ds-modal-overlay" style={styles.root}>
+        {/* 딤은 누를 수 없다 — 확인은 두 버튼 중 하나로만 끝난다 */}
+        <View
+          accessibilityViewIsModal
+          accessibilityRole="alert"
+          accessibilityLabel={`${title}. ${description}`}
+          style={styles.card}
+        >
+          <Text variant="heading1" color={labelColor.strong}>
+            {title}
+          </Text>
+          <Text variant="body2Reading" color={labelColor.neutral}>
+            {description}
+          </Text>
+          <View style={styles.actions}>
+            <Button
+              label={cancelLabel}
+              variant="outlined"
+              onPress={onCancel}
+              style={styles.action}
+            />
+            <Button
+              label={confirmLabel}
+              variant={destructive ? "destructive" : "solid"}
+              onPress={onConfirm}
+              style={styles.action}
+            />
+          </View>
         </View>
       </View>
-    </View>
+    </RNModal>
   );
 }
 

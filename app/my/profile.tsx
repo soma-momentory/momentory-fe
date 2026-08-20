@@ -2,8 +2,7 @@ import { router } from "expo-router";
 import { useEffect } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
-import { Card, Screen, TopNavigation } from "@/components/ds";
-import { RowSeparator, SettingRow } from "@/components/my/SettingRow";
+import { Card, ListCell, ListDivider, Screen, TopNavigation } from "@/components/ds";
 import { space } from "@/design/ds";
 import { ageText, labelsOf, summarize, NOT_CHOSEN } from "@/features/my/model/basicInfo";
 import { useProfile } from "@/features/my/model/settings";
@@ -57,30 +56,39 @@ export default function BasicInfoList() {
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         {/* 줄 여백은 각 줄이 만든다 — 카드는 면과 라운드만 준다 */}
         <Card padding="none" style={styles.rows}>
-          <SettingRow
-            label="닉네임"
+          <ListCell
+            title="닉네임"
             value={profile.nickname}
             onPress={() => router.push("/my/nickname")}
+            chevron
           />
-          <RowSeparator />
-          <SettingRow
-            label="나이"
+          <ListDivider />
+          <ListCell
+            title="나이"
             value={ageText(profile.age)}
             onPress={() => router.push("/my/age")}
+            chevron
           />
-          <RowSeparator />
-          <SettingRow label="성별" value={genderLabel} onPress={() => router.push("/my/gender")} />
-          <RowSeparator />
-          <SettingRow
-            label="관심 분야"
+          <ListDivider />
+          <ListCell
+            title="성별"
+            value={genderLabel}
+            onPress={() => router.push("/my/gender")}
+            chevron
+          />
+          <ListDivider />
+          <ListCell
+            title="관심 분야"
             value={summarize(labelsOf(interestAreas, profile.interests))}
             onPress={() => router.push("/my/interests")}
+            chevron
           />
-          <RowSeparator />
-          <SettingRow
-            label="쉬는 방법"
+          <ListDivider />
+          <ListCell
+            title="쉬는 방법"
             value={summarize(labelsOf(restMethods, profile.restMethods))}
             onPress={() => router.push("/my/rest")}
+            chevron
           />
         </Card>
       </ScrollView>

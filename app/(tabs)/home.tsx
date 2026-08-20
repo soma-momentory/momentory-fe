@@ -4,21 +4,19 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
-  BottomNavigation,
   Button,
   Card,
   Icon,
   IconButton,
   Menu,
   Modal,
-  Screen,
   SectionHeader,
+  TabScreen,
   Text,
   Toast,
   type MenuAction,
-  type TabItem,
 } from "@/components/ds";
-import { background, label as labelColor, layout, size, space, status } from "@/design/ds";
+import { label as labelColor, layout, size, space, status } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import {
   MAX_VISIBLE_SCHEDULES,
@@ -144,7 +142,36 @@ export default function Home() {
           ];
 
   return (
-    <Screen padded={false} edges={["top"]}>
+    <TabScreen
+      active="홈"
+      overlay={
+        <>
+          {menu != null && actions.length > 0 ? (
+            <Menu actions={actions} top={menu.top} onDismiss={() => setMenu(null)} />
+          ) : null}
+
+          {asking != null ? (
+            <Modal
+              title="이 일정을 삭제할까요?"
+              description="삭제한 일정은 되돌릴 수 없어요."
+              cancelLabel="취소"
+              confirmLabel="삭제"
+              destructive
+              onCancel={() => setAsking(null)}
+              onConfirm={() => {
+                remove(asking);
+                setAsking(null);
+                setToast("일정을 삭제했어요.");
+              }}
+            />
+          ) : null}
+
+          {toast != null ? (
+            <Toast message={toast} variant="positive" onDismiss={() => setToast(null)} />
+          ) : null}
+        </>
+      }
+    >
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -253,68 +280,13 @@ export default function Home() {
           ) : null}
         </View>
       </ScrollView>
-
-      <BottomNavigation
-        items={TABS}
-        active="홈"
-        onPress={(tab) => {
-          if (tab !== "홈") router.replace(ROUTES[tab]);
-        }}
-      />
-      {/* 탭바 아래 홈 인디케이터 자리 — 탭바와 같은 면으로 이어 둔다.
-          `Screen` 의 bottom edge 를 쓰면 탭바가 떠 있는 것처럼 보인다 */}
-      <View style={[styles.underTab, { height: insets.bottom }]} />
-
-      {menu != null && actions.length > 0 ? (
-        <Menu actions={actions} top={menu.top} onDismiss={() => setMenu(null)} />
-      ) : null}
-
-      {asking != null ? (
-        <Modal
-          title="이 일정을 삭제할까요?"
-          description="삭제한 일정은 되돌릴 수 없어요."
-          cancelLabel="취소"
-          confirmLabel="삭제"
-          destructive
-          onCancel={() => setAsking(null)}
-          onConfirm={() => {
-            remove(asking);
-            setAsking(null);
-            setToast("일정을 삭제했어요.");
-          }}
-        />
-      ) : null}
-
-      {toast != null ? (
-        <Toast message={toast} variant="positive" onDismiss={() => setToast(null)} />
-      ) : null}
-    </Screen>
+    </TabScreen>
   );
 }
 
-type TabName = "홈" | "쉼터" | "보관함" | "리포트" | "마이";
-
-/** `design.md` §10 — 다섯 칸. 없는 글리프를 추측하지 않는다(`person` 은 없다) */
-const TABS: readonly TabItem<TabName>[] = [
-  { name: "홈", icon: "home", label: "홈" },
-  { name: "쉼터", icon: "heart", label: "쉼터" },
-  { name: "보관함", icon: "folder-job", label: "보관함" },
-  { name: "리포트", icon: "document", label: "리포트" },
-  { name: "마이", icon: "nav-my-page", label: "마이" },
-];
-
-/** `replace` 인 이유 — 탭은 쌓이는 화면이 아니다 */
-const ROUTES: Record<TabName, "/home" | "/rest" | "/archive" | "/report" | "/my"> = {
-  홈: "/home",
-  쉼터: "/rest",
-  보관함: "/archive",
-  리포트: "/report",
-  마이: "/my",
-};
-
 const styles = StyleSheet.create({
+  // 좌우 20 은 `TabScreen` 이 잡는다 — 여기서 또 잡으면 두 겹이 된다
   content: {
-    paddingHorizontal: layout.screenPadding,
     // 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 (`design.md` §3)
     paddingBottom: layout.scrollClearance,
   },
@@ -335,5 +307,4 @@ const styles = StyleSheet.create({
   centered: { textAlign: "center" },
   more: { alignSelf: "flex-start", paddingHorizontal: 0 },
   done: { flexDirection: "row", alignItems: "center", gap: space.sm, paddingTop: space.md },
-  underTab: { backgroundColor: background.elevated },
 });

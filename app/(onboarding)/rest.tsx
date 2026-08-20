@@ -7,7 +7,7 @@ import { OtherReplyInput } from "@/components/onboarding/OtherReplyInput";
 import { QuickReplies } from "@/components/onboarding/QuickReplies";
 import { label as labelColor, space } from "@/design/ds";
 import { OTHER_REST_METHOD, useDraft } from "@/features/onboarding/model/draft";
-import { useOnboardingOptions } from "@/features/onboarding/model/options";
+import { choiceHint, useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * `07` · 쉬는 방법 (필수 · 복수)
@@ -92,18 +92,11 @@ export default function Rest() {
       }
     >
       <Text variant="caption1" color={labelColor.alternative} style={styles.hint}>
-        {hintOf(picked.length, etcOn, otherTrimmed.length > 0)}
+        {choiceHint(picked.length, etcOn, otherTrimmed.length > 0)}
       </Text>
       <Button label="다음" fill disabled={!ready} onPress={goNext} />
     </OnboardingChat>
   );
-}
-
-/** `06` 과 같은 형식 — 몇 개를 골랐는지 사실만 말한다 */
-function hintOf(count: number, etcOn: boolean, etcFilled: boolean) {
-  if (count === 0) return "하나 이상 골라주세요";
-  if (etcOn && etcFilled) return `${count}개 선택됨 · 확인을 누르면 저장돼요`;
-  return `${count}개 선택됨 · 다시 누르면 취소돼요`;
 }
 
 const styles = StyleSheet.create({

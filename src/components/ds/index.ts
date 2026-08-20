@@ -32,7 +32,7 @@ export { Button, type ButtonSize, type ButtonVariant } from "./Button";
 export { IconButton } from "./IconButton";
 export { SocialButton, type SocialProvider } from "./SocialButton";
 export { Card, InfoBlock } from "./Card";
-export { ListCell, type ListCellProps } from "./ListCell";
+export { ListCell, ListDivider, type ListCellProps } from "./ListCell";
 export { SectionHeader } from "./SectionHeader";
 export { Menu, type MenuAction } from "./Menu";
 export { Toast } from "./Toast";

@@ -174,14 +174,16 @@ describe("M1 · 마이 기본", () => {
   it("눌러도 아무 일도 없는 줄을 두지 않는다", async () => {
     // 갈 곳이 없는 줄은 표식(›)도 두지 않고 눌리지도 않는다 (M3.md 와 같은 이유)
     const r = await render(<My />);
-    const rowOf = (label: string) => r.getByText(label).parent;
+    // 줄의 **역할**로 찾는다 — 껍데기 구조가 바뀌어도 규칙은 그대로다
+    const pressable = (label: string) =>
+      r.queryAllByRole("button").some((b) => within(b).queryByText(label) != null);
 
     for (const label of ["알림 설정", "기본 정보 수정", "로그아웃"]) {
-      expect(rowOf(label)?.props.accessibilityRole).toBe("button");
+      expect(pressable(label)).toBe(true);
     }
     // 약관 문안·문의 채널이 아직 정해지지 않았다
     for (const label of ["문의하기", "정책 · 약관"]) {
-      expect(rowOf(label)?.props.accessibilityRole).not.toBe("button");
+      expect(pressable(label)).toBe(false);
       expect(r.getAllByText("준비 중").length).toBeGreaterThanOrEqual(1);
     }
   });

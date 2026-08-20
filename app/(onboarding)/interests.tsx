@@ -7,7 +7,7 @@ import { OtherReplyInput } from "@/components/onboarding/OtherReplyInput";
 import { QuickReplies } from "@/components/onboarding/QuickReplies";
 import { label as labelColor, space } from "@/design/ds";
 import { MAX_INTERESTS, OTHER_INTEREST, useDraft } from "@/features/onboarding/model/draft";
-import { useOnboardingOptions } from "@/features/onboarding/model/options";
+import { choiceHint, useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
  * `06` · 관심 분야 (필수 · 복수) + `06-b`/`06-c` 기타 입력
@@ -99,21 +99,11 @@ export default function Interests() {
       }
     >
       <Text variant="caption1" color={labelColor.alternative} style={styles.hint}>
-        {hintOf(picked.length, etcOn, otherTrimmed.length > 0)}
+        {choiceHint(picked.length, etcOn, otherTrimmed.length > 0)}
       </Text>
       <Button label="다음" fill disabled={!ready} onPress={goNext} />
     </OnboardingChat>
   );
-}
-
-/**
- * 안내는 몇 개를 골랐는지 **사실만** 말한다(`06-c.md`) — "3개까지예요" 같은
- * 제한 경고를 미리 띄우지 않는다. 기타 입력 중에는 확정 방법을 말한다.
- */
-function hintOf(count: number, etcOn: boolean, etcFilled: boolean) {
-  if (count === 0) return "하나 이상 골라주세요";
-  if (etcOn && etcFilled) return `${count}개 선택됨 · 확인을 누르면 저장돼요`;
-  return `${count}개 선택됨 · 다시 누르면 취소돼요`;
 }
 
 const styles = StyleSheet.create({
