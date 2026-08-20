@@ -1,7 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 import { useEffect } from "react";
 
-import theme from "@/design/theme";
+import { background, motion } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 
 /**
@@ -31,8 +31,8 @@ export default function MyLayout() {
       screenOptions={{
         headerShown: false,
         animation: "fade",
-        animationDuration: theme.motion.spec.screen.duration,
-        contentStyle: { backgroundColor: theme.colors.semantic.background },
+        animationDuration: motion.duration,
+        contentStyle: { backgroundColor: background.normal },
       }}
     />
   );

@@ -152,6 +152,18 @@ export const size = {
   sheet: { radius: radius.xlarge, wheelRow: 40 },
 } as const;
 
+/**
+ * 움직임. **`design.md` 에 모션 절이 없다** — 시안이 CSS 로 적어 둔 값만 있다:
+ * `transition: background 120ms cubic-bezier(0.4,0,0.2,1)` (칩·버튼의 상태 전환).
+ *
+ * 그래서 **하나뿐이다.** 화면 전환도 같은 값을 쓴다 — 시안이 화면 전환 시간을
+ * 따로 말하지 않는데 다른 값을 지어내면 그것이 정본 행세를 하게 된다.
+ *
+ * ⚠ **슬라이드를 만들지 않는다.** 화면 사이는 fade 하나다(옛 `theme.motion` 이
+ * 지키던 규칙이고 시안도 전환 연출을 두지 않는다).
+ */
+export const motion = { duration: 120 } as const;
+
 export const metrics = {
   space,
   radius,
@@ -161,4 +173,5 @@ export const metrics = {
   elevation,
   size,
   zIndex,
+  motion,
 } as const;
