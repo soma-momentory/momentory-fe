@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
 
-import { Button, Card, Icon, Modal, Text, TextField } from "@/components/ds";
+import { Button, Card, Icon, Text, TextField } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
 import type { ActionCard } from "@/features/diary/model/diary";
 import { formatKoreanDateShort } from "@/lib/day";
@@ -16,16 +16,11 @@ import { formatKoreanDateShort } from "@/lib/day";
  * - **되돌릴 때만 확인을 묻는다** — 완료 기록과 느낀 점이 함께 지워지므로
  * - **실행 횟수·연속 일수를 세지 않는다**
  *
- * ## 3세대 DS (2026-08-20)
- *
- * 라벨-값 블록의 짜임(`DESIGN.md` §8 · `Diary.dc.html` ④-d2)을 따랐다.
- * 되돌리기 확인은 그 자리에 열리던 카드에서 **`Modal`** 로 바뀌었다 —
- * 되돌릴 수 없는 행동의 확인은 모달이 맡는다(`PLAN.md` A-2 N2). 오류를 모달로
- * 띄우지 않는다는 `RULES.md` 규칙은 그대로 살아 있다.
- *
- * ⚠ 그 모달은 **이 컴포넌트가 그리지 않는다** — `UndoActionConfirm` 을 화면이
- * 스크롤 **밖**에 놓는다. 오버레이는 스스로 절대 배치되므로 스크롤 안에 두면
- * 화면이 아니라 **콘텐츠 높이**를 덮어 보이지 않는 곳에 뜬다. 문안은 여기 남는다.
+ * ⚠ **일기 상세(`A3`)는 이 카드를 `readOnly` 로 그린다**(2026-08-20) — 조작(해봤어요·
+ * 되돌리기·느낀점)은 **쉼터**에서 한다. 아래 조작 경로(`onMarkDone` 등)와 되돌리기 확인은
+ * 쉼터 등 조작 화면이 쓰는 것이고, 상세에서는 상태만 보여준다. 되돌리기 확인 모달은
+ * **화면 쪽**에서 그린다(이 컴포넌트가 그리지 않는다) — 완료 기록·느낀 점이 함께 지워지는
+ * 되돌릴 수 없는 행동이라 모달을 쓴다(`PLAN.md` A-2 N2 · 오류 모달 금지 규칙은 그대로).
  *
  * 라벨 문안은 스펙 그대로 「목표 행동」이다 — 시안의 「제안된 행동」은 쉼터 카드의
  * 말이다(`C6-b.md` · 문안은 `docs/spec` 우선).
@@ -37,7 +32,10 @@ type Props = {
   onMarkDone?: (cardId: string) => void;
   /** 되돌리기는 **묻고 나서** 실행된다 — 확인은 화면이 그린다 */
   onRequestUndo?: (cardId: string) => void;
+  /** 매 글자 — 로컬만 바꾼다(입력칸을 비춘다) */
   onSetReflection?: (cardId: string, text: string) => void;
+  /** 포커스가 빠질 때 — 그때 서버에 커밋한다(매 글자 보내지 않게) */
+  onCommitReflection?: (cardId: string) => void;
   /**
    * 읽기 전용 — 서버에서 불러온(store 에 없는) 카드일 때. 「해봤어요」·되돌리기·느낀
    * 점 편집이 store 를 바꾸는데 서버 카드는 그 대상이 아니라, 상호작용을 닫아 둔다.
@@ -52,6 +50,7 @@ export function ActionCardSection({
   onMarkDone,
   onRequestUndo,
   onSetReflection,
+  onCommitReflection,
   readOnly = false,
 }: Props) {
   return (
@@ -84,6 +83,7 @@ export function ActionCardSection({
                 accessibilityLabel="느낀 점"
                 value={card.reflection ?? ""}
                 onChangeText={(t) => onSetReflection?.(card.id, t)}
+                onBlur={() => onCommitReflection?.(card.id)}
                 editable={!readOnly}
                 placeholder="한 줄 남겨도 좋아요"
                 multiline
@@ -109,32 +109,6 @@ export function ActionCardSection({
         )}
       </Card>
     </View>
-  );
-}
-
-/**
- * 되돌리기 확인 — **되돌릴 때만 묻는다.** 완료 기록과 느낀 점이 함께 사라지므로
- * 잃는 것이 있고, 잃는 것이 있을 때만 모달을 쓴다(`components/ds/Modal`).
- *
- * 화면이 **스크롤 밖에서** 그린다 — 위 주석 참조.
- */
-export function UndoActionConfirm({
-  onCancel,
-  onConfirm,
-}: {
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <Modal
-      title="해본 기록을 지울까요?"
-      description="해본 날짜와 느낀 점이 함께 지워져요."
-      cancelLabel="그대로 두기"
-      confirmLabel="지우기"
-      destructive
-      onCancel={onCancel}
-      onConfirm={onConfirm}
-    />
   );
 }
 

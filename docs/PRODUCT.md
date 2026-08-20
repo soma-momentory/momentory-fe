@@ -30,38 +30,38 @@
 
 ## 화면 ID ↔ 라우트 매핑 (40화면)
 
-| 파트   | 화면 ID                   | 라우트 파일                                       | 비고                                                       |
-| ------ | ------------------------- | ------------------------------------------------- | ---------------------------------------------------------- |
-| 진입   | `S0`                      | `app/index.tsx`                                   | 진입 분기 (세션 없음→로그인 · 온보딩 전→온보딩 · 완료→홈)  |
-| 진입   | `S1`                      | `app/(auth)/login.tsx`                            | 카카오 연결됨 · Apple·Google 은 개발 통로                  |
-| 온보딩 | `03`                      | `app/(onboarding)/welcome.tsx`                    |                                                            |
-| 온보딩 | `04`                      | `app/(onboarding)/nickname.tsx`                   |                                                            |
-| 온보딩 | `05-b`                    | `app/(onboarding)/profile.tsx`                    | 나이·성별 (선택)                                           |
-| 온보딩 | `06` `06-b` `06-c`        | `app/(onboarding)/interests.tsx`                  | 한 파일이 세 상태                                          |
-| 온보딩 | `07`                      | `app/(onboarding)/rest.tsx`                       |                                                            |
-| 온보딩 | `08`                      | `app/(onboarding)/retro-time.tsx`                 | OS 시간 피커                                               |
-| 온보딩 | `09`                      | `app/(onboarding)/calendar.tsx`                   |                                                            |
-| 온보딩 | `10` `10-b`               | `app/(onboarding)/done.tsx`                       | 한 파일이 두 상태                                          |
-| 홈     | `12` `12-b`               | `app/(tabs)/home.tsx`                             | 일정 있음/없음 — 별도 레이아웃 아님                        |
-| 홈     | `12-c`                    | `app/home/schedule/[id].tsx`                      | 투명 모달 시트                                             |
-| 홈     | ~~`12-d`~~                | **없음 — 2026-08-14 삭제**                        | 새 홈에 순간 카드가 없다 (차이 대장 #18)                   |
-| 홈     | (신규)                    | `app/home/emotion/[id].tsx`                       | 마침 원을 누르면 뜨는 감정 시트 (`/PLAN.md` D11)           |
-| 홈     | `12-e`                    | `app/home/schedule/new.tsx`                       | 〃                                                         |
-| 회고   | `C1`                      | `app/retro/intro.tsx`                             |                                                            |
-| 회고   | `C2`                      | `app/retro/confirm.tsx`                           | 홈과 같은 store·컴포넌트                                   |
-| 회고   | `C3`                      | `app/retro/emotion.tsx`                           | 시작 감정 — 필수                                           |
-| 회고   | `C4` `C4-b` `C4-d` `C4-e` | `app/retro/talk.tsx`                              | 같은 대화의 다른 순간 — 라우트를 나누지 않는다             |
-| 회고   | `C4-c` `C4-c2`            | `app/retro/talk.tsx` (`DirectionSheet`)           | 방향 시트                                                  |
-| 회고   | `C6` `C6-b`               | `app/retro/draft.tsx`                             | 세그먼트 두 면                                             |
-| 회고   | `C7`                      | `app/retro/done.tsx`                              |                                                            |
-| 보관함 | `A1` `A2`                 | `app/(tabs)/archive.tsx`                          | 달력/목록 — 세그먼트 두 면                                 |
-| 보관함 | `A3` `A3-b` `A3-c`        | `app/diary/[id]/index.tsx`                        | 두 면 + 행동 카드 완료 상태                                |
-| 보관함 | `A4`                      | `app/diary/[id]/edit.tsx`                         | 내 문장·감정 태그만 수정                                   |
-| 리포트 | `W1`                      | `app/(tabs)/report.tsx`                           | 일기 7편부터                                               |
-| 마이   | `M1`                      | `app/(tabs)/my.tsx`                               |                                                            |
-| 마이   | `M3`                      | `app/(tabs)/my.tsx` (`BottomSheet`)               | 알림 설정 — 2026-08-20 부터 화면이 아니라 시트 (PLAN A-10) |
-| 마이   | `M2`                      | `app/my/profile.tsx`                              | 목록 — 지금 값만 보인다 (기본 정보 섹션: 아래 차이 대장)   |
-| 마이   | `M2` (항목별)             | `app/my/{nickname,age,gender,interests,rest}.tsx` | 한 화면 일괄 편집이 다섯 라우트로 갈렸다 (PLAN A-10)       |
+| 파트   | 화면 ID                   | 라우트 파일                                       | 비고                                                                             |
+| ------ | ------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 진입   | `S0`                      | `app/index.tsx`                                   | 진입 분기 (세션 없음→로그인 · 온보딩 전→온보딩 · 완료→홈)                        |
+| 진입   | `S1`                      | `app/(auth)/login.tsx`                            | 카카오 연결됨 · Apple·Google 은 개발 통로                                        |
+| 온보딩 | `03`                      | `app/(onboarding)/welcome.tsx`                    |                                                                                  |
+| 온보딩 | `04`                      | `app/(onboarding)/nickname.tsx`                   |                                                                                  |
+| 온보딩 | `05-b`                    | `app/(onboarding)/profile.tsx`                    | 나이·성별 (선택)                                                                 |
+| 온보딩 | `06` `06-b` `06-c`        | `app/(onboarding)/interests.tsx`                  | 한 파일이 세 상태                                                                |
+| 온보딩 | `07`                      | `app/(onboarding)/rest.tsx`                       |                                                                                  |
+| 온보딩 | `08`                      | `app/(onboarding)/retro-time.tsx`                 | OS 시간 피커                                                                     |
+| 온보딩 | `09`                      | `app/(onboarding)/calendar.tsx`                   |                                                                                  |
+| 온보딩 | `10` `10-b`               | `app/(onboarding)/done.tsx`                       | 한 파일이 두 상태                                                                |
+| 홈     | `12` `12-b`               | `app/(tabs)/home.tsx`                             | 일정 있음/없음 — 별도 레이아웃 아님                                              |
+| 홈     | `12-c`                    | `app/home/schedule/[id].tsx`                      | 투명 모달 시트                                                                   |
+| 홈     | ~~`12-d`~~                | **없음 — 2026-08-14 삭제**                        | 새 홈에 순간 카드가 없다 (차이 대장 #18)                                         |
+| 홈     | (신규)                    | `app/home/emotion/[id].tsx`                       | 마침 원을 누르면 뜨는 감정 시트 (`/PLAN.md` D11)                                 |
+| 홈     | `12-e`                    | `app/home/schedule/new.tsx`                       | 〃                                                                               |
+| 회고   | `C1`                      | `app/retro/intro.tsx`                             |                                                                                  |
+| 회고   | `C2`                      | `app/retro/confirm.tsx`                           | 홈과 같은 store·컴포넌트                                                         |
+| 회고   | `C3`                      | `app/retro/emotion.tsx`                           | 시작 감정 — 필수                                                                 |
+| 회고   | `C4` `C4-b` `C4-d` `C4-e` | `app/retro/talk.tsx`                              | 같은 대화의 다른 순간 — 라우트를 나누지 않는다                                   |
+| 회고   | `C4-c` `C4-c2`            | `app/retro/talk.tsx` (`DirectionSheet`)           | 방향 시트                                                                        |
+| 회고   | `C6` `C6-b`               | `app/retro/draft.tsx`                             | 세그먼트 두 면                                                                   |
+| 회고   | `C7`                      | `app/retro/done.tsx`                              |                                                                                  |
+| 보관함 | `A1` `A2`                 | `app/(tabs)/archive.tsx`                          | 달력/목록 — 세그먼트 두 면                                                       |
+| 보관함 | `A3` `A3-c`               | `app/diary/[id]/index.tsx`                        | 한 면(읽기) + 행동 카드 **읽기 전용** — A3-b 바바 면 제거(차이 24) · 조작은 쉼터 |
+| 보관함 | `A4`                      | `app/diary/[id]/edit.tsx`                         | 내 문장·감정 태그만 수정                                                         |
+| 리포트 | `W1`                      | `app/(tabs)/report.tsx`                           | 일기 7편부터                                                                     |
+| 마이   | `M1`                      | `app/(tabs)/my.tsx`                               |                                                                                  |
+| 마이   | `M3`                      | `app/(tabs)/my.tsx` (`BottomSheet`)               | 알림 설정 — 2026-08-20 부터 화면이 아니라 시트 (PLAN A-10)                       |
+| 마이   | `M2`                      | `app/my/profile.tsx`                              | 목록 — 지금 값만 보인다 (기본 정보 섹션: 아래 차이 대장)                         |
+| 마이   | `M2` (항목별)             | `app/my/{nickname,age,gender,interests,rest}.tsx` | 한 화면 일괄 편집이 다섯 라우트로 갈렸다 (PLAN A-10)                             |
 
 데이터 흐름·레이어 책임은 [`ARCHITECTURE.md`](ARCHITECTURE.md), 화면별 진행 상태는 [`TASKS.md`](TASKS.md).
 
@@ -99,5 +99,11 @@
 | 20 | **`09` 에서 권한을 거부해도 `10-b` 로 간다** — `09.md` 는 완료 화면이 `10-b` 가 되는 조건을 「`[나중에 할게요]` 로 건너뛰면」으로만 적어 두고, 「연결하기를 눌렀는데 OS 다이얼로그에서 거부한」 경우를 말하지 않는다(그 상태는 「아직 화면이 없다」로 남아 있다 · `09.md` 「연결 실패·권한 해제 상태」). 실제 권한 요청을 붙이자(2026-08-14) 그 경우가 매번 생기는데, 연결되지 않았는데 `10`(「캘린더도 연결됐어요」)을 보이면 **안내가 사실과 달라진다** — `09.md` 자신의 첫 규칙(「안내는 실제 처리와 같은 말이어야 한다」)이 그것을 막는다. 그래서 **거부도 `calendarLinked = false`** 로 두어 `[나중에 할게요]` 와 같은 화면으로 보낸다. ⚠ 사용자는 「연결하기」를 눌렀는데 「나중에 하기로 했다」는 안내를 보게 된다 — 두 경로를 가르려면 `10-c` 같은 화면이 하나 더 필요하다 | `09.md` 「안내는 실제 처리와 같은 말이어야 한다」 · 「연결 실패·권한 해제 상태는 아직 화면이 없다」 | `app/(onboarding)/calendar.tsx` 주석 · `app/(onboarding)/__tests__/onboarding.test.tsx` 「허용하지 않으면 연결됐다고 하지 않는다」 · 이 행 | 상류가 거부 경로의 화면·문안을 MVP 로 반입 → 그 화면으로 가른다 | **상류 확인 대기** |
 
 | 21 | **감정 3번의 이름이 「화남·답답함」이다** — `docs/spec/` 은 「화남/답답」인데 `docs/DESIGN.md` §1 이 「화남·답답함」으로 적었다. **디자인을 따른다**(결정 N3 · 2026-08-20). 반입 패키지가 「감정 이름은 기획 확정값으로 교체해요」라고 적어 둬서 한동안 열어 뒀던 자리인데, 「`DESIGN.md` 우선」이 문안까지 넓어지면서(N6) 함께 닫혔다. ⚠ 좁은 칸용 `shortEmotionName` 이 **`/` 가 아니라 `·` 로 자른다** — 구분자가 바뀌었다 | `docs/DESIGN.md` §1 Emotion Palette · `PLAN.md` N3·N6 | `src/features/emotion/model/emotion.ts` · `src/features/archive/model/archive.ts` · 이 행 | 상류가 스펙의 이름을 시안에 맞추거나, 다른 확정값을 준다 | **진행 중** |
+
+| 22 | **일기 삭제가 행동 카드를 지우지 않는다 — 일기만 지운다** — `RULES.md`·스키마·`A4.md` 는 "삭제는 회고 한 벌을 함께 지운다 — 내 문장·바바의 문장·**행동 카드**"이다. 그런데 행동 카드는 **자기 보관함(쉼터 · `R2`)** 을 따로 갖고 날짜로 독립해 사는 것으로 정했다(사용자 결정 2026-08-20). 그래서 `DELETE /api/v1/diaries/{id}` 는 **일기만** 지우고 행동 카드·회고 세션은 남긴다. 이에 맞춰 (a) FE `useDiary.remove` 가 카드를 지우지 않고, (b) 쉼터가 카드를 일기 날짜가 아니라 **카드 자신의 `createdAt`** 으로 세우며(`rest/model/cards.ts`), (c) 삭제 모달 문안이 「회고 한 벌」에서 **「내 문장과 바바의 문장이 삭제돼요 · 행동 카드는 보관함에 남아요」** 로 좁아졌다 | 사용자 결정(2026-08-20) vs `spec/RULES.md` 「보관함」·`momentory.schema.mvp.json` `Diary` 삭제 규칙·`spec/screens/A4.md` | BE `DiaryService.delete`(일기만) · FE `features/diary/model/diary.ts` `remove`·`app/diary/[id]/index.tsx` 삭제 모달 · `features/rest/model/cards.ts` · 이 행 | 상류가 "행동 카드는 별도 보관함이라 함께 지우지 않는다"를 스펙에 반영하거나, 함께 지우기로 되돌린다 | **상류 확인 대기** |
+
+| 23 | **일기 상세의 행동 카드가 읽기 전용이다 — 조작은 쉼터에서** — `A3`/`A3-c` 는 일기 상세에서 「해봤어요」·되돌리기·느낀 점을 다루게 돼 있다. 그런데 상세는 그날의 기록을 **읽는** 화면이라, 완료된 카드를 누르면 "해본 기록을 지울까요?"(되돌리기 확인)가 뜨는 게 어색하다는 판단으로(사용자 결정 2026-08-20) **상세의 행동 카드를 읽기 전용**으로 두고, 수행·취소·느낀 점 편집은 **쉼터(`R2`)에서만** 하게 했다. 상세는 상태(했는지·느낀 점)만 보여준다 | 사용자 결정(2026-08-20) vs `spec/screens/{A3,A3-c}.md` | FE `app/diary/[id]/index.tsx`(`ActionCardSection` 을 `readOnly` 로) · 이 행 | 상류가 "상세는 읽기, 관리는 쉼터"를 스펙에 반영하거나, 상세에서도 조작을 두기로 되돌린다 | **상류 확인 대기** |
+
+| 24 | **「바바가 함께 본 오늘」(`A3-b`) 면을 없앴다 — 상세는 내 문장 한 면만** — 스펙은 일기가 두 면(`A3` 내가 남긴 오늘 · `A3-b` 바바가 함께 본 오늘)으로 읽히게 돼 있다. 사용자 결정(2026-08-20)으로 **상세에서 바바 면을 통째로 제거**(면 전환 칩·`DiaryBabaFace` 컴포넌트 삭제)하고 내 본문 한 면만 보여준다. 더불어 **서버 조회분은 `reframed`(바바 문장)를 프론트에 띄우지 않는다**(어댑터에서 `babaView=null` — "original 하나만"). 그래서 삭제 모달 문안도 「바바의 문장」을 말하지 않는다(차이 22) | 사용자 결정(2026-08-20) vs `spec/screens/{A3-b,C6-b}.md` · `docs/DESIGN.md` 「보관함」 | FE `app/diary/[id]/index.tsx` · `features/diary/data/diaryApi.ts`(`babaView` 는 `null`) · 이 행 | 상류가 「바바 면」을 빼기로 반영하거나, 다시 두기로 되돌린다 | **상류 확인 대기** |
 
 새 행을 추가할 때: 차이·근거·임시 기록 자리·닫히는 조건을 전부 채운다 — 하나라도 비면 "조용한 이탈"이 된다.

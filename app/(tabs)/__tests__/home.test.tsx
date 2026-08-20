@@ -3,6 +3,7 @@ import { router } from "expo-router";
 
 import Home from "../home";
 
+import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import type { Schedule } from "@/features/home/model/types";
 import { SAMPLE_MOMENTS, SAMPLE_SCHEDULES } from "@/mocks/sample";
@@ -18,6 +19,9 @@ const flatten = (style: unknown) =>
 // 모듈 store 라 테스트 사이에 값이 샌다 — 매번 샘플 하루로 되돌린다
 beforeEach(() => {
   jest.clearAllMocks();
+  // 이번 주 감정 줄은 일기에서 나온다 — store 기본값이 비어 있으니 샘플로 seed 한다
+  // (운영은 `load()` 가 채운다 · 다른 diary 테스트와 같은 결)
+  useDiary.getState().reset();
   useDay.setState({
     schedules: SAMPLE_SCHEDULES.map((s) => ({ ...s, emotions: [...s.emotions] })),
     moments: SAMPLE_MOMENTS,
