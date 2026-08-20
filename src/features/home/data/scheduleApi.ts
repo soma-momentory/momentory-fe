@@ -210,12 +210,7 @@ export const patchScheduleVisibility = (
   id: string,
   hidden: boolean,
 ): Promise<ScheduleResult<true>> =>
-  call(
-    "PATCH",
-    `${SCHEDULES_PATH}/${encodeURIComponent(id)}/visibility`,
-    { hidden },
-    () => true,
-  );
+  call("PATCH", `${SCHEDULES_PATH}/${encodeURIComponent(id)}/visibility`, { hidden }, () => true);
 
 /**
  * 제목 수정 — `12-c` 편집 모드. **날짜도 함께 보낸다**(`ScheduleRequest` 가 둘 다

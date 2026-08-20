@@ -7,9 +7,7 @@ export type CalendarEventIdentity = {
 };
 
 const creationKey = (event: CalendarEvent): string | null =>
-  event.creationDate == null
-    ? null
-    : `${event.calendarId}\u0000${event.creationDate.getTime()}`;
+  event.creationDate == null ? null : `${event.calendarId}\u0000${event.creationDate.getTime()}`;
 
 /**
  * iOS 와 Android 가 분리된 반복 회차를 다르게 표현하는 간극을 여기서만 흡수한다.
