@@ -26,10 +26,9 @@ import { formatKoreanDateShort } from "@/lib/day";
  */
 export default function RestCardTrail() {
   const { date } = useLocalSearchParams<{ date: string }>();
-  const diaries = useDiary((s) => s.diaries);
   const cards = useDiary((s) => s.actionCards);
 
-  const all = useMemo(() => datedCards(diaries, cards), [diaries, cards]);
+  const all = useMemo(() => datedCards(cards), [cards]);
   const card = date == null ? null : cardOn(all, date);
   const past = date == null ? [] : pastCards(all, date);
 

@@ -1,4 +1,4 @@
-import type { ActionCard, Diary } from "@/features/diary/model/diary";
+import type { ActionCard } from "@/features/diary/model/diary";
 
 /**
  * 쉼터가 보는 것 — **행동 카드뿐이다**(2026-08-14 결정 · `PLAN.md` D1).
@@ -6,27 +6,23 @@ import type { ActionCard, Diary } from "@/features/diary/model/diary";
  * 시안의 룸 3종(대나무 숲 · 감각 연못 · 걱정 상자)은 구현 범위 밖이라 여기에
  * 상태를 두지 않는다.
  *
- * **카드는 일기에 붙어 산다** — 스스로 store 를 두지 않고 `features/diary` 의
- * 것을 읽어 날짜로 엮는다(`ActionCard.diaryId` → `Diary.date`). 카드를 따로
- * 저장하면 회고가 남긴 한 벌이 두 곳에 생긴다.
+ * **카드는 자기 날짜로 선다** — `ActionCard.createdAt`(만든 날 · KST) 로 엮는다.
+ * 예전엔 일기(`ActionCard.diaryId` → `Diary.date`)에서 날짜를 빌렸는데, 일기를
+ * 삭제해도 카드는 **자기 보관함(쉼터)** 에 남아야 하므로(PRODUCT.md 상류와 차이)
+ * 일기에 기대지 않는다. 서버가 카드마다 `createdDate`/`createdAt` 을 주고, 어댑터가
+ * 그것을 `createdAt`(YYYY-MM-DD)으로 옮긴다(`diaryApi.ts`).
  *
  * 세는 함수가 아니라 **고르는 함수만** 둔다 — 쉼터는 수행률을 보여주지 않는다
  * (`RULES.md` 「숫자로 압박하지 않는다」).
  */
 export type DatedCard = { card: ActionCard; date: string };
 
-const dateOf = (diaries: readonly Diary[], card: ActionCard) =>
-  diaries.find((d) => d.id === card.diaryId)?.date ?? null;
+/** 카드의 만든 날(`YYYY-MM-DD`) — `createdAt` 앞 열 글자다(로컬 저장분은 ISO 라 잘라 쓴다) */
+const dateOf = (card: ActionCard) => card.createdAt.slice(0, 10);
 
-/** 카드에 그날 날짜를 붙여 **최신순**으로. 날짜를 모르는 카드는 버린다 */
-export const datedCards = (diaries: readonly Diary[], cards: readonly ActionCard[]): DatedCard[] =>
-  cards
-    .map((card) => {
-      const date = dateOf(diaries, card);
-      return date == null ? null : { card, date };
-    })
-    .filter((x): x is DatedCard => x != null)
-    .sort((a, b) => b.date.localeCompare(a.date));
+/** 카드에 자기 날짜를 붙여 **최신순**으로 */
+export const datedCards = (cards: readonly ActionCard[]): DatedCard[] =>
+  cards.map((card) => ({ card, date: dateOf(card) })).sort((a, b) => b.date.localeCompare(a.date));
 
 /** 그날의 카드 한 장 — 없으면 `null`. 하루에 한 장뿐이다(`ActionCard` 주석) */
 export const cardOn = (all: readonly DatedCard[], date: string): ActionCard | null =>
