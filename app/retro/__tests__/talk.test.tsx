@@ -104,7 +104,7 @@ describe("텍스트 턴 — 자유 입력", () => {
   });
 });
 
-describe("선택지 턴 — 방향 시트", () => {
+describe("선택지 턴 — 대화 안의 칩", () => {
   const withOptions = () =>
     mockStart.mockResolvedValue({
       ok: true,
@@ -121,7 +121,7 @@ describe("선택지 턴 — 방향 시트", () => {
       },
     });
 
-  it("선택지가 오면 시트를 열고, 고르면 optionId 로 보낸다", async () => {
+  it("선택지가 대화에 붙고, 고르면 optionId 로 보낸다", async () => {
     withOptions();
     mockTurn.mockResolvedValue({
       ok: true,
@@ -132,7 +132,7 @@ describe("선택지 턴 — 방향 시트", () => {
     await waitFor(() => expect(r.getByText("짧게 기록하기")).toBeTruthy());
     await fireEvent.press(r.getByText("짧게 기록하기"));
     await act(async () => {
-      await fireEvent.press(r.getByText("이 방향으로 이어가기"));
+      await fireEvent.press(r.getByText("보내기"));
     });
 
     expect(mockTurn).toHaveBeenCalledWith(7, { optionId: "4" });
@@ -146,7 +146,7 @@ describe("선택지 턴 — 방향 시트", () => {
     await waitFor(() => expect(r.getByText("마음 이야기하기")).toBeTruthy());
     await fireEvent.press(r.getByText("마음 이야기하기"));
     await act(async () => {
-      await fireEvent.press(r.getByText("이 방향으로 이어가기"));
+      await fireEvent.press(r.getByText("보내기"));
     });
 
     // 칩 라벨이 대화에 남는다 (경계선)
@@ -155,6 +155,7 @@ describe("선택지 턴 — 방향 시트", () => {
 });
 
 describe("행동 추천 — 이전 카드 배지 + 직접 입력", () => {
+  // 설명을 들고 온 선택지는 칩이 아니라 **줄**로 편다 — 배지가 고르기 전에 보여야 한다
   const withActionOptions = () =>
     mockStart.mockResolvedValue({
       ok: true,
@@ -202,10 +203,11 @@ describe("행동 추천 — 이전 카드 배지 + 직접 입력", () => {
     await waitFor(() => expect(r.getByText("내가 직접 정할래요")).toBeTruthy());
     await fireEvent.press(r.getByText("내가 직접 정할래요"));
 
+    // 「직접 쓸게요」를 고르면 칩이 접히고 **입력창으로 전환된다**(`design.md` 「일기」 3)
     const input = r.getByLabelText("직접 입력한 행동");
     await fireEvent.changeText(input, "자기 전에 오늘 답변 한 줄 적어보기");
     await act(async () => {
-      await fireEvent.press(r.getByText("이 방향으로 이어가기"));
+      await fireEvent.press(r.getByLabelText("보내기"));
     });
 
     expect(mockTurn).toHaveBeenCalledWith(7, { content: "자기 전에 오늘 답변 한 줄 적어보기" });
@@ -230,10 +232,15 @@ describe("측정 턴 — 0~10 눈금", () => {
     mockTurn.mockResolvedValue({ ok: true, data: reply({ text: "고마워요.", phase: "script" }) });
     const r = await render(<RetroTalk />);
 
-    await waitFor(() => expect(r.getByLabelText("지금 감정 6")).toBeTruthy());
-    await fireEvent.press(r.getByLabelText("지금 감정 6"));
+    await waitFor(() => expect(r.getByLabelText("지금 감정")).toBeTruthy());
+    // 끌기 대신 낭독기 증감으로 올린다 — 둘이 같은 `onChange` 를 지난다
+    for (let i = 0; i < 6; i++) {
+      await fireEvent(r.getByLabelText("지금 감정"), "accessibilityAction", {
+        nativeEvent: { actionName: "increment" },
+      });
+    }
     await act(async () => {
-      await fireEvent.press(r.getByText("이어가기"));
+      await fireEvent.press(r.getByText("보내기"));
     });
 
     expect(mockTurn).toHaveBeenCalledWith(7, { measures: { current_emotion: 6 } });
@@ -256,8 +263,8 @@ describe("종료", () => {
     });
     const r = await render(<RetroTalk />);
 
-    await waitFor(() => expect(r.getByText("일기 보러 가기")).toBeTruthy());
-    await fireEvent.press(r.getByText("일기 보러 가기"));
+    await waitFor(() => expect(r.getByText("일기로 정리하기")).toBeTruthy());
+    await fireEvent.press(r.getByText("일기로 정리하기"));
     expect(jest.mocked(router.push)).toHaveBeenCalledWith("/retro/draft");
     // store 에 일기가 담겨 draft 가 읽는다
     expect(useRetro.getState().diary?.diary).toBe("오늘의 일기.");

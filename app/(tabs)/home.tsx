@@ -161,12 +161,14 @@ export default function Home() {
             </Text>
           </View>
           {/* 알림 **목록** 화면은 MVP 에 없다 — 종은 알림을 정하는 곳으로 보낸다.
-              갈 곳 없는 줄을 만들지 않는다(`CLAUDE.md` 「마이의 편집 경로」) */}
+              갈 곳 없는 줄을 만들지 않는다(`CLAUDE.md` 「마이의 편집 경로」).
+              ⚠ 옛 `/my/notify` 는 마이 이관에서 사라지고 **시트가 됐다**(A-11) —
+              그 시트를 여는 곳이 `M1` 이라 여기서는 마이로 보낸다 */}
           <IconButton
             name="bell"
             accessibilityLabel="알림 설정"
             color={labelColor.normal}
-            onPress={() => router.push("/my/notify")}
+            onPress={() => router.push("/my")}
             style={styles.bell}
           />
         </View>
@@ -184,7 +186,7 @@ export default function Home() {
             </Text>
           </View>
           {/* 이 화면의 유일한 Solid Primary — 하루의 주 행동이다 (`design.md` §6) */}
-          <Button label="지금 하루 돌아보기" fill onPress={() => router.push("/retro/intro")} />
+          <Button label="지금 하루 돌아보기" fill onPress={() => router.push("/retro/confirm")} />
         </Card>
 
         <View style={styles.section}>
