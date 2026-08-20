@@ -1,10 +1,8 @@
 import { render, fireEvent, act } from "@testing-library/react-native";
 import { Redirect, router } from "expo-router";
 
-import DiaryEdit from "../[id]/edit";
 import DiaryDetail from "../[id]/index";
 
-import { paperColors } from "@/design/paper";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 
 /** 7월 27일 일기 — 바바의 면·근거·행동 카드가 다 붙어 있는 한 장 */
@@ -16,9 +14,6 @@ jest.mock("expo-router", () => ({
   Redirect: jest.fn(() => null),
   useLocalSearchParams: () => mockParams,
 }));
-
-const flatten = (style: unknown) =>
-  Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
 
 const cardId = () => actionCardOf(useDiary.getState().actionCards, ID)?.id ?? "";
 
@@ -69,14 +64,15 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     expect(r.queryByText(/\d+회 실행|연속|일째/)).toBeNull();
   });
 
-  it("[수정하기] 는 실제 화면으로 이어진다 — 갈 곳 없는 줄을 두지 않는다", async () => {
-    // 새 디자인에서 수정은 바닥 알약이 아니라 ⋮ 메뉴에 있다 (design.md 「보관함」)
+  it("[수정하기] 를 두지 않는다 — 저장한 일기는 그날의 기록이다", async () => {
+    // ⚠ `A4`(일기 수정)는 **기능이 아니다**(2026-08-20). 고칠 기회는 저장 전
+    // (`C6` 의 `직접 고치기`) 하나이고, 메뉴에 남은 것은 삭제뿐이다
     const r = await render(<DiaryDetail />);
 
     await fireEvent.press(r.getByLabelText("더보기"));
-    await fireEvent.press(r.getByText("수정하기"));
 
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith(`/diary/${ID}/edit`);
+    expect(r.queryByText("수정하기")).toBeNull();
+    expect(r.getByText("삭제하기")).toBeTruthy();
   });
 
   it("⋮ 는 열고 닫는다 — 바깥을 탭해도 닫힌다", async () => {
@@ -89,17 +85,16 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     expect(r.queryByText("삭제하기")).toBeNull();
   });
 
-  it("바바의 면에서는 수정으로 가지 않는다 — 고칠 수 있는 것은 내 면뿐이다", async () => {
+  it("두 면 어디서도 메뉴는 삭제 하나다", async () => {
     const r = await render(<DiaryDetail />);
     await fireEvent.press(r.getByText("바바가 함께 본 오늘"));
     await fireEvent.press(r.getByLabelText("더보기"));
 
-    expect(r.queryByText("수정하기")).toBeNull();
-    // 삭제는 두 면에서 같다 — 지워지는 것은 한 벌이다
+    // 지워지는 것은 면이 아니라 한 벌이다
     expect(r.getByText("삭제하기")).toBeTruthy();
   });
 
-  it("⋮ 삭제는 무엇이 사라지는지 먼저 말한다 — 문안은 A4 와 같다", async () => {
+  it("⋮ 삭제는 무엇이 사라지는지 먼저 말한다", async () => {
     const r = await render(<DiaryDetail />);
 
     await fireEvent.press(r.getByLabelText("더보기"));
@@ -266,150 +261,5 @@ describe("A3-b · 바바가 함께 본 오늘", () => {
 
     expect(r.getByText("맑음 · 27℃")).toBeTruthy();
     expect(r.queryByLabelText("날씨")).toBeNull(); // 누를 수 있는 요소가 아니다
-  });
-});
-
-describe("A4 · 일기 수정", () => {
-  it("제목이 「이 일기의 감정 태그」다 — 「이날의 감정」이 아니다", async () => {
-    // 원본 감정을 고치는 것처럼 보이면 안 된다 (A4.md)
-    const r = await render(<DiaryEdit />);
-
-    expect(r.getByText("이 일기의 감정 태그")).toBeTruthy();
-    expect(r.queryByText("이날의 감정")).toBeNull();
-  });
-
-  it("무엇이 안 바뀌는지를 먼저 말한다", async () => {
-    const r = await render(<DiaryEdit />);
-
-    expect(
-      r.getByText(
-        "수정한 내용은 '내가 남긴 오늘'에만 반영돼요. 바바의 문장과 행동 카드는 회고를 마친 당시 내용 그대로 남아요.",
-      ),
-    ).toBeTruthy();
-  });
-
-  it("본문과 감정 태그를 고쳐 저장한다", async () => {
-    const r = await render(<DiaryEdit />);
-
-    await fireEvent.changeText(r.getByLabelText("일기 내용"), "다시 쓴 오늘.");
-    await fireEvent.press(r.getByLabelText("평온함"));
-    await fireEvent.press(r.getByText("저장"));
-
-    const d = useDiary.getState().diaries.find((x) => x.id === ID);
-    expect(d?.body).toBe("다시 쓴 오늘.");
-    expect(d?.emotions).toContain(9);
-    expect(d?.authoredBy).toBe("user");
-    expect(d?.editedAt).not.toBeNull();
-  });
-
-  it("고쳐도 바바의 문장·행동 카드·그날의 기록은 그대로다", async () => {
-    const before = useDiary.getState().diaries.find((x) => x.id === ID);
-    const r = await render(<DiaryEdit />);
-
-    await fireEvent.changeText(r.getByLabelText("일기 내용"), "다시 쓴 오늘.");
-    await fireEvent.press(r.getByText("저장"));
-
-    const after = useDiary.getState().diaries.find((x) => x.id === ID);
-    expect(after?.babaView).toBe(before?.babaView);
-    expect(after?.storyEmotion).toBe(before?.storyEmotion);
-    expect(after?.startEmotion).toBe(before?.startEmotion);
-    expect(actionCardOf(useDiary.getState().actionCards, ID)).not.toBeNull();
-  });
-
-  it("취소하면 아무것도 바뀌지 않는다", async () => {
-    const before = useDiary.getState().diaries.find((x) => x.id === ID)?.body;
-    const r = await render(<DiaryEdit />);
-
-    await fireEvent.changeText(r.getByLabelText("일기 내용"), "고치다 만 문장");
-    await fireEvent.press(r.getByText("취소"));
-
-    expect(useDiary.getState().diaries.find((x) => x.id === ID)?.body).toBe(before);
-  });
-
-  it("라벨이 「이 회고 삭제」다 — 지워지는 것이 회고 한 벌이기 때문", async () => {
-    const r = await render(<DiaryEdit />);
-
-    expect(r.getByText("이 회고 삭제")).toBeTruthy();
-    expect(r.queryByText("이 일기 삭제")).toBeNull();
-  });
-
-  it("삭제는 무엇이 사라지는지 먼저 말한다", async () => {
-    const r = await render(<DiaryEdit />);
-
-    await fireEvent.press(r.getByText("이 회고 삭제"));
-
-    expect(r.getByText("이 회고를 삭제할까요?")).toBeTruthy();
-    expect(r.getByText("내 문장, 바바의 문장, 행동 카드가 함께 삭제돼요.")).toBeTruthy();
-  });
-
-  it("확인하면 일기와 행동 카드가 함께 사라진다", async () => {
-    const r = await render(<DiaryEdit />);
-
-    await fireEvent.press(r.getByText("이 회고 삭제"));
-    await fireEvent.press(r.getByText("회고 삭제"));
-
-    expect(useDiary.getState().diaries.find((x) => x.id === ID)).toBeUndefined();
-    expect(actionCardOf(useDiary.getState().actionCards, ID)).toBeNull();
-    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/archive");
-  });
-
-  it("지운 한 벌은 되돌릴 수 있게 잠시 남는다", async () => {
-    const r = await render(<DiaryEdit />);
-
-    await fireEvent.press(r.getByText("이 회고 삭제"));
-    await fireEvent.press(r.getByText("회고 삭제"));
-
-    const kept = useDiary.getState().recentlyDeleted;
-    expect(kept?.diary.id).toBe(ID);
-    expect(kept?.card).not.toBeNull(); // 행동 카드도 함께 들고 있는다
-  });
-
-  it("되돌리면 일기와 행동 카드가 원래 순서로 돌아온다", async () => {
-    const before = useDiary.getState().diaries.map((d) => d.id);
-    const r = await render(<DiaryEdit />);
-    await fireEvent.press(r.getByText("이 회고 삭제"));
-    await fireEvent.press(r.getByText("회고 삭제"));
-
-    await act(async () => {
-      useDiary.getState().undoRemove();
-    });
-
-    // 맨 뒤가 아니라 원래 자리다 — 끝에 가면 되돌린 게 아니라 새로 쓴 것처럼 보인다
-    expect(useDiary.getState().diaries.map((d) => d.id)).toEqual(before);
-    expect(actionCardOf(useDiary.getState().actionCards, ID)).not.toBeNull();
-    expect(useDiary.getState().recentlyDeleted).toBeNull();
-  });
-
-  it("고친 뒤에는 언제 고쳤는지까지 말한다", async () => {
-    // 「수정함」은 언제인지를 말하지 못한다 (A4.md)
-    const r = await render(<DiaryEdit />);
-    await fireEvent.changeText(r.getByLabelText("일기 내용"), "다시 쓴 오늘.");
-    await fireEvent.press(r.getByText("저장"));
-
-    const detail = await render(<DiaryDetail />);
-    const edited = useDiary.getState().diaries.find((x) => x.id === ID)?.editedAt ?? "";
-    const [, m = "", d = ""] = edited.slice(0, 10).split("-");
-
-    expect(
-      detail.getByText(`회고 대화에서 작성 · ${Number(m)}월 ${Number(d)}일 수정`),
-    ).toBeTruthy();
-  });
-
-  it("고치기 전에는 「회고 대화에서」다", async () => {
-    const detail = await render(<DiaryDetail />);
-
-    expect(detail.getByText("회고 대화에서")).toBeTruthy();
-  });
-
-  it("위험색은 글자에만 얹는다 — 면도 테두리도 채우지 않는다 (R-40)", async () => {
-    // 새 디자인의 위험색은 `dangerFill` 이다 — 시안의 `danger #E4886C` 는 글자로
-    // 쓰면 2.6 이라 AA 미달이다 (PLAN.md Phase 1 대비 보정)
-    const r = await render(<DiaryEdit />);
-    const label = r.getByText("이 회고 삭제");
-
-    expect(flatten(label.props.style).color).toBe(paperColors.accent.dangerFill);
-    const button = label.parent;
-    expect(flatten(button?.props.style).backgroundColor).toBeUndefined();
-    expect(flatten(button?.props.style).borderWidth).toBeUndefined();
   });
 });
