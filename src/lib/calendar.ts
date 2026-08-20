@@ -61,11 +61,21 @@ export type CalendarEvent = {
   /**
    * 끝. 값이 없으면 `null` 이고 부르는 쪽이 하루짜리로 본다.
    *
-   * ⚠ **종일 일정이면 이 값은 「다음 날 자정」이다**(배타적). 보정은
-   * `expandCalendarEventByDate` 가 한다 — 그 규칙이 `allDay` 와 함께 가야 해서다.
+   * ⚠ 종일 일정은 Android 에서 다음 날 시작 시각(배타적), iOS 실기기에서 그날
+   * 23:59:59로 왔다. 보정은 `expandCalendarEventByDate` 가 한다.
    */
   end: Date | null;
   allDay: boolean;
+  /** 반복 시리즈의 회차가 원래 시작하던 시각. 수정·이동 뒤에도 회차 키를 지키는 데 쓴다 */
+  originalStart: Date | null;
+  /** iOS 에서 분리 회차를 원래 시리즈와 잇는 보조 신호. 서버로 보내지 않는다 */
+  creationDate: Date | null;
+  /** 반복 시리즈에서 따로 수정된 회차인가(iOS) */
+  isDetached: boolean;
+  /** 분리 회차가 속한 원본 반복 이벤트 id(Android) */
+  originalId: string | null;
+  /** 원본에 반복 규칙이 있는가. iOS 분리 회차의 부모 후보를 가릴 때만 쓴다 */
+  recurring: boolean;
 };
 
 /**
@@ -227,6 +237,14 @@ export async function readCalendarEvents(from: string, to: string): Promise<Cale
         start: at,
         end: toDate(event.endDate),
         allDay: event.allDay === true,
+        originalStart: toDate(event.originalStartDate),
+        creationDate: toDate(event.creationDate),
+        isDetached: event.isDetached === true,
+        originalId:
+          typeof event.originalId === "string" && event.originalId.length > 0
+            ? event.originalId
+            : null,
+        recurring: event.recurrenceRule != null,
       });
     }
     return { ok: true, events };

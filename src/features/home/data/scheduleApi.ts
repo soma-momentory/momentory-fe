@@ -27,14 +27,13 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * 옮기고, 어긋나는 자리는 아래에 전부 적었다 — 나중에 계약이 바뀌면 고칠 곳이
  * 이 파일 하나다.
  *
- * ## 서버가 주지 않는 것 넷 — 여기서 메운다
+ * ## 서버와 화면 모양이 다른 것
  *
  * | 스키마 필드  | 서버 | 여기서                                              |
  * | ------------ | ---- | --------------------------------------------------- |
- * | `source`     | 없다 | 항상 `"manual"` — 캘린더 연동 전이라 서버 일정은     |
- * |              |      | 전부 앱에서 만든 것이다(`POST` 로만 생긴다)         |
- * | `externalId` | 없다 | 항상 `null` — 위와 같은 이유                        |
- * | `hidden`     | 없다 | 항상 `false`. 숨기기는 기기에만 남는다(`day.ts`)     |
+ * | `source`     | 대문자 enum | 화면의 소문자 enum 으로 바꾼다              |
+ * | `externalId` | 없다        | 화면에서 원본 id를 쓰지 않아 `null`로 둔다   |
+ * | `hidden`     | boolean     | 그대로 옮긴다                                |
  * | `doneAt`     | 없다 | 항상 `null` — 마친 **시각**을 서버가 돌려주지 않는다 |
  *
  * `time` 은 MVP 가 항상 `null` 이라 어긋남이 아니다(`12-e` 에 시간 입력이 없다).
@@ -124,6 +123,12 @@ const toEmotions = (v: unknown): EmotionId[] => {
   return id == null ? [] : [id];
 };
 
+const toSource = (v: unknown): Schedule["source"] | null => {
+  if (v === "MANUAL") return "manual";
+  if (v === "CALENDAR") return "calendar";
+  return null;
+};
+
 /**
  * `ScheduleResponse` → 스키마 `Schedule`. **id 는 문자열로 바꾼다** — 스키마가
  * 그렇고, 아웃박스가 붙으면 클라이언트가 만드는 ULID 가 이 자리에 온다.
@@ -135,19 +140,20 @@ export const toSchedule = (v: unknown): Schedule | null => {
   if (typeof id !== "number" && typeof id !== "string") return null;
   const day = asText(date);
   const name = asText(title);
-  if (day == null || name == null) return null;
+  const source = toSource(v.source);
+  if (day == null || name == null || source == null || typeof v.hidden !== "boolean") return null;
 
   return {
     id: String(id),
     date: day,
     title: name,
     time: null,
-    source: "manual",
+    source,
     externalId: null,
     done: v.completed === true,
     doneAt: null,
     emotions: toEmotions(v.emotion),
-    hidden: false,
+    hidden: v.hidden,
   };
 };
 
@@ -198,6 +204,18 @@ export const deleteSchedule = async (id: string): Promise<ScheduleResult<true>> 
   );
   return result.ok ? { ok: true, data: true } : { ok: false, code: mapError(result.error) };
 };
+
+/** 가져온 일정은 캘린더 원본을 지우지 않고 Momentory 홈에서만 감춘다. */
+export const patchScheduleVisibility = (
+  id: string,
+  hidden: boolean,
+): Promise<ScheduleResult<true>> =>
+  call(
+    "PATCH",
+    `${SCHEDULES_PATH}/${encodeURIComponent(id)}/visibility`,
+    { hidden },
+    () => true,
+  );
 
 /**
  * 제목 수정 — `12-c` 편집 모드. **날짜도 함께 보낸다**(`ScheduleRequest` 가 둘 다

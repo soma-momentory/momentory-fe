@@ -6,7 +6,7 @@
  * (`docs/CODE-REVIEW.md` P2). 그래서 공급자를 하나로 모으고 갈아끼울 수 있게 둔다.
  *
  * - `SystemClock` — 운영 시각. **하루는 새벽 4:00 에 넘어간다**(`RULES.md`)
- * - `SampleClock` — 화면 데모의 고정 하루(2026-07-27). BE 전까지의 기본값
+ * - `SampleClock` — 테스트·화면 데모의 고정 하루(2026-07-27)
  * - `fixedClock(iso)` — 테스트별 고정 시각(TestClock)
  */
 export type Clock = {
@@ -74,10 +74,10 @@ export const fixedClock = (iso: string): Clock => {
 };
 
 /**
- * 지금 쓰는 시계. **BE·영속 저장(M3)이 붙어 실제 날짜를 다루기 시작하면
- * `SystemClock` 으로 바꾼다** — 바꾸는 곳은 이 한 줄이다.
+ * 운영·개발 빌드는 기기 시각을 쓴다. Jest 만 기존 샘플 데이터와 무관한 테스트가
+ * 흔들리지 않도록 고정 하루에서 시작하고, 필요한 테스트가 `fixedClock` 을 심는다.
  */
-let active: Clock = SampleClock;
+let active: Clock = process.env.NODE_ENV === "test" ? SampleClock : SystemClock;
 
 /** 시계를 갈아끼운다 — 테스트가 `fixedClock` 을 심을 때 쓴다 */
 export const setClock = (next: Clock) => {

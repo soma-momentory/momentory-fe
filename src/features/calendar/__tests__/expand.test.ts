@@ -12,6 +12,11 @@ const event = (over: Partial<CalendarEvent> = {}): CalendarEvent => ({
   start: new Date("2026-08-05T10:00:00"),
   end: null,
   allDay: false,
+  originalStart: null,
+  creationDate: null,
+  isDetached: false,
+  originalId: null,
+  recurring: false,
   ...over,
 });
 
@@ -65,6 +70,12 @@ describe("종일 일정의 끝은 배타적이다", () => {
 
   it("하루짜리가 이틀이 되지 않는다", () => {
     expect(datesOf(allDay("2026-08-15T09:00:00", "2026-08-16T09:00:00"))).toEqual(["2026-08-15"]);
+  });
+
+  it("iOS 의 그날 23:59:59 표현도 하루짜리다", () => {
+    expect(datesOf(allDay("2026-08-15T09:00:00", "2026-08-15T23:59:59"))).toEqual([
+      "2026-08-15",
+    ]);
   });
 
   it("이틀짜리는 이틀이다", () => {
@@ -144,6 +155,25 @@ describe("원본과의 관계를 잃지 않는다", () => {
     expect(got.map((o) => o.eventId)).toEqual(["e1", "e1", "e1"]);
     expect(got.map((o) => o.calendarId)).toEqual(["c1", "c1", "c1"]);
     expect(got.map((o) => o.title)).toEqual(["제주 여행", "제주 여행", "제주 여행"]);
+  });
+
+  it("이동된 반복 회차는 화면 날짜가 바뀌어도 원래 날짜로 같은 키를 만든다", () => {
+    const moved = event({
+      eventId: "detached",
+      start: new Date("2026-08-06T10:00:00"),
+      originalStart: new Date("2026-08-05T10:00:00"),
+      isDetached: true,
+    });
+
+    const [got] = expandCalendarEventByDate(moved, RANGE, {
+      seriesId: "series",
+      originalStart: moved.originalStart!,
+    });
+
+    expect(got?.date).toBe("2026-08-06");
+    expect(got?.externalId).toBe(
+      makeExternalId({ calendarId: "c1", eventId: "series", date: "2026-08-05" }),
+    );
   });
 
   it("회차마다 `externalId` 가 다르고, 그 값이 생성기와 일치한다", () => {

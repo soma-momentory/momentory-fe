@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { syncCalendarSnapshot } from "@/features/calendar/data/calendarSyncApi";
 import { readSyncState, writeSyncState } from "@/features/calendar/data/syncStateStore";
 import { expandCalendarEventByDate } from "@/features/calendar/model/expand";
+import { resolveCalendarEventIdentities } from "@/features/calendar/model/identity";
 import { snapshotHash } from "@/features/calendar/model/hash";
 import { normalizeOccurrences } from "@/features/calendar/model/normalize";
 import type { CalendarSnapshot, SyncRange } from "@/features/calendar/model/types";
@@ -68,7 +69,10 @@ export async function buildSnapshot(
   const read = await readCalendarEvents(range.from, range.to);
   if (!read.ok) return { ok: false, reason: read.reason };
 
-  const occurrences = read.events.flatMap((event) => expandCalendarEventByDate(event, range));
+  const identities = resolveCalendarEventIdentities(read.events);
+  const occurrences = read.events.flatMap((event, index) =>
+    expandCalendarEventByDate(event, range, identities[index]),
+  );
   const events = normalizeOccurrences(occurrences);
   return { ok: true, snapshot: { range, events, hash: snapshotHash(range, events) } };
 }

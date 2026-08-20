@@ -2,6 +2,7 @@ import {
   createSchedule as createScheduleApi,
   deleteSchedule as deleteScheduleApi,
   fetchSchedules as fetchSchedulesApi,
+  patchScheduleVisibility as patchScheduleVisibilityApi,
   putCompletion as putCompletionApi,
 } from "@/features/home/data/scheduleApi";
 import { remainingLabel, useDay, weekStartOf } from "@/features/home/model/day";
@@ -12,12 +13,14 @@ jest.mock("@/features/home/data/scheduleApi", () => ({
   createSchedule: jest.fn(),
   deleteSchedule: jest.fn(),
   putCompletion: jest.fn(),
+  patchScheduleVisibility: jest.fn(),
 }));
 
 const fetchSchedules = jest.mocked(fetchSchedulesApi);
 const createSchedule = jest.mocked(createScheduleApi);
 const deleteSchedule = jest.mocked(deleteScheduleApi);
 const putCompletion = jest.mocked(putCompletionApi);
+const patchScheduleVisibility = jest.mocked(patchScheduleVisibilityApi);
 
 const row = (over: Partial<Schedule> = {}): Schedule => ({
   id: "7",
@@ -42,6 +45,7 @@ beforeEach(() => {
   putCompletion.mockResolvedValue({ ok: true, data: { completed: true, emotions: [] } });
   createSchedule.mockResolvedValue({ ok: true, data: row({ id: "99", title: "산책" }) });
   deleteSchedule.mockResolvedValue({ ok: true, data: true });
+  patchScheduleVisibility.mockResolvedValue({ ok: true, data: true });
 });
 
 describe("일정은 서버가 정본이다", () => {
@@ -61,6 +65,26 @@ describe("일정은 서버가 정본이다", () => {
     await Promise.all([useDay.getState().load(), useDay.getState().load()]);
 
     expect(fetchSchedules).toHaveBeenCalledTimes(1);
+  });
+
+  it("동기화 뒤 reload는 진행 중 조회를 마친 다음 서버를 한 번 더 읽는다", async () => {
+    let finishFirst!: (value: ReturnType<typeof row>[]) => void;
+    fetchSchedules
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishFirst = (data) => resolve({ ok: true, data });
+          }),
+      )
+      .mockResolvedValueOnce({ ok: true, data: [row({ id: "8", title: "동기화 일정" })] });
+
+    const initial = useDay.getState().load();
+    const reloaded = useDay.getState().reload();
+    finishFirst([]);
+    await Promise.all([initial, reloaded]);
+
+    expect(fetchSchedules).toHaveBeenCalledTimes(2);
+    expect(useDay.getState().schedules[0]?.title).toBe("동기화 일정");
   });
 
   it("못 받으면 가진 것을 그대로 둔다 — 빈 목록으로 덮지 않는다", async () => {
@@ -231,12 +255,21 @@ describe("추가와 삭제", () => {
     expect(useDay.getState().schedules).toHaveLength(1);
   });
 
-  it("숨기기는 서버에 자리가 없어 기기에만 남는다", () => {
-    useDay.setState({ schedules: [row()] });
+  it("가져온 일정 숨기기는 즉시 반영하고 서버에도 저장한다", () => {
+    useDay.setState({ schedules: [row({ source: "calendar" })] });
 
     useDay.getState().hide("7");
 
     expect(useDay.getState().schedules[0]?.hidden).toBe(true);
-    expect(deleteSchedule).not.toHaveBeenCalled();
+    expect(patchScheduleVisibility).toHaveBeenCalledWith("7", true);
+  });
+
+  it("수동 일정에는 캘린더 전용 숨김 API를 부르지 않는다", () => {
+    useDay.setState({ schedules: [row()] });
+
+    useDay.getState().hide("7");
+
+    expect(useDay.getState().schedules[0]?.hidden).toBe(false);
+    expect(patchScheduleVisibility).not.toHaveBeenCalled();
   });
 });

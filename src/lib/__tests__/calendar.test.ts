@@ -141,6 +141,32 @@ describe("읽어 오기 — 펼치기 전의 원본을 준다", () => {
       start: new Date(`${SAMPLE_TODAY}T10:00:00`),
       end: null,
       allDay: false,
+      originalStart: null,
+      creationDate: null,
+      isDetached: false,
+      originalId: null,
+      recurring: false,
+    });
+  });
+
+  it("반복 회차 식별에 필요한 iOS·Android 신호만 옮긴다", async () => {
+    events.mockResolvedValue([
+      event({
+        originalStartDate: "2026-07-27T10:00:00",
+        creationDate: "2026-07-01T12:00:00",
+        isDetached: true,
+        originalId: "android-parent",
+        recurrenceRule: { frequency: "daily" },
+      }),
+    ]);
+
+    const [first] = eventsOf(await readCalendarEvents(SAMPLE_TODAY, SAMPLE_TODAY));
+    expect(first).toMatchObject({
+      originalStart: new Date("2026-07-27T10:00:00"),
+      creationDate: new Date("2026-07-01T12:00:00"),
+      isDetached: true,
+      originalId: "android-parent",
+      recurring: true,
     });
   });
 

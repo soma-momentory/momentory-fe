@@ -8,6 +8,7 @@ import {
   fetchSchedules,
   patchScheduleOrder,
   patchScheduleTitle,
+  patchScheduleVisibility,
   putCompletion,
   type ScheduleFailureCode,
 } from "@/features/home/data/scheduleApi";
@@ -33,9 +34,8 @@ import { clock } from "@/lib/clock";
  *   `auth.ts` 가 토큰 갱신 실패를 가르는 것과 **같은 구분**이다.
  *   아웃박스(M3-3)가 붙으면 「닿지 못한 것」이 큐로 들어간다. 그전까지는
  *   기기에만 남고 다음 `load()` 에 사라진다.
- * - **날짜·시각은 `clock` 을 지난다.** 지금 시계는 여전히 `SampleClock`(2026-07-27)
- *   이라 서버에도 그 날짜로 쌓인다 — 보관함·리포트가 아직 샘플 하루를 보고 있어
- *   여기만 실제 날짜로 옮기면 앱 안에 날짜가 둘이 된다(`TASKS.md`).
+ * - **날짜·시각은 `clock` 을 지난다.** 운영 앱은 기기 시각을 쓰고, 테스트만
+ *   고정 시계를 심는다.
  *
  * ## 서버가 스키마와 다른 두 곳 — 화면이 아니라 여기서 흡수한다
  *
@@ -62,6 +62,8 @@ type DayStore = {
   loaded: boolean;
   /** 홈이 뜰 때 부른다. **여러 번 불러도 요청은 하나** */
   load: () => Promise<void>;
+  /** 캘린더 화해 직후, 진행 중 조회가 있으면 끝낸 뒤 서버 정본을 다시 받는다 */
+  reload: () => Promise<void>;
   /**
    * 체크박스 — 즉시 마침/취소. 확인을 묻지 않는다.
    *
@@ -79,7 +81,7 @@ type DayStore = {
    * 계약을 지우면 되살릴 때 BE 를 다시 손대야 한다(`PLAN.md` A-8).
    */
   selectEmotion: (id: string, emotion: EmotionId) => void;
-  /** `12-c` 「홈에서 숨기기」 — 서버에 자리가 없어 **기기에만** 남는다 */
+  /** `12-c` 「홈에서 숨기기」 — 캘린더 원본은 두고 서버 표시 상태만 바꾼다 */
   hide: (id: string) => void;
   /** `12-c` 「이 일정 삭제」 — `source === "manual"` 에만 있다 */
   remove: (id: string) => void;
@@ -142,6 +144,12 @@ export const useDay = create<DayStore>((set, get) => ({
     return inFlight;
   },
 
+  reload: async () => {
+    const pending = inFlight;
+    if (pending != null) await pending;
+    await get().load();
+  },
+
   toggleDone: (id) => {
     const before = get().schedules.find((x) => x.id === id);
     if (before == null) return;
@@ -189,7 +197,16 @@ export const useDay = create<DayStore>((set, get) => ({
     });
   },
 
-  hide: (id) => set((s) => ({ schedules: replace(s.schedules, id, { hidden: true }) })),
+  hide: (id) => {
+    const before = get().schedules.find((x) => x.id === id);
+    if (before == null || before.source !== "calendar" || before.hidden) return;
+
+    set((s) => ({ schedules: replace(s.schedules, id, { hidden: true }) }));
+    void patchScheduleVisibility(id, true).then((result) => {
+      if (result.ok || !serverRefused(result.code)) return;
+      set((s) => ({ schedules: replace(s.schedules, id, { hidden: false }) }));
+    });
+  },
 
   remove: (id) => {
     const before = get().schedules;
