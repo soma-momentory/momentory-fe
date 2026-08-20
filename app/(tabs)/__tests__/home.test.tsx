@@ -103,8 +103,8 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
   it("일정 줄에 감정 알약이 없다 — 감정은 회고에서만 받는다 (N7)", async () => {
     const { queryByText } = await render(<Home />);
 
-    // 샘플의 「팀 회의 · 화남/답답」·「발표 준비 · 행복함」이 줄에 붙지 않는다
-    expect(queryByText("화남/답답")).toBeNull();
+    // 샘플의 「팀 회의 · 화남·답답함」·「발표 준비 · 행복함」이 줄에 붙지 않는다
+    expect(queryByText("화남·답답함")).toBeNull();
     expect(queryByText("행복함")).toBeNull();
   });
 

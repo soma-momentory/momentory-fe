@@ -102,7 +102,7 @@ describe("A1 · 보관함 달력", () => {
 
     expect(r.getByText("7월 22일의 기록")).toBeTruthy();
     expect(r.getByText("7월 22일 수요일")).toBeTruthy();
-    expect(r.getByText("화남/답답")).toBeTruthy(); // 얼굴이 아니라 이름으로
+    expect(r.getByText("화남·답답함")).toBeTruthy(); // 얼굴이 아니라 이름으로
     expect(r.getByText("뿌듯함")).toBeTruthy();
     expect(r.getByText("일기 열어보기 ›")).toBeTruthy();
   });
@@ -148,7 +148,7 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     for (const name of [
       "불안함",
       "우울함",
-      "화남/답답",
+      "화남·답답함",
       "행복함",
       "막막함",
       "무기력",

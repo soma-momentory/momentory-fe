@@ -83,8 +83,14 @@ export function monthChange(
   return picked;
 }
 
-/** 감정 이름에서 「/」 뒤를 떼어 짧게 — 「화남/답답」 → 「화남」 (좁은 칸용) */
-export const shortEmotionName = (id: EmotionId) => emotionName(id).split("/")[0] ?? "";
+/**
+ * 좁은 칸용 짧은 이름 — 「화남·답답함」 → **「화남」**.
+ *
+ * 아홉 중 하나만 두 낱말이다(`DESIGN.md` §1). 가운뎃점 앞만 남긴다 —
+ * ⚠ 예전 이름은 「화남/답답」이라 `/` 로 잘랐는데, 이름이 시안을 따르면서(N3)
+ * 구분자가 바뀌었다. 둘 다 받아 두면 다음에 또 바뀌었을 때 조용히 안 잘린다.
+ */
+export const shortEmotionName = (id: EmotionId) => emotionName(id).split("·")[0] ?? "";
 
 /**
  * 문장에 넣는 어간 — 「불안함」 → **「불안」**.

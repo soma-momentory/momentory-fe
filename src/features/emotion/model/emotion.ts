@@ -19,7 +19,7 @@
 export const EMOTIONS = [
   { id: 1, name: "불안함" },
   { id: 2, name: "우울함" },
-  { id: 3, name: "화남/답답" },
+  { id: 3, name: "화남·답답함" },
   { id: 4, name: "행복함" },
   { id: 5, name: "막막함" },
   { id: 6, name: "무기력" },

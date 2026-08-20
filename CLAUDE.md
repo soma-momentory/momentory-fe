@@ -3,8 +3,8 @@
 모멘토리 앱의 React Native 프론트. **MVP 40화면**을 만든다 (2026-08-06 상류 v2 개정 — 30 → 40).
 
 **이 저장소만으로 개발·검증이 전부 된다** — 화면 스펙·상태 기계·문안은 저장소 안
-[`docs/spec/`](docs/spec/SNAPSHOT.md)(동결 스냅샷 · 직접 수정 금지), 시각 값은
-[`docs/design/`](docs/design/IMPORT.md)(새 디자인 스냅샷)에 있다.
+[`docs/spec/`](docs/spec/SNAPSHOT.md)(동결 스냅샷 · 직접 수정 금지), 시각 값과
+화면 흐름은 [`docs/DESIGN.md`](docs/DESIGN.md)(디자인 SSOT)에 있다.
 **상류 접근은 더 이상 전제하지 않는다** (2026-08-14 D8 — [`PLAN.md`](PLAN.md) §0).
 재반입은 폐기됐고(`sync:theme` 은 2026-08-20 삭제), 규칙·값의 후속 결정은 이 저장소에서 한다.
 
@@ -54,7 +54,7 @@
 6. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — 커밋 · 브랜치 · PR · 품질 게이트 · 시크릿 · 생성물
 
 > ⚠ **쉼터는 범위에 들어왔다** (2026-08-14 D1) — 스펙 정본은
-> [`docs/design/app-flow.md`](docs/design/app-flow.md) §2.4 + 프로토타입이다(상류 `R*` 아님).
+> [`docs/DESIGN.md`](docs/DESIGN.md) 「쉼터」다(상류 `R*` 아님 · 2세대 스냅샷은 A-19 에서 지웠다).
 > 예외 화면(`E*` `X*`)은 여전히 범위 밖 — 마주치면 `PLAN.md` 에 결정을 기록하고 진행한다.
 > 스펙 ID 가 겹치면(특히 `C4-b`) 항상 `docs/spec/` 것을 쓴다.
 
@@ -116,7 +116,7 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 
 - `docs/DESIGN.md` ← **디자인 SSOT.** 반입 스냅샷이었으나 패키지를 지우면서
   **이 저장소가 소유한다**(A-18) — 값·규칙이 바뀌면 여기를 고친다
-- `docs/spec/**` ← 동결 스냅샷 · `docs/design/**` ← 2세대 반입 스냅샷 — 둘 다 직접 수정 금지
+- `docs/spec/**` ← 동결 스냅샷 — 직접 수정 금지
 - `ios/` `android/` ← `app.config.ts`. `npx expo prebuild`
 
 ✅ **전환이 끝났다** (2026-08-20 · `PLAN.md` A-16). `theme.ts` · `tokens.mvp.ts` ·

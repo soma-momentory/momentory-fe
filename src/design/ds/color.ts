@@ -182,7 +182,7 @@ export const social = {
 export const emotion: Record<EmotionId, string> = {
   1: "#7A96B0", // 불안함
   2: "#A9B5D9", // 우울함
-  3: "#C2796A", // 화남/답답
+  3: "#C2796A", // 화남·답답함
   4: "#F3D07A", // 행복함
   5: "#B4C3CC", // 막막함
   6: "#C7C1B6", // 무기력
