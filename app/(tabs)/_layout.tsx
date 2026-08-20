@@ -1,7 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 import { useEffect } from "react";
 
-import theme from "@/design/theme";
+import { background, motion } from "@/design/ds";
 import { currentUserId, useAuth } from "@/features/auth/model/auth";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 
@@ -53,8 +53,8 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         animation: "fade",
-        animationDuration: theme.motion.spec.screen.duration,
-        contentStyle: { backgroundColor: theme.colors.semantic.background },
+        animationDuration: motion.duration,
+        contentStyle: { backgroundColor: background.normal },
       }}
     />
   );

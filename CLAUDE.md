@@ -6,7 +6,7 @@
 [`docs/spec/`](docs/spec/SNAPSHOT.md)(동결 스냅샷 · 직접 수정 금지), 시각 값은
 [`docs/design/`](docs/design/IMPORT.md)(새 디자인 스냅샷)에 있다.
 **상류 접근은 더 이상 전제하지 않는다** (2026-08-14 D8 — [`PLAN.md`](PLAN.md) §0).
-재반입·`sync:theme` 은 폐기 수순이고, 규칙·값의 후속 결정은 이 저장소에서 한다.
+재반입은 폐기됐고(`sync:theme` 은 2026-08-20 삭제), 규칙·값의 후속 결정은 이 저장소에서 한다.
 
 > 🎨 **디자인 체계가 다시 바뀐다 — 3세대 「Momentory DS」** (2026-08-20 착수).
 > **SSOT 는 [`design-reference/design.md`](design-reference/design.md) 하나다**
@@ -116,15 +116,14 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 
 ## 생성물·반입물 — 직접 고치지 말 것
 
-- `src/design/theme.ts` ← **동결** (1세대 상류 생성물 — CI `check:theme` 가 무변경을 검증)
 - `design-reference/**` ← **3세대 Momentory DS 반입 패키지** — 디자인 확정 상태를 그대로
   보존한 것이라 리팩터·리포맷 금지(`.prettierignore` 에 있다). SSOT 는 그 안의 `design.md`
 - `docs/spec/**` ← 동결 스냅샷 · `docs/design/**` ← 2세대 반입 스냅샷 — 둘 다 직접 수정 금지
 - `ios/` `android/` ← `app.config.ts`. `npx expo prebuild`
 
-**세 세대의 토큰이 다 지워질 때까지가 이 전환이다** — `theme.ts` · `tokens.mvp.ts` ·
-`paper.ts` 셋 다 최종적으로 삭제된다(`scripts/sync-theme.mjs`·`check:theme` 도 함께).
-그때까지 **한 화면 안에 두 체계를 섞지 않는다** — 화면 단위로 통째로 갈아탄다.
+✅ **전환이 끝났다** (2026-08-20 · `PLAN.md` A-16). `theme.ts` · `tokens.mvp.ts` ·
+`paper.ts` 와 `scripts/sync-theme.mjs`·`sync:theme`·`check:theme` 이 **전부 삭제됐다**.
+이제 `src/design/` 에는 `ds/` 하나뿐이고, 화면은 전부 3세대다.
 
 ⚠ **디자인 파일에 제품 규칙을 넣지 않는다.** 토큰이 지워질 때 규칙이 조용히 사라진다 —
 실제로 `tokens.mvp.ts` 안에 일정 접기(5) · 「기타」 12자 · 일기 500자가 섞여 있었고
@@ -321,8 +320,6 @@ CI 와 로컬 검증의 정본은 [`docs/CONTRIBUTING.md` 「품질 게이트」
 ```bash
 npm start            npm run typecheck    npm run lint
 npm run test         npm run format:check
-npm run check:theme  # 생성물 자기 검증 — 상류 없이 돈다
 npm run sync:api     # 서버 OpenAPI 계약 재반입 — docs/api/README.md
 npm run android      # 공식 개발 환경인 dev client 빌드 — Expo Go 는 지원하지 않는다
-npm run sync:theme   # ⚠ 폐기 수순 (D8) — 돌리지 않는다. theme.ts 는 동결
 ```

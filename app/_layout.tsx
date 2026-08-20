@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
-import theme from "@/design/theme";
+import { background, motion } from "@/design/ds";
 import { AppProviders } from "@/lib/providers";
 
 /**
@@ -18,8 +18,8 @@ export default function RootLayout() {
           headerShown: false,
           // 화면 전환은 Fade only — 슬라이드 없음 (theme.motion.spec.screen)
           animation: "fade",
-          animationDuration: theme.motion.spec.screen.duration,
-          contentStyle: { backgroundColor: theme.colors.semantic.background },
+          animationDuration: motion.duration,
+          contentStyle: { backgroundColor: background.normal },
         }}
       >
         {/*

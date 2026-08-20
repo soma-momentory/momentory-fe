@@ -11,7 +11,7 @@
 토큰(`src/design/theme.ts`)과 폰트는 커밋돼 있다.
 
 설계 상류(momentory — 리모트 없는 로컬 저장소)에 접근할 일은
-**재반입과 `npm run sync:theme` 둘뿐**이고, 전부 상류 접근 담당자의 몫이다
+**재반입뿐**이고, 상류 접근 담당자의 몫이다
 (절차: [spec/SNAPSHOT.md](spec/SNAPSHOT.md)). 상류 폴더가 없어서 실패하는
 일반 개발 절차는 없어야 한다 — 있다면 그것이 버그다.
 
@@ -125,20 +125,19 @@ fix: 아웃박스 재생에 멱등 키를 더한다
 **이 표가 정본이다. `.github/workflows/ci.yml` 과 어긋나면 이 표와 ci.yml 을 같이 고친다.**
 전 단계가 **상류 폴더 없이** 돈다.
 
-| 순서 | 명령                   | 무엇을 잡나                                                |
-| ---- | ---------------------- | ---------------------------------------------------------- |
-| 1    | `npm ci`               | lockfile 과 동일한 트리                                    |
-| 2    | `npm run check:theme`  | 생성물 `theme.ts` 손 수정 (sha256 자기 검증 — 상류 불필요) |
-| 3    | `npm run typecheck`    | 타입 오류                                                  |
-| 4    | `npm run lint`         | 규칙 위반 — **경고도 실패** (`--max-warnings 0`)           |
-| 5    | `npm run format:check` | Prettier 서식                                              |
-| 6    | `npm run test -- --ci` | 화면 규칙·store·라우팅 테스트                              |
-| 7    | 시크릿 추적 검사       | `.env`·키 파일이 이력에 들어갔는지                         |
+| 순서 | 명령                   | 무엇을 잡나                                      |
+| ---- | ---------------------- | ------------------------------------------------ |
+| 1    | `npm ci`               | lockfile 과 동일한 트리                          |
+| 3    | `npm run typecheck`    | 타입 오류                                        |
+| 4    | `npm run lint`         | 규칙 위반 — **경고도 실패** (`--max-warnings 0`) |
+| 5    | `npm run format:check` | Prettier 서식                                    |
+| 6    | `npm run test -- --ci` | 화면 규칙·store·라우팅 테스트                    |
+| 7    | 시크릿 추적 검사       | `.env`·키 파일이 이력에 들어갔는지               |
 
 로컬에서 PR 전에 같은 것을 돌린다:
 
 ```bash
-npm run check:theme && npm run typecheck && npm run lint && npm run format:check && npm test
+npm run typecheck && npm run lint && npm run format:check && npm test
 ```
 
 ## 값을 다루는 세 등급
@@ -196,14 +195,13 @@ Expo SDK 57 트리의 peer 충돌(expo 가 고정한 `react@19.2.3` vs `react-do
 
 직접 고치면 다음 생성 때 덮인다. **소스를 고치고 다시 만든다.**
 
-| 생성물·반입물         | 소스                            | 다시 만들기                                                                       |
-| --------------------- | ------------------------------- | --------------------------------------------------------------------------------- |
-| `src/design/theme.ts` | 상류 `05_도구/lib.mjs`          | 담당자: 상류에서 export 후 `npm run sync:theme` ([SNAPSHOT.md](spec/SNAPSHOT.md)) |
-| `docs/spec/**`        | 상류 `09_MVP/` 등               | 담당자: 재반입 절차 ([SNAPSHOT.md](spec/SNAPSHOT.md))                             |
-| `ios/` `android/`     | `app.config.ts` + config plugin | `npx expo prebuild --clean`                                                       |
+| 생성물·반입물     | 소스                            | 다시 만들기                                           |
+| ----------------- | ------------------------------- | ----------------------------------------------------- |
+| `docs/spec/**`    | 상류 `09_MVP/` 등               | 담당자: 재반입 절차 ([SNAPSHOT.md](spec/SNAPSHOT.md)) |
+| `ios/` `android/` | `app.config.ts` + config plugin | `npx expo prebuild --clean`                           |
 
 `theme.ts` 는 헤더에 원본 커밋 SHA 와 본문 sha256 을 달고 있다.
-`npm run check:theme` 가 손댔는지 검사하고 CI 가 매번 돌린다. `docs/spec/**` 도 같은
+⚠ 옛 생성물 `theme.ts` 와 그 검사(`check:theme`)는 **3세대 이관이 끝나면서 사라졌다**(`PLAN.md` A-16). `docs/spec/**` 은 같은
 헤더 규약을 쓴다(검증은 수동 — SNAPSHOT.md).
 
 **생성물을 커밋하는 이유**는 재현성이다 — 저장소 밖 파일에 의존하면
@@ -235,10 +233,8 @@ npm run typecheck      # tsc --noEmit
 npm run lint           # eslint (경고 0)
 npm run test           # jest        (test:watch — 감시 모드)
 npm run format         # prettier 쓰기 (format:check — 검사만, CI 용)
-npm run check:theme    # 생성물 자기 검증 — 상류 불필요
 
 # 담당자 전용 (상류 로컬 폴더 필요)
-npm run sync:theme     # 상류 토큰 다시 가져오기 — docs/spec/SNAPSHOT.md
 ```
 
 ## 변경 이력

@@ -21,7 +21,6 @@ jobs:
 
       # 생성물이 손으로 수정됐는지 본다.
       # 상류 저장소 없이 도는 검사다 — 커밋된 파일의 자기 일관성만 확인한다.
-      - run: npm run check:theme
 
       - run: npm run typecheck
       - run: npm run lint
