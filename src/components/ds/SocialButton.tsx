@@ -132,7 +132,6 @@ const styles = StyleSheet.create({
     gap: space.sm,
     paddingHorizontal: space.lg,
     borderRadius: radius.medium,
-    overflow: "hidden",
   },
   label: LABEL,
   // 면은 브랜드 색 그대로 두고 흐리게만 — 어느 줄이 무엇인지는 남는다

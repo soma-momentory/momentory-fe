@@ -25,6 +25,33 @@ import { interaction, label, primary, social, status, zIndex } from "@/design/ds
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
 
+/**
+ * 누르는 것 넷은 **둥근 클립을 쓰지 않는다.**
+ *
+ * `borderRadius` + `overflow: "hidden"` 을 함께 두면 Android(Fabric)에서 둥근 클립이
+ * 하드웨어 레이어를 만들고, 그 뒤 자식이 다시 그려져도 레이어가 무효화되지 않는다 —
+ * 면만 새 색으로 칠해지고 **글자·아이콘이 사라진다.** 실기기에서 「색은 바뀌는데
+ * 글자가 없다」로 드러났다(`Button.tsx` 머리말).
+ *
+ * 클립은 필요하지도 않다 — 스크림이 자기 `borderRadius` 를 들고 있다.
+ */
+describe("누름 스크림을 얹는 것들 — 둥근 클립을 쓰지 않는다", () => {
+  const cases: [string, React.ReactElement][] = [
+    ["Button", <Button key="b" label="저장" onPress={() => {}} />],
+    ["Chip", <Chip key="c" label="행복함" onPress={() => {}} />],
+    [
+      "IconButton",
+      <IconButton key="i" name="close" accessibilityLabel="닫기" onPress={() => {}} />,
+    ],
+    ["SocialButton", <SocialButton key="s" provider="kakao" label="계속하기" onPress={() => {}} />],
+  ];
+
+  it.each(cases)("%s", async (_name, element) => {
+    const { getByRole } = await render(element);
+    expect(flatten(getByRole("button").props.style).overflow).toBeUndefined();
+  });
+});
+
 describe("Button", () => {
   it("solid 면은 primary.heavy 다 — 시안의 primary.normal 은 흰 글자에서 2.9 라 못 쓴다", async () => {
     const { getByRole } = await render(<Button label="저장" onPress={() => {}} />);
@@ -54,6 +81,16 @@ describe("Button", () => {
       <Button label="삭제" variant="destructive" onPress={() => {}} />,
     );
     expect(flatten(getByRole("button").props.style).backgroundColor).toBe(status.negative);
+  });
+
+  it("비활성에서 활성으로 바뀌어도 라벨이 남는다", async () => {
+    const { getByText, rerender } = await render(
+      <Button label="다음" disabled onPress={() => {}} />,
+    );
+    expect(flatten(getByText("다음").props.style).color).toBe(label.disabled);
+
+    await rerender(<Button label="다음" onPress={() => {}} />);
+    expect(flatten(getByText("다음").props.style).color).toBe(label.onFill);
   });
 
   // rest 를 먼저 펼치므로 호출자가 준 상태는 살고 잠금은 우리가 쥔다

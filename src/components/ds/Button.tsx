@@ -41,6 +41,17 @@ import { Text } from "./Text";
  * 멈춰 색이 안 바뀌던 문제의 원인이 그 간섭이었다). RN 에는 트랜지션이 없으므로
  * 회피책은 필요 없고, **스크림 방식만 그대로 가져왔다.**
  *
+ * ## ⚠ `overflow: "hidden"` 을 다시 넣지 않는다
+ *
+ * `borderRadius` 와 함께 두면 **Android(Fabric)에서 라벨이 사라진다.** 둥근 클립이
+ * 하드웨어 레이어를 만드는데, 그 뒤 자식이 다시 그려져도(`disabled` 가 풀리는 순간)
+ * 레이어가 무효화되지 않아 **면만 새 색으로 칠해지고 글자는 안 그려진다.**
+ * 실기기에서 「색은 바뀌는데 글자가 없다」로 드러났다 — 처음부터 활성이던 버튼
+ * (`03` 시작하기)은 멀쩡하고, 비활성에서 활성으로 넘어간 버튼(`04`·`05`)만 비었다.
+ *
+ * 클립은 애초에 필요 없다 — **스크림이 자기 `borderRadius` 를 들고 있다.**
+ * 같은 짝을 쓰던 `Chip`·`IconButton`·`SocialButton` 에서도 함께 지웠다.
+ *
  * ## ⚠ solid 의 면은 `primary.heavy` 다
  *
  * `design.md` 는 `#7C9E86` + 흰 라벨을 지정하는데 그 조합이 **2.91** 로 AA 미달이다.
@@ -153,8 +164,6 @@ const styles = StyleSheet.create({
     gap: space.sm,
     paddingHorizontal: space.lg,
     borderRadius: radius.medium,
-    // 스크림이 모서리 밖으로 새지 않게
-    overflow: "hidden",
   },
   fill: { alignSelf: "stretch" },
   // 비활성은 면·라벨 색으로만 말한다 — 경고 아이콘·문구를 붙이지 않는다(RULES 4)

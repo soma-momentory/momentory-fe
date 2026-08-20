@@ -79,7 +79,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: space.md,
     borderRadius: radius.full,
-    overflow: "hidden",
   },
   // 1px → 2px. **두께 변화가 선택 신호의 일부**라 여기서 같게 맞추지 않는다
   // (§9 · `RULES.md` 「색만으로 선택 표시 금지」). 칩 테두리는 카드의 hairline 이
