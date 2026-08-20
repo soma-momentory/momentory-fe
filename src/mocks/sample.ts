@@ -14,7 +14,7 @@ import { SAMPLE_TODAY } from "@/lib/clock";
  * 일정 4개 · 순간 2개 · 회고 시각 21:30. 그 날짜는 `SampleClock`(`src/lib/clock.ts`)
  * 이 들고 있다 — 데이터와 「오늘」이 같은 값을 봐야 하기 때문이다.
  *
- * ⚠ **가장 많이 고른 감정은 기간마다 다른 값**이다 — 전체 화남/답답(마이) ·
+ * ⚠ **가장 많이 고른 감정은 기간마다 다른 값**이다 — 전체 화남·답답함(마이) ·
  * 이번 달 행복함(보관함) · 그 주 평온함(리포트). **한 값을 세 곳에 넣지 않는다.**
  *
  * 타입은 소유하지 않는다 — `Schedule`·`Moment` 는 `features/home/model/types.ts`,
@@ -36,7 +36,7 @@ export const SAMPLE_WEATHER: Weather = { label: "맑음", celsius: 27 };
  * 샘플 하루 — **`meta.sampleData.todaySchedules` 가 정본**이다.
  *
  * ```
- * 팀 회의 · 화남/답답 · 마침
+ * 팀 회의 · 화남·답답함 · 마침
  * 발표 준비 · 행복함 · 마침
  * 면접 스터디 · 불안함        ← 감정은 있고 마침은 없다
  * 운동 가기
@@ -44,7 +44,7 @@ export const SAMPLE_WEATHER: Weather = { label: "맑음", celsius: 27 };
  *
  * 그래서 **마침 2/4** 이고 **감정 기록 3개**다 — 둘이 어긋나 보여도 맞는 값이다
  * (마침과 감정은 서로를 요구하지 않는다). `C1` 재료 카드의 「감정 기록 3개」와
- * `C2` 의 감정 3개(화남/답답 · 행복함 · 불안함)가 이 값에서 나온다.
+ * `C2` 의 감정 3개(화남·답답함 · 행복함 · 불안함)가 이 값에서 나온다.
  *
  * `C2` 의 「밤 3/4 마침」은 **사용자가 그 사이 면접 스터디를 마친 상태**다 —
  * 홈과 같은 store 를 보므로 화면에 숫자를 박지 않고 실제 값이 나오게 둔다
@@ -64,7 +64,7 @@ export const SAMPLE_SCHEDULES: Schedule[] = [
     externalId: "cal-1",
     done: true,
     doneAt: `${SAMPLE_TODAY}T11:20:00`,
-    emotions: [3], // 화남/답답
+    emotions: [3], // 화남·답답함
     hidden: false,
   },
   {
@@ -225,14 +225,14 @@ export const SAMPLE_LAST_MONTH_EMOTIONS: Partial<Record<EmotionId, number>> = {
  * **전체 기간**의 감정별 기록 수 — 마이(`M1`)의 「가장 많이 기록」이 쓴다.
  *
  * ⚠ **일정에 붙은 감정까지 센 값**이라 일기 태그만으로는 나오지 않는다
- * (`RULES.md` — "전체 **화남/답답**(마이 · 일정 감정 포함)"). 지난 달들의
+ * (`RULES.md` — "전체 **화남·답답함**(마이 · 일정 감정 포함)"). 지난 달들의
  * `Schedule` 을 MVP 가 들고 있지 않아 서버가 줄 집계를 샘플로 둔다.
  *
- * **기간마다 다른 값**이다 — 전체는 화남/답답, 이번 달은 행복함(보관함),
+ * **기간마다 다른 값**이다 — 전체는 화남·답답함, 이번 달은 행복함(보관함),
  * 그 주는 평온함(리포트). **한 값을 세 곳에 넣지 않는다.**
  */
 export const SAMPLE_ALL_TIME_EMOTIONS: Partial<Record<EmotionId, number>> = {
-  3: 11, // 화남/답답 — 전체 1위
+  3: 11, // 화남·답답함 — 전체 1위
   4: 9,
   9: 8,
   1: 7,
