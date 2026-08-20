@@ -35,7 +35,7 @@ export const OPTIONS_PATH = "/api/v1/onboarding/options";
  */
 export const OPTIONS_TIMEOUT_MS = 8_000;
 
-/** 칩 하나. `id` 는 서버의 `code` 다 — 이름만 화면 어휘(`ChipFlow`)에 맞췄다 */
+/** 칩 하나. `id` 는 서버의 `code` 다 — 이름만 화면 어휘(`QuickReplies`)에 맞췄다 */
 export type Option = { id: string; label: string };
 
 export type NicknamePolicy = {

@@ -80,8 +80,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     "expo-router",
     "expo-status-bar",
-    // 08 회고 시간 — OS 시간 피커. 커스텀 휠을 만들지 않는다 (08.md)
-    "@react-native-community/datetimepicker",
     // M2-0 인증 부트스트랩 — 세션 토큰 저장 (ARCHITECTURE §3)
     "expo-secure-store",
     // 회고 시간 알림(08 · M3) — 전부 로컬 알림이다. 푸시 토큰도 서버도 없다.

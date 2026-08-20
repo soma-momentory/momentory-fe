@@ -21,13 +21,6 @@ jest.mock(
     require("react-native-safe-area-context/jest/mock").default,
 );
 
-// OS 시간 피커(08)는 네이티브 모듈이라 테스트 환경에 없다. 화면 테스트가 보는 것은
-// "피커를 연다/닫는다"는 상태이지 피커 자체가 아니므로 빈 컴포넌트로 둔다.
-jest.mock("@react-native-community/datetimepicker", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-
 // 알림도 네이티브다. **기본은 「허용됨」** — 대부분의 테스트는 알림을 신경 쓰지
 // 않는데, 기본이 거부면 `08` 의 [다음] 이 알림을 끄는 것으로 읽혀 관계없는
 // 테스트가 함께 깨진다. 권한을 검사하는 테스트가 각자 이 목을 바꿔 쓴다.

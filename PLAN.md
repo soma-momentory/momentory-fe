@@ -20,15 +20,15 @@ Wanted Design System 구조에 Momentory 색을 얹은 확정본으로 **전 화
 
 ## A-0. 지금까지 (2026-08-20)
 
-| Phase               | 상태 | 무엇                                                                                                                                                            |
-| ------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0. 반입 정리**    | ✅   | 패키지를 `design-reference/` 로 옮겼다(`.claude/hooks` 의 Codex 리뷰가 이 경로를 SSOT 로 읽는다) · 원본 보존이라 `.prettierignore` 등록 · 압축본은 `.gitignore` |
-| **1. 도메인 구출**  | ✅   | 아래 A-1                                                                                                                                                        |
-| **2. 새 토큰**      | ✅   | `src/design/ds/`(color · typography · metrics) — 아래 A-5. **대비 검수에서 시안 값 여섯을 보정**했다                                                            |
-| 3. 새 공용 컴포넌트 | ✅   | `src/components/ds/` 코어 12개 + Wanted 아이콘 26개 — 아래 A-6                                                                                                  |
-| 4. 화면             | 진행 | **로그인 ✅**(기준 · A-7) · **온보딩 ✅**(A-9) · **홈·일정 ✅**(A-10) · **마이 ✅**(A-11) · **보관함·리포트 ✅**(기록 없음 — A-12) → 일기 → 쉼터                |
-| **4-후. 합치기**    | —    | 병렬 이관이 남긴 중복·어긋남 — 아래 **A-12**. 다음 화면(일기)을 시작하기 전에 닫는다                                                                            |
-| 5. 삭제             | —    | `theme.ts` · `tokens.mvp.ts` · `paper.ts` · `sync-theme.mjs` · `check:theme` · 캐릭터 자산 · **`datetimepicker`(마이 이관으로 참조 0 이 됐다 — A-11)**          |
+| Phase               | 상태 | 무엇                                                                                                                                                                                                         |
+| ------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **0. 반입 정리**    | ✅   | 패키지를 `design-reference/` 로 옮겼다(`.claude/hooks` 의 Codex 리뷰가 이 경로를 SSOT 로 읽는다) · 원본 보존이라 `.prettierignore` 등록 · 압축본은 `.gitignore`                                              |
+| **1. 도메인 구출**  | ✅   | 아래 A-1                                                                                                                                                                                                     |
+| **2. 새 토큰**      | ✅   | `src/design/ds/`(color · typography · metrics) — 아래 A-5. **대비 검수에서 시안 값 여섯을 보정**했다                                                                                                         |
+| 3. 새 공용 컴포넌트 | ✅   | `src/components/ds/` 코어 12개 + Wanted 아이콘 26개 — 아래 A-6                                                                                                                                               |
+| 4. 화면             | 진행 | **로그인 ✅**(기준 · A-7) · **온보딩 ✅**(A-9) · **홈·일정 ✅**(A-10) · **마이 ✅**(A-11) · **보관함·리포트 ✅**(기록 없음 — A-12) → 일기 → 쉼터                                                             |
+| **4-후. 합치기**    | —    | 병렬 이관이 남긴 중복·어긋남 — 아래 **A-12**. 다음 화면(일기)을 시작하기 전에 닫는다                                                                                                                         |
+| 5. 삭제             | 진행 | **1차 완료**(A-13) — 죽은 컴포넌트 13 · 자산 11 · `datetimepicker`. **남은 것은 화면이 아직 쓴다**: `theme.ts` · `tokens.mvp.ts` · `paper.ts` · `sync-theme.mjs` · `check:theme` · 카피바라·병아리·앉은 바바 |
 
 ### A-1. Phase 1 — 도메인이 디자인에서 떨어졌다 ✅
 
@@ -368,6 +368,40 @@ store·라우팅·실패 처리 그대로이고, 기존 테스트 6개가 수정
 | **`ds/Modal` 이 포털이 아니다** | `position: absolute` 라 ScrollView 안에서 열면 보이지 않는다 — 보관함이 부딪혀 우회했다                                                                                                      | 화면 최상단으로 올리거나 RN `Modal` 로 감싼다. **우회한 화면이 늘기 전에** 고친다                    |
 | **보관함·리포트 기록 없음**     | 같은 Phase 4-2 인데 `PLAN.md` 에 판정을 남기지 않고 병합됐다(#74). `ds/TabScreen`·`Calendar`·`EmotionDot`·`SearchField`·`ViewSwitcher` 가 거기서 왔다는 사실이 `ds/index.ts` 머리말에만 있다 | 그 화면을 다시 손댈 때 **왜 그렇게 됐는지 물어볼 곳이 없다.** 코드를 읽어 판정 표를 뒤늦게 채운다    |
 | **`07` 칩의 이모지**            | 서버 `restMethods` 라벨이 「😴 잠자기」로 온다                                                                                                                                               | **BE 에서 뺀다**(결정 N10) — FE 는 코드 변경 없음                                                    |
+
+### A-13. Phase 5 — 죽은 것 1차 삭제 ✅ (2026-08-20)
+
+**참조 0 인 것만 지웠다.** 「옛 디자인의 것」이 아니라 **아무도 부르지 않는 것**이
+기준이다 — 일기 · 회고 · 쉼터 · `S0` 가 아직 2세대 위에 서 있어서, 옛것이라는 이유로
+지우면 살아 있는 화면이 깨진다.
+
+**지운 것** — 컴포넌트 13(테스트 3 포함) · 자산 11 · 의존성 1
+
+| 무엇                                                                  | 왜 죽었나                                                             |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `primitives/{InputRow,BackChevron,ProgressDots}`                      | 온보딩이 3세대로 가면서 `OnboardingTopBar` 가 사라졌다                |
+| `onboarding/{OnboardingTopBar,OtherRow}`                              | 각각 `TopNavigation` · `OtherReplyInput` 로 대체                      |
+| `common/{ConfirmCard,Toggle,Toast}`                                   | 마이가 `ds/Modal`·`ds/Toast` 로 갈아탔다                              |
+| `archive/CalendarMonth` → `icons/moodIcons` → `assets/moods/*.png`(9) | 보관함이 `ds/Calendar` + `ds/EmotionDot` 로 갈아탔다 — **연쇄**       |
+| `chat/{Avatar,ChipFlow}` → `assets/baba/face-default.png`             | 캐릭터 없는 시안(N8) · 칩은 `QuickReplies` 로                         |
+| `assets/baba/face-joy.png`                                            | `C1` 이 이미 뺐다                                                     |
+| `features/my/model/stats.ts`                                          | 마이 이관이 놓고 갔다 — ⚠ A-11 은 「유지한 것」에 넣었는데 **틀렸다** |
+| `@react-native-community/datetimepicker`                              | `WheelPicker` 가 대신한다(A-11)                                       |
+
+`Avatar` 는 **자기 테스트만이 유일한 참조**였다 — 테스트가 살아 있다고 코드가 살아
+있는 것은 아니다. `layout.test.tsx` 는 `ChatLayout`·`TypingDots` 도 보므로
+**`Avatar` 블록만 걷어냈다.**
+
+**남긴 것과 이유** — 「옛 디자인」이지만 **지금 그려진다**
+
+| 무엇                                                         | 누가 쓰나                                               |
+| ------------------------------------------------------------ | ------------------------------------------------------- |
+| `assets/characters/{capybara,capybara2,chick}-trim.png`      | `icons/characters` → `chat/RetroScene` → **회고 6화면** |
+| `assets/baba/sitting-greeting.png`                           | `app/index.tsx`(`S0`)                                   |
+| `design/theme.ts`(47) · `tokens.mvp.ts`(30) · `paper.ts`(43) | 아직 안 옮긴 화면 전부                                  |
+
+**캐릭터를 지우는 일은 삭제가 아니라 이관이다** — 회고 · 쉼터 · `S0` 가 3세대로
+넘어와야 참조가 끊긴다. `S0` 는 결정 **N4** 가 아직 열려 있다(유지 / 재설계 / 삭제).
 
 ---
 
