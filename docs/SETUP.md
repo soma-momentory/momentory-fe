@@ -334,12 +334,12 @@ keytool -exportcert -alias androiddebugkey -keystore "$ks" -storepass android \
 >
 > 로컬로 띄운 서버에 붙일 때 알아 두면 편한 것:
 >
-> | 경로                | 무엇                                                  |
-> | ------------------- | ----------------------------------------------------- |
-> | `/actuator/health`  | 살아 있는지 — 인증 없이 열려 있다                     |
-> | `/swagger-ui/`      | 계약을 눈으로 볼 때. 인증 없이 열려 있다              |
-> | `/v3/api-docs`      | `npm run sync:api` 가 받는 곳. 인증 없이 열려 있다    |
-> | `/api/v1/auth/**`   | 로그인·갱신·로그아웃. 나머지는 전부 Bearer 를 요구한다 |
+> | 경로               | 무엇                                                   |
+> | ------------------ | ------------------------------------------------------ |
+> | `/actuator/health` | 살아 있는지 — 인증 없이 열려 있다                      |
+> | `/swagger-ui/`     | 계약을 눈으로 볼 때. 인증 없이 열려 있다               |
+> | `/v3/api-docs`     | `npm run sync:api` 가 받는 곳. 인증 없이 열려 있다     |
+> | `/api/v1/auth/**`  | 로그인·갱신·로그아웃. 나머지는 전부 Bearer 를 요구한다 |
 >
 > ⚠ **Swagger 는 운영에서도 기본 켜짐**이다(`application-prod.yml` 의
 > `${SWAGGER_ENABLED:true}`). 배포 전에 BE 에 확인할 자리다.

@@ -51,17 +51,17 @@ OpenAPI 는 **모양**을 말하지만 다음은 말하지 않는다. 원래 셋
 화면은 서버 모양을 보지 않는다. **`src/features/<도메인>/data/` 의 어댑터가 경계**이고,
 각 어댑터 파일 머리의 JSDoc 이 그 엔드포인트에 대한 이 저장소 쪽 기록이다.
 
-| 어댑터                                                  | 엔드포인트                                                                                                                              |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/features/auth/data/kakaoAuthApi.ts`                | `POST /api/v1/auth/kakao`                                                                                                                 |
-| `src/features/auth/data/reissueApi.ts`                  | `POST /api/v1/auth/reissue`                                                                                                               |
-| `src/features/auth/data/logoutApi.ts`                   | `POST /api/v1/auth/logout`                                                                                                                |
-| `src/features/auth/data/meApi.ts`                       | `GET /api/v1/users/me`                                                                                                                    |
-| `src/features/onboarding/data/optionsApi.ts`            | `GET /api/v1/onboarding/options`                                                                                                          |
-| `src/features/onboarding/data/completeOnboardingApi.ts` | `PUT /api/v1/users/me/onboarding`                                                                                                         |
-| `src/features/retro/data/retroApi.ts`                   | `POST /api/v1/retrospect` · `POST …/{id}/messages`                                                                                        |
-| `src/features/home/data/scheduleApi.ts`                 | `GET`·`POST /api/v1/schedules` · `PATCH`·`DELETE …/{id}` · `PATCH …/{id}/visibility` · `PATCH …/order` · `PUT …/{id}/completion` |
-| `src/features/calendar/data/calendarSyncApi.ts`         | `POST /api/v1/schedules/sync`                                                                                                             |
+| 어댑터                                                  | 엔드포인트                                                                                                                            |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/features/auth/data/kakaoAuthApi.ts`                | `POST /api/v1/auth/kakao`                                                                                                             |
+| `src/features/auth/data/reissueApi.ts`                  | `POST /api/v1/auth/reissue`                                                                                                           |
+| `src/features/auth/data/logoutApi.ts`                   | `POST /api/v1/auth/logout`                                                                                                            |
+| `src/features/auth/data/meApi.ts`                       | `GET /api/v1/users/me`                                                                                                                |
+| `src/features/onboarding/data/optionsApi.ts`            | `GET /api/v1/onboarding/options`                                                                                                      |
+| `src/features/onboarding/data/completeOnboardingApi.ts` | `PUT /api/v1/users/me/onboarding`                                                                                                     |
+| `src/features/retro/data/retroApi.ts`                   | `POST /api/v1/retrospect` · `POST …/{id}/messages`                                                                                    |
+| `src/features/home/data/scheduleApi.ts`                 | `GET`·`POST /api/v1/schedules` · `PATCH`·`DELETE …/{id}` · `PATCH …/{id}/visibility` · `PATCH …/order` · `PUT …/{id}/completion`      |
+| `src/features/calendar/data/calendarSyncApi.ts`         | `POST /api/v1/schedules/sync`                                                                                                         |
 | `src/features/diary/data/diaryApi.ts`                   | `GET /api/v1/diaries` · `DELETE …/{id}` · `PUT …/by-retrospect/{retrospectId}` · `GET /api/v1/action-cards` · `PUT …/{id}/completion` |
 
 **26개 중 21개가 붙어 있다.**
@@ -78,22 +78,22 @@ OpenAPI 는 **모양**을 말하지만 다음은 말하지 않는다. 원래 셋
 
 `openapi.json` 에는 있고 어댑터가 없다. 순서는 [`docs/TASKS.md`](../TASKS.md) 「남은 API 연결」을 본다.
 
-| 엔드포인트                                | 왜 없나                                                                                       |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 엔드포인트                                | 왜 없나                                                                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `GET`·`PUT`·`DELETE /api/v1/memos/{date}` | **붙이지 않기로 했다**(2026-08-11 제품 결정) — 서버는 날짜당 하나(`{ content }`)인데 스키마 `Moment` 는 여럿이다 |
-| `GET /api/v1/diaries/{id}`                | 월별 목록(`GET /api/v1/diaries`)이 본문까지 그대로 채워 줘서 부를 자리가 없다                 |
-| `GET /api/v1/action-cards/{id}`           | 같은 이유. 카드는 `retrospectId` 로 일기와 조인해 목록에서 세운다                             |
+| `GET /api/v1/diaries/{id}`                | 월별 목록(`GET /api/v1/diaries`)이 본문까지 그대로 채워 줘서 부를 자리가 없다                                    |
+| `GET /api/v1/action-cards/{id}`           | 같은 이유. 카드는 `retrospectId` 로 일기와 조인해 목록에서 세운다                                                |
 
 ## 경계가 갈리는 자리 — 알고 붙였다
 
-| 무엇                     | 서버                                                                     | 프론트                                                                    |
-| ------------------------ | ------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| 하루 경계                | **KST 자정** (`TimeZonePolicy`)                                          | **04:00 앱-하루** (`src/lib/clock.ts`)                                      |
-| 월 조회 창               | `[그 달 1일 00:00 KST, 다음 달 1일 00:00 KST)` 반열림                    | `diaryApi.ts` 의 `kstDate` 가 **서버 경계에 맞춘다** — 여기는 어긋나지 않는다 |
-| 회고 「하루 한 번」 판정 | **KST 자정** 기준으로 오늘 일기가 있으면 `409` (BE `hasDiaryOn`)         | 화면은 앱-하루(04:00)로 센다 — ⚠ **자정~04시에 두 판정이 갈린다**            |
-| 일정 감정               | `emotion` **단수 nullable** · `completed=false` 에 감정을 보내면 400     | 감정을 고르면 마침이 함께 켜진다([`PRODUCT.md`](../PRODUCT.md) 「상류와 차이」 13) |
-| 일정 수정·삭제          | `PATCH`·`DELETE /{id}` 는 **`source=MANUAL` 만** — 캘린더 일정은 `404`   | 캘린더 일정은 `PATCH …/{id}/visibility` 로 **숨기기만** 한다                |
-| 캘린더 일정의 `externalId` | 화해 요청(`CalendarSyncEventRequest`)에만 있고 **응답에는 없다**       | `scheduleApi.ts` 가 `externalId: null` 로 둔다 — 화면이 원본 id 를 안 쓴다  |
+| 무엇                       | 서버                                                                   | 프론트                                                                             |
+| -------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 하루 경계                  | **KST 자정** (`TimeZonePolicy`)                                        | **04:00 앱-하루** (`src/lib/clock.ts`)                                             |
+| 월 조회 창                 | `[그 달 1일 00:00 KST, 다음 달 1일 00:00 KST)` 반열림                  | `diaryApi.ts` 의 `kstDate` 가 **서버 경계에 맞춘다** — 여기는 어긋나지 않는다      |
+| 회고 「하루 한 번」 판정   | **KST 자정** 기준으로 오늘 일기가 있으면 `409` (BE `hasDiaryOn`)       | 화면은 앱-하루(04:00)로 센다 — ⚠ **자정~04시에 두 판정이 갈린다**                  |
+| 일정 감정                  | `emotion` **단수 nullable** · `completed=false` 에 감정을 보내면 400   | 감정을 고르면 마침이 함께 켜진다([`PRODUCT.md`](../PRODUCT.md) 「상류와 차이」 13) |
+| 일정 수정·삭제             | `PATCH`·`DELETE /{id}` 는 **`source=MANUAL` 만** — 캘린더 일정은 `404` | 캘린더 일정은 `PATCH …/{id}/visibility` 로 **숨기기만** 한다                       |
+| 캘린더 일정의 `externalId` | 화해 요청(`CalendarSyncEventRequest`)에만 있고 **응답에는 없다**       | `scheduleApi.ts` 가 `externalId: null` 로 둔다 — 화면이 원본 id 를 안 쓴다         |
 
 ⚠ **자정~04시가 실제로 갈린다.** 22일 01:00 에 사용자가 회고를 시작하면 화면은 「21일의
 회고」로 세지만 서버는 **22일**로 판정한다. 21일 23:00 에 이미 회고를 마쳤다면 화면은
@@ -107,16 +107,16 @@ OpenAPI 는 **모양**을 말하지만 다음은 말하지 않는다. 원래 셋
 `ApiErrorResponse` 는 `{ code, message }` 하나뿐이고 코드는 아래가 전부다
 (BE `*ExceptionHandler` 전수 대조 · 2026-08-21).
 
-| 코드                                                                                                                        | 상태  | 언제                                                            |
-| --------------------------------------------------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------- |
-| `INVALID_REQUEST`                                                                                                           | `400` | 검증 실패 전반 · 잘못된 연·월 · 일정 순서 · 캘린더 화해 요청     |
-| `AUTHENTICATION_REQUIRED`                                                                                                   | `401` | 토큰의 사용자를 서버가 못 찾을 때                               |
-| `KAKAO_TOKEN_INVALID` · `KAKAO_APP_ID_MISMATCH` · `KAKAO_USER_ID_MISMATCH`                                                  | `401` | 카카오 인증 실패 세 갈래                                        |
-| `REFRESH_TOKEN_INVALID` · `REFRESH_TOKEN_REVOKED` · `REFRESH_TOKEN_EXPIRED`                                                 | `401` | 갱신 실패 세 갈래                                               |
+| 코드                                                                                                                         | 상태  | 언제                                                                 |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----- | -------------------------------------------------------------------- |
+| `INVALID_REQUEST`                                                                                                            | `400` | 검증 실패 전반 · 잘못된 연·월 · 일정 순서 · 캘린더 화해 요청         |
+| `AUTHENTICATION_REQUIRED`                                                                                                    | `401` | 토큰의 사용자를 서버가 못 찾을 때                                    |
+| `KAKAO_TOKEN_INVALID` · `KAKAO_APP_ID_MISMATCH` · `KAKAO_USER_ID_MISMATCH`                                                   | `401` | 카카오 인증 실패 세 갈래                                             |
+| `REFRESH_TOKEN_INVALID` · `REFRESH_TOKEN_REVOKED` · `REFRESH_TOKEN_EXPIRED`                                                  | `401` | 갱신 실패 세 갈래                                                    |
 | `SCHEDULE_NOT_FOUND` · `DIARY_NOT_FOUND` · `ACTION_CARD_NOT_FOUND` · `DAILY_MEMO_NOT_FOUND` · `RETROSPECT_SESSION_NOT_FOUND` | `404` | 없거나 **남의 것**일 때 — 소유권 실패도 404 다(존재를 흘리지 않는다) |
-| `ALREADY_RETROSPECTED_TODAY`                                                                                                | `409` | 오늘(KST) 이미 회고를 마쳤다 — `retroApi.ts` 가 안내로 받는다   |
-| `KAKAO_API_SERVER_ERROR` · `KAKAO_API_RESPONSE_ERROR`                                                                       | `502` | 카카오 쪽 오류                                                  |
-| `KAKAO_API_NETWORK_ERROR`                                                                                                   | `503` | 카카오에 닿지 못함                                              |
+| `ALREADY_RETROSPECTED_TODAY`                                                                                                 | `409` | 오늘(KST) 이미 회고를 마쳤다 — `retroApi.ts` 가 안내로 받는다        |
+| `KAKAO_API_SERVER_ERROR` · `KAKAO_API_RESPONSE_ERROR`                                                                        | `502` | 카카오 쪽 오류                                                       |
+| `KAKAO_API_NETWORK_ERROR`                                                                                                    | `503` | 카카오에 닿지 못함                                                   |
 
 **인증 없이 열린 경로는 넷뿐이다**(BE `SecurityConfiguration.PUBLIC_PATHS`):
 `/actuator/health` · `/swagger-ui/**` · `/v3/api-docs/**` · `/api/v1/auth/**`.
