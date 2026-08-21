@@ -17,6 +17,7 @@ import { fill, hairline, label as labelColor, radius, space } from "@/design/ds"
 import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
+import { openExternalLink } from "@/lib/links";
 import {
   getNotificationPermission,
   requestNotificationPermission,
@@ -52,8 +53,10 @@ import {
  * ## 그대로인 규칙
  *
  * - **연속 일수·점수·배지를 쓰지 않는다** (`RULES.md`)
- * - **갈 곳이 없는 줄은 눌리지 않게 둔다** — 문의·약관·회원 탈퇴. 눌리는데 아무 일도
- *   없는 줄을 만들지 않고, 왜 아직인지는 「준비 중」 한 줄이 말한다
+ * - **갈 곳이 없는 줄은 눌리지 않게 둔다** — 지금은 회원 탈퇴 하나뿐이다. 눌리는데
+ *   아무 일도 없는 줄을 만들지 않고, 왜 아직인지는 「준비 중」 한 줄이 말한다.
+ *   ⚠ 「지원」 세 줄은 2026-08-21 에 갈 곳이 생겼다 — 랜딩 페이지의 약관·개인정보
+ *   처리방침과 Notion 문의 폼을 **앱 안 브라우저**로 연다(`src/lib/links.ts`)
  * - **회원 탈퇴는 목록 밖**의 낮춘 글자다 — 로그아웃과 같은 무게로 보이지 않게.
  *   확인 화면이 아직 없어(`my.pendingStates`) 실행되지 않는다
  * - **알림 예약을 화면이 부르지 않는다** — 설정 store 를 `features/my/model/reminders.ts`
@@ -234,21 +237,37 @@ export default function My() {
         </Group>
 
         {/*
-            ⚠ 약관·문의는 **갈 곳이 아직 없다.** 약관 문안은 법률 검토 중이고
-            (`OPEN-ISSUES.md` R-10~R-15) 문의 채널도 정해지지 않았다. 정해지면
-            `onPress` 가 붙는다 — 그때까지 표식을 두지 않는다.
+            세 줄 다 **앱 안 브라우저**로 랜딩 페이지를 연다(2026-08-21 · `src/lib/links.ts`).
+            앱 안에 문안을 두지 않는 이유는 약관이 웹에서 갱신되기 때문이다 — 복사해
+            두면 배포 주기가 다른 두 벌이 생긴다.
+
+            ⚠ 옛 「정책 · 약관」 한 줄이 **이용약관 · 개인정보 처리방침 둘로 갈렸다** —
+            주소가 둘이라 한 줄로는 어느 쪽으로 갈지 말할 수 없다. 로그인 화면의 약관
+            줄과 **같은 이름**을 쓴다(「마이에서 언제든 다시 확인할 수 있어요」가
+            가리키는 곳이다).
           */}
         <Group label="지원">
           <ListCell
             title="문의하기"
             leading={<Icon name="send" size={20} color={labelColor.alternative} />}
-            value="준비 중"
+            onPress={() => void openExternalLink("support")}
+            chevron
           />
           <ListDivider />
           <ListCell
-            title="정책 · 약관"
+            title="이용약관"
             leading={<Icon name="document" size={20} color={labelColor.alternative} />}
-            value="준비 중"
+            onPress={() => void openExternalLink("terms")}
+            chevron
+          />
+          <ListDivider />
+          {/* 같은 글리프를 두 줄이 나눠 쓴다 — 세트에 자물쇠·방패가 없고,
+           **없는 글리프를 만들지 않는다**(`CLAUDE.md` 아이콘 규칙) */}
+          <ListCell
+            title="개인정보 처리방침"
+            leading={<Icon name="document" size={20} color={labelColor.alternative} />}
+            onPress={() => void openExternalLink("privacy")}
+            chevron
           />
         </Group>
 

@@ -16,6 +16,10 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
 }));
 
+// 앱 안 브라우저는 네이티브다 — 약관 줄이 무엇을 여는지만 본다
+jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn(() => Promise.resolve()) }));
+const browser = jest.requireMock("expo-web-browser") as { openBrowserAsync: jest.Mock };
+
 const replace = jest.mocked(router.replace);
 
 const mockSignIn = (outcome: SignInOutcome) => {
@@ -121,6 +125,29 @@ describe("Momentory DS 이관 — 구조가 바뀌었다", () => {
     expect(getByText("이용약관")).toBeTruthy();
     expect(getByText("개인정보 처리방침")).toBeTruthy();
     expect(getByText(/마이에서 언제든 다시 확인할 수 있어요/)).toBeTruthy();
+  });
+
+  it("약관 두 줄이 각자의 원문을 앱 안에서 연다", async () => {
+    // 2026-08-21 — 랜딩 페이지가 생겨 눌리게 됐다. 주소는 `src/lib/links.ts` 가 안다
+    const { getByText } = await render(<Login />);
+
+    for (const [label, path] of [
+      ["이용약관", "/terms"],
+      ["개인정보 처리방침", "/privacy"],
+    ] as const) {
+      browser.openBrowserAsync.mockClear();
+      await fireEvent.press(getByText(label));
+
+      await waitFor(() => expect(browser.openBrowserAsync).toHaveBeenCalledTimes(1));
+      expect(browser.openBrowserAsync.mock.calls[0]![0]).toContain(path);
+    }
+  });
+
+  it("약관 줄은 버튼이 아니라 링크다 — 이 화면에서 「버튼」은 소셜 3종뿐이다", async () => {
+    const { getAllByRole } = await render(<Login />);
+
+    expect(getAllByRole("button")).toHaveLength(3);
+    expect(getAllByRole("link")).toHaveLength(2);
   });
 
   it("동의 체크박스를 두지 않는다 — 로그인 행위가 동의다", async () => {

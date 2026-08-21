@@ -112,6 +112,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
       },
     ],
+    // 약관·개인정보 처리방침·문의는 웹 문서다 — 앱을 떠나지 않고 **앱 안에서**
+    // 연다(iOS SFSafariViewController · Android Custom Tabs). 로그인 화면의 약관 줄과
+    // 마이의 「지원」이 같은 통로(`src/lib/links.ts`)를 지난다.
+    "expo-web-browser",
     ...kakaoPlugin,
     ...insecureApiPlugin,
     [
