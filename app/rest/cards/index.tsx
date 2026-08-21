@@ -14,8 +14,8 @@ import {
 import { RestActionCard } from "@/components/rest/RestActionCard";
 import { label as labelColor, space, status } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
+import { useTodayContext } from "@/features/home/model/day";
 import { cardDaysIn, cardOn, datedCards, latestCardDay } from "@/features/rest/model/cards";
-import { clock } from "@/lib/clock";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -39,9 +39,8 @@ import { formatKoreanDateShort } from "@/lib/day";
  * ## 삭제는 ⋮ → 확인 모달 → 토스트
  *
  * 일기 상세와 **같은 문법**이다(⋮ 메뉴 · 되돌릴 수 없는 행동만 모달 · 결과는
- * 한 줄). 다른 점 하나: 일기는 되돌리기 창(6초)을 두는데 **행동카드는 두지
- * 않는다** — 카드는 「지난 행동카드」 목록에서 날짜로 다시 만날 수 있는 것이
- * 아니라 지우면 그날의 자리가 비는 것이라, 미루기보다 먼저 묻는다.
+ * 한 줄). 2026-08-21 부터 **일기도 되돌리기 줄을 두지 않아** 둘이 완전히 같아졌다 —
+ * 확인을 이미 한 번 받았으므로 되돌리기는 같은 것을 두 번 묻는 셈이었다.
  *
  * ⚠ 서버에 `DELETE /action-cards/{id}` 가 없어 **기기에서만** 지운다 — 지운 id 를
  * 기기에 남기고 다음 조회에서 걸러낸다(`features/diary/data/deletedCardStore.ts` ·
@@ -61,7 +60,7 @@ export default function RestCards() {
   const [picked, setPicked] = useState<string | null>(null);
   const selected = picked ?? latestCardDay(all);
   const [month, setMonth] = useState<string | null>(null);
-  const today = clock.today();
+  const { date: today } = useTodayContext();
   const shownMonth = month ?? (selected ?? today).slice(0, 7);
 
   const card = selected == null ? null : cardOn(all, selected);

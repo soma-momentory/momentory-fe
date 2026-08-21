@@ -5,9 +5,7 @@ import { StyleSheet, View } from "react-native";
 import { Button, Card, Icon, Text } from "@/components/ds";
 import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
 import { label as labelColor, primary, space } from "@/design/ds";
-import { currentUserId } from "@/features/auth/model/auth";
-import { useCalendarSync } from "@/features/calendar/model/calendarSync";
-import { useDay } from "@/features/home/model/day";
+import { syncDeviceCalendar } from "@/features/calendar/model/foregroundSync";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { requestCalendarAccess } from "@/lib/calendar";
 
@@ -47,11 +45,7 @@ export default function CalendarLink() {
     if (access.granted) {
       // 첫 적재 — **기다리지 않는다.** 이 화면은 동기화를 위한 곳이 아니고,
       // 실패해도 다음 실행이 같은 것을 다시 보낸다(화해는 멱등이다)
-      void currentUserId().then(async (userId) => {
-        if (userId == null) return;
-        const outcome = await useCalendarSync.getState().sync(userId);
-        if (outcome.kind === "synced") await useDay.getState().reload();
-      });
+      void syncDeviceCalendar();
     }
 
     asking.current = false;

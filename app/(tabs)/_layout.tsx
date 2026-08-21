@@ -2,10 +2,9 @@ import { Redirect, Stack } from "expo-router";
 import { useEffect } from "react";
 
 import { background, motion } from "@/design/ds";
-import { currentUserId, useAuth } from "@/features/auth/model/auth";
-import { useCalendarSync } from "@/features/calendar/model/calendarSync";
+import { useAuth } from "@/features/auth/model/auth";
+import { syncDeviceCalendar } from "@/features/calendar/model/foregroundSync";
 import { useDiary } from "@/features/diary/model/diary";
-import { useDay } from "@/features/home/model/day";
 
 /**
  * 탭 스택. **하단 탭은 여기서 그리지 않는다** — 각 화면이 `TabScreen` 으로
@@ -38,14 +37,14 @@ export default function TabsLayout() {
    *
    * 기다리지 않는다 — 홈은 캘린더 없이도 그려진다. 실패는 조용하고 다음 실행이
    * 다시 보낸다(`RULES.md` 4).
+   *
+   * ⚠ **여기는 콜드 스타트뿐이다.** 앱이 살아 있는 동안 캘린더 앱에서 고친 것은
+   * 이 훅이 다시 돌지 않으므로 못 본다 — 그건 포그라운드 복귀가 맡는다
+   * (`providers.tsx` 의 `startCalendarForegroundSync`).
    */
   useEffect(() => {
     if (status !== "authenticated") return;
-    void currentUserId().then(async (userId) => {
-      if (userId == null) return;
-      const outcome = await useCalendarSync.getState().sync(userId);
-      if (outcome.kind === "synced") await useDay.getState().reload();
-    });
+    void syncDeviceCalendar();
   }, [status]);
 
   /**

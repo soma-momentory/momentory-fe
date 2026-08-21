@@ -5,6 +5,8 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
 import { ToastHost } from "@/components/ds";
+import { startCalendarForegroundSync } from "@/features/calendar/model/foregroundSync";
+import { startDayRollover } from "@/features/home/model/dayRollover";
 import { startReminderSync } from "@/features/my/model/reminders";
 
 // 폰트가 준비되기 전에 화면을 보이지 않는다 — 서체가 바뀌며 깜빡이지 않게.
@@ -46,6 +48,16 @@ export function AppProviders({ children }: { children: ReactNode }) {
   // (`features/my/model/reminders.ts`). 폰트보다 먼저 걸어도 되는 일이라
   // 이른 반환 위에 둔다 — 훅은 조건 없이 돈다.
   useEffect(() => startReminderSync(), []);
+
+  // 기기 캘린더 ↔ 서버 화해를 **앱이 앞으로 돌아올 때마다** 돌린다. 캘린더 앱에서
+  // 일정을 고치고 돌아온 직후가 바로 그때다 — 콜드 스타트에만 걸면 앱을 껐다 켜야
+  // 들어온다(`features/calendar/model/foregroundSync.ts`). 여기 거는 이유는 위
+  // 알림 구독과 같다: 탭 밖에 있는 동안에도 살아 있어야 한다.
+  useEffect(() => startCalendarForegroundSync(), []);
+
+  // 새벽 4:00 에 하루가 넘어가는 것도 여기서 지킨다 — 밤새 켜 둔 앱이 어제 날짜와
+  // 어제 일정을 든 채로 남지 않게(`features/home/model/dayRollover.ts`).
+  useEffect(() => startDayRollover(), []);
 
   // 폰트를 기다리는 동안은 스플래시가 떠 있다. 여기서 무언가를 그리면
   // 시스템 서체로 한 번 그렸다가 바뀌며 깜빡인다.
