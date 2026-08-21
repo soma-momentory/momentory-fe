@@ -41,9 +41,10 @@ const ARCHIVE_MONTHS = 12;
  * 초기값은 비어 있고 `load()` 가 서버에서 채운다(일정 store `useDay` 와 같은 결).
  * 쓰기도 이 경계를 지난다(`data/diaryApi.ts`):
  * - **삭제**(`DELETE /diaries/{id}`) — **일기만** 지운다. 행동 카드는 자기 보관함(쉼터)에
- *   남고 회고 세션도 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`). 되돌리기 창(6초)이
- *   있어 **지연 삭제**한다 — 지우면 로컬에서 감추고, 창이 닫힐 때(`clearRecentlyDeleted`)
- *   서버로 보낸다. 되돌리면 서버 호출 자체가 없다.
+ *   남고 회고 세션도 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`). **확인 모달을
+ *   지나면 그 자리에서 보낸다**(2026-08-21 · 되돌리기 폐지 · `PRODUCT.md` 「상류와 차이」).
+ *   예전에는 되돌리기 창(6초) 동안 미뤘는데, 확인을 이미 한 번 받았으므로 두 번 묻는
+ *   셈이었다. 실패했을 때만 되살린다.
  * - **「해봤어요」·되돌리기·느낀 점**(`PUT /action-cards/{id}/completion`) — 옵티미스틱하게
  *   먼저 바꾸고 서버가 **거부할 때만** 되돌린다(`serverRefusedWrite`).
  * - **C6 직접 고치기**(`PUT /diaries/by-retrospect/{id}`)는 draft 화면이 `data/diaryApi` 로
@@ -100,28 +101,17 @@ type DiaryStore = {
    * 「이 회고 삭제」 — **일기만** 지운다. 행동 카드는 자기 보관함(쉼터)에 날짜로 남고
    * 회고 세션도 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`).
    *
-   * 로컬에서 먼저 감추고 **`recentlyDeleted` 에 잠시 남긴다** — `A4.md` 가 "지운 직후에는
-   * 하단에 `[삭제했어요 · 되돌리기]` 를 잠시 둔다"고 한다. **서버 삭제는 미룬다**:
-   * 되돌리기 창이 닫힐 때(`clearRecentlyDeleted`) 보낸다. 되돌리면(`undoRemove`) 서버로
-   * 보내지 않는다 — 되살릴 재생성 계약이 없기 때문이다(지연 삭제).
+   * ⚠ **되돌리기가 없다**(2026-08-21). 화면에서 빼고 **곧바로 서버로 보낸다** —
+   * 앞에 확인 모달이 있으므로 되돌리기 줄은 같은 것을 두 번 묻는 셈이었다.
+   * 행동카드 삭제와 문법이 같아졌고, `DESIGN.md` 「삭제는 확인 모달 1회」와도 맞는다.
+   * 차이 기록: `docs/PRODUCT.md` 「상류와 차이」(`A4.md` 는 되돌리기 줄을 말한다).
+   *
+   * 결과는 **토스트 한 줄**로 알린다(`deleteToast.ts`). 답이 올 즈음 사용자는 다른
+   * 화면에 가 있을 수 있어, 화면이 아니라 앱 껍데기가 그리는 통로(`lib/toast.ts`)를
+   * 지난다. **서버가 받지 못했을 때만 되살린다** — 살아 있는 일기를 감춘 채로 두는
+   * 쪽이 더 나쁘다.
    */
   remove: (id: string) => void;
-  /**
-   * 지운 직후의 일기 — 되돌리기가 살아 있는 동안만 담긴다.
-   * **확인 모달 대신 되돌리기**다(`RULES.md` — 모달을 두지 않는다).
-   * `card` 는 이제 함께 지우지 않으므로 항상 `null` 이다(자리만 지킨다).
-   */
-  recentlyDeleted: { diary: Diary; card: ActionCard | null } | null;
-  /** `[되돌리기]` — 일기를 **원래 자리(순서)** 로 되돌린다. 서버 삭제를 취소한다 */
-  undoRemove: () => void;
-  /**
-   * 되돌리기 줄이 사라질 때 — 되돌릴 수 없게 된다. **미뤄둔 서버 삭제를 여기서 보낸다.**
-   *
-   * 결과는 **토스트 한 줄**로 알린다(`deleteToast.ts`). 지연 삭제라 결과가 나올
-   * 즈음 사용자는 다른 화면에 가 있을 수 있어, 화면이 아니라 앱 껍데기가 그리는
-   * 통로(`lib/toast.ts`)를 지난다.
-   */
-  clearRecentlyDeleted: () => void;
   /**
    * 행동 카드 한 장 삭제 — **이 기기에서** 지운다.
    *
@@ -165,7 +155,7 @@ const nextId = (prefix: string) => `${prefix}-local-${++seq}`;
 /**
  * 지웠던 일기를 **원래 순서**로 되돌린다 — 맨 뒤에 붙이면 되돌린 일기가 목록
  * 끝으로 가서 되돌린 것이 아니라 새로 쓴 것처럼 보인다.
- * 되돌리기(`undoRemove`)와 서버 삭제 실패가 같은 길을 쓴다.
+ * 서버 삭제가 실패했을 때 되살리는 길이다.
  */
 const restored = (diaries: readonly Diary[], diary: Diary): Diary[] =>
   [...diaries, diary].sort((a, b) => a.ordinal - b.ordinal);
@@ -181,6 +171,26 @@ const restoredCards = (cards: readonly ActionCard[], card: ActionCard): ActionCa
 /** 진행 중인 `load` — 동시에 여러 번 불려도 한 번만 나간다(`useDay` 와 같은 결) */
 let inFlight: Promise<void> | null = null;
 
+/**
+ * **세션 세대** — 로그아웃(`reset`)이 하나 올린다.
+ *
+ * 이 store 의 비동기 작업 중 셋(`load` · 일기 삭제 실패 · 카드 삭제 실패)은
+ * 끝날 때 **목록에 무언가를 넣는다.** 그 사이에 로그아웃하고 다른 사람이
+ * 로그인해 있으면, 앞 사람의 일기·행동카드가 **새 사람의 보관함에 나타난다.**
+ * 값을 고치기만 하는 쓰기(`markActionDone` 등)는 id 로 찾아 고치므로 비어 있는
+ * store 에서 아무 일도 하지 않지만, **되살리기는 없는 것을 만들어 낸다.**
+ *
+ * 그래서 시작할 때 세대를 붙잡아 두고, 끝났을 때 같은 세션일 때만 손을 댄다.
+ * (토스트도 함께 막는다 — 로그아웃한 화면에 「삭제했어요」가 뜰 이유가 없다.)
+ */
+let generation = 0;
+
+/** 지금 세대를 붙잡는다. 돌려주는 함수가 「아직 같은 세션인가」를 답한다 */
+const sameSession = () => {
+  const at = generation;
+  return () => at === generation;
+};
+
 export const useDiary = create<DiaryStore>((set, get) => ({
   diaries: [],
   actionCards: [],
@@ -191,6 +201,7 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     // 이미 채웠으면 다시 받지 않는다 — refetch 가 로컬 옵티미스틱 변경을 지운다
     if (get().loaded) return Promise.resolve();
 
+    const still = sameSession();
     const months = monthsBackFrom(clock.today(), ARCHIVE_MONTHS);
     inFlight = loadArchive(months)
       .then(async (result) => {
@@ -199,6 +210,8 @@ export const useDiary = create<DiaryStore>((set, get) => ({
         // 이 기기에서 지운 행동 카드는 걸러낸다 — 서버에 삭제 계약이 없어
         // 지운 카드가 그대로 다시 실려 온다(`data/deletedCardStore.ts`)
         const deleted = await readDeletedCardIds();
+        // 조회하는 사이 로그아웃했다 — 앞 사람의 보관함을 새 세션에 붓지 않는다
+        if (!still()) return;
         set({
           diaries: result.data.diaries,
           actionCards: result.data.actionCards.filter((c) => !deleted.has(c.id)),
@@ -289,42 +302,26 @@ export const useDiary = create<DiaryStore>((set, get) => ({
       ),
     })),
 
-  recentlyDeleted: null,
-
-  remove: (id) =>
-    set((s) => {
-      const diary = s.diaries.find((d) => d.id === id);
-      if (diary == null) return s;
-      return {
-        diaries: s.diaries.filter((d) => d.id !== id),
-        // **행동 카드는 지우지 않는다** — 자기 보관함(쉼터)에 날짜로 남는다(PRODUCT.md 상류와 차이)
-        // 잠시 들고 있는다 — 되돌리기가 이 값을 쓴다(카드는 남으므로 자리만 지킨다)
-        recentlyDeleted: { diary, card: null },
-      };
-    }),
-
-  undoRemove: () =>
-    // 되돌리기 — `recentlyDeleted` 를 비워 **미뤄둔 서버 삭제를 취소**한다
-    // (`clearRecentlyDeleted` 가 그때 null 을 보고 보내지 않는다)
-    set((s) => {
-      const kept = s.recentlyDeleted;
-      if (kept == null) return s;
-      return { diaries: restored(s.diaries, kept.diary), recentlyDeleted: null };
-    }),
-
-  clearRecentlyDeleted: () => {
-    // 되돌리기 창이 닫혔다 — **미뤄둔 서버 삭제를 지금 보낸다**(지연 삭제의 커밋 지점).
-    const kept = get().recentlyDeleted;
-    set({ recentlyDeleted: null });
+  remove: (id) => {
+    const kept = get().diaries.find((d) => d.id === id);
+    // 이미 없는 일기다 — 지운 척하지 않는다
     if (kept == null) return;
 
+    // **행동 카드는 지우지 않는다** — 자기 보관함(쉼터)에 날짜로 남는다(PRODUCT.md 상류와 차이)
+    set((s) => ({ diaries: s.diaries.filter((d) => d.id !== id) }));
+
     // 서버가 준 일기에만 보낸다 — 로컬 전용(`*-local-*`)은 서버에 없으니 이미 끝났다
-    if (!isServerId(kept.diary.id)) {
+    if (!isServerId(kept.id)) {
       notifyDeleteResult("일기", true);
       return;
     }
 
-    void deleteDiary(kept.diary.id).then((result) => {
+    const still = sameSession();
+    void deleteDiary(kept.id).then((result) => {
+      // 보내는 사이 로그아웃했다 — 앞 사람의 일기를 새 세션에 되살리지 않는다.
+      // 서버 쪽은 이미 요청이 갔거나 안 갔거나로 끝났고, 다음 로그인의 `load` 가
+      // 정본을 다시 가져온다
+      if (!still()) return;
       if (result.ok) {
         notifyDeleteResult("일기", true);
         return;
@@ -337,7 +334,7 @@ export const useDiary = create<DiaryStore>((set, get) => ({
        * 것을 감추는 쪽이 더 나쁘다. 반대로 실제로는 지워졌는데 되살렸다면
        * 다음 `load` 가 조용히 정리한다.
        */
-      set((s) => ({ diaries: restored(s.diaries, kept.diary) }));
+      set((s) => ({ diaries: restored(s.diaries, kept) }));
       notifyDeleteResult("일기", false);
     });
   },
@@ -353,7 +350,10 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     // 먼저 화면에서 빼고, **묘비를 남긴 뒤에** 성공이라고 말한다
     set((s) => ({ actionCards: s.actionCards.filter((c) => c.id !== cardId) }));
 
+    const still = sameSession();
     void rememberDeletedCard(cardId).then((ok) => {
+      // 남기는 사이 로그아웃했다 — 위 `remove` 와 같은 이유다
+      if (!still()) return;
       if (ok) {
         notifyDeleteResult("행동카드", true);
         return;
@@ -429,5 +429,12 @@ export const useDiary = create<DiaryStore>((set, get) => ({
    * 자리에 **남의 일기 열두 장이 새로 깔리는** 동작이었다 — 비우는 함수가
    * 채우고 있었다. 다음 사람의 보관함은 `load()` 가 서버에서 받아 채운다.
    */
-  reset: () => set({ diaries: [], actionCards: [], loaded: false, recentlyDeleted: null }),
+  reset: () => {
+    // 진행 중이던 조회·삭제가 **새 세션에 손대지 못하게** 세대를 올린다.
+    // `inFlight` 도 함께 놓는다 — 앞 사람의 조회를 다음 사람이 물려받으면
+    // 그 사람의 첫 `load` 가 아무것도 못 채우고 끝난다
+    generation += 1;
+    inFlight = null;
+    set({ diaries: [], actionCards: [], loaded: false });
+  },
 }));

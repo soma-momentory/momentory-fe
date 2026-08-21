@@ -188,7 +188,7 @@ export default function DiaryDetail() {
           onConfirm={() => {
             setConfirmDelete(false);
             remove(diary.id);
-            // 지운 일기는 보관함의 되돌리기 줄이 잠시 들고 있는다
+            // 확인을 지났으므로 그 자리에서 지운다 — 되돌리기 줄은 없앴다(2026-08-21)
             router.replace("/archive");
           }}
         />
