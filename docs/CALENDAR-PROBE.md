@@ -259,6 +259,24 @@ POST /api/v1/schedules/sync
 `source: "calendar"` 는 **이벤트마다 실어 보내지 않는다** — 이 엔드포인트로 들어온 것에
 서버가 붙인다. `hidden` 은 서버가 들고 upsert 때 보존한다(`DISCUSSION.md` §1-4).
 
+> ✅ **2026-08-21 — 서버 구현을 직접 읽고 대조했다**(BE `40da034` ·
+> `ScheduleService.syncCalendar` · `Schedule.syncFromCalendar` · 마이그레이션 `V4`·`V15`).
+> 위에 적어 둔 것이 전부 맞다. 문서에 없던 것 넷을 더한다:
+>
+> - **`(user_id, external_id)` 는 DB UNIQUE 다**(`uk_schedules_user_external_id`) —
+>   `externalId` 를 이벤트 회차마다 갈라 둔 것(`${event.id}@${date}`)이 여기서 값을 한다.
+>   **한 요청에 같은 `externalId` 가 두 번 들어오면 `400 INVALID_REQUEST`** 다
+> - **삭제는 소프트 삭제**(`deleted_at`)이고, **되살아난다.** 기기에서 지웠다가
+>   같은 `externalId` 로 다시 만든 일정은 **감정·마침·숨김을 그대로 되찾는다**
+>   (`syncFromCalendar` 가 `deletedAt` 을 `null` 로 되돌린다). ⚠ **일정 하나를 지웠다
+>   되돌리면 기록도 함께 돌아온다** — §1-4 가 경고한 「감정·마침이 함께 사라진다」의
+>   반대편이고, 사용자에게 더 나은 쪽이다. 다만 어디에도 안 적혀 있었다
+> - **`displayOrder` 는 서버가 매긴다** — 새로 만든 캘린더 일정은 그 날짜의 기존 일정
+>   **뒤**에 붙는다(`date` → `title` → `externalId` 순으로 정렬해서 넣는다). 기기 캘린더의
+>   순서를 따라가지 않는다
+> - **`source = MANUAL` 인 행에는 `external_id` 를 못 넣는다**(CHECK 제약 ·
+>   `chk_schedules_source_external_id`). 수동 일정이 화해에 휩쓸릴 길이 스키마 수준에서 막혀 있다
+
 **기간은 첫 연결과 이후 화해 모두 「이전 달 1일 ~ 다음 달 말일」** 이다(8월이면 `07-01 ~ 09-30`).
 
 - §1-4 「삭제는 보낸 범위 안에서만」이 그대로 걸린다. **창 밖으로 밀려난 과거는 서버에서
