@@ -703,8 +703,15 @@ SecureStore 세션이므로 캐시하지 않는다), `meApi.ts` 는 다시 `http
 
 > ✅ **`FOLLOW_UPS`·`DIRECTIONS`·`DRAFT_DEMO` 는 사라졌다.** 회고 대화가 서버로
 > 넘어가면서(`POST /api/v1/retrospect` · `…/{id}/messages`) 고정 대사가 전부 빠졌고,
-> `retro.ts`·`retroApi.ts` 머리말에 그 기록이 남아 있다. 아래 문단은 **왜 걷어냈는지의
-> 기록**이고, ⛔ 로 남은 것은 **리포트·마이 집계 샘플 셋**이다.
+> `retro.ts`·`retroApi.ts` 머리말에 그 기록이 남아 있다.
+>
+> ✅ **나머지 샘플도 2026-08-21 에 전부 지웠다** — `src/mocks/sample.ts` ·
+> `features/{home,report}/data/sampleRepository.ts` · `features/diary/data/sampleAdapter.ts`.
+> `SAMPLE_REPORT_ANALYSIS` 자리는 **비워 둔다**(계약에 주간 리포트가 없다 ·
+> `DISCUSSION.md` §1-3), `SAMPLE_ALL_TIME_EMOTIONS`·`SAMPLE_LAST_MONTH_EMOTIONS` 는
+> **쓰는 화면이 없어** 그 계산(`monthChange`)까지 함께 지웠다. 화면 테스트가 쓰던
+> 재료만 `src/testing/fixtures.ts` 로 옮겼고, 앱 코드가 그걸 import 하면 린터가 막는다.
+> **아래 문단은 왜 걷어냈는지의 기록이다.**
 >
 > ⚠ **`TYPING_MS` 자리는 안 사라졌다.** 「스트리밍이 대신한다」고 적어 뒀는데
 > 서버는 **턴마다 `ReplyDto` 하나를 주는 요청/응답 방식**이다(스트리밍이 아니다) —

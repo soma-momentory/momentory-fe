@@ -50,20 +50,21 @@ module.exports = [
     },
   },
   {
-    // 화면·공용 컴포넌트는 mock 을 직접 읽지 않는다 — feature 의 store·repository 를
-    // 지난다(`CLAUDE.md` 「BE 는 마지막에 붙인다」). 규칙은 사람이 아니라 린터가 지킨다.
-    // feature 의 model/data 와 테스트는 예외다 — 거기가 mock 이 들어오는 경계다.
-    files: ["app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
-    ignores: ["**/__tests__/**"],
+    // `src/mocks/sample.ts` 는 없앴다 (2026-08-21) — 화면이 보는 값은 전부 서버에서
+    // 온다. 남은 고정값은 **테스트 재료**뿐이고(`src/testing/fixtures.ts`) 그것이
+    // 앱 코드로 새어 들어가면 샘플 데이터가 조용히 되살아난다.
+    // 규칙은 사람이 아니라 린터가 지킨다 — 테스트만 예외다.
+    files: ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**", "src/testing/**"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           paths: [
             {
-              name: "@/mocks/sample",
+              name: "@/testing/fixtures",
               message:
-                "화면은 mock 을 직접 읽지 않는다 — src/features/<도메인>/ 의 store·repository 를 지난다.",
+                "테스트 전용 고정값이다 — 앱 코드는 서버(features/<도메인>/data)에서 받은 값만 그린다.",
             },
           ],
         },

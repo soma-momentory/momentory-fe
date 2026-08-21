@@ -217,9 +217,10 @@ CI 와 새 개발자가 같은 빌드를 만들 수 없다.
   `text.legal` `text.accent` `text.onDark` (`src/design/tokens.mvp.ts`)
 - 폰트는 `fontWeight` 가 아니라 **파일 이름**으로 지정한다
   (`fontFamily: "Pretendard-Bold"`). Android 에서 `fontWeight` 로는 OTF 굵기가 안 바뀐다.
-- **화면은 mock 을 직접 읽지 않는다** — `no-restricted-imports` 가
-  `app/**`·`src/components/**` 의 `@/mocks/sample` import 를 막는다.
-  데이터는 `src/features/<도메인>/` 의 store·repository 를 지난다.
+- **앱 코드는 고정값을 읽지 않는다** — 목 데이터는 2026-08-21 에 전부 지웠고
+  (`src/mocks/sample.ts`), 남은 것은 **테스트 전용** `src/testing/fixtures.ts` 뿐이다.
+  `no-restricted-imports` 가 `app/**`·`src/**`(테스트 제외)의 그 import 를 막는다 —
+  데이터는 `src/features/<도메인>/` 의 store·`data/` 를 지난다.
 - 경고도 실패다 — `npm run lint` 는 `--max-warnings 0` 으로 돈다.
 
 ## 명령

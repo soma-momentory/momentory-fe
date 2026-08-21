@@ -7,6 +7,7 @@ import { label as labelColor, primary } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import type { Schedule } from "@/features/home/model/types";
+import { seedDiaries } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -31,7 +32,7 @@ const schedule = (id: string, date: string, title: string, done: boolean): Sched
 });
 
 beforeEach(() => {
-  useDiary.getState().reset(); // 샘플 12편으로 되돌린다
+  seedDiaries(); // 일기 12편을 심는다 (src/testing/fixtures.ts)
   useDay.setState({ schedules: [] });
   jest.clearAllMocks();
 });
@@ -256,7 +257,7 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
 });
 
 describe("삭제 되돌리기 — 확인 모달 대신 되돌릴 길을 남긴다", () => {
-  const ID = "d-sample-27";
+  const ID = "d-fixture-27";
 
   it("지운 직후에만 [삭제했어요 · 되돌리기] 가 뜬다", async () => {
     const before = await render(<Archive />);

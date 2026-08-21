@@ -10,6 +10,7 @@ import RestEdit from "../rest";
 
 import { useProfile, useSettings } from "@/features/my/model/settings";
 import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
+import { seedProfile } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -26,7 +27,7 @@ jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
 const submit = jest.mocked(completeOnboarding);
 
 beforeEach(() => {
-  useProfile.getState().reset();
+  seedProfile();
   useSettings.getState().reset();
   jest.clearAllMocks();
   submit.mockResolvedValue({ ok: true, data: { onboardingRequired: false } });

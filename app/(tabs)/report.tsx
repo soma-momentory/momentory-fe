@@ -9,7 +9,7 @@ import { WeekStatList, type WeekStat } from "@/components/report/WeekStatList";
 import { label as labelColor, space } from "@/design/ds";
 import { shortEmotionName } from "@/features/archive/model/archive";
 import { useDiary } from "@/features/diary/model/diary";
-import { initialWeekStart, weekAnalyses } from "@/features/report/data/sampleRepository";
+import { initialWeekStart, weekAnalyses } from "@/features/report/data/reportRepository";
 import {
   REPORT_UNLOCK_COUNT,
   adjacentWeek,
@@ -53,9 +53,11 @@ import { formatKoreanDateShort } from "@/lib/day";
  * - **흐름 라벨은 상태를 단정하지 않는다** — 「회복」은 진단형이라 뺐다
  *
  * ⚠ 한 주 요약 문장·흐름 라벨·이어갈 한 가지는 **서버가 그 주 대화를 읽고
- * 만드는 값**이라 아직 데모 문장이다(`report/data/sampleRepository.ts`) —
- * **주마다 다른 문장**이라 표로 들고 있고, 그 표의 키가 곧 넘겨볼 수 있는 주다.
- * 수치(회고 수 · 감정 수 · 이전 주 N회 · 행동 만든/해본 수)는 전부 계산이다.
+ * 만드는 값**인데 **계약에 아직 그 엔드포인트가 없다** — 그래서 지금은 **비어
+ * 있다**(`report/data/reportRepository.ts`). 데모 문장 두 주치를 들고 있었지만
+ * 누가 로그인해도 같은 주 이야기가 나와서 지웠다(2026-08-21).
+ * 수치(회고 수 · 감정 수 · 이전 주 N회 · 행동 만든/해본 수)는 전부 계산이라
+ * 그대로 나온다 — **없는 문장만 비고 세는 값은 진짜다.**
  */
 export default function Report() {
   const diaries = useDiary((s) => s.diaries);

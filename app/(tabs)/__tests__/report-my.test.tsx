@@ -5,11 +5,44 @@ import My from "../my";
 import Report from "../report";
 
 import { useDiary } from "@/features/diary/model/diary";
-import { useProfile, useSettings } from "@/features/my/model/settings";
+import { useSettings } from "@/features/my/model/settings";
+import { initialWeekStart, weekAnalyses } from "@/features/report/data/reportRepository";
+import { seedDiaries, seedProfile } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
+}));
+
+/**
+ * 한 주 **해석**은 서버가 그 주 대화를 읽고 만드는 값인데 계약에 아직 그
+ * 엔드포인트가 없다 — `reportRepository` 는 **빈 표**를 준다(2026-08-21 ·
+ * 데모 문장을 샘플과 함께 지웠다).
+ *
+ * 화면의 규칙(**주마다 다른 문장** · 해석이 없는 주로는 넘어가지 않는다)은
+ * 그래도 지켜져야 하므로 **그 경계를 테스트가 심는다.** 문장 자체는 재료일
+ * 뿐이고, 여기서 보는 것은 「고른 주의 값이 함께 바뀌는가」다.
+ */
+const mockAnalyses = {
+  "2026-07-20": {
+    summary: "흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요.",
+    trendLabel: "다시 균형 찾기",
+    trendDelta: "이전 주보다 완만했어요",
+    emotionFlow: "무거운 몸으로 시작해 평온함으로 닫은 주였어요.",
+    actionText: "답이 막히면 핵심 한 가지부터 다시 말하기",
+  },
+  "2026-07-13": {
+    summary: "말수가 줄어든 주였지만, 그런 날도 있다고 스스로 넘겨준 한 주였어요.",
+    trendLabel: "한 박자 쉬어가기",
+    trendDelta: "이전 주보다 조용했어요",
+    emotionFlow: "답답함으로 열었지만 끝에는 힘을 뺀 주였어요.",
+    actionText: "답장이 밀리면 한 줄만 먼저 보내기",
+  },
+};
+
+jest.mock("@/features/report/data/reportRepository", () => ({
+  weekAnalyses: jest.fn(() => mockAnalyses),
+  initialWeekStart: jest.fn(() => "2026-07-20"),
 }));
 
 // 앱 안 브라우저도 네이티브다 — 「지원」 세 줄이 무엇을 여는지만 본다
@@ -23,9 +56,9 @@ const notifications = jest.requireMock("expo-notifications") as {
 };
 
 beforeEach(() => {
-  useDiary.getState().reset();
+  seedDiaries();
   useSettings.getState().reset();
-  useProfile.getState().reset();
+  seedProfile();
   jest.clearAllMocks();
   notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
@@ -423,6 +456,22 @@ describe("W1 · 주차 이동 — 수치와 해석이 함께 바뀐다", () => {
 
     await prev(r); // 눌러도 그대로다
     expect(r.getByText("7월 13일 ~ 7월 19일")).toBeTruthy();
+  });
+
+  it("해석이 아직 없으면 이번 주에 머문다 — 그래도 세는 값은 나온다", async () => {
+    // 지금 실제로 서버가 주는 것 = 아무것도 없음(`reportRepository` 의 빈 표).
+    // 없는 문장을 지어내지 않고, 대신 **계산한 값은 그대로 보여준다**.
+    jest.mocked(weekAnalyses).mockReturnValueOnce({});
+    jest.mocked(initialWeekStart).mockReturnValueOnce("2026-07-27");
+
+    const r = await render(<Report />);
+
+    expect(r.getByText("7월 27일 ~ 8월 2일")).toBeTruthy();
+    // 넘겨볼 주가 없다 — 화살표가 눌리지 않는 것으로 끝을 말한다
+    expect(r.getByLabelText("이전 주").props.accessibilityState.disabled).toBe(true);
+    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(true);
+    // 27일 한 편 · 감정 둘 — 일기에서 세는 값이라 해석 없이도 나온다
+    expect(r.getByText("회고 1회 · 감정 기록 2개를 바탕으로 바바가 정리했어요")).toBeTruthy();
   });
 
   it("「이전 주 N회」도 계산한다 — 앞 주가 없으면 비교하지 않는다", async () => {

@@ -1,7 +1,5 @@
 import { create } from "zustand";
 
-import { SAMPLE_USER } from "@/mocks/sample";
-
 /**
  * 알림 설정(`M3`) — 스키마 `User.notify*` 넷.
  *
@@ -32,8 +30,9 @@ type SettingsStore = {
 };
 
 const EMPTY: Record<NotifyKey, NotifySetting> = {
-  // 온보딩 `08` 에서 정한 회고 시각이 여기로 이어진다 — 데모 시작값은 샘플 사용자다
-  retro: { enabled: SAMPLE_USER.notifyRetro, time: SAMPLE_USER.retroTime },
+  // 온보딩 `08` 에서 정한 회고 시각이 여기로 이어진다. 그전까지는 스키마 기본값
+  // `21:30`(`momentory.schema.mvp.json` · `onboarding/model/draft.ts` 와 같은 값)
+  retro: { enabled: true, time: "21:30" },
   daily: { enabled: false, time: "14:00" },
   weekly: { enabled: true, time: "21:00" },
   // 시각이 없는 알림 — 누를 곳이 없는 표식(`›`)을 만들지 않는다
@@ -100,19 +99,29 @@ type ProfileStore = {
   reset: () => void;
 };
 
+/**
+ * **비어 있는 사용자** — 채우는 곳은 둘뿐이다: 부트스트랩의 서버
+ * `GET /users/me`(`auth.ts`)와 온보딩 완료(`10`). 둘 다 `adoptProfile` 을 지난다.
+ *
+ * ⚠ 예전에는 여기에 샘플 사용자(닉네임 「지현」 · 25 · 관심사 둘 · 캘린더 연결됨)가
+ * 있었다(2026-08-21 삭제). 서버 응답이 늦거나 실패하면 **로그인한 사람이 남의
+ * 프로필을 보는** 자리였고, 마이 화면이 「연결됨」이라고 말하는 캘린더가 실제로는
+ * 연결돼 있지 않았다. 화면 테스트가 쓰던 그 한 벌은 `src/testing/fixtures.ts` 에 있다.
+ *
+ * 빈 값은 화면에서 **빈 자리**로 읽힌다 — 닉네임 한 글자를 따는 마이 아바타도,
+ * 회고 대화가 서버로 보내는 `nickname` 도 이미 빈 문자열을 견딘다.
+ */
 const PROFILE = {
-  // 홈·회고 대화가 같은 닉네임을 봐야 한다 — 값의 정본은 샘플 사용자 한 곳이다
-  nickname: SAMPLE_USER.nickname as string,
+  nickname: "",
   // 서버 `interestAreas[].code` — 목록의 주인이 서버라 우리 id 로 옮기지 않는다
-  interests: ["RELATIONSHIP", "SELF"],
+  interests: [] as string[],
   interestOther: "",
   // 서버 `restMethods[].code` — 이모지 라벨(`🎵 음악 듣기`)을 id 로 쓰던 자리다
-  restMethods: ["LISTENING_TO_MUSIC", "WALKING"],
+  restMethods: [] as string[],
   restMethodOther: "",
-  age: "25",
-  gender: "FEMALE" as string | null,
-  // 샘플 일정 넷 중 셋이 `source: "calendar"` 다 — 연결한 사용자로 시작한다
-  calendarLinked: true,
+  age: "",
+  gender: null as string | null,
+  calendarLinked: false,
 };
 
 export const useProfile = create<ProfileStore>((set) => ({

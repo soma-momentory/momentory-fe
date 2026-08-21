@@ -5,7 +5,7 @@ import ScheduleEdit from "../schedule/[id]";
 import NewSchedule from "../schedule/new";
 
 import { useDay } from "@/features/home/model/day";
-import { SAMPLE_MOMENTS, SAMPLE_SCHEDULES } from "@/mocks/sample";
+import { testSchedules } from "@/testing/fixtures";
 
 // 어떤 일정을 열었는지는 라우트 파라미터가 정한다 — 테스트마다 바꾼다
 let mockParams: { id: string } = { id: "s3" };
@@ -24,10 +24,7 @@ const disabled = (node: { props?: { accessibilityState?: { disabled?: boolean } 
 
 beforeEach(() => {
   mockParams = { id: "s3" }; // 면접 스터디 — 캘린더에서 온 미완료 일정
-  useDay.setState({
-    schedules: SAMPLE_SCHEDULES.map((s) => ({ ...s, emotions: [...s.emotions] })),
-    moments: [...SAMPLE_MOMENTS],
-  });
+  useDay.setState({ schedules: testSchedules() });
   jest.clearAllMocks();
 });
 

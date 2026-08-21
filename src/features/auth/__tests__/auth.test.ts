@@ -8,6 +8,7 @@ import { useProfile, useSettings } from "@/features/my/model/settings";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { useRetro } from "@/features/retro/model/retro";
+import { seedDiaries } from "@/testing/fixtures";
 
 /**
  * `ARCHITECTURE §3` — "테스트로 고정할 경로: 만료 토큰 · 갱신 실패 · SecureStore
@@ -412,8 +413,7 @@ describe("signOut — 로그아웃 후 재진입", () => {
     useRetro.getState().addMyTurn("오늘은 좀 지쳤어");
     useProfile.getState().set({ nickname: "앞사람" });
     useSettings.getState().toggle("retro");
-    const firstDiaryId = useDiary.getState().diaries[0]!.id;
-    useDiary.getState().remove(firstDiaryId);
+    seedDiaries(); // 앞사람이 보고 있던 보관함
 
     await useAuth.getState().signOut();
 
@@ -421,8 +421,10 @@ describe("signOut — 로그아웃 후 재진입", () => {
     expect(useRetro.getState().turns).toEqual([]);
     expect(useProfile.getState().nickname).not.toBe("앞사람");
     expect(useSettings.getState().notify.retro.enabled).toBe(notifyBefore);
-    // 지운 일기가 되살아난다 = 일기 store 가 초기 상태로 돌아갔다
-    expect(useDiary.getState().diaries.some((d) => d.id === firstDiaryId)).toBe(true);
+    // 앞사람의 일기가 한 장도 남지 않는다 — **비우는 함수가 채우지 않는다**
+    // (예전에는 `reset()` 이 샘플 12편을 새로 깔았다 · 2026-08-21)
+    expect(useDiary.getState().diaries).toEqual([]);
+    expect(useDiary.getState().actionCards).toEqual([]);
   });
 });
 

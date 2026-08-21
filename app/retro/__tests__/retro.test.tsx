@@ -7,7 +7,7 @@ import RetroEmotion from "../emotion";
 import { interaction, primary, selectedTint } from "@/design/ds";
 import { useDay } from "@/features/home/model/day";
 import { useRetro } from "@/features/retro/model/retro";
-import { SAMPLE_MOMENTS, SAMPLE_SCHEDULES } from "@/mocks/sample";
+import { testSchedules } from "@/testing/fixtures";
 
 /**
  * ⚠ **`C1`(인트로)은 사라졌다** — 새 시안의 「일기」 흐름은 일정 확인부터 시작한다
@@ -25,10 +25,7 @@ const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
 
 beforeEach(() => {
-  useDay.setState({
-    schedules: SAMPLE_SCHEDULES.map((s) => ({ ...s, emotions: [...s.emotions] })),
-    moments: [...SAMPLE_MOMENTS],
-  });
+  useDay.setState({ schedules: testSchedules() });
   useRetro.getState().reset();
   jest.clearAllMocks();
 });
