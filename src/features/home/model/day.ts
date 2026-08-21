@@ -314,9 +314,27 @@ export const useDay = create<DayStore>((set, get) => ({
  * 나중에 그게 그날의 기록으로 남는다. `Weather` 타입(`model/types.ts`)은 스키마
  * 필드라 남긴다. 공급처가 생기면 여기 반환값에 다시 붙인다.
  */
-export const useTodayContext = (): { date: string } => ({
-  date: clock.today(),
-});
+export const useTodayContext = (): { date: string } => {
+  // 값이 아니라 **구독**이다 — 04:00 을 넘기면 이 훅을 쓰는 화면이 다시 그려진다.
+  // 구독이 없으면 밤새 켜 둔 앱이 어제 날짜를 그대로 들고 있다
+  useDayTick((s) => s.tick);
+  return { date: clock.today() };
+};
+
+/**
+ * 「날이 바뀌었다」는 신호. **날짜를 여기 담지 않는다** — 정본은 언제나
+ * `clock.today()` 이고(테스트가 시계를 갈아끼운다), 여기 있는 것은 「다시
+ * 그려라」는 세는 수 하나뿐이다. 날짜를 담으면 시계와 어긋날 자리가 생긴다.
+ */
+const useDayTick = create<{ tick: number }>(() => ({ tick: 0 }));
+
+/**
+ * 04:00 을 넘었다 — 날짜를 든 화면을 다시 그린다.
+ *
+ * **부르는 곳은 하나다**(`features/home/model/dayRollover.ts`). 화면이 스스로
+ * 날이 바뀌었는지 보지 않는다 — 보는 화면이 넷이라 하나를 빠뜨린다.
+ */
+export const markDayChanged = () => useDayTick.setState((s) => ({ tick: s.tick + 1 }));
 
 /**
  * 그 날짜가 든 주의 **월요일** — 홈의 「이번 주 감정」이 보는 창(`DESIGN.md` 「홈」).

@@ -62,7 +62,7 @@ beforeEach(() => {
       userId: USER_ID,
     }),
   );
-  useDiary.setState({ diaries: [], actionCards: [], recentlyDeleted: null, loaded: false });
+  useDiary.setState({ diaries: [], actionCards: [], loaded: false });
   useToast.setState({ current: null });
 });
 
@@ -75,7 +75,7 @@ describe("지우면 기기에 묘비가 남는다", () => {
     await flush();
 
     expect(toast()).toMatchObject({ message: "행동카드를 삭제했어요.", variant: "positive" });
-    expect(secure.__store.get(TOMBSTONE_KEY)).toBe(JSON.stringify(["7"]));
+    expect(secure.__store.get(TOMBSTONE_KEY)).toBe("7");
   });
 
   it("남기지 못하면 되돌리고 실패 한 줄 — 지웠다고 말해 놓고 되살아나지 않게", async () => {
@@ -102,6 +102,18 @@ describe("지우면 기기에 묘비가 남는다", () => {
     expect(secure.__store.has(TOMBSTONE_KEY)).toBe(false);
   });
 
+  it("연달아 지워도 앞의 묘비가 덮이지 않는다 — 읽고-고쳐-쓰기라 줄을 세운다", async () => {
+    // 둘이 겹치면 같은 목록을 읽고 각자 자기 id 만 붙여 써서 **나중 것이 앞의 것을
+    // 덮는다** — 첫 번째 카드가 다음 조회에 되살아난다
+    useDiary.setState({ actionCards: [card("7"), card("8")] });
+
+    useDiary.getState().removeActionCard("7");
+    useDiary.getState().removeActionCard("8");
+    await flush();
+
+    expect(secure.__store.get(TOMBSTONE_KEY)).toBe("7,8");
+  });
+
   it("같은 카드를 두 번 지워도 묘비는 한 줄이다", async () => {
     useDiary.setState({ actionCards: [card("7")] });
     useDiary.getState().removeActionCard("7");
@@ -111,7 +123,48 @@ describe("지우면 기기에 묘비가 남는다", () => {
     useDiary.getState().removeActionCard("7");
     await flush();
 
-    expect(secure.__store.get(TOMBSTONE_KEY)).toBe(JSON.stringify(["7"]));
+    expect(secure.__store.get(TOMBSTONE_KEY)).toBe("7");
+  });
+});
+
+describe("상한은 개수가 아니라 바이트다", () => {
+  /** 서버 id 를 흉내낸 5자리 번호들 — 오래된 것이 앞이다 */
+  const many = (count: number) => Array.from({ length: count }, (_, i) => String(10_000 + i));
+
+  const remember = async (id: string) => {
+    useDiary.setState({ actionCards: [card(id)] });
+    useDiary.getState().removeActionCard(id);
+    await flush();
+    return secure.__store.get(TOMBSTONE_KEY) ?? "";
+  };
+
+  it("옛 상한(200건)보다 훨씬 많이 담는다 — 조회 창이 12개월이라 365건까지 생긴다", async () => {
+    secure.__store.set(TOMBSTONE_KEY, many(250).join(","));
+
+    const stored = await remember("99999");
+
+    expect(stored.split(",")).toHaveLength(251);
+    // 옛 코드였다면 맨 앞 50건이 이미 떨어져 나가 되살아났을 자리다
+    expect(stored.startsWith("10000,")).toBe(true);
+  });
+
+  it("예산을 넘기면 **가장 오래된 것부터** 떨어진다 — 최근 삭제를 지킨다", async () => {
+    secure.__store.set(TOMBSTONE_KEY, many(400).join(","));
+
+    const stored = await remember("99999");
+    const ids = stored.split(",");
+
+    expect(stored.length).toBeLessThanOrEqual(1800);
+    expect(ids.at(-1)).toBe("99999"); // 방금 지운 것은 반드시 남는다
+    expect(ids).not.toContain("10000"); // 가장 오래된 것이 떨어졌다
+  });
+
+  it("앞 버전이 남긴 JSON 배열도 읽는다 — 업데이트만으로 삭제가 되살아나지 않게", async () => {
+    secure.__store.set(TOMBSTONE_KEY, JSON.stringify(["7", "8"]));
+
+    const stored = await remember("9");
+
+    expect(stored).toBe("7,8,9");
   });
 });
 
@@ -134,7 +187,7 @@ describe("다시 조회해도 되살아나지 않는다", () => {
 
   it("앱을 다시 켠 것과 같다 — 메모리를 비워도 묘비가 남아 있으면 걸러낸다", async () => {
     // 앞선 실행이 남긴 묘비만 있고 store 는 비어 있는 상태
-    secure.__store.set(TOMBSTONE_KEY, JSON.stringify(["7"]));
+    secure.__store.set(TOMBSTONE_KEY, "7");
     mockedLoad.mockResolvedValue({
       ok: true,
       data: { diaries: [], actionCards: [card("7"), card("8")] },
@@ -146,7 +199,7 @@ describe("다시 조회해도 되살아나지 않는다", () => {
   });
 
   it("다른 사용자의 묘비는 보지 않는다 — 카드 id 는 서버의 전역 번호다", async () => {
-    secure.__store.set("momentory.diary.deletedCards.999", JSON.stringify(["7"]));
+    secure.__store.set("momentory.diary.deletedCards.999", "7");
     mockedLoad.mockResolvedValue({
       ok: true,
       data: { diaries: [], actionCards: [card("7"), card("8")] },

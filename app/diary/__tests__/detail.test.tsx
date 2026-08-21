@@ -104,8 +104,6 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     // 행동 카드는 자기 보관함(쉼터)에 남는다 — 함께 지우지 않는다(PRODUCT.md 상류와 차이)
     expect(actionCardOf(useDiary.getState().actionCards, ID)).toBeTruthy();
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/archive");
-    // 지운 일기는 되돌릴 수 있게 잠시 남는다
-    expect(useDiary.getState().recentlyDeleted?.diary.id).toBe(ID);
   });
 
   it("확인에서 그대로 두면 지워지지 않는다", async () => {

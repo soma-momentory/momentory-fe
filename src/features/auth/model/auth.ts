@@ -7,7 +7,6 @@ import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
 import { fetchMe } from "@/features/auth/data/meApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
 import { clearSyncState } from "@/features/calendar/data/syncStateStore";
-import { clearDeletedCards } from "@/features/diary/data/deletedCardStore";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
@@ -251,13 +250,14 @@ const clearUserScopedStores = (userId?: number) => {
   // 기다리지 않는다 — 로그아웃은 실패할 수 없는 동작이고(아래 `signOut` 주석),
   // 지우지 못해도 키에 `userId` 가 박혀 있어 다른 계정이 그것을 보지는 않는다.
   //
-  // 지운 행동 카드의 묘비도 같은 이유로 기기에 눕는다 — 남기면 **다음 사용자의
-  // 같은 번호 카드가 조용히 사라진다**(카드 id 는 서버의 전역 번호다 ·
-  // `features/diary/data/deletedCardStore.ts`).
-  if (userId != null) {
-    void clearSyncState(userId);
-    void clearDeletedCards(userId);
-  }
+  // ⚠ **지운 행동 카드의 묘비는 지우지 않는다.** 키가 이미 사용자별이라
+  // (`momentory.diary.deletedCards.<userId>`) 다음 사람이 앞 사람의 묘비를 볼 일이
+  // 없고, 서버에는 카드 삭제 계약이 없어 **묘비가 유일한 삭제 기록**이다. 여기서
+  // 지우면 같은 사람이 다시 로그인했을 때 지운 카드가 `load()` 에 되살아난다 —
+  // 「이 기기에서는 삭제가 유지된다」는 약속이 로그아웃 한 번에 깨진다
+  // (`features/diary/data/deletedCardStore.ts`). 계정 삭제처럼 **기기에서 흔적을
+  // 지우는 흐름**이 생기면 그때 `clearDeletedCards` 를 부른다.
+  if (userId != null) void clearSyncState(userId);
 };
 
 /**

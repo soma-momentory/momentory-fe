@@ -229,7 +229,7 @@ export const testProfile = {
  * 서버 응답으로 덮지 않는다.
  */
 export const seedDiaries = (): void => {
-  useDiary.setState({ ...testDiaryData(), loaded: true, recentlyDeleted: null });
+  useDiary.setState({ ...testDiaryData(), loaded: true });
 };
 
 /** 온보딩을 마친 사용자를 store 에 심는다 — 마이 화면이 그릴 값이 있어야 한다 */

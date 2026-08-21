@@ -256,47 +256,34 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
   });
 });
 
-describe("삭제 되돌리기 — 확인 모달 대신 되돌릴 길을 남긴다", () => {
+/**
+ * ⚠ **되돌리기 줄을 없앴다**(2026-08-21). 삭제 앞에 확인 모달이 있으므로 같은 것을
+ * 두 번 묻는 셈이었다(`DESIGN.md` 「삭제는 확인 모달 1회」 · `docs/PRODUCT.md`).
+ * 지운 일기는 목록에서 곧바로 빠지고, 결과는 토스트 한 줄로만 말한다.
+ */
+describe("삭제 — 되돌리기 줄을 두지 않는다", () => {
   const ID = "d-fixture-27";
 
-  it("지운 직후에만 [삭제했어요 · 되돌리기] 가 뜬다", async () => {
-    const before = await render(<Archive />);
-    expect(before.queryByText("되돌리기")).toBeNull();
+  it("지워도 [되돌리기] 가 뜨지 않는다", async () => {
+    await act(async () => {
+      useDiary.getState().remove(ID);
+    });
+    const r = await render(<Archive />);
+
+    expect(r.queryByText("되돌리기")).toBeNull();
+    expect(r.queryByText("삭제했어요")).toBeNull();
+  });
+
+  it("지운 일기는 목록에서 곧바로 빠진다", async () => {
+    const r = await render(<Archive />);
+    await fireEvent.press(r.getByLabelText("목록으로 보기"));
+    expect(r.getByText("7월 27일 월요일")).toBeTruthy();
 
     await act(async () => {
       useDiary.getState().remove(ID);
     });
 
-    const after = await render(<Archive />);
-    expect(after.getByText("삭제했어요")).toBeTruthy();
-    expect(after.getByText("되돌리기")).toBeTruthy();
-  });
-
-  it("되돌리면 일기가 목록으로 돌아온다", async () => {
-    useDiary.getState().remove(ID);
-    const r = await render(<Archive />);
-    await fireEvent.press(r.getByLabelText("목록으로 보기"));
     expect(r.queryByText("7월 27일 월요일")).toBeNull();
-
-    await fireEvent.press(r.getByText("되돌리기"));
-
-    expect(r.getByText("7월 27일 월요일")).toBeTruthy();
-    expect(r.queryByText("되돌리기")).toBeNull(); // 줄도 함께 사라진다
-  });
-
-  it("잠시 뒤 스스로 사라진다 — 그 뒤에는 되돌릴 수 없다", async () => {
-    jest.useFakeTimers();
-    useDiary.getState().remove(ID);
-    const r = await render(<Archive />);
-    expect(r.getByText("되돌리기")).toBeTruthy();
-
-    await act(async () => {
-      jest.advanceTimersByTime(7000);
-    });
-
-    expect(r.queryByText("되돌리기")).toBeNull();
-    expect(useDiary.getState().recentlyDeleted).toBeNull();
-    jest.useRealTimers();
   });
 });
 

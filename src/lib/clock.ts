@@ -29,6 +29,21 @@ export function dayFrom(at: Date): string {
   return `${shifted.getFullYear()}-${pad(shifted.getMonth() + 1)}-${pad(shifted.getDate())}`;
 }
 
+/**
+ * 다음 하루 경계(새벽 4:00)까지 남은 밀리초 — **날이 바뀌는 순간을 기다리는
+ * 쪽**(`lib/dayChange.ts`)이 쓴다. 경계 위(정확히 4:00)면 방금 넘은 것이므로
+ * 다음 날까지의 24시간을 준다.
+ *
+ * 순수 계산이라 여기 둔다 — 경계 시각(`DAY_BOUNDARY_HOUR`)을 아는 곳을 늘리지
+ * 않으려는 것이고, 그래서 테스트도 시계 없이 이 함수만 본다.
+ */
+export function msUntilNextDay(from: Date): number {
+  const next = new Date(from);
+  next.setHours(DAY_BOUNDARY_HOUR, 0, 0, 0);
+  if (next.getTime() <= from.getTime()) next.setDate(next.getDate() + 1);
+  return next.getTime() - from.getTime();
+}
+
 /** 운영 시각 — 기기 시계 그대로, 하루 경계만 4:00 으로 옮긴다 */
 export const SystemClock: Clock = {
   now: () => new Date(),

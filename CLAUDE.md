@@ -318,6 +318,14 @@ src/lib/links.ts        ← 앱 밖 웹 문서의 단일 통로 — **주소를 
                           (약관 · 개인정보 처리방침 · 문의). `openBrowserAsync` 로
                           **앱 안에서** 연다(앱을 떠나면 로그인 흐름이 끊긴다) ·
                           던지지 않는다. 화면은 `"terms"` 같은 이름만 안다
+src/lib/appState.ts     ← 앱이 **앞으로 돌아온 순간**의 단일 통로 — `onForeground`.
+                          「백그라운드였다가 돌아왔다」를 어떤 상태 전이로 아는지는
+                          여기서만 안다(iOS 는 inactive 를 거친다). 캘린더 화해가
+                          이걸 타고 돈다(`features/calendar/model/foregroundSync.ts`)
+src/lib/dayChange.ts    ← **하루가 넘어간 순간**(04:00)의 단일 통로 — `onDayChange`.
+                          켠 채로 넘기면 타이머가, 백그라운드에서 넘어갔으면 복귀가
+                          잡는다(둘 다 있어야 한 쪽을 안 놓친다). **날짜를 들고 있지
+                          않다** — 정본은 `clock.today()` 이고 여기는 「바뀌었다」만 말한다
 src/lib/clock.ts        ← 시각의 단일 공급자 — SampleClock(2026-07-27) ·
                           SystemClock(04:00 하루 경계) · fixedClock(테스트)
 src/lib/day.ts          ← 날짜 표기. 계산은 clock.ts 가 한다

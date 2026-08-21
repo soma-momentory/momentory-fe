@@ -426,6 +426,18 @@ describe("signOut — 로그아웃 후 재진입", () => {
     expect(useDiary.getState().diaries).toEqual([]);
     expect(useDiary.getState().actionCards).toEqual([]);
   });
+
+  it("지운 행동카드의 묘비는 **남긴다** — 같은 사람이 다시 로그인해도 지워진 채다", async () => {
+    // 서버에 카드 삭제 계약이 없어 묘비가 유일한 삭제 기록이다. 로그아웃이 지우면
+    // 다시 로그인했을 때 지운 카드가 `load()` 에 되살아난다.
+    // 키가 이미 사용자별이라 다음 사람이 이것을 볼 일도 없다
+    seedSession(Date.now() + 60_000);
+    secure.__store.set("momentory.diary.deletedCards.1", JSON.stringify(["7"]));
+
+    await useAuth.getState().signOut();
+
+    expect(secure.__store.get("momentory.diary.deletedCards.1")).toBe(JSON.stringify(["7"]));
+  });
 });
 
 describe("signOut — 서버의 refresh token 폐기", () => {

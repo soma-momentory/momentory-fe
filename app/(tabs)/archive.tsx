@@ -1,6 +1,6 @@
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { DiaryPreviewCard } from "@/components/archive/DiaryPreviewCard";
@@ -16,18 +16,11 @@ import {
   type CalendarMark,
   type ViewOption,
 } from "@/components/ds";
-import {
-  elevation,
-  emotion as emotionColor,
-  label as labelColor,
-  primary,
-  space,
-} from "@/design/ds";
+import { emotion as emotionColor, label as labelColor, space } from "@/design/ds";
 import { byLatest, diariesInMonth, monthOf } from "@/features/archive/model/archive";
 import { useDiary } from "@/features/diary/model/diary";
 import type { EmotionId } from "@/features/emotion/model/emotion";
-import { useDay, visibleSchedules } from "@/features/home/model/day";
-import { clock } from "@/lib/clock";
+import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
 
 /**
@@ -61,12 +54,6 @@ const VIEWS: readonly ViewOption<"calendar" | "list">[] = [
   { name: "list", icon: "list-ordered", accessibilityLabel: "목록으로 보기" },
 ];
 
-/**
- * 되돌리기 줄이 머무는 시간. **"잠시"**(`A4.md`)를 숫자로 옮긴 것이고, 이 뒤에는
- * 되돌릴 수 없다. 짧으면 놓치고 길면 지웠다는 사실이 안 믿긴다.
- */
-const UNDO_MS = 6000;
-
 /** `2026-07` 에서 `step` 달만큼 옮긴 달 */
 function shiftMonth(month: string, step: number) {
   const moved = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + step, 1);
@@ -75,12 +62,11 @@ function shiftMonth(month: string, step: number) {
 
 export default function Archive() {
   const diaries = useDiary((s) => s.diaries);
-  const recentlyDeleted = useDiary((s) => s.recentlyDeleted);
-  const undoRemove = useDiary((s) => s.undoRemove);
-  const clearRecentlyDeleted = useDiary((s) => s.clearRecentlyDeleted);
   const schedules = useDay((s) => s.schedules);
 
-  const todayDate = clock.today();
+  // 04:00 을 넘기면 따라간다 — `clock.today()` 를 직접 읽으면 밤새 켜 둔 앱이
+  // 어제를 「오늘」로 표시한다(`useTodayContext`)
+  const { date: todayDate } = useTodayContext();
 
   const [view, setView] = useState<"calendar" | "list">("calendar");
   // 보관함이 여는 달은 오늘이 속한 달이다 — `‹ ›` 로 옮기면 두 면이 함께 따라간다
@@ -122,13 +108,6 @@ export default function Archive() {
     setMonth(next);
     setSelectedDate(`${next}-01`);
   };
-
-  // 잠시 뒤 스스로 사라진다 — 남겨두면 지운 것이 지워지지 않은 것처럼 보인다
-  useEffect(() => {
-    if (recentlyDeleted == null) return;
-    const t = setTimeout(clearRecentlyDeleted, UNDO_MS);
-    return () => clearTimeout(t);
-  }, [recentlyDeleted, clearRecentlyDeleted]);
 
   return (
     <TabScreen active="보관함">
@@ -215,26 +194,10 @@ export default function Archive() {
       )}
 
       {/*
-        지운 직후에만 잠시 뜬다(`A4.md`). 확인 모달을 두지 않는 대신 되돌릴 길을
-        남기는 쪽이다 — 되돌릴 수 있게 만든다는 규칙(`RULES.md`)이 여기까지 온다.
-        목록 위에 떠 있어서 아래 카드의 자리를 밀지 않는다.
-
-        ⚠ 아직 `Toast` 가 없다(`components/ds` 「아직 없는 것」) — 어두운 알약을
-        만들려면 반전 면 토큰이 필요한데 `DESIGN.md` 는 다크를 빼고 왔다. 그래서
-        같은 팔레트 안에서 **떠 있는 카드**로 그린다(`elevation.floating` · §5).
+        ⚠ **되돌리기 줄이 없다**(2026-08-21). 삭제 앞에 확인 모달이 있으므로 같은
+        것을 두 번 묻는 셈이었다 — `DESIGN.md` 「삭제는 확인 모달 1회」. 결과는
+        토스트 한 줄로만 말한다(`lib/toast.ts`). 차이 기록: `docs/PRODUCT.md`.
       */}
-      {recentlyDeleted != null ? (
-        <Card padding="none" style={styles.undo}>
-          <Text variant="body2" color={labelColor.normal} style={styles.undoLabel}>
-            삭제했어요
-          </Text>
-          <Pressable accessibilityRole="button" hitSlop={10} onPress={undoRemove}>
-            <Text variant="label1" color={primary.heavy}>
-              되돌리기
-            </Text>
-          </Pressable>
-        </Card>
-      ) : null}
     </TabScreen>
   );
 }
@@ -278,18 +241,4 @@ const styles = StyleSheet.create({
 
   note: { padding: space.xl },
   noteText: { textAlign: "center" },
-
-  undo: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: space.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.md,
-    minHeight: 48,
-    paddingHorizontal: space.lg,
-    ...elevation.floating,
-  },
-  undoLabel: { flex: 1 },
 });

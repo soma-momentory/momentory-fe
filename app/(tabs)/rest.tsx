@@ -5,8 +5,8 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Card, Icon, TabScreen, Text } from "@/components/ds";
 import { label as labelColor, primary, space } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
+import { useTodayContext } from "@/features/home/model/day";
 import { cardOn, datedCards, latestCardDay } from "@/features/rest/model/cards";
-import { clock } from "@/lib/clock";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -30,7 +30,7 @@ export default function Rest() {
 
   const all = useMemo(() => datedCards(cards), [cards]);
   const latest = latestCardDay(all);
-  const today = clock.today();
+  const { date: today } = useTodayContext();
   const hasToday = cardOn(all, today) != null;
 
   const summary =

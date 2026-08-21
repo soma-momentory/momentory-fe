@@ -48,39 +48,40 @@ const calls = (method: string) =>
 beforeEach(() => {
   mockedRequest.mockReset();
   mockedRequest.mockResolvedValue({ ok: true, data: null });
-  useDiary.setState({ diaries: [], actionCards: [], recentlyDeleted: null });
+  useDiary.setState({ diaries: [], actionCards: [] });
   useToast.setState({ current: null });
 });
 
 const toast = () => useToast.getState().current;
 
-describe("지연 삭제", () => {
-  it("remove 는 서버로 보내지 않고 카드도 남긴다 · clearRecentlyDeleted 가 커밋한다", () => {
+/**
+ * ⚠ **되돌리기가 없다**(2026-08-21). 예전에는 6초 창 동안 서버 삭제를 미뤘는데,
+ * 앞에 확인 모달이 있어 같은 것을 두 번 묻는 셈이었다. 지금은 **그 자리에서 보낸다**.
+ */
+describe("삭제는 그 자리에서 보낸다", () => {
+  it("화면에서 빼고 곧바로 서버로 — 카드는 남는다", () => {
     useDiary.setState({ diaries: [diary("42")], actionCards: [card("7", "42")] });
 
     useDiary.getState().remove("42");
+
     expect(useDiary.getState().diaries).toHaveLength(0);
     expect(useDiary.getState().actionCards).toHaveLength(1); // 카드는 남는다
-    expect(calls("DELETE")).toHaveLength(0); // 아직 안 보냈다
-
-    useDiary.getState().clearRecentlyDeleted();
     expect(calls("DELETE")).toEqual(["/api/v1/diaries/42"]);
   });
 
-  it("undoRemove 는 서버 삭제를 취소한다", () => {
+  it("없는 일기는 아무 일도 하지 않는다 — 지운 척하지 않는다", () => {
     useDiary.setState({ diaries: [diary("42")] });
-    useDiary.getState().remove("42");
-    useDiary.getState().undoRemove();
-    expect(useDiary.getState().diaries.find((d) => d.id === "42")).toBeTruthy();
 
-    useDiary.getState().clearRecentlyDeleted();
+    useDiary.getState().remove("없음");
+
+    expect(useDiary.getState().diaries).toHaveLength(1);
     expect(calls("DELETE")).toHaveLength(0);
+    expect(toast()).toBeNull();
   });
 
   it("로컬 전용 일기는 서버로 보내지 않는다 — 지운 순간 이미 끝났다", () => {
     useDiary.setState({ diaries: [diary("d-local-3")] });
     useDiary.getState().remove("d-local-3");
-    useDiary.getState().clearRecentlyDeleted();
     expect(calls("DELETE")).toHaveLength(0);
     expect(toast()).toMatchObject({ message: "일기를 삭제했어요.", variant: "positive" });
   });
@@ -90,7 +91,6 @@ describe("삭제 결과 한 줄", () => {
   it("서버가 지웠으면 성공 한 줄", async () => {
     useDiary.setState({ diaries: [diary("42")] });
     useDiary.getState().remove("42");
-    useDiary.getState().clearRecentlyDeleted();
     await flush();
 
     expect(toast()).toMatchObject({ message: "일기를 삭제했어요.", variant: "positive" });
@@ -107,20 +107,10 @@ describe("삭제 결과 한 줄", () => {
     });
 
     useDiary.getState().remove("41");
-    useDiary.getState().clearRecentlyDeleted();
     await flush();
 
     expect(useDiary.getState().diaries.map((d) => d.id)).toEqual(["41", "42"]);
     expect(toast()).toMatchObject({ message: "일기를 삭제하지 못했어요.", variant: "negative" });
-  });
-
-  it("되돌리면 아무것도 알리지 않는다 — 지운 일이 없다", () => {
-    useDiary.setState({ diaries: [diary("42")] });
-    useDiary.getState().remove("42");
-    useDiary.getState().undoRemove();
-    useDiary.getState().clearRecentlyDeleted();
-
-    expect(toast()).toBeNull();
   });
 });
 
