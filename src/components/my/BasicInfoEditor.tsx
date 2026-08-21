@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState, type ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, StyleSheet, View } from "react-native";
 
 import { Button, Screen, Text, TopNavigation } from "@/components/ds";
 import { space, status } from "@/design/ds";
@@ -62,10 +62,9 @@ export function BasicInfoEditor({ title, changed, ready = true, patch, children 
     <Screen>
       <TopNavigation leading="arrow-left" title={title} onLeadingPress={() => router.back()} />
 
-      <KeyboardAvoidingView
-        style={styles.fill}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      {/* 키보드는 **양쪽 다** 피한다 — edge-to-edge(Expo SDK 54+)에서는 안드로이드
+          창이 `adjustResize` 로 줄지 않고 키보드가 그 위를 덮는다(`ChatScaffold`) */}
+      <KeyboardAvoidingView style={styles.fill} behavior="padding">
         <View style={styles.body}>{children}</View>
 
         <View style={styles.dock}>

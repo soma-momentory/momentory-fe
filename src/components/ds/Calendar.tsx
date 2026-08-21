@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/design/ds";
 import { formatKoreanMonth } from "@/lib/day";
 
+import { columnWidth } from "./columnWidth";
 import { IconButton } from "./IconButton";
 import { Text } from "./Text";
 
@@ -29,6 +31,13 @@ import { Text } from "./Text";
  * 지킬 수 없다 — 38px 칸에 감정 이름이 들어가지 않는다. 대신 **날짜를 누르면
  * 아래 카드가 이름을 글자로 말한다**(`A1.md`). 이 달력만 따로 떼어 쓰면 그
  * 규칙이 함께 오지 않는다는 뜻이다.
+ *
+ * ## 한 주는 **화면 폭과 무관하게** 일곱 칸이다
+ *
+ * 예전엔 칸을 `width: '14.2857%'` 로 뒀는데, 일곱 칸이 각자 기기 픽셀로
+ * 반올림되면 합이 부모를 넘어 **토요일이 다음 줄로 넘어갔다**(좁은 기기에서
+ * 한 주가 6+1 로 접혔다). 지금은 격자 폭을 재서 픽셀로 나눈다(`columnWidth`) —
+ * 요일 머리글도 같은 값을 써서 줄이 어긋나지 않는다.
  *
  * ## 기록이 없는 날도 누를 수 있다
  *
@@ -64,6 +73,11 @@ const NO_MARK: CalendarMark = {};
 const isoOf = (month: string, day: number) => `${month}-${String(day).padStart(2, "0")}`;
 
 export function Calendar({ month, selectedDate, onSelect, onMonthStep, markOf }: Props) {
+  const [gridWidth, setGridWidth] = useState(0);
+  const cell = columnWidth(gridWidth, WEEKDAYS.length);
+  // 재기 전 한 프레임만 퍼센트로 선다
+  const cellSize = cell == null ? MEASURING_WIDTH : { width: cell };
+
   const [y = "2026", m = "1"] = month.split("-");
   // 1일의 요일만큼 앞을 비운다 — 요일 머리글과 줄이 맞아야 달력으로 읽힌다
   const lead = new Date(Number(y), Number(m) - 1, 1).getDay();
@@ -91,9 +105,9 @@ export function Calendar({ month, selectedDate, onSelect, onMonthStep, markOf }:
         />
       </View>
 
-      <View style={styles.grid}>
+      <View style={styles.grid} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
         {WEEKDAYS.map((d) => (
-          <View key={d} style={styles.head}>
+          <View key={d} style={[styles.head, cellSize]}>
             <Text variant="caption2" color={labelColor.assistive}>
               {d}
             </Text>
@@ -102,7 +116,7 @@ export function Calendar({ month, selectedDate, onSelect, onMonthStep, markOf }:
 
         {/* 앞의 빈 칸에는 누를 것이 없다 — 자리만 지킨다 */}
         {Array.from({ length: lead }, (_, i) => (
-          <View key={`lead-${i}`} style={styles.cell} />
+          <View key={`lead-${i}`} style={[styles.cell, cellSize]} />
         ))}
 
         {Array.from({ length: days }, (_, i) => {
@@ -119,7 +133,7 @@ export function Calendar({ month, selectedDate, onSelect, onMonthStep, markOf }:
               accessibilityState={{ selected, disabled: mark.disabled === true }}
               disabled={mark.disabled === true}
               onPress={() => onSelect(date)}
-              style={[styles.cell, selected ? styles.cellSelected : null]}
+              style={[styles.cell, cellSize, selected ? styles.cellSelected : null]}
             >
               <Text
                 variant={mark.emphasized === true ? "label2" : "caption1"}
@@ -150,17 +164,22 @@ function cellColor(mark: CalendarMark) {
 const CELL_HEIGHT = 38;
 const DOT = 6;
 
+/** 폭을 재기 전 한 프레임 — 퍼센트로 서 있다가 다음 프레임에 픽셀로 갈아탄다 */
+const MEASURING_WIDTH = { width: `${100 / WEEKDAYS.length}%` } as const;
+
 const styles = StyleSheet.create({
   root: { gap: space.md },
   monthRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   // 히트 44 는 유지하되 칸 높이를 밀지 않게 세로로 당긴다
   monthButton: { height: 32, marginVertical: -6 },
 
-  // 7칸 고정 — `flexBasis` 로 나눈다. gap 은 시안의 2px
+  // 7칸 고정 — 폭을 재서 픽셀로 나눈다(위 주석). 줄 간격은 시안의 2px
+  // ⚠ **가운데 정렬하지 않는다** — 마지막 주는 칸이 일곱보다 적어서, 가운데로
+  // 모으면 그 주의 날짜가 요일 머리글과 어긋난다. 내림하고 남는 2px 남짓은
+  // 오른쪽 끝에 그대로 둔다
   grid: { flexDirection: "row", flexWrap: "wrap", rowGap: 2, columnGap: 0 },
-  head: { width: `${100 / 7}%`, height: 24, alignItems: "center", justifyContent: "center" },
+  head: { height: 24, alignItems: "center", justifyContent: "center" },
   cell: {
-    width: `${100 / 7}%`,
     height: CELL_HEIGHT,
     alignItems: "center",
     justifyContent: "center",

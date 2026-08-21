@@ -101,7 +101,7 @@ export function TextField({
             setFocused(false);
             rest.onBlur?.(e);
           }}
-          style={styles.input}
+          style={[styles.input, multiline ? null : styles.singleLine]}
         />
         {suffix != null ? (
           <Text variant="body2" color={labelColor.assistive}>
@@ -172,6 +172,12 @@ const styles = StyleSheet.create({
     // 높이는 바깥(`field`)이 잡는다 — 안에서 또 잡으면 접미와 세로가 어긋난다
     padding: 0,
   },
+  /**
+   * 한 줄 입력은 **칸 높이의 가운데**다 — 값도 플레이스홀더도.
+   * 안드로이드는 `padding: 0` 을 주면 글자를 위로 붙이는 일이 있어 명시한다
+   * (여러 줄은 위에서부터 쌓이는 것이 맞아 이 스타일을 얹지 않는다).
+   */
+  singleLine: { textAlignVertical: "center" },
   // 3줄 = lineHeight 26 × 3 + 상하 패딩. 여러 줄은 위에서부터 쌓인다
   multiline: {
     alignItems: "flex-start",

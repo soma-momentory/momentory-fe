@@ -54,6 +54,10 @@ type Props = {
 /** 읽기 블록도 3줄에서 … 처리 — 전체는 「자세히 보기」에서 (시안 규칙) */
 const NOTE_LINES = 3;
 
+/** 느낀 점 저장 버튼 지름 — 입력 한 줄이 이 높이의 가운데에 선다 */
+const NOTE_BUTTON = 32;
+const NOTE_PADDING_Y = (NOTE_BUTTON - text.body1.lineHeight) / 2;
+
 export function RestActionCard({
   card,
   date,
@@ -245,15 +249,20 @@ const styles = StyleSheet.create({
   noteField: {
     flex: 1,
     minWidth: 0,
+    // 한 줄일 때 저장 버튼(32)과 세로 중심이 맞는다 — 플레이스홀더가 위에
+    // 떠 보이지 않게. 안드로이드는 여러 줄 입력의 글자를 위에 붙인다
+    minHeight: NOTE_BUTTON,
+    textAlignVertical: "center",
     // 1줄에서 최대 3줄까지만 (시안 규칙)
-    maxHeight: text.body1.lineHeight * NOTE_LINES,
-    padding: 0,
+    maxHeight: text.body1.lineHeight * NOTE_LINES + NOTE_PADDING_Y * 2,
+    paddingVertical: NOTE_PADDING_Y,
+    paddingHorizontal: 0,
     ...text.body1,
     color: labelColor.normal,
   },
   send: {
-    width: 32,
-    height: 32,
+    width: NOTE_BUTTON,
+    height: NOTE_BUTTON,
     borderRadius: radius.full,
     alignItems: "center",
     justifyContent: "center",

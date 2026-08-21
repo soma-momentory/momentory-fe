@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import {
@@ -11,6 +12,7 @@ import {
   space,
 } from "@/design/ds";
 
+import { columnWidth } from "./columnWidth";
 import { Text } from "./Text";
 
 /**
@@ -29,6 +31,13 @@ import { Text } from "./Text";
  * ## 선택을 색만으로 표시하지 않는다
  *
  * `RULES.md` 3 — 면 색과 함께 **테두리 굵기(1→2)와 글자 굵기**가 같이 바뀐다.
+ *
+ * ## 3열은 **화면 폭과 무관하게** 3열이다
+ *
+ * 예전엔 `flexBasis: 33.33%` + `maxWidth: 31%` 로 세웠는데, 간격(12)이 퍼센트
+ * 밖에서 더해져 좁은 기기에서는 세 칸이 한 줄에 들어가지 못하고 마지막 칸이
+ * 다음 줄로 넘어갔다 — 3×3 이 3·3·2·1 로 흩어졌다. 지금은 폭을 재서 칸을
+ * **픽셀로** 나눈다(`columnWidth`).
  */
 export type Choice = { id: string; label: string };
 
@@ -40,8 +49,11 @@ type Props = {
 };
 
 export function ChoiceGrid({ items, selected, onSelect }: Props) {
+  const [width, setWidth] = useState(0);
+  const tile = columnWidth(width, COLUMNS, GAP);
+
   return (
-    <View style={styles.grid}>
+    <View style={styles.grid} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
       {items.map((it) => {
         const on = it.id === selected;
         return (
@@ -50,7 +62,12 @@ export function ChoiceGrid({ items, selected, onSelect }: Props) {
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             onPress={() => onSelect(it.id)}
-            style={[styles.tile, on ? styles.on : styles.off]}
+            style={[
+              styles.tile,
+              // 재기 전 한 프레임만 퍼센트로 선다
+              tile == null ? styles.measuring : { width: tile },
+              on ? styles.on : styles.off,
+            ]}
           >
             <Text
               variant={on ? "label1" : "body2"}
@@ -67,22 +84,20 @@ export function ChoiceGrid({ items, selected, onSelect }: Props) {
 
 /** 3열 — 한 줄에 셋. 간격을 빼고 남은 폭을 셋이 나눈다 */
 const COLUMNS = 3;
+const GAP = space.md;
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
+  // 왼쪽부터 채운다 — 마지막 줄이 셋보다 적을 때 가운데로 모으면 열이 어긋난다.
+  // 내림하고 남는 1px 남짓은 오른쪽 끝에 둔다
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP },
   tile: {
-    // `flexBasis` 로 셋을 세우면 간격이 남는 폭에서 먼저 빠진다
-    flexBasis: `${100 / COLUMNS}%`,
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 0,
-    maxWidth: "31%",
     minHeight: size.button.large,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: space.sm,
     borderRadius: radius.medium,
   },
+  measuring: { flexBasis: `${100 / COLUMNS}%`, flexShrink: 1, minWidth: 0 },
   off: {
     backgroundColor: background.elevated,
     borderWidth: 1,
