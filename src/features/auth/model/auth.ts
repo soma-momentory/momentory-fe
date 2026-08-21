@@ -7,6 +7,7 @@ import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
 import { fetchMe } from "@/features/auth/data/meApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
 import { clearSyncState } from "@/features/calendar/data/syncStateStore";
+import { clearDeletedCards } from "@/features/diary/data/deletedCardStore";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
@@ -249,7 +250,14 @@ const clearUserScopedStores = (userId?: number) => {
   //
   // 기다리지 않는다 — 로그아웃은 실패할 수 없는 동작이고(아래 `signOut` 주석),
   // 지우지 못해도 키에 `userId` 가 박혀 있어 다른 계정이 그것을 보지는 않는다.
-  if (userId != null) void clearSyncState(userId);
+  //
+  // 지운 행동 카드의 묘비도 같은 이유로 기기에 눕는다 — 남기면 **다음 사용자의
+  // 같은 번호 카드가 조용히 사라진다**(카드 id 는 서버의 전역 번호다 ·
+  // `features/diary/data/deletedCardStore.ts`).
+  if (userId != null) {
+    void clearSyncState(userId);
+    void clearDeletedCards(userId);
+  }
 };
 
 /**

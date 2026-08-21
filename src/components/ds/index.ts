@@ -17,7 +17,11 @@
  * `Spinner`(정리 중).
  *
  * `ListCell`·`SectionHeader`·`Menu`·`Toast` 는 홈·일정에서 만들었고
- * **보관함·마이가 재사용한다**(`ListCell` 은 설정 목록, `Menu` 는 일기 상세의 ⋮).
+ * **보관함·마이가 재사용한다**(`ListCell` 은 설정 목록, `Menu` 는 일기 상세·쉼터의 ⋮).
+ *
+ * `ToastHost` 는 `Toast` 를 **앱에 하나뿐인 자리**에 그린다 — `AppProviders` 가
+ * 라우트 위에 얹고, 무엇을 띄울지는 `lib/toast.ts` 가 담는다. 화면이 자기 상태로
+ * 든 토스트(홈의 일정 삭제)는 그 화면이 살아 있는 동안만 뜬다는 한계가 있다.
  *
  * `Calendar`·`SearchField`·`ViewSwitcher`·`EmotionDot`·`TabScreen` 은 보관함·리포트에서
  * 만들었다 — `Calendar` 는 쉼터(R2)가, `EmotionDot`·`TabScreen` 은 나머지 탭이 재사용한다.
@@ -36,6 +40,7 @@ export { ListCell, ListDivider, type ListCellProps } from "./ListCell";
 export { SectionHeader } from "./SectionHeader";
 export { Menu, type MenuAction } from "./Menu";
 export { Toast } from "./Toast";
+export { ToastHost } from "./ToastHost";
 export { TextField } from "./TextField";
 export { SearchField } from "./SearchField";
 export { Chip } from "./Chip";

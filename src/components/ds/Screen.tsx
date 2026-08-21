@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { background, layout } from "@/design/ds";
 
@@ -17,6 +17,14 @@ import { GridBackground } from "./GridBackground";
  *
  * 전체 폭을 써야 하는 것(탭바·하단 CTA 바·시트)은 `padded={false}` 로 받고
  * 자기 안에서 20 을 잡는다 — 좌우 여백을 음수 마진으로 되돌리지 않는다.
+ *
+ * ## `SafeAreaView` 를 쓰지 않는다 — 아래에 **하한**이 필요하다
+ *
+ * `SafeAreaView` 는 인셋을 그대로 패딩으로 옮기는데, 안드로이드 **3버튼
+ * 내비게이션** 기기는 `insets.bottom` 이 0 으로 온다(시스템 바가 창 밖에 있다).
+ * 그러면 바닥 버튼이 시스템 버튼에 딱 붙는다 — 제스처 바 기기에서는 인셋이
+ * 저절로 여백 노릇을 해서 보이지 않던 문제다. 그래서 인셋과
+ * `layout.minBottomInset` 중 **큰 쪽**을 쓴다(라이브러리에 하한 옵션이 없다).
  */
 type Props = {
   children: ReactNode;
@@ -37,12 +45,23 @@ export function Screen({
   grid = true,
   edges = ["top", "bottom"],
 }: Props) {
+  const insets = useSafeAreaInsets();
+  const on = (edge: "top" | "bottom" | "left" | "right") => edges.includes(edge);
+
+  // 좌우는 화면 패딩(20)과 인셋을 **더한다** — 둘 중 하나로 덮으면 노치 기기에서
+  // 20 이 사라지거나 인셋이 무시된다
+  const side = padded ? layout.screenPadding : 0;
+  const safe = {
+    paddingTop: on("top") ? insets.top : 0,
+    paddingBottom: on("bottom") ? Math.max(insets.bottom, layout.minBottomInset) : 0,
+    paddingLeft: side + (on("left") ? insets.left : 0),
+    paddingRight: side + (on("right") ? insets.right : 0),
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: background[surface] }]}>
       {grid ? <GridBackground /> : null}
-      <SafeAreaView style={[styles.body, padded ? styles.padded : null]} edges={edges}>
-        {children}
-      </SafeAreaView>
+      <View style={[styles.body, safe]}>{children}</View>
     </View>
   );
 }
@@ -51,5 +70,4 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   // minHeight 0 — 안쪽 ScrollView 가 부모를 넘겨 밀지 않게 한다
   body: { flex: 1, minHeight: 0 },
-  padded: { paddingHorizontal: layout.screenPadding },
 });

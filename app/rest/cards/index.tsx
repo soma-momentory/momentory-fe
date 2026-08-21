@@ -2,7 +2,15 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { Calendar, Screen, Text, TopNavigation, type CalendarMark } from "@/components/ds";
+import {
+  Calendar,
+  Menu,
+  Modal,
+  Screen,
+  Text,
+  TopNavigation,
+  type CalendarMark,
+} from "@/components/ds";
 import { RestActionCard } from "@/components/rest/RestActionCard";
 import { label as labelColor, space, status } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
@@ -27,6 +35,17 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 달력은 「있었다」와 「했다」를 말할 뿐 잘했는지를 말하지 않는다.
  *
  * 카드가 없는 날은 **고를 수 없다** — 눌러도 빈 화면으로 데려갈 뿐이다.
+ *
+ * ## 삭제는 ⋮ → 확인 모달 → 토스트
+ *
+ * 일기 상세와 **같은 문법**이다(⋮ 메뉴 · 되돌릴 수 없는 행동만 모달 · 결과는
+ * 한 줄). 다른 점 하나: 일기는 되돌리기 창(6초)을 두는데 **행동카드는 두지
+ * 않는다** — 카드는 「지난 행동카드」 목록에서 날짜로 다시 만날 수 있는 것이
+ * 아니라 지우면 그날의 자리가 비는 것이라, 미루기보다 먼저 묻는다.
+ *
+ * ⚠ 서버에 `DELETE /action-cards/{id}` 가 없어 **기기에서만** 지운다 — 지운 id 를
+ * 기기에 남기고 다음 조회에서 걸러낸다(`features/diary/data/deletedCardStore.ts` ·
+ * `docs/PRODUCT.md` 「상류와 차이」 25).
  */
 export default function RestCards() {
   const cards = useDiary((s) => s.actionCards);
@@ -34,8 +53,11 @@ export default function RestCards() {
   const undoDone = useDiary((s) => s.undoActionDone);
   const setReflection = useDiary((s) => s.setReflection);
   const saveReflection = useDiary((s) => s.saveReflection);
+  const removeCard = useDiary((s) => s.removeActionCard);
 
   const all = useMemo(() => datedCards(cards), [cards]);
+  const [menuTop, setMenuTop] = useState<number | null>(null);
+  const [asking, setAsking] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const selected = picked ?? latestCardDay(all);
   const [month, setMonth] = useState<string | null>(null);
@@ -58,57 +80,110 @@ export default function RestCards() {
     setMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`);
   };
 
+  /**
+   * 고른 날짜를 놓아 준다 — `picked` 를 비우면 `latestCardDay` 가 다시 고른다.
+   * 빈 날에 머물러 있으면 방금 지운 자리에서 「행동카드가 없어요」를 보게 되고,
+   * 삭제가 실패해 카드가 되돌아오면 그 카드의 날짜로 다시 선다.
+   *
+   * **결과 한 줄은 store 가 알린다** — 묘비를 남긴 뒤에야 성공인지 알 수 있어서다
+   * (`features/diary/model/diary.ts` `removeActionCard`).
+   */
+  const confirmDelete = () => {
+    setAsking(false);
+    if (card == null) return;
+    removeCard(card.id);
+    setPicked(null);
+  };
+
   return (
-    <Screen>
-      <TopNavigation leading="arrow-left" title="행동카드" onLeadingPress={() => router.back()} />
+    <>
+      <Screen>
+        <TopNavigation leading="arrow-left" title="행동카드" onLeadingPress={() => router.back()} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {card == null || selected == null ? (
-          // 빈 상태 — 「아직」이라고 말하지 않는다. 회고가 먼저다
-          <Text variant="body2" color={labelColor.neutral} style={styles.empty}>
-            회고를 마치면 그날의 행동카드가 여기 남아요.
-          </Text>
-        ) : (
-          <RestActionCard
-            card={card}
-            date={formatKoreanDateShort(selected)}
-            dateNote={selected === today ? "오늘" : undefined}
-            onToggleDone={() => (card.done ? undoDone(card.id) : markDone(card.id))}
-            onSetReflection={(t) => {
-              // 쉼터는 저장 버튼에서 한 번에 커밋한다 — 로컬 반영 뒤 곧장 서버로
-              setReflection(card.id, t);
-              saveReflection(card.id);
-            }}
-            onOpenTrail={() =>
-              router.push({ pathname: "/rest/cards/[date]", params: { date: selected } })
-            }
-          />
-        )}
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {card == null || selected == null ? (
+            // 빈 상태 — 「아직」이라고 말하지 않는다. 회고가 먼저다
+            <Text variant="body2" color={labelColor.neutral} style={styles.empty}>
+              회고를 마치면 그날의 행동카드가 여기 남아요.
+            </Text>
+          ) : (
+            <RestActionCard
+              card={card}
+              date={formatKoreanDateShort(selected)}
+              dateNote={selected === today ? "오늘" : undefined}
+              onToggleDone={() => (card.done ? undoDone(card.id) : markDone(card.id))}
+              onSetReflection={(t) => {
+                // 쉼터는 저장 버튼에서 한 번에 커밋한다 — 로컬 반영 뒤 곧장 서버로
+                setReflection(card.id, t);
+                saveReflection(card.id);
+              }}
+              onOpenTrail={() =>
+                router.push({ pathname: "/rest/cards/[date]", params: { date: selected } })
+              }
+              // 누른 지점(창 기준) 바로 아래에 메뉴가 선다 — 메뉴는 `Screen` 밖
+              // 레이어라 인셋을 빼지 않는다
+              onMore={(atY) => setMenuTop(atY + space.md)}
+            />
+          )}
 
-        {/* 배경 위에 직접 — 흰 카드로 감싸면 위 카드와 같은 무게가 된다 */}
-        <View style={styles.past}>
-          <View style={styles.pastHead}>
-            <Text variant="label1" color={labelColor.neutral}>
-              지난 행동카드
-            </Text>
-            <Text variant="caption1" color={labelColor.alternative}>
-              카드가 있었던 날을 골라보세요.
-            </Text>
+          {/* 배경 위에 직접 — 흰 카드로 감싸면 위 카드와 같은 무게가 된다 */}
+          <View style={styles.past}>
+            <View style={styles.pastHead}>
+              <Text variant="label1" color={labelColor.neutral}>
+                지난 행동카드
+              </Text>
+              <Text variant="caption1" color={labelColor.alternative}>
+                카드가 있었던 날을 골라보세요.
+              </Text>
+            </View>
+
+            <Calendar
+              month={shownMonth}
+              selectedDate={selected}
+              onSelect={(date) => {
+                setPicked(date);
+                setMonth(date.slice(0, 7));
+              }}
+              onMonthStep={step}
+              markOf={markOf}
+            />
           </View>
+        </ScrollView>
+      </Screen>
 
-          <Calendar
-            month={shownMonth}
-            selectedDate={selected}
-            onSelect={(date) => {
-              setPicked(date);
-              setMonth(date.slice(0, 7));
-            }}
-            onMonthStep={step}
-            markOf={markOf}
-          />
-        </View>
-      </ScrollView>
-    </Screen>
+      {/* 메뉴·모달은 `Screen` **밖**이다 — 안에 두면 Safe Area 안쪽만 덮어
+          바깥 탭이 상태바 자리에서 먹히지 않는다(`TabScreen` 과 같은 이유) */}
+      {menuTop != null ? (
+        <Menu
+          actions={[
+            {
+              label: "삭제하기",
+              icon: "trash",
+              negative: true,
+              onPress: () => {
+                setMenuTop(null);
+                setAsking(true);
+              },
+            },
+          ]}
+          top={menuTop}
+          onDismiss={() => setMenuTop(null)}
+        />
+      ) : null}
+
+      {/* 되돌릴 수 없는 행동이라 **묻는다** — 오류가 아니므로 규칙과 어긋나지 않는다 */}
+      {asking ? (
+        <Modal
+          title="이 행동카드를 삭제할까요?"
+          description="삭제한 행동카드는 되돌릴 수 없어요."
+          cancelLabel="그대로 두기"
+          confirmLabel="삭제"
+          destructive
+          onCancel={() => setAsking(false)}
+          onConfirm={confirmDelete}
+        />
+      ) : null}
+    </>
   );
 }
 

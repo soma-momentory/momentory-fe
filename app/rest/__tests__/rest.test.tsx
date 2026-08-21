@@ -1,4 +1,4 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import Rest from "../../(tabs)/rest";
@@ -7,6 +7,7 @@ import RestCardTrail from "../cards/[date]";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { datedCards } from "@/features/rest/model/cards";
+import { useToast } from "@/lib/toast";
 import { seedDiaries } from "@/testing/fixtures";
 
 /**
@@ -28,8 +29,29 @@ jest.mock("expo-router", () => ({
 beforeEach(() => {
   mockParams = { date: "2026-07-27" };
   seedDiaries();
+  useToast.setState({ current: null });
   jest.clearAllMocks();
 });
+
+/**
+ * 삭제만 보는 테스트가 쓰는 **한 장짜리 시드** — 샘플 데이터에 기대지 않는다.
+ * 지우는 일은 「카드가 하나 있다」면 충분한데, 시드 목록에 기대면 시드가 바뀔 때
+ * 관계없는 테스트가 함께 깨진다.
+ */
+const seedOneCard = () => {
+  const card = {
+    id: "ac-1",
+    diaryId: "d-1",
+    situation: "회의가 길어져 지쳤다",
+    targetAction: "10분 걷기",
+    done: false,
+    doneAt: null,
+    reflection: null,
+    createdAt: "2026-07-27",
+  };
+  useDiary.setState({ actionCards: [card] });
+  return card;
+};
 
 /** 화면과 **같은 기준**으로 고른다 — 최신 날짜의 카드다 (store 순서가 아니다) */
 const latest = () => {
@@ -176,6 +198,43 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     expect(latest().done).toBe(false);
     // 적던 것이 다음 수행의 초안으로 남지 않는다
     expect(r.queryByLabelText("느낀 점")).toBeNull();
+  });
+
+  it("⋮ → [삭제하기] → 확인해야 지워지고, 결과를 한 줄로 알린다", async () => {
+    const target = seedOneCard();
+    const r = await render(<RestCards />);
+
+    await fireEvent.press(r.getByLabelText("더보기"));
+    await fireEvent.press(r.getByText("삭제하기"));
+
+    // 되돌릴 수 없는 행동이라 **먼저 묻는다** — 아직 지우지 않았다
+    expect(r.getByText("이 행동카드를 삭제할까요?")).toBeTruthy();
+    expect(useDiary.getState().actionCards.find((c) => c.id === target.id)).toBeTruthy();
+
+    await fireEvent.press(r.getByText("삭제"));
+
+    expect(useDiary.getState().actionCards.find((c) => c.id === target.id)).toBeUndefined();
+    // 알림은 **기기에 묘비를 남긴 뒤**에 온다 — 남기지 못하면 실패 한 줄이다
+    // (규칙 전체는 `features/diary/model/__tests__/deletedCards.test.ts`)
+    await waitFor(() =>
+      expect(useToast.getState().current).toMatchObject({
+        message: "행동카드를 삭제했어요.",
+        variant: "positive",
+      }),
+    );
+  });
+
+  it("[그대로 두기] 를 고르면 아무 일도 없다", async () => {
+    seedOneCard();
+    const before = useDiary.getState().actionCards.length;
+    const r = await render(<RestCards />);
+
+    await fireEvent.press(r.getByLabelText("더보기"));
+    await fireEvent.press(r.getByText("삭제하기"));
+    await fireEvent.press(r.getByText("그대로 두기"));
+
+    expect(useDiary.getState().actionCards).toHaveLength(before);
+    expect(useToast.getState().current).toBeNull();
   });
 
   it("[자세히 보기] 가 누적 기록으로 간다", async () => {

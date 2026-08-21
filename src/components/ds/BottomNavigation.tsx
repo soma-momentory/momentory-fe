@@ -8,7 +8,7 @@ import { Text } from "./Text";
 /**
  * 하단 탭 — `DESIGN.md` §10. **다섯 칸이다.**
  *
- * 높이 56 · `paddingBottom: 9`. 아이콘은 Wanted 세트만 쓴다 —
+ * 높이 56 · `paddingTop: 8` · `paddingBottom: 9`. 아이콘은 Wanted 세트만 쓴다 —
  * **`person` 은 없고 `nav-my-page` 를 쓴다**(§10, 없는 글리프를 추측하지 않는다).
  *
  * ## 활성 표시가 색만이 아니다
@@ -64,7 +64,10 @@ export function BottomNavigation<T extends string>({ items, active, onPress }: P
 
 const styles = StyleSheet.create({
   bar: {
-    height: layout.tabBar,
+    // `height` 가 아니라 `minHeight` 다 — 위아래 여백을 준 뒤에도 아이콘·라벨이
+    // 56 안에서 눌리지 않는다
+    minHeight: layout.tabBar,
+    paddingTop: layout.tabBarPaddingTop,
     paddingBottom: layout.tabBarPaddingBottom,
     flexDirection: "row",
     alignItems: "center",

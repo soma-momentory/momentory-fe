@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
-import { Button, Card, Icon, Text } from "@/components/ds";
+import { Button, Card, Icon, IconButton, Text } from "@/components/ds";
 import {
   background,
   fill,
@@ -49,10 +49,20 @@ type Props = {
   onSetReflection: (text: string) => void;
   /** 누적 기록(`R3`)으로. 없으면 「자세히 보기」를 두지 않는다 */
   onOpenTrail?: () => void;
+  /**
+   * ⋮ 를 누른 지점(창 기준 y) — 없으면 ⋮ 를 두지 않는다.
+   * 메뉴 자체는 **화면이 그린다**(일기 상세의 ⋮ 와 같은 문법) — 카드가 자기
+   * 위에 절대 배치 레이어를 얹으면 스크롤과 함께 밀린다.
+   */
+  onMore?: (atY: number) => void;
 };
 
 /** 읽기 블록도 3줄에서 … 처리 — 전체는 「자세히 보기」에서 (시안 규칙) */
 const NOTE_LINES = 3;
+
+/** 느낀 점 저장 버튼 지름 — 입력 한 줄이 이 높이의 가운데에 선다 */
+const NOTE_BUTTON = 32;
+const NOTE_PADDING_Y = (NOTE_BUTTON - text.body1.lineHeight) / 2;
 
 export function RestActionCard({
   card,
@@ -61,6 +71,7 @@ export function RestActionCard({
   onToggleDone,
   onSetReflection,
   onOpenTrail,
+  onMore,
 }: Props) {
   const saved = card.reflection != null && card.reflection.length > 0;
   /** 저장된 느낀 점을 **고치는 중**인지. 수행 직후에는 자동으로 열려 있다 */
@@ -87,13 +98,25 @@ export function RestActionCard({
   return (
     <Card padding="loose" style={styles.card}>
       <View style={styles.head}>
-        <Text variant="headline1" color={labelColor.strong}>
-          {date}
-        </Text>
-        {dateNote != null ? (
-          <Text variant="caption1" color={labelColor.alternative}>
-            {dateNote}
+        <View style={styles.headName}>
+          <Text variant="headline1" color={labelColor.strong}>
+            {date}
           </Text>
+          {dateNote != null ? (
+            <Text variant="caption1" color={labelColor.alternative}>
+              {dateNote}
+            </Text>
+          ) : null}
+        </View>
+        {onMore != null ? (
+          <IconButton
+            name="more-vertical"
+            size={20}
+            accessibilityLabel="더보기"
+            color={labelColor.alternative}
+            onPress={(e) => onMore(e.nativeEvent.pageY)}
+            style={styles.more}
+          />
         ) : null}
       </View>
 
@@ -207,10 +230,13 @@ const styles = StyleSheet.create({
   card: { gap: 10 },
   head: {
     flexDirection: "row",
-    alignItems: "baseline",
+    alignItems: "center",
     justifyContent: "space-between",
     gap: space.md,
   },
+  headName: { flexDirection: "row", alignItems: "baseline", gap: space.sm, flexShrink: 1 },
+  // 44 히트는 지키되 머리 줄의 높이를 밀지 않게 위아래·오른쪽으로 당긴다
+  more: { marginVertical: -space.md, marginRight: -space.md },
   field: { gap: space.xs },
 
   // 상태·느낀 점은 카드 안에서 한 겹 아래다 — 위 선 하나로 나눈다
@@ -245,15 +271,20 @@ const styles = StyleSheet.create({
   noteField: {
     flex: 1,
     minWidth: 0,
+    // 한 줄일 때 저장 버튼(32)과 세로 중심이 맞는다 — 플레이스홀더가 위에
+    // 떠 보이지 않게. 안드로이드는 여러 줄 입력의 글자를 위에 붙인다
+    minHeight: NOTE_BUTTON,
+    textAlignVertical: "center",
     // 1줄에서 최대 3줄까지만 (시안 규칙)
-    maxHeight: text.body1.lineHeight * NOTE_LINES,
-    padding: 0,
+    maxHeight: text.body1.lineHeight * NOTE_LINES + NOTE_PADDING_Y * 2,
+    paddingVertical: NOTE_PADDING_Y,
+    paddingHorizontal: 0,
     ...text.body1,
     color: labelColor.normal,
   },
   send: {
-    width: 32,
-    height: 32,
+    width: NOTE_BUTTON,
+    height: NOTE_BUTTON,
     borderRadius: radius.full,
     alignItems: "center",
     justifyContent: "center",
