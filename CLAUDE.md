@@ -129,10 +129,29 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 
 ## BE 는 마지막에 붙인다 (2026-08-07 결정)
 
-**화면 40장을 먼저 만들고 서버 연결은 맨 끝에 한다.** 그동안 데이터는
-`src/mocks/sample.ts`(스키마 `meta.sampleData`)에서 오고, 화면은 그걸 직접
-읽지 않고 **`src/features/<도메인>/` 의 store 와 `data/`(repository·adapter) 경계를
-지난다** — 직접 import 는 린터(`no-restricted-imports`)가 막는다.
+> 🧹 **목 데이터를 전부 지웠다** (2026-08-21). `src/mocks/sample.ts` 와
+> `features/*/data/sample*.ts` 셋이 사라졌다 — **화면이 그리는 값은 이제 서버에서
+> 온 것뿐**이고, 서버가 주지 않는 것은 **비어 있다.**
+>
+> 지운 것과 그 자리에 남은 것:
+>
+> | 지운 샘플                                                      | 지금                                                                   |
+> | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+> | 일기 12편 · 행동 카드 (보관함·쉼터·리포트)                     | 서버 `GET /diaries` — `useDiary.load()`                                |
+> | 프로필 한 벌 (닉네임 「지현」 · 나이 · 관심사 · 캘린더 연결됨) | 서버 `GET /users/me` · 온보딩 완료 — 그전에는 **빈 값**                |
+> | 순간 2개 (`Moment`)                                            | **없앴다** — 만드는 화면도 읽는 화면도 없다(타입만 남김)               |
+> | 날씨 「맑음 · 27℃」                                            | **없앴다** — 계약에 날씨가 없다                                        |
+> | 주간 해석 두 주치 (`W1`)                                       | **비어 있다** — 계약에 주간 리포트 엔드포인트가 없다. 세는 값은 나온다 |
+> | 지난달 감정 집계 (`monthChange`)                               | **없앴다** — 부르는 화면이 없었다                                      |
+>
+> **화면 테스트가 쓰던 재료만** [`src/testing/fixtures.ts`](src/testing/fixtures.ts) 로
+> 옮겼다 — 앱 코드가 그걸 import 하면 린터가 막는다(샘플이 조용히 되살아나는 길).
+> 남은 도메인은 서버가 붙을 때까지 **빈 화면**이 정상이다.
+
+**화면 40장을 먼저 만들고 서버 연결은 맨 끝에 한다**는 것이 원래 결정이었고, 그동안
+데이터는 `src/mocks/sample.ts`(스키마 `meta.sampleData`)에서 왔다. 화면은 그때도
+그걸 직접 읽지 않고 **`src/features/<도메인>/` 의 store 와 `data/`(repository·adapter)
+경계를 지났다** — 그래서 샘플을 지울 때 **경계 안쪽만** 고치면 됐다.
 
 모양을 스키마(`momentory.schema.mvp.json`)대로 맞추는 것이 조건이다 — 그래야
 서버가 붙을 때 `data/` 안쪽만 바뀌고 화면은 그대로다. 화면이 데이터를 직접 들면
@@ -140,8 +159,9 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 지금 안 써도 타입에 둔다.** 날짜·시각은 `src/lib/clock.ts` 를 지난다 —
 샘플 하루(2026-07-27)와 04:00 경계가 그 한 파일에 있다.
 
-⚠ **인증과 회고 대화는 이미 붙었다** (2026-08-09 · PR #46, 로그아웃 2026-08-10).
-결정이 뒤집힌 것은 아니고, 나머지 도메인(홈·보관함·리포트·마이)은 그대로 `sample.ts` 를 쓴다.
+⚠ **인증 · 회고 대화 · 일정 · 일기 · 프로필이 붙었다** (2026-08-09 PR #46 부터).
+**남은 것은 주간 리포트 해석 하나**이고 계약에 아직 엔드포인트가 없다 —
+그 자리는 샘플로 메우지 않고 **비워 뒀다**(위 「목 데이터를 전부 지웠다」).
 **서버 호출은 `src/lib/http.ts` 하나를 지난다** — `authedRequest` 가 Bearer 주입 ·
 타임아웃 · 안전 파싱을 맡고 **던지지 않고 `{ ok, error }` 로 닫는다.** 응답의
 형태 검증은 호출부(`data/` 어댑터) 몫이다. 다음 도메인을 붙일 때 **자기 `fetch`
@@ -223,18 +243,19 @@ src/features/emotion/model/emotion.ts     ← **감정 9종의 도메인 정본*
                                             번호는 서버 enum 두 벌(retro EMOTION_KEYS ·
                                             home SCHEDULE_EMOTIONS)과 맞물려 있다 —
                                             바꾸면 그 두 표를 함께 고친다
-src/features/home/{model/{day,types}.ts, data/sampleRepository.ts, ui/ScheduleRow.tsx}
+src/features/home/{model/{day,types}.ts, data/scheduleApi.ts, ui/ScheduleRow.tsx}
                                           ← day.ts 가 MAX_VISIBLE_SCHEDULES(5) 도 든다 —
                                             「5개까지 펼치고 접는다」는 디자인이 아니라 제품 규칙
 src/features/retro/{model/retro.ts, data/retroApi.ts}
                                           ← 대화는 서버가 주도한다 — store 는 시작 감정 ·
                                             세션 id · 버블 · 서버의 마지막 응답만 든다.
                                             고정 대사(FOLLOW_UPS·DRAFT_DEMO)는 사라졌다
-src/features/diary/{model/{diary,types,selectors}.ts, data/sampleAdapter.ts}
+src/features/diary/{model/{diary,types,selectors}.ts, data/diaryApi.ts}
                                           ← 회고가 남기는 것: Diary + ActionCard.
-                                            타입·selector·샘플 seed 가 store 와 분리돼 있다
+                                            타입·selector·서버 변환이 store 와 분리돼 있다
 src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 세지 않는다
-src/features/report/{model/report.ts, data/sampleRepository.ts} ← 주간 집계 · 해석 공급 경계
+src/features/report/{model/report.ts, data/reportRepository.ts} ← 주간 집계 · 해석 공급 경계
+                                          ← 해석은 **비어 있다** — 계약에 주간 리포트가 없다
 src/features/my/model/{settings,stats,reminders,basicInfo}.ts
                                           ← 알림/프로필 설정 · 전체 기간 집계 ·
                                             **설정 ↔ OS 예약 화해**. store 는 순수하게
@@ -262,9 +283,9 @@ src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,reissueApi,logoutA
                                             카카오 토큰은 서버로 한 번
                                             보내고 버린다 — SecureStore 에는 모멘토리 토큰만.
                                             로그아웃이 비우는 목록은 clearUserScopedStores 하나
-src/mocks/sample.ts                       ← 데모 데이터 정본 (스키마 meta.sampleData).
-                                            타입은 소유하지 않는다 — feature 가 소유.
-                                            화면이 직접 import 하면 린터가 막는다
+src/testing/fixtures.ts                   ← **테스트 전용 고정값.** 옛 `src/mocks/sample.ts`
+                                            자리다(2026-08-21 삭제) — 화면이 보는 값은 이제
+                                            서버에서만 온다. 앱 코드가 import 하면 린터가 막는다
 src/lib/providers.tsx   ← Provider 는 여기. _layout.tsx 가 아니다
 src/lib/http.ts         ← 인증이 필요한 서버 호출의 단일 통로 — Bearer 주입 · 타임아웃 ·
                           안전 파싱. 던지지 않고 { ok, error } 로 닫는다.

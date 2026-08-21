@@ -9,7 +9,7 @@ import { useDay } from "@/features/home/model/day";
 import type { ReplyActionCard, ReplyDiary } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
 import { authedRequest } from "@/lib/http";
-import { SAMPLE_SCHEDULES } from "@/mocks/sample";
+import { seedDiaries, testSchedules } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -58,7 +58,7 @@ describe("C6 · 일기 확인 — 기본은 읽기다", () => {
   });
 
   it("본문 아래 그날 일정을 함께 기록한다", async () => {
-    useDay.setState({ schedules: SAMPLE_SCHEDULES.map((x) => ({ ...x })) });
+    useDay.setState({ schedules: testSchedules() });
     const { getByText } = await render(<RetroDraft />);
 
     expect(getByText("오늘 일정")).toBeTruthy();
@@ -202,7 +202,7 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
   });
 
   it("이미 쌓인 일기 뒤에 이어 붙는다 — 13번째 장", async () => {
-    useDiary.getState().reset(); // 데모 시작값(12편)
+    seedDiaries(); // 이미 12편이 쌓여 있다
     await save();
 
     const { diaries } = useDiary.getState();

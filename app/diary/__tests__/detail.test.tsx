@@ -4,9 +4,10 @@ import { Redirect, router } from "expo-router";
 import DiaryDetail from "../[id]/index";
 
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
+import { seedDiaries } from "@/testing/fixtures";
 
 /** 7월 27일 일기 — 바바의 면·근거·행동 카드가 다 붙어 있는 한 장 */
-const ID = "d-sample-27";
+const ID = "d-fixture-27";
 let mockParams: { id: string } = { id: ID };
 
 jest.mock("expo-router", () => ({
@@ -17,7 +18,7 @@ jest.mock("expo-router", () => ({
 
 beforeEach(() => {
   mockParams = { id: ID };
-  useDiary.getState().reset();
+  seedDiaries();
   jest.clearAllMocks();
 });
 

@@ -1,6 +1,5 @@
 import type { Diary } from "@/features/diary/model/diary";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
-import { SAMPLE_LAST_MONTH_EMOTIONS } from "@/mocks/sample";
 
 /**
  * 보관함이 세는 것 — **기록 수치뿐이다.**
@@ -57,31 +56,14 @@ export function topEmotion(diaries: readonly Diary[]): EmotionId | null {
   return top;
 }
 
-/**
- * 「지난달과 비교」 — **얼마나 줄었는지를 말한다.**
+/*
+ * ⚠ **「지난달과 비교」(`monthChange`)가 사라졌다** (2026-08-21).
  *
- * 화살표(↓)는 정도를 말하지 못해 상류가 "불안 **2회 감소**" 로 바꿨다(`A1.md`).
- * 가장 많이 줄어든 감정 하나만 고른다.
- *
- * **비교할 데이터가 부족하면 `null`** 을 준다 — 화면은 그때
- * "변화를 모으는 중 / 기록이 쌓이면 알려드릴게요"를 쓴다.
+ * "불안 2회 감소"(`A1.md`)를 계산하려면 **지난달의 감정별 기록 수**가 있어야
+ * 하는데, 그 값을 주던 것은 샘플 한 벌(`SAMPLE_LAST_MONTH_EMOTIONS`)뿐이었고
+ * 계약에 월별 집계가 없다. 부르는 화면도 이미 없었다 — 새 보관함(`DESIGN.md`)이
+ * 그 칸을 쓰지 않는다. 서버가 지난달 집계를 주면 그때 다시 만든다.
  */
-export function monthChange(
-  diaries: readonly Diary[],
-  previous: Partial<Record<EmotionId, number>> = SAMPLE_LAST_MONTH_EMOTIONS,
-): { emotion: EmotionId; decrease: number } | null {
-  const prevTotal = Object.values(previous).reduce((n, v) => n + (v ?? 0), 0);
-  if (prevTotal === 0) return null;
-
-  const now = countEmotions(diaries);
-  let picked: { emotion: EmotionId; decrease: number } | null = null;
-  for (const [key, before] of Object.entries(previous)) {
-    const id = Number(key) as EmotionId;
-    const decrease = (before ?? 0) - (now.get(id) ?? 0);
-    if (decrease > (picked?.decrease ?? 0)) picked = { emotion: id, decrease };
-  }
-  return picked;
-}
 
 /**
  * 좁은 칸용 짧은 이름 — 「화남·답답함」 → **「화남」**.

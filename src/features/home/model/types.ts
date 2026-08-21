@@ -1,9 +1,13 @@
 /**
  * 오늘 하루의 도메인 타입 — `momentory.schema.mvp.json` 이 정본이다.
  *
- * 타입의 소유자는 feature 이고, `src/mocks/sample.ts` 는 이 타입을 **구현하는
- * 샘플 값만** 제공한다. mock 이 타입을 소유하면 서버가 붙을 때 mock 을 지우며
- * 타입까지 사라진다(`docs/CODE-REVIEW.md` P1).
+ * 타입의 소유자는 feature 다 — 옛 `src/mocks/sample.ts` 는 이 타입을 **구현하는
+ * 샘플 값만** 들었다. mock 이 타입을 소유했다면 그걸 지울 때 타입까지 사라졌을
+ * 텐데(`docs/CODE-REVIEW.md` P1), 실제로 2026-08-21 에 지웠고 타입은 남았다.
+ *
+ * ⚠ 그래서 **`Moment` 와 `Weather` 는 지금 아무도 만들지 않는 타입**이다 —
+ * 순간은 만드는 화면이 없고(`12-d` 삭제) 날씨는 계약에 없다. 스키마에 있는
+ * 필드라 자리를 지킨다(`CLAUDE.md` 「BE 는 마지막에 붙인다」).
  */
 import type { EmotionId } from "@/features/emotion/model/emotion";
 

@@ -8,7 +8,6 @@ import {
   putActionCardCompletion,
   serverRefusedWrite,
 } from "@/features/diary/data/diaryApi";
-import { initialDiaryData } from "@/features/diary/data/sampleAdapter";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 import { clock } from "@/lib/clock";
 
@@ -32,7 +31,8 @@ const ARCHIVE_MONTHS = 12;
  * - **타입** → `model/types.ts` (스키마 그대로)
  * - **골라 읽기** → `model/selectors.ts`
  * - **서버 변환** → `data/diaryApi.ts` — 월별 조회를 `Diary`/`ActionCard` 로 옮긴다.
- *   `data/sampleAdapter.ts` 의 샘플 seed 는 이제 `reset()`(테스트·데모)만 쓴다.
+ *   샘플 seed(`data/sampleAdapter.ts`)는 **없앴다**(2026-08-21) — 채우는 곳은
+ *   서버 하나다. 화면 테스트의 재료는 `src/testing/fixtures.ts` 에 있다.
  *
  * ## 서버가 붙었다 (2026-08-20)
  *
@@ -337,9 +337,11 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     })),
 
   /**
-   * 샘플 시작값으로 되돌린다 — **테스트·데모용**이다(운영은 `load()` 가 채운다).
-   * `loaded: true` 로 두어 이 뒤에 `load()` 가 불려도 샘플을 서버 값으로 덮지 않는다.
-   * 테스트에서 빈 상태가 필요하면 `setState({ diaries: [], actionCards: [] })`.
+   * **빈 상태로 되돌린다** — 로그아웃이 부른다(`clearUserScopedStores`).
+   *
+   * ⚠ 예전에는 샘플 12편으로 되돌렸다(2026-08-21 삭제). 앞 사람이 로그아웃한
+   * 자리에 **남의 일기 열두 장이 새로 깔리는** 동작이었다 — 비우는 함수가
+   * 채우고 있었다. 다음 사람의 보관함은 `load()` 가 서버에서 받아 채운다.
    */
-  reset: () => set({ ...initialDiaryData(), loaded: true, recentlyDeleted: null }),
+  reset: () => set({ diaries: [], actionCards: [], loaded: false, recentlyDeleted: null }),
 }));

@@ -49,8 +49,8 @@ export default function RetroDraft() {
   const sessionId = useRetro((s) => s.sessionId);
   const saveDiary = useDiary((s) => s.save);
   const schedules = useDay((s) => s.schedules);
-  // 홈·일정 확인과 같은 「오늘」 — 일기의 날짜·날씨가 여기서 온다
-  const { date: today, weather } = useTodayContext();
+  // 홈·일정 확인과 같은 「오늘」 — 일기의 날짜가 여기서 온다
+  const { date: today } = useTodayContext();
 
   const [body, setBody] = useState<string>(diary?.diary ?? "");
   const [editing, setEditing] = useState(false);
@@ -77,7 +77,7 @@ export default function RetroDraft() {
       emotions: [startEmotion],
       storyEmotion: null,
       startEmotion,
-      weather: `${weather.label} · ${weather.celsius}℃`,
+      weather: null,
       situation: actionCard?.situation ?? null,
       targetAction: actionCard?.action ?? null,
       retrospectId: sessionId != null ? String(sessionId) : null,
@@ -99,12 +99,14 @@ export default function RetroDraft() {
         onLeadingPress={() => (editing ? setEditing(false) : router.replace("/home"))}
       />
 
+      {/*
+        ⚠ 날씨 한 줄이 사라졌다 (2026-08-21) — 「맑음」은 샘플 값이었고 공급처가
+        없다(`features/home/model/day.ts` 의 `useTodayContext`). 지어낸 날씨를
+        적어 두면 그게 그날의 기록으로 남는다.
+      */}
       <View style={styles.head}>
         <Text variant="title3" color={labelColor.strong}>
           {`${formatKoreanDateShort(today)}의 일기`}
-        </Text>
-        <Text variant="caption1" color={labelColor.alternative}>
-          {weather.label}
         </Text>
       </View>
 

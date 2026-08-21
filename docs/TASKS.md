@@ -651,6 +651,16 @@ SecureStore 세션이므로 캐시하지 않는다), `meApi.ts` 는 다시 `http
 
 ### ⛔ BE 연결 전에 반드시 걷어내야 하는 것
 
+> ✅ **닫혔다** (2026-08-21) — `FOLLOW_UPS`·`DRAFT_DEMO` 는 회고가 서버로
+> 넘어가면서(2026-08-20), 나머지 샘플은 **목 데이터 전면 삭제**로 함께 갔다:
+> `src/mocks/sample.ts` · `features/{home,report}/data/sampleRepository.ts` ·
+> `features/diary/data/sampleAdapter.ts` 전부 없다. `SAMPLE_REPORT_ANALYSIS` 자리는
+> **비워 둔다**(계약에 주간 리포트가 없다 · `DISCUSSION.md` §1-3),
+> `SAMPLE_ALL_TIME_EMOTIONS`·`SAMPLE_LAST_MONTH_EMOTIONS` 는 **쓰는 화면이 없어**
+> 그 계산(`monthChange`)까지 함께 지웠다. 화면 테스트가 쓰던 재료만
+> `src/testing/fixtures.ts` 로 옮겼고, 앱 코드가 그걸 import 하면 린터가 막는다.
+> 아래는 그 전의 기록이다.
+
 **`FOLLOW_UPS`(`src/features/retro/model/retro.ts`) 는 화면 우선 단계의 임시
 장치다.** 되짚기 다음의 바바 대사가 `reframe` 데모 흐름 하나뿐이라 **어떤
 방향을 골라도 같은 말이 나온다.** 첫 질문만 방향별로 갈린다.

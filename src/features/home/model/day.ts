@@ -1,7 +1,6 @@
 import { create } from "zustand";
 
 import type { EmotionId } from "@/features/emotion/model/emotion";
-import { initialMoments, todayWeather } from "@/features/home/data/sampleRepository";
 import {
   createSchedule,
   deleteSchedule,
@@ -12,7 +11,7 @@ import {
   putCompletion,
   type ScheduleFailureCode,
 } from "@/features/home/data/scheduleApi";
-import type { Moment, Schedule, Weather } from "@/features/home/model/types";
+import type { Schedule } from "@/features/home/model/types";
 import { clock } from "@/lib/clock";
 
 /**
@@ -51,13 +50,12 @@ import { clock } from "@/lib/clock";
  */
 type DayStore = {
   schedules: Schedule[];
-  /**
-   * 오늘의 순간 — **읽기만 남았다.** 만드는 화면(`12-d`)이 새 홈에서 사라져
-   * `addMoment` 도 함께 지웠다(2026-08-14 · `docs/PRODUCT.md` 「상류와 차이」 #18).
-   * 회고 인트로(`C1`)의 「순간 n개」와 확인(`C2`)의 목록이 아직 이 값을 읽으므로
-   * 모델·샘플은 남긴다 — **다시 만들 길이 생기기 전까지 샘플 밖의 순간은 없다.**
+  /*
+   * ⚠ **순간(`Moment`)은 이 store 를 떠났다** (2026-08-21). 만드는 화면(`12-d`)이
+   * 사라진 뒤로 값이 들어올 길이 샘플뿐이었고, 읽는 화면도 없어져 **샘플을 지우니
+   * 남는 것이 없었다.** 타입(`model/types.ts` 의 `Moment`)은 스키마 필드라 남긴다 —
+   * 다시 만드는 길이 생기면 여기 상태부터 되살린다.
    */
-  moments: Moment[];
   /** 서버 답으로 그리고 있는가 — 아직 못 받았으면 목록이 비어 있을 뿐이다 */
   loaded: boolean;
   /** 홈이 뜰 때 부른다. **여러 번 불러도 요청은 하나** */
@@ -125,7 +123,6 @@ const replace = (schedules: Schedule[], id: string, patch: Partial<Schedule>) =>
 
 export const useDay = create<DayStore>((set, get) => ({
   schedules: [],
-  moments: initialMoments(),
   loaded: false,
 
   load: () => {
@@ -302,20 +299,23 @@ export const useDay = create<DayStore>((set, get) => ({
 
   reset: () => {
     inFlight = null;
-    set({ schedules: [], moments: initialMoments(), loaded: false });
+    set({ schedules: [], loaded: false });
   },
 }));
 
 /**
- * 화면 상단이 말하는 「오늘」 — 날짜와 날씨.
+ * 화면 상단이 말하는 「오늘」 — 이제 **날짜뿐이다.**
  *
- * 홈(`12`)과 회고 확인(`C2`)이 같은 값을 봐야 해서 한 곳에 뒀다. 화면이
- * `SAMPLE_TODAY`·`SAMPLE_WEATHER` 를 직접 읽지 않는 이유가 이 함수다 —
- * 날씨는 아직 샘플이고 서버가 붙으면 여기 안쪽만 바뀐다.
+ * 홈(`12`)·회고 확인(`C2`)·초안(`C6`)이 같은 값을 봐야 해서 한 곳에 뒀다.
+ * 화면이 `clock` 을 직접 들지 않는 이유가 이 함수다.
+ *
+ * ⚠ **날씨가 사라졌다** (2026-08-21). 「맑음 · 27℃」는 샘플 한 줄이었고 계약에
+ * 날씨가 아예 없다(`docs/api/openapi.json`) — 지어낸 날씨를 일기에 적어 두면
+ * 나중에 그게 그날의 기록으로 남는다. `Weather` 타입(`model/types.ts`)은 스키마
+ * 필드라 남긴다. 공급처가 생기면 여기 반환값에 다시 붙인다.
  */
-export const useTodayContext = (): { date: string; weather: Weather } => ({
+export const useTodayContext = (): { date: string } => ({
   date: clock.today(),
-  weather: todayWeather(),
 });
 
 /**

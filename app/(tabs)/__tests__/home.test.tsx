@@ -3,10 +3,9 @@ import { router } from "expo-router";
 
 import Home from "../home";
 
-import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import type { Schedule } from "@/features/home/model/types";
-import { SAMPLE_MOMENTS, SAMPLE_SCHEDULES } from "@/mocks/sample";
+import { seedDiaries, testSchedules } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -21,11 +20,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   // 이번 주 감정 줄은 일기에서 나온다 — store 기본값이 비어 있으니 샘플로 seed 한다
   // (운영은 `load()` 가 채운다 · 다른 diary 테스트와 같은 결)
-  useDiary.getState().reset();
-  useDay.setState({
-    schedules: SAMPLE_SCHEDULES.map((s) => ({ ...s, emotions: [...s.emotions] })),
-    moments: SAMPLE_MOMENTS,
-  });
+  seedDiaries();
+  useDay.setState({ schedules: testSchedules() });
 });
 
 /** ⋮ 를 눌러 그 줄의 메뉴를 연다 — 메뉴는 누른 지점 아래에 뜬다 */
@@ -114,7 +110,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
 
   it("다 마치면 그 사실만 말한다 — 점수를 매기지 않는다", async () => {
     await act(() =>
-      useDay.setState({ schedules: SAMPLE_SCHEDULES.map((s) => ({ ...s, done: true })) }),
+      useDay.setState({ schedules: testSchedules().map((s) => ({ ...s, done: true })) }),
     );
     const { getByText } = await render(<Home />);
 
@@ -257,7 +253,7 @@ describe("일정 행 — 체크박스와 ⋮", () => {
 describe("목록이 길 때 — 5개까지 펼친다 (12.md)", () => {
   const many = (): Schedule[] =>
     Array.from({ length: 7 }, (_, i) => ({
-      ...SAMPLE_SCHEDULES[3]!,
+      ...testSchedules()[3]!,
       id: `m${i}`,
       title: `일정 ${i}`,
       done: false,

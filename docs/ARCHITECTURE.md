@@ -112,9 +112,10 @@ src/
     archive/ diary/ report/  # 화면 조각 — CalendarMonth · ActionCardSection · WeeklyEmotionGrid 등
   features/                  # 도메인별 — auth onboarding home retro diary archive report my
     <도메인>/model/          # 타입(types.ts)·store(Zustand)·selector
-    <도메인>/data/           # mock↔store 경계 — sampleRepository·sampleAdapter (home·report·diary)
+    <도메인>/data/           # 서버↔store 경계 — scheduleApi·diaryApi·retroApi·meApi 등
     <도메인>/ui/             # 화면 조각 (home/ScheduleRow)
-  mocks/sample.ts            # 데모 데이터 정본 (schema meta.sampleData) — 화면은 직접 읽지 않는다(린터가 막음)
+  testing/fixtures.ts        # **테스트 전용** 고정값 — 앱 코드가 import 하면 린터가 막는다.
+                             # 옆 mocks/sample.ts 자리다(2026-08-21 삭제 — 화면 값은 서버에서만 온다)
   lib/
     providers.tsx            # Provider 스택 — 늘릴 때 여기만 고친다
     clock.ts                 # 시각의 단일 공급자 — 04:00 하루 경계 · SampleClock (§4)
@@ -270,7 +271,8 @@ src/
 
 1. ~~`schema.mvp.json` 의 엔티티 7개 + `states.mvp.json` 의 `effect(s)` 를 그대로 옮겨 **OpenAPI 계약 초안**을 쓴다.~~ → 서버가 낸 것을 반입한다.
 2. ~~`openapi-typescript` 로 타입을 생성 → `src/lib/api/schema.d.ts` (생성물).~~ → 어댑터가 손으로 쓴 DTO 타입 + **런타임 검증**을 든다. 생성 타입은 컴파일만 통과시킬 뿐 200 응답의 형태를 보장하지 않는다.
-3. ~~**MSW 핸들러**가 그 계약을 구현한다.~~ → 아직 붙지 않은 도메인은 `src/mocks/sample.ts` 가 계속 채운다.
+3. ~~**MSW 핸들러**가 그 계약을 구현한다.~~ → 도입하지 않았고, **샘플도 2026-08-21 에 지웠다.**
+   계약에 없는 것(주간 리포트 해석 · 날씨)은 **비워 둔다** — 지어낸 값을 화면에 두면 그것이 기록으로 남는다.
 4. 계약이 어긋나면 그 차이가 곧 BE 팀과의 논의 항목이 된다 — [`DISCUSSION.md`](DISCUSSION.md) §1.
 
 ### 서버가 목록의 주인인 값은 **코드를 그대로 든다** (2026-08-10)

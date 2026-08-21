@@ -7,6 +7,7 @@ import RestCardTrail from "../cards/[date]";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { datedCards } from "@/features/rest/model/cards";
+import { seedDiaries } from "@/testing/fixtures";
 
 /**
  * 쉼터는 **세 화면**이 됐다(`Rest.dc.html` · 2026-08-20):
@@ -26,7 +27,7 @@ jest.mock("expo-router", () => ({
 
 beforeEach(() => {
   mockParams = { date: "2026-07-27" };
-  useDiary.getState().reset();
+  seedDiaries();
   jest.clearAllMocks();
 });
 
