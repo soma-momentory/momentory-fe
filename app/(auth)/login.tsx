@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { Screen, SocialButton, Text } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
+import { openExternalLink, type ExternalLink } from "@/lib/links";
 
 /**
  * `S1` · 로그인 · 소셜 3종 — Momentory DS 이관 (2026-08-20 · `PLAN.md` A Phase 4).
@@ -121,8 +122,9 @@ export default function Login() {
 
       <View style={styles.legal}>
         <Text variant="caption2" color={labelColor.alternative} style={styles.centered}>
-          로그인하면 <LegalLink label="이용약관" />과 <LegalLink label="개인정보 처리방침" />에
-          동의하게 돼요. 마이에서 언제든 다시 확인할 수 있어요.
+          로그인하면 <LegalLink label="이용약관" link="terms" />과{" "}
+          <LegalLink label="개인정보 처리방침" link="privacy" />에 동의하게 돼요. 마이에서 언제든
+          다시 확인할 수 있어요.
         </Text>
       </View>
     </Screen>
@@ -130,20 +132,28 @@ export default function Login() {
 }
 
 /**
- * ⚠ 현재는 눌리지 않는다.
+ * 원문으로 나가는 줄 — **앱 안 브라우저**로 랜딩 페이지를 연다
+ * (2026-08-21 · `src/lib/links.ts`).
  *
- * `L1`(이용약관)·`L2`(개인정보 처리방침)는 **MVP 40화면에 없다.** 문안도 법률 검토
- * 중이라 지금 링크를 살릴 근거가 없다. 색만 유지해 "여기에 원문이 있다"는 사실은 전한다.
+ * `L1`(이용약관)·`L2`(개인정보 처리방침)는 여전히 **MVP 40화면에 없다.** 앱 안에
+ * 화면을 만들지 않고 웹 문서를 그대로 보여 주는 이유가 그것이다 — 약관은 웹에서
+ * 갱신되므로 앱에 복사해 두면 배포 주기가 다른 두 벌이 생긴다.
  *
- * TODO 웹 약관 URL 이 생기면 `Linking.openURL` 로 연결한다.
+ * ⚠ **버튼이 아니라 링크다.** `accessibilityRole="link"` 를 지키면 소셜 3종만
+ * 「버튼」으로 읽힌다 — 이 화면에서 누를 것이 다섯 개로 늘어난 것처럼 들리지 않게.
+ *
+ * 밑줄은 시안에 없지만 **누를 수 있게 된 뒤에 붙였다.** 옛 줄은 색만 달랐고 그때는
+ * 그것으로 "여기에 원문이 있다"만 전하면 됐다. 지금은 눌리는 자리라 색만으로
+ * 구분하지 않는다(`CLAUDE.md` 규칙 3 과 같은 이유).
  */
-function LegalLink({ label }: { label: string }) {
+function LegalLink({ label, link }: { label: string; link: ExternalLink }) {
   return (
     <Text
       variant="caption2"
       color={labelColor.neutral}
       accessibilityRole="link"
-      accessibilityState={{ disabled: true }}
+      onPress={() => void openExternalLink(link)}
+      style={styles.legalLink}
     >
       {label}
     </Text>
@@ -165,4 +175,6 @@ const styles = StyleSheet.create({
   centered: { textAlign: "center" },
   // 약관은 버튼보다 좁게 — 좌우 20(Screen) + 12 = 32 (`Login.dc.html`)
   legal: { paddingTop: space.xl, paddingHorizontal: space.md },
+  // 누를 수 있다는 신호를 색 하나에 맡기지 않는다
+  legalLink: { textDecorationLine: "underline" },
 });
