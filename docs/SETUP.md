@@ -42,8 +42,15 @@ cp .env.example .env
 
 화면 스펙·값·상태 기계는 [`docs/spec/`](spec/SNAPSHOT.md)에 반입돼 있고, 토큰과 폰트는
 커밋돼 있다 — **설계 상류 폴더는 개발·검증 어디에도 필요 없다.**
-유일한 예외는 `npm run sync:theme`(토큰 재생성)와 스펙 재반입인데, 둘 다 상류 로컬
-저장소를 가진 담당자 전용이다([`docs/spec/SNAPSHOT.md`](spec/SNAPSHOT.md)).
+~~유일한 예외는 `npm run sync:theme`(토큰 재생성)와 스펙 재반입인데, 둘 다 상류 로컬
+저장소를 가진 담당자 전용이다.~~ → **예외가 없어졌다** — `sync:theme`·`check:theme` 은
+3세대 이관과 함께 삭제됐고(`PLAN.md` A-16 · `CONTRIBUTING.md` 「생성물」),
+`docs/spec/**` 는 동결 스냅샷으로만 유지한다([`docs/spec/SNAPSHOT.md`](spec/SNAPSHOT.md)).
+
+**상류 대신 필요한 것은 서버 하나다** — `npm run sync:api` 가 개발 서버의
+`/v3/api-docs` 를 받아 [`docs/api/openapi.json`](api/README.md) 을 갱신한다.
+그 경로는 **인증 없이 열려 있어**(BE `PUBLIC_PATHS`) 토큰이 필요 없고,
+서버가 꺼져 있으면 커밋된 스냅샷을 그대로 읽으면 된다.
 
 ---
 
@@ -111,8 +118,10 @@ npm run typecheck
 npm run lint           # 경고도 실패다 (--max-warnings 0)
 npm run format:check   # Prettier 검사 (고치려면 npm run format)
 npm run test           # 감시 모드는 npm run test:watch
-npm run check:theme    # 생성물이 손대졌는지 — 상류 없이 돈다
+npm run sync:api       # 서버 API 계약 재반입 — docs/api/README.md (서버가 떠 있을 때만)
 ```
+
+⚠ `check:theme` 은 **더 이상 없다**(3세대 이관 때 삭제 · `CONTRIBUTING.md` 「생성물」).
 
 PR 전에 전부 통과해야 한다 — 기준은 [`CONTRIBUTING.md` 「품질 게이트」](CONTRIBUTING.md)가 정본이다.
 
@@ -148,14 +157,18 @@ lsof -ti:8081 | xargs kill
 `npm run typecheck` 를 돌린다. 실제로 이 플래그 때문에 ESLint 10 이 조용히 설치돼
 린트가 통째로 터진 적이 있다. 제거 조건은 [`CONTRIBUTING.md` 「의존성」](CONTRIBUTING.md) 참조.
 
-### `check:theme` 이 "생성 이후에 수정됐다" 로 실패
+### `npm run check:theme` / `sync:theme` 이 "그런 스크립트가 없다"로 실패
 
-`src/design/theme.ts` 는 **생성물**이다. 직접 고쳤거나 포매터가 건드린 것이다 —
-고친 내용을 되돌린다(`git checkout -- src/design/theme.ts`). 검사 자체는 상류 없이 돈다.
+**맞다 — 둘 다 삭제됐다**(3세대 이관 · `PLAN.md` A-16). `theme.ts`·`tokens.mvp.ts`·
+`paper.ts` 와 함께 사라졌고, 지금 토큰 정본은 [`src/design/ds/`](../src/design/ds/index.ts) 하나다.
+값을 바꾸는 일은 상류가 아니라 **이 저장소**에서 시작한다 — `docs/DESIGN.md` 가 SSOT 다.
+옛 문서·주석에 남은 이름은 출처 표시일 뿐이다.
 
-토큰 값을 바꾸는 일은 상류에서 시작한다 — 담당자 절차: [`docs/spec/SNAPSHOT.md`](spec/SNAPSHOT.md)
-「`npm run sync:theme`」. 일반 개발자가 `sync:theme` 을 돌리면 "상류 폴더 없음"으로
-실패하는데, 그것이 정상이다.
+### `npm run sync:api` 가 실패
+
+주소를 못 찾았거나 서버가 꺼져 있다. `.env` 의 `EXPO_PUBLIC_API_BASE_URL` 을 채우거나
+직접 준다 — `MOMENTORY_API=http://127.0.0.1:8080 npm run sync:api`.
+**받지 못해도 개발은 막히지 않는다** — `docs/api/openapi.json` 이 커밋돼 있다.
 
 ### 글자가 Pretendard 가 아닌 것 같다
 
@@ -314,6 +327,22 @@ keytool -exportcert -alias androiddebugkey -keystore "$ks" -storepass android \
 - ⛔ **운영 배포에는 이 서버를 쓰지 않는다.** 스토어 빌드의 주소는 HTTPS 여야 하고,
   그러면 위 예외는 생성물에 아예 들어가지 않는다.
 - 주소·앱 키를 바꾸면 네이티브 설정이 바뀐다 — `npm run android` 로 **다시 빌드**해야 한다.
+
+> **서버 쪽 사실**(BE 저장소 대조 · 2026-08-21) — 컨테이너는 **8080 평문**으로 듣는다
+> (`ecs-task-definition.json`). TLS 를 앞단(ALB 등)에서 끊는지는 BE 저장소에 안 보이므로
+> **HTTPS 여부는 BE 에 물어야 안다.**
+>
+> 로컬로 띄운 서버에 붙일 때 알아 두면 편한 것:
+>
+> | 경로                | 무엇                                                  |
+> | ------------------- | ----------------------------------------------------- |
+> | `/actuator/health`  | 살아 있는지 — 인증 없이 열려 있다                     |
+> | `/swagger-ui/`      | 계약을 눈으로 볼 때. 인증 없이 열려 있다              |
+> | `/v3/api-docs`      | `npm run sync:api` 가 받는 곳. 인증 없이 열려 있다    |
+> | `/api/v1/auth/**`   | 로그인·갱신·로그아웃. 나머지는 전부 Bearer 를 요구한다 |
+>
+> ⚠ **Swagger 는 운영에서도 기본 켜짐**이다(`application-prod.yml` 의
+> `${SWAGGER_ENABLED:true}`). 배포 전에 BE 에 확인할 자리다.
 
 ---
 
