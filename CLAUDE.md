@@ -179,8 +179,10 @@ OS 권한 중 **캘린더 연결**(알림은 2026-08-11 닫힘) · 계측 · 아
 M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](docs/TASKS.md)
 「화면 40장이 끝난 뒤 남은 것」에 있다.
 
-**아직 갈 곳이 없는 줄은 눌리지 않게 둔다** — 연결 관리 · 약관 · 문의 · 회원 탈퇴.
+**아직 갈 곳이 없는 줄은 눌리지 않게 둔다** — 연결 관리 · 회원 탈퇴.
 눌리는데 아무 일도 없는 줄을 만들지 않는다(`TASKS.md` 「마이의 편집 경로」).
+⚠ **약관·문의는 2026-08-21 에 갈 곳이 생겼다** — 랜딩 페이지의 웹 문서를 앱 안
+브라우저로 연다(`src/lib/links.ts` · `TASKS.md` 「2026-08-21 · 약관·문의」).
 지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
 ```
@@ -312,6 +314,10 @@ src/lib/toast.ts        ← 토스트의 단일 통로 — 「끝난 일을 알�
                           `components/ds/ToastHost` 가 `providers.tsx` 에서 라우트 위에
                           그린다. **문안을 모른다**(삭제 문안은
                           `features/diary/model/deleteToast.ts`) · 큐를 두지 않는다
+src/lib/links.ts        ← 앱 밖 웹 문서의 단일 통로 — **주소를 아는 곳은 여기 하나다**
+                          (약관 · 개인정보 처리방침 · 문의). `openBrowserAsync` 로
+                          **앱 안에서** 연다(앱을 떠나면 로그인 흐름이 끊긴다) ·
+                          던지지 않는다. 화면은 `"terms"` 같은 이름만 안다
 src/lib/clock.ts        ← 시각의 단일 공급자 — SampleClock(2026-07-27) ·
                           SystemClock(04:00 하루 경계) · fixedClock(테스트)
 src/lib/day.ts          ← 날짜 표기. 계산은 clock.ts 가 한다
@@ -322,8 +328,9 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 **Zustand** · **expo-secure-store** · **@react-native-community/datetimepicker**
 (08 OS 피커) · **@react-native-seoul/kakao-login** + **expo-build-properties**
 (카카오 로그인) · **expo-notifications**(회고 시간 알림 — 전부 로컬) ·
-**expo-calendar**(`09` 기기 캘린더 — **읽기만**)
-— 넷 다 네이티브라 **dev client 재빌드 필요**.
+**expo-calendar**(`09` 기기 캘린더 — **읽기만**) ·
+**expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`)
+— 다섯 다 네이티브라 **dev client 재빌드 필요**.
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 

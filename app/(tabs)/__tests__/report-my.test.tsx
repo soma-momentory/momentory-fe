@@ -45,6 +45,10 @@ jest.mock("@/features/report/data/reportRepository", () => ({
   initialWeekStart: jest.fn(() => "2026-07-20"),
 }));
 
+// 앱 안 브라우저도 네이티브다 — 「지원」 세 줄이 무엇을 여는지만 본다
+jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn(() => Promise.resolve()) }));
+const browser = jest.requireMock("expo-web-browser") as { openBrowserAsync: jest.Mock };
+
 /** `M2` 시트가 보는 OS 권한. 기본은 허용이고, 각 테스트가 거부로 바꾼다 */
 const notifications = jest.requireMock("expo-notifications") as {
   getPermissionsAsync: jest.Mock;
@@ -211,14 +215,41 @@ describe("M1 · 마이 기본", () => {
     const pressable = (label: string) =>
       r.queryAllByRole("button").some((b) => within(b).queryByText(label) != null);
 
-    for (const label of ["알림 설정", "기본 정보 수정", "로그아웃"]) {
+    // 지원 세 줄은 2026-08-21 에 랜딩 페이지로 이어졌다 — 더 이상 「준비 중」이 아니다
+    for (const label of [
+      "알림 설정",
+      "기본 정보 수정",
+      "로그아웃",
+      "문의하기",
+      "이용약관",
+      "개인정보 처리방침",
+    ]) {
       expect(pressable(label)).toBe(true);
     }
-    // 약관 문안·문의 채널이 아직 정해지지 않았다
-    for (const label of ["문의하기", "정책 · 약관"]) {
-      expect(pressable(label)).toBe(false);
-      expect(r.getAllByText("준비 중").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("지원 세 줄이 각자의 웹 문서를 앱 안에서 연다", async () => {
+    // **주소를 화면이 알지 않는다** — 무엇을 여는지만 여기서 고정하고,
+    // 주소가 바뀌면 고칠 곳은 `src/lib/links.ts` 하나다
+    const r = await render(<My />);
+
+    for (const [label, path] of [
+      ["문의하기", "notion.site"],
+      ["이용약관", "/terms"],
+      ["개인정보 처리방침", "/privacy"],
+    ] as const) {
+      browser.openBrowserAsync.mockClear();
+      await fireEvent.press(r.getByText(label));
+
+      await waitFor(() => expect(browser.openBrowserAsync).toHaveBeenCalledTimes(1));
+      expect(browser.openBrowserAsync.mock.calls[0]![0]).toContain(path);
     }
+  });
+
+  it("약관을 앱 안에 복사해 두지 않는다 — 웹에서 갱신되는 문서다", async () => {
+    const r = await render(<My />);
+
+    expect(r.queryByText(/제 ?\d+ ?조|수집하는 개인정보|시행일/)).toBeNull();
   });
 
   it("온보딩에서 답한 것은 [기본 정보 수정] 한 줄 뒤에 모여 있다", async () => {
