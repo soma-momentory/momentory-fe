@@ -87,6 +87,9 @@ export function ChatDock({
   );
 }
 
+/** 입력 칸(44) 안에서 body1(26) 을 가운데 두는 위아래 여백 */
+const INPUT_PADDING_Y = (layout.minTouch - text.body1.lineHeight) / 2;
+
 const styles = StyleSheet.create({
   dock: {
     flexDirection: "row",
@@ -105,9 +108,19 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     minWidth: 0,
+    /**
+     * **한 줄일 때 보내기 버튼과 세로 중심이 맞는다.** 칸을 44(버튼과 같은 높이)로
+     * 잡고 위아래 9 씩 나눠 준다 — 26(lineHeight) + 9 + 9 = 44.
+     *
+     * 안드로이드는 여러 줄 입력의 글자를 **위에 붙이므로** `textAlignVertical` 로
+     * 한 번 더 가운데로 당긴다(iOS 는 이 속성이 없고 위 패딩이 그 일을 한다).
+     * 플레이스홀더가 칸 위쪽에 떠 보이던 것이 이 자리였다.
+     */
+    minHeight: layout.minTouch,
+    textAlignVertical: "center",
     // 세 줄까지 자라고 그 뒤로는 안에서 스크롤된다 (§7 `maxLines`)
-    maxHeight: text.body1.lineHeight * size.input.maxLines,
-    paddingVertical: space.xs,
+    maxHeight: text.body1.lineHeight * size.input.maxLines + INPUT_PADDING_Y * 2,
+    paddingVertical: INPUT_PADDING_Y,
     paddingHorizontal: 0,
     ...text.body1,
     color: labelColor.normal,

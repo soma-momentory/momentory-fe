@@ -1,6 +1,7 @@
 import { useDiary } from "@/features/diary/model/diary";
 import type { ActionCard, Diary } from "@/features/diary/model/types";
 import { authedRequest } from "@/lib/http";
+import { useToast } from "@/lib/toast";
 
 /**
  * 쓰기 경로의 store 규칙 — **지연 삭제**와 **옵티미스틱 완료**. `@/lib/http` 만 목으로
@@ -48,7 +49,10 @@ beforeEach(() => {
   mockedRequest.mockReset();
   mockedRequest.mockResolvedValue({ ok: true, data: null });
   useDiary.setState({ diaries: [], actionCards: [], recentlyDeleted: null });
+  useToast.setState({ current: null });
 });
+
+const toast = () => useToast.getState().current;
 
 describe("지연 삭제", () => {
   it("remove 는 서버로 보내지 않고 카드도 남긴다 · clearRecentlyDeleted 가 커밋한다", () => {
@@ -73,11 +77,67 @@ describe("지연 삭제", () => {
     expect(calls("DELETE")).toHaveLength(0);
   });
 
-  it("로컬 전용 일기는 서버로 보내지 않는다", () => {
+  it("로컬 전용 일기는 서버로 보내지 않는다 — 지운 순간 이미 끝났다", () => {
     useDiary.setState({ diaries: [diary("d-local-3")] });
     useDiary.getState().remove("d-local-3");
     useDiary.getState().clearRecentlyDeleted();
     expect(calls("DELETE")).toHaveLength(0);
+    expect(toast()).toMatchObject({ message: "일기를 삭제했어요.", variant: "positive" });
+  });
+});
+
+describe("삭제 결과 한 줄", () => {
+  it("서버가 지웠으면 성공 한 줄", async () => {
+    useDiary.setState({ diaries: [diary("42")] });
+    useDiary.getState().remove("42");
+    useDiary.getState().clearRecentlyDeleted();
+    await flush();
+
+    expect(toast()).toMatchObject({ message: "일기를 삭제했어요.", variant: "positive" });
+    expect(useDiary.getState().diaries).toHaveLength(0);
+  });
+
+  it("실패하면 일기를 **원래 순서로 되돌리고** 실패 한 줄 — 서버에 살아 있는 것을 감추지 않는다", async () => {
+    mockedRequest.mockResolvedValue({ ok: false, error: { code: "network" } });
+    useDiary.setState({
+      diaries: [
+        { ...diary("41"), ordinal: 1 },
+        { ...diary("42"), ordinal: 2 },
+      ],
+    });
+
+    useDiary.getState().remove("41");
+    useDiary.getState().clearRecentlyDeleted();
+    await flush();
+
+    expect(useDiary.getState().diaries.map((d) => d.id)).toEqual(["41", "42"]);
+    expect(toast()).toMatchObject({ message: "일기를 삭제하지 못했어요.", variant: "negative" });
+  });
+
+  it("되돌리면 아무것도 알리지 않는다 — 지운 일이 없다", () => {
+    useDiary.setState({ diaries: [diary("42")] });
+    useDiary.getState().remove("42");
+    useDiary.getState().undoRemove();
+    useDiary.getState().clearRecentlyDeleted();
+
+    expect(toast()).toBeNull();
+  });
+});
+
+/**
+ * 행동카드 삭제는 **기기 삭제**라 서버로 나가는 것이 없다 — 규칙 전체는
+ * `deletedCards.test.ts` 가 본다. 여기서는 「이 경로가 서버를 부르지 않는다」만 지킨다.
+ */
+describe("행동카드 삭제는 서버를 부르지 않는다", () => {
+  it("계약에 `DELETE /action-cards/{id}` 가 없다 (`PRODUCT.md` 「상류와 차이」 25)", async () => {
+    useDiary.setState({ diaries: [diary("42")], actionCards: [card("7", "42")] });
+
+    useDiary.getState().removeActionCard("7");
+    await flush();
+
+    expect(calls("DELETE")).toHaveLength(0);
+    // 카드와 일기는 서로의 삭제를 부르지 않는다
+    expect(useDiary.getState().diaries).toHaveLength(1);
   });
 });
 

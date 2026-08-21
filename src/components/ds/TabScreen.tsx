@@ -26,6 +26,9 @@ import { Screen } from "./Screen";
  * **탭바가 떠 있는 것처럼** 보인다. 그래서 `edges` 에서 `bottom` 을 빼고, 홈
  * 인디케이터 자리를 **탭바와 같은 면**으로 직접 채운다.
  *
+ * ⚠ 그 자리에도 **하한이 있다**(`layout.minBottomInset`) — 안드로이드 3버튼
+ * 내비게이션 기기는 `insets.bottom` 이 0 이라 탭 라벨이 시스템 버튼에 붙는다.
+ *
  * ## 오버레이는 `Screen` 밖이다
  *
  * 시트·모달·메뉴는 절대 배치로 부모를 덮는데, `Screen` 안에 두면 Safe Area
@@ -77,8 +80,10 @@ export function TabScreen({ active, children, overlay }: Props) {
       <Screen padded={false} edges={["top"]}>
         <View style={styles.body}>{children}</View>
         <BottomNavigation items={TABS} active={active} onPress={go} />
-        {/* 홈 인디케이터 자리 — 탭바와 같은 면으로 이어 둔다 */}
-        <View style={[styles.underTab, { height: insets.bottom }]} />
+        {/* 홈 인디케이터·시스템 버튼 자리 — 탭바와 같은 면으로 이어 둔다 */}
+        <View
+          style={[styles.underTab, { height: Math.max(insets.bottom, layout.minBottomInset) }]}
+        />
       </Screen>
       {overlay}
     </>

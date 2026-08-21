@@ -8,10 +8,12 @@ import {
   putActionCardCompletion,
   serverRefusedWrite,
 } from "@/features/diary/data/diaryApi";
+import { readDeletedCardIds, rememberDeletedCard } from "@/features/diary/data/deletedCardStore";
 import { initialDiaryData } from "@/features/diary/data/sampleAdapter";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 import { clock } from "@/lib/clock";
 
+import { notifyDeleteResult } from "./deleteToast";
 import { actionCardOf } from "./selectors";
 import type { ActionCard, Diary } from "./types";
 
@@ -112,8 +114,29 @@ type DiaryStore = {
   recentlyDeleted: { diary: Diary; card: ActionCard | null } | null;
   /** `[되돌리기]` — 일기를 **원래 자리(순서)** 로 되돌린다. 서버 삭제를 취소한다 */
   undoRemove: () => void;
-  /** 되돌리기 줄이 사라질 때 — 되돌릴 수 없게 된다. **미뤄둔 서버 삭제를 여기서 보낸다** */
+  /**
+   * 되돌리기 줄이 사라질 때 — 되돌릴 수 없게 된다. **미뤄둔 서버 삭제를 여기서 보낸다.**
+   *
+   * 결과는 **토스트 한 줄**로 알린다(`deleteToast.ts`). 지연 삭제라 결과가 나올
+   * 즈음 사용자는 다른 화면에 가 있을 수 있어, 화면이 아니라 앱 껍데기가 그리는
+   * 통로(`lib/toast.ts`)를 지난다.
+   */
   clearRecentlyDeleted: () => void;
+  /**
+   * 행동 카드 한 장 삭제 — **이 기기에서** 지운다.
+   *
+   * 서버 계약에 `DELETE /action-cards/{id}` 가 없다(`docs/api/openapi.json` — 카드는
+   * 만들어지고 완료 여부만 바뀐다). 메모리에서만 빼면 다음 조회에 그대로 다시
+   * 실려 오므로, **지운 id 를 기기에 남기고**(`data/deletedCardStore.ts`) `load()` 가
+   * 그것을 걸러낸다 — 앱을 껐다 켜도 삭제가 유지된다.
+   * (`docs/PRODUCT.md` 「상류와 차이」 25)
+   *
+   * **결과는 이 store 가 알린다**(일기 삭제와 같은 결) — 묘비를 남기지 못하면
+   * 카드를 되돌리고 실패 한 줄을 띄운다. 남기지 못한 삭제를 성공이라고 말하지
+   * 않기 위해서다. 서버에 삭제가 생기면 여기서 `data/diaryApi` 를 부르고 화면은
+   * 그대로다.
+   */
+  removeActionCard: (cardId: string) => void;
   /**
    * `A3` `[해봤어요]` — **토글이 아니라 한 번의 기록**이다. 되돌리는 것은
    * `undoActionDone` 이고 확인을 묻는 것은 화면 쪽 몫이다(느낀 점이 함께 지워진다).
@@ -139,6 +162,22 @@ type DiaryStore = {
 let seq = 0;
 const nextId = (prefix: string) => `${prefix}-local-${++seq}`;
 
+/**
+ * 지웠던 일기를 **원래 순서**로 되돌린다 — 맨 뒤에 붙이면 되돌린 일기가 목록
+ * 끝으로 가서 되돌린 것이 아니라 새로 쓴 것처럼 보인다.
+ * 되돌리기(`undoRemove`)와 서버 삭제 실패가 같은 길을 쓴다.
+ */
+const restored = (diaries: readonly Diary[], diary: Diary): Diary[] =>
+  [...diaries, diary].sort((a, b) => a.ordinal - b.ordinal);
+
+/**
+ * 지웠던 행동 카드를 되돌린다 — **순서를 맞추지 않는다.** 카드는 `ordinal` 이
+ * 없고 화면이 `createdAt` 으로 세우므로(`features/rest/model/cards.ts`) 배열
+ * 순서가 화면에 보이지 않는다. 이미 들어와 있으면 두 장이 되지 않게 그냥 둔다.
+ */
+const restoredCards = (cards: readonly ActionCard[], card: ActionCard): ActionCard[] =>
+  cards.some((c) => c.id === card.id) ? [...cards] : [...cards, card];
+
 /** 진행 중인 `load` — 동시에 여러 번 불려도 한 번만 나간다(`useDay` 와 같은 결) */
 let inFlight: Promise<void> | null = null;
 
@@ -154,9 +193,17 @@ export const useDiary = create<DiaryStore>((set, get) => ({
 
     const months = monthsBackFrom(clock.today(), ARCHIVE_MONTHS);
     inFlight = loadArchive(months)
-      .then((result) => {
+      .then(async (result) => {
         // 못 받았으면 **가진 것을 그대로 둔다** — 빈 목록으로 덮지 않는다
-        if (result.ok) set({ ...result.data, loaded: true });
+        if (!result.ok) return;
+        // 이 기기에서 지운 행동 카드는 걸러낸다 — 서버에 삭제 계약이 없어
+        // 지운 카드가 그대로 다시 실려 온다(`data/deletedCardStore.ts`)
+        const deleted = await readDeletedCardIds();
+        set({
+          diaries: result.data.diaries,
+          actionCards: result.data.actionCards.filter((c) => !deleted.has(c.id)),
+          loaded: true,
+        });
       })
       .finally(() => {
         inFlight = null;
@@ -262,21 +309,60 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     set((s) => {
       const kept = s.recentlyDeleted;
       if (kept == null) return s;
-      return {
-        // 맨 뒤가 아니라 **원래 순서**로 돌린다 — 되돌린 일기가 목록 끝에 가면
-        // 되돌린 것이 아니라 새로 쓴 것처럼 보인다
-        diaries: [...s.diaries, kept.diary].sort((a, b) => a.ordinal - b.ordinal),
-        recentlyDeleted: null,
-      };
+      return { diaries: restored(s.diaries, kept.diary), recentlyDeleted: null };
     }),
 
   clearRecentlyDeleted: () => {
     // 되돌리기 창이 닫혔다 — **미뤄둔 서버 삭제를 지금 보낸다**(지연 삭제의 커밋 지점).
-    // 서버가 준 일기에만 보낸다 — 로컬 전용(`*-local-*`)은 서버에 없다. 실패는 조용히
-    // 두고(fail-quiet) 다음 `load` 에 서버 값이 다시 비친다.
     const kept = get().recentlyDeleted;
     set({ recentlyDeleted: null });
-    if (kept != null && isServerId(kept.diary.id)) void deleteDiary(kept.diary.id);
+    if (kept == null) return;
+
+    // 서버가 준 일기에만 보낸다 — 로컬 전용(`*-local-*`)은 서버에 없으니 이미 끝났다
+    if (!isServerId(kept.diary.id)) {
+      notifyDeleteResult("일기", true);
+      return;
+    }
+
+    void deleteDiary(kept.diary.id).then((result) => {
+      if (result.ok) {
+        notifyDeleteResult("일기", true);
+        return;
+      }
+      /**
+       * **실패하면 되돌린다.** 다른 쓰기(`markActionDone` 등)는 「서버가 답하고
+       * 거부했을 때만」 되돌리는데(`serverRefusedWrite`), 삭제는 반대로 잡는다:
+       * 요청이 나가지 못했으면 일기는 서버에 **그대로 살아 있다.** 화면에서만
+       * 감춰 두면 없어진 줄 알았던 일기가 다음 조회에 되살아난다 — 살아 있는
+       * 것을 감추는 쪽이 더 나쁘다. 반대로 실제로는 지워졌는데 되살렸다면
+       * 다음 `load` 가 조용히 정리한다.
+       */
+      set((s) => ({ diaries: restored(s.diaries, kept.diary) }));
+      notifyDeleteResult("일기", false);
+    });
+  },
+
+  removeActionCard: (cardId) => {
+    const kept = get().actionCards.find((c) => c.id === cardId);
+    // 이미 없는 카드다 — 지운 척하지 않는다
+    if (kept == null) {
+      notifyDeleteResult("행동카드", false);
+      return;
+    }
+
+    // 먼저 화면에서 빼고, **묘비를 남긴 뒤에** 성공이라고 말한다
+    set((s) => ({ actionCards: s.actionCards.filter((c) => c.id !== cardId) }));
+
+    void rememberDeletedCard(cardId).then((ok) => {
+      if (ok) {
+        notifyDeleteResult("행동카드", true);
+        return;
+      }
+      // 묘비를 남기지 못했다 — 다음 조회에 되살아난다. 지금 되돌려 두는 편이
+      // 「지웠다」고 말해 놓고 나중에 되살아나는 것보다 낫다
+      set((s) => ({ actionCards: restoredCards(s.actionCards, kept) }));
+      notifyDeleteResult("행동카드", false);
+    });
   },
 
   markActionDone: (cardId) => {
