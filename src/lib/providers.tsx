@@ -1,8 +1,10 @@
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, type ReactNode } from "react";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
+import { ToastHost } from "@/components/ds";
 import { startReminderSync } from "@/features/my/model/reminders";
 
 // 폰트가 준비되기 전에 화면을 보이지 않는다 — 서체가 바뀌며 깜빡이지 않게.
@@ -51,8 +53,19 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   // initialMetrics 를 주지 않으면 인셋을 실제로 재기 전까지 자식을 그리지 않는다 —
   // 스플래시가 내려간 뒤 한 프레임이 비어 깜빡인다.
-  return <SafeAreaProvider initialMetrics={initialWindowMetrics}>{children}</SafeAreaProvider>;
+  return (
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      {/* 토스트는 **라우트 위**에 산다 — 화면 안에 두면 화면이 바뀔 때 알림도
+          함께 사라진다(`lib/toast.ts`). 자리만 차지하지 않게 `box-none` 이다 */}
+      <View style={styles.root}>
+        {children}
+        <ToastHost />
+      </View>
+    </SafeAreaProvider>
+  );
 }
+
+const styles = StyleSheet.create({ root: { flex: 1 } });
 
 /**
  * Pretendard 4 weight. 위계는 굵기·크기·자간으로만 만든다 — 서체는 하나다.

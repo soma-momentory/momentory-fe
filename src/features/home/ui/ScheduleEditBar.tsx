@@ -1,13 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button, IconButton, Text } from "@/components/ds";
@@ -83,8 +76,10 @@ export function ScheduleEditBar({
         onPress={close}
       />
 
+      {/* 키보드는 **양쪽 다** 피한다 — edge-to-edge(Expo SDK 54+)에서는 안드로이드
+          창이 `adjustResize` 로 줄지 않고 키보드가 그 위를 덮는다(`ChatScaffold`) */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
         style={[styles.dock, { paddingBottom: Math.max(insets.bottom, space.md) }]}
       >
         <Text variant="caption1" color={labelColor.alternative} style={styles.caption}>
@@ -179,6 +174,9 @@ const styles = StyleSheet.create({
     lineHeight: text.body1Reading.lineHeight,
     color: labelColor.normal,
     padding: 0,
+    // 값도 플레이스홀더도 알약 높이의 **가운데**에 선다 — 안드로이드는
+    // `padding: 0` 일 때 글자를 위로 붙이는 일이 있어 명시한다
+    textAlignVertical: "center",
   },
   clear: { width: size.icon.lg, height: size.icon.lg },
   add: { width: layout.minTouch, height: layout.minTouch, borderRadius: radius.full },

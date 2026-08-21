@@ -82,6 +82,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     padding: 0,
+    // 값도 플레이스홀더도 칸 높이의 **가운데**에 선다 — 안드로이드는 `padding: 0`
+    // 일 때 글자를 위로 붙이는 일이 있어 명시한다
+    textAlignVertical: "center",
     // 입력값은 Regular 400 — 본문(500)과 다르다(`DESIGN.md` §2)
     fontFamily: fontFamily.regular,
     fontSize: text.body2.fontSize,

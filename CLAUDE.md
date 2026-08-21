@@ -230,9 +230,16 @@ src/features/retro/{model/retro.ts, data/retroApi.ts}
                                           ← 대화는 서버가 주도한다 — store 는 시작 감정 ·
                                             세션 id · 버블 · 서버의 마지막 응답만 든다.
                                             고정 대사(FOLLOW_UPS·DRAFT_DEMO)는 사라졌다
-src/features/diary/{model/{diary,types,selectors}.ts, data/sampleAdapter.ts}
+src/features/diary/{model/{diary,types,selectors,deleteToast}.ts,
+                    data/{sampleAdapter,deletedCardStore}.ts}
                                           ← 회고가 남기는 것: Diary + ActionCard.
-                                            타입·selector·샘플 seed 가 store 와 분리돼 있다
+                                            타입·selector·샘플 seed 가 store 와 분리돼 있다.
+                                            deleteToast = 일기·행동카드가 **같은 삭제 문안**을 쓴다.
+                                            deletedCardStore = **지운 행동카드의 묘비**(기기) —
+                                            서버에 카드 삭제 계약이 없어 지운 id 를 남기고
+                                            `load()` 가 걸러낸다. 못 남기면 삭제를 되돌린다
+                                            (PRODUCT.md 상류와 차이 25). 서버에 삭제가
+                                            생기면 이 파일이 사라진다
 src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 세지 않는다
 src/features/report/{model/report.ts, data/sampleRepository.ts} ← 주간 집계 · 해석 공급 경계
 src/features/my/model/{settings,stats,reminders,basicInfo}.ts
@@ -280,6 +287,10 @@ src/lib/calendar.ts     ← 기기 캘린더의 단일 통로 — 권한 · 범�
                           externalId 정규화. 던지지 않는다(실패하면 빈 목록).
                           **아직 서버로 가지 않는다** — 계약에 externalId·source·
                           hidden 이 없다(DISCUSSION §1-4). 플랫폼 차이는 여기서만
+src/lib/toast.ts        ← 토스트의 단일 통로 — 「끝난 일을 알리는 한 줄」이 뜨는 자리 하나.
+                          `components/ds/ToastHost` 가 `providers.tsx` 에서 라우트 위에
+                          그린다. **문안을 모른다**(삭제 문안은
+                          `features/diary/model/deleteToast.ts`) · 큐를 두지 않는다
 src/lib/clock.ts        ← 시각의 단일 공급자 — SampleClock(2026-07-27) ·
                           SystemClock(04:00 하루 경계) · fixedClock(테스트)
 src/lib/day.ts          ← 날짜 표기. 계산은 clock.ts 가 한다

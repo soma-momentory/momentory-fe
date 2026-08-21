@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from "react-native";
 
 import { space } from "@/design/ds";
 
@@ -15,6 +15,13 @@ import { TopNavigation } from "./TopNavigation";
  *
  * 두 벌로 두지 않는 이유는 **아래 스크롤 보정** 때문이다 — 한쪽에서만 고치면
  * 다른 쪽이 조용히 어긋난다. 실제로 그런 버그를 한 번 밟았다.
+ *
+ * ## 키보드는 **양쪽 다** 피한다
+ *
+ * 예전엔 안드로이드에서 `behavior` 를 비워 뒀다 — 창이 `adjustResize` 로 저절로
+ * 줄어든다는 전제였다. **edge-to-edge 에서는 그 전제가 깨진다**(Expo SDK 54+ 는
+ * edge-to-edge 를 끌 수 없다): 창이 줄지 않고 키보드가 그 위를 덮어서 입력 독이
+ * 가려진다. 그래서 두 플랫폼 모두 `padding` 으로 피한다.
  */
 type Props = {
   /** `arrow-left` 뒤로 · `close` 닫기. 없으면 상단바를 두지 않는다 */
@@ -51,15 +58,15 @@ export function ChatScaffold({ leading, onLeadingPress, trailing, children, dock
         <TopNavigation leading={leading} onLeadingPress={onLeadingPress} trailing={trailing} />
       ) : null}
 
-      <KeyboardAvoidingView
-        style={styles.fill}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <KeyboardAvoidingView style={styles.fill} behavior="padding">
         <ScrollView
           ref={scroll}
           style={styles.fill}
           contentContainerStyle={styles.conversation}
           showsVerticalScrollIndicator={false}
+          // 키보드가 올라온 채로도 칩·버튼이 한 번에 눌린다 — 안 그러면 첫 탭이
+          // 키보드를 내리는 데 쓰이고 사라진다
+          keyboardShouldPersistTaps="handled"
           onContentSizeChange={toBottom}
           onLayout={toBottom}
         >
