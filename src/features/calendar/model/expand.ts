@@ -24,6 +24,21 @@ import { dayFrom } from "@/lib/clock";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * 종일 일정은 시각이 아니라 캘린더의 **날짜 자체**다.
+ *
+ * iOS 는 종일 일정을 로컬 자정으로 줄 수 있다. 여기에 Momentory 의 04:00 경계를
+ * 적용하면 `8/22 00:00` 이 `8/21` 로 접힌다. Android 의 UTC 자정(KST 09:00)과
+ * 표현은 달라도, 두 플랫폼 모두 기기 로컬 달력 날짜를 읽으면 같은 날이 된다.
+ */
+const calendarDayFrom = (at: Date): string =>
+  `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+
+const eventDayFrom = (at: Date, allDay: boolean): string =>
+  allDay ? calendarDayFrom(at) : dayFrom(at);
+
 /** 하루 뒤. 문자열 산술을 하지 않는다 — 월말·윤년이 걸린다 */
 const nextDay = (date: string): string => {
   // 정오를 쓴다 — 04:00 경계에서 멀어 어느 쪽으로도 접히지 않는다
@@ -52,7 +67,7 @@ const lastDateOf = (event: CalendarEvent, first: string): string => {
     event.start.getSeconds() === event.end.getSeconds() &&
     event.start.getMilliseconds() === event.end.getMilliseconds();
   const allDayEnd = new Date(event.end.getTime() - (sameTimeOfDay ? DAY_MS : 1));
-  const last = dayFrom(event.allDay ? allDayEnd : event.end);
+  const last = eventDayFrom(event.allDay ? allDayEnd : event.end, event.allDay);
   // 끝이 시작보다 앞서면(망가진 값) 하루짜리로 접는다
   return last < first ? first : last;
 };
@@ -67,8 +82,8 @@ const lastDateOf = (event: CalendarEvent, first: string): string => {
  * 반복 횟수도 창 길이로 묶인다 — 작년부터 이어지는 일정이든 끝 날짜가 망가져
  * 멀리 있든, 루프가 `range` 를 넘지 않는다.
  *
- * 날짜는 전부 `dayFrom` 을 지난다 → **사용자 로컬 기준 `YYYY-MM-DD`** 다.
- * UTC 로 바꾸지 않으므로 `2026-08-05 00:00 KST` 가 8/4 로 밀리지 않는다.
+ * 날짜는 전부 사용자 로컬 기준 `YYYY-MM-DD` 다. 시각 일정만 `dayFrom` 의 04:00
+ * 경계를 지나고, 종일 일정은 캘린더에 표시된 날짜를 그대로 쓴다.
  */
 const dayNumber = (date: string): number => {
   const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
@@ -88,8 +103,8 @@ export const expandCalendarEventByDate = (
     originalStart: event.originalStart ?? event.start,
   },
 ): Occurrence[] => {
-  const first = dayFrom(event.start);
-  const originalFirst = dayFrom(identity.originalStart);
+  const first = eventDayFrom(event.start, event.allDay);
+  const originalFirst = eventDayFrom(identity.originalStart, event.allDay);
   const last = lastDateOf(event, first);
   if (last < range.from || first > range.to) return [];
 
