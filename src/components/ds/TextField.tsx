@@ -101,7 +101,7 @@ export function TextField({
             setFocused(false);
             rest.onBlur?.(e);
           }}
-          style={[styles.input, multiline ? null : styles.singleLine]}
+          style={[styles.input, multiline ? styles.multilineInput : styles.singleLine]}
         />
         {suffix != null ? (
           <Text variant="body2" color={labelColor.assistive}>
@@ -167,17 +167,25 @@ const styles = StyleSheet.create({
     // 입력값은 Regular 400 — 본문(500)과 다르다
     fontFamily: fontFamily.regular,
     fontSize: text.body1Reading.fontSize,
-    lineHeight: text.body1Reading.lineHeight,
     color: labelColor.normal,
     // 높이는 바깥(`field`)이 잡는다 — 안에서 또 잡으면 접미와 세로가 어긋난다
     padding: 0,
   },
   /**
    * 한 줄 입력은 **칸 높이의 가운데**다 — 값도 플레이스홀더도.
-   * 안드로이드는 `padding: 0` 을 주면 글자를 위로 붙이는 일이 있어 명시한다
-   * (여러 줄은 위에서부터 쌓이는 것이 맞아 이 스타일을 얹지 않는다).
+   *
+   * ⚠ **줄 간격(`lineHeight`)을 주지 않는다.** iOS 는 한 줄 입력에 줄 간격이 있으면
+   * 글자를 그 줄 상자의 **바닥에 붙여** 그린다 — 16/26 이라 10 만큼 내려앉아
+   * 「맨 아래 붙은」 것으로 보였다. `textAlignVertical` 은 안드로이드 전용이라
+   * 이걸 되돌리지 못한다. 빼면 글자 상자가 글꼴 높이가 되고 바깥(`field`)의
+   * `alignItems: "center"` 가 가운데로 놓는다 — 한 줄짜리에 줄 간격은 뜻이 없어
+   * 잃는 것도 없다.
+   *
+   * 안드로이드는 `padding: 0` 을 주면 글자를 위로 붙이는 일이 있어 명시한다.
    */
   singleLine: { textAlignVertical: "center" },
+  // 여러 줄은 위에서부터 쌓인다 — 줄 간격은 여기서만 뜻을 갖는다
+  multilineInput: { lineHeight: text.body1Reading.lineHeight },
   // 3줄 = lineHeight 26 × 3 + 상하 패딩. 여러 줄은 위에서부터 쌓인다
   multiline: {
     alignItems: "flex-start",

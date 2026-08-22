@@ -82,13 +82,14 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     padding: 0,
-    // 값도 플레이스홀더도 칸 높이의 **가운데**에 선다 — 안드로이드는 `padding: 0`
-    // 일 때 글자를 위로 붙이는 일이 있어 명시한다
+    // 값도 플레이스홀더도 칸 높이의 **가운데**에 선다 — 바깥(`field`)의
+    // `alignItems: "center"` 가 놓는다. ⚠ **줄 간격을 주지 않는다** — iOS 는 한 줄
+    // 입력에 줄 간격이 있으면 글자를 줄 상자 바닥에 붙여 그린다(`TextField` 와 같은 이유).
+    // 안드로이드는 `padding: 0` 일 때 글자를 위로 붙이는 일이 있어 명시한다
     textAlignVertical: "center",
     // 입력값은 Regular 400 — 본문(500)과 다르다(`DESIGN.md` §2)
     fontFamily: fontFamily.regular,
     fontSize: text.body2.fontSize,
-    lineHeight: text.body2.lineHeight,
     color: labelColor.normal,
   },
   // 히트 44 는 유지하되 칸 높이를 밀지 않게 음수 여백으로 당긴다

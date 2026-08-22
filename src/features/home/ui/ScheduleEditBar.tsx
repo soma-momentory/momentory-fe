@@ -171,11 +171,12 @@ const styles = StyleSheet.create({
     // 입력값은 Regular 400 (`DESIGN.md` §2)
     fontFamily: fontFamily.regular,
     fontSize: text.body1Reading.fontSize,
-    lineHeight: text.body1Reading.lineHeight,
     color: labelColor.normal,
     padding: 0,
-    // 값도 플레이스홀더도 알약 높이의 **가운데**에 선다 — 안드로이드는
-    // `padding: 0` 일 때 글자를 위로 붙이는 일이 있어 명시한다
+    // 값도 플레이스홀더도 알약 높이의 **가운데**에 선다 — 바깥(`bar`)의
+    // `alignItems: "center"` 가 놓는다. ⚠ **줄 간격을 주지 않는다** — iOS 는 한 줄
+    // 입력에 줄 간격이 있으면 글자를 줄 상자 바닥에 붙여 그린다(`TextField` 와 같은 이유).
+    // 안드로이드는 `padding: 0` 일 때 글자를 위로 붙이는 일이 있어 명시한다
     textAlignVertical: "center",
   },
   clear: { width: size.icon.lg, height: size.icon.lg },
