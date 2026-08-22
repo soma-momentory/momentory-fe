@@ -80,7 +80,7 @@ export function ScheduleEditBar({
           창이 `adjustResize` 로 줄지 않고 키보드가 그 위를 덮는다(`ChatScaffold`) */}
       <KeyboardAvoidingView
         behavior="padding"
-        style={[styles.dock, { paddingBottom: Math.max(insets.bottom, space.md) }]}
+        style={[styles.dock, { paddingBottom: Math.max(insets.bottom, layout.minBottomInset) }]}
       >
         <Text variant="caption1" color={labelColor.alternative} style={styles.caption}>
           {caption}
