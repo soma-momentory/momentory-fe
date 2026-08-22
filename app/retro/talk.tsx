@@ -9,8 +9,8 @@ import {
   ChatScaffold,
   Chip,
   Slider,
-  Spinner,
   Text,
+  TypingBubble,
 } from "@/components/ds";
 import {
   background,
@@ -284,12 +284,10 @@ export default function RetroTalk() {
         </View>
       ) : null}
 
-      {/* 기다리는 동안 — 진행률도 남은 시간도 말하지 않는다 */}
-      {pending ? (
-        <View style={styles.pending}>
-          <Spinner />
-        </View>
-      ) : null}
+      {/* 기다리는 동안 — **다음 말이 앉을 자리에** 점 셋을 둔다. 기다리는 대상이
+          화면이 아니라 상대의 말이라, 답이 오면 이 말풍선이 글자로 바뀐다.
+          진행률도 남은 시간도 말하지 않는다(`RULES.md` 4) */}
+      {pending ? <TypingBubble /> : null}
     </ChatScaffold>
   );
 }
@@ -416,5 +414,4 @@ const styles = StyleSheet.create({
   rowOn: { backgroundColor: selectedTint, borderWidth: 2, borderColor: primary.normal },
   measures: { gap: space.xl },
   measure: { gap: space.sm },
-  pending: { alignSelf: "flex-start", paddingVertical: space.sm },
 });
