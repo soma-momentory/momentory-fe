@@ -309,6 +309,89 @@ describe("06 · 관심 분야 (+ 06-b·06-c 기타 입력)", () => {
     expect(useDraft.getState().interests).toEqual(["OTHER"]);
   });
 
+  it("확정하면 「기타」 칩이 적은 값으로 바뀐다", async () => {
+    // 「완료를 누르면 칩이 됩니다」 (06-c.md) — 칩이 「기타」로만 남으면
+    // 무엇을 골랐는지 나중에 못 읽는다
+    const r = await render(<Interests />);
+    await pick(r, "기타");
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), " 이사 준비 ");
+
+    await fireEvent.press(r.getByText("확인"));
+
+    expect(r.getByText("이사 준비")).toBeTruthy();
+    expect(r.queryByText("기타")).toBeNull();
+  });
+
+  it("적는 중에는 칩이 아직 「기타」다 — 확정을 지나야 바뀐다", async () => {
+    // 타자마다 칩이 바뀌면 「확인을 누르면 저장돼요」와 어긋난다 (06-c.md)
+    const r = await render(<Interests />);
+    await pick(r, "기타");
+
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), "이사 준비");
+
+    expect(r.getByText("기타")).toBeTruthy();
+    expect(r.queryByText("이사 준비")).toBeNull();
+  });
+
+  it("키보드 [완료] 도 칩을 바꾼다 — 확정은 한 규칙이다", async () => {
+    const r = await render(<Interests />);
+    await pick(r, "기타");
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), "이사 준비");
+
+    await fireEvent(r.getByPlaceholderText("직접 입력"), "submitEditing");
+
+    expect(r.getByText("이사 준비")).toBeTruthy();
+  });
+
+  it("확정하면 「확인을 누르면 저장돼요」가 사라진다 — 끝난 일을 할 일처럼 남기지 않는다", async () => {
+    const r = await render(<Interests />);
+    await pick(r, "가족", "기타");
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), "이사 준비");
+    expect(r.getByText("2개 선택됨 · 확인을 누르면 저장돼요")).toBeTruthy();
+
+    await fireEvent.press(r.getByText("확인"));
+
+    expect(r.getByText("2개 선택됨 · 다시 누르면 선택이 해제돼요")).toBeTruthy();
+  });
+
+  it("확정하면 입력 줄과 [확인] 이 사라진다 — 답은 칩이 들고 있다", async () => {
+    // 같은 답을 두 자리에 두지 않는다 (06-c.md 「완료를 누르면 칩이 됩니다」)
+    const r = await render(<Interests />);
+    await pick(r, "기타");
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), "이사 준비");
+
+    await fireEvent.press(r.getByText("확인"));
+
+    expect(r.queryByPlaceholderText("직접 입력")).toBeNull();
+    expect(r.queryByText("확인")).toBeNull();
+    expect(r.getByText("이사 준비")).toBeTruthy();
+  });
+
+  it("기타를 껐다 다시 켜면 빈 줄이 다시 열린다 — 고쳐 적는 길이다", async () => {
+    const r = await render(<Interests />);
+    await pick(r, "기타");
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), "이사 준비");
+    await fireEvent.press(r.getByText("확인"));
+
+    await fireEvent.press(r.getByText("이사 준비"));
+    await fireEvent.press(r.getByText("기타"));
+
+    expect(r.getByPlaceholderText("직접 입력")).toBeTruthy();
+    expect(r.getByText("0/12")).toBeTruthy();
+  });
+
+  it("확정한 뒤 기타를 끄면 칩 이름이 「기타」로 돌아온다", async () => {
+    const r = await render(<Interests />);
+    await pick(r, "기타");
+    await fireEvent.changeText(r.getByPlaceholderText("직접 입력"), "이사 준비");
+    await fireEvent.press(r.getByText("확인"));
+
+    await fireEvent.press(r.getByText("이사 준비"));
+
+    expect(r.getByText("기타")).toBeTruthy();
+    expect(useDraft.getState().interestOther).toBe("");
+  });
+
   it("공백뿐이면 [확인] 이 잠긴다 — 빈 답을 확정할 수 없다", async () => {
     // design.md §7 「전송/확인 — 값이 비면 비활성」
     const r = await render(<Interests />);

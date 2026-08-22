@@ -9,7 +9,11 @@ import { label as labelColor, space } from "@/design/ds";
 import { sameChoices } from "@/features/my/model/basicInfo";
 import { useProfile } from "@/features/my/model/settings";
 import { OTHER_REST_METHOD } from "@/features/onboarding/model/draft";
-import { choiceHint, useOnboardingOptions } from "@/features/onboarding/model/options";
+import {
+  choiceHint,
+  useOnboardingOptions,
+  withOtherLabel,
+} from "@/features/onboarding/model/options";
 
 /**
  * `M8` · 쉬는 방법 수정
@@ -30,6 +34,8 @@ export default function RestEdit() {
 
   const [picked, setPicked] = useState<string[]>(savedPicked);
   const [other, setOther] = useState(savedOther);
+  /** 칩에 얹힌 값 — 확정을 지난 것만 들어온다(`06-c.md`). 저장된 답은 이미 확정이다 */
+  const [committed, setCommitted] = useState(() => savedOther.trim());
 
   useEffect(() => {
     void useOnboardingOptions.getState().load();
@@ -37,6 +43,10 @@ export default function RestEdit() {
 
   const etcOn = picked.includes(OTHER_REST_METHOD);
   const otherTrimmed = other.trim();
+  // 적는 중 — 확정을 지나면 줄을 닫는다. 답은 이미 칩이 들고 있다(`06-c.md`)
+  const etcEditing = etcOn && committed.length === 0;
+  // 적었지만 아직 확정 전 — 확정을 지나면 칩이 이미 바뀌어 있어 더 말할 것이 없다
+  const etcPending = otherTrimmed.length > 0 && otherTrimmed !== committed;
   const changed = !sameChoices(picked, savedPicked) || otherTrimmed !== savedOther;
   const ready = picked.length > 0 && (!etcOn || otherTrimmed.length > 0);
 
@@ -44,20 +54,28 @@ export default function RestEdit() {
     if (picked.includes(id)) {
       setPicked(picked.filter((x) => x !== id));
       // 기타를 끄면 적던 값도 함께 비운다 — 꺼진 답을 남기지 않는다
-      if (id === OTHER_REST_METHOD) setOther("");
+      if (id === OTHER_REST_METHOD) {
+        setOther("");
+        setCommitted("");
+      }
       return;
     }
     setPicked([...picked, id]);
   };
 
-  /** 「기타」 확정 — 공백뿐이면 확정하지 않고 기타 선택을 취소한다(`06-c.md`) */
+  /**
+   * 「기타」 확정 — 공백뿐이면 확정하지 않고 기타 선택을 취소한다(`06-c.md`).
+   * 확정한 값은 **칩의 이름이 된다**.
+   */
   const commitOther = () => {
     if (otherTrimmed.length === 0) {
       setPicked(picked.filter((x) => x !== OTHER_REST_METHOD));
       setOther("");
+      setCommitted("");
       return;
     }
     setOther(otherTrimmed);
+    setCommitted(otherTrimmed);
   };
 
   return (
@@ -73,15 +91,19 @@ export default function RestEdit() {
         contentContainerStyle={styles.chips}
         showsVerticalScrollIndicator={false}
       >
-        <QuickReplies items={items} selected={picked} onToggle={toggle} />
+        <QuickReplies
+          items={withOtherLabel(items, OTHER_REST_METHOD, committed)}
+          selected={picked}
+          onToggle={toggle}
+        />
 
-        {etcOn ? (
+        {etcEditing ? (
           <OtherReplyInput value={other} onChangeText={setOther} onCommit={commitOther} />
         ) : null}
       </ScrollView>
 
       <Text variant="caption1" color={labelColor.alternative}>
-        {choiceHint(picked.length, etcOn, otherTrimmed.length > 0)}
+        {choiceHint(picked.length, etcOn, etcPending)}
       </Text>
     </BasicInfoEditor>
   );
