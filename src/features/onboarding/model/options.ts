@@ -165,9 +165,36 @@ export const useOnboardingOptions = create<OptionsStore>((set, get) => ({
  * - **몇 개를 골랐는지 사실만** 말한다 — 「3개까지예요」 같은 제한 경고를 미리 띄우지
  *   않는다(`06-c.md`). 상한은 넷째를 눌렀을 때 켜지지 않는 것으로 이미 말한다
  * - 「기타」를 적는 중이면 **무엇을 눌러야 확정되는지**부터 말한다(`06-c.md`)
+ *
+ * ⚠ `etcPending` 은 **적었나**가 아니라 **아직 확정 안 했나**다. 확정을 지나면 칩이
+ * 이미 그 값으로 바뀌어 있어서(`withOtherLabel`), 그때도 「확인을 누르면 저장돼요」를
+ * 두면 이미 누른 것을 또 누르라고 말하는 셈이다 — 끝난 일을 할 일처럼 남기지 않는다.
  */
-export function choiceHint(count: number, etcOn: boolean, etcFilled: boolean) {
+export function choiceHint(count: number, etcOn: boolean, etcPending: boolean) {
   if (count === 0) return "하나 이상 골라주세요";
-  if (etcOn && etcFilled) return `${count}개 선택됨 · 확인을 누르면 저장돼요`;
+  if (etcOn && etcPending) return `${count}개 선택됨 · 확인을 누르면 저장돼요`;
   return `${count}개 선택됨 · 다시 누르면 선택이 해제돼요`;
+}
+
+/**
+ * 「기타」 칩을 **확정된 직접 입력 값**으로 바꾼다 — `06-c.md`:
+ * 「완료를 누르면 칩이 됩니다」 · 「세 경우 모두 앞뒤 공백을 다듬은 값을 칩으로 바꾼다」.
+ *
+ * 답변 버블이 이미 같은 규칙을 쓴다(`conversation.ts` 의 `joinPicked`) — 고른 것이
+ * 「기타」로만 남으면 무엇을 골랐는지 나중에 못 읽는다. 칩도 같아야 한다.
+ *
+ * ⚠ **넘기는 값은 `확인`(키보드 `완료` · `[다음]`)을 지난 것이어야 한다.** 적는
+ * 중인 글자를 그대로 넘기면 타자마다 칩이 바뀌어 「확인을 누르면 저장돼요」라는
+ * 안내와 어긋난다 — 그래서 화면이 확정된 값을 따로 쥔다.
+ *
+ * 확정 값이 비어 있으면(아직 안 적었거나 취소했으면) 목록을 그대로 돌려준다.
+ */
+export function withOtherLabel(
+  items: readonly Option[],
+  otherId: string,
+  committed: string,
+): readonly Option[] {
+  const label = committed.trim();
+  if (label.length === 0) return items;
+  return items.map((o) => (o.id === otherId ? { ...o, label } : o));
 }

@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Button, Text } from "@/components/ds";
@@ -7,7 +8,11 @@ import { OtherReplyInput } from "@/components/onboarding/OtherReplyInput";
 import { QuickReplies } from "@/components/onboarding/QuickReplies";
 import { label as labelColor, space } from "@/design/ds";
 import { OTHER_REST_METHOD, useDraft } from "@/features/onboarding/model/draft";
-import { choiceHint, useOnboardingOptions } from "@/features/onboarding/model/options";
+import {
+  choiceHint,
+  useOnboardingOptions,
+  withOtherLabel,
+} from "@/features/onboarding/model/options";
 
 /**
  * `07` · 쉬는 방법 (필수 · 복수)
@@ -34,8 +39,15 @@ export default function Rest() {
   const other = useDraft((s) => s.restMethodOther);
   const set = useDraft((s) => s.set);
 
+  /** 칩에 얹힌 값 — 확정을 지난 것만 들어온다. `06` 과 같은 규칙이다(`06-c.md`) */
+  const [committed, setCommitted] = useState(() => other.trim());
+
   const etcOn = picked.includes(OTHER_REST_METHOD);
   const otherTrimmed = other.trim();
+  // 적는 중 — 확정을 지나면 줄을 닫는다. 답은 이미 칩이 들고 있다(`06-c.md`)
+  const etcEditing = etcOn && committed.length === 0;
+  // 적었지만 아직 확정 전 — 확정을 지나면 칩이 이미 바뀌어 있어 더 말할 것이 없다
+  const etcPending = otherTrimmed.length > 0 && otherTrimmed !== committed;
   // 기타를 켠 채 비워 두면 잠긴다 — 06-b 와 같은 규칙이다
   const ready = picked.length > 0 && (!etcOn || otherTrimmed.length > 0);
 
@@ -46,7 +58,10 @@ export default function Rest() {
         picked.filter((x) => x !== id),
       );
       // 기타를 끄면 적던 값도 함께 비운다 — 꺼진 답을 초안에 남기지 않는다
-      if (id === OTHER_REST_METHOD) set("restMethodOther", "");
+      if (id === OTHER_REST_METHOD) {
+        set("restMethodOther", "");
+        setCommitted("");
+      }
       return;
     }
     set("restMethods", [...picked, id]);
@@ -55,7 +70,7 @@ export default function Rest() {
   /**
    * 기타 값 확정 — `[확인]` · 키보드 `완료` · `[다음]` 이 여기를 지난다.
    * **밖 탭(blur)은 확정이 아니다**(`DESIGN.md` §7). 공백뿐이면 확정하지 않고
-   * 기타 선택을 취소한다(`06-c.md`).
+   * 기타 선택을 취소한다(`06-c.md`). 확정한 값은 **칩의 이름이 된다**.
    */
   const commitOther = () => {
     if (otherTrimmed.length === 0) {
@@ -64,9 +79,11 @@ export default function Rest() {
         picked.filter((x) => x !== OTHER_REST_METHOD),
       );
       set("restMethodOther", "");
+      setCommitted("");
       return;
     }
     set("restMethodOther", otherTrimmed);
+    setCommitted(otherTrimmed);
   };
 
   const goNext = () => {
@@ -80,8 +97,12 @@ export default function Rest() {
       onBack={() => router.back()}
       inline={
         <View style={styles.replies}>
-          <QuickReplies items={items} selected={picked} onToggle={toggle} />
-          {etcOn ? (
+          <QuickReplies
+            items={withOtherLabel(items, OTHER_REST_METHOD, committed)}
+            selected={picked}
+            onToggle={toggle}
+          />
+          {etcEditing ? (
             <OtherReplyInput
               value={other}
               onChangeText={(v) => set("restMethodOther", v)}
@@ -92,7 +113,7 @@ export default function Rest() {
       }
     >
       <Text variant="caption1" color={labelColor.alternative} style={styles.hint}>
-        {choiceHint(picked.length, etcOn, otherTrimmed.length > 0)}
+        {choiceHint(picked.length, etcOn, etcPending)}
       </Text>
       <Button label="다음" fill disabled={!ready} onPress={goNext} />
     </OnboardingChat>
