@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { KeyboardAvoidingView, StyleSheet, View } from "react-native";
 
 import { Button, Screen, Text, TopNavigation } from "@/components/ds";
-import { space, status } from "@/design/ds";
+import { layout, space, status } from "@/design/ds";
 import { saveBasicInfo, type BasicInfo } from "@/features/my/model/basicInfo";
 
 /**
@@ -63,8 +63,14 @@ export function BasicInfoEditor({ title, changed, ready = true, patch, children 
       <TopNavigation leading="arrow-left" title={title} onLeadingPress={() => router.back()} />
 
       {/* 키보드는 **양쪽 다** 피한다 — edge-to-edge(Expo SDK 54+)에서는 안드로이드
-          창이 `adjustResize` 로 줄지 않고 키보드가 그 위를 덮는다(`ChatScaffold`) */}
-      <KeyboardAvoidingView style={styles.fill} behavior="padding">
+          창이 `adjustResize` 로 줄지 않고 키보드가 그 위를 덮는다(`ChatScaffold`).
+          `keyboardVerticalOffset` 은 키보드가 올라온 뒤에도 저장 버튼 아래
+          숨을 남긴다 — 같은 이유로 `ChatScaffold` 도 이 값을 준다 */}
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior="padding"
+        keyboardVerticalOffset={layout.androidNavGap}
+      >
         <View style={styles.body}>{children}</View>
 
         <View style={styles.dock}>

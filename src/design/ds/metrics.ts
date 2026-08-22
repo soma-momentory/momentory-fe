@@ -1,4 +1,4 @@
-import { StyleSheet, type ViewStyle } from "react-native";
+import { Platform, StyleSheet, type ViewStyle } from "react-native";
 
 import { line } from "./color";
 
@@ -93,6 +93,25 @@ export const layout = {
    * 지난다 — Screen · TabScreen · ScheduleEditBar · ToastHost.
    */
   minBottomInset: 24,
+  /**
+   * **안드로이드에서만** 시스템 바 인셋 위에 더 얹는 숨.
+   *
+   * `minBottomInset` 은 인셋이 0 으로 오는 기기의 **하한**이라, 인셋이 제대로
+   * 오는 기기(3버튼 내비 48 · 제스처 바 24)에서는 아무 일도 하지 않는다 —
+   * 그 기기에서는 하단 독이 **시스템 바에 딱 맞닿아** 붙어 보였다(회고의
+   * 「다음」·「이야기 시작하기」·채팅 입력·일정 입력).
+   *
+   * iOS 는 홈 인디케이터 인셋(≈34)이 이미 그 숨을 만들어 준다 — 그래서 0 이다.
+   * 인셋과 **더한다**(하한이 아니다). 이 값을 지나는 곳: `Screen` ·
+   * `ScheduleEditBar`. 탭 화면 아래는 탭바가 면으로 이어져 있어 해당 없다.
+   *
+   * **키보드가 올라온 동안에도 같은 숨을 남긴다** — `KeyboardAvoidingView` 의
+   * `behavior="padding"` 은 독의 아래를 키보드 윗변에 정확히 맞춰서, 그냥 두면
+   * 이 숨이 키보드가 뜨는 순간 사라진다. 그래서 독을 든 셋(`ChatScaffold` ·
+   * `ScheduleEditBar` · `BasicInfoEditor`)이 `keyboardVerticalOffset` 으로
+   * 같은 값을 넘긴다.
+   */
+  androidNavGap: Platform.OS === "android" ? space.lg : 0,
   /** 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 */
   scrollClearance: 76,
   /** 모든 탭 대상 최소 (아이콘이 작으면 hitSlop 으로 채운다) */
