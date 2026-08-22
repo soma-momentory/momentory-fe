@@ -13,6 +13,16 @@ import { label as labelColor, text, type TextToken } from "@/design/ds";
  *
  * 색 기본값은 `label.normal` 이다. 다른 색이 필요하면 **토큰을 넘긴다** —
  * `color="#..."` 로 hex 를 적으면 린터가 막는다.
+ *
+ * ## 글꼴 배율에 천장을 둔다 — 기본 1.3
+ *
+ * RN `Text` 는 시스템 글꼴 크기(안드로이드 「글꼴/화면 크기」)를 그대로 따라가서
+ * 배율이 1.5·2.0 까지 오른다. 그러면 **고정 높이 그릇**(Button 48 · Chip 36 ·
+ * 탭바)을 글자가 뚫고 나와 레이아웃이 깨진다 — 「내 기기는 멀쩡한데 남의
+ * 기기에서 깨지는」 자리다. 그래서 배율 상한을 1.3 으로 둔다(접근성을 완전히
+ * 죽이는 `allowFontScaling={false}` 대신 절충값).
+ *
+ * `...rest` **앞에** 두어, 특정 화면이 필요하면 prop 으로 덮을 수 있게 남긴다.
  */
 type Props = TextProps & {
   variant?: TextToken;
@@ -20,6 +30,18 @@ type Props = TextProps & {
   color?: string;
 };
 
-export function Text({ variant = "body1", color = labelColor.normal, style, ...rest }: Props) {
-  return <RNText {...rest} style={[text[variant], { color }, style]} />;
+export function Text({
+  variant = "body1",
+  color = labelColor.normal,
+  maxFontSizeMultiplier = 1.3,
+  style,
+  ...rest
+}: Props) {
+  return (
+    <RNText
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
+      {...rest}
+      style={[text[variant], { color }, style]}
+    />
+  );
 }
