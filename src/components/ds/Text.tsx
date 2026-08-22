@@ -1,6 +1,6 @@
 import { Text as RNText, type TextProps } from "react-native";
 
-import { label as labelColor, text, type TextToken } from "@/design/ds";
+import { label as labelColor, maxFontScale, text, type TextToken } from "@/design/ds";
 
 /**
  * Momentory DS — 글자.
@@ -19,8 +19,10 @@ import { label as labelColor, text, type TextToken } from "@/design/ds";
  * RN `Text` 는 시스템 글꼴 크기(안드로이드 「글꼴/화면 크기」)를 그대로 따라가서
  * 배율이 1.5·2.0 까지 오른다. 그러면 **고정 높이 그릇**(Button 48 · Chip 36 ·
  * 탭바)을 글자가 뚫고 나와 레이아웃이 깨진다 — 「내 기기는 멀쩡한데 남의
- * 기기에서 깨지는」 자리다. 그래서 배율 상한을 1.3 으로 둔다(접근성을 완전히
- * 죽이는 `allowFontScaling={false}` 대신 절충값).
+ * 기기에서 깨지는」 자리다. 그래서 배율 상한을 `maxFontScale`(1.3)로 둔다 —
+ * 접근성을 완전히 죽이는 `allowFontScaling={false}` 대신의 절충값이다. 값이
+ * 토큰에 있는 이유는 **글자 높이로 여백을 계산하는 화면이 같은 천장을 봐야**
+ * 하기 때문이다(홈 머리의 날짜 정렬).
  *
  * `...rest` **앞에** 두어, 특정 화면이 필요하면 prop 으로 덮을 수 있게 남긴다.
  */
@@ -33,7 +35,7 @@ type Props = TextProps & {
 export function Text({
   variant = "body1",
   color = labelColor.normal,
-  maxFontSizeMultiplier = 1.3,
+  maxFontSizeMultiplier = maxFontScale,
   style,
   ...rest
 }: Props) {

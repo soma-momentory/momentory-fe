@@ -99,4 +99,15 @@ export const text = {
 
 export type TextToken = keyof typeof text;
 
+/**
+ * 글꼴 배율 **천장**. 시스템 글꼴 크기(안드로이드 「글꼴/화면 크기」)를 그대로
+ * 따라가면 배율이 1.5·2.0 까지 올라 고정 높이 그릇(Button 48 · Chip 36 · 탭바)을
+ * 글자가 뚫는다 — 접근성을 죽이는 `allowFontScaling={false}` 대신의 절충값이다.
+ *
+ * `components/ds/Text` 가 이 값을 `maxFontSizeMultiplier` 로 넘긴다. **글자 높이로
+ * 여백을 계산하는 쪽도 같은 천장을 봐야 한다** — 화면이 1.3 을 따로 적으면
+ * 천장이 둘이 되고, 한쪽만 고쳐졌을 때 배율 큰 기기에서만 어긋난다.
+ */
+export const maxFontScale = 1.3;
+
 export const typography = { fontFamily, text } as const;

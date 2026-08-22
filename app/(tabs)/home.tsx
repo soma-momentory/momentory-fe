@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { PixelRatio, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -16,7 +16,7 @@ import {
   Toast,
   type MenuAction,
 } from "@/components/ds";
-import { label as labelColor, layout, size, space, status, text } from "@/design/ds";
+import { label as labelColor, layout, maxFontScale, size, space, status, text } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import {
   MAX_VISIBLE_SCHEDULES,
@@ -71,15 +71,27 @@ import { formatKoreanTime } from "@/lib/time";
  * 대신한다. `DESIGN.md` §2 표와 §10 「제목」 줄을 함께 고쳤다(이 저장소가 그
  * 문서를 소유한다 — `PLAN.md` A-18).
  *
- * 정렬 계산(`styles.date`)이 같은 값을 봐야 해서 이름으로 묶어 둔다.
+ * 정렬 계산(`datePaddingTop` · `weekdayIndent`)이 같은 값을 봐야 해서 이름으로 묶어 둔다.
  */
 const DATE_VARIANT = "title1Hand" as const;
 
-/** 날짜를 종의 중심선보다 더 내리는 양 (사용자 조정 2026-08-22) */
-const DATE_DROP = space.xs;
+/**
+ * 손글씨가 글자칸 **위쪽**에 붙는 정도 — 행간 대비 비율.
+ *
+ * 고딕과 달리 글자가 칸 가운데에 앉지 않아서, 수치상 중심을 맞추면 눈에는 높이
+ * 떠 보인다. **고정 dp 가 아니라 비율인 이유**는 이 뜨는 양이 글자 크기에
+ * 비례하기 때문이다 — 단을 키우거나(28→32) 기기의 글꼴 배율이 커지면 어긋난
+ * 양도 같은 비율로 커진다. 한 기기에서 맞춰 둔 4dp 는 다른 기기에서 다시 어긋난다.
+ */
+const HAND_TOP_BEARING = 0.1;
 
-/** 요일 줄의 왼쪽 들여쓰기 — 날짜 글자와 눈으로 맞춘다 */
-const WEEKDAY_INDENT = space.xs;
+/**
+ * 손글씨 첫 획이 글자칸 **왼쪽**에서 뜨는 정도 — 글자 크기 대비 비율.
+ *
+ * 날짜(큰 글자)와 요일(작은 글자)은 같은 서체라도 뜨는 폭이 달라서 왼쪽 끝이
+ * 안 맞아 보인다. 그 **차이만큼** 요일을 들여쓰면 둘의 첫 획이 한 줄에 선다.
+ */
+const HAND_LEFT_BEARING = 0.22;
 
 export default function Home() {
   const schedules = useDay((s) => s.schedules);
@@ -91,6 +103,35 @@ export default function Home() {
   const load = useDay((s) => s.load);
   const diaries = useDiary((s) => s.diaries);
   const insets = useSafeAreaInsets();
+  /**
+   * 기기의 글꼴 배율. **`useWindowDimensions` 로 받는 이유**는 설정에서 글꼴
+   * 크기를 바꾸면 앱이 살아 있는 채로 값이 바뀌고, 그때 다시 그려야 하기
+   * 때문이다(`PixelRatio.getFontScale()` 은 한 번 읽고 끝이라 안 따라온다).
+   * 천장은 `Text` 가 실제로 적용하는 것과 같은 값을 본다.
+   */
+  const { fontScale } = useWindowDimensions();
+
+  /**
+   * 날짜 칸의 위 여백 · 요일 들여쓰기 — **기기마다 다르게 계산된다.**
+   *
+   * `StyleSheet` 에 고정 dp 로 박으면 글꼴 배율이 큰 기기에서 어긋난다: 글자는
+   * 배율만큼 커지는데 여백은 그대로라, 종과 맞춰 둔 중심선이 밀린다. 그래서
+   * **글자 높이에서 계산하고 배율을 곱한다.**
+   *
+   * - 위 여백 = 종(44) 한가운데에 날짜 줄을 맞추고(`(44 − 줄높이) / 2`),
+   *   손글씨가 칸 위에 붙는 만큼 더 내린다
+   * - 들여쓰기 = 날짜와 요일의 **글자 크기 차이**에 왼쪽 뜨는 비율을 곱한다
+   *
+   * 반올림은 기기 픽셀 격자에 맞춘다 — 소수 여백은 글자 가장자리를 흐리게 만든다.
+   */
+  const scale = Math.min(fontScale, maxFontScale);
+  const dateLine = text[DATE_VARIANT].lineHeight * scale;
+  const datePaddingTop = PixelRatio.roundToNearestPixel(
+    Math.max((layout.minTouch - dateLine) / 2, 0) + HAND_TOP_BEARING * dateLine,
+  );
+  const weekdayIndent = PixelRatio.roundToNearestPixel(
+    HAND_LEFT_BEARING * (text[DATE_VARIANT].fontSize - text.label1Hand.fontSize) * scale,
+  );
 
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -205,13 +246,17 @@ export default function Home() {
         scrollEnabled={!dragging}
       >
         <View style={styles.head}>
-          {/* 날짜 줄이 종과 같은 높이에 선다 — 아래 `styles.date` 참고 */}
-          <View style={styles.date}>
+          {/* 날짜 줄이 종과 같은 높이에 선다 — 값은 위에서 배율까지 넣어 계산한다 */}
+          <View style={{ paddingTop: datePaddingTop }}>
             <Text variant={DATE_VARIANT} color={labelColor.strong}>
               {formatKoreanDateShort(today)}
             </Text>
             {/* 요일도 날짜와 같은 손글씨 — 둘이 한 덩어리로 읽힌다 */}
-            <Text variant="label1Hand" color={labelColor.alternative} style={styles.weekday}>
+            <Text
+              variant="label1Hand"
+              color={labelColor.alternative}
+              style={{ paddingLeft: weekdayIndent }}
+            >
               {`${koreanWeekday(today)}요일`}
             </Text>
           </View>
@@ -326,20 +371,13 @@ const styles = StyleSheet.create({
     paddingBottom: space.md,
   },
   /**
-   * **날짜 줄의 한가운데를 종의 한가운데에 맞춘다.**
+   * ⚠ **날짜 칸의 위 여백과 요일 들여쓰기는 여기 없다** — 기기의 글꼴 배율이
+   * 들어가야 해서 컴포넌트 안에서 계산한다(`datePaddingTop` · `weekdayIndent`).
+   * `StyleSheet` 는 배율을 모른다.
    *
-   * 날짜 칸은 두 줄(38 + 16 = 54)이고 종은 44 정사각이라, 위나 아래로 맞추면
-   * 어느 쪽이든 날짜 **첫 줄**과 종 아이콘이 어긋난다(바닥 정렬일 때 종이 10
-   * 아래에 있었다). 눈이 짝지어 보는 것은 큰 글씨 한 줄과 종이므로 그 둘의
-   * 중심을 맞추고, 요일은 그 아래에 딸려 간다.
-   *
-   * 값은 단에서 계산한다 — 날짜 단을 키우면 이 여백이 따라 줄어든다. 거기에
-   * `DATE_DROP` 을 더해 **중심선보다 조금 아래**에 앉힌다(사용자 조정 2026-08-22) —
-   * 손글씨는 글자가 칸 위쪽에 붙어 보여서, 수치상 중심이 눈에는 높게 보인다.
+   * 눈이 짝지어 보는 것은 **큰 글씨 한 줄과 종**이라 그 둘의 중심을 맞추고,
+   * 요일은 그 아래에 딸려 간다. 바닥 정렬이던 시절에는 종이 10 아래에 있었다.
    */
-  date: { paddingTop: (layout.minTouch - text[DATE_VARIANT].lineHeight) / 2 + DATE_DROP },
-  // 요일은 날짜보다 조금 안쪽에서 시작한다 — 손글씨 첫 획이 왼쪽에서 뜬다
-  weekday: { paddingLeft: WEEKDAY_INDENT },
   // 44 히트는 지키되 날짜 줄의 높이를 밀지 않게 오른쪽으로 당긴다
   bell: { marginRight: -space.md },
   cta: { gap: 22 },
