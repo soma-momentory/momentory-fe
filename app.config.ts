@@ -67,8 +67,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: "com.momentory.app",
+    // 배경색은 **로고 자체의 배경**이다(`assets/logo.jpeg` 의 면 = #F2E4DC).
+    // 전경 PNG 의 가장자리 픽셀은 그 베이지와 섞인 색을 그대로 들고 있어서,
+    // 배경층이 같은 색일 때만 이음매가 보이지 않는다 — 여기를 바꾸면 테두리가 뜬다.
     adaptiveIcon: {
-      backgroundColor: "#F2E9DA",
+      backgroundColor: "#F2E4DC",
       foregroundImage: "./assets/android-icon-foreground.png",
       monochromeImage: "./assets/android-icon-monochrome.png",
     },
