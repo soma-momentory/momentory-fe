@@ -111,9 +111,9 @@ export default function Archive() {
 
   return (
     <TabScreen active="보관함">
-      {/* 탭 루트라 상단 내비 제목을 두지 않는다 — 본문의 Title 3 가 제목이다(`DESIGN.md` §10) */}
+      {/* 탭 루트라 상단 내비 제목을 두지 않는다 — 본문의 Title 3(손글씨)가 제목이다(`DESIGN.md` §10) */}
       <View style={styles.header}>
-        <Text variant="title3" color={labelColor.strong}>
+        <Text variant="title3Hand" color={labelColor.strong}>
           보관함
         </Text>
         <ViewSwitcher options={VIEWS} active={view} onChange={setView} />

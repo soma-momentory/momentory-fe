@@ -25,6 +25,13 @@ import { GridBackground } from "./GridBackground";
  * 그러면 바닥 버튼이 시스템 버튼에 딱 붙는다 — 제스처 바 기기에서는 인셋이
  * 저절로 여백 노릇을 해서 보이지 않던 문제다. 그래서 인셋과
  * `layout.minBottomInset` 중 **큰 쪽**을 쓴다(라이브러리에 하한 옵션이 없다).
+ *
+ * ## 안드로이드는 그 위에 한 뼘 더 얹는다
+ *
+ * 인셋이 **제대로 오는** 안드로이드 기기에서는 하한이 아무 일도 하지 않아서,
+ * 하단 독(「다음」·「이야기 시작하기」·채팅 입력)이 시스템 바에 **딱 맞닿아**
+ * 있었다. `layout.androidNavGap` 을 인셋에 **더해** 숨을 만든다 — iOS 는 홈
+ * 인디케이터 인셋이 이미 그 일을 해서 0 이다.
  */
 type Props = {
   children: ReactNode;
@@ -53,7 +60,9 @@ export function Screen({
   const side = padded ? layout.screenPadding : 0;
   const safe = {
     paddingTop: on("top") ? insets.top : 0,
-    paddingBottom: on("bottom") ? Math.max(insets.bottom, layout.minBottomInset) : 0,
+    paddingBottom: on("bottom")
+      ? Math.max(insets.bottom, layout.minBottomInset) + layout.androidNavGap
+      : 0,
     paddingLeft: side + (on("left") ? insets.left : 0),
     paddingRight: side + (on("right") ? insets.right : 0),
   };

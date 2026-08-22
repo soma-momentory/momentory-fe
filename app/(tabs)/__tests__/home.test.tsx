@@ -204,17 +204,19 @@ describe("일정 행 — 체크박스와 ⋮", () => {
     expect(router.push).toHaveBeenCalledWith("/home/schedule/s4");
   });
 
-  it("가져온 일정은 지우는 것이 아니라 숨기는 것이다", async () => {
+  it("가져온 일정은 「삭제하기」라고 말하지만 숨기는 것이다 — 캘린더 원본은 그대로다", async () => {
     const r = await render(<Home />);
     await openMenu(r, "면접 스터디");
 
-    expect(r.queryByText("삭제하기")).toBeNull();
-    await fireEvent.press(r.getByText("홈에서 숨기기"));
+    // 수정은 여전히 없다 — 가져온 제목은 우리가 고칠 수 있는 것이 아니다
+    expect(r.queryByText("수정하기")).toBeNull();
+    await fireEvent.press(r.getByText("삭제하기"));
 
     // 배열에는 남아 있다 — hidden 플래그만 켠다 (캘린더 원본은 지우지 않는다)
     expect(useDay.getState().schedules.find((s) => s.id === "s3")?.hidden).toBe(true);
     expect(useDay.getState().schedules).toHaveLength(4);
-    expect(r.getByText("홈에서만 보이지 않게 돼요 · 캘린더 원본은 그대로 있어요")).toBeTruthy();
+    // 이름이 「삭제」가 된 만큼, 원본이 남는다는 말은 토스트가 대신한다
+    expect(r.getByText("일정을 삭제했어요 · 캘린더 원본은 그대로 있어요")).toBeTruthy();
   });
 
   it("바깥을 누르면 메뉴가 닫힌다", async () => {

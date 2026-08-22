@@ -43,7 +43,14 @@ export {
   withAlpha,
 } from "./color";
 
-export { fontFamily, text, typography, type FontWeightName, type TextToken } from "./typography";
+export {
+  fontFamily,
+  maxFontScale,
+  text,
+  typography,
+  type FontWeightName,
+  type TextToken,
+} from "./typography";
 
 export {
   bubbleRadius,

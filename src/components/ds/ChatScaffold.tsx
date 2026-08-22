@@ -1,7 +1,7 @@
 import { useRef, type ReactNode } from "react";
 import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from "react-native";
 
-import { space } from "@/design/ds";
+import { layout, space } from "@/design/ds";
 
 import { Screen } from "./Screen";
 import { TopNavigation } from "./TopNavigation";
@@ -22,6 +22,11 @@ import { TopNavigation } from "./TopNavigation";
  * 줄어든다는 전제였다. **edge-to-edge 에서는 그 전제가 깨진다**(Expo SDK 54+ 는
  * edge-to-edge 를 끌 수 없다): 창이 줄지 않고 키보드가 그 위를 덮어서 입력 독이
  * 가려진다. 그래서 두 플랫폼 모두 `padding` 으로 피한다.
+ *
+ * ⚠ **피하기만 하면 독이 키보드에 딱 붙는다.** `padding` 은 독의 아래를 키보드
+ * 윗변에 **정확히** 맞춘다 — 키보드가 없을 때 `Screen` 이 만들어 둔 숨
+ * (`layout.androidNavGap`)이 키보드가 올라오는 순간 사라진다. `keyboardVerticalOffset`
+ * 에 같은 값을 줘 키보드 윗변을 그만큼 위로 친다(iOS 는 0 이라 그대로다).
  */
 type Props = {
   /** `arrow-left` 뒤로 · `close` 닫기. 없으면 상단바를 두지 않는다 */
@@ -58,7 +63,11 @@ export function ChatScaffold({ leading, onLeadingPress, trailing, children, dock
         <TopNavigation leading={leading} onLeadingPress={onLeadingPress} trailing={trailing} />
       ) : null}
 
-      <KeyboardAvoidingView style={styles.fill} behavior="padding">
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior="padding"
+        keyboardVerticalOffset={layout.androidNavGap}
+      >
         <ScrollView
           ref={scroll}
           style={styles.fill}

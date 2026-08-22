@@ -91,6 +91,8 @@ function useAppFonts() {
     "Pretendard-Medium": require("../../assets/fonts/Pretendard-Medium.otf"),
     "Pretendard-SemiBold": require("../../assets/fonts/Pretendard-SemiBold.otf"),
     "Pretendard-Bold": require("../../assets/fonts/Pretendard-Bold.otf"),
+    // 제목 넷(홈 날짜 · 탭 제목 셋)만 쓰는 손글씨 — `ds/typography.ts` 의 `hand`
+    KyoboHandwriting2025lyb: require("../../assets/fonts/KyoboHandwriting2025lyb.ttf"),
   });
 
   useEffect(() => {
