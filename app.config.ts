@@ -138,6 +138,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           "./assets/fonts/Pretendard-Medium.otf",
           "./assets/fonts/Pretendard-SemiBold.otf",
           "./assets/fonts/Pretendard-Bold.otf",
+          "./assets/fonts/KyoboHandwriting2025lyb.ttf",
         ],
       },
     ],

@@ -190,7 +190,7 @@ export default function My() {
     >
       {/* 탭 루트라 상단바가 없다 — 본문의 Title 3 이 제목 노릇을 한다(`DESIGN.md` §10) */}
       <View style={styles.head}>
-        <Text variant="title3" color={labelColor.strong}>
+        <Text variant="title3Hand" color={labelColor.strong}>
           마이
         </Text>
       </View>

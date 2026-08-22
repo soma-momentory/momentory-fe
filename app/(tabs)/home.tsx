@@ -16,7 +16,7 @@ import {
   Toast,
   type MenuAction,
 } from "@/components/ds";
-import { label as labelColor, layout, size, space, status } from "@/design/ds";
+import { label as labelColor, layout, size, space, status, text } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import {
   MAX_VISIBLE_SCHEDULES,
@@ -63,6 +63,24 @@ import { formatKoreanTime } from "@/lib/time";
  * 상태로 든다. 반대로 **입력 바(`12-c`·`12-e`)는 라우트**다 — 뒤로가기가 닫기여야
  * 하기 때문이다(`PLAN.md` A-4).
  */
+/**
+ * 날짜 단 — **화면에서 가장 큰 글자**이자 손글씨다(32/42 · `DESIGN.md` §2).
+ *
+ * 원래 `title3`(다른 탭의 화면 제목과 같은 단)였는데 2026-08-22 에 두 단 올리고
+ * **서체도 손글씨로 갈았다** — 홈에는 화면 제목이 따로 없고 날짜가 그 자리를
+ * 대신한다. `DESIGN.md` §2 표와 §10 「제목」 줄을 함께 고쳤다(이 저장소가 그
+ * 문서를 소유한다 — `PLAN.md` A-18).
+ *
+ * 정렬 계산(`styles.date`)이 같은 값을 봐야 해서 이름으로 묶어 둔다.
+ */
+const DATE_VARIANT = "title1Hand" as const;
+
+/** 날짜를 종의 중심선보다 더 내리는 양 (사용자 조정 2026-08-22) */
+const DATE_DROP = space.xs;
+
+/** 요일 줄의 왼쪽 들여쓰기 — 날짜 글자와 눈으로 맞춘다 */
+const WEEKDAY_INDENT = space.xs;
+
 export default function Home() {
   const schedules = useDay((s) => s.schedules);
   const toggleDone = useDay((s) => s.toggleDone);
@@ -128,15 +146,23 @@ export default function Home() {
             },
           ]
         : [
-            // 가져온 일정은 지울 것이 여기 없다 — 캘린더 원본을 건드리지 않는다(`12-c`).
-            // 되돌릴 수 있는 동작이라 위험색도 확인 모달도 쓰지 않는다
+            /**
+             * 가져온 일정도 **「삭제하기」라고 말한다**(2026-08-22 · 사용자 요청 ·
+             * `PRODUCT.md` 상류와 차이 27). 스펙은 「홈에서 숨기기」였다 —
+             * 캘린더 원본이 지워졌다고 오해할까 봐 이름을 갈라 뒀던 자리다.
+             *
+             * **하는 일은 그대로 `hidden` 플래그 하나다** — 기기 캘린더는 읽기만
+             * 하므로(`lib/calendar.ts`) 원본은 건드리지 않는다. 이름만 같아졌으니
+             * **그 사실은 토스트 한 줄이 말한다.**
+             */
             {
-              label: "홈에서 숨기기",
-              icon: "close",
+              label: "삭제하기",
+              icon: "trash",
+              negative: true,
               onPress: () => {
                 setMenu(null);
                 hide(target.id);
-                setToast("홈에서만 보이지 않게 돼요 · 캘린더 원본은 그대로 있어요");
+                setToast("일정을 삭제했어요 · 캘린더 원본은 그대로 있어요");
               },
             },
           ];
@@ -179,11 +205,13 @@ export default function Home() {
         scrollEnabled={!dragging}
       >
         <View style={styles.head}>
-          <View>
-            <Text variant="title3" color={labelColor.strong}>
+          {/* 날짜 줄이 종과 같은 높이에 선다 — 아래 `styles.date` 참고 */}
+          <View style={styles.date}>
+            <Text variant={DATE_VARIANT} color={labelColor.strong}>
               {formatKoreanDateShort(today)}
             </Text>
-            <Text variant="caption1" color={labelColor.alternative}>
+            {/* 요일도 날짜와 같은 손글씨 — 둘이 한 덩어리로 읽힌다 */}
+            <Text variant="label1Hand" color={labelColor.alternative} style={styles.weekday}>
               {`${koreanWeekday(today)}요일`}
             </Text>
           </View>
@@ -217,7 +245,7 @@ export default function Home() {
         </Card>
 
         <View style={styles.section}>
-          <WeekEmotionStrip days={week} today={today} onSeeAll={() => router.replace("/report")} />
+          <WeekEmotionStrip days={week} today={today} />
         </View>
 
         <View style={styles.section}>
@@ -292,11 +320,26 @@ const styles = StyleSheet.create({
   },
   head: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: space.md,
     paddingBottom: space.md,
   },
+  /**
+   * **날짜 줄의 한가운데를 종의 한가운데에 맞춘다.**
+   *
+   * 날짜 칸은 두 줄(38 + 16 = 54)이고 종은 44 정사각이라, 위나 아래로 맞추면
+   * 어느 쪽이든 날짜 **첫 줄**과 종 아이콘이 어긋난다(바닥 정렬일 때 종이 10
+   * 아래에 있었다). 눈이 짝지어 보는 것은 큰 글씨 한 줄과 종이므로 그 둘의
+   * 중심을 맞추고, 요일은 그 아래에 딸려 간다.
+   *
+   * 값은 단에서 계산한다 — 날짜 단을 키우면 이 여백이 따라 줄어든다. 거기에
+   * `DATE_DROP` 을 더해 **중심선보다 조금 아래**에 앉힌다(사용자 조정 2026-08-22) —
+   * 손글씨는 글자가 칸 위쪽에 붙어 보여서, 수치상 중심이 눈에는 높게 보인다.
+   */
+  date: { paddingTop: (layout.minTouch - text[DATE_VARIANT].lineHeight) / 2 + DATE_DROP },
+  // 요일은 날짜보다 조금 안쪽에서 시작한다 — 손글씨 첫 획이 왼쪽에서 뜬다
+  weekday: { paddingLeft: WEEKDAY_INDENT },
   // 44 히트는 지키되 날짜 줄의 높이를 밀지 않게 오른쪽으로 당긴다
   bell: { marginRight: -space.md },
   cta: { gap: 22 },

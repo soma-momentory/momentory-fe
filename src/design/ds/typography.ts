@@ -19,8 +19,22 @@ export const fontFamily = {
   medium: "Pretendard-Medium",
   semibold: "Pretendard-SemiBold",
   bold: "Pretendard-Bold",
+  /**
+   * **손글씨 — 제목 넷에만 쓴다**(2026-08-22 · 교보손글씨 2025 lyb).
+   *
+   * 홈의 날짜와 탭 제목 셋(쉼터·보관함·마이)이 전부다. 웨이트가 **하나뿐**이라
+   * 굵기로 위계를 만들 수 없고, 그래서 본문·라벨에는 쓰지 않는다 — 서체를
+   * 섞는 자리를 늘리면 위계가 굵기가 아니라 서체로 읽히기 시작한다.
+   *
+   * 쓰는 단은 `title2Hand`·`title3Hand` 둘뿐이고, 화면은 그 단 이름만 안다.
+   */
+  hand: "KyoboHandwriting2025lyb",
 } as const;
 
+/**
+ * 서체 이름 하나. ⚠ 「weight」라고 부르지만 `hand` 처럼 **웨이트가 아닌 것도**
+ * 들어 있다 — `fontFamily` 의 키 전부다.
+ */
 export type FontWeightName = keyof typeof fontFamily;
 
 /**
@@ -39,8 +53,28 @@ const style = (family: FontWeightName, fontSize: number, lineHeight: number): St
 export const text = {
   /** 28/38 700 — 브랜드 워드마크, 페이지 제목 */
   title2: style("bold", 28, 38),
-  /** 24/32 700 — 화면 제목(마이·쉼터·보관함), 날짜 */
+  /** 24/32 700 — 화면 제목(일기 상세 등). ⚠ **탭 제목 셋은 `title3Hand`** 다 */
   title3: style("bold", 24, 32),
+  /**
+   * 32/42 손글씨 — **홈 날짜 하나**. 앱에서 가장 큰 글자다.
+   *
+   * 손글씨는 같은 크기의 고딕보다 작아 보인다(획이 얇고 글자 면이 좁다) —
+   * 28(`title2`)로는 「가장 큰 자리」로 읽히지 않아 2026-08-22 에 한 단 더 올렸다.
+   * **Wanted 스케일에서 안 쓰던 Title 1 자리를 이 한 곳에만 연 것이고**, 32/42 는
+   * 우리가 정한 값이다(반입 패키지를 지워 원본 Title 1 값을 확인할 수 없다 —
+   * 24/32 · 28/38 의 행간비 1.33 을 그대로 이었다). `DESIGN.md` §2.
+   */
+  title1Hand: style("hand", 32, 42),
+  /** 24/32 손글씨 — 탭 제목 셋(쉼터·보관함·마이). 같은 크기의 `title3` 와 짝이다 */
+  title3Hand: style("hand", 24, 32),
+  /**
+   * 14/20 손글씨 — **홈 날짜 아래 요일 한 줄**. 날짜와 한 덩어리로 읽혀야 해서
+   * 서체를 같이 간다(`label1` 과 크기·행간이 같다).
+   *
+   * ⚠ 손글씨 중 **가장 작은 자리**다. 이보다 작게 쓰지 않는다 — 획이 얇아
+   * 처음 잡았던 12 에서는 읽기가 아니라 무늬에 가까웠다(2026-08-22 · 12→14).
+   */
+  label1Hand: style("hand", 14, 20),
   /** 22/30 600 — 카드·시트 제목, 온보딩 질문 */
   heading1: style("semibold", 22, 30),
   /** 18/26 600 — 리스트 강조, 값 표시 */
