@@ -1,6 +1,15 @@
-import { StyleSheet, View, type ViewStyle } from "react-native";
+import { useEffect, useState } from "react";
+import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 
-import { bubbleRadius, fill, label as labelColor, primary, space, withAlpha } from "@/design/ds";
+import {
+  bubbleRadius,
+  fill,
+  label as labelColor,
+  primary,
+  radius,
+  space,
+  withAlpha,
+} from "@/design/ds";
 
 import { Text } from "./Text";
 
@@ -63,6 +72,60 @@ export function ChatBubble({ children, variant = "question", past = false, style
   );
 }
 
+/** 점 하나가 밝아졌다 어두워지는 데 걸리는 시간 · 점 사이의 시차 */
+const DOT_MS = 420;
+const DOT_STAGGER = 140;
+const DOT_DIM = 0.28;
+
+/**
+ * 답장을 쓰는 중 — **질문 말풍선 자리에 점 셋**이 앉는다.
+ *
+ * 회전하는 원(`Spinner`)이 아니라 말풍선인 이유: 기다리는 대상이 **화면이 아니라
+ * 상대의 말**이기 때문이다. 스피너는 「앱이 뭔가 하고 있다」를 말하지만, 여기서
+ * 알려야 하는 것은 「바바가 지금 답을 쓰고 있다」다. 그래서 다음에 올 말이 앉을
+ * 바로 그 자리에, 그 말풍선 모양으로 둔다 — 답이 도착하면 점이 글자로 바뀐다.
+ *
+ * `ChatBubble` 과 **같은 파일에 두는 것이 규칙**이다. 면·라운드·정렬·최대 폭을
+ * 공유해야 점과 글자가 같은 자리에서 갈아끼워지는데, 파일이 갈리면 한쪽만
+ * 고쳐졌을 때 말풍선이 미묘하게 어긋난다.
+ *
+ * **진행률도 남은 시간도 말하지 않는다**(`RULES.md` 4 · `Spinner` 머리말과 같은 규칙).
+ *
+ * ⚠ 점의 움직임은 **정보가 아니라 생동감**이다 — 낭독기에는 한 줄로만 말한다.
+ */
+export function TypingBubble({ style }: { style?: ViewStyle }) {
+  // 값은 한 번 만들어 계속 쓴다 (`ScheduleList` 와 같은 방식)
+  const [dots] = useState(() => [0, 1, 2].map(() => new Animated.Value(DOT_DIM)));
+
+  useEffect(() => {
+    const loops = dots.map((v, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * DOT_STAGGER),
+          Animated.timing(v, { toValue: 1, duration: DOT_MS, useNativeDriver: true }),
+          Animated.timing(v, { toValue: DOT_DIM, duration: DOT_MS, useNativeDriver: true }),
+          // 한 바퀴 길이를 점마다 같게 맞춘다 — 어긋나면 시차가 조금씩 밀린다
+          Animated.delay((dots.length - 1 - i) * DOT_STAGGER),
+        ]),
+      ),
+    );
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+  }, [dots]);
+
+  return (
+    <View
+      style={[styles.base, styles.question, styles.typing, style]}
+      accessible
+      accessibilityLabel="답장을 쓰는 중"
+    >
+      {dots.map((v, i) => (
+        <Animated.View key={i} style={[styles.dot, { opacity: v }]} />
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   base: { borderRadius: 0 },
   question: {
@@ -72,6 +135,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     backgroundColor: fill.alternative,
     ...bubbleRadius.question,
+  },
+  /**
+   * 글자 대신 점이 들어간 질문 말풍선. 세로 여백을 14 에서 줄이는 이유는 점의 높이가
+   * 글자 한 줄(26)보다 낮아서다 — 그대로 두면 말풍선만 홀쭉하게 길어 보인다.
+   */
+  typing: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.xs + space.xs2, // 6 — 점 지름과 같게 두면 셋이 한 덩어리로 읽힌다
+    paddingVertical: space.lg,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: radius.full,
+    backgroundColor: labelColor.neutral,
   },
   answer: {
     alignSelf: "flex-end",

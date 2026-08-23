@@ -104,6 +104,32 @@ describe("텍스트 턴 — 자유 입력", () => {
   });
 });
 
+describe("기다리는 동안 — 다음 말이 앉을 자리", () => {
+  it("답을 기다리는 동안 말풍선이 서고, 답이 오면 그 자리가 글자로 바뀐다", async () => {
+    // 회전하는 원이 아니라 말풍선이다 — 기다리는 것이 화면이 아니라 상대의 말이라서
+    let arrive!: (v: Awaited<ReturnType<typeof sendTurn>>) => void;
+    mockTurn.mockReturnValue(new Promise((res) => (arrive = res)));
+
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+    expect(r.queryByLabelText("답장을 쓰는 중")).toBeNull();
+
+    await fireEvent.changeText(r.getByLabelText("답변"), "답이 막혔어요.");
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("보내기"));
+    });
+
+    expect(r.getByLabelText("답장을 쓰는 중")).toBeTruthy();
+
+    await act(async () => {
+      arrive({ ok: true, data: reply({ text: "그랬군요.", phase: "intro" }) });
+    });
+
+    await waitFor(() => expect(r.queryByLabelText("답장을 쓰는 중")).toBeNull());
+    expect(r.getByText("그랬군요.")).toBeTruthy();
+  });
+});
+
 describe("선택지 턴 — 대화 안의 칩", () => {
   const withOptions = () =>
     mockStart.mockResolvedValue({

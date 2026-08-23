@@ -49,7 +49,7 @@ export { EmotionDot } from "./EmotionDot";
 export { ViewSwitcher, type ViewOption } from "./ViewSwitcher";
 export { ChatScaffold } from "./ChatScaffold";
 export { ChoiceGrid, type Choice } from "./ChoiceGrid";
-export { ChatBubble } from "./ChatBubble";
+export { ChatBubble, TypingBubble } from "./ChatBubble";
 export { ChatDock } from "./ChatDock";
 export { Slider } from "./Slider";
 export { Spinner } from "./Spinner";
