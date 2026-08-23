@@ -157,7 +157,10 @@ describe("행동카드 삭제", () => {
     await flush();
 
     expect(useDiary.getState().actionCards.map((c) => c.id)).toEqual(["7"]);
-    expect(toast()).toMatchObject({ message: "행동카드를 삭제하지 못했어요.", variant: "negative" });
+    expect(toast()).toMatchObject({
+      message: "행동카드를 삭제하지 못했어요.",
+      variant: "negative",
+    });
   });
   // 로컬 전용 카드(서버 id 없음)의 기기 묘비 경로는 `deletedCards.test.ts` 가 본다.
 });

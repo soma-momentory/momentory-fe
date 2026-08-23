@@ -235,7 +235,10 @@ describe("짧은 기록형 — 리프레이밍도 행동 카드도 없다", () =
   beforeEach(() => {
     useDiary.setState({ diaries: [], actionCards: [] });
     // reframedDiary·actionCard 없이 일기 한 장만
-    seedCompleted({ diaryId: null, diary: "오늘 있었던 일을 짧게 남겼다.", reframedDiary: null }, null);
+    seedCompleted(
+      { diaryId: null, diary: "오늘 있었던 일을 짧게 남겼다.", reframedDiary: null },
+      null,
+    );
   });
 
   it("리프레이밍이 없어도 화면은 같다 — 읽고, 고치고, 저장한다", async () => {
