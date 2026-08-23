@@ -67,9 +67,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: "com.momentory.app",
-    // 배경색은 **로고 자체의 배경**이다(`assets/logo.jpeg` 의 면 = #F2E4DC).
-    // 전경 PNG 의 가장자리 픽셀은 그 베이지와 섞인 색을 그대로 들고 있어서,
-    // 배경층이 같은 색일 때만 이음매가 보이지 않는다 — 여기를 바꾸면 테두리가 뜬다.
+    // 배경색은 **로고 자체의 면**이다(`assets/logo.jpeg` = #F2E4DC).
+    //
+    // 전경 PNG 는 그 면을 지운 **내용만**이라(투명 배경), 베이지를 그리는 것은
+    // 배경층 하나뿐이다 — 여기를 바꾸면 카피바라가 다른 색 위에 뜬 것처럼 된다.
+    //
+    // ⚠ 전경의 배율은 **보낸 원본 그대로**다(2026-08-23 · 가로 36.5% · 세로 45.6%).
+    // 여백이 넉넉한 구도라 런처에서 작아 보이지만 그것이 로고의 구도다. 다만
+    // 원본은 내용이 6% 아래로 치우쳐 있어 **세로만 가운데로 되돌렸다** — 적응형
+    // 아이콘은 안쪽 66% 만 보이고, 치우친 채로는 원형 마스크가 워드마크를 자른다.
     adaptiveIcon: {
       backgroundColor: "#F2E4DC",
       foregroundImage: "./assets/android-icon-foreground.png",
@@ -121,13 +127,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-web-browser",
     ...kakaoPlugin,
     ...insecureApiPlugin,
+    // 스플래시도 **같은 로고 하나**다 — 런처 아이콘과 마찬가지로
+    // `assets/logo.jpeg` 에서 배경을 지워 뽑았다.
+    //
+    // 배경은 앱의 첫 화면과 같은 크림(`ds/color.ts` `background.normal`)이다 —
+    // 스플래시가 다른 색이면 `S0` 로 넘어가는 순간 바탕이 한 번 튄다. 옛 값
+    // `#F2E9DA`(2세대 palette.bgMid)는 어느 화면의 색도 아니었다.
+    //
+    // ⚠ 이미지 안의 내용은 정사각 캔버스의 **안쪽 66%** 에만 있다 — 안드로이드 12+
+    // 는 스플래시 아이콘을 원으로 깎으므로, 가장자리까지 채우면 워드마크가 잘린다.
+    // 그래서 `imageWidth` 는 화면에 보이길 바라는 폭이 아니라 그 1.5배다.
     [
       "expo-splash-screen",
       {
         image: "./assets/splash-icon.png",
-        imageWidth: 200,
+        imageWidth: 288,
         resizeMode: "contain",
-        backgroundColor: "#F2E9DA", // palette.bgMid — 시안 배경의 단색 폴백
+        backgroundColor: "#F7F4ED", // ds/color.ts background.normal
       },
     ],
     [
