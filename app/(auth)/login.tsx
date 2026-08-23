@@ -72,7 +72,7 @@ export default function Login() {
       {/* 로고 영역이 남은 높이를 다 차지하고 **광학 중앙**에 온다 —
           아래 96 을 비워 시각적 무게를 위로 올린다 (`Login.dc.html` 「수직 균형」) */}
       <View style={styles.hero}>
-        <Text variant="title2" color={labelColor.strong}>
+        <Text variant="wordmarkHand" color={labelColor.strong}>
           모멘토리
         </Text>
         <Text variant="body2Reading" color={labelColor.neutral}>

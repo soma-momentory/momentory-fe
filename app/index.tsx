@@ -70,7 +70,7 @@ export default function Splash() {
     <Screen>
       {/* 로그인과 **같은 블록**이다 — 자리·간격·아래 96 까지(`login.tsx` `hero`) */}
       <View style={styles.hero}>
-        <Text variant="title2" color={labelColor.strong}>
+        <Text variant="wordmarkHand" color={labelColor.strong}>
           모멘토리
         </Text>
         <Text variant="body2Reading" color={labelColor.neutral}>
