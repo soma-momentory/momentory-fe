@@ -14,7 +14,7 @@ import {
   TextField,
   WheelPicker,
 } from "@/components/ds";
-import { fill, hairline, label as labelColor, radius, space, status } from "@/design/ds";
+import { label as labelColor, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
@@ -42,7 +42,8 @@ import {
  *
  * ## 새 디자인에서 바뀐 것
  *
- * - 프로필이 **이니셜 아바타 + 기록 일수** 한 줄이다 (캐릭터 그림이 사라졌다 — `PLAN.md` N8)
+ * - 프로필이 **닉네임 + 기록 일수** 한 줄이다 (캐릭터 그림은 N8 에서, 이니셜 아바타 원은
+ *   2026-08-23 에 뺐다 — 동그라미 없이 글자만 남긴다)
  * - 「총 회고 12회」 → **「일기 12일 기록」**. 「회고」는 내부 용어라 밖으로 내보내지 않는다.
  *   **세는 대상도 다르다** — 편수가 아니라 **기록이 남은 날 수**다
  * - 「회고 프로필」·「기본 정보」 두 줄이 **「기본 정보 수정」 한 줄**로 합쳐졌다(`M3` 목록)
@@ -105,7 +106,6 @@ export default function My() {
 
   // 연속 일수가 아니라 **기록이 남은 날 수**다 — 같은 날 두 편을 써도 하루다
   const recordedDays = new Set(diaries.map((d) => d.date)).size;
-  const initial = nickname.trim().slice(0, 1);
   const notifyValue = retro.enabled ? `매일 ${formatKoreanTime(retro.time ?? "21:30")}` : "꺼짐";
 
   /**
@@ -275,12 +275,6 @@ export default function My() {
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <View style={styles.profile}>
-          {/* 그림이 아니라 이니셜이다 — 새 디자인에 캐릭터가 없다(N8) */}
-          <View style={styles.avatar} accessibilityElementsHidden>
-            <Text variant="headline1" color={labelColor.neutral}>
-              {initial}
-            </Text>
-          </View>
           <View style={styles.profileCopy}>
             <Text variant="heading1" color={labelColor.strong} numberOfLines={1}>
               {nickname}
@@ -416,8 +410,6 @@ function Group({
   );
 }
 
-const AVATAR = 56;
-
 const styles = StyleSheet.create({
   // 좌우 20 은 `TabScreen` 이 잡는다 — 여기서 또 잡으면 두 겹이 된다
   head: { paddingTop: space.sm, paddingBottom: space.xl },
@@ -427,15 +419,6 @@ const styles = StyleSheet.create({
   },
 
   profile: { flexDirection: "row", alignItems: "center", gap: 14 },
-  avatar: {
-    width: AVATAR,
-    height: AVATAR,
-    borderRadius: radius.full,
-    backgroundColor: fill.normal,
-    alignItems: "center",
-    justifyContent: "center",
-    ...hairline.neutral,
-  },
   profileCopy: { flex: 1, minWidth: 0, gap: space.xs2 },
 
   group: { gap: space.sm },
