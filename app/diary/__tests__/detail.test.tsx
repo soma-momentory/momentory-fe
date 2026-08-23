@@ -90,10 +90,11 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     await fireEvent.press(r.getByText("삭제하기"));
 
     expect(r.getByText("이 일기를 삭제할까요?")).toBeTruthy();
-    expect(r.getByText("이 일기가 삭제돼요. 행동 카드는 보관함에 남아요.")).toBeTruthy();
+    // 카드가 있는 날이므로 함께 지워진다는 사실을 먼저 알린다
+    expect(r.getByText("이 일기가 삭제돼요. 함께 만든 행동 카드도 같이 삭제돼요.")).toBeTruthy();
   });
 
-  it("확인하면 일기만 사라지고 행동 카드는 남는다 — 보관함으로 돌아간다", async () => {
+  it("확인하면 일기와 그 일기의 행동 카드가 함께 사라진다 — 보관함으로 돌아간다", async () => {
     const r = await render(<DiaryDetail />);
 
     await fireEvent.press(r.getByLabelText("더보기"));
@@ -101,8 +102,8 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     await fireEvent.press(r.getByText("일기 삭제"));
 
     expect(useDiary.getState().diaries.find((x) => x.id === ID)).toBeUndefined();
-    // 행동 카드는 자기 보관함(쉼터)에 남는다 — 함께 지우지 않는다(PRODUCT.md 상류와 차이)
-    expect(actionCardOf(useDiary.getState().actionCards, ID)).toBeTruthy();
+    // 일기를 지우면 그 일기의 행동 카드도 함께 지운다
+    expect(actionCardOf(useDiary.getState().actionCards, ID)).toBeNull();
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/archive");
   });
 

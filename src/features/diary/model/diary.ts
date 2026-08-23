@@ -40,12 +40,13 @@ const ARCHIVE_MONTHS = 12;
  *
  * 초기값은 비어 있고 `load()` 가 서버에서 채운다(일정 store `useDay` 와 같은 결).
  * 쓰기도 이 경계를 지난다(`data/diaryApi.ts`):
- * - **삭제**(`DELETE /diaries/{id}`) — **일기만** 지운다. 행동 카드는 자기 보관함(쉼터)에
- *   남고 회고 세션도 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`). 회고를 막 끝낸
- *   일기도 완료 응답이 준 서버 id 를 그대로 들고 있어 곧바로 지워진다. **확인 모달을
+ * - **삭제**(`DELETE /diaries/{id}`) — 일기와 **그 일기의 행동 카드를 함께** 지운다
+ *   (1:1 · `diaryId` 로 잇는다). 카드는 `DELETE /action-cards/{id}` 로 곁딸려 나가고,
+ *   실패해도 카드만 조용히 되살린다(토스트는 「일기」 하나). 회고 세션은 남긴다. 회고를 막 끝낸
+ *   일기·카드도 완료 응답이 준 서버 id 를 그대로 들고 있어 곧바로 지워진다. **확인 모달을
  *   지나면 그 자리에서 보낸다**(2026-08-21 · 되돌리기 폐지 · `PRODUCT.md` 「상류와 차이」).
  *   예전에는 되돌리기 창(6초) 동안 미뤘는데, 확인을 이미 한 번 받았으므로 두 번 묻는
- *   셈이었다. 실패했을 때만 되살린다.
+ *   셈이었다. 실패했을 때만 되살린다. **행동 카드 삭제(`R2`)는 반대로 카드만 지운다** — 일기는 남는다.
  * - **「해봤어요」·되돌리기·느낀 점**(`PUT /action-cards/{id}/completion`) — 옵티미스틱하게
  *   먼저 바꾸고 서버가 **거부할 때만** 되돌린다(`serverRefusedWrite`).
  * - **C6 직접 고치기**(`PUT /diaries/by-retrospect/{id}`)는 draft 화면이 `data/diaryApi` 로
@@ -327,8 +328,26 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     // 이미 없는 일기다 — 지운 척하지 않는다
     if (kept == null) return;
 
-    // **행동 카드는 지우지 않는다** — 자기 보관함(쉼터)에 날짜로 남는다(PRODUCT.md 상류와 차이)
-    set((s) => ({ diaries: s.diaries.filter((d) => d.id !== id) }));
+    // 일기를 지우면 **그 일기의 행동 카드도 함께** 지운다(1:1 · `diaryId` 로 잇는다).
+    const card = actionCardOf(get().actionCards, id);
+
+    // 먼저 화면에서 둘 다 뺀다 — 서버 응답을 기다리지 않는다
+    set((s) => ({
+      diaries: s.diaries.filter((d) => d.id !== id),
+      actionCards:
+        card == null ? s.actionCards : s.actionCards.filter((c) => c.id !== card.id),
+    }));
+
+    const still = sameSession();
+
+    // 카드는 곁딸린 삭제다 — 서버 카드면 함께 지우고, 못 닿으면 카드만 조용히 되살린다.
+    // 토스트는 일기 하나로만 낸다(사용자가 누른 것은 「일기 삭제」다). 로컬 전용 카드는 이미 끝났다.
+    if (card != null && isServerId(card.id)) {
+      void deleteActionCard(card.id).then((result) => {
+        if (!still() || result.ok) return;
+        set((s) => ({ actionCards: restoredCards(s.actionCards, card) }));
+      });
+    }
 
     // 서버가 준 일기에만 보낸다 — 로컬 전용(`*-local-*`)은 서버에 없으니 이미 끝났다.
     // 회고를 막 끝낸 일기도 완료 응답의 diaryId 를 그대로 들고 있어(서버 id) 여기로 온다.
@@ -337,7 +356,6 @@ export const useDiary = create<DiaryStore>((set, get) => ({
       return;
     }
 
-    const still = sameSession();
     void deleteDiary(kept.id).then((result) => {
       // 보내는 사이 로그아웃했다 — 앞 사람의 일기를 새 세션에 되살리지 않는다.
       // 서버 쪽은 이미 요청이 갔거나 안 갔거나로 끝났고, 다음 로그인의 `load` 가

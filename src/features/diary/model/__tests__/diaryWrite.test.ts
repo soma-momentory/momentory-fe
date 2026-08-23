@@ -59,14 +59,52 @@ const toast = () => useToast.getState().current;
  * 앞에 확인 모달이 있어 같은 것을 두 번 묻는 셈이었다. 지금은 **그 자리에서 보낸다**.
  */
 describe("삭제는 그 자리에서 보낸다", () => {
-  it("화면에서 빼고 곧바로 서버로 — 일기 id 로 지운다, 카드는 남는다", () => {
+  it("화면에서 빼고 곧바로 서버로 — 일기와 그 일기의 행동 카드를 함께 지운다", async () => {
     useDiary.setState({ diaries: [diary("42")], actionCards: [card("7", "42")] });
 
     useDiary.getState().remove("42");
+    await flush();
 
     expect(useDiary.getState().diaries).toHaveLength(0);
-    expect(useDiary.getState().actionCards).toHaveLength(1); // 카드는 남는다
+    expect(useDiary.getState().actionCards).toHaveLength(0); // 카드도 함께 지운다
+    // 일기·카드 둘 다 서버에서 지운다
+    expect(calls("DELETE")).toContain("/api/v1/diaries/42");
+    expect(calls("DELETE")).toContain("/api/v1/action-cards/7");
+    // 토스트는 「일기」 하나만 — 곁딸린 카드 삭제로 두 줄 뜨지 않는다
+    expect(toast()).toMatchObject({ message: "일기를 삭제했어요.", variant: "positive" });
+  });
+
+  it("다른 일기의 카드는 건드리지 않는다 — diaryId 로만 잇는다", () => {
+    useDiary.setState({
+      diaries: [diary("42")],
+      actionCards: [card("7", "99")], // 다른 일기(99)의 카드
+    });
+
+    useDiary.getState().remove("42");
+
+    expect(useDiary.getState().actionCards.map((c) => c.id)).toEqual(["7"]);
     expect(calls("DELETE")).toEqual(["/api/v1/diaries/42"]);
+  });
+
+  it("카드 삭제가 서버에 못 닿으면 카드만 조용히 되살린다 — 일기 삭제는 그대로", async () => {
+    // 일기 삭제는 성공, 카드 삭제만 실패하게 한다
+    mockedRequest.mockImplementation((_method, path) =>
+      Promise.resolve(
+        String(path).includes("/action-cards/")
+          ? { ok: false, error: { code: "network" } }
+          : { ok: true, data: null },
+      ),
+    );
+    useDiary.setState({ diaries: [diary("42")], actionCards: [card("7", "42")] });
+
+    useDiary.getState().remove("42");
+    await flush();
+
+    // 일기는 지워진 채로 두고, 서버에 살아 있는 카드만 되살린다
+    expect(useDiary.getState().diaries).toHaveLength(0);
+    expect(useDiary.getState().actionCards.map((c) => c.id)).toEqual(["7"]);
+    // 실패 토스트로 사용자를 놀래지 않는다 — 곁딸린 카드 삭제는 조용히 처리한다
+    expect(toast()).toMatchObject({ message: "일기를 삭제했어요.", variant: "positive" });
   });
 
   it("없는 일기는 아무 일도 하지 않는다 — 지운 척하지 않는다", () => {
