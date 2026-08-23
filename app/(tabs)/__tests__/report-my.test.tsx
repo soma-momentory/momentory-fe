@@ -182,13 +182,15 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
 });
 
 describe("M1 · 마이 기본", () => {
-  it("프로필은 이니셜 · 닉네임 · 기록 일수 한 줄이다", async () => {
+  it("프로필은 닉네임 · 기록 일수 한 줄이다 — 이니셜 동그라미가 없다", async () => {
     // 「총 회고 12회」는 내부 용어였다 — 새 디자인은 「일기 12일 기록」이다
     const r = await render(<My />);
 
     expect(r.getByText("지현")).toBeTruthy();
     expect(r.getByText("일기 12일 기록")).toBeTruthy();
     expect(r.queryByText(/회고 \d+회/)).toBeNull();
+    // 이니셜 아바타 원(2026-08-23 제거) — 첫 글자만 따로 뜨던 동그라미가 없다
+    expect(r.queryByText("지")).toBeNull();
   });
 
   it("연속 일수·점수·배지를 쓰지 않는다", async () => {

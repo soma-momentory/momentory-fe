@@ -95,13 +95,14 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     expect(queryByText(/회 실행/)).toBeNull();
   });
 
-  it("카드가 하나도 없으면 누를 수 없다 — 갈 곳 없는 자리를 만들지 않는다", async () => {
+  it("카드가 하나도 없어도 들어갈 수 있다 — 안에서 날짜로 둘러본다", async () => {
     useDiary.setState({ diaries: [], actionCards: [] });
     const { getByLabelText, getByText } = await render(<Rest />);
 
+    // 요약 줄은 회고가 먼저라는 사실만 말하되, 진입은 막지 않는다
     expect(getByText("회고를 마치면 그날의 행동카드가 여기 남아요")).toBeTruthy();
     await fireEvent.press(getByLabelText("행동카드 보기"));
-    expect(jest.mocked(router.push)).not.toHaveBeenCalled();
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards");
   });
 });
 
@@ -113,6 +114,28 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     expect(getByText("상황")).toBeTruthy();
     expect(getByText("제안된 행동")).toBeTruthy();
     expect(getByText(card.situation)).toBeTruthy();
+  });
+
+  it("카드 없는 날도 고를 수 있고, 그 자리에 「행동카드가 없어요」를 보여준다", async () => {
+    seedOneCard(); // 2026-07-27 에 카드 한 장
+    const r = await render(<RestCards />);
+
+    // 처음엔 최신 카드(27일)를 보여준다
+    expect(r.getByText("10분 걷기")).toBeTruthy();
+
+    // 카드가 없는 15일을 골라도 잠기지 않고, 카드 자리에 없다는 문구가 뜬다
+    await fireEvent.press(r.getByLabelText("15일"));
+    expect(r.getByText("7월 15일에 만들어진 행동카드가 없어요.")).toBeTruthy();
+  });
+
+  it("카드가 하나도 없어도 캘린더로 날짜를 둘러볼 수 있다", async () => {
+    useDiary.setState({ diaries: [], actionCards: [] });
+    const r = await render(<RestCards />);
+
+    // 아직 아무 날도 안 골랐으면 회고가 먼저라는 것을, 날을 고르면 그 날 카드가 없다는 것을
+    expect(r.getByText("회고를 마치면 그날의 행동카드가 여기 남아요.")).toBeTruthy();
+    await fireEvent.press(r.getByLabelText("15일"));
+    expect(r.getByText(/15일에 만들어진 행동카드가 없어요\./)).toBeTruthy();
   });
 
   it("왼쪽은 상태, 오른쪽은 행동 버튼이다 — 체크박스를 두지 않는다", async () => {

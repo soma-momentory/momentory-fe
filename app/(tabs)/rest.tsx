@@ -22,8 +22,9 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 하나**다. 「쉼터에는 아직 행동카드만 — 기능이 늘면 R1에 항목을 더해요」가 시안
  * 주석에 그대로 적혀 있다. 늘어날 자리를 비워 두는 것과, 없는 것을 그리는 것은 다르다.
  *
- * **카드가 하나도 없으면 누를 수 없다** — 갈 곳은 있지만 보여줄 것이 없는 자리를
- * 누르게 하지 않는다(`CLAUDE.md`). 대신 회고가 먼저라는 사실만 말한다.
+ * **카드가 하나도 없어도 들어갈 수 있다** — 안에서 날짜로 둘러보고, 카드가 없는 날은
+ * 「그 날 만들어진 행동카드가 없어요」로 답한다(2026-08-23). 요약 줄은 카드가 없으면
+ * 회고가 먼저라는 사실만 말한다.
  */
 export default function Rest() {
   const cards = useDiary((s) => s.actionCards);
@@ -52,12 +53,7 @@ export default function Rest() {
         </Text>
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="행동카드 보기"
-        disabled={latest == null}
-        onPress={open}
-      >
+      <Pressable accessibilityRole="button" accessibilityLabel="행동카드 보기" onPress={open}>
         <Card padding="loose" style={styles.entry}>
           <View style={styles.head}>
             <View style={styles.name}>
@@ -66,12 +62,11 @@ export default function Rest() {
                 행동카드
               </Text>
             </View>
-            {/* 카드 전체가 진입점이라 이 글자는 **표시**다 — 따로 눌리지 않는다 */}
-            {latest != null ? (
-              <Text variant="label2" color={primary.heavy}>
-                보기
-              </Text>
-            ) : null}
+            {/* 카드 전체가 진입점이라 이 글자는 **표시**다 — 따로 눌리지 않는다.
+                카드가 없어도 들어가 날짜로 둘러볼 수 있어 늘 보여 준다 */}
+            <Text variant="label2" color={primary.heavy}>
+              보기
+            </Text>
           </View>
 
           <Text variant="body2" color={labelColor.neutral}>
