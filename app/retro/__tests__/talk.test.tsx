@@ -120,6 +120,8 @@ describe("기다리는 동안 — 다음 말이 앉을 자리", () => {
     });
 
     expect(r.getByLabelText("답장을 쓰는 중")).toBeTruthy();
+    // 서버 응답을 기다리지 않고 보낸 즉시 입력창이 비워진다(반응 지연 없이)
+    expect(r.getByLabelText("답변").props.value).toBe("");
 
     await act(async () => {
       arrive({ ok: true, data: reply({ text: "그랬군요.", phase: "intro" }) });

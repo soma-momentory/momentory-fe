@@ -167,6 +167,9 @@ export default function RetroTalk() {
   const sendText = () => {
     const text = draftText.trim();
     if (text.length === 0) return;
+    // 보낸 즉시 입력창을 비운다 — 서버 응답을 기다리지 않는다.
+    // 보낸 말은 addMyTurn 으로 말풍선에 남으므로 사라지지 않는다
+    setDraftText("");
     addMyTurn(text);
     void runTurn({ content: text });
   };
