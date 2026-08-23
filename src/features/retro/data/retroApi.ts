@@ -33,16 +33,28 @@ export type ReplyOption = {
 /** 슬라이더 하나. `id` 는 measure 필드 키 — 턴 요청 `measures` 의 키로 돌려보낸다 */
 export type ReplyMeasure = { id: string; label: string; min: number; max: number };
 
-/** 행동 카드 — 방향에 따라 없을 수 있다(짧은 기록형 등) */
+/**
+ * 행동 카드 — 방향에 따라 없을 수 있다(짧은 기록형 등).
+ *
+ * `actionCardId` 는 완료 턴이 서버에 방금 저장한 카드의 id(문자열 · 일기 `diaryId` 와 같은 결).
+ * 이 값을 store 에 넣어 두면 다음 조회를 기다리지 않고 그 id 로 「해봤어요」·느낀 점·삭제를
+ * 곧바로 서버에 보낼 수 있다. 서버가 안 주면(옛 서버 등) `null`.
+ */
 export type ReplyActionCard = {
+  actionCardId: string | null;
   situation: string;
   action: string;
   detail: string | null;
   createdDate: string | null;
 };
 
-/** 일기 — 짧은 기록형은 `reframedDiary` 가 없어 한 면만 그린다 */
-export type ReplyDiary = { diary: string; reframedDiary: string | null };
+/**
+ * 일기 — 짧은 기록형은 `reframedDiary` 가 없어 한 면만 그린다.
+ *
+ * `diaryId` 는 완료 턴이 서버에 방금 저장한 일기의 id(문자열). 이 값을 그대로 store 에 넣어
+ * 두면 다음 조회를 기다리지 않고 그 id 로 삭제할 수 있다. 서버가 안 주면(옛 서버 등) `null`.
+ */
+export type ReplyDiary = { diaryId: string | null; diary: string; reframedDiary: string | null };
 
 /** 한 턴의 서버 응답. 프론트는 이걸 보고 무엇을 그릴지 정한다 */
 export type Reply = {
@@ -161,6 +173,13 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 
 const asString = (v: unknown): string | null => (typeof v === "string" ? v : null);
 
+/** 서버 `Long` id → 문자열. 숫자·비어 있지 않은 문자열만 받고 나머지는 `null` */
+const asId = (v: unknown): string | null => {
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  if (typeof v === "string" && v.length > 0) return v;
+  return null;
+};
+
 const toOptions = (v: unknown): ReplyOption[] | null => {
   if (!Array.isArray(v)) return null;
   const out: ReplyOption[] = [];
@@ -200,14 +219,20 @@ const toActionCard = (v: unknown): ReplyActionCard | null => {
   const situation = asString(v.situation);
   const action = asString(v.action);
   if (situation == null || action == null) return null;
-  return { situation, action, detail: asString(v.detail), createdDate: asString(v.createdDate) };
+  return {
+    actionCardId: asId(v.actionCardId),
+    situation,
+    action,
+    detail: asString(v.detail),
+    createdDate: asString(v.createdDate),
+  };
 };
 
 const toDiary = (v: unknown): ReplyDiary | null => {
   if (!isObject(v)) return null;
   const diary = asString(v.diary);
   if (diary == null) return null;
-  return { diary, reframedDiary: asString(v.reframedDiary) };
+  return { diaryId: asId(v.diaryId), diary, reframedDiary: asString(v.reframedDiary) };
 };
 
 /**
