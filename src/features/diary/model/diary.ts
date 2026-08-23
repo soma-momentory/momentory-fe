@@ -112,8 +112,9 @@ type DiaryStore = {
    */
   edit: (id: string, input: { body: string; emotions: EmotionId[] }) => void;
   /**
-   * 「이 회고 삭제」 — **일기만** 지운다. 행동 카드는 자기 보관함(쉼터)에 날짜로 남고
-   * 회고 세션도 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`).
+   * 「이 회고 삭제」 — 일기와 **그 일기의 행동 카드를 함께** 지운다(1:1 · `diaryId`).
+   * 회고 세션은 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`). 카드 삭제가 실패하면
+   * 카드만 조용히 되살린다(토스트는 「일기」 하나).
    *
    * ⚠ **되돌리기가 없다**(2026-08-21). 화면에서 빼고 **곧바로 서버로 보낸다** —
    * 앞에 확인 모달이 있으므로 되돌리기 줄은 같은 것을 두 번 묻는 셈이었다.
@@ -334,8 +335,7 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     // 먼저 화면에서 둘 다 뺀다 — 서버 응답을 기다리지 않는다
     set((s) => ({
       diaries: s.diaries.filter((d) => d.id !== id),
-      actionCards:
-        card == null ? s.actionCards : s.actionCards.filter((c) => c.id !== card.id),
+      actionCards: card == null ? s.actionCards : s.actionCards.filter((c) => c.id !== card.id),
     }));
 
     const still = sameSession();
