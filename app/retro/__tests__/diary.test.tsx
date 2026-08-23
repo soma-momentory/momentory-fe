@@ -24,10 +24,12 @@ const mockedRequest = authedRequest as jest.MockedFunction<typeof authedRequest>
 
 /** 서버가 완료 응답에 담아 준 값 — store 가 draft 로 넘긴다 */
 const SEED_DIARY: ReplyDiary = {
+  diaryId: "77",
   diary: "오늘 모의 면접에서 답이 막혔지만 끝까지 답했다.",
   reframedDiary: "그 한 번이 면접을 못한다는 뜻은 아니다.",
 };
 const SEED_ACTION: ReplyActionCard = {
+  actionCardId: "88",
   situation: "면접 연습을 시작할 때",
   action: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
   detail: null,
@@ -136,12 +138,16 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
     await save();
 
     const d = useDiary.getState().diaries[0];
+    // 완료 응답이 준 서버 일기 id 를 그대로 쓴다 — 저장 직후 삭제가 이 id 로 서버에 닿는다
+    expect(d?.id).toBe(SEED_DIARY.diaryId);
     expect(d?.body).toBe(SEED_DIARY.diary);
     expect(d?.babaView).toBe(SEED_DIARY.reframedDiary);
     expect(d?.startEmotion).toBe(2);
     expect(d?.emotions).toEqual([2]);
 
     const card = useDiary.getState().actionCards[0];
+    // 완료 응답이 준 서버 카드 id 를 그대로 쓴다 — 「해봤어요」·느낀 점·삭제가 이 id 로 서버에 닿는다
+    expect(card?.id).toBe(SEED_ACTION.actionCardId);
     expect(card?.situation).toBe(SEED_ACTION.situation);
     expect(card?.targetAction).toBe(SEED_ACTION.action);
   });
@@ -229,7 +235,7 @@ describe("짧은 기록형 — 리프레이밍도 행동 카드도 없다", () =
   beforeEach(() => {
     useDiary.setState({ diaries: [], actionCards: [] });
     // reframedDiary·actionCard 없이 일기 한 장만
-    seedCompleted({ diary: "오늘 있었던 일을 짧게 남겼다.", reframedDiary: null }, null);
+    seedCompleted({ diaryId: null, diary: "오늘 있었던 일을 짧게 남겼다.", reframedDiary: null }, null);
   });
 
   it("리프레이밍이 없어도 화면은 같다 — 읽고, 고치고, 저장한다", async () => {

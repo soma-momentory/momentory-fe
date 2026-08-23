@@ -70,6 +70,8 @@ export default function RetroDraft() {
     saving.current = true;
     const edited = body !== diary.diary;
     saveDiary({
+      // 완료 턴이 준 서버 일기 id — 있으면 store 가 이걸 그대로 써서 저장 직후에도 삭제가 닿는다
+      id: diary.diaryId,
       date: today,
       body,
       babaView: diary.reframedDiary,
@@ -80,6 +82,8 @@ export default function RetroDraft() {
       weather: null,
       situation: actionCard?.situation ?? null,
       targetAction: actionCard?.action ?? null,
+      // 완료 턴이 준 서버 카드 id — 있으면 저장 직후에도 완료/느낀 점/삭제가 서버에 닿는다
+      actionCardId: actionCard?.actionCardId ?? null,
       retrospectId: sessionId != null ? String(sessionId) : null,
       edited,
     });

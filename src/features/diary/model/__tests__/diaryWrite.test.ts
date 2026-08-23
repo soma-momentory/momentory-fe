@@ -59,7 +59,7 @@ const toast = () => useToast.getState().current;
  * 앞에 확인 모달이 있어 같은 것을 두 번 묻는 셈이었다. 지금은 **그 자리에서 보낸다**.
  */
 describe("삭제는 그 자리에서 보낸다", () => {
-  it("화면에서 빼고 곧바로 서버로 — 카드는 남는다", () => {
+  it("화면에서 빼고 곧바로 서버로 — 일기 id 로 지운다, 카드는 남는다", () => {
     useDiary.setState({ diaries: [diary("42")], actionCards: [card("7", "42")] });
 
     useDiary.getState().remove("42");
@@ -84,6 +84,23 @@ describe("삭제는 그 자리에서 보낸다", () => {
     useDiary.getState().remove("d-local-3");
     expect(calls("DELETE")).toHaveLength(0);
     expect(toast()).toMatchObject({ message: "일기를 삭제했어요.", variant: "positive" });
+  });
+
+  it("완료 응답이 준 서버 id 로 저장하면 그 일기도 곧바로 서버에서 지워진다", () => {
+    // 방금 회고를 끝낸 일기 — save({ id }) 로 서버 id 를 받아 저장한다(로컬 임시 id 가 아니다)
+    useDiary.getState().save({
+      id: "55",
+      date: "2026-08-14",
+      body: "본문",
+      babaView: null,
+      emotions: [1],
+      retrospectId: "10",
+      edited: false,
+    });
+    expect(useDiary.getState().diaries[0]?.id).toBe("55");
+
+    useDiary.getState().remove("55");
+    expect(calls("DELETE")).toEqual(["/api/v1/diaries/55"]);
   });
 });
 
@@ -115,20 +132,34 @@ describe("삭제 결과 한 줄", () => {
 });
 
 /**
- * 행동카드 삭제는 **기기 삭제**라 서버로 나가는 것이 없다 — 규칙 전체는
- * `deletedCards.test.ts` 가 본다. 여기서는 「이 경로가 서버를 부르지 않는다」만 지킨다.
+ * 행동카드 삭제 — 서버가 준 카드는 서버에서 지운다(`DELETE /action-cards/{id}`).
+ * 로컬 전용 카드만 기기 묘비로 처리한다(`deletedCards.test.ts` 가 그 경로를 본다).
  */
-describe("행동카드 삭제는 서버를 부르지 않는다", () => {
-  it("계약에 `DELETE /action-cards/{id}` 가 없다 (`PRODUCT.md` 「상류와 차이」 25)", async () => {
+describe("행동카드 삭제", () => {
+  it("서버 카드는 그 id 로 서버에서 지운다 — 일기는 건드리지 않는다", async () => {
     useDiary.setState({ diaries: [diary("42")], actionCards: [card("7", "42")] });
 
     useDiary.getState().removeActionCard("7");
     await flush();
 
-    expect(calls("DELETE")).toHaveLength(0);
+    expect(calls("DELETE")).toEqual(["/api/v1/action-cards/7"]);
+    expect(useDiary.getState().actionCards).toHaveLength(0);
     // 카드와 일기는 서로의 삭제를 부르지 않는다
     expect(useDiary.getState().diaries).toHaveLength(1);
+    expect(toast()).toMatchObject({ message: "행동카드를 삭제했어요.", variant: "positive" });
   });
+
+  it("서버가 받지 못하면 카드를 되살리고 실패 한 줄 — 서버에 살아 있는 것을 감추지 않는다", async () => {
+    mockedRequest.mockResolvedValue({ ok: false, error: { code: "network" } });
+    useDiary.setState({ actionCards: [card("7", "42")] });
+
+    useDiary.getState().removeActionCard("7");
+    await flush();
+
+    expect(useDiary.getState().actionCards.map((c) => c.id)).toEqual(["7"]);
+    expect(toast()).toMatchObject({ message: "행동카드를 삭제하지 못했어요.", variant: "negative" });
+  });
+  // 로컬 전용 카드(서버 id 없음)의 기기 묘비 경로는 `deletedCards.test.ts` 가 본다.
 });
 
 describe("옵티미스틱 완료", () => {

@@ -42,9 +42,9 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 한 줄). 2026-08-21 부터 **일기도 되돌리기 줄을 두지 않아** 둘이 완전히 같아졌다 —
  * 확인을 이미 한 번 받았으므로 되돌리기는 같은 것을 두 번 묻는 셈이었다.
  *
- * ⚠ 서버에 `DELETE /action-cards/{id}` 가 없어 **기기에서만** 지운다 — 지운 id 를
- * 기기에 남기고 다음 조회에서 걸러낸다(`features/diary/data/deletedCardStore.ts` ·
- * `docs/PRODUCT.md` 「상류와 차이」 25).
+ * 삭제는 **서버로 간다**(`DELETE /action-cards/{id}`) — 일기 삭제와 같은 결이다. 회고를 막
+ * 끝낸 카드도 완료 응답이 준 서버 id 를 들고 있어 그 자리에서 지워진다(`model/diary.ts`
+ * 의 `removeActionCard`).
  */
 export default function RestCards() {
   const cards = useDiary((s) => s.actionCards);

@@ -45,10 +45,19 @@ describe("DiaryResponse → Diary", () => {
     expect(d?.babaViewBasis).toBeNull();
   });
 
-  it("createdAt 을 KST 자정 기준 날짜로 접는다 — UTC 앞자르기가 아니다", () => {
-    // 2026-08-13T16:30Z 는 KST 로 8/14 01:30 — UTC 날짜(8/13)와 다른 날이다
-    const d = toDiary({ ...raw, createdAt: "2026-08-13T16:30:00Z" });
+  it("createdAt 을 KST 날짜로 접는다 — UTC 앞자르기가 아니다", () => {
+    // 2026-08-13T20:00Z 는 KST 로 8/14 05:00(4시 넘음) — UTC 날짜(8/13)와 다른 날이다
+    const d = toDiary({ ...raw, createdAt: "2026-08-13T20:00:00Z" });
     expect(d?.date).toBe("2026-08-14");
+  });
+
+  it("하루는 새벽 4시에 넘어간다 — 4시 전은 아직 어제다", () => {
+    // 2026-08-14T18:00Z 는 KST 로 8/15 03:00 — 4시 전이라 아직 8/14 에 속한다
+    const before = toDiary({ ...raw, createdAt: "2026-08-14T18:00:00Z" });
+    expect(before?.date).toBe("2026-08-14");
+    // 2026-08-14T19:00Z 는 KST 로 8/15 04:00 — 경계를 넘어 8/15 다
+    const after = toDiary({ ...raw, createdAt: "2026-08-14T19:00:00Z" });
+    expect(after?.date).toBe("2026-08-15");
   });
 
   it("두 감정 키를 [현재, 일정] 순 태그로 편다 — 현재 감정이 대표다", () => {

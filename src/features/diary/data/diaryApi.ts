@@ -7,6 +7,10 @@
  * 본문만). store·화면은 이 경계를 지나 옵티미스틱하게 쓴다. **저장 뒤 편집(`A4`)은 없다** —
  * 고칠 기회는 저장 전(C6) 하나다.
  *
+ * 삭제는 **일기 id** 로 보낸다 — 회고를 막 끝낸 일기도 완료 턴 응답이 그 일기의 서버 id 를
+ * 실어 주므로(`retro/data/retroApi.ts` 의 `ReplyDiary.diaryId`), store 가 저장 때부터 서버 id 를
+ * 들고 있어 저장 직후에도 이 삭제가 서버에 닿는다.
+ *
  * 이 파일은 `sampleAdapter.ts` 가 하던 **변환 역할**을 서버 응답 기준으로 대신한다.
  * store 와 화면은 `Diary`/`ActionCard` 의 모양만 알고, 서버 DTO 와의 차이는 전부
  * 여기서 흡수한다(`CLAUDE.md` 「BE 는 마지막에 붙인다」).
@@ -17,9 +21,9 @@
  * ## 서버 DTO 와 다른 자리
  *
  * - `id`·`retrospectId` 는 `Long` → **문자열**로 바꾼다(스키마가 그렇다).
- * - 날짜는 별도 필드가 없고 `createdAt: Instant` 하나다 → **KST 자정 기준 날짜**로
- *   접는다(아래 `kstDate`). 서버 월 조회가 KST 자정 반열림 구간이라 같은 경계를
- *   써야 달력 칸·월 묶음이 서버와 어긋나지 않는다.
+ * - 날짜는 별도 필드가 없고 `createdAt: Instant` 하나다 → **KST 04:00 하루 경계 기준
+ *   날짜**로 접는다(아래 `kstDate`). 서버 월 조회도 같은 04:00 반열림 구간이라
+ *   (`DayBoundary`) 같은 경계를 써야 달력 칸·월 묶음이 서버와 어긋나지 않는다.
  * - 감정은 `currentEmotion`·`scheduleEmotion` **두 소문자 키**다 → 프론트 감정
  *   태그 배열로 편다(아래 `EMOTION_BY_KEY`).
  * - 본문 이름이 다르다: `original` → `body`. **`reframed`(바바가 다시 본 오늘)는
@@ -33,6 +37,7 @@
  */
 import type { ActionCard, Diary } from "@/features/diary/model/types";
 import { isEmotionId, type EmotionId } from "@/features/emotion/model/emotion";
+import { DAY_BOUNDARY_HOUR } from "@/lib/clock";
 import { authedRequest, type HttpError } from "@/lib/http";
 
 const DIARIES_PATH = "/api/v1/diaries";
@@ -72,17 +77,21 @@ const emotionOf = (v: unknown): EmotionId | null => {
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 /**
- * `Instant`(ISO) → KST 달력 날짜 `"YYYY-MM-DD"`.
+ * `Instant`(ISO) → 그 순간이 속한 **하루**의 KST 날짜 `"YYYY-MM-DD"`.
  *
  * **UTC 문자열 앞자르기가 아니다** — 그러면 한국시간 자정 전후에서 날짜가 하루
- * 어긋난다. 에폭에 +9h 를 더하고 UTC 조각을 읽어 기기 타임존과 무관하게 KST
- * 달력 날짜를 얻는다. 서버 월 조회의 경계(`atStartOfDay(Asia/Seoul)`)와 같다 —
- * `clock.ts` 의 04:00 앱-하루 경계가 아니다(그건 회고 「하루 한 번」용이다).
+ * 어긋난다. 에폭에 +9h 를 더해 KST 벽시계로 옮긴 뒤 UTC 조각을 읽어, 기기
+ * 타임존과 무관하게 KST 달력 날짜를 얻는다.
+ *
+ * **하루는 자정이 아니라 새벽 4:00 에 넘어간다**(`clock.ts` 의 `DAY_BOUNDARY_HOUR`)
+ * — 그래서 KST 로 옮긴 뒤 경계 시각만큼 더 빼고 날짜를 읽는다. 새벽 1시에 남긴
+ * 일기는 아직 「어제」다. 서버의 월·일 조회도 같은 04:00 경계를 쓰므로
+ * (`DayBoundary`), 달력 칸·월 묶음이 서버와 어긋나지 않는다.
  */
 const kstDate = (iso: string): string | null => {
   const ms = Date.parse(iso);
   if (Number.isNaN(ms)) return null;
-  const d = new Date(ms + KST_OFFSET_MS);
+  const d = new Date(ms + KST_OFFSET_MS - DAY_BOUNDARY_HOUR * 60 * 60 * 1000);
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
@@ -359,6 +368,26 @@ export const putActionCardCompletion = async (
     "PUT",
     `${ACTION_CARDS_PATH}/${serverId}/completion`,
     body,
+    { timeoutMs: WRITE_TIMEOUT_MS, signal: options?.signal },
+  );
+  return result.ok ? { ok: true } : { ok: false, code: mapWriteError(result.error) };
+};
+
+/**
+ * 행동 카드 한 장 삭제 — 서버에서 지운다(`DELETE /api/v1/action-cards/{id}`).
+ *
+ * 회고를 막 끝낸 카드도 완료 응답이 준 서버 id(`actionCardId`)를 store 가 들고 있어, 그 id 로
+ * 곧바로 지운다. 일기 삭제(`deleteDiary`)와 같은 결이다 — 예전엔 서버 삭제 계약이 없어 지운 id 를
+ * 기기에 남겨 조회 때 걸렀는데, 이제 서버가 실제로 지운다.
+ */
+export const deleteActionCard = async (
+  serverId: string,
+  options?: { signal?: AbortSignal },
+): Promise<DiaryWriteResult> => {
+  const result = await authedRequest<null>(
+    "DELETE",
+    `${ACTION_CARDS_PATH}/${serverId}`,
+    undefined,
     { timeoutMs: WRITE_TIMEOUT_MS, signal: options?.signal },
   );
   return result.ok ? { ok: true } : { ok: false, code: mapWriteError(result.error) };

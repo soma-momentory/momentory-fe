@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import {
+  deleteActionCard,
   deleteDiary,
   isServerId,
   loadArchive,
@@ -8,7 +9,6 @@ import {
   putActionCardCompletion,
   serverRefusedWrite,
 } from "@/features/diary/data/diaryApi";
-import { readDeletedCardIds, rememberDeletedCard } from "@/features/diary/data/deletedCardStore";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 import { clock } from "@/lib/clock";
 
@@ -41,7 +41,8 @@ const ARCHIVE_MONTHS = 12;
  * 초기값은 비어 있고 `load()` 가 서버에서 채운다(일정 store `useDay` 와 같은 결).
  * 쓰기도 이 경계를 지난다(`data/diaryApi.ts`):
  * - **삭제**(`DELETE /diaries/{id}`) — **일기만** 지운다. 행동 카드는 자기 보관함(쉼터)에
- *   남고 회고 세션도 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`). **확인 모달을
+ *   남고 회고 세션도 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`). 회고를 막 끝낸
+ *   일기도 완료 응답이 준 서버 id 를 그대로 들고 있어 곧바로 지워진다. **확인 모달을
  *   지나면 그 자리에서 보낸다**(2026-08-21 · 되돌리기 폐지 · `PRODUCT.md` 「상류와 차이」).
  *   예전에는 되돌리기 창(6초) 동안 미뤘는데, 확인을 이미 한 번 받았으므로 두 번 묻는
  *   셈이었다. 실패했을 때만 되살린다.
@@ -77,6 +78,12 @@ type DiaryStore = {
    * `situation`·`targetAction` 이 **둘 다** 있을 때만 카드를 만든다.
    */
   save: (input: {
+    /**
+     * 서버가 방금 저장한 일기의 id — 완료 턴 응답(`ReplyDiary.diaryId`)에서 온다. 있으면 이걸
+     * 그대로 일기 id 로 써서, 저장 직후에도 이 id 로 서버 삭제(`DELETE /diaries/{id}`)가 닿는다.
+     * 서버가 안 줬으면(옛 서버 등) 로컬 임시 id(`d-local-N`)를 쓴다 — 그 경우 삭제는 로컬만이다.
+     */
+    id?: string | null;
     date: string;
     body: string;
     babaView: string | null;
@@ -87,6 +94,12 @@ type DiaryStore = {
     weather?: string | null;
     situation?: string | null;
     targetAction?: string | null;
+    /**
+     * 서버가 방금 저장한 행동 카드의 id — 완료 턴 응답(`ReplyActionCard.actionCardId`)에서 온다.
+     * 있으면 카드 id 로 그대로 써서, 저장 직후에도 「해봤어요」·느낀 점·삭제가 이 서버 id 로 닿는다.
+     * 서버가 안 줬으면(옛 서버 등) 로컬 임시 id(`ac-local-N`).
+     */
+    actionCardId?: string | null;
     /** 이 일기를 남긴 서버 회고 세션 id — 서버 저장분을 다시 불러오는 열쇠 */
     retrospectId?: string | null;
     /** 사용자가 초안을 고쳤는지 */
@@ -106,6 +119,11 @@ type DiaryStore = {
    * 행동카드 삭제와 문법이 같아졌고, `DESIGN.md` 「삭제는 확인 모달 1회」와도 맞는다.
    * 차이 기록: `docs/PRODUCT.md` 「상류와 차이」(`A4.md` 는 되돌리기 줄을 말한다).
    *
+   * **서버 일기 id 로 지운다.** 회고를 막 끝낸 일기도 완료 응답이 그 일기의 서버 id 를 실어
+   * 주므로(`ReplyDiary.diaryId` → `save({ id })`), 저장 직후에도 이 삭제가 서버에 닿는다.
+   * 예전엔 저장 때 로컬 임시 id 만 붙여, 방금 만든 일기를 지우면 서버엔 남아 다음 조회에
+   * 되살아났다.
+   *
    * 결과는 **토스트 한 줄**로 알린다(`deleteToast.ts`). 답이 올 즈음 사용자는 다른
    * 화면에 가 있을 수 있어, 화면이 아니라 앱 껍데기가 그리는 통로(`lib/toast.ts`)를
    * 지난다. **서버가 받지 못했을 때만 되살린다** — 살아 있는 일기를 감춘 채로 두는
@@ -113,18 +131,18 @@ type DiaryStore = {
    */
   remove: (id: string) => void;
   /**
-   * 행동 카드 한 장 삭제 — **이 기기에서** 지운다.
+   * 행동 카드 한 장 삭제 — **서버에서** 지운다(`DELETE /action-cards/{id}`).
    *
-   * 서버 계약에 `DELETE /action-cards/{id}` 가 없다(`docs/api/openapi.json` — 카드는
-   * 만들어지고 완료 여부만 바뀐다). 메모리에서만 빼면 다음 조회에 그대로 다시
-   * 실려 오므로, **지운 id 를 기기에 남기고**(`data/deletedCardStore.ts`) `load()` 가
-   * 그것을 걸러낸다 — 앱을 껐다 켜도 삭제가 유지된다.
-   * (`docs/PRODUCT.md` 「상류와 차이」 25)
+   * 회고를 막 끝낸 카드도 완료 응답이 준 서버 id(`actionCardId`)를 들고 있어(`save({ actionCardId })`),
+   * 그 id 로 곧바로 지운다. 일기 삭제(`remove`)와 **문법이 같다** — 화면에서 먼저 빼고 서버로
+   * 보내며, **서버가 받지 못했을 때만 되살린다.** 로컬 전용(`*-local-*`) 카드는 서버에 없으니
+   * 화면에서만 뺀다.
    *
-   * **결과는 이 store 가 알린다**(일기 삭제와 같은 결) — 묘비를 남기지 못하면
-   * 카드를 되돌리고 실패 한 줄을 띄운다. 남기지 못한 삭제를 성공이라고 말하지
-   * 않기 위해서다. 서버에 삭제가 생기면 여기서 `data/diaryApi` 를 부르고 화면은
-   * 그대로다.
+   * ⚠ 예전엔 서버에 카드 삭제 계약이 없어 지운 id 를 **기기에 묘비로 남기고**(`deletedCardStore.ts`)
+   * `load()` 가 걸러냈다. 서버 삭제(`DELETE /action-cards/{id}`)가 생기면서 그 우회로는 사라졌다 —
+   * 서버가 실제로 지우므로 다음 조회에 다시 실려 오지 않는다.
+   *
+   * **결과는 이 store 가 알린다**(토스트 한 줄 · `deleteToast.ts`).
    */
   removeActionCard: (cardId: string) => void;
   /**
@@ -204,17 +222,14 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     const still = sameSession();
     const months = monthsBackFrom(clock.today(), ARCHIVE_MONTHS);
     inFlight = loadArchive(months)
-      .then(async (result) => {
+      .then((result) => {
         // 못 받았으면 **가진 것을 그대로 둔다** — 빈 목록으로 덮지 않는다
         if (!result.ok) return;
-        // 이 기기에서 지운 행동 카드는 걸러낸다 — 서버에 삭제 계약이 없어
-        // 지운 카드가 그대로 다시 실려 온다(`data/deletedCardStore.ts`)
-        const deleted = await readDeletedCardIds();
         // 조회하는 사이 로그아웃했다 — 앞 사람의 보관함을 새 세션에 붓지 않는다
         if (!still()) return;
         set({
           diaries: result.data.diaries,
-          actionCards: result.data.actionCards.filter((c) => !deleted.has(c.id)),
+          actionCards: result.data.actionCards,
           loaded: true,
         });
       })
@@ -226,6 +241,7 @@ export const useDiary = create<DiaryStore>((set, get) => ({
   },
 
   save: ({
+    id = null,
     date,
     body,
     babaView,
@@ -236,11 +252,14 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     weather = null,
     situation = null,
     targetAction = null,
+    actionCardId = null,
     retrospectId = null,
     edited,
   }) =>
     set((s) => {
-      const diaryId = nextId("d");
+      // 서버가 준 id 가 있으면 그대로 쓴다 — 저장 직후에도 이 id 로 서버 삭제가 닿는다.
+      // 없으면 로컬 임시 id(옛 서버 대비 안전망).
+      const diaryId = id ?? nextId("d");
       const now = clock.now().toISOString();
       // 상황·목표 행동이 둘 다 있을 때만 행동 카드를 만든다 — 짧은 기록형은 일기만
       const hasCard =
@@ -272,7 +291,8 @@ export const useDiary = create<DiaryStore>((set, get) => ({
           ? [
               ...s.actionCards,
               {
-                id: nextId("ac"),
+                // 서버가 준 카드 id 가 있으면 그대로 — 저장 직후에도 완료/느낀 점/삭제가 서버에 닿는다
+                id: actionCardId ?? nextId("ac"),
                 diaryId,
                 situation,
                 targetAction,
@@ -310,7 +330,8 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     // **행동 카드는 지우지 않는다** — 자기 보관함(쉼터)에 날짜로 남는다(PRODUCT.md 상류와 차이)
     set((s) => ({ diaries: s.diaries.filter((d) => d.id !== id) }));
 
-    // 서버가 준 일기에만 보낸다 — 로컬 전용(`*-local-*`)은 서버에 없으니 이미 끝났다
+    // 서버가 준 일기에만 보낸다 — 로컬 전용(`*-local-*`)은 서버에 없으니 이미 끝났다.
+    // 회고를 막 끝낸 일기도 완료 응답의 diaryId 를 그대로 들고 있어(서버 id) 여기로 온다.
     if (!isServerId(kept.id)) {
       notifyDeleteResult("일기", true);
       return;
@@ -347,19 +368,24 @@ export const useDiary = create<DiaryStore>((set, get) => ({
       return;
     }
 
-    // 먼저 화면에서 빼고, **묘비를 남긴 뒤에** 성공이라고 말한다
+    // 먼저 화면에서 뺀다 — 서버 응답을 기다리지 않는다(일기 삭제와 같은 결)
     set((s) => ({ actionCards: s.actionCards.filter((c) => c.id !== cardId) }));
 
+    // 서버가 준 카드에만 보낸다 — 로컬 전용(`*-local-*`)은 서버에 없으니 이미 끝났다.
+    // 회고를 막 끝낸 카드도 완료 응답의 서버 id 를 들고 있어 여기로 온다(일기 삭제와 같은 결).
+    if (!isServerId(cardId)) {
+      notifyDeleteResult("행동카드", true);
+      return;
+    }
+
     const still = sameSession();
-    void rememberDeletedCard(cardId).then((ok) => {
-      // 남기는 사이 로그아웃했다 — 위 `remove` 와 같은 이유다
+    void deleteActionCard(cardId).then((result) => {
       if (!still()) return;
-      if (ok) {
+      if (result.ok) {
         notifyDeleteResult("행동카드", true);
         return;
       }
-      // 묘비를 남기지 못했다 — 다음 조회에 되살아난다. 지금 되돌려 두는 편이
-      // 「지웠다」고 말해 놓고 나중에 되살아나는 것보다 낫다
+      // 실패하면 되살린다 — 요청이 못 나갔으면 카드는 서버에 그대로 살아 있다(일기 삭제와 같다)
       set((s) => ({ actionCards: restoredCards(s.actionCards, kept) }));
       notifyDeleteResult("행동카드", false);
     });
