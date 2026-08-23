@@ -156,12 +156,19 @@ export default function RetroDraft() {
       </ScrollView>
 
       <View style={styles.dock}>
-        <Button label="일기 저장하기" fill onPress={save} />
-        {/* 고치는 중에는 되돌릴 곳이 상단 `‹` 하나라 보조 버튼을 두지 않는다 */}
-        {editing ? null : (
-          <View style={styles.secondary}>
-            <Button label="직접 고치기" variant="text" onPress={() => setEditing(true)} />
-          </View>
+        {/*
+          고치는 중에는 바로 저장하지 않는다 — 「수정 완료」로 읽기로 돌아가
+          고친 본문을 한 번 확인한 뒤 「일기 저장하기」로 넘어간다(수정 완료 → 저장).
+        */}
+        {editing ? (
+          <Button label="수정 완료" fill onPress={() => setEditing(false)} />
+        ) : (
+          <>
+            <Button label="일기 저장하기" fill onPress={save} />
+            <View style={styles.secondary}>
+              <Button label="직접 고치기" variant="text" onPress={() => setEditing(true)} />
+            </View>
+          </>
         )}
       </View>
     </Screen>

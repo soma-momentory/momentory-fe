@@ -33,7 +33,7 @@ export default function RetroDone() {
   const { date: today } = useTodayContext();
 
   /** 나가는 길은 둘 뿐이고 **둘 다 회고를 닫고** 나간다 */
-  const leave = (to: "/home" | "/rest") => {
+  const leave = (to: "/home" | "/rest/cards") => {
     resetRetro();
     router.replace(to);
   };
@@ -93,7 +93,11 @@ export default function RetroDone() {
         <Button label="홈으로 돌아가기" fill onPress={() => leave("/home")} />
         {actionCard != null ? (
           <View style={styles.secondary}>
-            <Button label="쉼터에서 보기" variant="text" onPress={() => leave("/rest")} />
+            {/*
+              쉼터 행동카드(R2)로 바로 간다. `/rest` 는 (tabs)·(onboarding) 두 그룹에
+              같은 경로가 있어 온보딩으로 새는 반면, `/rest/cards` 는 실제 경로라 안전하다.
+            */}
+            <Button label="쉼터에서 보기" variant="text" onPress={() => leave("/rest/cards")} />
           </View>
         ) : null}
       </View>

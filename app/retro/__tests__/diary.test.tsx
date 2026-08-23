@@ -95,10 +95,25 @@ describe("C6 · 일기 확인 — 기본은 읽기다", () => {
     expect(r.getByText(`${edited.length} / 500`)).toBeTruthy();
   });
 
+  it("고치는 중에는 [수정 완료]가 나오고, 눌러야 읽기로 돌아가 저장 버튼이 보인다", async () => {
+    const r = await render(<RetroDraft />);
+    await fireEvent.press(r.getByText("직접 고치기"));
+
+    // 편집 중: 저장 버튼은 감춰지고 「수정 완료」만 있다(수정 완료 → 저장 순서)
+    expect(r.queryByText("일기 저장하기")).toBeNull();
+    expect(r.getByText("수정 완료")).toBeTruthy();
+
+    // 수정 완료 → 읽기로 돌아오고 저장 버튼이 다시 보인다
+    await fireEvent.press(r.getByText("수정 완료"));
+    expect(r.queryByLabelText("일기 본문")).toBeNull();
+    expect(r.getByText("일기 저장하기")).toBeTruthy();
+  });
+
   it("최소 글자 수를 요구하지 않는다 — 비워도 저장할 수 있다", async () => {
     const r = await render(<RetroDraft />);
     await fireEvent.press(r.getByText("직접 고치기"));
     await fireEvent.changeText(r.getByLabelText("일기 본문"), "");
+    await fireEvent.press(r.getByText("수정 완료"));
 
     const cta = r.getByRole("button", { name: "일기 저장하기" });
     expect(cta.props.accessibilityState.disabled).toBe(false);
@@ -127,6 +142,8 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
     if (body !== undefined) {
       await fireEvent.press(r.getByText("직접 고치기"));
       await fireEvent.changeText(r.getByLabelText("일기 본문"), body);
+      // 고친 뒤에는 「수정 완료」로 읽기로 돌아온 다음에야 저장할 수 있다
+      await fireEvent.press(r.getByText("수정 완료"));
     }
     await act(async () => {
       await fireEvent.press(r.getByText("일기 저장하기"));
@@ -306,5 +323,11 @@ describe("C7 · 완료 — 허브로 만들지 않는다", () => {
     const { getByText } = await render(<RetroDone />);
     await fireEvent.press(getByText("홈으로 돌아가기"));
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
+  });
+
+  it("[쉼터에서 보기] 는 쉼터 행동카드(R2)로 간다 — 온보딩 /rest 로 새지 않는다", async () => {
+    const { getByText } = await render(<RetroDone />);
+    await fireEvent.press(getByText("쉼터에서 보기"));
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/rest/cards");
   });
 });
