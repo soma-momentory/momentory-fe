@@ -434,18 +434,6 @@ describe("signOut — 로그아웃 후 재진입", () => {
     expect(useDiary.getState().diaries).toEqual([]);
     expect(useDiary.getState().actionCards).toEqual([]);
   });
-
-  it("지운 행동카드의 묘비는 **남긴다** — 같은 사람이 다시 로그인해도 지워진 채다", async () => {
-    // 서버에 카드 삭제 계약이 없어 묘비가 유일한 삭제 기록이다. 로그아웃이 지우면
-    // 다시 로그인했을 때 지운 카드가 `load()` 에 되살아난다.
-    // 키가 이미 사용자별이라 다음 사람이 이것을 볼 일도 없다
-    seedSession(Date.now() + 60_000);
-    secure.__store.set("momentory.diary.deletedCards.1", JSON.stringify(["7"]));
-
-    await useAuth.getState().signOut();
-
-    expect(secure.__store.get("momentory.diary.deletedCards.1")).toBe(JSON.stringify(["7"]));
-  });
 });
 
 describe("withdraw — 회원탈퇴", () => {
@@ -464,15 +452,6 @@ describe("withdraw — 회원탈퇴", () => {
     expect(useProfile.getState().nickname).not.toBe("앞사람");
     expect(useRetro.getState().turns).toEqual([]);
     expect(useDiary.getState().diaries).toEqual([]);
-  });
-
-  it("로그아웃과 달리 **묘비까지 지운다** — 계정이 사라지니 유지할 대상이 없다", async () => {
-    seedSession(Date.now() + 60_000);
-    secure.__store.set("momentory.diary.deletedCards.1", JSON.stringify(["7"]));
-
-    await useAuth.getState().withdraw();
-
-    expect(secure.__store.has("momentory.diary.deletedCards.1")).toBe(false);
   });
 
   it("카카오 연결 해제가 실패하면 아무것도 지우지 않는다 — 계정이 아직 살아 있다", async () => {

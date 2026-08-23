@@ -9,7 +9,6 @@ import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/dat
 import { deleteAccount, type WithdrawFailureCode } from "@/features/auth/data/withdrawApi";
 import { clearSyncState } from "@/features/calendar/data/syncStateStore";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
-import { clearDeletedCards } from "@/features/diary/data/deletedCardStore";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
@@ -167,7 +166,7 @@ type AuthStore = {
   /**
    * 회원탈퇴 — `DELETE /api/v1/users/me`. **로그아웃과 달리 서버를 기다린다** —
    * 카카오 연결 해제가 실패하면 계정이 남으므로, 성공했을 때만 세션과 기기 흔적을
-   * (묘비 포함) 비우고 `anonymous` 로 닫는다. 성공하면 `true`.
+   * 비우고 `anonymous` 로 닫는다. 성공하면 `true`.
    */
   withdraw: () => Promise<boolean>;
   /** 진행 중 — 확인 버튼을 잠그는 값이자 중복 실행을 막는 자물쇠다 */
@@ -279,14 +278,6 @@ const clearUserScopedStores = (userId?: number) => {
   //
   // 기다리지 않는다 — 로그아웃은 실패할 수 없는 동작이고(아래 `signOut` 주석),
   // 지우지 못해도 키에 `userId` 가 박혀 있어 다른 계정이 그것을 보지는 않는다.
-  //
-  // ⚠ **지운 행동 카드의 묘비는 지우지 않는다.** 키가 이미 사용자별이라
-  // (`momentory.diary.deletedCards.<userId>`) 다음 사람이 앞 사람의 묘비를 볼 일이
-  // 없고, 서버에는 카드 삭제 계약이 없어 **묘비가 유일한 삭제 기록**이다. 여기서
-  // 지우면 같은 사람이 다시 로그인했을 때 지운 카드가 `load()` 에 되살아난다 —
-  // 「이 기기에서는 삭제가 유지된다」는 약속이 로그아웃 한 번에 깨진다
-  // (`features/diary/data/deletedCardStore.ts`). 계정 삭제처럼 **기기에서 흔적을
-  // 지우는 흐름**이 생기면 그때 `clearDeletedCards` 를 부른다.
   if (userId != null) void clearSyncState(userId);
 };
 
@@ -652,11 +643,6 @@ export const useAuth = create<AuthStore>((set, get) => ({
       const session = await readSession();
       await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
       clearUserScopedStores(session?.userId);
-
-      // **묘비까지 지운다** — 로그아웃은 남기지만(같은 사람이 다시 로그인) 탈퇴는
-      // 계정 자체가 사라지므로 「이 기기에서 삭제 유지」 약속을 지킬 대상이 없다
-      // (`clearUserScopedStores` 주석 · `deletedCardStore.ts`).
-      if (session != null) await clearDeletedCards(session.userId);
 
       // 라우트 가드가 이 전이를 보고 로그인으로 돌려보낸다 — 화면이 직접 옮기지 않는다
       set({ status: "anonymous", signInError: null });
