@@ -12,7 +12,7 @@ import {
   type CalendarMark,
 } from "@/components/ds";
 import { RestActionCard } from "@/components/rest/RestActionCard";
-import { label as labelColor, space, status } from "@/design/ds";
+import { label as labelColor, primary, space, status } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { cardDaysIn, cardOn, datedCards, latestCardDay } from "@/features/rest/model/cards";
@@ -32,9 +32,11 @@ import { formatKoreanDateShort } from "@/lib/day";
  *
  * 셋을 한 자리에 겹쳐 칠하면(옛 화면의 배경 채움) 「카드가 있다」와 「해냈다」가
  * 같은 신호로 읽힌다. **수행률·연속 일수를 세지 않는다**(`RULES.md` 4) —
- * 달력은 「있었다」와 「했다」를 말할 뿐 잘했는지를 말하지 않는다.
+ * 달력은 「있었다」와 「했다」를 말할 뿐 잘했는지를 말하지 않는다. 카드가 있는 날은
+ * 점 색으로 **수행 여부**를 나눈다(초록 = 수행함 · 브랜드색 = 아직 안 함).
  *
- * 카드가 없는 날은 **고를 수 없다** — 눌러도 빈 화면으로 데려갈 뿐이다.
+ * 카드가 **없는 날도 고를 수 있다** — 그 자리에 「그 날 만들어진 행동카드가 없어요」를
+ * 보여준다. 카드가 없어 못 들어오는 화면이 아니라, 들어와서 날짜로 둘러보는 화면이다.
  *
  * ## 삭제는 ⋮ → 확인 모달 → 토스트
  *
@@ -66,11 +68,16 @@ export default function RestCards() {
   const card = selected == null ? null : cardOn(all, selected);
   const days = cardDaysIn(all, shownMonth);
 
-  /** 카드 존재 · 수행 · 선택을 **셋으로 나눠** 표시한다(시안 규칙) */
+  /**
+   * 카드 존재 · 수행 · 선택을 **셋으로 나눠** 표시한다(시안 규칙).
+   * **카드가 없는 날도 고를 수 있다** — 강조·점 없이 두되 잠그지 않는다.
+   * 카드가 있으면 날짜를 진하게(존재), 점 색으로 수행 여부를 나눈다:
+   * 초록 = 수행함 · 브랜드색 = 아직 안 함.
+   */
   const markOf = (date: string): CalendarMark => {
-    const has = days.includes(date);
-    if (!has) return { disabled: true };
-    return { emphasized: true, dotColor: cardOn(all, date)?.done ? status.positive : undefined };
+    const dayCard = days.includes(date) ? cardOn(all, date) : null;
+    if (dayCard == null) return {};
+    return { emphasized: true, dotColor: dayCard.done ? status.positive : primary.normal };
   };
 
   const step = (by: -1 | 1) => {
@@ -101,9 +108,12 @@ export default function RestCards() {
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {card == null || selected == null ? (
-            // 빈 상태 — 「아직」이라고 말하지 않는다. 회고가 먼저다
+            // 카드가 놓일 자리에 「없다」를 말한다. 고른 날이 있으면 그 날 카드가
+            // 없다는 것을, 아직 아무 날도 안 골랐으면 회고가 먼저라는 것을 말한다.
             <Text variant="body2" color={labelColor.neutral} style={styles.empty}>
-              회고를 마치면 그날의 행동카드가 여기 남아요.
+              {selected == null
+                ? "회고를 마치면 그날의 행동카드가 여기 남아요."
+                : `${formatKoreanDateShort(selected)}에 만들어진 행동카드가 없어요.`}
             </Text>
           ) : (
             <RestActionCard
