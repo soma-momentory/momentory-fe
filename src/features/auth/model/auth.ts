@@ -6,8 +6,10 @@ import { requestKakaoAccessToken } from "@/features/auth/data/kakaoSdk";
 import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
 import { fetchMe } from "@/features/auth/data/meApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
+import { deleteAccount, type WithdrawFailureCode } from "@/features/auth/data/withdrawApi";
 import { clearSyncState } from "@/features/calendar/data/syncStateStore";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
+import { clearDeletedCards } from "@/features/diary/data/deletedCardStore";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
@@ -116,6 +118,22 @@ const FAILURE_MESSAGES: Record<AuthFailureCode | "sdk", string> = {
 /** 세션을 저장하지 못했을 때 — 다음 부트에서 어차피 로그아웃이라 **여기서 닫는다** */
 const STORE_FAILED_MESSAGE = "로그인 정보를 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.";
 
+/**
+ * 회원탈퇴 실패 사유 → 사용자 문구. 로그인 실패와 같은 규칙이다 — **한 줄이고
+ * 모달·재시도 버튼이 없다**(`RULES.md` 4). 확인 모달은 실행 **전** 되돌릴 수
+ * 없음을 알리는 자리이고, 실패는 그 뒤 **한 줄로 흡수한다.**
+ *
+ * `kakao` 는 사유를 조금 더 밝힌다 — 계정이 지워지지 않았음을 사용자가 알아야
+ * 「탈퇴됐나?」를 확인하러 다시 들어오지 않는다. 나머지는 재시도가 답이라 같다.
+ */
+const WITHDRAW_FAILURE_MESSAGES: Record<WithdrawFailureCode, string> = {
+  unauthenticated: "다시 로그인한 뒤 시도해 주세요.",
+  kakao: "카카오 연결 해제에 실패해 탈퇴하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+  network: "지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.",
+  server: "지금은 탈퇴할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  unconfigured: "지금은 탈퇴할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+};
+
 type AuthStore = {
   status: AuthStatus;
   /** 로그인 진행 중 — 버튼을 잠그는 값이자 중복 클릭을 막는 자물쇠다 */
@@ -146,6 +164,18 @@ type AuthStore = {
    * 폐기한다 (§3-5). **폐기를 기다리지 않는다** — 즉시 `anonymous` 로 닫는다
    */
   signOut: () => Promise<void>;
+  /**
+   * 회원탈퇴 — `DELETE /api/v1/users/me`. **로그아웃과 달리 서버를 기다린다** —
+   * 카카오 연결 해제가 실패하면 계정이 남으므로, 성공했을 때만 세션과 기기 흔적을
+   * (묘비 포함) 비우고 `anonymous` 로 닫는다. 성공하면 `true`.
+   */
+  withdraw: () => Promise<boolean>;
+  /** 진행 중 — 확인 버튼을 잠그는 값이자 중복 실행을 막는 자물쇠다 */
+  withdrawing: boolean;
+  /** 탈퇴 실패 한 줄. 성공·재시도 시작 때 `null` 이다 */
+  withdrawError: string | null;
+  /** 안내 한 줄을 지운다 — 확인 모달을 다시 열 때 지난 실패가 남지 않게 */
+  clearWithdrawError: () => void;
 };
 
 /**
@@ -431,6 +461,8 @@ export const useAuth = create<AuthStore>((set, get) => ({
   status: "hydrating",
   signingIn: false,
   signInError: null,
+  withdrawing: false,
+  withdrawError: null,
 
   hydrate: async () => {
     try {
@@ -595,6 +627,42 @@ export const useAuth = create<AuthStore>((set, get) => ({
       void revokeRefreshToken(session.refreshToken).then((result) => {
         if (!result.ok) warnInDev(result.code);
       });
+    }
+  },
+
+  clearWithdrawError: () => set({ withdrawError: null }),
+
+  withdraw: async () => {
+    // 중복 실행 방지 — 확인 버튼을 두 번 눌러도 요청은 한 번이다
+    if (get().withdrawing) return false;
+    set({ withdrawing: true, withdrawError: null });
+
+    try {
+      // **로그아웃과 다르게 기다린다.** 서버가 카카오 연결부터 끊는데 그게 실패하면
+      // 계정이 남는다 — 성공을 확인하기 전에 기기를 비우면 「탈퇴됐다」고 보여주고도
+      // 계정이 살아 있는 상태가 된다(다음 로그인에 되살아난다).
+      const result = await deleteAccount();
+      if (!result.ok) {
+        set({ withdrawError: WITHDRAW_FAILURE_MESSAGES[result.code] });
+        return false;
+      }
+
+      // 서버가 계정을 지웠다 — 이제 기기의 흔적을 지운다. 지우기 전에 세션을 읽어
+      // `userId` 를 든다(사용자별로 눕는 것을 비우는 데 필요하다).
+      const session = await readSession();
+      await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
+      clearUserScopedStores(session?.userId);
+
+      // **묘비까지 지운다** — 로그아웃은 남기지만(같은 사람이 다시 로그인) 탈퇴는
+      // 계정 자체가 사라지므로 「이 기기에서 삭제 유지」 약속을 지킬 대상이 없다
+      // (`clearUserScopedStores` 주석 · `deletedCardStore.ts`).
+      if (session != null) await clearDeletedCards(session.userId);
+
+      // 라우트 가드가 이 전이를 보고 로그인으로 돌려보낸다 — 화면이 직접 옮기지 않는다
+      set({ status: "anonymous", signInError: null });
+      return true;
+    } finally {
+      set({ withdrawing: false });
     }
   },
 }));

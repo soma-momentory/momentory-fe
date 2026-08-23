@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import My from "../my";
 import Report from "../report";
 
+import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useSettings } from "@/features/my/model/settings";
 import { initialWeekStart, weekAnalyses } from "@/features/report/data/reportRepository";
@@ -59,6 +60,8 @@ beforeEach(() => {
   seedDiaries();
   useSettings.getState().reset();
   seedProfile();
+  // 탈퇴 상태가 테스트 사이로 새지 않게 — 한 곳만 이 store 를 건드린다
+  useAuth.setState({ withdrawing: false, withdrawError: null });
   jest.clearAllMocks();
   notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
@@ -260,12 +263,43 @@ describe("M1 · 마이 기본", () => {
     expect(jest.mocked(router.push)).toHaveBeenCalledWith("/my/profile");
   });
 
-  it("회원 탈퇴는 목록 밖에 홀로 있고 아직 실행되지 않는다", async () => {
-    // 되돌릴 수 없는 동작을 확인 없이 실행하지 않는다 (my.pendingStates)
+  it("회원 탈퇴는 확인 문구를 따라 써야 실행된다 — 틀리면 버튼이 안 켜진다", async () => {
+    // 되돌릴 수 없는 동작이라 문구(`회원탈퇴`)를 정확히 따라 써야 실행된다
+    const withdraw = jest.fn(async () => true);
+    useAuth.setState({ withdraw, withdrawing: false, withdrawError: null });
     const r = await render(<My />);
 
-    expect(r.getByText("회원 탈퇴")).toBeTruthy();
-    expect(r.getByText("회원 탈퇴").parent?.props.accessibilityRole).not.toBe("button");
+    const leave = r.getByText("회원 탈퇴");
+    expect(leave.parent?.props.accessibilityRole).toBe("button");
+
+    // 누르면 확인 시트가 열리고 따라 쓸 문구를 안내한다
+    await fireEvent.press(leave);
+    expect(r.getByText(/회원탈퇴 를 입력해 주세요/)).toBeTruthy();
+    const input = r.getByPlaceholderText("회원탈퇴");
+
+    // 문구가 틀리면 탈퇴 버튼이 안 켜져 실행되지 않는다
+    await fireEvent.changeText(input, "회원탈퇴합니다");
+    await fireEvent.press(r.getByText("탈퇴하기"));
+    expect(withdraw).not.toHaveBeenCalled();
+
+    // 정확히 따라 쓰면 실행된다
+    await fireEvent.changeText(input, "회원탈퇴");
+    await fireEvent.press(r.getByText("탈퇴하기"));
+    expect(withdraw).toHaveBeenCalledTimes(1);
+  });
+
+  it("탈퇴에 실패하면 시트가 아니라 한 줄로 알린다", async () => {
+    // 오류는 한 줄로 흡수한다 — 시트·재시도 버튼을 띄우지 않는다 (RULES.md 4)
+    useAuth.setState({
+      withdraw: jest.fn(async () => false),
+      withdrawing: false,
+      withdrawError: "지금은 탈퇴할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+    });
+    const r = await render(<My />);
+
+    expect(r.getByText("지금은 탈퇴할 수 없어요. 잠시 뒤 다시 시도해 주세요.")).toBeTruthy();
+    // 실패 안내는 시트가 아니다 — 시트는 닫혀 있다
+    expect(r.queryByPlaceholderText("회원탈퇴")).toBeNull();
   });
 
   it("알림 설정 줄이 지금 시각을 말하고, 끄면 「꺼짐」이 된다", async () => {

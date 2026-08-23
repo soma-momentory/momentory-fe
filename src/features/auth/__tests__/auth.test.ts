@@ -2,6 +2,7 @@ import { SESSION_KEY, getAccessToken, useAuth } from "../model/auth";
 import { revokeRefreshToken } from "../data/logoutApi";
 import { fetchMe } from "../data/meApi";
 import { reissueAccessToken } from "../data/reissueApi";
+import { deleteAccount } from "../data/withdrawApi";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
@@ -24,6 +25,12 @@ jest.mock("../data/logoutApi", () => ({
   revokeRefreshToken: jest.fn(async () => ({ ok: true })),
 }));
 const revoke = jest.mocked(revokeRefreshToken);
+
+/** 계약 자체는 `withdrawApi.test.ts` 가 본다 — 여기선 store 가 결과로 뭘 하는지만 */
+jest.mock("../data/withdrawApi", () => ({
+  deleteAccount: jest.fn(async () => ({ ok: true })),
+}));
+const withdrawApi = jest.mocked(deleteAccount);
 
 /**
  * 기본값은 **서버에 못 물어본 상태**다 — 그래야 아래 옛 시험들이 `hydrate` 의
@@ -70,7 +77,8 @@ beforeEach(() => {
   secure.__store.clear();
   jest.clearAllMocks();
   me.mockResolvedValue({ ok: false, code: "network" });
-  useAuth.setState({ status: "hydrating" });
+  withdrawApi.mockResolvedValue({ ok: true });
+  useAuth.setState({ status: "hydrating", withdrawing: false, withdrawError: null });
   useDraft.getState().reset();
   useRetro.getState().reset();
   useDiary.getState().reset();
@@ -437,6 +445,73 @@ describe("signOut — 로그아웃 후 재진입", () => {
     await useAuth.getState().signOut();
 
     expect(secure.__store.get("momentory.diary.deletedCards.1")).toBe(JSON.stringify(["7"]));
+  });
+});
+
+describe("withdraw — 회원탈퇴", () => {
+  it("성공하면 세션·사용자 store 를 비우고 anonymous 로 닫는다", async () => {
+    seedSession(Date.now() + 60_000);
+    await useAuth.getState().hydrate();
+    useProfile.getState().set({ nickname: "앞사람" });
+    useRetro.getState().addMyTurn("오늘은 좀 지쳤어");
+    seedDiaries();
+
+    const ok = await useAuth.getState().withdraw();
+
+    expect(ok).toBe(true);
+    expect(useAuth.getState().status).toBe("anonymous");
+    expect(secure.__store.has(SESSION_KEY)).toBe(false);
+    expect(useProfile.getState().nickname).not.toBe("앞사람");
+    expect(useRetro.getState().turns).toEqual([]);
+    expect(useDiary.getState().diaries).toEqual([]);
+  });
+
+  it("로그아웃과 달리 **묘비까지 지운다** — 계정이 사라지니 유지할 대상이 없다", async () => {
+    seedSession(Date.now() + 60_000);
+    secure.__store.set("momentory.diary.deletedCards.1", JSON.stringify(["7"]));
+
+    await useAuth.getState().withdraw();
+
+    expect(secure.__store.has("momentory.diary.deletedCards.1")).toBe(false);
+  });
+
+  it("카카오 연결 해제가 실패하면 아무것도 지우지 않는다 — 계정이 아직 살아 있다", async () => {
+    withdrawApi.mockResolvedValueOnce({ ok: false, code: "kakao" });
+    seedSession(Date.now() + 60_000);
+    await useAuth.getState().hydrate();
+    useProfile.getState().set({ nickname: "앞사람" });
+
+    const ok = await useAuth.getState().withdraw();
+
+    expect(ok).toBe(false);
+    // 세션도 프로필도 그대로다 — 지웠으면 탈퇴 안 됐는데 로그아웃된 꼴이 된다
+    expect(secure.__store.has(SESSION_KEY)).toBe(true);
+    expect(useAuth.getState().status).toBe("authenticated");
+    expect(useProfile.getState().nickname).toBe("앞사람");
+    // 실패는 한 줄로 흡수한다 — 사유가 문구로 바뀌어 있다
+    expect(useAuth.getState().withdrawError).toContain("카카오");
+  });
+
+  it("실패 뒤 다시 시도하면 지난 실패 한 줄을 지우고 시작한다", async () => {
+    withdrawApi.mockResolvedValueOnce({ ok: false, code: "server" });
+    seedSession(Date.now() + 60_000);
+    await useAuth.getState().withdraw();
+    expect(useAuth.getState().withdrawError).not.toBeNull();
+
+    await useAuth.getState().withdraw(); // 이번엔 성공(기본 목)
+
+    expect(useAuth.getState().status).toBe("anonymous");
+    expect(useAuth.getState().withdrawError).toBeNull();
+  });
+
+  it("진행 중이면 두 번째 호출은 무시한다 — 확인 버튼 중복 클릭", async () => {
+    seedSession(Date.now() + 60_000);
+    useAuth.setState({ withdrawing: true });
+
+    const ok = await useAuth.getState().withdraw();
+
+    expect(ok).toBe(false);
+    expect(withdrawApi).not.toHaveBeenCalled();
   });
 });
 

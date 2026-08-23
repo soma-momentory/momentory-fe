@@ -106,6 +106,28 @@ describe("load", () => {
     expect(fetchOptions).toHaveBeenCalledTimes(1);
   });
 
+  it("서버가 이모지 없이 준 쉬는 방법에 id 로 이모지를 다시 얹는다 (07.md)", async () => {
+    // 서버 라벨엔 이모지가 없다 — 아는 id 는 이모지가 붙고, 모르는 id 는 그대로 둔다
+    fetchOptions.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        ...SERVER,
+        restMethods: [
+          { id: "SLEEP", label: "잠자기" }, // 아는 id · 이모지 없음 → 붙는다
+          { id: "READING", label: "📖 독서하기" }, // 서버가 이미 붙였으면 겹치지 않는다
+          { id: "NAPPING", label: "낮잠" }, // 모르는 id → 그대로 통과(새 항목이 사라지지 않게)
+        ],
+      },
+    });
+
+    await useOnboardingOptions.getState().load();
+
+    const rest = useOnboardingOptions.getState().restMethods;
+    expect(rest.find((o) => o.id === "SLEEP")?.label).toBe("😴 잠자기");
+    expect(rest.find((o) => o.id === "READING")?.label).toBe("📖 독서하기");
+    expect(rest.find((o) => o.id === "NAPPING")?.label).toBe("낮잠");
+  });
+
   it("한 번 받았으면 다시 묻지 않는다", async () => {
     fetchOptions.mockResolvedValueOnce({ ok: true, data: SERVER });
     await useOnboardingOptions.getState().load();
