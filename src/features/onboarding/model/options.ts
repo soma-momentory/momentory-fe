@@ -67,10 +67,13 @@ const FALLBACK_INTERESTS: Option[] = [
  * (`07.md` · 이모지를 선 아이콘으로 바꾼 규칙의 유일한 예외).
  *
  * ⚠ **서버 라벨에는 이모지가 없고 낱말 둘이 다르다**(`영화, 드라마 보기` ·
- * `카페가기`). 즉 **연결됐을 때와 대역일 때 칩이 다르게 보인다** — 성별·관심사와
- * 같은 성질의 어긋남이고 기록도 같은 자리다(`PRODUCT.md` 9번). 여기서
- * 되돌리지 않는 이유도 같다: 라벨을 화면에 고정하면 서버가 항목을 늘렸을 때
- * 그 칩이 사라진다.
+ * `카페가기`). 예전에는 서버 라벨을 그대로 써서 **연결되면 이모지가 사라졌다** —
+ * `07.md` 가 라벨의 일부로 못박은 이모지가 화면에서 빠지는 회귀였다. 이제
+ * `withRestEmoji` 가 **id 로 이모지를 다시 얹는다**: 서버는 여전히 「어떤 항목이
+ * 있는가」의 정본이라(모르는 id 는 그대로 통과 → 서버가 늘린 항목이 사라지지
+ * 않는다) 라벨을 화면에 고정하지 않으면서, 아는 항목에는 이모지를 붙인다.
+ * 낱말 차이(`영화, 드라마 보기` 등)는 서버 것을 그대로 둔다 — BE 가 스펙 문안으로
+ * 맞추면 사라진다(`PRODUCT.md` 9번).
  */
 const FALLBACK_REST_METHODS: Option[] = [
   { id: "SLEEP", label: "😴 잠자기" },
@@ -89,6 +92,32 @@ const FALLBACK_REST_METHODS: Option[] = [
   { id: "IDLE_REST", label: "😶 멍하니 쉬기" },
   { id: OTHER_REST_METHOD, label: "기타" },
 ];
+
+/**
+ * 쉬는 방법 `id → 이모지`. **대역 라벨에서 한 벌만 뽑는다** — 이모지를 따로
+ * 적어 두면 대역과 이 표가 갈려 하나만 고쳐진다. 라벨은 `이모지 + 공백 + 낱말`
+ * 꼴이라 첫 토막이 이모지다. 「기타」(`OTHER_REST_METHOD`)는 이모지가 없어 빠진다.
+ */
+const REST_METHOD_EMOJI: Record<string, string> = Object.fromEntries(
+  FALLBACK_REST_METHODS.flatMap(({ id, label }) => {
+    const [head, ...rest] = label.split(" ");
+    return rest.length > 0 && head != null && id !== OTHER_REST_METHOD ? [[id, head]] : [];
+  }),
+);
+
+/**
+ * 서버 쉬는 방법 라벨에 이모지를 다시 얹는다.
+ *
+ * 서버는 **어떤 항목이 있는가**의 정본이다 — 모르는 id 는 그대로 통과시켜 서버가
+ * 새로 넣은 항목이 사라지지 않게 한다. 이모지는 `07.md` 가 라벨의 일부로 못박은
+ * 것이라 우리가 붙인다. 서버가 이미 붙여 주면(`startsWith`) 겹쳐 붙이지 않는다.
+ */
+const withRestEmoji = (options: Option[]): Option[] =>
+  options.map((option) => {
+    const emoji = REST_METHOD_EMOJI[option.id];
+    if (emoji == null || option.label.startsWith(emoji)) return option;
+    return { ...option, label: `${emoji} ${option.label}` };
+  });
 
 type OptionsStore = {
   nickname: NicknamePolicy;
@@ -137,7 +166,8 @@ export const useOnboardingOptions = create<OptionsStore>((set, get) => ({
           nickname: nickname ?? get().nickname,
           genders: genders ?? get().genders,
           interestAreas: interestAreas ?? get().interestAreas,
-          restMethods: restMethods ?? get().restMethods,
+          // 서버 라벨엔 이모지가 없다 — id 로 다시 얹는다(`withRestEmoji` 머리말)
+          restMethods: restMethods ? withRestEmoji(restMethods) : get().restMethods,
           fromServer: true,
         });
       })

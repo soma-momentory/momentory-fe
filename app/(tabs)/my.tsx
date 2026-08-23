@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import {
   BottomSheet,
@@ -11,9 +11,10 @@ import {
   ListDivider,
   TabScreen,
   Text,
+  TextField,
   WheelPicker,
 } from "@/components/ds";
-import { fill, hairline, label as labelColor, radius, space } from "@/design/ds";
+import { fill, hairline, label as labelColor, radius, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useProfile, useSettings } from "@/features/my/model/settings";
@@ -53,15 +54,23 @@ import {
  * ## 그대로인 규칙
  *
  * - **연속 일수·점수·배지를 쓰지 않는다** (`RULES.md`)
- * - **갈 곳이 없는 줄은 눌리지 않게 둔다** — 지금은 회원 탈퇴 하나뿐이다. 눌리는데
- *   아무 일도 없는 줄을 만들지 않고, 왜 아직인지는 「준비 중」 한 줄이 말한다.
- *   ⚠ 「지원」 세 줄은 2026-08-21 에 갈 곳이 생겼다 — 랜딩 페이지의 약관·개인정보
- *   처리방침과 Notion 문의 폼을 **앱 안 브라우저**로 연다(`src/lib/links.ts`)
- * - **회원 탈퇴는 목록 밖**의 낮춘 글자다 — 로그아웃과 같은 무게로 보이지 않게.
- *   확인 화면이 아직 없어(`my.pendingStates`) 실행되지 않는다
+ * - **갈 곳이 없는 줄은 눌리지 않게 둔다.** 「지원」 세 줄은 2026-08-21 에 갈 곳이
+ *   생겼고(랜딩 페이지의 약관·개인정보 처리방침과 Notion 문의 폼을 **앱 안 브라우저**로
+ *   연다 · `src/lib/links.ts`), **회원 탈퇴는 2026-08-23 에 붙었다**(BE #42)
+ * - **회원 탈퇴는 목록 밖**의 낮춘 위험색 글자다 — 로그아웃과 같은 무게로 보이지 않게.
+ *   되돌릴 수 없어 **확인 모달**을 거치고(`DESIGN.md` N2), 서버(`DELETE /users/me`)가
+ *   카카오 연결을 끊고 계정을 지운 **뒤에만** 기기를 비운다(`features/auth/model/auth.ts`
+ *   의 `withdraw`). 실패는 모달이 아니라 자리 아래 **한 줄**로 흡수한다(`RULES.md` 4)
  * - **알림 예약을 화면이 부르지 않는다** — 설정 store 를 `features/my/model/reminders.ts`
  *   가 구독해 OS 예약을 맞춘다. 여기서는 값만 바꾼다
  */
+/**
+ * 탈퇴 확인 문구 — **정확히 이 글자를 따라 써야** 탈퇴가 실행된다. 되돌릴 수 없는
+ * 동작을 실수로 한 번에 누르지 못하게 하는 마찰이다(GitHub 저장소 삭제와 같은 방식).
+ * 공백만 다듬어 비교한다 — 사용자가 앞뒤에 실수로 띄운 칸까지 틀렸다고 하지 않는다.
+ */
+const WITHDRAW_CONFIRM_PHRASE = "회원탈퇴";
+
 export default function My() {
   const diaries = useDiary((s) => s.diaries);
   const nickname = useProfile((s) => s.nickname);
@@ -69,9 +78,17 @@ export default function My() {
   const setTime = useSettings((s) => s.setTime);
   const toggle = useSettings((s) => s.toggle);
   const signOut = useAuth((s) => s.signOut);
+  const withdraw = useAuth((s) => s.withdraw);
+  const withdrawing = useAuth((s) => s.withdrawing);
+  const withdrawError = useAuth((s) => s.withdrawError);
+  const clearWithdrawError = useAuth((s) => s.clearWithdrawError);
 
   /** 시트를 여는 동안만 사는 값 — **`완료` 를 눌러야 설정이 된다**(`DESIGN.md` §11) */
   const [editingTime, setEditingTime] = useState<string | null>(null);
+  /** 탈퇴 확인 시트가 떠 있는가. 되돌릴 수 없는 행동이라 문구를 따라 써야 실행된다 */
+  const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
+  /** 확인 시트의 입력값 — `WITHDRAW_CONFIRM_PHRASE` 와 맞아야 탈퇴 버튼이 켜진다 */
+  const [withdrawConfirmText, setWithdrawConfirmText] = useState("");
   /** `null` 은 아직 모르는 상태 — 모르는 채로 안내를 띄우지 않는다 */
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
 
@@ -107,6 +124,35 @@ export default function My() {
     const result = await requestNotificationPermission();
     setPermission(result);
     if (result.granted) toggle("retro");
+  };
+
+  /** 확인 시트를 연다 — 지난 실패 한 줄과 입력값을 지우고 연다 */
+  const openWithdraw = () => {
+    clearWithdrawError();
+    setWithdrawConfirmText("");
+    setConfirmingWithdraw(true);
+  };
+
+  /** 시트를 닫고 입력값을 버린다 — 딤을 누르거나 취소했을 때 */
+  const cancelWithdraw = () => {
+    setConfirmingWithdraw(false);
+    setWithdrawConfirmText("");
+  };
+
+  /** 문구가 정확히 맞아야 탈퇴 버튼이 켜진다 */
+  const canWithdraw = withdrawConfirmText.trim() === WITHDRAW_CONFIRM_PHRASE;
+
+  /**
+   * 「탈퇴하기」 — 서버가 계정을 지우고 성공하면 store 가 `anonymous` 로 닫아
+   * 라우트 가드가 로그인으로 돌려보낸다(여기서 옮기지 않는다). 실패하면 시트를
+   * 닫고, `withdrawError` 한 줄이 회원 탈퇴 자리 아래에 뜬다(시트엔 오류를 두지 않는다).
+   */
+  const confirmWithdraw = async () => {
+    // 진행 중 중복 탭 방지는 store 가 하지만, 문구가 안 맞으면 애초에 안 부른다
+    if (!canWithdraw) return;
+    await withdraw();
+    setConfirmingWithdraw(false);
+    setWithdrawConfirmText("");
   };
 
   // 앱이 다시 물을 수 있는 동안에는 안내하지 않는다 — 시트의 `완료` 가 곧 그 물음이다
@@ -184,6 +230,38 @@ export default function My() {
                 />
               </View>
             ) : null}
+          </BottomSheet>
+        ) : confirmingWithdraw ? (
+          /*
+            회원 탈퇴 확인 — **문구를 따라 써야** 실행된다(되돌릴 수 없는 동작의 마찰).
+            알림 시트와 같은 이유로 `overlay` 로 넘긴다 — `Screen` 안에 두면 딤이
+            상태바·홈 인디케이터 자리에서 끊긴다(위 알림 시트 주석).
+          */
+          <BottomSheet title="회원 탈퇴" onDismiss={cancelWithdraw}>
+            <Text variant="body2Reading" color={labelColor.neutral}>
+              탈퇴하면 기록한 일기와 대화가 모두 지워지고 되돌릴 수 없어요.
+            </Text>
+            {/* 오류가 아니라 확인이라 시트에 둔다 — 실패(카카오 등)는 시트를 닫고
+                회원 탈퇴 자리 아래 한 줄로 흡수한다(`RULES.md` 4) */}
+            <TextField
+              fieldLabel={`확인을 위해 아래에 ${WITHDRAW_CONFIRM_PHRASE} 를 입력해 주세요`}
+              placeholder={WITHDRAW_CONFIRM_PHRASE}
+              value={withdrawConfirmText}
+              onChangeText={setWithdrawConfirmText}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!withdrawing}
+              returnKeyType="done"
+              onSubmitEditing={() => void confirmWithdraw()}
+            />
+            <Button
+              label={withdrawing ? "탈퇴 중…" : "탈퇴하기"}
+              variant="destructive"
+              fill
+              // 문구가 맞기 전에는 눌리지 않는다 — 진행 중에도 잠근다(중복 탭 방지)
+              disabled={!canWithdraw || withdrawing}
+              onPress={() => void confirmWithdraw()}
+            />
           </BottomSheet>
         ) : null
       }
@@ -282,16 +360,27 @@ export default function My() {
 
         {/*
             위험 동작은 목록 밖 바닥에 홀로 둔다 — 로그아웃과 같은 무게로 보이지 않게.
-            ⚠ **확인 화면이 아직 없다**(`my.pendingStates`) — 그래서 아직 눌리지 않고,
-            왜 눌리지 않는지를 아래 한 줄이 말한다.
+            면을 채우지 않고 낮춘 위험색 글자다(`M1` 규칙 · `dangerInk` = `status.negative`).
+            누르면 되돌릴 수 없어 **확인 시트에서 문구를 따라 써야** 실행된다.
+            실패는 시트가 아니라 이 자리 아래 **한 줄**로 흡수한다(`RULES.md` 4).
           */}
         <View style={styles.leave}>
-          <Text variant="label2" color={labelColor.assistive}>
-            회원 탈퇴
-          </Text>
-          <Text variant="caption1" color={labelColor.alternative}>
-            준비 중
-          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: withdrawing }}
+            hitSlop={space.sm}
+            disabled={withdrawing}
+            onPress={openWithdraw}
+          >
+            <Text variant="label2" color={status.negative}>
+              회원 탈퇴
+            </Text>
+          </Pressable>
+          {withdrawError != null ? (
+            <Text variant="caption1" color={status.negative}>
+              {withdrawError}
+            </Text>
+          ) : null}
         </View>
       </ScrollView>
     </TabScreen>
