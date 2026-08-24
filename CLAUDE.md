@@ -176,7 +176,7 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 ⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 남은 것은 **나머지 도메인의 BE 연결** ·
 영속 저장(MMKV) · 소셜 SDK **나머지 하나**(카카오는 2026-08-07 연결 · 토큰 갱신은
 2026-08-09 닫힘 — **HTTPS 만 대기**, [`DISCUSSION.md`](docs/DISCUSSION.md) §1-6 ·
-**애플은 2026-08-24 에 SDK + 서버 교환 + nonce 까지 연결됐다** — 남은 것은 탈퇴 revoke §1-10 ·
+**애플은 2026-08-24 에 SDK + 교환 + nonce + 탈퇴 revoke 까지 연결됐다** — `.p8` 발급만 남았다 §1-10 ·
 **구글은 아직 개발 통로**) ·
 OS 권한 중 **캘린더 연결**(알림은 2026-08-11 닫힘) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
 M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](docs/TASKS.md)
@@ -320,8 +320,11 @@ src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,appleSdk,appleAuth
                                             adoptSession 하나를 나눠 쓴다.
                                             nonce = 해시는 애플로 · 원문은 서버로
                                             (재생 방지 · appleSdk 가 만든다).
-                                            ⛔ 남은 것: 탈퇴 시 애플 revoke 없음
-                                            (DISCUSSION §1-10 의 4)
+                                            탈퇴 revoke 도 붙었다 — 로그인 때
+                                            authorizationCode 를 애플 refresh
+                                            token 으로 바꿔 서버가 보관한다.
+                                            ⛔ .p8 발급 전이라 그때까지 탈퇴가
+                                            연결 해제 없이 지나간다
 src/testing/fixtures.ts                   ← **테스트 전용 고정값.** 옛 `src/mocks/sample.ts`
                                             자리다(2026-08-21 삭제) — 화면이 보는 값은 이제
                                             서버에서만 온다. 앱 코드가 import 하면 린터가 막는다

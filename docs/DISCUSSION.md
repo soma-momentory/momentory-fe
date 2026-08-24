@@ -468,14 +468,15 @@ POST /api/v1/schedules/sync
 FE 는 **1번을 제안한다** — 04:00 은 제품 규칙이고 KST 자정은 구현 기본값이라,
 근거의 무게가 다르다. 다만 서버가 이미 쌓은 데이터의 월 경계가 바뀌므로 BE 판단이다.
 
-### 1-10. 애플 세션 교환 — ✅ **닫혔다** (2026-08-24 · 교환 + nonce · 남은 것은 탈퇴 revoke 하나)
+### 1-10. 애플 세션 교환 — ✅ **전부 닫혔다** (2026-08-24 · 교환 · nonce · 탈퇴 revoke)
 
 **닫혔다.** BE 가 `POST /api/v1/auth/apple` 을 냈고(`AppleLoginController`),
 FE 가 같은 날 붙였다(`src/features/auth/data/appleAuthApi.ts`).
 계약은 [`api/openapi.json`](api/openapi.json) 에 반입돼 있다(엔드포인트 32개).
 
-이 절을 지우지 않고 남겨 두는 것은 **넷 중 하나가 아직 열려 있어서**다 — 아래
-「정할 것 넷」의 4(탈퇴 시 연결 해제). nonce(3번)는 같은 날 양쪽에 붙였다.
+**「정할 것 넷」이 모두 닫혔다.** 절을 남겨 두는 것은 무엇이 어떻게 정해졌는지가
+아직 다른 정본에 옮겨 적히지 않아서다 — 특히 4번(탈퇴 revoke)의 「로그인 때 미리
+받아 둔다」는 구조는 계약만 보고는 알 수 없다.
 
 #### 어떻게 닫혔나 — **FE 제안보다 나은 답이 왔다**
 
@@ -510,7 +511,7 @@ FE 는 요청을 `{ identityToken, authorizationCode }` 로 제안하고 이름�
 | 서버 교환                   | ✅ `src/features/auth/data/appleAuthApi.ts` (`POST /api/v1/auth/apple`) |
 | 세션 저장 · 라우팅          | ✅ 카카오와 **같은 코드**를 지난다 (`auth.ts` 의 `adoptSession`)        |
 
-#### 정할 것 넷 — 셋 닫히고 하나 남았다
+#### 정할 것 넷 — 전부 닫혔다
 
 1. ✅ **경로와 요청 모양.** `POST /api/v1/auth/apple` · 요청 `{ identityToken }` ·
    응답은 카카오와 동일(`accessToken`·`refreshToken`·`tokenType`·
@@ -541,15 +542,40 @@ FE 는 요청을 `{ identityToken, authorizationCode }` 로 제안하고 이름�
    ⚠ **막지 못하는 것**: 요청 하나를 통째로 가로챈 상대는 토큰과 원문을 함께 갖는다.
    그 창을 닫는 것은 HTTPS 이고 개발 서버는 아직 평문이다(§1-6) — nonce 는 그 대체재가 아니다.
 
-4. ⛔ **탈퇴 시 애플 연결 해제 — 그대로 열려 있다.** 카카오는
-   `DELETE /api/v1/users/me` 가 카카오 unlink 까지 한다(`withdrawApi.ts` 의 `kakao`
-   실패 코드). 애플도 같은 의무가 있다 — App Store 심사 규정이 **앱 안에서 계정
-   삭제**를 요구하고, 애플로 가입한 사용자는 서버가 애플에 `revoke` 를 보내야
-   연결이 끊긴다. 서버가 `.p8` 로 서명해야 하는 일이라 **FE 가 할 수 있는 부분이
-   없다.** §1-5 와 함께 본다.
-   ⚠ **이제 애플로 가입한 사용자가 실제로 생긴다** — §1 에서 애플 관련으로 **유일하게 남은 항목**이다.
-   ⚠ 붙이려면 계약이 한 줄 는다: 서버가 `authorizationCode` 를 받아 애플 refresh
-   token 으로 바꿔 **저장해 두어야** 연결을 끊을 수 있다(스키마 변경 · `.p8` 필요).
+4. ✅ **탈퇴 시 애플 연결 해제 — 닫혔다** (2026-08-24). 카카오가
+   `DELETE /api/v1/users/me` 에서 unlink 까지 하는 것과 **같은 자리에** 붙였다
+   (BE `UserWithdrawalService`).
+
+   **어려운 점은 「탈퇴 시점에 끊을 토큰이 없다」였다.** 애플 revoke 는 refresh token
+   을 요구하는데, 그것을 얻으려면 authorization code 를 교환해야 하고 code 는 인가
+   한 번에 하나씩만 나온다 — 사용자가 탈퇴 화면에서 Sign in with Apple 을 다시 하지는
+   않는다. 그래서 **로그인 때 미리 받아 둔다**:
+
+   ```
+   로그인:  authorizationCode → POST /auth/token → refresh token → oauth_accounts 에 보관
+   탈퇴:    보관된 refresh token → POST /auth/revoke → 계정 삭제
+   ```
+
+   그래서 요청에 `authorizationCode` 한 줄이 늘었다(선택 필드 — **없어도 로그인은 된다**).
+   교환은 애플 서버를 한 번 더 부르는 일이라 실패할 수 있는데, **실패해도 로그인을 막지
+   않는다**: 지금 로그인하려는 사용자와 무관한 준비 작업이고, 그 사용자는 다음 로그인에서
+   다시 채울 기회를 얻는다.
+
+   **`client_secret` 은 우리가 서명한다.** 애플은 고정 비밀 문자열을 받지 않고
+   `.p8` 로 서명한 짧은 ES256 JWT 를 요구한다(`AppleClientSecretGenerator` · 수명 5분).
+   `.p8` 만이 비밀이고 Team ID·Key ID·번들 ID 는 공개 식별자다.
+
+   ⚠ **`.p8` 이 없으면 로그인은 되고 탈퇴만 지나간다.** 설정 셋(`APPLE_TEAM_ID`·
+   `APPLE_KEY_ID`·`APPLE_PRIVATE_KEY`)을 **필수로 두지 않았다** — 발급 전인 값을 필수로
+   걸면 배포가 통째로 막히기 때문이다(`APPLE_CLIENT_ID` 를 SSM 참조로 두었다가 CD 가
+   두 번 롤백된 적이 있다). 대신 경고 로그를 남긴다.
+   **계정 삭제 자체도 심사 규정이 요구하는 기능이라, 연결을 못 끊는 것보다 탈퇴가
+   통째로 막히는 쪽이 더 나쁘다** — 그래서 막지 않고 지나간다.
+   ⛔ **그래서 운영 배포 전에 반드시 설정돼야 한다.** 설정 없이 나가면 애플 사용자의
+   연결이 조용히 남고, 그 사실은 경고 로그로만 드러난다.
+
+   ⚠ 반대로 **설정이 있는데 애플이 거절하면 탈퇴를 실패시킨다** — 카카오 unlink 와 같은
+   규약이다. 연결을 못 끊었는데 계정만 지우면 어느 토큰으로 끊어야 하는지도 함께 잃는다.
 
 #### 서버에 필요한 값
 

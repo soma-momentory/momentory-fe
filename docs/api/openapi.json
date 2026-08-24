@@ -2199,7 +2199,7 @@
           "Reports"
         ],
         "summary": "주간 리포트 조회",
-        "description": "그 주(월~일, KST)의 마음 일곱 칸과 요약 멘트, 일정·행동 카드·일기 셈을 돌려준다. date 는 그 주에 속한 아무 날이나 넣으면 되고, 서버가 해당 주의 월요일로 맞춘다. 생략하면 오늘(KST)이 속한 주다.",
+        "description": "그 주(일~토, KST)의 마음 일곱 칸과 요약 멘트, 일정·행동 카드·일기 셈을 돌려준다. date 는 그 주에 속한 아무 날이나 넣으면 되고, 서버가 해당 주의 일요일로 맞춘다. 생략하면 오늘(KST)이 속한 주다.",
         "operationId": "getWeekly",
         "parameters": [
           {
@@ -3646,6 +3646,10 @@
             "type": "string",
             "description": "재생 공격 방지용 nonce 원문. 앱은 이 값의 SHA-256 hex 를 애플에 전달하고, 서버가 identity token 의 nonce 클레임과 대조합니다.",
             "minLength": 1
+          },
+          "authorizationCode": {
+            "type": "string",
+            "description": "애플 authorization code. 탈퇴 시 연결 해제(revoke)에 쓸 refresh token 으로 교환해 보관합니다. 없어도 로그인은 됩니다."
           }
         },
         "required": [
@@ -3899,18 +3903,18 @@
           "startDate": {
             "type": "string",
             "format": "date",
-            "description": "주 시작일(월요일, KST)",
-            "example": "2026-08-17"
+            "description": "주 시작일(일요일, KST)",
+            "example": "2026-08-16"
           },
           "endDate": {
             "type": "string",
             "format": "date",
-            "description": "주 종료일(일요일, KST)",
-            "example": "2026-08-23"
+            "description": "주 종료일(토요일, KST)",
+            "example": "2026-08-22"
           },
           "dailyMoods": {
             "type": "array",
-            "description": "월요일부터 일요일까지 일곱 칸의 마음",
+            "description": "일요일부터 토요일까지 일곱 칸의 마음",
             "items": {
               "$ref": "#/components/schemas/DailyMoodResponse"
             }

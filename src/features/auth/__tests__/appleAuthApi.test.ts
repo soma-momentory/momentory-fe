@@ -10,9 +10,9 @@ import { getApiBaseUrl } from "@/lib/config";
  *
  * 여기서만 볼 수 있는 것이 둘 있다:
  *
- * 1. **보내는 것이 `identityToken` 과 `nonce` 둘뿐인가** — 서버가 이름·이메일을
- *    토큰 안에서 읽으므로 요청 본문에 더 얹을 이유가 없다. 얹으면 「보냈으니
- *    저쪽이 갖고 있겠지」라는 잘못된 전제가 생긴다
+ * 1. **보내는 것이 셋뿐인가** — `identityToken`·`nonce`·`authorizationCode`.
+ *    이름·이메일은 서버가 토큰 안에서 읽으므로 요청 본문에 얹지 않는다. 얹으면
+ *    「보냈으니 저쪽이 갖고 있겠지」라는 잘못된 전제가 생긴다
  * 2. **400 두 갈래를 본문으로 가르는가** — 계약이 `INVALID_REQUEST` 와
  *    `APPLE_EMAIL_UNAVAILABLE` 을 같은 상태 코드에 둔다. 사용자가 할 일이
  *    갈리는 자리라(설정을 고칠 것인가 · 우리가 고칠 것인가) 상태 코드만으로는
@@ -27,6 +27,9 @@ const baseUrl = jest.mocked(getApiBaseUrl);
 
 /** 이번 인가의 nonce **원문**. 애플에 준 것은 이 값의 SHA-256 해시다(`appleSdk.ts`) */
 const NONCE = "0f1e2d3c";
+
+/** 이번 인가의 authorization code — 서버가 애플 refresh token 으로 바꿔 보관한다 */
+const AUTH_CODE = "apple-authorization-code";
 
 /** 응답은 **카카오와 글자 그대로 같다** — 검증도 같은 코드를 지난다 */
 const VALID_BODY = {
@@ -61,10 +64,10 @@ beforeEach(() => {
 });
 
 describe("요청 — 계약대로 보낸다", () => {
-  it("합의한 endpoint 로 identity token 과 nonce 원문만 담아 POST 한다", async () => {
+  it("합의한 endpoint 로 셋만 담아 POST 한다 — 이름·이메일은 없다", async () => {
     const fetchMock = mockFetch(async () => respond(200, VALID_BODY));
 
-    await exchangeAppleIdentityToken("apple-identity-token", NONCE);
+    await exchangeAppleIdentityToken("apple-identity-token", NONCE, AUTH_CODE);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0]!;
@@ -78,6 +81,7 @@ describe("요청 — 계약대로 보낸다", () => {
     expect(JSON.parse(String(init.body))).toEqual({
       identityToken: "apple-identity-token",
       nonce: NONCE,
+      authorizationCode: AUTH_CODE,
     });
   });
 
@@ -85,7 +89,7 @@ describe("요청 — 계약대로 보낸다", () => {
     baseUrl.mockReturnValue("");
     const fetchMock = mockFetch(async () => respond(200, VALID_BODY));
 
-    const result = await exchangeAppleIdentityToken("apple-identity-token", NONCE);
+    const result = await exchangeAppleIdentityToken("apple-identity-token", NONCE, AUTH_CODE);
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(result).toEqual({ ok: false, code: "unconfigured" });
@@ -96,7 +100,7 @@ describe("성공 응답", () => {
   it("계약대로면 세션을 그대로 돌려준다", async () => {
     mockFetch(async () => respond(200, VALID_BODY));
 
-    const result = await exchangeAppleIdentityToken("apple-identity-token", NONCE);
+    const result = await exchangeAppleIdentityToken("apple-identity-token", NONCE, AUTH_CODE);
 
     expect(result).toEqual({
       ok: true,
@@ -113,7 +117,7 @@ describe("성공 응답", () => {
   it("온보딩이 끝난 사용자의 false 도 그대로 전한다", async () => {
     mockFetch(async () => respond(200, { ...VALID_BODY, onboardingRequired: false }));
 
-    const result = await exchangeAppleIdentityToken("apple-identity-token", NONCE);
+    const result = await exchangeAppleIdentityToken("apple-identity-token", NONCE, AUTH_CODE);
 
     expect(result).toEqual(expect.objectContaining({ ok: true }));
     expect(result.ok && result.session.onboardingRequired).toBe(false);
@@ -133,15 +137,15 @@ describe("거절 — 애플의 사유로 옮긴다", () => {
   ])("본문의 %s 는 %i 에서 %s 다", async (serverCode, status, code) => {
     mockFetch(async () => respond(status, { code: serverCode }));
 
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({ ok: false, code });
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({ ok: false, code });
   });
 
   it("같은 400 이라도 이메일 문제와 우리 잘못을 가른다 — 사용자가 할 일이 다르다", async () => {
     mockFetch(async () => respond(400, { code: "APPLE_EMAIL_UNAVAILABLE" }));
-    const email = await exchangeAppleIdentityToken("t", NONCE);
+    const email = await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE);
 
     mockFetch(async () => respond(400, { code: "INVALID_REQUEST" }));
-    const ours = await exchangeAppleIdentityToken("t", NONCE);
+    const ours = await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE);
 
     expect(email).toEqual({ ok: false, code: "apple_email_unavailable" });
     expect(ours).toEqual({ ok: false, code: "invalid_request" });
@@ -151,7 +155,7 @@ describe("거절 — 애플의 사유로 옮긴다", () => {
     mockFetch(async () => respond(401, { code: "APPLE_NONCE_MISMATCH" }));
 
     // 반복되면 공격이 아니라 양쪽 해시 인코딩이 어긋난 것이다
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
       ok: false,
       code: "apple_nonce_mismatch",
     });
@@ -161,7 +165,7 @@ describe("거절 — 애플의 사유로 옮긴다", () => {
     mockFetch(async () => respond(401, { code: "APPLE_CLIENT_ID_MISMATCH" }));
 
     // 번들 ID 와 서버의 APPLE_CLIENT_ID 가 어긋났다는 뜻이다 — 사용자 문제가 아니다
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
       ok: false,
       code: "apple_client_mismatch",
     });
@@ -171,7 +175,7 @@ describe("거절 — 애플의 사유로 옮긴다", () => {
     // 500 인데 본문이 「애플 쪽 장애」라고 말하면 그 말을 믿는다
     mockFetch(async () => respond(500, { code: "APPLE_API_SERVER_ERROR" }));
 
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
       ok: false,
       code: "apple_upstream",
     });
@@ -185,7 +189,7 @@ describe("거절 — 애플의 사유로 옮긴다", () => {
   ])("본문을 못 읽으면 상태 코드로 판정한다 — %i 는 %s", async (status, code) => {
     mockFetch(async () => respond(status, undefined));
 
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({ ok: false, code });
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({ ok: false, code });
   });
 
   it("400 을 본문 없이 받으면 「우리가 잘못 보냈다」로 접는다", async () => {
@@ -193,7 +197,7 @@ describe("거절 — 애플의 사유로 옮긴다", () => {
     // 애플 설정을 헛되이 뒤진다
     mockFetch(async () => respond(400, {}));
 
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
       ok: false,
       code: "invalid_request",
     });
@@ -202,14 +206,17 @@ describe("거절 — 애플의 사유로 옮긴다", () => {
   it("알 수 없는 상태 코드는 server 로 접는다 — 사용자에게는 같은 상황이다", async () => {
     mockFetch(async () => respond(418, { code: "TEAPOT" }));
 
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({ ok: false, code: "server" });
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
+      ok: false,
+      code: "server",
+    });
   });
 
   it("카카오의 사유가 새어 들어오지 않는다 — 표를 나눠 둔 이유다", async () => {
     mockFetch(async () => respond(401, { code: "KAKAO_TOKEN_INVALID" }));
 
     // 애플 엔드포인트에서 온 카카오 코드는 우리가 아는 이름이 아니다 → 상태 코드로 판정
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
       ok: false,
       code: "apple_token_invalid",
     });
@@ -222,7 +229,10 @@ describe("서버에 닿지 못했을 때", () => {
       throw new TypeError("Network request failed");
     });
 
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({ ok: false, code: "network" });
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
+      ok: false,
+      code: "network",
+    });
   });
 
   it("응답이 없으면 정해진 시간에 끊는다 — 버튼이 영영 잠기지 않게", async () => {
@@ -234,7 +244,7 @@ describe("서버에 닿지 못했을 때", () => {
         }),
     );
 
-    const pending = exchangeAppleIdentityToken("t", NONCE);
+    const pending = exchangeAppleIdentityToken("t", NONCE, AUTH_CODE);
     jest.advanceTimersByTime(LOGIN_REQUEST_TIMEOUT_MS);
 
     expect(await pending).toEqual({ ok: false, code: "network" });
@@ -246,7 +256,10 @@ describe("형태 위반 — 200 이어도 받지 않는다", () => {
   it("JSON 이 아니면 malformed", async () => {
     mockFetch(async () => respond(200, undefined));
 
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({ ok: false, code: "malformed" });
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
+      ok: false,
+      code: "malformed",
+    });
   });
 
   it.each([
@@ -261,6 +274,9 @@ describe("형태 위반 — 200 이어도 받지 않는다", () => {
   ])("%s 면 malformed — 반쯤 로그인된 상태를 만들지 않는다", async (_name, body) => {
     mockFetch(async () => respond(200, body));
 
-    expect(await exchangeAppleIdentityToken("t", NONCE)).toEqual({ ok: false, code: "malformed" });
+    expect(await exchangeAppleIdentityToken("t", NONCE, AUTH_CODE)).toEqual({
+      ok: false,
+      code: "malformed",
+    });
   });
 });

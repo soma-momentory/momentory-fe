@@ -13,13 +13,17 @@ import {
  * Content-Type: application/json
  * Accept: application/json
  *
- * { "identityToken": "<애플이 서명한 JWT>", "nonce": "<이번 인가의 nonce 원문>" }
+ * {
+ *   "identityToken": "<애플이 서명한 JWT>",
+ *   "nonce": "<이번 인가의 nonce 원문>",
+ *   "authorizationCode": "<이번 인가의 단기 코드>"
+ * }
  * ```
  *
  * **`DISCUSSION.md` §1-10 이 이 파일이 없어서 열려 있던 절이다.** 서버가 계약을
  * 내면서 닫혔고, 그때 FE 가 물은 넷 중 **셋이 답을 받았다** — 아래에 옮겨 적는다.
  *
- * ## 서버가 받는 것은 **identity token 과 nonce 원문 둘뿐이다**
+ * ## 서버가 받는 것 셋 — **이름·이메일은 그중에 없다**
  *
  * FE 제안은 `{ identityToken, authorizationCode }` 였고 이름·이메일도 선택 필드로
  * 두자고 했는데, 서버는 **이름·이메일을 받지 않는다.** 짐작이 틀린 것이 아니라
@@ -40,8 +44,13 @@ import {
  * 된다. `appleSdk.ts` 는 그 값들을 계속 꺼내 온다 — **서버가 요구하게 되는 날
  * 이 파일 한 줄만 늘리면 되도록** 경계는 그대로 두었다.
  *
- * ⚠ 특히 `authorizationCode` 는 **탈퇴 revoke 가 붙는 날 필요해진다** — 서버가
- * 그것을 애플 refresh token 으로 바꿔 두어야 연결을 끊을 수 있다(§1-10 의 4번).
+ * ✅ **`authorizationCode` 는 이제 보낸다** (§1-10 의 4번이 닫혔다). 서버가 그것을
+ * 애플 refresh token 으로 바꿔 보관해 두었다가, 탈퇴할 때 그 토큰으로 연결을 끊는다 —
+ * 탈퇴 시점에는 새 code 를 얻을 방법이 없기 때문이다(사용자가 그때 다시 Sign in with
+ * Apple 을 하지는 않는다).
+ *
+ * **없어도 로그인은 된다.** 서버가 이 값을 선택 필드로 둔다 — 교환에 실패해도 로그인을
+ * 막지 않는다. 그 사용자는 다음 로그인에서 다시 채울 기회를 얻는다.
  *
  * ## `nonce` 원문을 함께 보낸다
  *
@@ -158,7 +167,12 @@ const classify = (status: number, serverCode: string | null): AppleAuthFailureCo
 export async function exchangeAppleIdentityToken(
   identityToken: string,
   nonce: string,
+  authorizationCode: string,
 ): Promise<AppleLoginResult> {
-  // 이 둘뿐이다 — 이름·이메일은 서버가 토큰 안에서 읽는다(위 머리말)
-  return exchangeLoginSession(APPLE_LOGIN_PATH, { identityToken, nonce }, classify);
+  // 이름·이메일은 여전히 보내지 않는다 — 서버가 토큰 안에서 읽는다(위 머리말)
+  return exchangeLoginSession(
+    APPLE_LOGIN_PATH,
+    { identityToken, nonce, authorizationCode },
+    classify,
+  );
 }
