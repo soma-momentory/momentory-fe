@@ -6,8 +6,7 @@ import { Button, Card, IconButton, Spinner, TabScreen, Text } from "@/components
 import { WeekCountList } from "@/components/report/WeekCountList";
 import { WeekMoodCard } from "@/components/report/WeekMoodCard";
 import { label as labelColor, space } from "@/design/ds";
-import { useDiary } from "@/features/diary/model/diary";
-import { REPORT_UNLOCK_COUNT, isReportUnlocked, weekEnd } from "@/features/report/model/report";
+import { weekEnd } from "@/features/report/model/report";
 import { canGoNextWeek, useWeeklyReport } from "@/features/report/model/weeklyReport";
 import { formatKoreanDateShort } from "@/lib/day";
 
@@ -34,49 +33,27 @@ import { formatKoreanDateShort } from "@/lib/day";
  * **주차 이동 → 이번 주의 마음 → 이번 주 한눈에 → 기록 보러가기.**
  * 각 조각의 규칙은 `src/components/report/` 에 있고 여기는 조립과 상태 분기만 한다.
  *
- * - **일기 7편부터 열린다.** 그 전에는 **잠긴 화면이 아니라 한 줄**로 예고한다 —
- *   잠긴 문을 보여주면 못 연 것이 사용자 탓이 된다
+ * - **처음부터 열려 있다.** 예전에는 일기 7편이 모이기 전까지 예고 한 줄만 보여줬는데
+ *   (`RULES.md` 「리포트」), 사용자 결정(2026-08-24)으로 문턱을 없앴다 — 기록이 없는 주도
+ *   **비어 있는 한 주**로 성실히 보여주고, 하루하루 쌓이면 그 자리가 저절로 채워진다.
+ *   빈 화면이 곧 「아직 없다」는 말이라 잠금이 따로 할 일이 없다
+ * - **「이번 주」는 이번 주에만 쓴다** — 지난 주를 넘겨보는 동안에는 「이 주의 마음 ·
+ *   이 주 한눈에 · 이 주의 기록 보기」다. 서버 멘트만은 그대로 둔다(BE 문장이라 여기서
+ *   고치지 않는다 — `WeekMoodCard` 주석)
  * - **다음 주로 넘어가지 않는다** — 아직 오지 않은 주에는 셀 것이 없다. 이전 주는
  *   막지 않는다(서버가 「빈 주」로 성실히 답한다)
  * - **실패는 한 줄로 흡수한다** — 모달도 재시도 버튼도 두지 않는다(`RULES.md` 4).
  *   탭을 다시 열면 그때 다시 받는다
  */
 export default function Report() {
-  const diaries = useDiary((s) => s.diaries);
-
   const weekStart = useWeeklyReport((s) => s.weekStart);
   const report = useWeeklyReport((s) => s.report);
   const status = useWeeklyReport((s) => s.status);
 
-  const unlocked = isReportUnlocked(diaries);
-
-  /**
-   * 탭은 `replace` 라 들어올 때마다 새로 마운트된다 — 그때마다 **이번 주부터** 다시 연다.
-   *
-   * **아직 열리지 않았으면 부르지 않는다** — 예고 한 줄만 보이는 화면 뒤로 조회를
-   * 내보내지 않는다. 일기는 탭 진입에서 받아 오므로(`(tabs)/_layout.tsx`) 그 답이
-   * 도착해 7편을 넘기는 순간이 곧 첫 조회다.
-   */
+  // 탭은 `replace` 라 들어올 때마다 새로 마운트된다 — 그때마다 **이번 주부터** 다시 연다
   useEffect(() => {
-    if (!unlocked) return;
     void useWeeklyReport.getState().open();
-  }, [unlocked]);
-
-  if (!unlocked) {
-    return (
-      <TabScreen active="리포트">
-        {/* 잠긴 화면을 만들지 않는다 — 같은 자리의 한 줄로 예고한다 */}
-        <Card padding="loose" style={styles.notice}>
-          <Text variant="headline1" color={labelColor.strong}>
-            {`일기 ${REPORT_UNLOCK_COUNT}편이 모이면 한 주를 정리해 드릴게요`}
-          </Text>
-          <Text variant="body2Reading" color={labelColor.alternative}>
-            {`지금까지 ${diaries.length}편 · 천천히 모아도 괜찮아요`}
-          </Text>
-        </Card>
-      </TabScreen>
-    );
-  }
+  }, []);
 
   /**
    * 머리의 날짜는 **보고 있는 주**에서 만든다 — 받아 온 값(`report.startDate`)을 쓰면
@@ -143,11 +120,11 @@ export default function Report() {
           </Card>
         ) : (
           <>
-            <WeekMoodCard report={report} />
+            <WeekMoodCard report={report} thisWeek={thisWeek} />
 
             <View style={styles.section}>
               <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>
-                이번 주 한눈에
+                {thisWeek ? "이번 주 한눈에" : "이 주 한눈에"}
               </Text>
               <WeekCountList report={report} />
             </View>

@@ -19,21 +19,27 @@ import { WeekMoodRow } from "./WeekMoodRow";
  * 굵기로 세울 뿐이고(`splitMoodMessage`), 문장을 고치거나 보태지 않는다. 한 문장뿐인
  * 주(여러 감정이 최다를 나눠 가진 주 · 기록이 없는 주)는 그대로 한 줄이다.
  *
- * ## 「이번 주」라고 쓴다
+ * ## 「이번 주」는 이번 주에만 쓴다
  *
  * `W1.md` 는 문구를 기간에 매지 말라고 했지만(「한 주 요약」), 서버 멘트 자체가
- * 「**이번 주에는** …」으로 시작한다. 제목만 기간에서 떼면 카드 안에서 말이 갈린다 —
- * 시안(`Report · 리포트 주간`)을 따라 「이번 주의 마음」으로 맞췄다.
+ * 「**이번 주에는** …」으로 시작해서 제목만 기간에서 떼면 카드 안에서 말이 갈린다.
+ * 그래서 시안(`Report · 리포트 주간`)을 따라 「이번 주의 마음」으로 두되, **지난 주를
+ * 넘겨보는 동안에는 「이 주의 마음」**이다 — 기기에서 보니 「8월 17일 ~ 8월 23일」
+ * 위에 「이번 주」가 서는 것이 대놓고 틀린 말이었다(2026-08-24 실기기 확인).
  * 기록: `docs/PRODUCT.md` 「상류와 차이」.
+ *
+ * ⚠ **서버 멘트는 지난 주에도 「이번 주에는 …」이라고 말한다**(BE `WeeklyMood` 의
+ * 고정 문장 아홉 벌). 그 문장은 서버 것이라 여기서 고치지 않는다 — BE 가 「그 주에는」
+ * 으로 바꾸거나 주차별로 갈라 주어야 닫힌다.
  */
-export function WeekMoodCard({ report }: { report: WeeklyReport }) {
+export function WeekMoodCard({ report, thisWeek }: { report: WeeklyReport; thisWeek: boolean }) {
   const { lead, follow } = splitMoodMessage(report.moodMessage);
 
   return (
     <Card padding="loose" style={styles.card}>
       <View style={styles.top}>
         <Text variant="headline1" color={labelColor.strong}>
-          이번 주의 마음
+          {thisWeek ? "이번 주의 마음" : "이 주의 마음"}
         </Text>
         <WeekMoodRow days={report.days} />
       </View>

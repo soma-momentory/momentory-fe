@@ -243,14 +243,31 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(router.replace).toHaveBeenCalledWith("/archive");
   });
 
-  it("일기 7편 미만이면 잠긴 화면 대신 한 줄로 예고한다", async () => {
-    // 잠긴 문을 보여주면 못 연 것이 사용자 탓이 된다 (W1.md)
-    useDiary.setState({ diaries: useDiary.getState().diaries.slice(0, 3) });
-    const r = await render(<Report />);
+  it("기록이 없어도 처음부터 열려 있다 — 문턱을 두지 않는다", async () => {
+    // 「일기 7편부터 열린다」(`RULES.md`)를 없앴다 (2026-08-24 · 사용자 결정).
+    // 빈 주는 잠긴 화면이 아니라 **비어 있는 한 주**로 보인다 — 하루하루 쌓이면 채워진다
+    useDiary.setState({ diaries: [] });
+    reportApi.fetchWeeklyReport.mockResolvedValue({
+      ok: true,
+      data: weeklyReport({
+        days: weeklyReport().days.map((d) => ({ ...d, emotion: null })),
+        dominantEmotion: null,
+        moodMessage: "아직 이번 주에 기록된 마음이 없어요.",
+        scheduleTotal: 0,
+        scheduleCompleted: 0,
+        actionCardCreated: 0,
+        actionCardCompleted: 0,
+        diaryCount: 0,
+      }),
+    });
 
-    expect(r.getByText("일기 7편이 모이면 한 주를 정리해 드릴게요")).toBeTruthy();
-    expect(r.getByText("지금까지 3편 · 천천히 모아도 괜찮아요")).toBeTruthy();
-    expect(r.queryByText(/잠김|잠겨|열리지 않/)).toBeNull();
+    const r = await openReport();
+
+    expect(r.getByText("아직 이번 주에 기록된 마음이 없어요.")).toBeTruthy();
+    expect(r.getAllByText("없음")).toHaveLength(3);
+    expect(r.getByLabelText("월요일 기록 없음")).toBeTruthy();
+    // 잠금 화면의 흔적이 남지 않는다
+    expect(r.queryByText(/7편|잠김|잠겨|열리지 않/)).toBeNull();
   });
 });
 
@@ -519,6 +536,28 @@ describe("W1 · 주차 이동 — 주마다 서버에 다시 묻는다", () => {
 
     gate.resolve(lastWeek);
     await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
+  });
+
+  it("지난 주를 볼 때는 「이번 주」라고 쓰지 않는다", async () => {
+    const r = await openReport();
+    expect(r.getByText("이번 주 한눈에")).toBeTruthy();
+    expect(r.getByText("이번 주 기록 보기")).toBeTruthy();
+
+    reportApi.fetchWeeklyReport.mockResolvedValue(lastWeek);
+    await pressWeek(r, "이전 주");
+    await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
+
+    // 「8월 17일 ~ 8월 23일」 위에 「이번 주」가 서면 대놓고 틀린 말이 된다
+    expect(r.getByText("이 주의 마음")).toBeTruthy();
+    expect(r.getByText("이 주 한눈에")).toBeTruthy();
+    expect(r.getByText("이 주의 기록 보기")).toBeTruthy();
+    expect(r.queryByText("이번 주의 마음")).toBeNull();
+    expect(r.queryByText("이번 주 한눈에")).toBeNull();
+    expect(r.queryByText("이번 주 기록 보기")).toBeNull();
+
+    // ⚠ **서버 멘트만은 지난 주에도 「이번 주에는 …」이다**(BE `WeeklyMood` 의 고정 문장).
+    // 우리가 쓰지 않은 문장이라 여기서 고치지 않는다 — BE 가 닫아야 할 자리라 못을 박아 둔다
+    expect(r.getByText(/^이번 주에는/)).toBeTruthy();
   });
 
   it("다시 다음 주로 오면 이번 주다", async () => {

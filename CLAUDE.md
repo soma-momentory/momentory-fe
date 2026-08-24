@@ -272,8 +272,9 @@ src/features/report/{model/{report,weeklyReport}.ts, data/weeklyReportApi.ts}
                                           ← weeklyReport = 보고 있는 주 + 서버 조회
                                             (`GET /reports/weekly` · 주를 넘기면 다시 받는다).
                                             report.ts 에 남은 것은 **홈의 이번 주 감정 줄**이
-                                            쓰는 요일 일곱 칸 계산과 리포트 잠금(일기 7편)뿐 —
-                                            리포트가 쓰던 집계 함수는 2026-08-24 에 지웠다
+                                            쓰는 요일 일곱 칸 계산뿐 — 리포트가 쓰던 집계 함수와
+                                            문턱(일기 7편)은 2026-08-24 에 지웠다.
+                                            **리포트는 처음부터 열려 있다**(PRODUCT.md 32)
 src/features/my/model/{settings,stats,reminders,basicInfo}.ts
                                           ← 알림/프로필 설정 · 전체 기간 집계 ·
                                             **설정 ↔ OS 예약 화해**. store 는 순수하게

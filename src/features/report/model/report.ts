@@ -2,7 +2,7 @@ import type { Diary } from "@/features/diary/model/diary";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
- * 한 주를 **요일 일곱 칸으로 펼치는** 계산 — 그리고 리포트가 열리는 문턱.
+ * 한 주를 **요일 일곱 칸으로 펼치는** 계산.
  *
  * **관찰이지 평가가 아니다**(`W1.md`) — 그래서 여기에 점수·등급·실행률·최고 기록·
  * 연속 일수를 만드는 함수가 없다.
@@ -14,14 +14,11 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
  *
  * 남은 것을 쓰는 곳은 **홈의 이번 주 감정 줄**이다(`app/(tabs)/home.tsx` ·
  * `features/home/ui/WeekEmotionStrip.tsx`) — 그쪽은 로컬 일기에서 그대로 그린다.
+ *
+ * ⚠ **리포트가 열리는 문턱(일기 7편)도 사라졌다** (2026-08-24 · 사용자 결정). 리포트는
+ * 이제 처음부터 열려 있고 기록이 없는 주는 「비어 있는 한 주」로 보인다 — 그래서
+ * `REPORT_UNLOCK_COUNT`·`isReportUnlocked` 가 없다.
  */
-
-/** 리포트가 열리는 최소 장수 — **일기 7편부터**(`RULES.md` 「리포트」) */
-export const REPORT_UNLOCK_COUNT = 7;
-
-/** `diaryCount >= 7` 이면 열린다. 그 전에는 **잠긴 화면 대신 홈의 한 줄**로 예고한다 */
-export const isReportUnlocked = (diaries: readonly Diary[]) =>
-  diaries.length >= REPORT_UNLOCK_COUNT;
 
 /** 그 주(시작~끝, 양끝 포함)에 든 일기 */
 export const diariesInWeek = (diaries: readonly Diary[], start: string, end: string) =>
