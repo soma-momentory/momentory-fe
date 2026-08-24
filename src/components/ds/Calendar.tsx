@@ -308,5 +308,6 @@ const styles = StyleSheet.create({
    * 스펙과 어긋나므로 굳으면 `docs/PRODUCT.md` 「상류와 차이」에 남긴다.
    */
   cellSelected: { borderWidth: 2, borderColor: primary.normal },
-  dot: { width: DOT, height: DOT, borderRadius: radius.full },
+  // 점 모드(쉼터 행동 카드) — 날짜 아래 점. 숫자에 조금 더 붙게 위로 당긴다
+  dot: { width: DOT, height: DOT, borderRadius: radius.full, marginTop: -3 },
 });
