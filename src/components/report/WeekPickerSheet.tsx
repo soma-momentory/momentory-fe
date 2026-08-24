@@ -1,7 +1,8 @@
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BottomSheet, Icon, ListCell, ListDivider, Text } from "@/components/ds";
-import { label as labelColor, primary, space } from "@/design/ds";
+import { label as labelColor, primary, space, text } from "@/design/ds";
 import type { WeekOption } from "@/features/report/model/weeklyReport";
 
 /**
@@ -24,6 +25,13 @@ import type { WeekOption } from "@/features/report/model/weeklyReport";
  * 않는 값이라(달마다 첫 일요일이 다르다) 이름만 두면 고를 근거가 없다.
  *
  * 선택은 **색만으로 말하지 않는다**(`RULES.md` 3) — 오른쪽에 체크 표시가 선다.
+ *
+ * ## 시트는 화면의 절반까지만 자란다
+ *
+ * 주가 쌓이면 목록이 길어지는데, 시트가 화면을 거의 다 덮으면 **뒤에 있던 리포트가
+ * 안 보여서** 「지금 어느 주를 보고 있었나」를 잃는다. 그래서 시트 전체를 화면 절반에
+ * 맞추고 넘치는 만큼은 목록 안에서 구르게 한다. 고정 픽셀이 아니라 **그 기기의 화면
+ * 높이**로 잰다 — 작은 기기에서 절반은 더 작다.
  */
 type Props = {
   /** 최근 주가 위로. 만드는 것은 `weekOptions` 다 */
@@ -35,14 +43,41 @@ type Props = {
   onDismiss: () => void;
 };
 
-/** 시트가 화면을 다 먹지 않게 — 넘치면 목록 안에서 구른다 */
-const MAX_LIST_HEIGHT = 380;
+/** `BottomSheet` 의 그랩 핸들 높이 — 그 파일 안 값이라 여기 옮겨 적는다 */
+const HANDLE_HEIGHT = 4;
+
+/**
+ * 시트에서 목록 **바깥**이 쓰는 높이 — 손잡이·제목·아래 안내 한 줄과 그 사이 간격들
+ * (`BottomSheet` 의 `paddingTop`·`gap` + `heading1` + `caption1` + 목록의 `marginTop`).
+ * 하단 inset 은 기기마다 달라 여기 넣지 않고 그때 뺀다.
+ */
+const SHEET_CHROME =
+  space.md +
+  HANDLE_HEIGHT +
+  space.lg +
+  text.heading1.lineHeight +
+  space.lg +
+  space.sm +
+  space.lg +
+  text.caption1.lineHeight;
+
+/** 절반이 너무 얕은 기기에서도 두 줄은 보인다 — 스크롤할 것이 있다는 것부터 보여야 한다 */
+const MIN_LIST_HEIGHT = 2 * 56;
 
 export function WeekPickerSheet({ weeks, weekStart, onSelect, onDismiss }: Props) {
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // 시트 전체가 화면 절반이 되도록 목록에 남는 높이를 준다
+  const maxHeight = Math.max(
+    MIN_LIST_HEIGHT,
+    height / 2 - SHEET_CHROME - Math.max(insets.bottom, space.xl),
+  );
+
   return (
     <BottomSheet title="주 고르기" onDismiss={onDismiss}>
       <ScrollView
-        style={styles.list}
+        testID="week-picker-list"
+        style={[styles.list, { maxHeight }]}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -78,7 +113,7 @@ const describe = (week: WeekOption) =>
   week.diaryCount === 0 ? week.range : `${week.range} · 일기 ${week.diaryCount}일`;
 
 const styles = StyleSheet.create({
-  list: { maxHeight: MAX_LIST_HEIGHT, marginTop: space.sm },
+  list: { marginTop: space.sm },
   // 마지막 줄이 아래 안내 한 줄에 붙지 않게 사이를 벌린다
   content: { paddingBottom: space.sm },
 });

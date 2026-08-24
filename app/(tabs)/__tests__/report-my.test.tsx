@@ -1,4 +1,5 @@
 import { render, act, fireEvent, waitFor, within } from "@testing-library/react-native";
+import { Dimensions } from "react-native";
 import { router } from "expo-router";
 
 import My from "../my";
@@ -275,6 +276,23 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     // 날짜 머리도 함께 옮겨간다 — 옛 주 날짜 아래 새 수치를 두지 않는다
     await waitFor(() => expect(r.getByText("7월 19일 ~ 7월 25일")).toBeTruthy());
     expect(r.queryByText("주 고르기")).toBeNull();
+  });
+
+  it("주가 쌓여도 시트는 화면 절반을 넘지 않는다", async () => {
+    // 시트가 화면을 거의 다 덮으면 뒤에 있던 리포트가 안 보여서
+    // 「지금 어느 주를 보고 있었나」를 잃는다. 넘치는 만큼은 목록 안에서 구른다
+    const r = await openReport();
+    await openPicker(r);
+
+    const { height } = Dimensions.get("window");
+    const style = Object.assign(
+      {},
+      ...[r.getByTestId("week-picker-list").props.style].flat(Infinity).filter(Boolean),
+    ) as { maxHeight: number };
+
+    // 손잡이·제목·안내 한 줄이 함께 절반 안에 들어가므로 목록은 그보다 낮다
+    expect(style.maxHeight).toBeLessThan(height / 2);
+    expect(style.maxHeight).toBeGreaterThan(0);
   });
 
   it("아직 오지 않은 주는 목록에 아예 없다 — 셀 것이 없다", async () => {
