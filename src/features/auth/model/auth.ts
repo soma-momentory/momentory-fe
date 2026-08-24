@@ -709,6 +709,8 @@ export const useAuth = create<AuthStore>((set, get) => ({
         sdk.credential.identityToken,
         // nonce 원문 — 토큰과 **같은 인가에서** 나온 짝이어야 서버가 받아들인다
         sdk.credential.nonce,
+        // 탈퇴 때 애플 연결을 끊을 refresh token 으로 서버가 바꿔 둔다
+        sdk.credential.authorizationCode,
       );
       if (!exchanged.ok) {
         const message = APPLE_FAILURE_MESSAGES[exchanged.code];
