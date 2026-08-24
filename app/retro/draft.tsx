@@ -109,7 +109,7 @@ export default function RetroDraft() {
         적어 두면 그게 그날의 기록으로 남는다.
       */}
       <View style={styles.head}>
-        <Text variant="title3" color={labelColor.strong}>
+        <Text variant="title3Hand" color={labelColor.strong}>
           {`${formatKoreanDateShort(today)}의 일기`}
         </Text>
       </View>
@@ -143,7 +143,7 @@ export default function RetroDraft() {
               </Text>
             </>
           ) : (
-            <Text variant="body1Reading" color={labelColor.normal}>
+            <Text variant="body1ReadingHand" color={labelColor.normal}>
               {body}
             </Text>
           )}
@@ -164,10 +164,10 @@ export default function RetroDraft() {
           <Button label="수정 완료" fill onPress={() => setEditing(false)} />
         ) : (
           <>
-            <Button label="일기 저장하기" fill onPress={save} />
             <View style={styles.secondary}>
               <Button label="직접 고치기" variant="text" onPress={() => setEditing(true)} />
             </View>
+            <Button label="일기 저장하기" fill onPress={save} />
           </>
         )}
       </View>
@@ -193,7 +193,8 @@ const styles = StyleSheet.create({
 
   card: { gap: space.md },
   emotionRow: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
-  input: { ...text.body1Reading, color: labelColor.normal, padding: 0 },
+  // 읽기(`body1ReadingHand`)와 같은 손글씨로 — 고쳐도 본문의 결이 바뀌지 않는다
+  input: { ...text.body1ReadingHand, color: labelColor.normal, padding: 0 },
   counter: { textAlign: "right", fontVariant: ["tabular-nums"] },
   schedules: { paddingHorizontal: space.xs },
 
