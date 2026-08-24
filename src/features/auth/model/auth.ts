@@ -7,6 +7,7 @@ import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
 import { fetchMe } from "@/features/auth/data/meApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
 import { deleteAccount, type WithdrawFailureCode } from "@/features/auth/data/withdrawApi";
+import { useMonthSchedules } from "@/features/archive/model/monthSchedules";
 import { clearSyncState } from "@/features/calendar/data/syncStateStore";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDiary } from "@/features/diary/model/diary";
@@ -267,6 +268,8 @@ const clearUserScopedStores = (userId?: number) => {
   useDiary.getState().reset();
   // 일정이 서버에서 오면서 앞 사람의 하루가 남을 수 있게 됐다 (2026-08-11)
   useDay.getState().reset();
+  // 보관함이 든 한 달치 일정도 앞 사람의 것이다 (2026-08-24)
+  useMonthSchedules.getState().reset();
   useProfile.getState().reset();
   useSettings.getState().reset();
   useCalendarSync.getState().reset();

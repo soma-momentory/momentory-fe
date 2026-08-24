@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
@@ -16,11 +16,12 @@ import {
   type CalendarMark,
   type ViewOption,
 } from "@/components/ds";
-import { emotion as emotionColor, label as labelColor, space } from "@/design/ds";
+import { emotion as emotionColor, label as labelColor, space, withAlpha } from "@/design/ds";
 import { byLatest, diariesInMonth, monthOf } from "@/features/archive/model/archive";
+import { useMonthSchedules } from "@/features/archive/model/monthSchedules";
 import { useDiary } from "@/features/diary/model/diary";
 import type { EmotionId } from "@/features/emotion/model/emotion";
-import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
+import { useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
 
 /**
@@ -62,7 +63,10 @@ function shiftMonth(month: string, step: number) {
 
 export default function Archive() {
   const diaries = useDiary((s) => s.diaries);
-  const schedules = useDay((s) => s.schedules);
+  // 일정은 **한 달치**를 서버에서 받는다(`GET /schedules/period`) — 홈(`useDay`)이
+  // 든 「오늘 하루」와 달리 보관함은 어느 날이든 고를 수 있어서다
+  const monthSchedules = useMonthSchedules((s) => s.schedules);
+  const loadMonth = useMonthSchedules((s) => s.loadMonth);
 
   // 04:00 을 넘기면 따라간다 — `clock.today()` 를 직접 읽으면 밤새 켜 둔 앱이
   // 어제를 「오늘」로 표시한다(`useTodayContext`)
@@ -75,9 +79,18 @@ export default function Archive() {
   const [filter, setFilter] = useState<EmotionId | null>(null);
   const [query, setQuery] = useState("");
 
+  // 탭에 들어오거나 달을 옮기면 그달 일정을 서버에서 다시 받는다. 탭은 매번 새로
+  // 마운트되므로 **홈에서 바꾼 완료가 이때 반영된다**(연계 · `model/monthSchedules.ts`)
+  useEffect(() => {
+    void loadMonth(month);
+  }, [month, loadMonth]);
+
   const monthly = diariesInMonth(diaries, month);
   const selectedDiary = monthly.find((d) => d.date === selectedDate) ?? null;
-  const daySchedules = visibleSchedules(schedules).filter((s) => s.date === selectedDate);
+  const monthVisible = visibleSchedules(monthSchedules);
+  const daySchedules = monthVisible.filter((s) => s.date === selectedDate);
+  // 캘린더에 「일정 있는 날」을 밑줄로 표시하려고 그달 일정 날짜를 모은다
+  const scheduledDates = new Set(monthVisible.map((s) => s.date));
 
   const keyword = query.trim();
   const listed = byLatest(
@@ -91,15 +104,26 @@ export default function Archive() {
   const open = (id: string) => router.push(`/diary/${id}`);
 
   /**
-   * 달력 칸의 표시 규칙 — **일기가 있는 날에만 점**이 찍히고 그 날짜만 진해진다
-   * (`A1.md`). 점은 대표 감정 하나다: 한 칸에 셋을 찍으면 38px 안에서 서로
-   * 구분되지 않는다. 감정 태그가 없는 일기는 **중립색 점 하나**(`A1.md`).
+   * 달력 칸의 표시 규칙 — **두 채널**이다:
+   * - **점(+진한 날짜)** = 일기. 대표 감정 하나(태그 없으면 중립색). 한 칸에 셋을
+   *   찍으면 38px 안에서 구분되지 않는다(`A1.md`).
+   * - **숫자 밑 갈색 밑줄** = 그날 일정이 있다. 점과 다른 채널이라 둘 다 있는 날도
+   *   색 없이 구분된다(일기=점 · 일정=밑줄 · 둘 다=점+밑줄).
    */
   const markOf = (date: string): CalendarMark => {
     const diary = monthly.find((d) => d.date === date);
-    if (diary == null) return {};
-    const top = diary.emotions[0];
-    return { emphasized: true, dotColor: top == null ? labelColor.assistive : emotionColor[top] };
+    const scheduled = scheduledDates.has(date);
+    if (diary == null && !scheduled) return {};
+
+    const mark: CalendarMark = {};
+    if (diary != null) {
+      const top = diary.emotions[0];
+      mark.emphasized = true;
+      mark.dotColor = top == null ? labelColor.assistive : emotionColor[top];
+    }
+    // 연한 갈색 — 갈색 계열은 유지하되(일정=갈색) 반투명으로 낮춘다
+    if (scheduled) mark.underlineColor = withAlpha(labelColor.neutral, 0.55);
+    return mark;
   };
 
   // 달을 옮기면 고른 날도 그달의 첫날로 간다 — 31일이 없는 달로 넘어가지 않게
@@ -133,22 +157,30 @@ export default function Archive() {
               onSelect={setSelectedDate}
               onMonthStep={goMonth}
               markOf={markOf}
+              dateFill
             />
           </Card>
 
           <View style={styles.section}>
-            <Text variant="label1" color={labelColor.neutral}>
-              {`${formatKoreanDateShort(selectedDate)}의 기록`}
-            </Text>
-
+            {/* 「○월 ○일의 기록」 머리글은 뺐다(2026-08-24) — 일기 카드가 이미 그
+                날짜를 말하고, 아래 일정은 자기 머리글(「○월 ○일의 일정」)을 갖는다 */}
             {selectedDiary != null ? (
               <DiaryPreviewCard diary={selectedDiary} onOpen={open} showOpenLink />
             ) : (
               <Note>{"이 날은 기록이 없어요.\n비어 있어도 괜찮은 날이에요."}</Note>
             )}
 
-            {/* 일기와 일정을 두 섹션으로 나누지 않는다 — 그날의 기록 한 덩이다 */}
-            <DayScheduleList schedules={daySchedules} />
+            {/* 일기 아래 그날 일정 — 작은 갈색 머리글로 일기와 나누고, 오른쪽으로
+                조금 들여 종속으로 보인다. 완료는 점으로(채운 초록 = 완료 · 빈 점 =
+                미완료 · 홈의 완료와 이어진다) */}
+            <DayScheduleList
+              schedules={daySchedules}
+              title={`${formatKoreanDateShort(selectedDate)}의 일정`}
+              titleVariant="label1"
+              titleColor={labelColor.neutral}
+              inset={space.md}
+              showStatusDot
+            />
           </View>
         </ScrollView>
       ) : (
