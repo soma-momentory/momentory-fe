@@ -1,14 +1,17 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { DiaryPreviewCard } from "@/components/archive/DiaryPreviewCard";
 import { EmotionFilter } from "@/components/archive/EmotionFilter";
 import {
+  BottomSheet,
   Calendar,
   Card,
+  Icon,
   InfoBlock,
+  ListCell,
   SearchField,
   TabScreen,
   Text,
@@ -45,7 +48,8 @@ import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
  * 지키는 규칙:
  * - **연속 일수를 세지 않는다** — 세는 것은 **장수**다
  * - 목록은 **최신순 고정**이고 정렬 옵션을 두지 않는다
- * - 필터는 **한 번에 하나만**. 미리보기는 **두 줄 말줄임**
+ * - 필터는 **여러 감정을 함께**(교집합 · 고른 감정을 **모두** 가진 일기 ·
+ *   2026-08-24 「한 번에 하나만」에서 바꿈). 미리보기는 **두 줄 말줄임**
  * - **색만으로 판단하게 하지 않는다** — 달력의 점이 아니라 기록 카드의 감정
  *   이름이 무엇이었는지를 말한다
  * - 빈 날·빈 결과는 **전용 레이아웃이 아니라 같은 자리의 한 장**이다(`A1.md`)
@@ -71,13 +75,22 @@ export default function Archive() {
   // 04:00 을 넘기면 따라간다 — `clock.today()` 를 직접 읽으면 밤새 켜 둔 앱이
   // 어제를 「오늘」로 표시한다(`useTodayContext`)
   const { date: todayDate } = useTodayContext();
+  // 기간 시트 목록은 **화면 절반**까지만 자라고 그 안에서 스크롤한다 — 달이 많아도
+  // 시트가 화면을 가득 채우지 않게(고정 px 대신 기기 높이에 비례)
+  const { height: windowHeight } = useWindowDimensions();
 
   const [view, setView] = useState<"calendar" | "list">("calendar");
   // 보관함이 여는 달은 오늘이 속한 달이다 — `‹ ›` 로 옮기면 두 면이 함께 따라간다
   const [month, setMonth] = useState(monthOf(todayDate));
   const [selectedDate, setSelectedDate] = useState(todayDate);
-  const [filter, setFilter] = useState<EmotionId | null>(null);
+  // 감정 필터는 **여러 개 함께** 고른다(합집합) — 빈 배열이면 필터 없음
+  const [filters, setFilters] = useState<EmotionId[]>([]);
+  const toggleFilter = (e: EmotionId) =>
+    setFilters((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
   const [query, setQuery] = useState("");
+  // 목록은 달력과 따로 논다 — 특정 달, 또는 전체(`null`)를 본다
+  const [listMonth, setListMonth] = useState<string | null>(monthOf(todayDate));
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
 
   // 탭에 들어오거나 달을 옮기면 그달 일정을 서버에서 다시 받는다. 탭은 매번 새로
   // 마운트되므로 **홈에서 바꾼 완료가 이때 반영된다**(연계 · `model/monthSchedules.ts`)
@@ -92,14 +105,24 @@ export default function Archive() {
   // 캘린더에 「일정 있는 날」을 밑줄로 표시하려고 그달 일정 날짜를 모은다
   const scheduledDates = new Set(monthVisible.map((s) => s.date));
 
+  // 목록이 보는 일기 — **선택한 기간**이 먼저다: 전체면 전부, 아니면 그달만
+  // (달력의 `monthly` 와 별개다). 감정·검색은 이 기간 안에서만 좁힌다.
+  const listSource = listMonth == null ? diaries : diariesInMonth(diaries, listMonth);
   const keyword = query.trim();
   const listed = byLatest(
-    monthly.filter(
+    listSource.filter(
       (d) =>
-        (filter == null || d.emotions.includes(filter)) &&
+        // 고른 감정을 **모두** 가진 일기만(교집합) — 아무것도 안 골랐으면 통과
+        filters.every((f) => d.emotions.includes(f)) &&
         (keyword.length === 0 || d.body.includes(keyword)),
     ),
   );
+
+  // 고를 수 있는 달 — 기록이 있는 달에 이번 달을 더해(비어 있어도 돌아올 자리가 있다) 최신순
+  const monthOptions = [
+    ...new Set([monthOf(todayDate), ...diaries.map((d) => monthOf(d.date))]),
+  ].sort((a, b) => b.localeCompare(a));
+  const listMonthLabel = listMonth == null ? "전체 보기" : formatKoreanMonth(listMonth);
 
   const open = (id: string) => router.push(`/diary/${id}`);
 
@@ -134,7 +157,41 @@ export default function Archive() {
   };
 
   return (
-    <TabScreen active="보관함">
+    <TabScreen
+      active="보관함"
+      overlay={
+        monthPickerOpen ? (
+          <BottomSheet title="기간 선택" onDismiss={() => setMonthPickerOpen(false)}>
+            {/* 시트는 하나의 결정만 담는다 — 여기선 「어느 기간을 볼지」 하나다(§11) */}
+            <ScrollView
+              style={{ maxHeight: Math.round(windowHeight * 0.35) }}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+            >
+              <MonthOption
+                label="전체 보기"
+                selected={listMonth == null}
+                onPress={() => {
+                  setListMonth(null);
+                  setMonthPickerOpen(false);
+                }}
+              />
+              {monthOptions.map((m) => (
+                <MonthOption
+                  key={m}
+                  label={formatKoreanMonth(m)}
+                  selected={listMonth === m}
+                  onPress={() => {
+                    setListMonth(m);
+                    setMonthPickerOpen(false);
+                  }}
+                />
+              ))}
+            </ScrollView>
+          </BottomSheet>
+        ) : null
+      }
+    >
       {/* 탭 루트라 상단 내비 제목을 두지 않는다 — 본문의 Title 3(손글씨)가 제목이다(`DESIGN.md` §10) */}
       <View style={styles.header}>
         <Text variant="title3Hand" color={labelColor.strong}>
@@ -197,16 +254,26 @@ export default function Archive() {
                 스크롤 내용의 여백으로 옮긴다. 감싸는 View 에 패딩을 주면 칩이
                 20px 지점에서 잘린다 */}
             <View style={styles.bleed}>
-              <EmotionFilter selected={filter} onSelect={setFilter} edgePadding={space.xl} />
+              <EmotionFilter selected={filters} onToggle={toggleFilter} edgePadding={space.xl} />
             </View>
 
             <View style={styles.countRow}>
               <Text variant="body2" color={labelColor.neutral}>
                 {`기록 ${listed.length}건`}
               </Text>
-              <Text variant="body2" color={labelColor.alternative}>
-                {formatKoreanMonth(month)}
-              </Text>
+              {/* 달을 고르거나 전체를 보는 자리 — 누르면 기간 시트가 열린다 */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`기간 선택, 지금 ${listMonthLabel}`}
+                onPress={() => setMonthPickerOpen(true)}
+                hitSlop={space.sm}
+                style={styles.scopeTrigger}
+              >
+                <Text variant="body2" color={labelColor.normal}>
+                  {listMonthLabel}
+                </Text>
+                <Icon name="chevron-right" size={16} color={labelColor.assistive} />
+              </Pressable>
             </View>
           </View>
 
@@ -251,6 +318,31 @@ function Note({ children }: { children: string }) {
   );
 }
 
+/**
+ * 기간 시트의 한 줄. 고른 것에는 **체크**를 둔다 — 선택을 색만으로 표시하지
+ * 않는다(`CLAUDE.md` 요약 3). 달력의 `‹ ›` 는 이웃 달로 한 칸씩 옮기는 것이고,
+ * 여기선 지난 달로 **바로 건너뛰거나** 전체를 편다.
+ */
+function MonthOption({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <ListCell
+      title={label}
+      onPress={onPress}
+      trailing={
+        selected ? <Icon name="circle-check" size={20} color={labelColor.strong} /> : undefined
+      }
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
@@ -270,6 +362,7 @@ const styles = StyleSheet.create({
   // 화면 좌우 20 을 되돌려 칩 줄이 끝까지 흐르게 한다
   bleed: { marginHorizontal: -space.xl },
   countRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  scopeTrigger: { flexDirection: "row", alignItems: "center", gap: space.xs },
 
   note: { padding: space.xl },
   noteText: { textAlign: "center" },
