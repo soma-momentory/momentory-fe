@@ -191,15 +191,40 @@ lsof -ti:8081 | xargs kill
 
 ## 6. 앱 식별자와 외부 등록
 
-### 식별자 — 2026-08-05 확정
+### 식별자 — 2026-08-24 개정
 
 ```
-com.momentory.app        # iOS bundleIdentifier · Android package 동일
+kr.momentory.app         # iOS bundleIdentifier · Android package 동일
 momentory                # URL scheme (회고 알림 딥링크)
 ```
 
 **등록한 뒤에는 바꿀 수 없다.** 스토어는 한 번 쓴 ID 를 재사용하지 못하고,
 카카오·구글 콘솔의 플랫폼 설정도 이 값에 묶인다.
+
+> ⚠ **옛 값 `com.momentory.app`(2026-08-05 확정)은 버렸다** — 애플에 등록할 수 없다.
+>
+> Sign in with Apple 을 붙이려고 App ID 를 만들려니
+> `An App ID with Identifier 'com.momentory.app' is not available` 로 거부됐다.
+> 그런데 우리 팀 Identifiers 목록은 **통째로 비어 있었다.**
+>
+> 원인은 **무료 개인 계정(Personal Team)**이다. 팀원이 Xcode 로 실기기에 앱을 올릴 때
+> Xcode 가 그 번들 ID 를 조용히 등록하는데, Personal Team 의 등록은
+> `developer.apple.com` 의 Identifiers 목록에 **나타나지 않으면서** 문자열은 전역으로
+> 점유한다(애플의 번들 ID 는 전 세계에서 유일해야 한다). 그래서 「목록은 비었는데
+> 그 이름만 안 되는」 증상이 나온다. 지울 화면이 없으므로 애플 지원 티켓 말고는
+> 되찾을 방법이 없고, 응답이 1~3일 걸리며 거절될 수도 있어 이름을 바꿨다.
+>
+> **계정이 문제인지 문자열이 문제인지 가르는 법** — 아무 의미 없는 값
+> (`kr.momentory.tempcheck` 같은)으로 App ID 를 하나 만들어 본다. 그게 되면 계정은
+> 멀쩡하고 그 문자열만 점유된 것이다(확인 뒤 지운다).
+>
+> **마지막 조각으로 흔한 단어를 쓰지 않는다** — `app` 이 정확히 그래서 겹쳤다.
+> `kr.` 접두사는 `com.` 네임스페이스 경쟁을 피하고, 나중에 `momentory.kr` 을 사면
+> 역-DNS 규칙과도 맞는다.
+>
+> 바꿀 때 **한 곳만 고치면 안 된다** — `app.config.ts`(iOS·Android 둘 다) ·
+> 아래 카카오 콘솔 표 · `docs/CALENDAR-PROBE.md` 의 딥링크 명령 · `npx expo prebuild --clean`.
+> 스토어 앱 레코드도 구글 OAuth 클라이언트도 아직 없어서 이 시점의 변경 비용이 가장 쌌다.
 
 ### 지문 — 개발용(debug)
 
@@ -278,15 +303,43 @@ keytool -exportcert -alias androiddebugkey -keystore "$ks" -storepass android \
 
 ### 등록 체크리스트
 
-| 공급자     | 해야 할 것                                                                          | 얻는 값                                                  | 비고                                                          |
-| ---------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------- |
-| **카카오** | 앱 등록 → 플랫폼에 패키지명 + 키 해시 → 카카오 로그인 ON → 동의항목 설정            | 네이티브 앱 키 → `EXPO_PUBLIC_KAKAO_APP_KEY`             | 당일·무료                                                     |
-| **구글**   | Cloud Console OAuth 클라이언트 — Android(패키지명 + SHA-1) · iOS(번들 ID) · **Web** | Web/iOS 클라이언트 ID → `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | 당일·무료. `idToken` 검증에 **Web 클라이언트 ID 가 필요**하다 |
-| **애플**   | Developer Program 가입 → Sign in with Apple 활성화                                  | —                                                        | **$99/년 · 심사 1~2일**                                       |
+| 공급자     | 해야 할 것                                                                                           | 얻는 값                                                  | 비고                                                          |
+| ---------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------- |
+| **카카오** | 앱 등록 → 플랫폼에 패키지명 + 키 해시 → 카카오 로그인 ON → 동의항목 설정                             | 네이티브 앱 키 → `EXPO_PUBLIC_KAKAO_APP_KEY`             | 당일·무료                                                     |
+| **구글**   | Cloud Console OAuth 클라이언트 — Android(패키지명 + SHA-1) · iOS(번들 ID) · **Web**                  | Web/iOS 클라이언트 ID → `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | 당일·무료. `idToken` 검증에 **Web 클라이언트 ID 가 필요**하다 |
+| **애플**   | Developer Program 가입 → **App ID 등록**(Explicit) → 그 App ID 에 Sign In with Apple 체크 → Key 발급 | `.p8` · Key ID · Team ID → **백엔드로**                  | **$99/년 · 심사 1~2일**. App ID 는 2026-08-24 등록            |
 
 **애플은 지금 미룰 수 있다.** iOS 전용이고 Android 빌드에는 필요 없다.
 다만 App Store 심사 규정(4.8)상 다른 소셜 로그인을 제공하는 iOS 앱은 Sign in with Apple 이
 **필수**이므로, iOS 빌드를 만들기 전에는 반드시 끝나 있어야 한다.
+
+<details>
+<summary>애플 콘솔에서 정확히 무엇을 하는가 (2026-08-24)</summary>
+
+App ID 를 만들 때 **입력 칸이 둘이고 규칙이 정반대다** — 여기서 대부분 막힌다.
+
+| 칸                       | 값                 | 규칙                                                |
+| ------------------------ | ------------------ | --------------------------------------------------- |
+| Description              | `Momentory`        | **영문·숫자·공백만.** 마침표를 넣으면 거부된다      |
+| Bundle ID (**Explicit**) | `kr.momentory.app` | Wildcard 를 고르면 Sign in with Apple 을 켤 수 없다 |
+
+1. Identifiers → + → App IDs → App → 위 표대로 채우고, 같은 화면의 Capabilities 에서
+   **Sign In with Apple** 을 체크한다.
+2. **이걸 안 켜면 Key 를 만들 때 Primary App ID 드롭다운에 이 App ID 가 아예 안 뜬다.**
+   「번들 ID 가 목록에 없다」의 두 번째 흔한 원인이다.
+3. Keys → + → Sign in with Apple → Configure → Primary App ID = `kr.momentory.app`.
+   **`.p8` 은 한 번만 받을 수 있다.**
+4. `.p8` · Key ID · Team ID 를 백엔드에 넘긴다 — 서버가 identity token 의 `aud` 가
+   `kr.momentory.app` 인지 검증한다(카카오와 같은 형태 · [`DISCUSSION.md`](DISCUSSION.md) §1-6 부근).
+
+> **Services ID 는 만들지 않는다.** 네이티브 iOS 앱만 붙이므로 Services ID + Return URL
+> 은 웹·안드로이드용이라 해당 없다.
+>
+> ⚠ **`.p8` 파일과 그 내용은 저장소·문서에 적지 않는다**
+> ([`CONTRIBUTING.md` 「값을 다루는 세 등급」](CONTRIBUTING.md) ②③). Key ID·Team ID 는
+> 공개 식별자지만 `.p8` 은 서명 키다.
+
+</details>
 
 받은 값은 `.env` 에 넣는다 — 커밋하지 않는다.
 성격은 [`CONTRIBUTING.md` 「값을 다루는 세 등급」](CONTRIBUTING.md) 참조(이 값들은 ①번, 공개 식별자다).
@@ -295,13 +348,17 @@ keytool -exportcert -alias androiddebugkey -keystore "$ks" -storepass android \
 
 | 콘솔 자리                   | 값                                                                             |
 | --------------------------- | ------------------------------------------------------------------------------ |
-| 플랫폼 › Android › 패키지명 | `com.momentory.app`                                                            |
+| 플랫폼 › Android › 패키지명 | `kr.momentory.app` ← ⚠ 2026-08-24 변경                                         |
 | 플랫폼 › Android › 키 해시  | **`Xo8WBi6jzSxKDVR4drqm84yr9iU=`** (팀 공용 debug — 위 「지문」 절)            |
-| 플랫폼 › iOS › 번들 ID      | `com.momentory.app`                                                            |
+| 플랫폼 › iOS › 번들 ID      | `kr.momentory.app` ← ⚠ 2026-08-24 변경                                         |
 | 카카오 로그인 › 활성화      | ON                                                                             |
 | 카카오 로그인 › 동의항목    | MVP 가 쓰는 것만 — **닉네임·프로필 사진은 온보딩에서 직접 받으므로 필수 없음** |
 | 앱 키                       | **네이티브 앱 키** → `EXPO_PUBLIC_KAKAO_APP_KEY` (REST·JavaScript 키가 아니다) |
 
+- ⚠ **2026-08-24 에 패키지명·번들 ID 가 바뀌었다**(위 「식별자」 절). 카카오 콘솔의
+  두 칸을 `kr.momentory.app` 으로 고치기 전까지 **카카오 로그인이 실패한다** —
+  Android 는 `AUTHORIZATION_FAILED` 로 닫힌다. **키 해시는 그대로다**(서명 인증서에서
+  나오는 값이라 패키지명과 무관하다).
 - **Redirect URI 를 따로 등록하지 않는다.** 네이티브 SDK 는 `kakao{네이티브앱키}://oauth`
   스킴으로 돌아오고, 그 스킴은 `app.config.ts` 의 플러그인이 매니페스트·Info.plist 에
   넣는다(`plugins` 의 `@react-native-seoul/kakao-login`).
