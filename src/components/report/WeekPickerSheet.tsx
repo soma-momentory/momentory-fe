@@ -26,6 +26,10 @@ import type { WeekOption } from "@/features/report/model/weeklyReport";
  *
  * 선택은 **색만으로 말하지 않는다**(`RULES.md` 3) — 오른쪽에 체크 표시가 선다.
  *
+ * **제목 줄을 두지 않는다**(2026-08-24 · 사용자 요청) — 「2026년 8월 4주차」가 늘어선
+ * 목록이 그 자체로 무엇을 고르는 자리인지 말한다. 여는 버튼의 낭독기 이름
+ * (「… · 주 고르기」)이 그 몫을 대신 진다.
+ *
  * ## 시트는 화면의 절반까지만 자란다
  *
  * 주가 쌓이면 목록이 길어지는데, 시트가 화면을 거의 다 덮으면 **뒤에 있던 리포트가
@@ -47,19 +51,12 @@ type Props = {
 const HANDLE_HEIGHT = 4;
 
 /**
- * 시트에서 목록 **바깥**이 쓰는 높이 — 손잡이·제목·아래 안내 한 줄과 그 사이 간격들
- * (`BottomSheet` 의 `paddingTop`·`gap` + `heading1` + `caption1` + 목록의 `marginTop`).
- * 하단 inset 은 기기마다 달라 여기 넣지 않고 그때 뺀다.
+ * 시트에서 목록 **바깥**이 쓰는 높이 — 손잡이·아래 안내 한 줄과 그 사이 간격들
+ * (`BottomSheet` 의 `paddingTop`·`gap` + `caption1` + 목록의 `marginTop`).
+ * 제목 줄이 사라지면서 그만큼 목록이 넓어졌다. 하단 inset 은 기기마다 달라 그때 뺀다.
  */
 const SHEET_CHROME =
-  space.md +
-  HANDLE_HEIGHT +
-  space.lg +
-  text.heading1.lineHeight +
-  space.lg +
-  space.sm +
-  space.lg +
-  text.caption1.lineHeight;
+  space.md + HANDLE_HEIGHT + space.lg + space.sm + space.lg + text.caption1.lineHeight;
 
 /** 절반이 너무 얕은 기기에서도 두 줄은 보인다 — 스크롤할 것이 있다는 것부터 보여야 한다 */
 const MIN_LIST_HEIGHT = 2 * 56;
@@ -74,7 +71,7 @@ export function WeekPickerSheet({ weeks, weekStart, onSelect, onDismiss }: Props
   );
 
   return (
-    <BottomSheet title="주 고르기" onDismiss={onDismiss}>
+    <BottomSheet onDismiss={onDismiss}>
       <ScrollView
         testID="week-picker-list"
         style={[styles.list, { maxHeight }]}

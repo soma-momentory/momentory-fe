@@ -313,8 +313,10 @@ describe("A2 · 기간 선택 — 달 고르기 · 전체 보기", () => {
 
     await fireEvent.press(r.getByLabelText("기간 선택, 지금 2026년 7월"));
 
-    // 시트가 열리고 「전체 보기」와 달을 고를 수 있다
-    expect(r.getByText("기간 선택")).toBeTruthy();
+    // 시트가 열리고 「전체 보기」와 달을 고를 수 있다.
+    // **제목 줄은 두지 않는다**(2026-08-24) — 고를 것들이 그 자체로 자리를 말한다
+    expect(r.getByTestId("ds-bottom-sheet")).toBeTruthy();
+    expect(r.queryByText("기간 선택")).toBeNull();
     expect(r.getByText("전체 보기")).toBeTruthy();
   });
 

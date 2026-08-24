@@ -168,8 +168,11 @@ export default function Archive() {
       active="보관함"
       overlay={
         monthPickerOpen ? (
-          <BottomSheet title="기간 선택" onDismiss={() => setMonthPickerOpen(false)}>
-            {/* 시트는 하나의 결정만 담는다 — 여기선 「어느 기간을 볼지」 하나다(§11) */}
+          <BottomSheet onDismiss={() => setMonthPickerOpen(false)}>
+            {/* 시트는 하나의 결정만 담는다 — 여기선 「어느 기간을 볼지」 하나다(§11).
+                제목 줄은 두지 않는다(2026-08-24 · 사용자 요청) — 「전체 보기 · 2026년 7월 …」
+                이 그 자체로 무엇을 고르는 자리인지 말한다. 여는 버튼의 낭독기 이름
+                (「기간 선택, 지금 …」)이 그 몫을 대신 진다 */}
             <ScrollView
               style={{ maxHeight: Math.round(windowHeight * 0.35) }}
               showsVerticalScrollIndicator

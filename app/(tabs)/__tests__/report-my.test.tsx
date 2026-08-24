@@ -226,7 +226,9 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
 
     await openPicker(r);
 
-    expect(r.getByText("주 고르기")).toBeTruthy();
+    // **제목 줄은 두지 않는다**(2026-08-24) — 늘어선 「N주차」가 그 자체로 자리를 말한다
+    expect(r.getByTestId("ds-bottom-sheet")).toBeTruthy();
+    expect(r.queryByText("주 고르기")).toBeNull();
   });
 
   it("일기가 있는 주만 「몇 년 몇 월 몇 주차」로 세운다 — 최근 주가 위다", async () => {
@@ -275,7 +277,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-19"));
     // 날짜 머리도 함께 옮겨간다 — 옛 주 날짜 아래 새 수치를 두지 않는다
     await waitFor(() => expect(r.getByText("7월 19일 ~ 7월 25일")).toBeTruthy());
-    expect(r.queryByText("주 고르기")).toBeNull();
+    expect(r.queryByTestId("ds-bottom-sheet")).toBeNull();
   });
 
   it("주가 쌓여도 시트는 화면 절반을 넘지 않는다", async () => {
