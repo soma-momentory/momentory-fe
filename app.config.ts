@@ -139,6 +139,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 연다(iOS SFSafariViewController · Android Custom Tabs). 로그인 화면의 약관 줄과
     // 마이의 「지원」이 같은 통로(`src/lib/links.ts`)를 지난다.
     "expo-web-browser",
+    // 애플 로그인 (2026-08-24). 이 한 줄이 하는 일은 **엔타이틀먼트 하나**다 —
+    // `com.apple.developer.applesignin: ["Default"]` 를 iOS 엔타이틀먼트에 넣고,
+    // 애플 버튼이 시스템 언어를 따르도록 `CFBundleAllowMixedLocalizations` 를 켠다.
+    //
+    // ⚠ **키를 받지 않는다.** 카카오와 달리 앱 키가 없다 — 애플은 **번들 ID 로**
+    // 앱을 알아본다(`kr.momentory.app`). 그래서 `.env` 에 더할 값도 없고,
+    // 조건부로 뺄 이유도 없다(카카오는 키가 없으면 URL 스킴이 깨져 통째로 뺀다).
+    //
+    // ⚠ **Android 빌드에는 아무 영향이 없다** — 이 플러그인은 iOS 만 건드린다.
+    // 애플 줄이 Android 에서 「쓸 수 없다」로 닫히는 것은 이 설정이 아니라
+    // 네이티브 모듈이 없기 때문이다(`src/features/auth/data/appleSdk.ts`).
+    //
+    // 콘솔 쪽 준비(App ID · Sign In with Apple 체크 · Key)는
+    // docs/SETUP.md 「애플 콘솔에서 정확히 무엇을 하는가」에 있다.
+    "expo-apple-authentication",
     ...kakaoPlugin,
     ...insecureApiPlugin,
     // 스플래시도 **같은 로고 하나**다 — 런처 아이콘과 마찬가지로

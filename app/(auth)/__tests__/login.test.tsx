@@ -16,6 +16,16 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
 }));
 
+// 애플 로그인도 네이티브다. 화면 테스트는 store 의 갈래를 목으로 갈아끼우므로
+// 여기까지 내려가지 않지만, import 사슬이 네이티브 모듈에 닿는다
+// (갈래 자체는 `features/auth/__tests__/appleSignIn.test.ts`)
+jest.mock("expo-apple-authentication", () => ({
+  __esModule: true,
+  isAvailableAsync: jest.fn(async () => false),
+  signInAsync: jest.fn(),
+  AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
+}));
+
 // 앱 안 브라우저는 네이티브다 — 약관 줄이 무엇을 여는지만 본다
 jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn(() => Promise.resolve()) }));
 const browser = jest.requireMock("expo-web-browser") as { openBrowserAsync: jest.Mock };
@@ -62,6 +72,90 @@ describe("카카오 버튼 — 실제 로그인에 연결돼 있다", () => {
     await waitFor(() => expect(signIn).toHaveBeenCalled());
     expect(replace).not.toHaveBeenCalled();
     expect(queryByText(/다시 시도/)).toBeNull();
+  });
+});
+
+describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () => {
+  /**
+   * 화면은 **어느 공급자가 무엇을 못 하는지 모른다.** 지금 애플은 서버 교환이
+   * 없어 `signed-in` 이 나오지 않지만(`DISCUSSION.md` §1-8), 그때 화면이 할 일은
+   * 카카오와 똑같다 — 여기서 거는 것은 그 「똑같음」이다.
+   */
+  const mockApple = (outcome: SignInOutcome) => {
+    const signIn = jest.fn(async () => outcome);
+    useAuth.setState({ signInWithApple: signIn });
+    return signIn;
+  };
+
+  it("누르면 애플 로그인을 부른다 — 개발 통로(가짜 세션)를 지나지 않는다", async () => {
+    const signIn = mockApple({ kind: "failed", message: "애플 로그인은 아직 준비 중이에요." });
+    const dev = jest.fn(async () => {});
+    useAuth.setState({ signInDev: dev });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent.press(getByText("Apple로 계속하기"));
+
+    await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
+    expect(dev).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("세션이 생기면 카카오와 같은 곳으로 보낸다", async () => {
+    mockApple({ kind: "signed-in", onboardingRequired: false });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent.press(getByText("Apple로 계속하기"));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
+  });
+
+  it("취소하면 화면을 옮기지 않는다", async () => {
+    mockApple({ kind: "cancelled" });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent.press(getByText("Apple로 계속하기"));
+
+    await waitFor(() => expect(replace).not.toHaveBeenCalled());
+  });
+
+  /**
+   * **릴리스에서도 열려 있다** — 서버 교환이 붙으면서 잠금을 지웠다 (2026-08-24 ·
+   * `DISCUSSION.md` §1-10 · 옛 `isAppleLineOpen`).
+   *
+   * 잠가 두었던 이유는 「애플이 이름·이메일을 첫 인가 한 번만 주는데 받아 둘
+   * 서버가 없다」였다. 서버가 그 값을 **identity token 안에서** 읽으므로 태울
+   * 한 번이 없어졌다(`appleAuthApi.ts` 머리말).
+   *
+   * **빌드 종류로 갈리지 않는 것을 고정한다** — 전역 `__DEV__` 를 릴리스로
+   * 바꿔도 애플 줄은 카카오와 같이 열려 있어야 한다. 잠금이 조용히 되살아나면
+   * iOS 심사가 요구하는 줄(심사 규정 4.8)이 운영에서 눌리지 않는다.
+   */
+  it("빌드 종류로 갈리지 않는다 — 릴리스에서도 카카오와 같이 열려 있다", async () => {
+    const globals = globalThis as unknown as { __DEV__: boolean };
+    const wasDev = globals.__DEV__;
+    globals.__DEV__ = false;
+
+    try {
+      const { getAllByRole } = await render(<Login />);
+      const [kakao, , apple] = getAllByRole("button");
+
+      expect(apple!.props.accessibilityState.disabled).toBe(false);
+      expect(kakao!.props.accessibilityState.disabled).toBe(false);
+      // 구글 줄은 여기서 보지 않는다 — `DEV_SKIP_AUTH` 는 모듈이 읽힐 때 값을
+      // 붙잡으므로 전역만 바꾸는 이 테스트에는 릴리스로 보이지 않는다
+    } finally {
+      globals.__DEV__ = wasDev;
+    }
+  });
+
+  it("진행 중이면 잠긴다 — 카카오와 자물쇠를 나눠 쓴다", async () => {
+    const signIn = mockApple({ kind: "signed-in", onboardingRequired: true });
+    useAuth.setState({ signingIn: true });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent.press(getByText("Apple로 계속하기"));
+
+    expect(signIn).not.toHaveBeenCalled();
   });
 });
 

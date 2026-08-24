@@ -1,8 +1,14 @@
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 
+import {
+  exchangeAppleIdentityToken,
+  type AppleAuthFailureCode,
+} from "@/features/auth/data/appleAuthApi";
+import { requestAppleCredential } from "@/features/auth/data/appleSdk";
 import { exchangeKakaoToken, type AuthFailureCode } from "@/features/auth/data/kakaoAuthApi";
 import { requestKakaoAccessToken } from "@/features/auth/data/kakaoSdk";
+import { type LoginSession } from "@/features/auth/data/loginSession";
 import { revokeRefreshToken } from "@/features/auth/data/logoutApi";
 import { fetchMe } from "@/features/auth/data/meApi";
 import { reissueAccessToken, type ReissueFailureCode } from "@/features/auth/data/reissueApi";
@@ -115,6 +121,41 @@ const FAILURE_MESSAGES: Record<AuthFailureCode | "sdk", string> = {
   malformed: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
 };
 
+/**
+ * 애플 로그인의 실패 사유 → 사용자 문구. 카카오와 **같은 규칙, 다른 표**다
+ * (`RULES.md` 4 — 한 줄 · 모달·재시도 버튼·경고 아이콘 없음).
+ *
+ * 표를 합치지 않는다 — 「카카오 로그인을 마치지 못했어요」가 애플 줄에서 뜨면
+ * 사용자는 누른 적 없는 것의 실패를 읽는다. 사유 이름이 같아도 문구는 갈린다.
+ *
+ * **재시도를 권하지 않는 둘**이 있다 — 다시 눌러도 같기 때문이다:
+ *
+ * - `unavailable` — Android 이거나 iOS 12 이하이거나 기기에 애플 계정이 없다
+ *   (`appleSdk.ts`). 이 기기에서는 애플 줄이 앞으로도 안 된다
+ * - `apple_email_unavailable` — 서버도 애플도 정상인데 **토큰에 확인된 이메일이
+ *   없다**(`appleAuthApi.ts`). 사용자가 애플 ID 설정에서 이메일 공유를 켜야
+ *   풀리는 일이라, **유일하게 사용자가 할 일을 알려 주는 문구**다
+ *
+ * `apple_client_mismatch` 와 `apple_nonce_mismatch` 는 사용자가 할 수 있는 일이
+ * 없어 `apple_token_invalid` 와 **같은 문장**을 준다 — 사유를 갈라 둔 것은
+ * 우리가 읽기 위해서다(둘 다 「우리 설정이 틀렸다」의 신호일 수 있다).
+ */
+const APPLE_FAILURE_MESSAGES: Record<AppleAuthFailureCode | "sdk" | "unavailable", string> = {
+  sdk: "애플 로그인을 마치지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+  unavailable: "이 기기에서는 애플 로그인을 쓸 수 없어요. 다른 방법으로 로그인해 주세요.",
+  apple_email_unavailable:
+    "애플 계정 이메일을 확인할 수 없어요. 애플 ID 설정에서 이메일 공유를 켠 뒤 다시 시도해 주세요.",
+  apple_token_invalid: "애플 로그인 정보가 만료됐어요. 다시 시도해 주세요.",
+  apple_nonce_mismatch: "애플 로그인 정보가 만료됐어요. 다시 시도해 주세요.",
+  apple_client_mismatch: "애플 로그인 정보가 만료됐어요. 다시 시도해 주세요.",
+  apple_upstream: "애플 쪽 연결이 잠시 불안정해요. 잠시 뒤 다시 시도해 주세요.",
+  network: "지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.",
+  unconfigured: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  invalid_request: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  server: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  malformed: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+};
+
 /** 세션을 저장하지 못했을 때 — 다음 부트에서 어차피 로그아웃이라 **여기서 닫는다** */
 const STORE_FAILED_MESSAGE = "로그인 정보를 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.";
 
@@ -152,10 +193,17 @@ type AuthStore = {
    * **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다.**
    */
   signInWithKakao: () => Promise<SignInOutcome>;
+  /**
+   * `S1` 의 [Apple로 계속하기]. 애플 SDK → 서버 교환 → SecureStore 순서다 —
+   * **카카오와 같다**(2026-08-24 · `POST /api/v1/auth/apple`).
+   * **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다.**
+   */
+  signInWithApple: () => Promise<SignInOutcome>;
   /** 안내 한 줄을 지운다 — 다시 누를 때 지난 실패가 남아 있지 않게 */
   clearSignInError: () => void;
   /**
-   * __DEV__ 전용 가짜 세션. 아직 SDK 가 없는 Apple·Google 자리의 개발 통로다.
+   * __DEV__ 전용 가짜 세션. 아직 SDK 가 없는 **Google** 자리의 개발 통로다.
+   * 애플은 2026-08-24 부터 자기 갈래(`signInWithApple`)를 지난다 — 이 통로를 쓰지 않는다.
    * 릴리스 빌드에서는 아무것도 하지 않는다 — 세션 없이 보호 흐름에 들어가지 않는다.
    */
   signInDev: () => Promise<void>;
@@ -282,6 +330,52 @@ const clearUserScopedStores = (userId?: number) => {
   // 기다리지 않는다 — 로그아웃은 실패할 수 없는 동작이고(아래 `signOut` 주석),
   // 지우지 못해도 키에 `userId` 가 박혀 있어 다른 계정이 그것을 보지는 않는다.
   if (userId != null) void clearSyncState(userId);
+};
+
+/**
+ * 서버가 내준 세션을 **이 기기의 로그인 상태로 만든다** — 카카오와 애플이 함께 쓴다.
+ *
+ * 교환 뒤의 일은 **공급자를 묻지 않는다.** 저장 · 온보딩 플래그 · `authenticated` ·
+ * 프로필 배웅까지 순서와 판정이 같아서, 따로 두면 한쪽만 고쳐진 채로 남는다 —
+ * 그리고 그 어긋남은 「로그인은 됐는데 온보딩이 다시 뜬다」처럼 **로그인이 끝난
+ * 뒤에야** 드러난다.
+ *
+ * 실패는 하나뿐이다: **기기에 남기지 못한 경우.** 그때는 `authenticated` 로
+ * 넘기지 않는다 — 앱을 끄면 사라질 세션을 「로그인됐다」고 말하지 않는다.
+ */
+const adoptSession = async (
+  set: (partial: Partial<AuthStore>) => void,
+  get: () => AuthStore,
+  session: LoginSession,
+): Promise<SignInOutcome> => {
+  const stored = await persist({
+    accessToken: session.accessToken,
+    refreshToken: session.refreshToken,
+    // 서버가 주는 것은 **초 단위 잔여 시간**이다. 저장은 절대 시각으로 —
+    // 상대 시간을 그대로 두면 앱이 꺼져 있던 동안을 셈에서 놓친다.
+    expiresAt: nowMs() + session.accessTokenExpiresIn * 1000,
+    userId: session.userId,
+  });
+  if (!stored) {
+    // 기기에 남기지 못한 세션은 앱을 끄면 사라진다 — 그 사실을 지금 말한다
+    set({ signInError: STORE_FAILED_MESSAGE });
+    return { kind: "failed", message: STORE_FAILED_MESSAGE };
+  }
+
+  // 온보딩 완료 여부는 **서버가 정본**이다. 이 기기에 남아 있던 로컬
+  // 플래그(앞 사용자·앞 세션의 것)를 서버 답에 맞춰 덮는다.
+  const completion = useOnboardingCompletion.getState();
+  if (session.onboardingRequired) completion.reset();
+  else completion.complete();
+
+  set({ status: "authenticated" });
+
+  // 프로필을 뒤따라 채운다 — **기다리지 않는다.** 다음 화면은 위 플래그가
+  // 이미 정했고, 여기서 더 받을 것은 닉네임·관심사뿐이라 로그인을 붙잡을
+  // 이유가 없다. 실패해도 조용하다(`syncMe`).
+  void get().syncMe();
+
+  return { kind: "signed-in", onboardingRequired: session.onboardingRequired };
 };
 
 /**
@@ -555,35 +649,75 @@ export const useAuth = create<AuthStore>((set, get) => ({
         return { kind: "failed", message };
       }
 
-      const { session } = exchanged;
-      const stored = await persist({
-        accessToken: session.accessToken,
-        refreshToken: session.refreshToken,
-        // 서버가 주는 것은 **초 단위 잔여 시간**이다. 저장은 절대 시각으로 —
-        // 상대 시간을 그대로 두면 앱이 꺼져 있던 동안을 셈에서 놓친다.
-        expiresAt: nowMs() + session.accessTokenExpiresIn * 1000,
-        userId: session.userId,
-      });
-      if (!stored) {
-        // 기기에 남기지 못한 세션은 앱을 끄면 사라진다 — 그 사실을 지금 말한다
-        set({ signInError: STORE_FAILED_MESSAGE });
-        return { kind: "failed", message: STORE_FAILED_MESSAGE };
+      // 저장·플래그·배웅은 공급자를 묻지 않는다 — 애플과 같은 코드를 지난다
+      return await adoptSession(set, get, exchanged.session);
+    } finally {
+      set({ signingIn: false });
+    }
+  },
+
+  /**
+   * 애플 로그인 (2026-08-24 SDK · **교환 연결 2026-08-24**). 카카오와 **같은
+   * 순서, 같은 코드**다 — 애플 SDK → 서버 교환 → SecureStore.
+   *
+   * ## 비어 있던 가운데 칸이 찼다
+   *
+   * `POST /api/v1/auth/apple` 이 계약에 들어오면서(`DISCUSSION.md` §1-10 · BE
+   * `AppleLoginController`) 「인가됐다」와 「로그인됐다」 사이의 틈이 닫혔다.
+   * 서버가 **응답을 카카오와 글자 그대로 같게** 냈으므로, 교환 뒤의 일은
+   * `adoptSession` 하나를 카카오와 나눠 쓴다.
+   *
+   * ⚠ **보내는 것은 identity token 과 nonce 원문 둘뿐이다.** 서버가 이름·이메일을
+   * 요청 본문이 아니라 **토큰 안의 클레임**에서 읽는다(`appleAuthApi.ts` 머리말) —
+   * 그래서 「애플이 이름을 첫 인가에만 준다」가 더 이상 로그인을 막지 않고,
+   * 릴리스에서 애플 줄을 잠가 두었던 이유도 함께 사라졌다(`login.tsx`).
+   *
+   * `appleSdk.ts` 는 `authorizationCode`·`fullName`·`email` 을 계속 꺼내 온다 —
+   * **지금은 아무도 쓰지 않는다.** 경계를 좁히지 않은 것은 서버가 요구하게 되는
+   * 날 SDK 경계를 다시 열지 않으려는 것이고, 쓰지 않는 값은 **여기서 버린다**
+   * (기기에도 로그에도 남기지 않는다 · `docs/CONTRIBUTING.md` 「값을 다루는 세 등급」).
+   *
+   * ## 지키는 것 — 카카오와 같다
+   *
+   * - **취소는 조용하다**
+   * - **실패는 한 줄이다** — 모달·재시도 버튼 없음(`RULES.md` 4)
+   * - **자물쇠는 하나다** — `signingIn` 을 카카오와 나눠 쓴다. 두 줄을 번갈아
+   *   눌러도 시트는 한 번만 열린다
+   * - **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다**
+   */
+  signInWithApple: async () => {
+    // 중복 클릭 — 카카오와 같은 자물쇠다. 애플 시트는 한 번에 하나만 열린다
+    if (get().signingIn) return { kind: "busy" };
+    set({ signingIn: true, signInError: null });
+
+    try {
+      const sdk = await requestAppleCredential();
+
+      // 사용자의 답이다 — 안내 한 줄도 띄우지 않는다
+      if (sdk.kind === "cancelled") return { kind: "cancelled" };
+
+      if (sdk.kind !== "credential") {
+        const message =
+          sdk.kind === "unavailable"
+            ? APPLE_FAILURE_MESSAGES.unavailable
+            : APPLE_FAILURE_MESSAGES.sdk;
+        set({ signInError: message });
+        return { kind: "failed", message };
       }
 
-      // 온보딩 완료 여부는 **서버가 정본**이다. 이 기기에 남아 있던 로컬
-      // 플래그(앞 사용자·앞 세션의 것)를 서버 답에 맞춰 덮는다.
-      const completion = useOnboardingCompletion.getState();
-      if (session.onboardingRequired) completion.reset();
-      else completion.complete();
+      const exchanged = await exchangeAppleIdentityToken(
+        sdk.credential.identityToken,
+        // nonce 원문 — 토큰과 **같은 인가에서** 나온 짝이어야 서버가 받아들인다
+        sdk.credential.nonce,
+      );
+      if (!exchanged.ok) {
+        const message = APPLE_FAILURE_MESSAGES[exchanged.code];
+        set({ signInError: message });
+        return { kind: "failed", message };
+      }
 
-      set({ status: "authenticated" });
-
-      // 프로필을 뒤따라 채운다 — **기다리지 않는다.** 다음 화면은 위 플래그가
-      // 이미 정했고, 여기서 더 받을 것은 닉네임·관심사뿐이라 로그인을 붙잡을
-      // 이유가 없다. 실패해도 조용하다(`syncMe`).
-      void get().syncMe();
-
-      return { kind: "signed-in", onboardingRequired: session.onboardingRequired };
+      // 저장·플래그·배웅은 공급자를 묻지 않는다 — 카카오와 같은 코드를 지난다
+      return await adoptSession(set, get, exchanged.session);
     } finally {
       set({ signingIn: false });
     }

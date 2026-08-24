@@ -313,6 +313,34 @@ keytool -exportcert -alias androiddebugkey -keystore "$ks" -storepass android \
 다만 App Store 심사 규정(4.8)상 다른 소셜 로그인을 제공하는 iOS 앱은 Sign in with Apple 이
 **필수**이므로, iOS 빌드를 만들기 전에는 반드시 끝나 있어야 한다.
 
+> **2026-08-24 — FE 는 붙었다.** `expo-apple-authentication` 이 설치됐고 `S1` 의
+> 애플 줄이 실제 시트를 연다(`TASKS.md` 「2026-08-24 · 애플 로그인」).
+> **네이티브라 dev client 재빌드가 필요하다** — `npx expo prebuild` → `npm run ios`.
+> Android 빌드에는 아무 영향이 없다(플러그인이 iOS 만 건드린다).
+>
+> **`.env` 에 넣을 값은 없다.** 카카오·구글과 달리 **앱이 드는 키가 하나도 없고**,
+> 애플은 번들 ID(`kr.momentory.app`)로 앱을 알아본다. `.p8` · Key ID · Team ID 는
+> 전부 **백엔드가** 쓴다.
+>
+> ✅ **로그인이 끝까지 간다** (2026-08-24). 서버가 `POST /api/v1/auth/apple` 을 냈고
+> FE 가 `appleAuthApi.ts` 로 붙였다([`DISCUSSION.md`](DISCUSSION.md) §1-10) —
+> 시트 → 인가 → 모멘토리 세션까지 카카오와 같은 길이다.
+> **릴리스 잠금도 지웠다**(옛 `login.tsx` 의 `isAppleLineOpen`): 서버가 이메일을
+> identity token 안에서 읽으므로 「첫 인가 한 번」을 태울 일이 없어졌다.
+>
+> ⛔ **서버 쪽에 `APPLE_CLIENT_ID` 가 있어야 앱이 뜬다.** `application.yml` 의
+> `apple.auth.client-id` 는 기본값이 없고 `@NotBlank` 라, 없으면 **BE 가 부팅
+> 자체를 못 한다.** 값은 **번들 ID `kr.momentory.app`** 이다(애플이 앱을 알아보는
+> 이름 · 비밀이 아니다). 운영은 SSM `/momentory/prod/APPLE_CLIENT_ID` 를 읽는다
+> (`ecs-task-definition.json`). ⚠ 이 값이 번들 ID 와 어긋나면 로그인이
+> `401 APPLE_CLIENT_ID_MISMATCH` 로 떨어진다.
+>
+> ✅ **`nonce` 도 붙었다** — 앱이 해시를 애플에, 원문을 서버에 보내고 서버가 대조한다.
+>
+> ⛔ **남은 것 하나 — 탈퇴 시 애플 `revoke`.** App Store 심사 규정이 요구하고,
+> 서버가 `.p8` 로 서명해야 한다(§1-10 「정할 것 넷」4). `.p8` · Key ID · Team ID 는
+> **아직 발급 전이다.**
+
 <details>
 <summary>애플 콘솔에서 정확히 무엇을 하는가 (2026-08-24)</summary>
 

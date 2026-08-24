@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://momentory-core-alb-1032944181.ap-northeast-2.elb.amazonaws.com",
+      "url": "http://127.0.0.1:8080",
       "description": "Generated server url"
     }
   ],
@@ -1442,6 +1442,157 @@
         }
       }
     },
+    "/api/v1/auth/apple": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "애플 Native 로그인",
+        "description": "React Native 애플 로그인 SDK Identity Token을 검증하고 모멘토리 토큰을 발급합니다.",
+        "operationId": "login_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppleLoginResponse"
+                },
+                "example": {
+                  "accessToken": "발급된 모멘토리 Access Token",
+                  "refreshToken": "발급된 모멘토리 Refresh Token",
+                  "tokenType": "Bearer",
+                  "accessTokenExpiresIn": 1800,
+                  "userId": 1,
+                  "onboardingRequired": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "validationError": {
+                    "description": "validationError",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "identityToken은 필수입니다."
+                    }
+                  },
+                  "unreadableRequest": {
+                    "description": "unreadableRequest",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "APPLE_EMAIL_UNAVAILABLE": {
+                    "description": "APPLE_EMAIL_UNAVAILABLE",
+                    "value": {
+                      "code": "APPLE_EMAIL_UNAVAILABLE",
+                      "message": "유효하고 인증된 애플계정 이메일이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "애플 Identity Token 검증 실패",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "APPLE_TOKEN_INVALID": {
+                    "description": "APPLE_TOKEN_INVALID",
+                    "value": {
+                      "code": "APPLE_TOKEN_INVALID",
+                      "message": "애플 인증에 실패했습니다."
+                    }
+                  },
+                  "APPLE_NONCE_MISMATCH": {
+                    "description": "APPLE_NONCE_MISMATCH",
+                    "value": {
+                      "code": "APPLE_NONCE_MISMATCH",
+                      "message": "애플 인증에 실패했습니다."
+                    }
+                  },
+                  "APPLE_CLIENT_ID_MISMATCH": {
+                    "description": "APPLE_CLIENT_ID_MISMATCH",
+                    "value": {
+                      "code": "APPLE_CLIENT_ID_MISMATCH",
+                      "message": "애플 인증에 실패했습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "애플 인증 서버 또는 응답 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "APPLE_API_SERVER_ERROR": {
+                    "description": "APPLE_API_SERVER_ERROR",
+                    "value": {
+                      "code": "APPLE_API_SERVER_ERROR",
+                      "message": "애플 서비스에 일시적인 오류가 발생했습니다."
+                    }
+                  },
+                  "APPLE_API_RESPONSE_ERROR": {
+                    "description": "APPLE_API_RESPONSE_ERROR",
+                    "value": {
+                      "code": "APPLE_API_RESPONSE_ERROR",
+                      "message": "애플 서비스 응답을 처리할 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "애플 인증 서버 네트워크 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "APPLE_API_NETWORK_ERROR": {
+                    "description": "APPLE_API_NETWORK_ERROR",
+                    "value": {
+                      "code": "APPLE_API_NETWORK_ERROR",
+                      "message": "애플 서비스에 연결할 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/schedules/{scheduleId}": {
       "delete": {
         "tags": [
@@ -2603,6 +2754,74 @@
             "bearerAuth": []
           }
         ]
+      },
+      "delete": {
+        "tags": [
+          "ActionCards"
+        ],
+        "summary": "행동 카드 삭제",
+        "description": "행동 카드 한 장을 지운다. 회고를 막 끝낸 카드도 완료 응답이 준 서버 id 로 그 자리에서 지울 수 있다. 일기 삭제와 같은 결이다.",
+        "operationId": "delete_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "삭제 성공"
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "행동 카드 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "ACTION_CARD_NOT_FOUND": {
+                    "description": "ACTION_CARD_NOT_FOUND",
+                    "value": {
+                      "code": "ACTION_CARD_NOT_FOUND",
+                      "message": "행동 카드를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -3176,6 +3395,10 @@
       "ActionCardDto": {
         "type": "object",
         "properties": {
+          "actionCardId": {
+            "type": "integer",
+            "format": "int64"
+          },
           "situation": {
             "type": "string"
           },
@@ -3190,6 +3413,10 @@
       "DiaryDto": {
         "type": "object",
         "properties": {
+          "diaryId": {
+            "type": "integer",
+            "format": "int64"
+          },
           "diary": {
             "type": "string"
           },
@@ -3373,6 +3600,60 @@
         ]
       },
       "KakaoLoginResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "모멘토리 Access Token"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "모멘토리 Refresh Token"
+          },
+          "tokenType": {
+            "type": "string",
+            "description": "Access Token 인증 방식",
+            "example": "Bearer"
+          },
+          "accessTokenExpiresIn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Access Token 만료까지 남은 시간(초)",
+            "example": 1800
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "모멘토리 사용자 ID",
+            "example": 1
+          },
+          "onboardingRequired": {
+            "type": "boolean",
+            "description": "온보딩 필요 여부",
+            "example": true
+          }
+        }
+      },
+      "AppleLoginRequest": {
+        "type": "object",
+        "properties": {
+          "identityToken": {
+            "type": "string",
+            "description": "React Native 애플 로그인 SDK에서 발급한 Identity Token(JWT)",
+            "minLength": 1
+          },
+          "nonce": {
+            "type": "string",
+            "description": "재생 공격 방지용 nonce 원문. 앱은 이 값의 SHA-256 hex 를 애플에 전달하고, 서버가 identity token 의 nonce 클레임과 대조합니다.",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "identityToken",
+          "nonce"
+        ]
+      },
+      "AppleLoginResponse": {
         "type": "object",
         "properties": {
           "accessToken": {

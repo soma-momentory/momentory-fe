@@ -32,16 +32,18 @@ import { openExternalLink, type ExternalLink } from "@/lib/links";
  */
 
 /**
- * **아직 SDK 가 없는 두 줄**(Apple·Google)의 개발 통로. **개발 빌드에서만 열린다.**
+ * **아직 SDK 가 없는 한 줄**(Google)의 개발 통로. **개발 빌드에서만 열린다.**
  *
  * `router.push` 로 건너뛰지 않는다 — `(onboarding)` 레이아웃의 라우트 가드가
  * 세션 없는 진입을 즉시 로그인으로 되돌린다(M2-0). 그래서 `signInDev` 가
  * SecureStore 에 가짜 세션을 만들고 나서 이동한다. 릴리스에서는 `__DEV__` 가
- * false 라 두 줄이 비활성으로 남는다 — 세션 없이 보호 흐름에 들어가지 않는다.
+ * false 라 그 줄이 비활성으로 남는다 — 세션 없이 보호 흐름에 들어가지 않는다.
  *
- * 카카오는 이 통로를 쓰지 않는다 — **실제 로그인이 붙었다**.
+ * 카카오와 **애플**은 이 통로를 쓰지 않는다 — 각자 실제 SDK 와 서버 교환을
+ * 지난다(애플은 2026-08-24 부터).
  */
 const DEV_SKIP_AUTH = __DEV__;
+
 const skipAuth = async () => {
   // 다른 줄을 누르면 카카오 실패 안내는 지운다 — 지난 시도의 말이 남아 있으면
   // 방금 누른 것의 결과로 읽힌다
@@ -63,6 +65,26 @@ export default function Login() {
    */
   const signInKakao = async () => {
     const outcome = await useAuth.getState().signInWithKakao();
+    if (outcome.kind !== "signed-in") return;
+    router.replace(outcome.onboardingRequired ? "/welcome" : "/home");
+  };
+
+  /**
+   * 애플 로그인 (2026-08-24). **카카오와 같은 모양으로 부른다** — 화면은 어느
+   * 공급자가 무엇을 못 하는지 모른다.
+   *
+   * ✅ **릴리스 잠금이 풀렸다** (2026-08-24). 서버 교환이 붙어(`DISCUSSION.md`
+   * §1-10 · `POST /api/v1/auth/apple`) 이 줄이 실제로 세션을 만든다. 잠가 두었던
+   * 이유는 「애플이 이름·이메일을 첫 인가 한 번만 주는데 받아 둘 서버가 없다」
+   * 였는데, 서버가 그 값을 **identity token 안에서** 읽으므로 태울 한 번이
+   * 없어졌다(`appleAuthApi.ts` 머리말). 그래서 옛 `isAppleLineOpen` 을 지웠고
+   * `disabled` 는 카카오와 같아졌다.
+   *
+   * **`Platform.OS` 를 여기서 묻지 않는다.** 애플 줄은 두 플랫폼에 같은 모양으로
+   * 있고, 「이 기기에서 되는가」는 `appleSdk.ts` 가 판정해 안내 한 줄로 돌려준다.
+   */
+  const signInApple = async () => {
+    const outcome = await useAuth.getState().signInWithApple();
     if (outcome.kind !== "signed-in") return;
     router.replace(outcome.onboardingRequired ? "/welcome" : "/home");
   };
@@ -97,8 +119,8 @@ export default function Login() {
         <SocialButton
           provider="apple"
           label="Apple로 계속하기"
-          disabled={!DEV_SKIP_AUTH || signingIn}
-          onPress={skipAuth}
+          disabled={signingIn}
+          onPress={signInApple}
         />
       </View>
 

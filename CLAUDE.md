@@ -173,8 +173,10 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 보관함 6 · 리포트 1 · 마이 3. 화면 ID ↔ 라우트 매핑은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표가 정본이다.
 
 ⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 남은 것은 **나머지 도메인의 BE 연결** ·
-영속 저장(MMKV) · 소셜 SDK **나머지 둘**(카카오는 2026-08-07 연결 · 토큰 갱신은
-2026-08-09 닫힘 — **HTTPS 만 대기**, [`DISCUSSION.md`](docs/DISCUSSION.md) §1-6) ·
+영속 저장(MMKV) · 소셜 SDK **나머지 하나**(카카오는 2026-08-07 연결 · 토큰 갱신은
+2026-08-09 닫힘 — **HTTPS 만 대기**, [`DISCUSSION.md`](docs/DISCUSSION.md) §1-6 ·
+**애플은 2026-08-24 에 SDK + 서버 교환 + nonce 까지 연결됐다** — 남은 것은 탈퇴 revoke §1-10 ·
+**구글은 아직 개발 통로**) ·
 OS 권한 중 **캘린더 연결**(알림은 2026-08-11 닫힘) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
 M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](docs/TASKS.md)
 「화면 40장이 끝난 뒤 남은 것」에 있다.
@@ -285,13 +287,31 @@ src/features/onboarding/{model/{draft, completion, options, submit}.ts,
                                             조용히 사라진다(ARCHITECTURE §4).
                                             못 받으면 대역으로 그린다 — 온보딩은 멈추지 않는다.
                                             실패 문구는 submit.ts 한 곳(10·M2 가 나눠 쓴다)
-src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,reissueApi,logoutApi}.ts}
+src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,appleSdk,appleAuthApi,
+                                       loginSession,reissueApi,logoutApi}.ts}
                                           ← M2-0 부트스트랩(hydrate·가드·fail-closed) +
                                             M2-1 카카오 로그인 + 만료 토큰의 조용한 갱신
                                             (refresh 는 회전한다) + 로그아웃(서버 폐기).
                                             카카오 토큰은 서버로 한 번
                                             보내고 버린다 — SecureStore 에는 모멘토리 토큰만.
-                                            로그아웃이 비우는 목록은 clearUserScopedStores 하나
+                                            로그아웃이 비우는 목록은 clearUserScopedStores 하나.
+                                            appleSdk = **애플 SDK 경계**(2026-08-24) ·
+                                            appleAuthApi = **서버 교환**
+                                            (`POST /api/v1/auth/apple` · 2026-08-24).
+                                            보내는 것은 **identityToken 하나**다 —
+                                            서버가 이름·이메일을 토큰 클레임에서 읽어
+                                            「첫 인가 한 번」 문제가 없다. 그래서
+                                            **릴리스 잠금(옛 isAppleLineOpen)을 지웠다.**
+                                            「이 기기에서 되는가」(iOS 전용) 판정은
+                                            appleSdk 하나 — 화면은 플랫폼을 모른다.
+                                            loginSession = **카카오·애플 공통 전송·응답
+                                            검증** — 응답이 글자 그대로 같아서 모았다.
+                                            교환 뒤(저장·플래그·배웅)는 auth.ts 의
+                                            adoptSession 하나를 나눠 쓴다.
+                                            nonce = 해시는 애플로 · 원문은 서버로
+                                            (재생 방지 · appleSdk 가 만든다).
+                                            ⛔ 남은 것: 탈퇴 시 애플 revoke 없음
+                                            (DISCUSSION §1-10 의 4)
 src/testing/fixtures.ts                   ← **테스트 전용 고정값.** 옛 `src/mocks/sample.ts`
                                             자리다(2026-08-21 삭제) — 화면이 보는 값은 이제
                                             서버에서만 온다. 앱 코드가 import 하면 린터가 막는다
@@ -337,8 +357,10 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 (08 OS 피커) · **@react-native-seoul/kakao-login** + **expo-build-properties**
 (카카오 로그인) · **expo-notifications**(회고 시간 알림 — 전부 로컬) ·
 **expo-calendar**(`09` 기기 캘린더 — **읽기만**) ·
-**expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`)
-— 다섯 다 네이티브라 **dev client 재빌드 필요**.
+**expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`) ·
+**expo-apple-authentication** + **expo-crypto**(`S1` 애플 로그인 — **iOS 전용** ·
+서버 교환·nonce 까지 연결됨 2026-08-24)
+— 여섯 다 네이티브라 **dev client 재빌드 필요**.
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
