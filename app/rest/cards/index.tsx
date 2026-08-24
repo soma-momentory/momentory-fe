@@ -111,7 +111,12 @@ export default function RestCards() {
   return (
     <>
       <Screen>
-        <TopNavigation leading="arrow-left" title="행동카드" onLeadingPress={() => router.back()} />
+        <TopNavigation
+          leading="arrow-left"
+          title="행동카드"
+          titleHand
+          onLeadingPress={() => router.back()}
+        />
 
         {/* 카드 자리와 달력을 세로로 나눈다 — 달력은 **바닥에 고정**하고 카드는
             그 위 남는 높이를 채운다. 그래서 카드가 있든 없든 달력의 자리가 같다.

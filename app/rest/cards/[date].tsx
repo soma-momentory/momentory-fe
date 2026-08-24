@@ -49,7 +49,8 @@ export default function RestCardTrail() {
               <Text variant="label2" color={labelColor.alternative}>
                 제안된 행동
               </Text>
-              <Text variant="title3" color={labelColor.strong}>
+              {/* 제안된 행동 문구는 **손글씨(교보 2025)**로 — 회고가 건넨 말처럼 읽히게 */}
+              <Text variant="title3Hand" color={labelColor.strong}>
                 {card.targetAction}
               </Text>
             </View>

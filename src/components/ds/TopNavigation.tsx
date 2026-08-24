@@ -26,11 +26,19 @@ type Props = {
   onLeadingPress?: () => void;
   /** 하위 화면만. 탭 루트에서는 넘기지 않는다 */
   title?: string;
+  /** 제목을 **손글씨(교보 2025)**로 — 기본은 고딕 `headline1` 이다 */
+  titleHand?: boolean;
   /** 우측 — Text Button 이나 IconButton 을 그대로 넣는다 */
   trailing?: ReactNode;
 };
 
-export function TopNavigation({ leading, onLeadingPress, title, trailing }: Props) {
+export function TopNavigation({
+  leading,
+  onLeadingPress,
+  title,
+  titleHand = false,
+  trailing,
+}: Props) {
   return (
     <View style={styles.bar}>
       <View style={styles.side}>
@@ -45,7 +53,12 @@ export function TopNavigation({ leading, onLeadingPress, title, trailing }: Prop
       </View>
 
       {title != null ? (
-        <Text variant="headline1" color={labelColor.strong} numberOfLines={1} style={styles.title}>
+        <Text
+          variant={titleHand ? "title3Hand" : "headline1"}
+          color={labelColor.strong}
+          numberOfLines={1}
+          style={styles.title}
+        >
           {title}
         </Text>
       ) : (
