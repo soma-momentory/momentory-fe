@@ -7,8 +7,9 @@ import { WeekCountList } from "@/components/report/WeekCountList";
 import { WeekMoodCard } from "@/components/report/WeekMoodCard";
 import { WeekPickerSheet } from "@/components/report/WeekPickerSheet";
 import { interaction, label as labelColor, layout, space } from "@/design/ds";
+import { useDiary } from "@/features/diary/model/diary";
 import { weekEnd } from "@/features/report/model/report";
-import { isThisWeek, useWeeklyReport } from "@/features/report/model/weeklyReport";
+import { isThisWeek, useWeeklyReport, weekOptions } from "@/features/report/model/weeklyReport";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -41,15 +42,18 @@ import { formatKoreanDateShort } from "@/lib/day";
  * - **「이번 주」는 이번 주에만 쓴다** — 지난 주를 넘겨보는 동안에는 「이 주의 마음 ·
  *   이 주 한눈에 · 이 주의 기록 보기」다. 서버 멘트만은 그대로 둔다(BE 문장이라 여기서
  *   고치지 않는다 — `WeekMoodCard` 주석)
- * - **주는 날짜를 눌러 달력에서 고른다**(`WeekPickerSheet`). 예전에는 머리의 `‹ ›`
- *   로 한 주씩 옮겼는데 두 달 전 주를 보려면 여덟 번을 눌러야 했다 —
- *   사용자 요청(2026-08-24)으로 화살표를 걷고 달력을 열었다
- * - **아직 오지 않은 주는 고를 수 없다** — 셀 것이 없다. 지난 주는 막지 않는다
- *   (서버가 「빈 주」로 성실히 답한다)
+ * - **주는 날짜를 눌러 목록에서 고른다**(`WeekPickerSheet`) — **일기가 남은 주만**
+ *   선다. 예전에는 머리의 `‹ ›` 로 한 주씩 옮겼고 그다음엔 달력이었는데, 둘 다
+ *   기록이 없는 주를 함께 보여줬다(사용자 요청 2026-08-24)
+ * - 그래서 **아직 오지 않은 주는 목록에 아예 없다** — 셀 것이 없는 주다.
+ *   서버는 아무 주나 「빈 주」로 성실히 답하지만 그 주를 넘겨볼 길을 두지 않는다
  * - **실패는 한 줄로 흡수한다** — 모달도 재시도 버튼도 두지 않는다(`RULES.md` 4).
  *   탭을 다시 열면 그때 다시 받는다
  */
 export default function Report() {
+  // 고를 수 있는 주는 **일기가 남은 주**다 — 그 목록의 재료가 일기 store 다
+  const diaries = useDiary((s) => s.diaries);
+
   const weekStart = useWeeklyReport((s) => s.weekStart);
   const report = useWeeklyReport((s) => s.report);
   const status = useWeeklyReport((s) => s.status);
@@ -82,6 +86,7 @@ export default function Report() {
       overlay={
         picking ? (
           <WeekPickerSheet
+            weeks={weekOptions(diaries, weekStart)}
             weekStart={weekStart}
             onSelect={pick}
             onDismiss={() => setPicking(false)}

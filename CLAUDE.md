@@ -245,8 +245,8 @@ src/components/diary/{ActionRow, ActionCardSection, DiaryBabaFace}.tsx ← C6-b�
 src/components/report/{WeekMoodCard, WeekMoodRow, WeekCountList, WeekPickerSheet}.tsx
                                           ← 이번 주의 마음(점 일곱 칸 + 요약) · 이번 주 한눈에.
                                             비율(도넛·%)을 만들지 않는다 — 세는 값은 서버 것이다.
-                                            WeekPickerSheet = 주를 고르는 달력(**줄 단위**로 눌린다 ·
-                                            월→일 · 공용 Calendar 는 하루를 고르는 것이라 안 쓴다)
+                                            WeekPickerSheet = 주를 고르는 **목록**
+                                            (일기가 남은 주만 · 「2026년 8월 4주차」 + 날짜·일기 수)
 src/features/emotion/model/emotion.ts     ← **감정 9종의 도메인 정본** — id·이름·EmotionId.
                                             **색은 여기 두지 않는다**(디자인 몫 · 세대마다 바뀐다).
                                             번호는 서버 enum 두 벌(retro EMOTION_KEYS ·

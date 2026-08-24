@@ -66,8 +66,5 @@ function addDays(iso: string, days: number) {
   return toIso(new Date(Number(y), Number(m) - 1, Number(d) + days));
 }
 
-/** 주차 이동 — 음수면 이전 주 */
-export const shiftWeek = (start: string, weeks: number) => addDays(start, weeks * 7);
-
 /** 그 주의 끝(시작 + 6일) */
 export const weekEnd = (start: string) => addDays(start, 6);

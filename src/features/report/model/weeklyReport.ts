@@ -1,13 +1,15 @@
 import { create } from "zustand";
 
+import type { Diary } from "@/features/diary/model/types";
 import { weekStartOf } from "@/features/home/model/day";
 import {
   fetchWeeklyReport,
   type WeeklyReport,
   type WeeklyReportFailureCode,
 } from "@/features/report/data/weeklyReportApi";
-import { shiftWeek } from "@/features/report/model/report";
+import { weekEnd } from "@/features/report/model/report";
 import { clock } from "@/lib/clock";
+import { formatKoreanDateShort } from "@/lib/day";
 
 /**
  * 주간 리포트가 보는 **한 주** — 서버가 정본이다(`GET /reports/weekly`).
@@ -65,14 +67,6 @@ export const thisWeekStart = (): string => weekStartOf(clock.today());
 
 /** 보고 있는 주가 이번 주인가 — 문구가 「이번 주 …」인지 「이 주 …」인지를 가른다 */
 export const isThisWeek = (weekStart: string) => weekStart === thisWeekStart();
-
-/**
- * 고를 수 있는 주인가 — **이번 주가 끝**이다. 아직 오지 않은 주에는 셀 것이 없으므로
- * 달력에서 눌리지 않게 두는 것으로 끝을 말한다(`W1.md` 「이동 범위의 끝은 화면이 없다」).
- *
- * 지난 주는 막지 않는다 — 가입 이전 주도 서버는 「빈 주」로 성실히 답한다.
- */
-export const isPickableWeek = (weekStart: string) => weekStart <= thisWeekStart();
 
 export const useWeeklyReport = create<WeeklyReportStore>((set, get) => {
   const load = async () => {
@@ -134,43 +128,67 @@ export function splitMoodMessage(message: string): { lead: string; follow: strin
   return { lead: message.slice(0, at + 1).trim(), follow: message.slice(at + 1).trim() };
 }
 
-// ── 주를 고르는 달력이 쓰는 계산 ──────────────────────────────────────────
-
-const pad = (n: number) => String(n).padStart(2, "0");
-const toIso = (at: Date) => `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
-
-/** `2026-08-24` → `2026-08` */
-export const monthOf = (date: string) => date.slice(0, 7);
-
-/** `2026-08` 에서 `step` 달 뒤(음수면 앞). 12월을 넘겨도 `Date` 가 맞춰준다 */
-export function shiftMonth(month: string, step: number): string {
-  const [y = "2026", m = "1"] = month.split("-");
-  const at = new Date(Number(y), Number(m) - 1 + step, 1);
-  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}`;
-}
-
-/** 그 주의 일곱 날(월→일) — 달력 한 줄이 그리는 값이다 */
-export function daysOfWeek(weekStart: string): string[] {
-  const [y = "2026", m = "1", d = "1"] = weekStart.split("-");
-  const from = new Date(Number(y), Number(m) - 1, Number(d));
-  return Array.from({ length: 7 }, (_, i) =>
-    toIso(new Date(from.getFullYear(), from.getMonth(), from.getDate() + i)),
-  );
-}
+// ── 주를 고르는 목록이 쓰는 계산 ──────────────────────────────────────────
 
 /**
- * 그 달에 **걸치는** 주들의 월요일 — 4~6줄이다.
+ * 그 주의 이름 — `2026-08-24` → 「2026년 8월 4주차」.
  *
- * 앞뒤로 삐져나온 주까지 넣는다(8월 1일이 토요일이면 첫 줄은 7월 27일 월요일에서
- * 시작한다) — **주가 달력의 단위**라서 반쪽 줄을 만들 수 없다. 그래서 8월을 열어도
- * 7월의 주를 고를 수 있고, 그게 맞다(달 경계는 주와 무관하다).
+ * **주가 시작한 달**로 센다(그 주의 월요일이 든 달). 한 주가 달을 걸치면 어느 쪽으로
+ * 셀지 정해야 하는데, 시작한 달이 가장 설명하기 쉽다 — 8월 31일에 시작한 주는
+ * 「8월 5주차」다(9월 1주차가 아니다).
+ *
+ * 몇 주차인지는 **월요일의 날짜**만 보면 나온다: 한 달 안의 월요일들은 7일 간격이라
+ * 첫 월요일이 며칠이든 `(일 - 1) / 7` 이 그대로 순번이 된다.
  */
-export function weeksOfMonth(month: string): string[] {
-  const [y = "2026", m = "1"] = month.split("-");
-  const last = toIso(new Date(Number(y), Number(m), 0));
-  const first = weekStartOf(`${month}-01`);
+export function weekNameOf(weekStart: string): string {
+  const [y = "2026", m = "1", d = "1"] = weekStart.split("-");
+  return `${Number(y)}년 ${Number(m)}월 ${Math.floor((Number(d) - 1) / 7) + 1}주차`;
+}
 
-  const weeks: string[] = [];
-  for (let week = first; week <= last; week = shiftWeek(week, 1)) weeks.push(week);
-  return weeks;
+/** 목록에 서는 한 줄 — 고르는 값(`weekStart`)과 사람이 읽는 것들 */
+export type WeekOption = {
+  /** 그 주의 월요일 — 고르면 이 값이 서버로 간다 */
+  weekStart: string;
+  /** 「2026년 8월 4주차」 */
+  name: string;
+  /** 「8월 24일 ~ 8월 30일」 — 몇 주차인지만으로는 어느 날인지 모른다 */
+  range: string;
+  /** 그 주에 일기를 남긴 날 수 */
+  diaryCount: number;
+  /** 오늘이 든 주인가 — 목록에서 「이번 주」라고 적는다 */
+  thisWeek: boolean;
+};
+
+/**
+ * 고를 수 있는 주 목록 — **일기가 있는 주만**, 최근 주가 위로.
+ *
+ * 리포트가 넘겨볼 수 있는 주는 원래 무한하다(서버는 아무 주나 「빈 주」로 성실히
+ * 답한다). 그런데 빈 주를 무한히 넘겨보는 일은 없어서, **기록이 남은 주만** 세워
+ * 둔다(사용자 요청 2026-08-24). 일기는 12개월 창으로 받아 두므로
+ * (`features/diary/model/diary.ts`) 목록의 범위도 거기까지다.
+ *
+ * ⚠ **이번 주는 일기가 없어도 늘 목록에 둔다.** 그러지 않으면 지난 주를 보다가
+ * 이번 주로 돌아올 길이 목록에서 사라진다 — 오늘 아직 일기를 안 쓴 날이 그렇다.
+ * 지금 보고 있는 주도 같은 이유로 늘 둔다(선택 표시가 설 자리가 있어야 한다).
+ */
+export function weekOptions(diaries: readonly Diary[], current: string): WeekOption[] {
+  const counts = new Map<string, number>();
+  for (const diary of diaries) {
+    const week = weekStartOf(diary.date);
+    counts.set(week, (counts.get(week) ?? 0) + 1);
+  }
+
+  const today = thisWeekStart();
+  const weeks = new Set([...counts.keys(), today, current]);
+
+  return [...weeks]
+    .sort()
+    .reverse()
+    .map((weekStart) => ({
+      weekStart,
+      name: weekNameOf(weekStart),
+      range: `${formatKoreanDateShort(weekStart)} ~ ${formatKoreanDateShort(weekEnd(weekStart))}`,
+      diaryCount: counts.get(weekStart) ?? 0,
+      thisWeek: weekStart === today,
+    }));
 }
