@@ -58,15 +58,25 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // (09_MVP/docs/S0.md · 01_화면설계/1. SPLASH/docs/RULES.md)
   userInterfaceStyle: "light",
 
-  // 앱 식별자 — 2026-08-05 확정. 카카오·구글·애플과 스토어에 이 값으로 등록한다.
-  // 등록 뒤에는 바꿀 수 없다(스토어는 같은 ID 를 재사용할 수 없다).
-  // 등록 절차와 키 해시·SHA-1 은 docs/SETUP.md 「앱 식별자와 외부 등록」 참조.
+  // 앱 식별자 — 2026-08-24 개정 (`com.momentory.app` → `kr.momentory.app`).
+  // 카카오·구글·애플과 스토어에 이 값으로 등록한다. 등록 뒤에는 바꿀 수 없다
+  // (스토어는 같은 ID 를 재사용할 수 없다).
+  //
+  // ⚠ 옛 값 `com.momentory.app` 은 **쓸 수 없다.** 팀원이 무료 개인 계정(Personal
+  // Team)으로 실기기에 올릴 때 Xcode 가 그 번들 ID 를 조용히 등록했고, 애플의 번들
+  // ID 는 전 세계에서 유일해야 한다. Personal Team 의 등록은 developer.apple.com
+  // Identifiers 목록에 **나타나지도 않으면서** 문자열만 점유한다 — 그래서 목록이
+  // 비어 있는데 등록만 거부됐다. 되찾으려면 애플 지원 티켓뿐이라 이름을 바꿨다.
+  //
+  // iOS·Android 를 **같은 값으로 둔다** — 갈라두면 콘솔마다 다른 값을 넣게 되고
+  // 어느 쪽이 맞는지 매번 확인해야 한다. 등록 절차와 키 해시·SHA-1 은
+  // docs/SETUP.md 「앱 식별자와 외부 등록」 참조.
   ios: {
     supportsTablet: false,
-    bundleIdentifier: "com.momentory.app",
+    bundleIdentifier: "kr.momentory.app",
   },
   android: {
-    package: "com.momentory.app",
+    package: "kr.momentory.app",
     // 배경색은 **로고 자체의 면**이다(`assets/logo.jpeg` = #F2E4DC).
     //
     // 전경 PNG 는 그 면을 지운 **내용만**이라(투명 배경), 베이지를 그리는 것은

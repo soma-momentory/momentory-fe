@@ -168,7 +168,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 npx expo start --dev-client --port 8081
 adb reverse tcp:8081 tcp:8081
 adb shell am start -a android.intent.action.VIEW \
-  -d "momentory://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081" com.momentory.app
+  -d "momentory://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081" kr.momentory.app
 
 # 4. 로그
 adb logcat -d -s ReactNativeJS:* | grep CALPROBE
