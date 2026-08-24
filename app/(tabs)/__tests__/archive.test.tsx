@@ -139,12 +139,16 @@ describe("A1 · 보관함 달력", () => {
     expect(r.queryByText("일기 열어보기 ›")).toBeNull();
   });
 
-  it("선택된 날은 테두리 2px 로 표시한다 — 색만으로 구분하지 않는다", async () => {
+  it("선택된 날은 감정 박스 테두리를 굵혀 표시한다 — 색만으로 구분하지 않는다", async () => {
+    // 채움 모드에선 선택 표시가 셀이 아니라 **가로로 좁은 감정 박스**에 붙는다.
+    // 박스는 날짜 숫자를 감싸므로 그 숫자 Text 의 부모가 박스다.
     const r = await render(<Archive />);
+    const boxOf = (label: string, day: string) =>
+      within(r.getByLabelText(label)).getByText(day).parent;
 
-    expect(flatten(r.getByLabelText("22일").props.style).borderWidth).toBeUndefined();
+    expect(flatten(boxOf("22일", "22")?.props.style).borderWidth).not.toBe(2);
     await fireEvent.press(r.getByLabelText("22일"));
-    expect(flatten(r.getByLabelText("22일").props.style).borderWidth).toBe(2);
+    expect(flatten(boxOf("22일", "22")?.props.style).borderWidth).toBe(2);
   });
 });
 

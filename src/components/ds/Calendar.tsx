@@ -49,9 +49,10 @@ export type CalendarMark = {
    */
   dotHollow?: boolean;
   /**
-   * 날짜 숫자 밑 **밑줄** 색 — 점(dot)과 **다른 채널**이다. 보관함이 「그날 일정이
-   * 있다」를 점(일기)과 겹치지 않게 표시할 때 쓴다: 점=일기 · 밑줄=일정이라 둘 다
-   * 있는 날도 색 없이 구분된다. 없으면 긋지 않는다 — **뜻은 부르는 쪽이 안다**.
+   * 「그날 일정이 있다」를 **일기와 다른 채널**로 표시하는 색. 렌더는 모드마다 다르다:
+   * 점 모드(쉼터)는 숫자 밑 **밑줄**, 채움 모드(보관함)는 감정 박스 **아래 동그란 점**이다.
+   * 어느 쪽이든 일기 채널(dot/채움)과 겹치지 않아 둘 다 있는 날도 색 없이 갈린다.
+   * 없으면 그리지 않는다 — **뜻·색은 부르는 쪽이 안다**(보관함은 홈 CTA 색을 준다).
    */
   underlineColor?: string;
   /** 기록이 있는 날 — 날짜 글자를 진하게 */
@@ -70,9 +71,9 @@ type Props = {
   onMonthStep: (step: -1 | 1) => void;
   markOf?: (date: string) => CalendarMark;
   /**
-   * **halo 모드** — `dotColor` 를 날짜 아래 점이 아니라 날짜를 **감싸는 색 원**으로
-   * 그린다(보관함). 일정 밑줄(`underlineColor`)은 원 밖 아래에 서서 감싸이지 않는다.
-   * 기본(false)은 점 모드(쉼터의 수행/미수행 점).
+   * **채움 모드** — `dotColor` 를 날짜 아래 점이 아니라 날짜를 담는 **가로로 조금
+   * 좁은 색 박스**로 채운다(보관함 · 일기 = 감정 색). 일정(`underlineColor`)은 그
+   * 박스 아래 **동그란 점**으로 선다. 기본(false)은 점 모드(쉼터의 수행/미수행 점).
    */
   dateFill?: boolean;
 };
@@ -155,39 +156,38 @@ export function Calendar({
                 styles.cell,
                 cellSize,
                 dateFill ? styles.cellFill : null,
-                selected ? styles.cellSelected : null,
+                !dateFill && selected ? styles.cellSelected : null,
               ]}
             >
               {dateFill ? (
-                // halo 모드(보관함) — 감정을 날짜 **뒤 색 원**으로 감싼다. 원색은
-                // 대비가 낮아 55% 틴트 + 원색 링을 쓰고(EmotionDot 규칙) 숫자는 그 위에
-                // 진한 잉크로 읽힌다. 일정 밑줄은 원 **밖 아래**라 감싸이지 않는다
-                <>
-                  <View
-                    style={[
-                      styles.halo,
-                      mark.dotColor != null
-                        ? {
-                            backgroundColor: withAlpha(mark.dotColor, 0.55),
-                            borderColor: mark.dotColor,
-                          }
-                        : null,
-                    ]}
+                // 채움 모드(보관함) — 일기가 있는 날은 그 감정 색으로 **박스를 채운다**
+                // (가로로 조금 좁은 라운드 박스). 테두리 없이 감정 배경색(55% 틴트)만 두고,
+                // 박스가 **날짜와 그 아래 일정 점을 함께 감싼다**. 선택만 2px primary 테두리.
+                <View
+                  style={[
+                    styles.fillBox,
+                    mark.dotColor != null
+                      ? { backgroundColor: withAlpha(mark.dotColor, 0.55) }
+                      : null,
+                    selected ? styles.fillBoxSelected : null,
+                  ]}
+                >
+                  <Text
+                    variant={mark.emphasized === true ? "caption1" : "caption2"}
+                    color={cellColor(mark)}
                   >
-                    <Text
-                      variant={mark.emphasized === true ? "caption1" : "caption2"}
-                      color={cellColor(mark)}
-                    >
-                      {day}
-                    </Text>
-                  </View>
+                    {day}
+                  </Text>
+                  {/* 그날 일정 — 감정 배경 **안**, 날짜 아래 동그란 점. 감정 채움과 다른
+                      채널이라 둘 다 있는 날도 갈린다. 색은 부르는 쪽이 준다(보관함=홈 CTA 색).
+                      늘 자리를 잡고(투명) 일정 있는 날만 색을 준다 */}
                   <View
                     style={[
-                      styles.underbar,
+                      styles.scheduleDot,
                       mark.underlineColor != null ? { backgroundColor: mark.underlineColor } : null,
                     ]}
                   />
-                </>
+                </View>
               ) : (
                 // 점 모드(쉼터) — 숫자 아래 점(수행=채움/미수행=빈 점). 일정 밑줄은
                 // 숫자 밑 고정 바. ⚠ 폭을 **숫자**에 주면 「22」가 줄바꿈돼 깨진다
@@ -240,8 +240,12 @@ const DOT = 8;
 const DOT_BORDER = 1.5;
 /** 일정 밑줄 바의 고정 폭 — 숫자 폭과 무관하게 **같은 (짧은) 길이**로 서게 한다 */
 const BAR_WIDTH = 8;
-/** halo 모드의 감정 원 지름 — 날짜 숫자(11~12)를 넉넉히 감싼다 */
-const HALO = 24;
+/** 채움 모드 감정 박스의 높이 — 날짜와 그 아래 일정 점을 **함께** 담는다 */
+const FILL_HEIGHT = 34;
+/** 감정 박스 좌우 여백 — 칸보다 **가로로 조금 좁게** 서서 이웃과 벌어진다 */
+const FILL_HMARGIN = 4;
+/** 채움 모드 일정 점 지름 — 날짜 아래 동그라미(홈 CTA 색) */
+const SCHED_DOT = 6;
 
 /** 폭을 재기 전 한 프레임 — 퍼센트로 서 있다가 다음 프레임에 픽셀로 갈아탄다 */
 const MEASURING_WIDTH = { width: `${100 / WEEKDAYS.length}%` } as const;
@@ -265,18 +269,32 @@ const styles = StyleSheet.create({
     gap: 3,
     borderRadius: radius.small,
   },
-  // halo 모드 — 날짜가 박스 가운데에서 **아주 약간 위**에 서게 아래를 조금 띄운다
-  cellFill: { paddingBottom: 3 },
-  // 감정 원 — 55% 틴트 채움 + 원색 1.5px 링(EmotionDot 규칙). 링 자리는 늘 잡아
-  // 두고(투명) 일기 있는 날만 색을 준다. 숫자를 가운데 감싼다
-  halo: {
-    width: HALO,
-    height: HALO,
-    borderRadius: radius.full,
+  // 채움 모드 — 감정 박스와 일정 점을 세로로 담는다
+  cellFill: { paddingBottom: 2 },
+  // 감정 박스 — 칸 폭에서 좌우로 조금 물러나(가로로 좁게) 세로로 선다. **테두리
+  // 없이 55% 틴트 배경만** 두고, 일기 있는 날만 색을 준다. 1.5px 테두리 자리는 늘
+  // 잡아 두되 투명이라 안 보인다 — 선택 시 2px 로 커져도 칸이 밀리지 않게 한다.
+  // 숫자를 가운데 감싼다
+  fillBox: {
+    alignSelf: "stretch",
+    marginHorizontal: FILL_HMARGIN,
+    height: FILL_HEIGHT,
+    borderRadius: radius.small,
     borderWidth: 1.5,
     borderColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
+    // 날짜와 그 아래 일정 점 사이 간격
+    gap: 2,
+  },
+  // 선택은 박스 링을 2px primary 로 덮는다 — 감정 채움(배경)은 그대로 남는다
+  fillBoxSelected: { borderWidth: 2, borderColor: primary.normal },
+  // 일정 점 — 감정 박스 아래 동그라미. 늘 자리를 잡고(투명) 일정 있는 날만 색(홈 CTA)
+  scheduleDot: {
+    width: SCHED_DOT,
+    height: SCHED_DOT,
+    borderRadius: radius.full,
+    backgroundColor: "transparent",
   },
   // 숫자와 그 밑줄 바를 세로로 묶는다 — **폭을 주지 않아** 「22」가 줄바꿈되지 않는다
   num: { alignItems: "center", gap: 2 },

@@ -19,7 +19,13 @@ import {
   type CalendarMark,
   type ViewOption,
 } from "@/components/ds";
-import { emotion as emotionColor, label as labelColor, space, withAlpha } from "@/design/ds";
+import {
+  emotion as emotionColor,
+  label as labelColor,
+  primary,
+  space,
+  withAlpha,
+} from "@/design/ds";
 import { byLatest, diariesInMonth, monthOf } from "@/features/archive/model/archive";
 import { useMonthSchedules } from "@/features/archive/model/monthSchedules";
 import { useDiary } from "@/features/diary/model/diary";
@@ -127,11 +133,12 @@ export default function Archive() {
   const open = (id: string) => router.push(`/diary/${id}`);
 
   /**
-   * 달력 칸의 표시 규칙 — **두 채널**이다:
-   * - **점(+진한 날짜)** = 일기. 대표 감정 하나(태그 없으면 중립색). 한 칸에 셋을
-   *   찍으면 38px 안에서 구분되지 않는다(`A1.md`).
-   * - **숫자 밑 갈색 밑줄** = 그날 일정이 있다. 점과 다른 채널이라 둘 다 있는 날도
-   *   색 없이 구분된다(일기=점 · 일정=밑줄 · 둘 다=점+밑줄).
+   * 달력 칸의 표시 규칙 — **두 채널**이다(`dateFill` 채움 모드):
+   * - **감정 색 박스(+진한 날짜)** = 일기. 대표 감정 하나로 칸을 채운다(태그 없으면
+   *   중립색). 한 칸에 셋을 칠하면 38px 안에서 구분되지 않는다(`A1.md`).
+   * - **날짜 밑 동그란 점** = 그날 일정이 있다. 색은 홈의 「지금 하루 돌아보기」
+   *   버튼 색(`primary.heavy`)을 **연하게**(60%) 낮춘 것 — 감정 채움 위에서 튀지
+   *   않게 한다. 채움과 다른 채널이라 둘 다 있는 날도 갈린다.
    */
   const markOf = (date: string): CalendarMark => {
     const diary = monthly.find((d) => d.date === date);
@@ -144,8 +151,8 @@ export default function Archive() {
       mark.emphasized = true;
       mark.dotColor = top == null ? labelColor.assistive : emotionColor[top];
     }
-    // 연한 갈색 — 갈색 계열은 유지하되(일정=갈색) 반투명으로 낮춘다
-    if (scheduled) mark.underlineColor = withAlpha(labelColor.neutral, 0.55);
+    // 그날 일정 — 홈 CTA(「지금 하루 돌아보기」) 색을 연하게 낮춘 점으로 찍는다
+    if (scheduled) mark.underlineColor = withAlpha(primary.heavy, 0.6);
     return mark;
   };
 
