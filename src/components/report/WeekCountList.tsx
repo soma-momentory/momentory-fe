@@ -1,0 +1,94 @@
+import { StyleSheet, View } from "react-native";
+
+import { Card, Icon, Text, type IconName } from "@/components/ds";
+import { interaction, label as labelColor, space } from "@/design/ds";
+import type { WeeklyReport } from "@/features/report/model/weeklyReport";
+
+/**
+ * `W1` · 「**이번 주 한눈에**」 — 일정 · 행동카드 · 일기를 한 줄씩 센다.
+ *
+ * ## 분모를 함께 적는다 (2026-08-24)
+ *
+ * `DESIGN.md` 「리포트」는 「지표는 `9개 완료` 형태」라고만 적었고, 예전 줄은 그래서
+ * 전체 개수를 숨겼다 — 「분모를 붙이면 비율이 읽히고 비율은 평가가 된다」는 이유였다.
+ * **그 판단을 뒤집었다**: 분모 없는 「9개 완료」는 그 주에 일정이 아홉이었는지 서른이었는지
+ * 알 수 없어서, 값이 커도 작아도 읽는 사람이 자기 기억으로 분모를 채워 넣게 된다.
+ * 「12개 중 9개」는 **비율이 아니라 그 주에 있었던 일의 크기**다.
+ *
+ * 대신 **비율은 여전히 만들지 않는다** — %·완료율·달성률·연속을 쓰지 않고, 굵은
+ * 글자는 언제나 「해낸 쪽」이다. 기록: `docs/PRODUCT.md` 「상류와 차이」.
+ *
+ * 셀 것이 하나도 없는 줄은 「0개 중 0개 완료」로 적지 않는다 — **없던 일에 0 을 붙이면
+ * 못 한 것처럼 읽힌다.** 그런 줄은 「없음」 한 마디로 닫는다.
+ *
+ * ⚠ **행동카드의 분모는 「그 주에 만든 카드」다**(BE `WeeklyReport`) — 지난주에 만든
+ * 카드를 이번 주에 해봤다면 어느 쪽에도 잡히지 않는다. 그래서 두 값이 같은 분모를
+ * 나눠 갖고, 「n개 중 m개」가 성립한다.
+ *
+ * 아이콘은 **숫자보다 약하게**(시안 「Interaction/Inactive」) — 줄의 주인공은 값이다.
+ */
+type WeekCount = {
+  icon: IconName;
+  label: string;
+  /** 「12개 중」 — 셀 것이 없으면 비운다 */
+  prefix: string;
+  /** 「9개 완료」 — 이 줄에서 굵게 서는 값 */
+  value: string;
+};
+
+/** 「n개 중 m개 <했다>」. 분모가 0 이면 분모를 말하지 않는다 */
+const countOf = (total: number, done: number, verb: string): Pick<WeekCount, "prefix" | "value"> =>
+  total === 0
+    ? { prefix: "", value: "없음" }
+    : { prefix: `${total}개 중`, value: `${done}개 ${verb}` };
+
+/** 일기는 하루 한 벌이라 **남긴 날 수**가 곧 장수다 — 분모가 될 「전체」가 없다 */
+const diaryCountOf = (days: number): Pick<WeekCount, "prefix" | "value"> =>
+  days === 0 ? { prefix: "", value: "없음" } : { prefix: "", value: `${days}일 기록` };
+
+export const weekCounts = (report: WeeklyReport): WeekCount[] => [
+  {
+    icon: "calendar",
+    label: "일정",
+    ...countOf(report.scheduleTotal, report.scheduleCompleted, "완료"),
+  },
+  {
+    icon: "heart",
+    label: "행동카드",
+    ...countOf(report.actionCardCreated, report.actionCardCompleted, "실천"),
+  },
+  { icon: "document", label: "일기", ...diaryCountOf(report.diaryCount) },
+];
+
+export function WeekCountList({ report }: { report: WeeklyReport }) {
+  return (
+    <Card padding="loose" style={styles.card}>
+      {weekCounts(report).map((c) => (
+        <View key={c.label} style={styles.row}>
+          <Icon name={c.icon} size={20} color={interaction.inactive} />
+          <Text variant="body2" color={labelColor.neutral} style={styles.label}>
+            {c.label}
+          </Text>
+          <View style={styles.values}>
+            {c.prefix.length > 0 ? (
+              <Text variant="caption1" color={labelColor.alternative}>
+                {c.prefix}
+              </Text>
+            ) : null}
+            <Text variant="headline1" color={labelColor.strong}>
+              {c.value}
+            </Text>
+          </View>
+        </View>
+      ))}
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: { gap: space.xl },
+  row: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  label: { flex: 1, minWidth: 0 },
+  // 「12개 중」과 「9개 완료」가 한 줄에 선다 — 밑줄을 맞춰야 굵기 차이가 위계로 읽힌다
+  values: { flexDirection: "row", alignItems: "baseline", gap: space.xs, flexShrink: 1 },
+});

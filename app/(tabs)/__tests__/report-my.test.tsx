@@ -1,4 +1,4 @@
-import { render, fireEvent, waitFor, within } from "@testing-library/react-native";
+import { render, act, fireEvent, waitFor, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import My from "../my";
@@ -7,7 +7,8 @@ import Report from "../report";
 import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
 import { useSettings } from "@/features/my/model/settings";
-import { initialWeekStart, weekAnalyses } from "@/features/report/data/reportRepository";
+import type { WeeklyReport } from "@/features/report/data/weeklyReportApi";
+import { useWeeklyReport } from "@/features/report/model/weeklyReport";
 import { seedDiaries, seedProfile } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
@@ -16,35 +17,45 @@ jest.mock("expo-router", () => ({
 }));
 
 /**
- * 한 주 **해석**은 서버가 그 주 대화를 읽고 만드는 값인데 계약에 아직 그
- * 엔드포인트가 없다 — `reportRepository` 는 **빈 표**를 준다(2026-08-21 ·
- * 데모 문장을 샘플과 함께 지웠다).
+ * 주간 리포트는 **한 번의 조회**가 전부다(`GET /reports/weekly`) — 마음 일곱 칸 ·
+ * 요약 멘트 · 일정 · 행동 카드 · 일기 셈이 한 벌로 온다. 화면은 아무것도 세지
+ * 않으므로, 여기서 심는 것은 **서버가 준 한 주** 하나다.
  *
- * 화면의 규칙(**주마다 다른 문장** · 해석이 없는 주로는 넘어가지 않는다)은
- * 그래도 지켜져야 하므로 **그 경계를 테스트가 심는다.** 문장 자체는 재료일
- * 뿐이고, 여기서 보는 것은 「고른 주의 값이 함께 바뀌는가」다.
+ * 고정 하루(`SampleClock` · 2026-07-27 월)가 그대로 이번 주의 월요일이다.
  */
-const mockAnalyses = {
-  "2026-07-20": {
-    summary: "흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요.",
-    trendLabel: "다시 균형 찾기",
-    trendDelta: "이전 주보다 완만했어요",
-    emotionFlow: "무거운 몸으로 시작해 평온함으로 닫은 주였어요.",
-    actionText: "답이 막히면 핵심 한 가지부터 다시 말하기",
-  },
-  "2026-07-13": {
-    summary: "말수가 줄어든 주였지만, 그런 날도 있다고 스스로 넘겨준 한 주였어요.",
-    trendLabel: "한 박자 쉬어가기",
-    trendDelta: "이전 주보다 조용했어요",
-    emotionFlow: "답답함으로 열었지만 끝에는 힘을 뺀 주였어요.",
-    actionText: "답장이 밀리면 한 줄만 먼저 보내기",
-  },
-};
+const THIS_WEEK = "2026-07-27";
 
-jest.mock("@/features/report/data/reportRepository", () => ({
-  weekAnalyses: jest.fn(() => mockAnalyses),
-  initialWeekStart: jest.fn(() => "2026-07-20"),
+const weeklyReport = (over: Partial<WeeklyReport> = {}): WeeklyReport => ({
+  startDate: THIS_WEEK,
+  endDate: "2026-08-02",
+  days: [
+    { date: "2026-07-27", emotion: 7 }, // 월 · 피곤함
+    { date: "2026-07-28", emotion: 9 }, // 화 · 평온함
+    { date: "2026-07-29", emotion: 9 },
+    { date: "2026-07-30", emotion: null }, // 목 · 기록 없음
+    { date: "2026-07-31", emotion: 9 },
+    { date: "2026-08-01", emotion: null }, // 토 · 기록 없음
+    { date: "2026-08-02", emotion: 4 },
+  ],
+  dominantEmotion: 9,
+  moodMessage:
+    "이번 주에는 평온한 마음을 가장 많이 느꼈어요. " +
+    "나를 편안하게 해준 환경이나 행동을 다음 주에도 이어가 보세요.",
+  scheduleTotal: 12,
+  scheduleCompleted: 9,
+  actionCardCreated: 5,
+  actionCardCompleted: 3,
+  diaryCount: 5,
+  ...over,
+});
+
+jest.mock("@/features/report/data/weeklyReportApi", () => ({
+  fetchWeeklyReport: jest.fn(),
 }));
+
+const reportApi = jest.requireMock("@/features/report/data/weeklyReportApi") as {
+  fetchWeeklyReport: jest.Mock;
+};
 
 // 앱 안 브라우저도 네이티브다 — 「지원」 세 줄이 무엇을 여는지만 본다
 jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn(() => Promise.resolve()) }));
@@ -58,6 +69,7 @@ const notifications = jest.requireMock("expo-notifications") as {
 
 beforeEach(() => {
   seedDiaries();
+  useWeeklyReport.getState().reset();
   useSettings.getState().reset();
   seedProfile();
   // 탈퇴 상태가 테스트 사이로 새지 않게 — 한 곳만 이 store 를 건드린다
@@ -65,109 +77,170 @@ beforeEach(() => {
   jest.clearAllMocks();
   notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
+  // 기본은 「이번 주가 그대로 왔다」 — 실패·빈 주를 보는 테스트만 이 목을 갈아끼운다
+  reportApi.fetchWeeklyReport.mockResolvedValue({ ok: true, data: weeklyReport() });
 });
 
+/** 마운트 직후에는 아직 조회 중이다 — 값이 그려지길 기다렸다가 본다 */
+const openReport = async () => {
+  const r = await render(<Report />);
+  // 첫 조회의 응답이 **act 안에서** 닿게 한다 — 밖에서 닿으면 React 가 경고한다
+  await act(async () => {});
+  expect(r.getByText("이번 주의 마음")).toBeTruthy();
+  return r;
+};
+
+/**
+ * 주차 이동은 누르는 즉시 서버를 부른다 — 그 왕복이 **act 안에서** 끝나게 감싼다
+ * (밖에서 상태가 바뀌면 React 가 경고한다). 응답이 아직 없으면 그대로 「받는 중」이다.
+ */
+const pressWeek = async (r: Awaited<ReturnType<typeof render>>, label: "이전 주" | "다음 주") => {
+  await act(async () => {
+    fireEvent.press(r.getByLabelText(label));
+  });
+};
+
+/** 응답 도착 시점을 테스트가 쥔다 — 「받는 동안」과 순서 뒤바뀜을 보려면 필요하다 */
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+};
+
 describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
-  it("문구를 기간에 매지 않는다 — 「이번 주」라고 쓰지 않는다", async () => {
-    // 지난 주차를 넘겨볼 때도 같은 말이 맞아야 한다 (W1.md)
-    const r = await render(<Report />);
+  it("보고 있는 주를 서버에 그 주의 월요일로 묻는다", async () => {
+    await openReport();
 
-    expect(r.getByText("한 주 요약")).toBeTruthy();
-    expect(r.getByText("한 주의 흐름")).toBeTruthy();
-    expect(r.getByText("이어갈 한 가지")).toBeTruthy();
-    expect(r.queryByText(/이번 주/)).toBeNull();
+    expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith(THIS_WEEK);
+    expect(reportApi.fetchWeeklyReport).toHaveBeenCalledTimes(1);
   });
 
-  it("그 주 회고 횟수와 감정 기록 수를 센다", async () => {
-    // 7/20~26 — 일기 5편 · 감정 기록 10개
-    const r = await render(<Report />);
-
-    expect(r.getByText("5회")).toBeTruthy();
-    expect(r.getByText("회고 5회 · 감정 기록 10개를 바탕으로 바바가 정리했어요")).toBeTruthy();
-  });
-
-  it("그 주 가장 많이 기록한 감정은 평온함이다 — 보관함·마이와 기간이 다르다", async () => {
-    // 「평온함」은 요일 칸에도 나온다 — 지표는 「3번 기록」이 함께 붙은 쪽이다
-    const r = await render(<Report />);
-
-    expect(r.getByText("가장 많이 기록한 감정")).toBeTruthy();
-    expect(r.getByText("3번 기록")).toBeTruthy();
-    // 그 주 평온함은 21·24·26 세 번이다
-    expect(r.getAllByText("평온함").length).toBeGreaterThanOrEqual(3);
-  });
-
-  it("흐름 라벨이 상태를 단정하지 않는다 — 「회복」을 쓰지 않는다", async () => {
-    const r = await render(<Report />);
-
-    expect(r.getByText("다시 균형 찾기")).toBeTruthy();
-    expect(r.queryByText("회복")).toBeNull();
-  });
-
-  it("비교는 기준을 밝혀 쓴다", async () => {
-    // 「이전 주 3회」는 앞 주(7/13~19)의 실제 장수에서 계산한 값이다
-    const r = await render(<Report />);
-
-    expect(r.getByText("이전 주보다 완만했어요")).toBeTruthy();
-    expect(r.getByText("이전 주 3회")).toBeTruthy();
-  });
-
-  it("요일 일곱 칸을 두고 기록 없는 날은 「기록 없음」이다", async () => {
-    // 7/23 목 · 7/25 토는 일기가 없다
-    const r = await render(<Report />);
+  it("마음 일곱 칸을 두고 기록 없는 날은 빈 칸으로 남긴다", async () => {
+    const r = await openReport();
 
     for (const d of ["월", "화", "수", "목", "금", "토", "일"]) {
-      expect(r.getByLabelText(`${d}요일`)).toBeTruthy();
+      expect(r.getByLabelText(new RegExp(`^${d}요일`))).toBeTruthy();
     }
-    expect(r.getAllByText("기록 없음")).toHaveLength(2);
+    // 색만으로 판단하게 하지 않는다 — 칸마다 낭독기가 읽을 감정 이름이 붙는다
+    expect(r.getByLabelText("월요일 피곤함")).toBeTruthy();
+    expect(r.getByLabelText("목요일 기록 없음")).toBeTruthy();
+    expect(r.getByLabelText("토요일 기록 없음")).toBeTruthy();
   });
 
-  it("감정을 이름과 함께 적는다 — 색만으로 판단하게 하지 않는다", async () => {
-    const r = await render(<Report />);
-    const thursday = within(r.getByLabelText("목요일"));
-    const monday = within(r.getByLabelText("월요일"));
+  it("요약 멘트를 두 줄로 가르되 문장을 고치지 않는다", async () => {
+    const r = await openReport();
 
-    expect(thursday.getByText("기록 없음")).toBeTruthy();
-    expect(monday.getByText("피곤함")).toBeTruthy();
-    expect(monday.getByText("뿌듯함")).toBeTruthy();
+    // 서버가 준 한 덩이를 첫 마침표에서 자를 뿐이다 — 없는 문장을 짓지 않는다
+    expect(r.getByText("이번 주에는 평온한 마음을 가장 많이 느꼈어요.")).toBeTruthy();
+    expect(
+      r.getByText("나를 편안하게 해준 환경이나 행동을 다음 주에도 이어가 보세요."),
+    ).toBeTruthy();
   });
 
-  it("행동은 만든 수와 해본 수만 적는다 — 실행률·연속을 세지 않는다", async () => {
-    const r = await render(<Report />);
+  it("한 문장뿐인 주는 그대로 한 줄이다", async () => {
+    reportApi.fetchWeeklyReport.mockResolvedValue({
+      ok: true,
+      data: weeklyReport({
+        dominantEmotion: null,
+        moodMessage: "여러 마음이 번갈아 찾아온 한 주였어요.",
+      }),
+    });
+    const r = await openReport();
 
-    expect(r.getByText("3번 만들었고 · 2번 해봤어요")).toBeTruthy();
-    // `%` 는 도넛의 감정 **비율**에만 쓴다(`app-flow.md` §2.6) — 실행률·달성률이 아니다
-    expect(r.queryByText(/실행률|달성률|연속|최고 기록/)).toBeNull();
+    expect(r.getByText("여러 마음이 번갈아 찾아온 한 주였어요.")).toBeTruthy();
   });
 
-  it("도넛·비율·범례를 쓰지 않는다 — 감정은 7일 흐름으로만 말한다", async () => {
-    // design.md 「리포트」 — 「도넛·비율·범례 없이 7일 감정 흐름 + 요약 2줄」.
-    // 완료율·%·분석 같은 표현도 쓰지 않는다
-    const r = await render(<Report />);
+  it("일정·행동카드는 「몇 개 중 몇 개」로 적는다", async () => {
+    const r = await openReport();
+
+    expect(r.getByText("이번 주 한눈에")).toBeTruthy();
+
+    const schedule = within(r.getByText("일정").parent!.parent!);
+    expect(schedule.getByText("12개 중")).toBeTruthy();
+    expect(schedule.getByText("9개 완료")).toBeTruthy();
+
+    const cards = within(r.getByText("행동카드").parent!.parent!);
+    expect(cards.getByText("5개 중")).toBeTruthy();
+    expect(cards.getByText("3개 실천")).toBeTruthy();
+  });
+
+  it("일기는 남긴 날 수로 적는다 — 분모가 될 「전체」가 없다", async () => {
+    const r = await openReport();
+
+    expect(r.getByText("5일 기록")).toBeTruthy();
+  });
+
+  it("셀 것이 없는 줄에 0 을 붙이지 않는다", async () => {
+    // 「0개 중 0개 완료」는 없던 일을 못 한 일로 만든다
+    reportApi.fetchWeeklyReport.mockResolvedValue({
+      ok: true,
+      data: weeklyReport({
+        scheduleTotal: 0,
+        scheduleCompleted: 0,
+        actionCardCreated: 0,
+        actionCardCompleted: 0,
+        diaryCount: 0,
+      }),
+    });
+    const r = await openReport();
+
+    expect(r.getAllByText("없음")).toHaveLength(3);
+    expect(r.queryByText(/0개/)).toBeNull();
+  });
+
+  it("비율을 만들지 않는다 — 도넛·%·완료율을 쓰지 않는다", async () => {
+    // `DESIGN.md` 「리포트」 — 「도넛·비율·범례 없이」 · 「완료율·%·분석 표현 금지」.
+    // 「12개 중 9개」는 비율이 아니라 그 주에 있었던 일의 크기다
+    const r = await openReport();
 
     expect(r.queryByText(/%/)).toBeNull();
     expect(r.queryByLabelText(/비율/)).toBeNull();
-    expect(r.queryByText(/완료율|실행률|분석|평균/)).toBeNull();
+    expect(r.queryByText(/완료율|실행률|달성률|분석|평균/)).toBeNull();
   });
 
-  it("지표는 값 하나로 말한다 — 분모를 붙이지 않는다", async () => {
-    // 「5회 / 7일 중」이 되는 순간 비율이 읽히고, 비율은 평가가 된다
+  it("점수·등급·배지·연속을 쓰지 않는다", async () => {
+    const r = await openReport();
+
+    expect(r.queryByText(/점수|등급|배지|연속|최고 기록|\d+점/)).toBeNull();
+  });
+
+  it("다음 주로 넘어가지 않는다 — 아직 오지 않은 주에는 셀 것이 없다", async () => {
+    const r = await openReport();
+
+    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(true);
+    await pressWeek(r, "다음 주");
+
+    expect(reportApi.fetchWeeklyReport).toHaveBeenCalledTimes(1);
+  });
+
+  it("이전 주로 넘기면 그 주를 다시 받는다", async () => {
+    const r = await openReport();
+
+    await pressWeek(r, "이전 주");
+
+    await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-20"));
+    // 날짜 머리도 함께 옮겨간다 — 옛 주 날짜 아래 새 수치를 두지 않는다
+    await waitFor(() => expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy());
+  });
+
+  it("실패는 한 줄로 흡수한다 — 모달도 재시도 버튼도 없다", async () => {
+    reportApi.fetchWeeklyReport.mockResolvedValue({ ok: false, code: "network" });
     const r = await render(<Report />);
 
-    expect(r.getByText("한 주 한눈에")).toBeTruthy();
-    expect(r.getByText("5회")).toBeTruthy();
-    expect(r.queryByText(/중 \d+|\/\s*\d+/)).toBeNull();
+    await waitFor(() =>
+      expect(r.getByText("리포트를 불러오지 못했어요 · 잠시 뒤에 다시 열어 주세요")).toBeTruthy(),
+    );
+    expect(r.queryByText(/다시 시도|재시도/)).toBeNull();
   });
 
   it("보조 행동으로 그 주의 기록을 보러 간다", async () => {
-    const r = await render(<Report />);
+    const r = await openReport();
 
-    expect(r.getByText("이 주의 기록 보러가기")).toBeTruthy();
-  });
+    fireEvent.press(r.getByText("이번 주 기록 보기"));
 
-  it("점수·등급·배지를 쓰지 않는다", async () => {
-    const r = await render(<Report />);
-
-    expect(r.queryByText(/점수|등급|배지|\d+점/)).toBeNull();
+    expect(router.replace).toHaveBeenCalledWith("/archive");
   });
 
   it("일기 7편 미만이면 잠긴 화면 대신 한 줄로 예고한다", async () => {
@@ -407,116 +480,79 @@ describe("M2 · 알림 설정 시트 — 하나의 결정만 담는다", () => {
   });
 });
 
-describe("W1 · 주차 이동 — 수치와 해석이 함께 바뀐다", () => {
-  const prev = async (r: Awaited<ReturnType<typeof render>>) =>
-    fireEvent.press(r.getByLabelText("이전 주"));
+describe("W1 · 주차 이동 — 주마다 서버에 다시 묻는다", () => {
+  /** 이전 주(7/20~26)가 답할 값 — 이번 주와 **다른 수치**여야 뒤바뀜이 보인다 */
+  const lastWeek = {
+    ok: true,
+    data: weeklyReport({
+      startDate: "2026-07-20",
+      endDate: "2026-07-26",
+      scheduleTotal: 4,
+      scheduleCompleted: 1,
+    }),
+  };
 
-  it("① 이전 주로 이동하면 날짜 범위가 바뀐다", async () => {
-    const r = await render(<Report />);
+  it("이전 주로 옮기면 날짜와 수치가 함께 그 주 것이 된다", async () => {
+    const r = await openReport();
+    expect(r.getByText("12개 중")).toBeTruthy();
+
+    reportApi.fetchWeeklyReport.mockResolvedValue(lastWeek);
+    await pressWeek(r, "이전 주");
+
+    await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-20"));
+    await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
     expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy();
-
-    await prev(r);
-
-    expect(r.getByText("7월 13일 ~ 7월 19일")).toBeTruthy();
+    expect(r.queryByText("12개 중")).toBeNull();
   });
 
-  it("② 회고·감정 수치가 바뀐다", async () => {
-    const r = await render(<Report />);
-    // 7/20 주 — 일기 5편 · 감정 10개
-    expect(r.getByText("회고 5회 · 감정 기록 10개를 바탕으로 바바가 정리했어요")).toBeTruthy();
+  it("새 주를 받는 동안 옛 주의 수치를 남겨 두지 않는다", async () => {
+    // 새 날짜 아래 지난 주 수치가 한 프레임이라도 보이면 그 화면은 거짓말을 한 것이다
+    const r = await openReport();
+    const gate = deferred<typeof lastWeek>();
+    reportApi.fetchWeeklyReport.mockReturnValueOnce(gate.promise);
 
-    await prev(r);
+    await pressWeek(r, "이전 주");
 
-    // 7/13 주 — 13 · 15 · 17 세 편 · 감정 6개
-    expect(r.getByText("회고 3회 · 감정 기록 6개를 바탕으로 바바가 정리했어요")).toBeTruthy();
-    expect(r.getByText("3회")).toBeTruthy();
+    await waitFor(() => expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy());
+    expect(r.queryByText("12개 중")).toBeNull();
+    expect(r.getByText("한 주를 모으고 있어요")).toBeTruthy();
+
+    gate.resolve(lastWeek);
+    await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
   });
 
-  it("③ 한 주 요약과 흐름 문장도 그 주 값이다", async () => {
-    // 서로 다른 한 주에 같은 문장을 보여주지 않는다
-    const r = await render(<Report />);
-    expect(
-      r.getByText("흔들렸지만, 스스로를 다독이며 다시 균형을 찾아간 한 주였어요."),
-    ).toBeTruthy();
-    expect(r.getByText("다시 균형 찾기")).toBeTruthy();
-    expect(r.getByText("무거운 몸으로 시작해 평온함으로 닫은 주였어요.")).toBeTruthy();
+  it("다시 다음 주로 오면 이번 주다", async () => {
+    const r = await openReport();
 
-    await prev(r);
+    reportApi.fetchWeeklyReport.mockResolvedValue(lastWeek);
+    await pressWeek(r, "이전 주");
+    await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
 
-    expect(
-      r.getByText("말수가 줄어든 주였지만, 그런 날도 있다고 스스로 넘겨준 한 주였어요."),
-    ).toBeTruthy();
-    expect(r.getByText("한 박자 쉬어가기")).toBeTruthy();
-    expect(r.getByText("답답함으로 열었지만 끝에는 힘을 뺀 주였어요.")).toBeTruthy();
-    // 앞 주의 문장이 남아 있으면 안 된다
-    expect(r.queryByText("다시 균형 찾기")).toBeNull();
-  });
+    reportApi.fetchWeeklyReport.mockResolvedValue({ ok: true, data: weeklyReport() });
+    await pressWeek(r, "다음 주");
 
-  it("④ 이어갈 한 가지와 행동 수치도 그 주 값이다", async () => {
-    const r = await render(<Report />);
-    // 7/20 주 — 20 · 22 · 26 세 장을 만들고 20 · 22 를 해봤다
-    expect(r.getByText("답이 막히면 핵심 한 가지부터 다시 말하기")).toBeTruthy();
-    expect(r.getByText("3번 만들었고 · 2번 해봤어요")).toBeTruthy();
-
-    await prev(r);
-
-    // 7/13 주 — 13 · 17 두 장을 만들고 13 을 해봤다
-    expect(r.getByText("답장이 밀리면 한 줄만 먼저 보내기")).toBeTruthy();
-    expect(r.getByText("2번 만들었고 · 1번 해봤어요")).toBeTruthy();
-  });
-
-  it("⑤ 다시 다음 주로 가면 원래 데이터로 돌아온다", async () => {
-    const r = await render(<Report />);
-    await prev(r);
-
-    await fireEvent.press(r.getByLabelText("다음 주"));
-
-    expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy();
-    expect(r.getByText("다시 균형 찾기")).toBeTruthy();
-    expect(r.getByText("3번 만들었고 · 2번 해봤어요")).toBeTruthy();
-  });
-
-  it("⑥ 이동 범위의 끝에서는 화살표가 눌리지 않는다", async () => {
-    // 해석이 준비된 주만 본다 — 없는 주로는 넘어가지 않는다
-    const r = await render(<Report />);
-
-    // 최신 주 — 다음이 없다
+    await waitFor(() => expect(r.getByText("7월 27일 ~ 8월 2일")).toBeTruthy());
+    await waitFor(() => expect(r.getByText("12개 중")).toBeTruthy());
+    // 이번 주에 닿았으니 다시 끝이다
     expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(true);
-    expect(r.getByLabelText("이전 주").props.accessibilityState.disabled).toBe(false);
-
-    await prev(r);
-
-    // 가장 이른 주 — 이전이 없다
-    expect(r.getByLabelText("이전 주").props.accessibilityState.disabled).toBe(true);
-    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(false);
-
-    await prev(r); // 눌러도 그대로다
-    expect(r.getByText("7월 13일 ~ 7월 19일")).toBeTruthy();
   });
 
-  it("해석이 아직 없으면 이번 주에 머문다 — 그래도 세는 값은 나온다", async () => {
-    // 지금 실제로 서버가 주는 것 = 아무것도 없음(`reportRepository` 의 빈 표).
-    // 없는 문장을 지어내지 않고, 대신 **계산한 값은 그대로 보여준다**.
-    jest.mocked(weekAnalyses).mockReturnValueOnce({});
-    jest.mocked(initialWeekStart).mockReturnValueOnce("2026-07-27");
+  it("늦게 도착한 옛 주의 응답이 지금 보는 주를 덮지 않는다", async () => {
+    const slow = deferred<{ ok: true; data: WeeklyReport }>();
+    reportApi.fetchWeeklyReport.mockReturnValueOnce(slow.promise).mockResolvedValue(lastWeek);
 
     const r = await render(<Report />);
+    await pressWeek(r, "이전 주");
+    await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
 
-    expect(r.getByText("7월 27일 ~ 8월 2일")).toBeTruthy();
-    // 넘겨볼 주가 없다 — 화살표가 눌리지 않는 것으로 끝을 말한다
-    expect(r.getByLabelText("이전 주").props.accessibilityState.disabled).toBe(true);
-    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(true);
-    // 27일 한 편 · 감정 둘 — 일기에서 세는 값이라 해석 없이도 나온다
-    expect(r.getByText("회고 1회 · 감정 기록 2개를 바탕으로 바바가 정리했어요")).toBeTruthy();
-  });
+    // 이번 주 조회가 이제야 돌아온다 — 화면은 그 주를 보고 있지 않다
+    slow.resolve({ ok: true, data: weeklyReport() });
+    await act(async () => {
+      await Promise.resolve();
+    });
 
-  it("「이전 주 N회」도 계산한다 — 앞 주가 없으면 비교하지 않는다", async () => {
-    const r = await render(<Report />);
-    expect(r.getByText("이전 주 3회")).toBeTruthy();
-
-    await prev(r);
-
-    expect(r.queryByText(/이전 주 \d+회/)).toBeNull();
+    expect(r.getByText("4개 중")).toBeTruthy();
+    expect(r.queryByText("12개 중")).toBeNull();
   });
 });
 
