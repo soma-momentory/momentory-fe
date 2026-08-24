@@ -8,9 +8,9 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * GET /api/v1/reports/weekly?date=YYYY-MM-DD   200 WeeklyReportResponse
  * ```
  *
- * `date` 는 **그 주에 속한 아무 날**이면 되고 서버가 그 주의 월요일로 맞춘다.
- * 그래서 화면은 늘 월요일을 보내고, 돌아온 `startDate`·`endDate` 를 그대로 쓴다 —
- * 주 경계(월~일 · KST · 04:00 하루 경계)를 화면이 다시 계산하지 않는다.
+ * `date` 는 **그 주에 속한 아무 날**이면 되고 서버가 그 주의 일요일로 맞춘다.
+ * 그래서 화면은 늘 일요일을 보내고, 돌아온 `startDate`·`endDate` 를 그대로 쓴다 —
+ * 주 경계(일~토 · KST · 04:00 하루 경계)를 화면이 다시 계산하지 않는다.
  *
  * **리포트는 세는 화면이라 서버에 제 테이블이 없다**(BE `WeeklyReportService`).
  * 일정의 숨김·삭제 규칙도 일기의 하루 경계도 서버 안에서 이미 적용된 값이 온다 —
@@ -22,7 +22,7 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * | 서버                              | 여기서                                    |
  * | --------------------------------- | ----------------------------------------- |
  * | `emotion` 소문자 키(`calm`)       | 감정 id(1~9) — 모르는 키는 `null` 로 버린다 |
- * | `dailyMoods` 일곱 칸(월→일)       | 그대로. **일곱 칸이 아니면 어긋남**이다     |
+ * | `dailyMoods` 일곱 칸(일→토)       | 그대로. **일곱 칸이 아니면 어긋남**이다     |
  * | `*Count` int64                    | number                                     |
  *
  * `scheduleApi.ts` 와 같은 결로 **던지지 않는다** — 전송 실패도 계약 위반도
@@ -73,11 +73,11 @@ export type WeeklyMoodDay = {
  * 나눠 갖는 짝**이고, 화면이 「n개 중 m개」로 함께 읽을 수 있다.
  */
 export type WeeklyReport = {
-  /** 주 시작일(월요일) */
+  /** 주 시작일(일요일) */
   startDate: string;
-  /** 주 종료일(일요일) */
+  /** 주 종료일(토요일) */
   endDate: string;
-  /** 월→일 일곱 칸 */
+  /** 일→토 일곱 칸 */
   days: WeeklyMoodDay[];
   /** 가장 자주 느낀 감정 — 최다가 여럿이거나 기록이 없으면 `null` */
   dominantEmotion: EmotionId | null;
@@ -194,7 +194,7 @@ export const toWeeklyReport = (v: unknown): WeeklyReport | null => {
 // ── 호출 ────────────────────────────────────────────────────────────────
 
 /**
- * 그 주의 리포트. `date` 는 그 주에 속한 아무 날이면 된다 — 화면은 월요일을 보낸다.
+ * 그 주의 리포트. `date` 는 그 주에 속한 아무 날이면 된다 — 화면은 일요일을 보낸다.
  * **던지지 않는다.**
  */
 export const fetchWeeklyReport = async (date: string): Promise<WeeklyReportResult> => {

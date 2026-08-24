@@ -42,7 +42,7 @@ export type WeeklyReportStatus =
   | "failed";
 
 type WeeklyReportStore = {
-  /** 보고 있는 주의 **월요일**. 서버에 보내는 `date` 이기도 하다 */
+  /** 보고 있는 주의 **일요일**(주의 첫날). 서버에 보내는 `date` 이기도 하다 */
   weekStart: string;
   /** 받은 한 주. 주를 옮기면 **먼저 비운다** — 새 날짜 아래 옛 수치를 두지 않는다 */
   report: WeeklyReport | null;
@@ -51,7 +51,7 @@ type WeeklyReportStore = {
   failure: WeeklyReportFailureCode | null;
   /** 화면에 들어올 때 — **이번 주**로 되돌리고 받는다 */
   open: () => Promise<void>;
-  /** 고른 주로 옮기고 곧바로 받는다 — 인자는 그 주의 **월요일**이다 */
+  /** 고른 주로 옮기고 곧바로 받는다 — 인자는 그 주의 **일요일**이다 */
   selectWeek: (weekStart: string) => Promise<void>;
   reset: () => void;
 };
@@ -62,7 +62,7 @@ type WeeklyReportStore = {
  */
 let latest = 0;
 
-/** 오늘(04:00 하루 경계)이 든 주의 월요일 — 리포트가 처음 여는 주다 */
+/** 오늘(04:00 하루 경계)이 든 주의 일요일 — 리포트가 처음 여는 주다 */
 export const thisWeekStart = (): string => weekStartOf(clock.today());
 
 /** 보고 있는 주가 이번 주인가 — 문구가 「이번 주 …」인지 「이 주 …」인지를 가른다 */
@@ -133,12 +133,12 @@ export function splitMoodMessage(message: string): { lead: string; follow: strin
 /**
  * 그 주의 이름 — `2026-08-24` → 「2026년 8월 4주차」.
  *
- * **주가 시작한 달**로 센다(그 주의 월요일이 든 달). 한 주가 달을 걸치면 어느 쪽으로
- * 셀지 정해야 하는데, 시작한 달이 가장 설명하기 쉽다 — 8월 31일에 시작한 주는
+ * **주가 시작한 달**로 센다(그 주의 일요일이 든 달). 한 주가 달을 걸치면 어느 쪽으로
+ * 셀지 정해야 하는데, 시작한 달이 가장 설명하기 쉽다 — 8월 30일에 시작한 주는
  * 「8월 5주차」다(9월 1주차가 아니다).
  *
- * 몇 주차인지는 **월요일의 날짜**만 보면 나온다: 한 달 안의 월요일들은 7일 간격이라
- * 첫 월요일이 며칠이든 `(일 - 1) / 7` 이 그대로 순번이 된다.
+ * 몇 주차인지는 **첫날의 날짜**만 보면 나온다: 한 달 안의 일요일들은 7일 간격이라
+ * 첫 일요일이 며칠이든 `(일 - 1) / 7` 이 그대로 순번이 된다.
  */
 export function weekNameOf(weekStart: string): string {
   const [y = "2026", m = "1", d = "1"] = weekStart.split("-");
@@ -147,7 +147,7 @@ export function weekNameOf(weekStart: string): string {
 
 /** 목록에 서는 한 줄 — 고르는 값(`weekStart`)과 사람이 읽는 것들 */
 export type WeekOption = {
-  /** 그 주의 월요일 — 고르면 이 값이 서버로 간다 */
+  /** 그 주의 일요일 — 고르면 이 값이 서버로 간다 */
   weekStart: string;
   /** 「2026년 8월 4주차」 */
   name: string;

@@ -21,16 +21,16 @@ import type { WeekOption } from "@/features/report/model/weeklyReport";
  * ## 「4주차」만으로는 어느 날인지 모른다
  *
  * 그래서 줄마다 **날짜 범위와 일기 수를 함께** 적는다. 몇 주차인지는 사람이 세지
- * 않는 값이라(달마다 첫 월요일이 다르다) 이름만 두면 고를 근거가 없다.
+ * 않는 값이라(달마다 첫 일요일이 다르다) 이름만 두면 고를 근거가 없다.
  *
  * 선택은 **색만으로 말하지 않는다**(`RULES.md` 3) — 오른쪽에 체크 표시가 선다.
  */
 type Props = {
   /** 최근 주가 위로. 만드는 것은 `weekOptions` 다 */
   weeks: readonly WeekOption[];
-  /** 지금 보고 있는 주의 월요일 */
+  /** 지금 보고 있는 주의 일요일 */
   weekStart: string;
-  /** 고른 주의 월요일. 시트를 닫는 것은 부르는 쪽이다 */
+  /** 고른 주의 일요일. 시트를 닫는 것은 부르는 쪽이다 */
   onSelect: (weekStart: string) => void;
   onDismiss: () => void;
 };

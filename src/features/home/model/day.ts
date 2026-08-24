@@ -337,18 +337,23 @@ const useDayTick = create<{ tick: number }>(() => ({ tick: 0 }));
 export const markDayChanged = () => useDayTick.setState((s) => ({ tick: s.tick + 1 }));
 
 /**
- * 그 날짜가 든 주의 **월요일** — 홈의 「이번 주 감정」이 보는 창(`DESIGN.md` 「홈」).
+ * 그 날짜가 든 주의 **일요일** — 앱의 **한 주 기준 한 곳**이다.
  *
- * 주는 월요일에 시작한다(시안의 요일 줄이 `월…일` 이다). 일요일(`getDay()===0`)은
- * **앞선 월요일**에 붙는다 — 그 주의 마지막 날이지 다음 주의 첫날이 아니다.
+ * 홈의 「이번 주 감정」과 리포트의 한 주가 둘 다 여기를 지난다. 두 곳이 각자 세면
+ * 같은 날이 서로 다른 주에 들어가고, 그러면 홈에서 본 감정 줄과 리포트의 일곱 칸이
+ * 어긋난다.
+ *
+ * ⚠ **일~토다** (2026-08-24 · 사용자 결정). 시안의 요일 줄이 `월…일` 이라 원래는
+ * 월요일에 시작했는데, 기준을 일요일로 옮겼다 — **서버도 같은 날 함께 바꿨다**
+ * (BE `WeeklyReportService` 의 `previousOrSame(SUNDAY)`). 한쪽만 바꾸면 리포트가
+ * 서버에서 받은 주와 화면이 그린 날짜 머리가 하루씩 어긋난다.
  */
 export function weekStartOf(iso: string): string {
   const [y = "2026", m = "1", d = "1"] = iso.split("-");
   const at = new Date(Number(y), Number(m) - 1, Number(d));
-  const back = (at.getDay() + 6) % 7;
-  const monday = new Date(at.getFullYear(), at.getMonth(), at.getDate() - back);
+  const sunday = new Date(at.getFullYear(), at.getMonth(), at.getDate() - at.getDay());
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${monday.getFullYear()}-${pad(monday.getMonth() + 1)}-${pad(monday.getDate())}`;
+  return `${sunday.getFullYear()}-${pad(sunday.getMonth() + 1)}-${pad(sunday.getDate())}`;
 }
 
 /** 목록에 보이는 일정 — 숨긴 것은 빼고 센다 */

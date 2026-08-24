@@ -7,7 +7,7 @@ import type { WeeklyMoodDay } from "@/features/report/model/weeklyReport";
 import { koreanWeekday } from "@/lib/day";
 
 /**
- * `W1` · **이번 주의 마음 일곱 칸** — 월요일부터 일요일까지 하루 한 점이다.
+ * `W1` · **이번 주의 마음 일곱 칸** — 일요일부터 토요일까지 하루 한 점이다.
  *
  * **막대가 아니라 점**이다(`W1.md`) — 감정에 강도를 입력받지 않으므로 높이로
  * 말할 수 있는 것이 없다. 기록이 없는 날은 색 없이 잔잔한 중립 원으로 자리만

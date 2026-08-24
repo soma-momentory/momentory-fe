@@ -21,21 +21,22 @@ jest.mock("expo-router", () => ({
  * 요약 멘트 · 일정 · 행동 카드 · 일기 셈이 한 벌로 온다. 화면은 아무것도 세지
  * 않으므로, 여기서 심는 것은 **서버가 준 한 주** 하나다.
  *
- * 고정 하루(`SampleClock` · 2026-07-27 월)가 그대로 이번 주의 월요일이다.
+ * ⚠ 한 주는 **일~토**다(2026-08-24 · 서버와 같은 기준). 고정 하루
+ * (`SampleClock` · 2026-07-27 월)가 든 주는 **7월 26일(일)에 시작한다.**
  */
-const THIS_WEEK = "2026-07-27";
+const THIS_WEEK = "2026-07-26";
 
 const weeklyReport = (over: Partial<WeeklyReport> = {}): WeeklyReport => ({
   startDate: THIS_WEEK,
-  endDate: "2026-08-02",
+  endDate: "2026-08-01",
   days: [
-    { date: "2026-07-27", emotion: 7 }, // 월 · 피곤함
-    { date: "2026-07-28", emotion: 9 }, // 화 · 평온함
-    { date: "2026-07-29", emotion: 9 },
-    { date: "2026-07-30", emotion: null }, // 목 · 기록 없음
-    { date: "2026-07-31", emotion: 9 },
-    { date: "2026-08-01", emotion: null }, // 토 · 기록 없음
-    { date: "2026-08-02", emotion: 4 },
+    { date: "2026-07-26", emotion: 7 }, // 일 · 피곤함
+    { date: "2026-07-27", emotion: 9 }, // 월 · 평온함
+    { date: "2026-07-28", emotion: 9 },
+    { date: "2026-07-29", emotion: null }, // 수 · 기록 없음
+    { date: "2026-07-30", emotion: 9 },
+    { date: "2026-07-31", emotion: null }, // 금 · 기록 없음
+    { date: "2026-08-01", emotion: 4 }, // 토
   ],
   dominantEmotion: 9,
   moodMessage:
@@ -129,13 +130,13 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
   it("마음 일곱 칸을 두고 기록 없는 날은 빈 칸으로 남긴다", async () => {
     const r = await openReport();
 
-    for (const d of ["월", "화", "수", "목", "금", "토", "일"]) {
+    for (const d of ["일", "월", "화", "수", "목", "금", "토"]) {
       expect(r.getByLabelText(new RegExp(`^${d}요일`))).toBeTruthy();
     }
     // 색만으로 판단하게 하지 않는다 — 칸마다 낭독기가 읽을 감정 이름이 붙는다
-    expect(r.getByLabelText("월요일 피곤함")).toBeTruthy();
-    expect(r.getByLabelText("목요일 기록 없음")).toBeTruthy();
-    expect(r.getByLabelText("토요일 기록 없음")).toBeTruthy();
+    expect(r.getByLabelText("일요일 피곤함")).toBeTruthy();
+    expect(r.getByLabelText("수요일 기록 없음")).toBeTruthy();
+    expect(r.getByLabelText("금요일 기록 없음")).toBeTruthy();
   });
 
   it("요약 멘트를 두 줄로 가르되 문장을 고치지 않는다", async () => {
@@ -236,8 +237,8 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.getByText("2026년 7월 3주차")).toBeTruthy();
     expect(r.getByText("2026년 7월 2주차")).toBeTruthy();
     expect(r.getByText("2026년 7월 1주차")).toBeTruthy();
-    // 6월 29일에 시작한 주 — 달을 걸쳐도 시작한 달로 센다
-    expect(r.getByText("2026년 6월 5주차")).toBeTruthy();
+    // 6월 28일(일)에 시작한 주 — 달을 걸쳐도 시작한 달로 센다
+    expect(r.getByText("2026년 6월 4주차")).toBeTruthy();
     expect(r.getAllByText(/주차/)).toHaveLength(5);
   });
 
@@ -245,24 +246,24 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     const r = await openReport();
     await openPicker(r);
 
-    // 7/20 주에는 20·21·22·24·26 다섯 편이 있다
-    expect(r.getByText("7월 20일 ~ 7월 26일 · 일기 5일")).toBeTruthy();
-    expect(r.getByText("7월 13일 ~ 7월 19일 · 일기 3일")).toBeTruthy();
+    // 7/19(일) 주에는 20·21·22·24 네 편, 7/12 주에는 13·15·17 세 편이 있다
+    expect(r.getByText("7월 19일 ~ 7월 25일 · 일기 4일")).toBeTruthy();
+    expect(r.getByText("7월 12일 ~ 7월 18일 · 일기 3일")).toBeTruthy();
   });
 
   it("이번 주는 일기가 없어도 목록에 남는다", async () => {
     // 없으면 지난 주를 보다가 이번 주로 돌아올 길이 목록에서 사라진다
     useDiary.setState({
-      diaries: useDiary.getState().diaries.filter((d) => d.date < "2026-07-27"),
+      diaries: useDiary.getState().diaries.filter((d) => d.date < "2026-07-26"),
     });
     const r = await openReport();
     await openPicker(r);
 
     expect(r.getByText("2026년 7월 4주차 · 이번 주")).toBeTruthy();
     // 머리와 목록 줄, 두 자리에 같은 범위가 선다
-    expect(r.getAllByText("7월 27일 ~ 8월 2일")).toHaveLength(2);
+    expect(r.getAllByText("7월 26일 ~ 8월 1일")).toHaveLength(2);
     // 일기가 없으니 뒤에 「· 일기 N일」을 붙이지 않는다
-    expect(r.queryByText(/7월 27일 ~ 8월 2일 · 일기/)).toBeNull();
+    expect(r.queryByText(/7월 26일 ~ 8월 1일 · 일기/)).toBeNull();
   });
 
   it("목록에서 한 주를 고르면 그 주를 다시 받고 목록이 닫힌다", async () => {
@@ -270,9 +271,9 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
 
     await pickWeek(r, "2026년 7월 3주차");
 
-    await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-20"));
+    await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-19"));
     // 날짜 머리도 함께 옮겨간다 — 옛 주 날짜 아래 새 수치를 두지 않는다
-    await waitFor(() => expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy());
+    await waitFor(() => expect(r.getByText("7월 19일 ~ 7월 25일")).toBeTruthy());
     expect(r.queryByText("주 고르기")).toBeNull();
   });
 
@@ -556,12 +557,12 @@ describe("M2 · 알림 설정 시트 — 하나의 결정만 담는다", () => {
 });
 
 describe("W1 · 주 고르기 — 고른 주마다 서버에 다시 묻는다", () => {
-  /** 이전 주(7/20~26)가 답할 값 — 이번 주와 **다른 수치**여야 뒤바뀜이 보인다 */
+  /** 이전 주(7/19~25)가 답할 값 — 이번 주와 **다른 수치**여야 뒤바뀜이 보인다 */
   const lastWeek = {
     ok: true,
     data: weeklyReport({
-      startDate: "2026-07-20",
-      endDate: "2026-07-26",
+      startDate: "2026-07-19",
+      endDate: "2026-07-25",
       scheduleTotal: 4,
       scheduleCompleted: 1,
     }),
@@ -574,9 +575,9 @@ describe("W1 · 주 고르기 — 고른 주마다 서버에 다시 묻는다", 
     reportApi.fetchWeeklyReport.mockResolvedValue(lastWeek);
     await pickWeek(r, "2026년 7월 3주차");
 
-    await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-20"));
+    await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-19"));
     await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
-    expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy();
+    expect(r.getByText("7월 19일 ~ 7월 25일")).toBeTruthy();
     expect(r.queryByText("12개 중")).toBeNull();
   });
 
@@ -588,7 +589,7 @@ describe("W1 · 주 고르기 — 고른 주마다 서버에 다시 묻는다", 
 
     await pickWeek(r, "2026년 7월 3주차");
 
-    await waitFor(() => expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy());
+    await waitFor(() => expect(r.getByText("7월 19일 ~ 7월 25일")).toBeTruthy());
     expect(r.queryByText("12개 중")).toBeNull();
     expect(r.getByText("한 주를 모으고 있어요")).toBeTruthy();
 
@@ -605,7 +606,7 @@ describe("W1 · 주 고르기 — 고른 주마다 서버에 다시 묻는다", 
     await pickWeek(r, "2026년 7월 3주차");
     await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
 
-    // 「8월 17일 ~ 8월 23일」 위에 「이번 주」가 서면 대놓고 틀린 말이 된다
+    // 「7월 19일 ~ 7월 25일」 위에 「이번 주」가 서면 대놓고 틀린 말이 된다
     expect(r.getByText("이 주의 마음")).toBeTruthy();
     expect(r.getByText("이 주 한눈에")).toBeTruthy();
     expect(r.getByText("이 주의 기록 보기")).toBeTruthy();
@@ -628,7 +629,7 @@ describe("W1 · 주 고르기 — 고른 주마다 서버에 다시 묻는다", 
     reportApi.fetchWeeklyReport.mockResolvedValue({ ok: true, data: weeklyReport() });
     await pickWeek(r, "2026년 7월 4주차 · 이번 주");
 
-    await waitFor(() => expect(r.getByText("7월 27일 ~ 8월 2일")).toBeTruthy());
+    await waitFor(() => expect(r.getByText("7월 26일 ~ 8월 1일")).toBeTruthy());
     await waitFor(() => expect(r.getByText("12개 중")).toBeTruthy());
   });
 
