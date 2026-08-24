@@ -95,6 +95,9 @@ export default function RetroTalk() {
 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 시작 실패의 사유 코드 — `already_today` 처럼 **재시도로 풀리지 않는** 실패와
+  // 잠깐의 네트워크 실패를 가른다(전자는 다시 시도 대신 나가는 길만 준다)
+  const [startErrorCode, setStartErrorCode] = useState<RetroFailureCode | null>(null);
   const [draftText, setDraftText] = useState("");
   /** 이번 턴에 고른 선택지 — `보내기` 를 누를 때까지 확정되지 않는다 */
   const [pickedId, setPickedId] = useState<string | null>(null);
@@ -133,6 +136,7 @@ export default function RetroTalk() {
   async function runStart(emotion: NonNullable<typeof startEmotion>) {
     setPending(true);
     setError(null);
+    setStartErrorCode(null);
     const items: StartScheduleItem[] = visibleSchedules(schedules).flatMap((s) => {
       // BE 는 일정마다 감정 하나가 필수다 — 감정이 없는 줄은 보내지 않는다
       const first = s.emotions[0];
@@ -151,6 +155,7 @@ export default function RetroTalk() {
       // 다시 시도할 수 있게 자물쇠를 푼다
       starting.current = false;
       setError(FAILURE_MESSAGES[result.code]);
+      setStartErrorCode(result.code);
     }
   }
 
@@ -195,13 +200,19 @@ export default function RetroTalk() {
     starting.current = true;
     void runStart(startEmotion);
   };
+  const goHome = () => router.replace("/home");
 
   const done = lastReply?.done === true;
   const ended = done && lastReply?.phase === PHASE_ENDED;
   const options = lastReply?.options ?? null;
   const measures = lastReply?.measures ?? null;
   const isMeasure = lastReply?.ui === UI_MEASURE && (measures?.length ?? 0) > 0;
-  const startFailed = sessionId == null && error != null;
+  // 세션이 서기 전 — 대화를 그릴 수 없다. 이 동안 dock 은 채팅 입력이 아니라
+  // 시작/실패 상태만 보여준다(입력창이 순간 떴다 사라지는 깜빡임을 막는다)
+  const noSession = sessionId == null;
+  // 하루 한 번(`already_today`)처럼 **재시도로 풀리지 않는** 시작 실패 — 다시 시도
+  // 대신 나가는 길만 둔다(눌러도 같은 실패라 화면이 깜빡이던 문제)
+  const startTerminal = startErrorCode === "already_today";
   const picked = options?.find((o) => o.id === pickedId) ?? null;
   /** 「직접 쓸게요」를 고르면 칩을 접고 입력창으로 넘어간다(`DESIGN.md` 「일기」 3) */
   const customPicked = picked?.input === true;
@@ -213,12 +224,14 @@ export default function RetroTalk() {
       onLeadingPress={() => router.replace("/home")}
       dock={
         <RetroDock
-          startFailed={startFailed}
+          noSession={noSession}
+          startTerminal={startTerminal}
           error={error}
           ended={ended}
           done={done}
           pending={pending}
           onRetry={retryStart}
+          onGoHome={goHome}
           showOptions={showOptions}
           canSendPicked={pickedId != null}
           onSendPicked={sendPicked}
@@ -341,12 +354,16 @@ function OptionRow({
  * 선택형·척도에서는 입력창을 숨긴다(`DESIGN.md` 「일기」 3).
  */
 type DockProps = {
-  startFailed: boolean;
+  /** 세션이 아직 없다 — 대화를 그릴 수 없어 시작/실패 상태만 둔다 */
+  noSession: boolean;
+  /** 재시도로 풀리지 않는 시작 실패(하루 한 번 등) — 다시 시도 대신 나가는 길 */
+  startTerminal: boolean;
   error: string | null;
   ended: boolean;
   done: boolean;
   pending: boolean;
   onRetry: () => void;
+  onGoHome: () => void;
   showOptions: boolean;
   canSendPicked: boolean;
   onSendPicked: () => void;
@@ -360,16 +377,25 @@ type DockProps = {
 };
 
 function RetroDock(p: DockProps) {
-  // 시작 실패는 대화가 없는 상태라 다시 시도 하나만 둔다
-  if (p.startFailed) {
-    return (
-      <>
-        <Text variant="caption1" color={labelColor.neutral}>
-          {p.error}
-        </Text>
-        <Button label="다시 시도" fill onPress={p.onRetry} disabled={p.pending} />
-      </>
-    );
+  // 세션이 서기 전 — 대화(입력창)를 미리 띄우지 않는다. 시작 중이거나 실패한 상태다.
+  if (p.noSession) {
+    if (p.error != null) {
+      return (
+        <>
+          <Text variant="caption1" color={labelColor.neutral}>
+            {p.error}
+          </Text>
+          {p.startTerminal ? (
+            // 하루 한 번 같은 종결 실패 — 다시 눌러도 같은 답이라 나가는 길만 둔다
+            <Button label="홈으로 돌아가기" fill onPress={p.onGoHome} />
+          ) : (
+            <Button label="다시 시도" fill onPress={p.onRetry} disabled={p.pending} />
+          )}
+        </>
+      );
+    }
+    // 시작 중 — 아직 대화가 없어 눌러 넘어갈 곳이 없다. 채팅 입력 대신 잠근 버튼을 둔다
+    return <Button label="시작하는 중" fill disabled />;
   }
 
   return (

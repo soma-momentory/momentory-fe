@@ -22,13 +22,20 @@ import { EMOTIONS, type EmotionId } from "@/features/emotion/model/emotion";
  * 그래서 여기는 이름만 두고, **색으로 감정을 가리키는 일은 도트가 맡는다**
  * (목록 카드·달력).
  *
- * 그대로인 것: **한 번에 하나만** 고르고 **`[전체]` 칩이 없다** — 고른 칩을 다시
- * 누르면 풀린다(초기화 버튼을 따로 두지 않는다).
+ * ## 여러 감정을 함께 고른다 (2026-08-24 · 스펙의 「한 번에 하나만」에서 바꿈)
+ *
+ * `A2.md`·`DESIGN.md` 는 「한 번에 하나만」이었지만, 「불안하면서 뿌듯했던 날」처럼
+ * 여러 감정이 **겹친** 기록을 좁혀 찾으려면 **여러 칩을 함께** 고를 수 있어야 한다.
+ * 고른 감정들의 **교집합**으로 거른다 — 고른 감정을 **모두 다** 가진 일기만 남는다
+ * (칩을 더 고를수록 좁아진다). 이 거르기는 **선택한 기간(달·전체) 안에서만** 돈다.
+ * 여전히 **`[전체]` 칩은 없다** — 고른 칩을 다시 누르면 그 하나만 풀리고, 전부 풀면
+ * 그 기간 전체가 보인다. 차이 기록: `docs/PRODUCT.md` 「상류와 차이」.
  */
 type Props = {
-  /** `null` 이면 필터 없음 — 그달 전체가 보인다 */
-  selected: EmotionId | null;
-  onSelect: (emotion: EmotionId | null) => void;
+  /** 고른 감정들. **빈 배열이면 필터 없음** — 그달 전체가 보인다 */
+  selected: readonly EmotionId[];
+  /** 칩 하나를 켜고 끈다 — 부모가 합집합 목록을 관리한다 */
+  onToggle: (emotion: EmotionId) => void;
   /**
    * 화면 좌우 여백. 줄이 **화면 끝까지 흐르게** 하려면 부모가 음수 마진으로 20 을
    * 되돌리고 그 값을 여기로 넘긴다 — 스크롤 내용의 여백이라야 칩이 잘리지 않는다.
@@ -36,7 +43,7 @@ type Props = {
   edgePadding?: number;
 };
 
-export function EmotionFilter({ selected, onSelect, edgePadding = 0 }: Props) {
+export function EmotionFilter({ selected, onToggle, edgePadding = 0 }: Props) {
   return (
     <ScrollView
       testID="emotion-filter"
@@ -48,9 +55,9 @@ export function EmotionFilter({ selected, onSelect, edgePadding = 0 }: Props) {
         <Chip
           key={e.id}
           label={e.name}
-          selected={selected === e.id}
-          // 같은 칩을 다시 누르면 해제다
-          onPress={() => onSelect(selected === e.id ? null : e.id)}
+          selected={selected.includes(e.id)}
+          // 같은 칩을 다시 누르면 그 하나만 해제다
+          onPress={() => onToggle(e.id)}
         />
       ))}
     </ScrollView>

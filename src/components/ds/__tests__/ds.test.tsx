@@ -427,9 +427,10 @@ describe("Toast", () => {
 });
 
 describe("아이콘 세트", () => {
-  it("26개가 다 있고 전부 path 를 든다 — 빈 글리프를 만들지 않는다", async () => {
+  it("27개가 다 있고 전부 path 를 든다 — 빈 글리프를 만들지 않는다", async () => {
+    // Wanted 반입 26 + 사용자 요청으로 더한 `list`(순수 3줄 · 2026-08-24) = 27
     const names = Object.keys(ICON_PATHS) as IconName[];
-    expect(names).toHaveLength(26);
+    expect(names).toHaveLength(27);
     for (const n of names) {
       expect(ICON_PATHS[n].length).toBeGreaterThan(0);
       for (const p of ICON_PATHS[n]) expect(p.d.startsWith("M")).toBe(true);

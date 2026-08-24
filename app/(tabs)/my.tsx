@@ -266,17 +266,15 @@ export default function My() {
         ) : null
       }
     >
-      {/* 탭 루트라 상단바가 없다 — 본문의 Title 3 이 제목 노릇을 한다(`DESIGN.md` §10) */}
-      <View style={styles.head}>
-        <Text variant="title3Hand" color={labelColor.strong}>
-          마이
-        </Text>
-      </View>
-
+      {/* 상단 제목(「마이」)을 두지 않는다(2026-08-24) — 손글씨로 쓴 이름이 그 자리에서
+          이 화면의 제목 노릇을 한다(`DESIGN.md` §10 의 Title 3 을 이름이 대신한다) */}
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <View style={styles.profile}>
           <View style={styles.profileCopy}>
-            <Text variant="heading1" color={labelColor.strong} numberOfLines={1}>
+            {/* 이름은 **손글씨(교보 2025)** 로 쓴다(2026-08-24) — 제목을 뺀 자리에서
+                이 화면의 손글씨 제목 노릇을 한다. `heading1`(22) 자리를 같은 급의
+                손글씨 `title3Hand`(24)로 바꾼다 — 손글씨는 같은 크기 고딕보다 작아 보인다 */}
+            <Text variant="title3Hand" color={labelColor.strong} numberOfLines={1}>
               {nickname}
             </Text>
             {/* 연속 일수가 아니라 기록이 남은 날 수다 */}
@@ -412,9 +410,10 @@ function Group({
 
 const styles = StyleSheet.create({
   // 좌우 20 은 `TabScreen` 이 잡는다 — 여기서 또 잡으면 두 겹이 된다
-  head: { paddingTop: space.sm, paddingBottom: space.xl },
   body: {
     gap: space.xl2,
+    // 제목 줄을 없애며 그 위 여백(옛 `head` 의 paddingTop)을 여기로 옮겼다
+    paddingTop: space.sm,
     paddingBottom: space.xl,
   },
 

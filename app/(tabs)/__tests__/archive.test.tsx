@@ -139,12 +139,16 @@ describe("A1 · 보관함 달력", () => {
     expect(r.queryByText("일기 열어보기 ›")).toBeNull();
   });
 
-  it("선택된 날은 테두리 2px 로 표시한다 — 색만으로 구분하지 않는다", async () => {
+  it("선택된 날은 감정 박스 테두리를 굵혀 표시한다 — 색만으로 구분하지 않는다", async () => {
+    // 채움 모드에선 선택 표시가 셀이 아니라 **가로로 좁은 감정 박스**에 붙는다.
+    // 박스는 날짜 숫자를 감싸므로 그 숫자 Text 의 부모가 박스다.
     const r = await render(<Archive />);
+    const boxOf = (label: string, day: string) =>
+      within(r.getByLabelText(label)).getByText(day).parent;
 
-    expect(flatten(r.getByLabelText("22일").props.style).borderWidth).toBeUndefined();
+    expect(flatten(boxOf("22일", "22")?.props.style).borderWidth).not.toBe(2);
     await fireEvent.press(r.getByLabelText("22일"));
-    expect(flatten(r.getByLabelText("22일").props.style).borderWidth).toBe(2);
+    expect(flatten(boxOf("22일", "22")?.props.style).borderWidth).toBe(2);
   });
 });
 
@@ -190,15 +194,28 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     expect(r.getByText("7월 22일의 일기")).toBeTruthy();
   });
 
-  it("한 번에 하나만 고른다 — 다른 감정을 누르면 앞 선택이 풀린다", async () => {
-    const { filter, chip } = await openList();
+  it("여러 감정을 함께 고른다 — 교집합(모두 붙은 일기)으로 좁히고 앞 선택이 풀리지 않는다", async () => {
+    // 2026-08-24 「한 번에 하나만」에서 다중 선택으로 바꿈 (PRODUCT.md 상류와 차이)
+    // 뿌듯함(8): 7/8[4,8]·7/22[3,8] · 화남·답답함(3): 7/22[3,8]
+    const { r, filter, chip } = await openList();
 
-    await fireEvent.press(filter.getByText("행복함"));
-    expect(chip("행복함")?.props.accessibilityState.selected).toBe(true);
+    // 뿌듯함만 — 뿌듯함이 붙은 7/8·7/22 가 함께 보인다
+    await fireEvent.press(filter.getByText("뿌듯함"));
+    expect(r.getByText("7월 8일의 일기")).toBeTruthy();
+    expect(r.getByText("7월 22일의 일기")).toBeTruthy();
 
-    await fireEvent.press(filter.getByText("평온함"));
-    expect(chip("행복함")?.props.accessibilityState.selected).toBe(false);
-    expect(chip("평온함")?.props.accessibilityState.selected).toBe(true);
+    // 화남·답답함을 더 고르면 앞 선택(뿌듯함)이 유지되고, **둘 다** 가진 일기만 남는다
+    await fireEvent.press(filter.getByText("화남·답답함"));
+    expect(chip("뿌듯함")?.props.accessibilityState.selected).toBe(true);
+    expect(chip("화남·답답함")?.props.accessibilityState.selected).toBe(true);
+    expect(r.getByText("7월 22일의 일기")).toBeTruthy(); // 화남·답답함 + 뿌듯함 둘 다
+    expect(r.queryByText("7월 8일의 일기")).toBeNull(); // 뿌듯함만 있어 빠진다
+
+    // 화남·답답함을 다시 누르면 그 하나만 풀린다 — 뿌듯함은 남고 7/8 이 돌아온다
+    await fireEvent.press(filter.getByText("화남·답답함"));
+    expect(chip("뿌듯함")?.props.accessibilityState.selected).toBe(true);
+    expect(chip("화남·답답함")?.props.accessibilityState.selected).toBe(false);
+    expect(r.getByText("7월 8일의 일기")).toBeTruthy();
   });
 
   it("고른 칩은 색뿐 아니라 테두리 굵기·글자색으로도 표시한다", async () => {
@@ -267,6 +284,67 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     );
 
     expect(preview.props.numberOfLines).toBe(2);
+  });
+});
+
+describe("A2 · 기간 선택 — 달 고르기 · 전체 보기", () => {
+  /** 이번 달 밖(6월) 일기 한 편을 더 심는다 — 다른 달을 보는 걸 확인하려면 필요하다 */
+  const seedJune = () => {
+    const base = useDiary.getState().diaries[0]!;
+    useDiary.setState((s) => ({
+      diaries: [
+        ...s.diaries,
+        { ...base, id: "d-june", date: "2026-06-10", body: "6월의 어느 날, 오래 걸었다." },
+      ],
+    }));
+  };
+
+  const openList = async () => {
+    const r = await render(<Archive />);
+    await fireEvent.press(r.getByLabelText("목록으로 보기"));
+    return r;
+  };
+
+  it("목록은 이번 달로 열리고, 그 자리를 눌러 기간 시트를 연다", async () => {
+    const r = await openList();
+
+    // 오른쪽에 지금 보는 기간이 뜬다 — 처음엔 오늘이 속한 달이다
+    expect(r.getByLabelText("기간 선택, 지금 2026년 7월")).toBeTruthy();
+
+    await fireEvent.press(r.getByLabelText("기간 선택, 지금 2026년 7월"));
+
+    // 시트가 열리고 「전체 보기」와 달을 고를 수 있다
+    expect(r.getByText("기간 선택")).toBeTruthy();
+    expect(r.getByText("전체 보기")).toBeTruthy();
+  });
+
+  it("전체 보기를 고르면 이번 달 밖의 일기도 함께 나온다", async () => {
+    seedJune();
+    const r = await openList();
+
+    // 이번 달(7월)만 볼 때는 6월 일기가 없다
+    expect(r.queryByText(/6월 10일/)).toBeNull();
+
+    await fireEvent.press(r.getByLabelText("기간 선택, 지금 2026년 7월"));
+    await fireEvent.press(r.getByText("전체 보기"));
+
+    // 6월과 7월이 한 목록에 함께 나온다
+    expect(r.getByText(/6월 10일/)).toBeTruthy();
+    expect(r.getByText("7월 27일의 일기")).toBeTruthy();
+    // 그 자리도 「전체 보기」로 바뀐다
+    expect(r.getByLabelText("기간 선택, 지금 전체 보기")).toBeTruthy();
+  });
+
+  it("달을 고르면 그달만 남는다 — 기록이 있는 달을 시트에서 고른다", async () => {
+    seedJune();
+    const r = await openList();
+
+    await fireEvent.press(r.getByLabelText("기간 선택, 지금 2026년 7월"));
+    await fireEvent.press(r.getByText("2026년 6월"));
+
+    expect(r.getByText(/6월 10일/)).toBeTruthy();
+    expect(r.queryByText("7월 27일의 일기")).toBeNull();
+    expect(r.getByLabelText("기간 선택, 지금 2026년 6월")).toBeTruthy();
   });
 });
 

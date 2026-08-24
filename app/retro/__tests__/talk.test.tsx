@@ -86,6 +86,36 @@ describe("시작 — 서버가 첫 응답을 준다", () => {
     await waitFor(() => expect(r.getByText("다시 시도")).toBeTruthy());
     expect(r.getByText(/연결이 불안정/)).toBeTruthy();
   });
+
+  it("하루 한 번(already_today) 실패는 다시 시도 대신 [홈으로 돌아가기] 를 둔다", async () => {
+    // 재시도해도 같은 답이라 다시 시도를 주지 않는다 — 재시도 시 입력창이 순간
+    // 떴다 사라지며 「뒤에 다른 화면이 뜨는」 깜빡임을 없앤다
+    mockStart.mockResolvedValue({ ok: false, code: "already_today" });
+    const r = await render(<RetroTalk />);
+
+    await waitFor(() => expect(r.getByText("홈으로 돌아가기")).toBeTruthy());
+    expect(r.queryByText("다시 시도")).toBeNull();
+    expect(r.getByText(/이미 회고를 마쳤어요/)).toBeTruthy();
+  });
+
+  it("세션이 서기 전에는 채팅 입력창을 띄우지 않는다 — 시작 중엔 잠근 버튼만", async () => {
+    // 세션이 없는 동안 입력창(ChatDock)이 잠깐 떴다 사라지지 않게 한다
+    let arrive!: (v: Awaited<ReturnType<typeof startRetro>>) => void;
+    mockStart.mockReturnValue(new Promise((res) => (arrive = res)));
+    const r = await render(<RetroTalk />);
+
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+    expect(r.queryByLabelText("답변")).toBeNull();
+    expect(r.getByText("시작하는 중")).toBeTruthy();
+
+    await act(async () => {
+      arrive({
+        ok: true,
+        data: { sessionId: 7, reply: reply({ text: "오늘은 어떤 이야기?", phase: "intro" }) },
+      });
+    });
+    await waitFor(() => expect(r.getByLabelText("답변")).toBeTruthy());
+  });
 });
 
 describe("텍스트 턴 — 자유 입력", () => {
