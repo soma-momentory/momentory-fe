@@ -54,6 +54,7 @@ OpenAPI 는 **모양**을 말하지만 다음은 말하지 않는다. 원래 셋
 | 어댑터                                                  | 엔드포인트                                                                                                                            |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/features/auth/data/kakaoAuthApi.ts`                | `POST /api/v1/auth/kakao`                                                                                                             |
+| `src/features/auth/data/appleAuthApi.ts`                | `POST /api/v1/auth/apple`                                                                                                             |
 | `src/features/auth/data/reissueApi.ts`                  | `POST /api/v1/auth/reissue`                                                                                                           |
 | `src/features/auth/data/logoutApi.ts`                   | `POST /api/v1/auth/logout`                                                                                                            |
 | `src/features/auth/data/meApi.ts`                       | `GET /api/v1/users/me`                                                                                                                |
@@ -64,7 +65,24 @@ OpenAPI 는 **모양**을 말하지만 다음은 말하지 않는다. 원래 셋
 | `src/features/calendar/data/calendarSyncApi.ts`         | `POST /api/v1/schedules/sync`                                                                                                         |
 | `src/features/diary/data/diaryApi.ts`                   | `GET /api/v1/diaries` · `DELETE …/{id}` · `PUT …/by-retrospect/{retrospectId}` · `GET /api/v1/action-cards` · `PUT …/{id}/completion` |
 
-**26개 중 21개가 붙어 있다.**
+> ⚠ **2026-08-24 재반입 — 스냅샷은 이제 오퍼레이션 32개다.**
+> `MOMENTORY_API=http://127.0.0.1:8080 npm run sync:api` 로 개발 서버에서 다시 받았고,
+> 받기 전 커밋된 스냅샷은 30개였다. **늘어난 둘**은 스크립트가 찍어 준 그대로다:
+>
+> - **`POST /api/v1/auth/apple`** — 애플 로그인. 같은 날 `appleAuthApi.ts` 로 **붙였다**
+>   ([`DISCUSSION.md`](../DISCUSSION.md) §1-10)
+> - **`DELETE /api/v1/action-cards/{id}`** — 행동 카드 삭제. **아직 안 붙였다.**
+>   이것은 [`PRODUCT.md` 「상류와 차이」](../PRODUCT.md) #25 를 닫을 수 있는
+>   엔드포인트다 — 지금 FE 는 서버에 삭제 계약이 없다는 전제로 지운 카드 id 를 기기에
+>   묘비로 남기고 있고(`deletedCardStore.ts`), 그래서 **다른 기기에서는 지운 카드가
+>   다시 보인다.** 붙이면 그 파일이 사라진다
+>
+> ⚠ **위 「26개 중 21개」는 2026-08-21 기준이고, 이번에 다시 세지 않았다.**
+> 어댑터 표에 애플 한 줄을 더했을 뿐이다 — 표 자체도 그때 이후 BE 가 낸 것들
+> (주간 리포트 · 회원탈퇴 · 일기 전체 목록 · 기간별 일정 등)을 아직 반영하지 않았다.
+> **숫자를 고치려면 어댑터를 하나씩 열어 대조해야 한다** — 경로 문자열이 템플릿으로
+> 조립되는 곳이 있어(`…/{id}/completion`) 문자열 검색으로는 세어지지 않는다.
+> 그 대조는 하지 않았으므로 낡은 채로 둔다.
 
 > ⚠ **옛 표의 마지막 줄(`src/features/diary/data/retrospectDiaryApi.ts` →
 > `GET /api/v1/retrospect/{id}/diary`)은 둘 다 없다.** 엔드포인트는 2026-08-20 에
