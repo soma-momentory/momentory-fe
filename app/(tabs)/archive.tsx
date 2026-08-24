@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 
@@ -65,6 +65,17 @@ const VIEWS: readonly ViewOption<"calendar" | "list">[] = [
   { name: "list", icon: "list", accessibilityLabel: "목록으로 보기" },
 ];
 
+/**
+ * 라우트 파라미터로 건너온 날짜 — 모양이 어긋나면 **없는 것으로 친다**(`null`).
+ *
+ * expo-router 는 값을 `string | string[]` 로 준다(같은 이름이 두 번 오면 배열이다).
+ * 화면이 그 두 모양을 다 알 이유가 없으므로 여기서 하나로 좁힌다 — 날짜가 아니면
+ * 오늘로 열리지, 깨진 달을 그리지 않는다.
+ */
+function askedDate(value: string | string[] | undefined): string | null {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
 /** `2026-07` 에서 `step` 달만큼 옮긴 달 */
 function shiftMonth(month: string, step: number) {
   const moved = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + step, 1);
@@ -85,17 +96,27 @@ export default function Archive() {
   // 시트가 화면을 가득 채우지 않게(고정 px 대신 기기 높이에 비례)
   const { height: windowHeight } = useWindowDimensions();
 
+  /**
+   * 리포트에서 「이 주의 기록 보기」로 건너오면 **그 주의 일요일**을 들고 온다
+   * (`app/(tabs)/report.tsx`) — 그 날이 든 달을 열고 그 칸을 고른 채로 시작한다.
+   * 보관함 탭을 곧바로 누르면 이 값이 없고, 그때는 여느 때처럼 오늘이다.
+   *
+   * **첫 상태를 만들 때만 본다.** 이후 달을 옮기거나 다른 날을 고르는 것은 화면의
+   * 몫이라, 파라미터가 그대로 남아 있어도 그 선택을 되돌리지 않는다.
+   */
+  const openedAt = askedDate(useLocalSearchParams().date) ?? todayDate;
+
   const [view, setView] = useState<"calendar" | "list">("calendar");
-  // 보관함이 여는 달은 오늘이 속한 달이다 — `‹ ›` 로 옮기면 두 면이 함께 따라간다
-  const [month, setMonth] = useState(monthOf(todayDate));
-  const [selectedDate, setSelectedDate] = useState(todayDate);
+  // 보관함이 여는 달은 건너온 날(없으면 오늘)이 속한 달이다 — `‹ ›` 로 옮기면 두 면이 함께 따라간다
+  const [month, setMonth] = useState(monthOf(openedAt));
+  const [selectedDate, setSelectedDate] = useState(openedAt);
   // 감정 필터는 **여러 개 함께** 고른다(합집합) — 빈 배열이면 필터 없음
   const [filters, setFilters] = useState<EmotionId[]>([]);
   const toggleFilter = (e: EmotionId) =>
     setFilters((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
   const [query, setQuery] = useState("");
   // 목록은 달력과 따로 논다 — 특정 달, 또는 전체(`null`)를 본다
-  const [listMonth, setListMonth] = useState<string | null>(monthOf(todayDate));
+  const [listMonth, setListMonth] = useState<string | null>(monthOf(openedAt));
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
 
   // 탭에 들어오거나 달을 옮기면 그달 일정을 서버에서 다시 받는다. 탭은 매번 새로

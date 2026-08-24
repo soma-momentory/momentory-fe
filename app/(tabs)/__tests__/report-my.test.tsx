@@ -314,12 +314,17 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.queryByText(/다시 시도|재시도/)).toBeNull();
   });
 
-  it("보조 행동으로 그 주의 기록을 보러 간다", async () => {
+  it("보조 행동으로 그 주의 기록을 보러 간다 — 보고 있던 주를 들려 보낸다", async () => {
+    // 날짜를 안 주면 보관함이 오늘이 든 달로 열려, 지난 주를 보다 누른 사람은
+    // 자기가 보던 주를 다시 찾아가야 한다
     const r = await openReport();
 
     fireEvent.press(r.getByText("이번 주 기록 보기"));
 
-    expect(router.replace).toHaveBeenCalledWith("/archive");
+    expect(router.replace).toHaveBeenCalledWith({
+      pathname: "/archive",
+      params: { date: THIS_WEEK },
+    });
   });
 
   it("기록이 없어도 처음부터 열려 있다 — 문턱을 두지 않는다", async () => {

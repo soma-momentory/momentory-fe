@@ -13,7 +13,11 @@ import { seedDiaries } from "@/testing/fixtures";
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
+  // 리포트에서 「이 주의 기록 보기」로 건너올 때만 값이 있다 — 기본은 빈 파라미터
+  useLocalSearchParams: jest.fn(() => ({})),
 }));
+
+const routeParams = jest.requireMock("expo-router") as { useLocalSearchParams: jest.Mock };
 
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
@@ -36,6 +40,7 @@ beforeEach(() => {
   seedDiaries(); // 일기 12편을 심는다 (src/testing/fixtures.ts)
   useMonthSchedules.getState().reset();
   jest.clearAllMocks();
+  routeParams.useLocalSearchParams.mockReturnValue({});
   // 보관함은 마운트 때 그달 일정을 `/schedules/period` 로 받는다 — 기본은 「받은
   // 일정 없음」이고, 일정이 필요한 테스트만 이 목을 갈아끼운다
   jest
@@ -411,5 +416,49 @@ describe("하단 탭 — 다섯 칸이 전부 이어진다", () => {
     await fireEvent.press(tabNamed(r, "보관함")!);
 
     expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * 리포트가 「이 주의 기록 보기」로 건너보내는 길 — 그 주의 **일요일**을 들고 온다
+ * (`app/(tabs)/report.tsx`). 날짜를 안 주면 오늘이 든 달로 열려서, 지난 주를 보다
+ * 누른 사람은 자기가 보던 주를 다시 찾아가야 한다.
+ */
+describe("A1 · 리포트에서 건너오기", () => {
+  it("건너온 날이 든 달을 열고 그 칸을 고른 채로 선다", async () => {
+    // 7월 19일(일) — 고정 하루(7/27)가 든 달과 같은 7월이지만 **다른 날**이다
+    routeParams.useLocalSearchParams.mockReturnValue({ date: "2026-07-19" });
+
+    const r = await render(<Archive />);
+
+    expect(r.getByText("2026년 7월")).toBeTruthy();
+    expect(r.getByLabelText("19일").props.accessibilityState.selected).toBe(true);
+    // 오늘(27일)이 아니라 건너온 날이 고른 칸이다
+    expect(r.getByLabelText("27일").props.accessibilityState.selected).toBe(false);
+  });
+
+  it("지난 달의 주로 건너오면 그 달이 열린다", async () => {
+    routeParams.useLocalSearchParams.mockReturnValue({ date: "2026-06-28" });
+
+    const r = await render(<Archive />);
+
+    expect(r.getByText("2026년 6월")).toBeTruthy();
+    expect(r.getByLabelText("28일").props.accessibilityState.selected).toBe(true);
+  });
+
+  it("날짜 없이 탭으로 들어오면 여느 때처럼 오늘이다", async () => {
+    const r = await render(<Archive />);
+
+    expect(r.getByText("2026년 7월")).toBeTruthy();
+    expect(r.getByLabelText("27일").props.accessibilityState.selected).toBe(true);
+  });
+
+  it("모양이 어긋난 날짜는 없는 것으로 친다 — 깨진 달을 그리지 않는다", async () => {
+    routeParams.useLocalSearchParams.mockReturnValue({ date: "지난주" });
+
+    const r = await render(<Archive />);
+
+    expect(r.getByText("2026년 7월")).toBeTruthy();
+    expect(r.getByLabelText("27일").props.accessibilityState.selected).toBe(true);
   });
 });

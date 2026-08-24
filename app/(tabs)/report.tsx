@@ -105,7 +105,11 @@ export default function Report() {
         style={styles.weekNav}
       >
         <Icon name="calendar" size={20} color={interaction.inactive} />
-        <Text variant="headline1" color={labelColor.strong} numberOfLines={1}>
+        {/* 날짜는 **손글씨(교보 2025)** 로 쓴다(2026-08-24) — 제목이 따로 없는 화면에서
+            이 줄이 손글씨 제목 노릇을 한다(보관함·쉼터·마이의 `title3Hand` 와 같은 자리).
+            `headline1`(18) 자리를 `title3Hand`(24)로 올린다 — 손글씨는 같은 크기 고딕보다
+            작아 보인다(`my.tsx` 의 같은 판단). 길어지면 줄이 아니라 말줄임으로 접는다 */}
+        <Text variant="title3Hand" color={labelColor.strong} numberOfLines={1} style={styles.range}>
           {range}
         </Text>
       </Pressable>
@@ -143,12 +147,15 @@ export default function Report() {
             </View>
 
             {/* 보조 행동이라 Outlined 다 — 이 화면에 Solid Primary 는 없다(`DESIGN.md` §6).
-                탭은 쌓이는 화면이 아니라 **옮겨간다**(`TabScreen` 과 같은 이유) */}
+                탭은 쌓이는 화면이 아니라 **옮겨간다**(`TabScreen` 과 같은 이유).
+                **보고 있는 주의 첫날(일요일)을 들려 보낸다** — 보관함이 그 달을 열고 그
+                칸을 고른 채로 선다. 날짜를 안 주면 오늘이 든 달로 열려서, 지난 주를 보다
+                누른 사람은 「내가 보던 주」를 다시 찾아가야 한다 */}
             <Button
               label={thisWeek ? "이번 주 기록 보기" : "이 주의 기록 보기"}
               variant="outlined"
               fill
-              onPress={() => router.replace("/archive")}
+              onPress={() => router.replace({ pathname: "/archive", params: { date: weekStart } })}
             />
           </>
         )}
@@ -168,6 +175,9 @@ const styles = StyleSheet.create({
     marginTop: space.sm,
     marginBottom: space.md,
   },
+
+  // 글꼴 배율이 커져도 달력 아이콘을 밀어내지 않는다 — 글자 쪽이 줄어든다
+  range: { flexShrink: 1 },
 
   // 남은 높이를 다 쓰고 그 안에서만 스크롤한다 — 안 잡으면 내용 높이만큼 자라 넘친다
   scroll: { flex: 1, minHeight: 0 },
