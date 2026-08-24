@@ -49,8 +49,8 @@ type WeeklyReportStore = {
   failure: WeeklyReportFailureCode | null;
   /** 화면에 들어올 때 — **이번 주**로 되돌리고 받는다 */
   open: () => Promise<void>;
-  /** 이웃한 주로 옮기고 곧바로 받는다. 음수면 이전 주 */
-  goWeek: (dir: -1 | 1) => Promise<void>;
+  /** 고른 주로 옮기고 곧바로 받는다 — 인자는 그 주의 **월요일**이다 */
+  selectWeek: (weekStart: string) => Promise<void>;
   reset: () => void;
 };
 
@@ -63,13 +63,16 @@ let latest = 0;
 /** 오늘(04:00 하루 경계)이 든 주의 월요일 — 리포트가 처음 여는 주다 */
 export const thisWeekStart = (): string => weekStartOf(clock.today());
 
+/** 보고 있는 주가 이번 주인가 — 문구가 「이번 주 …」인지 「이 주 …」인지를 가른다 */
+export const isThisWeek = (weekStart: string) => weekStart === thisWeekStart();
+
 /**
- * 다음 주로 갈 수 있는가 — **이번 주가 끝**이다. 아직 오지 않은 주에는 셀 것이
- * 없으므로 화살표를 눌리지 않게 하는 것으로 끝을 말한다(`W1.md`).
+ * 고를 수 있는 주인가 — **이번 주가 끝**이다. 아직 오지 않은 주에는 셀 것이 없으므로
+ * 달력에서 눌리지 않게 두는 것으로 끝을 말한다(`W1.md` 「이동 범위의 끝은 화면이 없다」).
  *
- * 이전 주는 막지 않는다 — 가입 이전 주도 서버는 「빈 주」로 성실히 답한다.
+ * 지난 주는 막지 않는다 — 가입 이전 주도 서버는 「빈 주」로 성실히 답한다.
  */
-export const canGoNextWeek = (weekStart: string) => weekStart < thisWeekStart();
+export const isPickableWeek = (weekStart: string) => weekStart <= thisWeekStart();
 
 export const useWeeklyReport = create<WeeklyReportStore>((set, get) => {
   const load = async () => {
@@ -102,8 +105,10 @@ export const useWeeklyReport = create<WeeklyReportStore>((set, get) => {
       await load();
     },
 
-    goWeek: async (dir) => {
-      set({ weekStart: shiftWeek(get().weekStart, dir), report: null });
+    selectWeek: async (weekStart) => {
+      // 보고 있던 주를 다시 고르면 아무 일도 없다 — 같은 조회를 두 번 보내지 않는다
+      if (get().weekStart === weekStart) return;
+      set({ weekStart, report: null });
       await load();
     },
 
@@ -127,4 +132,45 @@ export function splitMoodMessage(message: string): { lead: string; follow: strin
   const at = message.indexOf(". ");
   if (at < 0) return { lead: message.trim(), follow: "" };
   return { lead: message.slice(0, at + 1).trim(), follow: message.slice(at + 1).trim() };
+}
+
+// ── 주를 고르는 달력이 쓰는 계산 ──────────────────────────────────────────
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const toIso = (at: Date) => `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+
+/** `2026-08-24` → `2026-08` */
+export const monthOf = (date: string) => date.slice(0, 7);
+
+/** `2026-08` 에서 `step` 달 뒤(음수면 앞). 12월을 넘겨도 `Date` 가 맞춰준다 */
+export function shiftMonth(month: string, step: number): string {
+  const [y = "2026", m = "1"] = month.split("-");
+  const at = new Date(Number(y), Number(m) - 1 + step, 1);
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}`;
+}
+
+/** 그 주의 일곱 날(월→일) — 달력 한 줄이 그리는 값이다 */
+export function daysOfWeek(weekStart: string): string[] {
+  const [y = "2026", m = "1", d = "1"] = weekStart.split("-");
+  const from = new Date(Number(y), Number(m) - 1, Number(d));
+  return Array.from({ length: 7 }, (_, i) =>
+    toIso(new Date(from.getFullYear(), from.getMonth(), from.getDate() + i)),
+  );
+}
+
+/**
+ * 그 달에 **걸치는** 주들의 월요일 — 4~6줄이다.
+ *
+ * 앞뒤로 삐져나온 주까지 넣는다(8월 1일이 토요일이면 첫 줄은 7월 27일 월요일에서
+ * 시작한다) — **주가 달력의 단위**라서 반쪽 줄을 만들 수 없다. 그래서 8월을 열어도
+ * 7월의 주를 고를 수 있고, 그게 맞다(달 경계는 주와 무관하다).
+ */
+export function weeksOfMonth(month: string): string[] {
+  const [y = "2026", m = "1"] = month.split("-");
+  const last = toIso(new Date(Number(y), Number(m), 0));
+  const first = weekStartOf(`${month}-01`);
+
+  const weeks: string[] = [];
+  for (let week = first; week <= last; week = shiftWeek(week, 1)) weeks.push(week);
+  return weeks;
 }

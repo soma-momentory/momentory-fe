@@ -1,13 +1,14 @@
 import { router } from "expo-router";
-import { useEffect } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { Button, Card, IconButton, Spinner, TabScreen, Text } from "@/components/ds";
+import { Button, Card, Icon, Spinner, TabScreen, Text } from "@/components/ds";
 import { WeekCountList } from "@/components/report/WeekCountList";
 import { WeekMoodCard } from "@/components/report/WeekMoodCard";
-import { label as labelColor, space } from "@/design/ds";
+import { WeekPickerSheet } from "@/components/report/WeekPickerSheet";
+import { interaction, label as labelColor, layout, space } from "@/design/ds";
 import { weekEnd } from "@/features/report/model/report";
-import { canGoNextWeek, useWeeklyReport } from "@/features/report/model/weeklyReport";
+import { isThisWeek, useWeeklyReport } from "@/features/report/model/weeklyReport";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -40,8 +41,11 @@ import { formatKoreanDateShort } from "@/lib/day";
  * - **「이번 주」는 이번 주에만 쓴다** — 지난 주를 넘겨보는 동안에는 「이 주의 마음 ·
  *   이 주 한눈에 · 이 주의 기록 보기」다. 서버 멘트만은 그대로 둔다(BE 문장이라 여기서
  *   고치지 않는다 — `WeekMoodCard` 주석)
- * - **다음 주로 넘어가지 않는다** — 아직 오지 않은 주에는 셀 것이 없다. 이전 주는
- *   막지 않는다(서버가 「빈 주」로 성실히 답한다)
+ * - **주는 날짜를 눌러 달력에서 고른다**(`WeekPickerSheet`). 예전에는 머리의 `‹ ›`
+ *   로 한 주씩 옮겼는데 두 달 전 주를 보려면 여덟 번을 눌러야 했다 —
+ *   사용자 요청(2026-08-24)으로 화살표를 걷고 달력을 열었다
+ * - **아직 오지 않은 주는 고를 수 없다** — 셀 것이 없다. 지난 주는 막지 않는다
+ *   (서버가 「빈 주」로 성실히 답한다)
  * - **실패는 한 줄로 흡수한다** — 모달도 재시도 버튼도 두지 않는다(`RULES.md` 4).
  *   탭을 다시 열면 그때 다시 받는다
  */
@@ -49,6 +53,8 @@ export default function Report() {
   const weekStart = useWeeklyReport((s) => s.weekStart);
   const report = useWeeklyReport((s) => s.report);
   const status = useWeeklyReport((s) => s.status);
+
+  const [picking, setPicking] = useState(false);
 
   // 탭은 `replace` 라 들어올 때마다 새로 마운트된다 — 그때마다 **이번 주부터** 다시 연다
   useEffect(() => {
@@ -62,40 +68,42 @@ export default function Report() {
    */
   const start = weekStart;
   const end = weekEnd(weekStart);
-  const hasNext = canGoNextWeek(weekStart);
-  const thisWeek = !hasNext;
+  const thisWeek = isThisWeek(weekStart);
+  const range = `${formatKoreanDateShort(start)} ~ ${formatKoreanDateShort(end)}`;
 
-  const go = (dir: -1 | 1) => {
-    if (dir === 1 && !hasNext) return;
-    void useWeeklyReport.getState().goWeek(dir);
+  const pick = (week: string) => {
+    setPicking(false);
+    void useWeeklyReport.getState().selectWeek(week);
   };
 
   return (
-    <TabScreen active="리포트">
+    <TabScreen
+      active="리포트"
+      overlay={
+        picking ? (
+          <WeekPickerSheet
+            weekStart={weekStart}
+            onSelect={pick}
+            onDismiss={() => setPicking(false)}
+          />
+        ) : null
+      }
+    >
       {/*
-        주차 이동. 범위의 끝은 화면이 따로 없으므로(`report.pendingStates`)
-        **화살표를 눌리지 않게 하는 것**으로 끝을 말한다.
+        날짜 줄이 곧 주를 고르는 문이다 — 달력 아이콘이 「눌러서 고른다」를 말한다
+        (아이콘 세트에 아래 꺾쇠가 없다 · `DESIGN.md` §10 「없는 글리프를 만들지 않는다」).
       */}
-      <View style={styles.weekNav}>
-        <IconButton
-          name="chevron-left"
-          size={20}
-          accessibilityLabel="이전 주"
-          onPress={() => go(-1)}
-          style={styles.navButton}
-        />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${range} · 주 고르기`}
+        onPress={() => setPicking(true)}
+        style={styles.weekNav}
+      >
+        <Icon name="calendar" size={20} color={interaction.inactive} />
         <Text variant="headline1" color={labelColor.strong} numberOfLines={1}>
-          {`${formatKoreanDateShort(start)} ~ ${formatKoreanDateShort(end)}`}
+          {range}
         </Text>
-        <IconButton
-          name="chevron-right"
-          size={20}
-          accessibilityLabel="다음 주"
-          disabled={!hasNext}
-          onPress={() => go(1)}
-          style={styles.navButton}
-        />
-      </View>
+      </Pressable>
 
       <ScrollView
         style={styles.scroll}
@@ -145,16 +153,16 @@ export default function Report() {
 }
 
 const styles = StyleSheet.create({
+  // 줄 전체가 눌린다 — 히트 44 를 지키고(`RULES.md` 터치 최소 44) 가운데로 모은다
   weekNav: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     gap: space.sm,
-    paddingTop: space.sm,
-    paddingBottom: space.lg,
+    minHeight: layout.minTouch,
+    marginTop: space.sm,
+    marginBottom: space.md,
   },
-  // 히트 44 는 유지하되 화면 좌우 패딩(20) 안쪽에서 시작하도록 당긴다
-  navButton: { marginHorizontal: -space.md },
 
   // 남은 높이를 다 쓰고 그 안에서만 스크롤한다 — 안 잡으면 내용 높이만큼 자라 넘친다
   scroll: { flex: 1, minHeight: 0 },

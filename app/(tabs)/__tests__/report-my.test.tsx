@@ -90,13 +90,25 @@ const openReport = async () => {
   return r;
 };
 
-/**
- * 주차 이동은 누르는 즉시 서버를 부른다 — 그 왕복이 **act 안에서** 끝나게 감싼다
- * (밖에서 상태가 바뀌면 React 가 경고한다). 응답이 아직 없으면 그대로 「받는 중」이다.
- */
-const pressWeek = async (r: Awaited<ReturnType<typeof render>>, label: "이전 주" | "다음 주") => {
+/** 「7월 20일 ~ 7월 26일 주」 — 달력의 줄 하나가 낭독기에 이렇게 읽힌다 */
+const weekRow = (from: string, to: string) => `${from} ~ ${to} 주`;
+
+/** 날짜 줄을 눌러 주 고르는 달력을 연다 */
+const openPicker = async (r: Awaited<ReturnType<typeof render>>) => {
   await act(async () => {
-    fireEvent.press(r.getByLabelText(label));
+    fireEvent.press(r.getByLabelText(/주 고르기$/));
+  });
+};
+
+/**
+ * 주를 옮긴다 — 달력을 열고 그 주의 줄을 고른다. 고르는 즉시 서버를 부르므로
+ * 그 왕복이 **act 안에서** 끝나게 감싼다(밖에서 상태가 바뀌면 React 가 경고한다).
+ * 응답이 아직 없으면 그대로 「받는 중」이다.
+ */
+const pickWeek = async (r: Awaited<ReturnType<typeof render>>, from: string, to: string) => {
+  await openPicker(r);
+  await act(async () => {
+    fireEvent.press(r.getByLabelText(weekRow(from, to)));
   });
 };
 
@@ -206,23 +218,58 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.queryByText(/점수|등급|배지|연속|최고 기록|\d+점/)).toBeNull();
   });
 
-  it("다음 주로 넘어가지 않는다 — 아직 오지 않은 주에는 셀 것이 없다", async () => {
+  it("날짜를 누르면 주를 고르는 달력이 열린다 — 화살표로 옮기지 않는다", async () => {
     const r = await openReport();
 
-    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(true);
-    await pressWeek(r, "다음 주");
+    // 옛 `‹ ›` 는 걷었다 (2026-08-24 · 사용자 요청)
+    expect(r.queryByLabelText("이전 주")).toBeNull();
+    expect(r.queryByLabelText("다음 주")).toBeNull();
+
+    await openPicker(r);
+
+    expect(r.getByText("주 고르기")).toBeTruthy();
+    // 보고 있던 주가 든 달부터 연다 — 「지금 어디에 있는지」를 먼저 보여준다
+    expect(r.getByText("2026년 7월")).toBeTruthy();
+    expect(r.getByLabelText(weekRow("7월 27일", "8월 2일")).props.accessibilityState.selected).toBe(
+      true,
+    );
+  });
+
+  it("아직 오지 않은 주는 고를 수 없다 — 셀 것이 없다", async () => {
+    const r = await openReport();
+    await openPicker(r);
+
+    await act(async () => {
+      fireEvent.press(r.getByLabelText("다음 달"));
+    });
+
+    const coming = r.getByLabelText(weekRow("8월 3일", "8월 9일"));
+    expect(coming.props.accessibilityState.disabled).toBe(true);
+    await act(async () => {
+      fireEvent.press(coming);
+    });
 
     expect(reportApi.fetchWeeklyReport).toHaveBeenCalledTimes(1);
   });
 
-  it("이전 주로 넘기면 그 주를 다시 받는다", async () => {
+  it("달력에서 한 주를 고르면 그 주를 다시 받고 달력이 닫힌다", async () => {
     const r = await openReport();
 
-    await pressWeek(r, "이전 주");
+    await pickWeek(r, "7월 20일", "7월 26일");
 
     await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-20"));
     // 날짜 머리도 함께 옮겨간다 — 옛 주 날짜 아래 새 수치를 두지 않는다
     await waitFor(() => expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy());
+    expect(r.queryByText("주 고르기")).toBeNull();
+  });
+
+  it("달을 넘겨도 고르는 것은 주다 — 걸친 주가 그대로 있다", async () => {
+    // 7월 1일은 수요일이라 첫 줄이 6월 29일에서 시작한다. 그 줄을 고르면 6월의 주가 열린다
+    const r = await openReport();
+
+    await pickWeek(r, "6월 29일", "7월 5일");
+
+    await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-06-29"));
   });
 
   it("실패는 한 줄로 흡수한다 — 모달도 재시도 버튼도 없다", async () => {
@@ -497,7 +544,7 @@ describe("M2 · 알림 설정 시트 — 하나의 결정만 담는다", () => {
   });
 });
 
-describe("W1 · 주차 이동 — 주마다 서버에 다시 묻는다", () => {
+describe("W1 · 주 고르기 — 고른 주마다 서버에 다시 묻는다", () => {
   /** 이전 주(7/20~26)가 답할 값 — 이번 주와 **다른 수치**여야 뒤바뀜이 보인다 */
   const lastWeek = {
     ok: true,
@@ -509,12 +556,12 @@ describe("W1 · 주차 이동 — 주마다 서버에 다시 묻는다", () => {
     }),
   };
 
-  it("이전 주로 옮기면 날짜와 수치가 함께 그 주 것이 된다", async () => {
+  it("지난 주를 고르면 날짜와 수치가 함께 그 주 것이 된다", async () => {
     const r = await openReport();
     expect(r.getByText("12개 중")).toBeTruthy();
 
     reportApi.fetchWeeklyReport.mockResolvedValue(lastWeek);
-    await pressWeek(r, "이전 주");
+    await pickWeek(r, "7월 20일", "7월 26일");
 
     await waitFor(() => expect(reportApi.fetchWeeklyReport).toHaveBeenCalledWith("2026-07-20"));
     await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
@@ -528,7 +575,7 @@ describe("W1 · 주차 이동 — 주마다 서버에 다시 묻는다", () => {
     const gate = deferred<typeof lastWeek>();
     reportApi.fetchWeeklyReport.mockReturnValueOnce(gate.promise);
 
-    await pressWeek(r, "이전 주");
+    await pickWeek(r, "7월 20일", "7월 26일");
 
     await waitFor(() => expect(r.getByText("7월 20일 ~ 7월 26일")).toBeTruthy());
     expect(r.queryByText("12개 중")).toBeNull();
@@ -544,7 +591,7 @@ describe("W1 · 주차 이동 — 주마다 서버에 다시 묻는다", () => {
     expect(r.getByText("이번 주 기록 보기")).toBeTruthy();
 
     reportApi.fetchWeeklyReport.mockResolvedValue(lastWeek);
-    await pressWeek(r, "이전 주");
+    await pickWeek(r, "7월 20일", "7월 26일");
     await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
 
     // 「8월 17일 ~ 8월 23일」 위에 「이번 주」가 서면 대놓고 틀린 말이 된다
@@ -560,20 +607,18 @@ describe("W1 · 주차 이동 — 주마다 서버에 다시 묻는다", () => {
     expect(r.getByText(/^이번 주에는/)).toBeTruthy();
   });
 
-  it("다시 다음 주로 오면 이번 주다", async () => {
+  it("다시 이번 주를 고르면 이번 주다", async () => {
     const r = await openReport();
 
     reportApi.fetchWeeklyReport.mockResolvedValue(lastWeek);
-    await pressWeek(r, "이전 주");
+    await pickWeek(r, "7월 20일", "7월 26일");
     await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
 
     reportApi.fetchWeeklyReport.mockResolvedValue({ ok: true, data: weeklyReport() });
-    await pressWeek(r, "다음 주");
+    await pickWeek(r, "7월 27일", "8월 2일");
 
     await waitFor(() => expect(r.getByText("7월 27일 ~ 8월 2일")).toBeTruthy());
     await waitFor(() => expect(r.getByText("12개 중")).toBeTruthy());
-    // 이번 주에 닿았으니 다시 끝이다
-    expect(r.getByLabelText("다음 주").props.accessibilityState.disabled).toBe(true);
   });
 
   it("늦게 도착한 옛 주의 응답이 지금 보는 주를 덮지 않는다", async () => {
@@ -581,7 +626,7 @@ describe("W1 · 주차 이동 — 주마다 서버에 다시 묻는다", () => {
     reportApi.fetchWeeklyReport.mockReturnValueOnce(slow.promise).mockResolvedValue(lastWeek);
 
     const r = await render(<Report />);
-    await pressWeek(r, "이전 주");
+    await pickWeek(r, "7월 20일", "7월 26일");
     await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
 
     // 이번 주 조회가 이제야 돌아온다 — 화면은 그 주를 보고 있지 않다
