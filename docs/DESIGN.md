@@ -298,6 +298,61 @@ CTA 위계: 주 행동만 Solid Primary. 보조는 Outlined, 3순위는 Text But
 소셜 3종(카카오·Google·Apple) 공식 색·마크 유지, 높이 48 · 간격 10.
 Apple은 라이트 검정 / 다크 흰색. 예외 상태 없음.
 
+### 3사 공식 규격 (2026-08-24)
+
+「공식 색·마크 유지」를 각 사 가이드를 실제로 읽고 값까지 맞췄다.
+**세 회사가 마크·간격·여백·문구를 각자 다르게 못박고 있어서, 줄마다 값이 다르다** —
+보기 좋게 통일하지 않는다. 구현은 [`SocialButton.tsx`](../src/components/ds/SocialButton.tsx).
+
+|            | 면 · 테두리               | 마크                     | 글자             | 마크~글자   | 좌우 여백   | 문구 (허용 목록)                         |
+| ---------- | ------------------------- | ------------------------ | ---------------- | ----------- | ----------- | ---------------------------------------- |
+| **카카오** | `#FEE500`                 | 24 (심볼 19.2×18.1)      | 16 = 48÷3        | 8           | 16          | **카카오 로그인** / 로그인               |
+| **Google** | `#FFFFFF` + `#747775` 1px | 20 (그라디언트 G)        | 14 = 규격 그대로 | iOS 12 / 10 | iOS 16 / 12 | Google 계정으로 **로그인** / 가입 / 계속 |
+| **Apple**  | `#000000`                 | 15.85 (로고 12.90×15.85) | 20.64 = 48×43%   | 10          | 16          | **Apple로 로그인** (`ko_KR` · `sign-in`) |
+
+- **글자 크기는 통일할 수가 없다.** 애플 HIG 는 커스텀 버튼의 글자를 「높이의 43%」로
+  **요구**하고(권장이 아니다 — `need to use the same proportions`), 카카오는 「레이블
+  세로 길이 ≤ 높이의 1/3」로 **막는다**. Pretendard 한글의 ink/em 이 0.88 이라
+  20.64 × 0.88 = 18.2 로 카카오 상한 16 을 넘고, 둘 다 높이 대비 **비율** 규칙이라
+  버튼을 키워도 같이 커진다(카카오 상한 37.8% < 애플 요구 43%). 그래서 줄마다 다르다
+- **애플 로고는 Medium 사이즈다.** 애플이 Small·Medium·Large 를 두는 이유가
+  「match logo sizes in **all the sign-up buttons** you display」라서다 — 옆 줄이
+  카카오 17.69 · Google 20.00 인데 Small 은 15.85 로 혼자 작았다. Medium 20.73 이
+  Google 과 나란히 선다(애플 자체 렌더는 15.5 ≈ Small 이지만, 그건 애플 버튼 하나만
+  놓고 볼 때의 값이다)
+- **굵기는 셋 다 500 이다.** 애플 공식 렌더에서 **획 두께 ÷ 글자 ink 높이**를 재면
+  0.1090 인데 Pretendard Medium 이 정확히 0.1090, SemiBold 는 0.1282(+18%)다 —
+  처음 쓰던 600 은 공식 버튼보다 두꺼웠다. 구글이 규격으로 못박는 Roboto Medium 도
+  같은 단이라 셋이 한 굵기로 모인다
+- **이제 규격에서 벗어난 값이 없다** (2026-08-24). 색·마크·문구·크기·굵기·서체·
+  여백·radius 가 전부 각 사 규격대로다
+- **카카오는 심볼과 레이블의 검정이 다르다** — 심볼 `#000000` · 레이블 `#000000 85%`
+- **Google 마크는 2025년에 그라디언트로 바뀌었다.** conic gradient 라 벡터로 못 그려서
+  구글이 배포하는 PNG 원본을 그대로 쓴다 (`assets/brand/google-g.png`)
+- **Apple 로고도 애플 공식 아트워크다** (2026-08-24). Apple Design Resources 의
+  「Sign in with Apple Logo」 중 **Left-aligned / White / Small** 의 경로를 한 글자도
+  고치지 않고 쓴다(`icons/AppleMark.tsx`). HIG 가 「Apple Design Resources 에서 받은
+  아트워크만 쓰고 **직접 그리지 말라**」고 못박기 때문이다 — 그전까지 쓰던 Wanted 세트
+  글리프가 바로 그 「custom Apple logo」였다(형태 96.3% 일치 · 가로세로비 2.8% 좁음).
+  크기는 「**파일 높이 = 버튼 높이**」 규칙에서 나온다: 파일 44 안의 글리프 14.532 →
+  버튼 48 에서 15.85
+- **문구를 한글로 쓰는 것은 셋 다 규격 안이다** — 카카오는 가이드 표에 국문 칸이 있고,
+  애플은 `locale=ko_KR` 로 애플이 직접 렌더한 문자열이며, 구글은 원문이 현지화를
+  「permitted and encouraged」로 적는다. 셋 다 **우리가 번역한 말이 아니다**
+- **서체도 셋 다 각 사가 지정한 것이다** — 카카오 「OS 별 기본 시스템 서체」 ·
+  애플 「Prefer the system font」 · 구글 「Roboto Medium」. 앞의 둘은 `fontFamily` 를
+  **비워 두는 것**이 곧 규격이고, iOS 에서는 그것이 SF Pro(한글 Apple SD Gothic Neo)라
+  애플이 렌더한 공식 버튼과 같은 서체가 된다. ⚠ **그래서 이 화면의 버튼 셋만
+  Pretendard 를 쓰지 않는다** — 워드마크·태그라인·약관 줄은 그대로다
+- **마크 크기가 갈리는 이유**: 카카오·애플은 「컨테이너에 비례해 키우라」는 규정이고
+  구글은 절대값 규정이다(표준 높이 40·44 어느 쪽에서든 마크는 20)
+
+원문: [카카오](https://developers.kakao.com/docs/ko/kakaologin/design-guide) ·
+[Google](https://developers.google.com/identity/branding-guidelines?hl=ko) ·
+[Apple](https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple)
+(애플은 수치를 글로 적지 않아 **공식 버튼 렌더에서 실측했다** —
+`appleid.cdn-apple.com/appleid/button?height=48&…&scale=2`)
+
 ## 온보딩 (대화형)
 
 - 질문 좌측 Fill 6%, 답변 우측 Primary 22% 틴트
