@@ -41,7 +41,7 @@ export function Icon({ name, size: px = size.icon.lg, color = label.normal }: Pr
           d={p.d}
           fill={color}
           fillRule={"evenOdd" in p && p.evenOdd ? "evenodd" : "nonzero"}
-          transform={p.transform}
+          transform={"transform" in p ? p.transform : undefined}
         />
       ))}
     </Svg>

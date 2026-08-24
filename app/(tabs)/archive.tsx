@@ -62,7 +62,7 @@ import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
  */
 const VIEWS: readonly ViewOption<"calendar" | "list">[] = [
   { name: "calendar", icon: "calendar", accessibilityLabel: "달력으로 보기" },
-  { name: "list", icon: "list-ordered", accessibilityLabel: "목록으로 보기" },
+  { name: "list", icon: "list", accessibilityLabel: "목록으로 보기" },
 ];
 
 /** `2026-07` 에서 `step` 달만큼 옮긴 달 */
