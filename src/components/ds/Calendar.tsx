@@ -1,14 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import {
-  interaction,
-  label as labelColor,
-  primary,
-  radius,
-  selectedTint,
-  space,
-} from "@/design/ds";
+import { interaction, label as labelColor, primary, radius, space, withAlpha } from "@/design/ds";
 import { formatKoreanMonth } from "@/lib/day";
 
 import { columnWidth } from "./columnWidth";
@@ -49,6 +42,18 @@ import { Text } from "./Text";
 export type CalendarMark = {
   /** 칸 아래 점. 없으면 찍지 않는다 — **점의 뜻은 부르는 쪽이 안다** */
   dotColor?: string;
+  /**
+   * 점을 채우지 않고 **테두리만** 그린다 — 상태를 색이 아니라 「채움」으로 나눌 때
+   * (쉼터: 수행 = 채운 점 · 미수행 = 빈 점). 두 상태의 색이 가까워도 모양으로
+   * 갈려서 「색만으로 판단하게 하지 않는다」(`RULES.md`)를 지킨다. 없으면 채운다
+   */
+  dotHollow?: boolean;
+  /**
+   * 날짜 숫자 밑 **밑줄** 색 — 점(dot)과 **다른 채널**이다. 보관함이 「그날 일정이
+   * 있다」를 점(일기)과 겹치지 않게 표시할 때 쓴다: 점=일기 · 밑줄=일정이라 둘 다
+   * 있는 날도 색 없이 구분된다. 없으면 긋지 않는다 — **뜻은 부르는 쪽이 안다**.
+   */
+  underlineColor?: string;
   /** 기록이 있는 날 — 날짜 글자를 진하게 */
   emphasized?: boolean;
   /** 고를 수 없는 날 (쉼터의 카드 없는 날) */
@@ -64,6 +69,12 @@ type Props = {
   /** `-1` 이전 달 · `1` 다음 달 */
   onMonthStep: (step: -1 | 1) => void;
   markOf?: (date: string) => CalendarMark;
+  /**
+   * **halo 모드** — `dotColor` 를 날짜 아래 점이 아니라 날짜를 **감싸는 색 원**으로
+   * 그린다(보관함). 일정 밑줄(`underlineColor`)은 원 밖 아래에 서서 감싸이지 않는다.
+   * 기본(false)은 점 모드(쉼터의 수행/미수행 점).
+   */
+  dateFill?: boolean;
 };
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -72,7 +83,14 @@ const NO_MARK: CalendarMark = {};
 /** `2026-08` + `13` → `2026-08-13` */
 const isoOf = (month: string, day: number) => `${month}-${String(day).padStart(2, "0")}`;
 
-export function Calendar({ month, selectedDate, onSelect, onMonthStep, markOf }: Props) {
+export function Calendar({
+  month,
+  selectedDate,
+  onSelect,
+  onMonthStep,
+  markOf,
+  dateFill = false,
+}: Props) {
   const [gridWidth, setGridWidth] = useState(0);
   const cell = columnWidth(gridWidth, WEEKDAYS.length);
   // 재기 전 한 프레임만 퍼센트로 선다
@@ -133,21 +151,76 @@ export function Calendar({ month, selectedDate, onSelect, onMonthStep, markOf }:
               accessibilityState={{ selected, disabled: mark.disabled === true }}
               disabled={mark.disabled === true}
               onPress={() => onSelect(date)}
-              style={[styles.cell, cellSize, selected ? styles.cellSelected : null]}
+              style={[
+                styles.cell,
+                cellSize,
+                dateFill ? styles.cellFill : null,
+                selected ? styles.cellSelected : null,
+              ]}
             >
-              <Text
-                variant={mark.emphasized === true ? "label2" : "caption1"}
-                color={cellColor(mark)}
-              >
-                {day}
-              </Text>
-              {/* 점 자리는 늘 잡아 둔다 — 있고 없고에 따라 숫자가 오르내리지 않게 */}
-              <View
-                style={[
-                  styles.dot,
-                  mark.dotColor != null ? { backgroundColor: mark.dotColor } : null,
-                ]}
-              />
+              {dateFill ? (
+                // halo 모드(보관함) — 감정을 날짜 **뒤 색 원**으로 감싼다. 원색은
+                // 대비가 낮아 55% 틴트 + 원색 링을 쓰고(EmotionDot 규칙) 숫자는 그 위에
+                // 진한 잉크로 읽힌다. 일정 밑줄은 원 **밖 아래**라 감싸이지 않는다
+                <>
+                  <View
+                    style={[
+                      styles.halo,
+                      mark.dotColor != null
+                        ? {
+                            backgroundColor: withAlpha(mark.dotColor, 0.55),
+                            borderColor: mark.dotColor,
+                          }
+                        : null,
+                    ]}
+                  >
+                    <Text
+                      variant={mark.emphasized === true ? "caption1" : "caption2"}
+                      color={cellColor(mark)}
+                    >
+                      {day}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.underbar,
+                      mark.underlineColor != null ? { backgroundColor: mark.underlineColor } : null,
+                    ]}
+                  />
+                </>
+              ) : (
+                // 점 모드(쉼터) — 숫자 아래 점(수행=채움/미수행=빈 점). 일정 밑줄은
+                // 숫자 밑 고정 바. ⚠ 폭을 **숫자**에 주면 「22」가 줄바꿈돼 깨진다
+                <>
+                  <View style={styles.num}>
+                    <Text
+                      variant={mark.emphasized === true ? "caption1" : "caption2"}
+                      color={cellColor(mark)}
+                    >
+                      {day}
+                    </Text>
+                    <View
+                      style={[
+                        styles.underbar,
+                        mark.underlineColor != null
+                          ? { backgroundColor: mark.underlineColor }
+                          : null,
+                      ]}
+                    />
+                  </View>
+                  {/* 점 자리는 늘 잡아 둔다 — 채운 점(수행)과 빈 점(미수행)은 모양으로 갈린다 */}
+                  <View
+                    style={[
+                      styles.dot,
+                      mark.dotColor != null
+                        ? mark.dotHollow === true
+                          ? { borderWidth: DOT_BORDER, borderColor: mark.dotColor }
+                          : { backgroundColor: mark.dotColor }
+                        : null,
+                    ]}
+                  />
+                </>
+              )}
             </Pressable>
           );
         })}
@@ -162,7 +235,13 @@ function cellColor(mark: CalendarMark) {
 }
 
 const CELL_HEIGHT = 38;
-const DOT = 6;
+const DOT = 8;
+/** 빈 점의 테두리 굵기 — 점 가운데가 뚫려 보이는 최소값 */
+const DOT_BORDER = 1.5;
+/** 일정 밑줄 바의 고정 폭 — 숫자 폭과 무관하게 **같은 (짧은) 길이**로 서게 한다 */
+const BAR_WIDTH = 8;
+/** halo 모드의 감정 원 지름 — 날짜 숫자(11~12)를 넉넉히 감싼다 */
+const HALO = 24;
 
 /** 폭을 재기 전 한 프레임 — 퍼센트로 서 있다가 다음 프레임에 픽셀로 갈아탄다 */
 const MEASURING_WIDTH = { width: `${100 / WEEKDAYS.length}%` } as const;
@@ -186,11 +265,30 @@ const styles = StyleSheet.create({
     gap: 3,
     borderRadius: radius.small,
   },
+  // halo 모드 — 날짜가 박스 가운데에서 **아주 약간 위**에 서게 아래를 조금 띄운다
+  cellFill: { paddingBottom: 3 },
+  // 감정 원 — 55% 틴트 채움 + 원색 1.5px 링(EmotionDot 규칙). 링 자리는 늘 잡아
+  // 두고(투명) 일기 있는 날만 색을 준다. 숫자를 가운데 감싼다
+  halo: {
+    width: HALO,
+    height: HALO,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // 숫자와 그 밑줄 바를 세로로 묶는다 — **폭을 주지 않아** 「22」가 줄바꿈되지 않는다
+  num: { alignItems: "center", gap: 2 },
+  // 일정 밑줄 — 숫자와 무관한 **고정 폭 바**. 늘 자리를 잡고(투명) 일정 있는 날만 색.
+  // 폭이 고정이라 「22」든 「1」이든 밑줄 길이가 같다(작게 통일)
+  underbar: { width: BAR_WIDTH, height: 2, borderRadius: 1, backgroundColor: "transparent" },
   /**
-   * 선택은 **면 + 테두리 2px** 이다(`A1.md`) — 색 하나로 말하지 않는다.
-   * 시안은 1.5px 이지만 스펙이 2px 을 못박았고, 선택 표시는 접근성 규칙이
-   * 걸린 자리라 두꺼운 쪽을 쓴다.
+   * 선택은 **테두리 2px 만**으로 표시한다(2026-08-24 · 초록 면 채움을 뺐다).
+   * 굵기 변화(1→2px)가 색이 아닌 신호라 「선택을 색만으로 표시하지 않는다」는
+   * 규칙은 그대로 지킨다. `A1.md` 는 면+테두리였으나 배경을 투명으로 바꿨다 —
+   * 스펙과 어긋나므로 굳으면 `docs/PRODUCT.md` 「상류와 차이」에 남긴다.
    */
-  cellSelected: { backgroundColor: selectedTint, borderWidth: 2, borderColor: primary.normal },
+  cellSelected: { borderWidth: 2, borderColor: primary.normal },
   dot: { width: DOT, height: DOT, borderRadius: radius.full },
 });
