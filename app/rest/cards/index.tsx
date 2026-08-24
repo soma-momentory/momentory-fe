@@ -71,13 +71,20 @@ export default function RestCards() {
   /**
    * 카드 존재 · 수행 · 선택을 **셋으로 나눠** 표시한다(시안 규칙).
    * **카드가 없는 날도 고를 수 있다** — 강조·점 없이 두되 잠그지 않는다.
-   * 카드가 있으면 날짜를 진하게(존재), 점 색으로 수행 여부를 나눈다:
-   * 초록 = 수행함 · 브랜드색 = 아직 안 함.
+   * 카드가 있으면 날짜를 진하게(존재), **점의 모양**으로 수행 여부를 나눈다:
+   * **채운 초록 점 = 수행함 · 빈 점 = 아직 안 함**.
+   *
+   * ⚠ 색만으로 나누지 않는다 — 브랜드색(`primary.normal` #6F947A)과 완료
+   * 초록(`status.positive` #6D9757)이 거의 같은 초록이라 점 색만으로는 구분이
+   * 안 됐다(2026-08-24). 채움/비움이라는 **모양**이 실제 신호이고, 색은 거든다.
+   * 「했어요」를 누르면 store 가 그 자리에서 바뀌어 점이 바로 채워진다.
    */
   const markOf = (date: string): CalendarMark => {
     const dayCard = days.includes(date) ? cardOn(all, date) : null;
     if (dayCard == null) return {};
-    return { emphasized: true, dotColor: dayCard.done ? status.positive : primary.normal };
+    return dayCard.done
+      ? { emphasized: true, dotColor: status.positive }
+      : { emphasized: true, dotColor: primary.normal, dotHollow: true };
   };
 
   const step = (by: -1 | 1) => {
@@ -106,46 +113,49 @@ export default function RestCards() {
       <Screen>
         <TopNavigation leading="arrow-left" title="행동카드" onLeadingPress={() => router.back()} />
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {card == null || selected == null ? (
-            // 카드가 놓일 자리에 「없다」를 말한다. 고른 날이 있으면 그 날 카드가
-            // 없다는 것을, 아직 아무 날도 안 골랐으면 회고가 먼저라는 것을 말한다.
-            <Text variant="body2" color={labelColor.neutral} style={styles.empty}>
-              {selected == null
-                ? "회고를 마치면 그날의 행동카드가 여기 남아요."
-                : `${formatKoreanDateShort(selected)}에 만들어진 행동카드가 없어요.`}
-            </Text>
-          ) : (
-            <RestActionCard
-              card={card}
-              date={formatKoreanDateShort(selected)}
-              dateNote={selected === today ? "오늘" : undefined}
-              onToggleDone={() => (card.done ? undoDone(card.id) : markDone(card.id))}
-              onSetReflection={(t) => {
-                // 쉼터는 저장 버튼에서 한 번에 커밋한다 — 로컬 반영 뒤 곧장 서버로
-                setReflection(card.id, t);
-                saveReflection(card.id);
-              }}
-              onOpenTrail={() =>
-                router.push({ pathname: "/rest/cards/[date]", params: { date: selected } })
-              }
-              // 누른 지점(창 기준) 바로 아래에 메뉴가 선다 — 메뉴는 `Screen` 밖
-              // 레이어라 인셋을 빼지 않는다
-              onMore={(atY) => setMenuTop(atY + space.md)}
-            />
-          )}
+        {/* 카드 자리와 달력을 세로로 나눈다 — 달력은 **바닥에 고정**하고 카드는
+            그 위 남는 높이를 채운다. 그래서 카드가 있든 없든 달력의 자리가 같다.
+            평소엔 스크롤 없이 둘이 한 화면에 서고, 카드가 길어질 때만(느낀 점
+            입력·긴 상황) 위 칸이 스크롤한다 */}
+        <View style={styles.body}>
+          <ScrollView
+            style={styles.cardArea}
+            contentContainerStyle={styles.cardAreaContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {card == null || selected == null ? (
+              // 카드가 놓일 자리에 「없다」를 말한다. 고른 날이 있으면 그 날 카드가
+              // 없다는 것을, 아직 아무 날도 안 골랐으면 회고가 먼저라는 것을 말한다.
+              <Text variant="body2" color={labelColor.neutral} style={styles.empty}>
+                {selected == null
+                  ? "회고를 마치면 그날의 행동카드가 여기 남아요."
+                  : `${formatKoreanDateShort(selected)}에 만들어진 행동카드가 없어요.`}
+              </Text>
+            ) : (
+              <RestActionCard
+                card={card}
+                date={formatKoreanDateShort(selected)}
+                dateNote={selected === today ? "오늘" : undefined}
+                onToggleDone={() => (card.done ? undoDone(card.id) : markDone(card.id))}
+                onSetReflection={(t) => {
+                  // 쉼터는 저장 버튼에서 한 번에 커밋한다 — 로컬 반영 뒤 곧장 서버로
+                  setReflection(card.id, t);
+                  saveReflection(card.id);
+                }}
+                onOpenTrail={() =>
+                  router.push({ pathname: "/rest/cards/[date]", params: { date: selected } })
+                }
+                // 누른 지점(창 기준) 바로 아래에 메뉴가 선다 — 메뉴는 `Screen` 밖
+                // 레이어라 인셋을 빼지 않는다
+                onMore={(atY) => setMenuTop(atY + space.md)}
+              />
+            )}
+          </ScrollView>
 
-          {/* 배경 위에 직접 — 흰 카드로 감싸면 위 카드와 같은 무게가 된다 */}
+          {/* 달력만 바닥에 둔다 — 「지난 행동카드」 머리글은 뺐다(2026-08-24).
+              카드가 화면의 주인공이라 그 위 세로를 머리글에 내주지 않는다.
+              마지막 자식이라 위 칸(flex:1)이 남는 높이를 먹고 달력은 바닥에 선다 */}
           <View style={styles.past}>
-            <View style={styles.pastHead}>
-              <Text variant="label1" color={labelColor.neutral}>
-                지난 행동카드
-              </Text>
-              <Text variant="caption1" color={labelColor.alternative}>
-                카드가 있었던 날을 골라보세요.
-              </Text>
-            </View>
-
             <Calendar
               month={shownMonth}
               selectedDate={selected}
@@ -157,7 +167,7 @@ export default function RestCards() {
               markOf={markOf}
             />
           </View>
-        </ScrollView>
+        </View>
       </Screen>
 
       {/* 메뉴·모달은 `Screen` **밖**이다 — 안에 두면 Safe Area 안쪽만 덮어
@@ -197,9 +207,13 @@ export default function RestCards() {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: space.md, paddingBottom: space.xl },
+  // 나머지 세로를 카드 자리와 달력이 나눠 갖는다 (달력은 바닥 고정)
+  body: { flex: 1 },
+  // 카드 자리는 남는 높이를 먹고 — 평소엔 스크롤하지 않는다(flexGrow 로 꽉 채움).
+  // 카드가 길어지면(느낀 점·긴 상황) 이 칸만 스크롤하고 달력은 그대로 있다
+  cardArea: { flex: 1 },
+  cardAreaContent: { flexGrow: 1, paddingBottom: space.lg },
   empty: { paddingVertical: space.xl },
-  // 지난 카드 블록은 위 카드와 16 띄운다 (시안 `margin-top:16`)
-  past: { gap: 10, marginTop: space.lg },
-  pastHead: { gap: 2, paddingHorizontal: space.xs },
+  // 달력은 카드 자리와 최소 16 띄운다
+  past: { paddingTop: space.lg },
 });

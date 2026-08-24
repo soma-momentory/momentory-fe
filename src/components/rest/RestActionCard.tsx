@@ -10,7 +10,6 @@ import {
   line,
   primary,
   radius,
-  size,
   space,
   status,
   text,
@@ -60,9 +59,14 @@ type Props = {
 /** 읽기 블록도 3줄에서 … 처리 — 전체는 「자세히 보기」에서 (시안 규칙) */
 const NOTE_LINES = 3;
 
-/** 느낀 점 저장 버튼 지름 — 입력 한 줄이 이 높이의 가운데에 선다 */
-const NOTE_BUTTON = 32;
+/**
+ * 느낀 점 저장 버튼 지름 — 입력 한 줄이 이 높이의 가운데에 선다.
+ * 입력창을 낮추려고 32→28 로 줄였다(2026-08-24 · 하단 영역 축소).
+ */
+const NOTE_BUTTON = 28;
 const NOTE_PADDING_Y = (NOTE_BUTTON - text.body1.lineHeight) / 2;
+/** 느낀 점 입력창 최소 높이 — 옛 `size.input.compact`(52)에서 낮췄다(하단 축소) */
+const NOTE_INPUT_MIN = 40;
 
 export function RestActionCard({
   card,
@@ -94,6 +98,30 @@ export function RestActionCard({
     setDraft("");
     onToggleDone();
   };
+
+  /**
+   * 카드 하단 한 줄의 **왼쪽** — 상태별로 다르다. 오른쪽 「자세히 보기」와 한 줄에
+   * 세워 하단 높이를 줄인다(느낀 점 도움말이 「자세히 보기」와 같은 줄에 선다).
+   */
+  const footLead = !card.done ? (
+    <Text variant="caption1" color={labelColor.alternative}>
+      수행하면 느낀 점을 남길 수 있어요
+    </Text>
+  ) : writing ? (
+    <Text variant="caption1" color={labelColor.alternative}>
+      남기지 않아도 괜찮아요.
+    </Text>
+  ) : saved ? (
+    <Button
+      label="고치기"
+      variant="text"
+      size="small"
+      onPress={() => {
+        setDraft(card.reflection ?? "");
+        setEditing(true);
+      }}
+    />
+  ) : null;
 
   return (
     <Card padding="loose" style={styles.card}>
@@ -158,67 +186,49 @@ export function RestActionCard({
           />
         </View>
 
-        {/* 수행 전에는 느낀 점 자리를 열어두지 않는다 — 무엇에 대한 느낌인지가 없다 */}
-        {!card.done ? (
-          <Text variant="caption1" color={labelColor.alternative}>
-            수행하면 느낀 점을 남길 수 있어요
-          </Text>
-        ) : writing ? (
-          <View style={styles.noteBlock}>
-            <View style={styles.noteInput}>
-              <TextInput
-                value={draft}
-                onChangeText={setDraft}
-                placeholder="느낀 점을 남겨보세요…"
-                placeholderTextColor={labelColor.assistive}
-                accessibilityLabel="느낀 점"
-                multiline
-                style={styles.noteField}
+        {/* 느낀 점 입력/읽기 — 수행 후에만 연다(무엇에 대한 느낌인지가 있어야) */}
+        {card.done && writing ? (
+          <View style={styles.noteInput}>
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="느낀 점을 남겨보세요…"
+              placeholderTextColor={labelColor.assistive}
+              accessibilityLabel="느낀 점"
+              multiline
+              style={styles.noteField}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="느낀 점 저장"
+              accessibilityState={{ disabled: draft.trim().length === 0 }}
+              disabled={draft.trim().length === 0}
+              onPress={save}
+              style={[styles.send, draft.trim().length === 0 ? styles.sendIdle : styles.sendReady]}
+            >
+              <Icon
+                name="send"
+                size={16}
+                color={draft.trim().length === 0 ? labelColor.disabled : labelColor.onFill}
               />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="느낀 점 저장"
-                accessibilityState={{ disabled: draft.trim().length === 0 }}
-                disabled={draft.trim().length === 0}
-                onPress={save}
-                style={[
-                  styles.send,
-                  draft.trim().length === 0 ? styles.sendIdle : styles.sendReady,
-                ]}
-              >
-                <Icon
-                  name="send"
-                  size={16}
-                  color={draft.trim().length === 0 ? labelColor.disabled : labelColor.onFill}
-                />
-              </Pressable>
-            </View>
-            <Text variant="caption1" color={labelColor.alternative}>
-              남기지 않아도 괜찮아요.
-            </Text>
+            </Pressable>
           </View>
-        ) : saved ? (
+        ) : card.done && saved ? (
           <View style={styles.noteRead}>
             <Text variant="body2" color={labelColor.neutral} numberOfLines={NOTE_LINES}>
               {card.reflection}
             </Text>
-            <View style={styles.editRow}>
-              <Button
-                label="고치기"
-                variant="text"
-                size="small"
-                onPress={() => {
-                  setDraft(card.reflection ?? "");
-                  setEditing(true);
-                }}
-              />
-            </View>
           </View>
         ) : null}
 
-        {onOpenTrail != null ? (
-          <View style={styles.trailRow}>
-            <Button label="자세히 보기" variant="text" size="small" onPress={onOpenTrail} />
+        {/* 하단 한 줄 — 왼쪽 도움말/고치기 · 오른쪽 「자세히 보기」. 둘을 한 줄로
+            합쳐 카드 하단 높이를 줄인다 */}
+        {footLead != null || onOpenTrail != null ? (
+          <View style={styles.footRow}>
+            <View style={styles.footLead}>{footLead}</View>
+            {onOpenTrail != null ? (
+              <Button label="자세히 보기" variant="text" size="small" onPress={onOpenTrail} />
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -246,24 +256,23 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: line.alternative,
   },
+  // ⚠ paddingTop 을 두지 않는다 — 상태줄이 위 구분선에 붙는다(`foot` 의 10 만 띄운다)
   statusRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: space.md,
-    paddingTop: 10,
   },
   statusLabel: { flexDirection: "row", alignItems: "center", gap: space.sm, flexShrink: 1 },
 
-  noteBlock: { gap: space.sm },
   noteInput: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: space.sm,
-    minHeight: size.input.compact,
-    paddingLeft: 14,
-    padding: 9,
-    borderRadius: 14,
+    minHeight: NOTE_INPUT_MIN,
+    paddingLeft: 12,
+    padding: 6,
+    borderRadius: 12,
     backgroundColor: background.elevated,
     ...hairline.neutral,
     borderColor: primary.normal,
@@ -293,11 +302,16 @@ const styles = StyleSheet.create({
   sendIdle: { backgroundColor: fill.normal },
 
   noteRead: {
-    gap: space.xs,
     padding: 14,
     borderRadius: radius.medium,
     backgroundColor: fill.alternative,
   },
-  editRow: { alignItems: "flex-end" },
-  trailRow: { alignItems: "flex-end" },
+  // 도움말/고치기(왼쪽)와 「자세히 보기」(오른쪽)를 한 줄에 — 하단 높이를 줄인다
+  footRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: space.md,
+  },
+  footLead: { flexShrink: 1 },
 });

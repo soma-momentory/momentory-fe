@@ -187,6 +187,22 @@ const call = async <T>(
 export const fetchSchedules = (date: string): Promise<ScheduleResult<Schedule[]>> =>
   call("GET", `${SCHEDULES_PATH}?date=${encodeURIComponent(date)}`, undefined, toSchedules);
 
+/**
+ * 기간 조회 — 보관함이 한 달을 통째로 받는다(`GET /schedules/period?from&to`).
+ * 하루치(`fetchSchedules`)와 **같은 `{ schedules }` 모양**이라 `toSchedules` 를
+ * 그대로 쓴다. **던지지 않는다** — 실패는 부르는 쪽이 빈 목록으로 흡수한다.
+ */
+export const fetchSchedulesInPeriod = (
+  from: string,
+  to: string,
+): Promise<ScheduleResult<Schedule[]>> =>
+  call(
+    "GET",
+    `${SCHEDULES_PATH}/period?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    undefined,
+    toSchedules,
+  );
+
 /** `12-e` 직접 추가 — **제목 하나만** 보낸다. 서버가 순서를 끝에 붙여 돌려준다 */
 export const createSchedule = (date: string, title: string): Promise<ScheduleResult<Schedule>> =>
   call("POST", SCHEDULES_PATH, { date, title }, toSchedule);

@@ -1,7 +1,8 @@
+import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Icon, Text } from "@/components/ds";
-import { label as labelColor, space, status } from "@/design/ds";
+import { label as labelColor, radius, space, status } from "@/design/ds";
 import type { Schedule } from "@/features/home/model/types";
 
 /**
@@ -22,41 +23,79 @@ type Props = {
   schedules: readonly Schedule[];
   /** 블록 제목. 없으면 줄만 그린다 (`A1` 은 위 카드가 이미 날짜를 말한다) */
   title?: string;
+  /** 제목 크기 — 기본 `headline1`. 보관함은 작은 라벨로 낮춘다 */
+  titleVariant?: ComponentProps<typeof Text>["variant"];
+  /** 제목 색 — 기본 강한 잉크. 보관함은 갈색 라벨색을 준다 */
+  titleColor?: string;
+  /** 블록 전체를 오른쪽으로 들여쓴다 — 일기 아래 종속으로 보이게. 기본 0 */
+  inset?: number;
+  /**
+   * 줄마다 **완료 점**을 앞에 둔다 — 채운 초록 점 = 완료 · 빈 점 = 미완료.
+   * 보관함이 홈의 완료를 한눈에 보이려고 켠다(쉼터 달력의 채움/비움과 같은 결).
+   *
+   * ⚠ 기본은 끈다. 안 켜면 완료만 초록 체크로 표시하고 미완료엔 표식을 두지
+   * 않는다 — 「안 한 일에 표식을 붙이면 미달의 목록이 된다」는 결(회고 초안의
+   * 「오늘 일정」이 이 얼굴이다). 완료를 **대조**로 보여야 하는 보관함만 켠다.
+   */
+  showStatusDot?: boolean;
 };
 
-export function DayScheduleList({ schedules, title }: Props) {
+export function DayScheduleList({
+  schedules,
+  title,
+  titleVariant = "headline1",
+  titleColor = labelColor.strong,
+  inset = 0,
+  showStatusDot = false,
+}: Props) {
   if (schedules.length === 0) return null;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, inset > 0 ? { paddingLeft: inset } : null]}>
       {title != null ? (
-        <Text variant="headline1" color={labelColor.strong}>
+        <Text variant={titleVariant} color={titleColor}>
           {title}
         </Text>
       ) : null}
 
-      {schedules.map((s) => (
-        <View key={s.id} style={[styles.row, s.done ? null : styles.rowOpen]}>
-          {s.done ? <Icon name="circle-check" size={16} color={status.positive} /> : null}
-          <Text
-            variant="body2"
-            color={s.done ? labelColor.neutral : labelColor.strong}
-            style={s.done ? styles.done : null}
-          >
-            {s.title}
-          </Text>
-        </View>
-      ))}
+      {schedules.map((s) => {
+        // 점 모드: 완료/미완료 모두 점을 둔다. 기본 모드: 완료만 초록 체크, 미완료는 표식 없음
+        const marker = showStatusDot ? (
+          <View style={[styles.dot, s.done ? styles.dotDone : styles.dotOpen]} />
+        ) : s.done ? (
+          <Icon name="circle-check" size={16} color={status.positive} />
+        ) : null;
+
+        return (
+          <View key={s.id} style={[styles.row, marker == null ? styles.rowOpen : null]}>
+            {marker}
+            <Text
+              variant="body2"
+              color={s.done ? labelColor.neutral : labelColor.strong}
+              style={s.done ? styles.done : null}
+            >
+              {s.title}
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
 
 // 체크(16) + 사이 여백(6) 만큼 — 완료한 줄과 글자 왼끝이 맞는다
 const INDENT = 22;
+/** 완료 점 지름. `body2`(15/22) 첫 줄 가운데에 서게 위 여백을 준다 */
+const DOT = 8;
 
 const styles = StyleSheet.create({
   root: { gap: space.md },
   row: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
   rowOpen: { paddingLeft: INDENT },
   done: { textDecorationLine: "line-through" },
+
+  // (22 - 8) / 2 = 7 — 8px 점을 22 line-height 첫 줄 세로 가운데에 세운다
+  dot: { width: DOT, height: DOT, borderRadius: radius.full, marginTop: 7 },
+  dotDone: { backgroundColor: status.positive },
+  dotOpen: { borderWidth: 1.5, borderColor: labelColor.assistive },
 });

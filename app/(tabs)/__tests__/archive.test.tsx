@@ -4,8 +4,9 @@ import { router } from "expo-router";
 import Archive from "../archive";
 
 import { label as labelColor, primary } from "@/design/ds";
+import { useMonthSchedules } from "@/features/archive/model/monthSchedules";
 import { useDiary } from "@/features/diary/model/diary";
-import { useDay } from "@/features/home/model/day";
+import * as scheduleApi from "@/features/home/data/scheduleApi";
 import type { Schedule } from "@/features/home/model/types";
 import { seedDiaries } from "@/testing/fixtures";
 
@@ -33,8 +34,13 @@ const schedule = (id: string, date: string, title: string, done: boolean): Sched
 
 beforeEach(() => {
   seedDiaries(); // 일기 12편을 심는다 (src/testing/fixtures.ts)
-  useDay.setState({ schedules: [] });
+  useMonthSchedules.getState().reset();
   jest.clearAllMocks();
+  // 보관함은 마운트 때 그달 일정을 `/schedules/period` 로 받는다 — 기본은 「받은
+  // 일정 없음」이고, 일정이 필요한 테스트만 이 목을 갈아끼운다
+  jest
+    .spyOn(scheduleApi, "fetchSchedulesInPeriod")
+    .mockResolvedValue({ ok: false, code: "network" });
 });
 
 describe("A1 · 보관함 달력", () => {
@@ -60,12 +66,22 @@ describe("A1 · 보관함 달력", () => {
     expect(r.getByLabelText("목록으로 보기").props.accessibilityState.selected).toBe(true);
   });
 
-  it("그날 일정도 함께 보인다 — A1 은 그날의 일기 + 일정이다", async () => {
-    // design.md 「보관함」 — 일기가 없어도 일정이 있는 날이 있다
-    useDay.setState({ schedules: [schedule("s-a1", "2026-07-27", "팀 회의", true)] });
+  it("그날 일정도 함께 보인다 — 「○월 ○일의 일정」 아래, 완료·미완료를 점으로", async () => {
+    // design.md 「보관함」 — 일기가 없어도 일정이 있는 날이 있다. 그달 일정은
+    // 서버에서 받아온다(`/schedules/period`) — 홈의 완료가 이 점에 비친다
+    jest.spyOn(scheduleApi, "fetchSchedulesInPeriod").mockResolvedValue({
+      ok: true,
+      data: [
+        schedule("s-done", "2026-07-27", "팀 회의", true),
+        schedule("s-open", "2026-07-27", "장보기", false),
+      ],
+    });
     const r = await render(<Archive />);
 
+    // 일정은 자기 머리글로 일기와 나뉜다
+    expect(await r.findByText("7월 27일의 일정")).toBeTruthy();
     expect(r.getByText("팀 회의")).toBeTruthy();
+    expect(r.getByText("장보기")).toBeTruthy();
   });
 
   it("연속 일수를 세지 않고 화살표로 압박하지 않는다", async () => {
@@ -101,8 +117,7 @@ describe("A1 · 보관함 달력", () => {
 
     await fireEvent.press(r.getByLabelText("22일"));
 
-    expect(r.getByText("7월 22일의 기록")).toBeTruthy();
-    expect(r.getByText("7월 22일 수요일")).toBeTruthy();
+    expect(r.getByText("7월 22일의 일기")).toBeTruthy();
     expect(r.getByText("화남·답답함")).toBeTruthy(); // 얼굴이 아니라 이름으로
     expect(r.getByText("뿌듯함")).toBeTruthy();
     expect(r.getByText("일기 열어보기 ›")).toBeTruthy();
@@ -120,7 +135,6 @@ describe("A1 · 보관함 달력", () => {
 
     await fireEvent.press(r.getByLabelText("23일"));
 
-    expect(r.getByText("7월 23일의 기록")).toBeTruthy();
     expect(r.getByText(/이 날은 기록이 없어요/)).toBeTruthy();
     expect(r.queryByText("일기 열어보기 ›")).toBeNull();
   });
@@ -169,11 +183,11 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
 
     await fireEvent.press(filter.getByText("우울함"));
     expect(chip("우울함")?.props.accessibilityState.selected).toBe(true);
-    expect(r.queryByText("7월 22일 수요일")).toBeNull();
+    expect(r.queryByText("7월 22일의 일기")).toBeNull();
 
     await fireEvent.press(filter.getByText("우울함"));
     expect(chip("우울함")?.props.accessibilityState.selected).toBe(false);
-    expect(r.getByText("7월 22일 수요일")).toBeTruthy();
+    expect(r.getByText("7월 22일의 일기")).toBeTruthy();
   });
 
   it("한 번에 하나만 고른다 — 다른 감정을 누르면 앞 선택이 풀린다", async () => {
@@ -215,7 +229,7 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
 
     expect(r.queryByText(/정렬|오래된 순|최신순/)).toBeNull();
     // 27일이 1일보다 먼저 나온다
-    expect(r.getByText("7월 27일 월요일")).toBeTruthy();
+    expect(r.getByText("7월 27일의 일기")).toBeTruthy();
   });
 
   it("감정을 고르면 그 감정이 붙은 일기만 남는다", async () => {
@@ -224,9 +238,9 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     await fireEvent.press(filter.getByText("우울함"));
 
     // 우울함(2)은 7/17 · 7/27 두 편이다
-    expect(r.getByText("7월 27일 월요일")).toBeTruthy();
-    expect(r.getByText("7월 17일 금요일")).toBeTruthy();
-    expect(r.queryByText("7월 22일 수요일")).toBeNull();
+    expect(r.getByText("7월 27일의 일기")).toBeTruthy();
+    expect(r.getByText("7월 17일의 일기")).toBeTruthy();
+    expect(r.queryByText("7월 22일의 일기")).toBeNull();
   });
 
   it("검색은 일기 본문을 찾는다", async () => {
@@ -234,8 +248,8 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
 
     await fireEvent.changeText(r.getByLabelText("일기 내용 검색"), "회의");
 
-    expect(r.getByText("7월 22일 수요일")).toBeTruthy();
-    expect(r.queryByText("7월 27일 월요일")).toBeNull();
+    expect(r.getByText("7월 22일의 일기")).toBeTruthy();
+    expect(r.queryByText("7월 27일의 일기")).toBeNull();
   });
 
   it("결과가 없으면 같은 자리에 한 줄만 남는다", async () => {
@@ -277,13 +291,13 @@ describe("삭제 — 되돌리기 줄을 두지 않는다", () => {
   it("지운 일기는 목록에서 곧바로 빠진다", async () => {
     const r = await render(<Archive />);
     await fireEvent.press(r.getByLabelText("목록으로 보기"));
-    expect(r.getByText("7월 27일 월요일")).toBeTruthy();
+    expect(r.getByText("7월 27일의 일기")).toBeTruthy();
 
     await act(async () => {
       useDiary.getState().remove(ID);
     });
 
-    expect(r.queryByText("7월 27일 월요일")).toBeNull();
+    expect(r.queryByText("7월 27일의 일기")).toBeNull();
   });
 });
 
