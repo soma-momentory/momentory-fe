@@ -155,7 +155,7 @@ export default function Home() {
   const rows = folded ? shown.slice(0, MAX_VISIBLE_SCHEDULES) : shown;
   const allDone = !empty && shown.every((s) => s.done);
 
-  // 이번 주(월~일)의 감정 — 일기가 남긴 값을 리포트와 **같은 계산**으로 본다.
+  // 이번 주(일~토)의 감정 — 일기가 남긴 값을 리포트와 **같은 계산**으로 본다.
   // 두 화면이 같은 주를 다르게 세면 어느 쪽이 맞는지 알 수 없게 된다
   const week = useMemo(() => {
     const start = weekStartOf(today);

@@ -200,10 +200,14 @@ describe("홈 머리가 세는 것", () => {
     expect(remainingLabel([row({ id: "1" }), row({ id: "2", hidden: true })])).toBe("1개 남음");
   });
 
-  it("주는 월요일에 시작하고 일요일은 그 주의 끝이다", () => {
-    expect(weekStartOf("2026-07-27")).toBe("2026-07-27"); // 월요일
-    expect(weekStartOf("2026-07-30")).toBe("2026-07-27");
-    expect(weekStartOf("2026-08-02")).toBe("2026-07-27"); // 일요일 — 앞선 월요일에 붙는다
+  it("주는 일요일에 시작하고 토요일은 그 주의 끝이다", () => {
+    // 2026-08-24 에 월~일 에서 일~토 로 옮겼다 — **서버도 같은 기준**이다
+    // (BE `WeeklyReportService`). 한쪽만 바꾸면 리포트가 하루씩 어긋난다
+    expect(weekStartOf("2026-07-26")).toBe("2026-07-26"); // 일요일
+    expect(weekStartOf("2026-07-27")).toBe("2026-07-26"); // 월요일 — 앞선 일요일에 붙는다
+    expect(weekStartOf("2026-07-30")).toBe("2026-07-26");
+    expect(weekStartOf("2026-08-01")).toBe("2026-07-26"); // 토요일 — 그 주의 끝
+    expect(weekStartOf("2026-08-02")).toBe("2026-08-02"); // 다음 일요일 — 새 주가 열린다
   });
 });
 

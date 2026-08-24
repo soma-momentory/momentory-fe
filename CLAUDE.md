@@ -135,14 +135,14 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 >
 > 지운 것과 그 자리에 남은 것:
 >
-> | 지운 샘플                                                      | 지금                                                                   |
-> | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
-> | 일기 12편 · 행동 카드 (보관함·쉼터·리포트)                     | 서버 `GET /diaries` — `useDiary.load()`                                |
-> | 프로필 한 벌 (닉네임 「지현」 · 나이 · 관심사 · 캘린더 연결됨) | 서버 `GET /users/me` · 온보딩 완료 — 그전에는 **빈 값**                |
-> | 순간 2개 (`Moment`)                                            | **없앴다** — 만드는 화면도 읽는 화면도 없다(타입만 남김)               |
-> | 날씨 「맑음 · 27℃」                                            | **없앴다** — 계약에 날씨가 없다                                        |
-> | 주간 해석 두 주치 (`W1`)                                       | **비어 있다** — 계약에 주간 리포트 엔드포인트가 없다. 세는 값은 나온다 |
-> | 지난달 감정 집계 (`monthChange`)                               | **없앴다** — 부르는 화면이 없었다                                      |
+> | 지운 샘플                                                      | 지금                                                                        |
+> | -------------------------------------------------------------- | --------------------------------------------------------------------------- |
+> | 일기 12편 · 행동 카드 (보관함·쉼터·리포트)                     | 서버 `GET /diaries` — `useDiary.load()`                                     |
+> | 프로필 한 벌 (닉네임 「지현」 · 나이 · 관심사 · 캘린더 연결됨) | 서버 `GET /users/me` · 온보딩 완료 — 그전에는 **빈 값**                     |
+> | 순간 2개 (`Moment`)                                            | **없앴다** — 만드는 화면도 읽는 화면도 없다(타입만 남김)                    |
+> | 날씨 「맑음 · 27℃」                                            | **없앴다** — 계약에 날씨가 없다                                             |
+> | 주간 해석 두 주치 (`W1`)                                       | 서버 `GET /reports/weekly` — 2026-08-24 에 붙었다(그전까지 **비어 있었다**) |
+> | 지난달 감정 집계 (`monthChange`)                               | **없앴다** — 부르는 화면이 없었다                                           |
 >
 > **화면 테스트가 쓰던 재료만** [`src/testing/fixtures.ts`](src/testing/fixtures.ts) 로
 > 옮겼다 — 앱 코드가 그걸 import 하면 린터가 막는다(샘플이 조용히 되살아나는 길).
@@ -159,9 +159,10 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 지금 안 써도 타입에 둔다.** 날짜·시각은 `src/lib/clock.ts` 를 지난다 —
 샘플 하루(2026-07-27)와 04:00 경계가 그 한 파일에 있다.
 
-⚠ **인증 · 회고 대화 · 일정 · 일기 · 프로필이 붙었다** (2026-08-09 PR #46 부터).
-**남은 것은 주간 리포트 해석 하나**이고 계약에 아직 엔드포인트가 없다 —
-그 자리는 샘플로 메우지 않고 **비워 뒀다**(위 「목 데이터를 전부 지웠다」).
+⚠ **인증 · 회고 대화 · 일정 · 일기 · 프로필 · 주간 리포트가 붙었다**
+(2026-08-09 PR #46 부터 · 리포트는 2026-08-24). **화면이 읽는 도메인은 전부 서버가 정본이다.**
+주간 리포트는 `GET /reports/weekly` 한 번이 마음 일곱 칸 · 요약 멘트 · 일정 · 행동 카드 ·
+일기 셈을 한 벌로 준다 — 화면은 **아무것도 세지 않는다**.
 **서버 호출은 `src/lib/http.ts` 하나를 지난다** — `authedRequest` 가 Bearer 주입 ·
 타임아웃 · 안전 파싱을 맡고 **던지지 않고 `{ ok, error }` 로 닫는다.** 응답의
 형태 검증은 호출부(`data/` 어댑터) 몫이다. 다음 도메인을 붙일 때 **자기 `fetch`
@@ -241,7 +242,11 @@ src/components/my/{SettingRow, BasicInfoEditor}.tsx
 src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이모지 금지)
 src/components/archive/{CalendarMonth, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionRow, ActionCardSection, DiaryBabaFace}.tsx ← C6-b·A3 공유
-src/components/report/{WeeklySummaryCard, WeeklyEmotionGrid, ActionInsightCard}.tsx
+src/components/report/{WeekMoodCard, WeekMoodRow, WeekCountList, WeekPickerSheet}.tsx
+                                          ← 이번 주의 마음(점 일곱 칸 + 요약) · 이번 주 한눈에.
+                                            비율(도넛·%)을 만들지 않는다 — 세는 값은 서버 것이다.
+                                            WeekPickerSheet = 주를 고르는 **목록**
+                                            (일기가 남은 주만 · 「2026년 8월 4주차」 + 날짜·일기 수)
 src/features/emotion/model/emotion.ts     ← **감정 9종의 도메인 정본** — id·이름·EmotionId.
                                             **색은 여기 두지 않는다**(디자인 몫 · 세대마다 바뀐다).
                                             번호는 서버 enum 두 벌(retro EMOTION_KEYS ·
@@ -265,8 +270,13 @@ src/features/diary/{model/{diary,types,selectors,deleteToast}.ts,
                                             (PRODUCT.md 상류와 차이 25). 서버에 삭제가
                                             생기면 이 파일이 사라진다
 src/features/archive/model/archive.ts     ← 세는 것만. 연속 일수를 세지 않는다
-src/features/report/{model/report.ts, data/reportRepository.ts} ← 주간 집계 · 해석 공급 경계
-                                          ← 해석은 **비어 있다** — 계약에 주간 리포트가 없다
+src/features/report/{model/{report,weeklyReport}.ts, data/weeklyReportApi.ts}
+                                          ← weeklyReport = 보고 있는 주 + 서버 조회
+                                            (`GET /reports/weekly` · 주를 넘기면 다시 받는다).
+                                            report.ts 에 남은 것은 **홈의 이번 주 감정 줄**이
+                                            쓰는 요일 일곱 칸 계산뿐 — 리포트가 쓰던 집계 함수와
+                                            문턱(일기 7편)은 2026-08-24 에 지웠다.
+                                            **리포트는 처음부터 열려 있다**(PRODUCT.md 32)
 src/features/my/model/{settings,stats,reminders,basicInfo}.ts
                                           ← 알림/프로필 설정 · 전체 기간 집계 ·
                                             **설정 ↔ OS 예약 화해**. store 는 순수하게

@@ -1,213 +1,190 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { Button, Card, IconButton, TabScreen, Text } from "@/components/ds";
-import { ActionInsightCard } from "@/components/report/ActionInsightCard";
-import { WeeklySummaryCard } from "@/components/report/WeeklySummaryCard";
-import { WeekStatList, type WeekStat } from "@/components/report/WeekStatList";
-import { label as labelColor, space } from "@/design/ds";
-import { shortEmotionName } from "@/features/archive/model/archive";
+import { Button, Card, Icon, Spinner, TabScreen, Text } from "@/components/ds";
+import { WeekCountList } from "@/components/report/WeekCountList";
+import { WeekMoodCard } from "@/components/report/WeekMoodCard";
+import { WeekPickerSheet } from "@/components/report/WeekPickerSheet";
+import { label as labelColor, layout, space } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
-import { initialWeekStart, weekAnalyses } from "@/features/report/data/reportRepository";
-import {
-  REPORT_UNLOCK_COUNT,
-  adjacentWeek,
-  availableWeekStarts,
-  isReportUnlocked,
-  diariesInWeek,
-  weekActions,
-  weekDays,
-  weekEmotionCount,
-  weekEnd,
-  weekRange,
-  weekTopEmotion,
-} from "@/features/report/model/report";
+import { weekEnd } from "@/features/report/model/report";
+import { isThisWeek, useWeeklyReport, weekOptions } from "@/features/report/model/weeklyReport";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
  * `W1` · 주간 리포트
  *
  * **리포트는 평가가 아니라 관찰이다**(`W1.md`) — 점수·등급·연속 일수·실행률·
- * 최고 기록을 쓰지 않는다.
+ * 최고 기록을 쓰지 않는다. 감정 도넛·비율·범례도 없다(`DESIGN.md` 「리포트」).
  *
- * ## 새 디자인 (`PLAN.md` A Phase 4 · `docs/DESIGN.md` 「리포트」)
+ * ## 서버가 붙었다 (2026-08-24)
  *
- * ⚠ **감정 도넛이 사라졌다.** `DESIGN.md` 「리포트」가 「도넛·비율·범례 **없이**
- * 7일 감정 흐름 + 요약 2줄, 지표는 `9개 완료` 형태」라고 못박고 「완료율·%·분석
- * 같은 표현을 쓰지 않는다」를 덧붙인다. 그래서 `EmotionDonut`(범례·비율 계산
- * 포함)과 초록 통계 패널(`WeekStatsPanel`)을 지웠고, 화면은 세 덩이가 됐다:
- * **주차 이동 → 한 주 요약(7일 흐름 + 요약 2줄) → 한 주 한눈에 → 이어갈 한 가지.**
+ * 예전에는 화면이 **일기·행동 카드 store 를 직접 세고** 한 주 해석 문장만 서버를
+ * 기다렸는데, 계약에 그 엔드포인트가 없어 문장 자리가 **비어 있었다**
+ * (`data/reportRepository.ts` — 이 브랜치에서 지웠다). 이제 `GET /reports/weekly`
+ * 하나가 마음 일곱 칸 · 요약 멘트 · 일정 · 행동 카드 · 일기 셈을 한 벌로 준다.
  *
- * **세는 것은 그대로다** — `features/report/model/report.ts` 의 집계 함수는 한 줄도
- * 바뀌지 않았다. 바뀐 것은 그리는 방법뿐이고, 사라진 것은 **비율**이다(도넛이
- * 계산하던 %는 어디에도 남지 않는다 — 그것이 이 변경의 요지다).
+ * 그래서 이 화면은 **아무것도 세지 않는다** — `features/report/model/report.ts` 의
+ * 집계 함수를 부르던 자리가 전부 사라졌다(그 파일은 홈의 이번 주 감정 줄이 아직 쓴다).
+ * 일정 셈을 서버가 하는 것이 특히 중요하다: 숨김·삭제 규칙을 화면이 다시 구현하면
+ * 홈 목록과 리포트가 서로 다른 수를 말하게 된다.
  *
- * 이 파일은 **조합만** 한다 — 각 조각의 규칙은 `src/components/report/` 에 있고,
- * 여기는 주차 이동과 수치 계산을 잇는다.
+ * ## 화면은 세 덩이다
  *
- * - **일기 7편부터 열린다.** 그 전에는 **잠긴 화면이 아니라 한 줄**로 예고한다 —
- *   잠긴 문을 보여주면 못 연 것이 사용자 탓이 된다
- * - **문구를 기간에 매지 않는다** — 시안의 「이번 주의 마음」·「이번 주 한눈에」가
- *   아니라 「한 주 요약 · 한 주 한눈에 · 이어갈 한 가지」다(문안은 `docs/spec` 우선)
- * - **흐름 라벨은 상태를 단정하지 않는다** — 「회복」은 진단형이라 뺐다
+ * **주차 이동 → 이번 주의 마음 → 이번 주 한눈에 → 기록 보러가기.**
+ * 각 조각의 규칙은 `src/components/report/` 에 있고 여기는 조립과 상태 분기만 한다.
  *
- * ⚠ 한 주 요약 문장·흐름 라벨·이어갈 한 가지는 **서버가 그 주 대화를 읽고
- * 만드는 값**인데 **계약에 아직 그 엔드포인트가 없다** — 그래서 지금은 **비어
- * 있다**(`report/data/reportRepository.ts`). 데모 문장 두 주치를 들고 있었지만
- * 누가 로그인해도 같은 주 이야기가 나와서 지웠다(2026-08-21).
- * 수치(회고 수 · 감정 수 · 이전 주 N회 · 행동 만든/해본 수)는 전부 계산이라
- * 그대로 나온다 — **없는 문장만 비고 세는 값은 진짜다.**
+ * - **처음부터 열려 있다.** 예전에는 일기 7편이 모이기 전까지 예고 한 줄만 보여줬는데
+ *   (`RULES.md` 「리포트」), 사용자 결정(2026-08-24)으로 문턱을 없앴다 — 기록이 없는 주도
+ *   **비어 있는 한 주**로 성실히 보여주고, 하루하루 쌓이면 그 자리가 저절로 채워진다.
+ *   빈 화면이 곧 「아직 없다」는 말이라 잠금이 따로 할 일이 없다
+ * - **「이번 주」는 이번 주에만 쓴다** — 지난 주를 넘겨보는 동안에는 「이 주의 마음 ·
+ *   이 주 한눈에 · 이 주의 기록 보기」다. 서버 멘트만은 그대로 둔다(BE 문장이라 여기서
+ *   고치지 않는다 — `WeekMoodCard` 주석)
+ * - **주는 날짜를 눌러 목록에서 고른다**(`WeekPickerSheet`) — **일기가 남은 주만**
+ *   선다. 예전에는 머리의 `‹ ›` 로 한 주씩 옮겼고 그다음엔 달력이었는데, 둘 다
+ *   기록이 없는 주를 함께 보여줬다(사용자 요청 2026-08-24)
+ * - 그래서 **아직 오지 않은 주는 목록에 아예 없다** — 셀 것이 없는 주다.
+ *   서버는 아무 주나 「빈 주」로 성실히 답하지만 그 주를 넘겨볼 길을 두지 않는다
+ * - **실패는 한 줄로 흡수한다** — 모달도 재시도 버튼도 두지 않는다(`RULES.md` 4).
+ *   탭을 다시 열면 그때 다시 받는다
  */
 export default function Report() {
+  // 고를 수 있는 주는 **일기가 남은 주**다 — 그 목록의 재료가 일기 store 다
   const diaries = useDiary((s) => s.diaries);
-  const actionCards = useDiary((s) => s.actionCards);
 
-  // 볼 수 있는 주 = 해석이 준비된 주. 없는 주로는 넘어가지 않는다
-  const analyses = weekAnalyses();
-  const starts = availableWeekStarts(analyses);
-  const [start, setStart] = useState<string>(initialWeekStart());
-  const end = weekEnd(start);
-  const { hasPrev, hasNext } = weekRange(starts, start);
+  const weekStart = useWeeklyReport((s) => s.weekStart);
+  const report = useWeeklyReport((s) => s.report);
+  const status = useWeeklyReport((s) => s.status);
 
-  const unlocked = isReportUnlocked(diaries);
-  const weekly = diariesInWeek(diaries, start, end);
-  const days = weekDays(diaries, start, end);
-  const top = weekTopEmotion(diaries, start, end);
-  const actions = weekActions(actionCards, start, end);
-  // 해석은 주차마다 다르다 — 같은 문장을 두 주에 보여주지 않는다
-  const analysis = analyses[start];
+  const [picking, setPicking] = useState(false);
 
-  // 「이전 주 N회」도 계산한다 — 앞 주가 범위에 없으면 비교할 것이 없다
-  const prevStart = adjacentWeek(starts, start, -1);
-  const prevCount =
-    prevStart == null ? null : diariesInWeek(diaries, prevStart, weekEnd(prevStart)).length;
-
-  const go = (dir: -1 | 1) => {
-    const next = adjacentWeek(starts, start, dir);
-    if (next != null) setStart(next);
-  };
-
-  if (!unlocked) {
-    return (
-      <TabScreen active="리포트">
-        {/* 잠긴 화면을 만들지 않는다 — 같은 자리의 한 줄로 예고한다 */}
-        <Card padding="loose" style={styles.locked}>
-          <Text variant="headline1" color={labelColor.strong}>
-            {`일기 ${REPORT_UNLOCK_COUNT}편이 모이면 한 주를 정리해 드릴게요`}
-          </Text>
-          <Text variant="body2Reading" color={labelColor.alternative}>
-            {`지금까지 ${diaries.length}편 · 천천히 모아도 괜찮아요`}
-          </Text>
-        </Card>
-      </TabScreen>
-    );
-  }
+  // 탭은 `replace` 라 들어올 때마다 새로 마운트된다 — 그때마다 **이번 주부터** 다시 연다
+  useEffect(() => {
+    void useWeeklyReport.getState().open();
+  }, []);
 
   /**
-   * 요약 3칸(`W1.md`). **분모를 붙이지 않는다** — 「5회 / 7일 중」이 되는 순간
-   * 비율이 읽히고, 비율은 관찰이 아니라 평가다(`DESIGN.md` 「리포트」).
+   * 머리의 날짜는 **보고 있는 주**에서 만든다 — 받아 온 값(`report.startDate`)을 쓰면
+   * 주를 넘기는 동안 날짜만 옛 주에 머문다. 서버가 일요일로 맞추는 규칙과 같은 계산이라
+   * 두 값은 어긋나지 않는다.
    */
-  const stats: readonly WeekStat[] = [
-    {
-      icon: "clock",
-      label: "한 주의 흐름",
-      value: analysis?.trendLabel ?? "—",
-      note: analysis?.trendDelta ?? "",
-    },
-    {
-      icon: "document",
-      label: "회고 횟수",
-      value: `${weekly.length}회`,
-      // 비교는 기준을 밝혀 쓴다 — 앞 주가 범위에 없으면 비교하지 않는다
-      note: prevCount == null ? "" : `이전 주 ${prevCount}회`,
-    },
-    {
-      icon: "heart",
-      label: "가장 많이 기록한 감정",
-      value: top == null ? "—" : shortEmotionName(top.emotion),
-      note: top == null ? "" : `${top.count}번 기록`,
-    },
-  ];
+  const start = weekStart;
+  const end = weekEnd(weekStart);
+  const thisWeek = isThisWeek(weekStart);
+  const range = `${formatKoreanDateShort(start)} ~ ${formatKoreanDateShort(end)}`;
+
+  const pick = (week: string) => {
+    setPicking(false);
+    void useWeeklyReport.getState().selectWeek(week);
+  };
 
   return (
-    <TabScreen active="리포트">
+    <TabScreen
+      active="리포트"
+      overlay={
+        picking ? (
+          <WeekPickerSheet
+            weeks={weekOptions(diaries, weekStart)}
+            weekStart={weekStart}
+            onSelect={pick}
+            onDismiss={() => setPicking(false)}
+          />
+        ) : null
+      }
+    >
       {/*
-        주차 이동. 범위의 끝은 화면이 따로 없으므로(`report.pendingStates`)
-        **화살표를 눌리지 않게 하는 것**으로 끝을 말한다.
+        날짜 줄 **전체**가 주를 고르는 문이다 — 날짜를 눌러도 아이콘을 눌러도 같은 시트가
+        열린다. 아이콘은 **줄 오른쪽 끝**에 선다(2026-08-24 · 사용자 요청): 날짜 옆에
+        붙여 두면 글자의 장식으로 읽혀 「고를 수 있다」가 티가 나지 않았다. 오른쪽 끝은
+        보관함의 기간 줄(`기간 · ›`)과 같은 자리라, 「누르면 바뀌는 값」의 문법을 공유한다.
+        아이콘 세트에 아래 꺾쇠가 없어 달력으로 쓴다(`DESIGN.md` §10 「없는 글리프를
+        만들지 않는다」).
       */}
-      <View style={styles.weekNav}>
-        <IconButton
-          name="chevron-left"
-          size={20}
-          accessibilityLabel="이전 주"
-          disabled={!hasPrev}
-          onPress={() => go(-1)}
-          style={styles.navButton}
-        />
-        <Text variant="headline1" color={labelColor.strong} numberOfLines={1}>
-          {`${formatKoreanDateShort(start)} ~ ${formatKoreanDateShort(end)}`}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${range} · 주 고르기`}
+        onPress={() => setPicking(true)}
+        style={styles.weekNav}
+      >
+        {/* 날짜는 **손글씨(교보 2025)** 로 쓴다(2026-08-24) — 제목이 따로 없는 화면에서
+            이 줄이 손글씨 제목 노릇을 한다(보관함·쉼터·마이의 `title3Hand` 와 같은 자리).
+            `headline1`(18) 자리를 `title3Hand`(24)로 올린다 — 손글씨는 같은 크기 고딕보다
+            작아 보인다(`my.tsx` 의 같은 판단). 길어지면 줄이 아니라 말줄임으로 접는다 */}
+        <Text variant="title3Hand" color={labelColor.strong} numberOfLines={1} style={styles.range}>
+          {range}
         </Text>
-        <IconButton
-          name="chevron-right"
-          size={20}
-          accessibilityLabel="다음 주"
-          disabled={!hasNext}
-          onPress={() => go(1)}
-          style={styles.navButton}
-        />
-      </View>
+        {/* `interaction.inactive` 가 아니다 — 그 토큰은 「지금 활성이 아닌 것」이고
+            이 아이콘은 **눌리는 것**이다. 값(날짜)보다는 약하게 둔다 */}
+        <Icon name="calendar" size={20} color={labelColor.neutral} />
+      </Pressable>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <WeeklySummaryCard
-          summary={analysis?.summary ?? ""}
-          flow={analysis?.emotionFlow ?? ""}
-          days={days}
-          retroCount={weekly.length}
-          emotionCount={weekEmotionCount(days)}
-        />
+        {report == null ? (
+          <Card padding="loose" style={styles.notice}>
+            {status === "failed" ? (
+              // 한 줄로 흡수한다 — 무엇을 잘못했는지 묻지 않고, 다시 열면 다시 받는다
+              <Text variant="body2Reading" color={labelColor.alternative}>
+                리포트를 불러오지 못했어요 · 잠시 뒤에 다시 열어 주세요
+              </Text>
+            ) : (
+              <View style={styles.loading}>
+                <Spinner />
+                <Text variant="body2Reading" color={labelColor.alternative}>
+                  한 주를 모으고 있어요
+                </Text>
+              </View>
+            )}
+          </Card>
+        ) : (
+          <>
+            <WeekMoodCard report={report} thisWeek={thisWeek} />
 
-        <View style={styles.section}>
-          <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>
-            한 주 한눈에
-          </Text>
-          <WeekStatList stats={stats} />
-        </View>
+            <View style={styles.section}>
+              <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>
+                {thisWeek ? "이번 주 한눈에" : "이 주 한눈에"}
+              </Text>
+              <WeekCountList report={report} />
+            </View>
 
-        <ActionInsightCard
-          actionText={analysis?.actionText ?? ""}
-          made={actions.made}
-          done={actions.done}
-        />
-
-        {/* 보조 행동이라 Outlined 다 — 이 화면에 Solid Primary 는 없다(`DESIGN.md` §6).
-            탭은 쌓이는 화면이 아니라 **옮겨간다**(`TabScreen` 과 같은 이유) */}
-        <Button
-          label="이 주의 기록 보러가기"
-          variant="outlined"
-          fill
-          onPress={() => router.replace("/archive")}
-        />
+            {/* 보조 행동이라 Outlined 다 — 이 화면에 Solid Primary 는 없다(`DESIGN.md` §6).
+                탭은 쌓이는 화면이 아니라 **옮겨간다**(`TabScreen` 과 같은 이유).
+                **보고 있는 주의 첫날(일요일)을 들려 보낸다** — 보관함이 그 달을 열고 그
+                칸을 고른 채로 선다. 날짜를 안 주면 오늘이 든 달로 열려서, 지난 주를 보다
+                누른 사람은 「내가 보던 주」를 다시 찾아가야 한다 */}
+            <Button
+              label={thisWeek ? "이번 주 기록 보기" : "이 주의 기록 보기"}
+              variant="outlined"
+              fill
+              onPress={() => router.replace({ pathname: "/archive", params: { date: weekStart } })}
+            />
+          </>
+        )}
       </ScrollView>
     </TabScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  // 줄 전체가 눌린다 — 히트 44 를 지키고(`RULES.md` 터치 최소 44) 날짜는 왼쪽,
+  // 아이콘은 오른쪽 끝이다(다른 탭의 손글씨 제목도 왼쪽에서 시작한다)
   weekNav: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: space.sm,
-    paddingTop: space.sm,
-    paddingBottom: space.lg,
+    minHeight: layout.minTouch,
+    marginTop: space.sm,
+    marginBottom: space.md,
   },
-  // 히트 44 는 유지하되 화면 좌우 패딩(20) 안쪽에서 시작하도록 당긴다
-  navButton: { marginHorizontal: -space.md },
+
+  // 글꼴 배율이 커져도 달력 아이콘을 밀어내지 않는다 — 글자 쪽이 줄어든다
+  range: { flexShrink: 1 },
 
   // 남은 높이를 다 쓰고 그 안에서만 스크롤한다 — 안 잡으면 내용 높이만큼 자라 넘친다
   scroll: { flex: 1, minHeight: 0 },
@@ -216,5 +193,6 @@ const styles = StyleSheet.create({
   // 시안이 섹션 라벨만 4px 안쪽에서 시작한다
   sectionLabel: { paddingLeft: space.xs },
 
-  locked: { marginTop: space.lg, gap: space.sm },
+  notice: { gap: space.sm },
+  loading: { alignItems: "center", gap: space.md, paddingVertical: space.sm },
 });
