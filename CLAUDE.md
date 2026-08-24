@@ -218,7 +218,8 @@ src/design/{theme.ts, tokens.mvp.ts, paper.ts}
                                           ← 1·1.5·2세대. 안 옮긴 화면이 아직 쓴다 — 최종 삭제 대상
 src/components/ds/{Text, Screen, GridBackground, Button, IconButton, SocialButton,
                    Card, TextField, Chip, TopNavigation, BottomNavigation,
-                   BottomSheet, Modal}.tsx + icons/{Icon.tsx, paths.ts, GoogleMark.tsx}
+                   BottomSheet, Modal}.tsx + icons/{Icon.tsx, paths.ts, GoogleMark.tsx,
+                                                       AppleMark.tsx}
                                           ← **3세대 공용 컴포넌트.** 새 화면은 여기서 조립한다.
                                             아이콘 26개는 Wanted 세트를 그대로 옮긴 것 —
                                             **없는 글리프를 만들지 않는다**(person 없음 → nav-my-page).

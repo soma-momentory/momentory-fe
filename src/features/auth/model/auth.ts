@@ -189,12 +189,12 @@ type AuthStore = {
    */
   syncMe: () => Promise<void>;
   /**
-   * `S1` 의 [카카오로 계속하기]. 카카오 SDK → 서버 교환 → SecureStore 순서다.
+   * `S1` 의 [카카오 로그인]. 카카오 SDK → 서버 교환 → SecureStore 순서다.
    * **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다.**
    */
   signInWithKakao: () => Promise<SignInOutcome>;
   /**
-   * `S1` 의 [Apple로 계속하기]. 애플 SDK → 서버 교환 → SecureStore 순서다 —
+   * `S1` 의 [Apple로 로그인]. 애플 SDK → 서버 교환 → SecureStore 순서다 —
    * **카카오와 같다**(2026-08-24 · `POST /api/v1/auth/apple`).
    * **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다.**
    */

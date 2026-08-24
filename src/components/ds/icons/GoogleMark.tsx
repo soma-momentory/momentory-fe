@@ -1,41 +1,45 @@
-import Svg, { Path } from "react-native-svg";
-
-import { social } from "@/design/ds";
+import { Image } from "react-native";
 
 /**
- * Google 공식 4색 「G」.
+ * Google 공식 「G」 — **구글이 배포하는 PNG 원본 그대로다**
+ * (`assets/brand/google-g.png` · 2026-08-24 에
+ * <https://developers.google.com/static/identity/images/g-logo.png> 에서 받음).
  *
- * **Wanted 아이콘 세트에 없다** — `Icon` 은 `currentColor` 한 색으로 그리는데 이 마크는
- * 네 색이 고정이라 통과시킬 수 없다(`EXPORT_MANIFEST` §5: 「Google 로그인 마크만
- * 예외로 4색 인라인 SVG」). 그래서 `Icon` 에 억지로 넣지 않고 따로 둔다.
+ * ## 왜 SVG 가 아니라 PNG 인가
  *
- * **색을 받지 않는다.** 브랜드가 고정한 값이라 tint 를 허용하면 규정을 어기게 된다.
+ * 2026-08-24 이전에는 4색 플랫 「G」를 `react-native-svg` 로 그렸다. 그런데
+ * **구글이 2025 년에 마크를 그라디언트로 바꿨고**, 지금 `signin-assets.zip` 이
+ * 주는 공식 SVG 는 conic gradient(원뿔형) 위에 가우시안 블러 타원 여섯을 얹고
+ * 「G」 모양으로 마스킹한 것이다. `react-native-svg` 에는 **conic gradient 가
+ * 없다** — 벡터로는 재현할 방법이 없다.
+ *
+ * 그래서 선택지는 둘뿐이었다: **옛 4색 마크를 계속 쓰거나**(규정 위반),
+ * **구글이 렌더한 래스터를 그대로 쓰거나**. 후자를 골랐다 — 브랜딩 가이드라인이
+ * 「로고의 크기·색상 변경 금지」를 못박는데, 옛 마크는 이미 「색상이 다른 로고」다.
+ *
+ * ⚠ **색을 받지 않는다.** 브랜드가 고정한 값이라 tint 를 허용하면 규정을 어긴다.
+ * `resizeMode` 도 `contain` 으로 고정한다 — `cover`·`stretch` 는 로고를 왜곡한다.
  */
-export function GoogleMark({ size = 20 }: { size?: number }) {
+export function GoogleMark({ size = MARK_HEIGHT }: { size?: number }) {
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 48 48"
+    <Image
+      source={require("../../../../assets/brand/google-g.png")}
+      // 원본이 200×204 다. 높이를 규격에 맞추고 **폭은 비율에서 나오게** 둔다 —
+      // 정사각으로 그리면 2% 눌린 로고가 된다(가이드라인이 금지하는 「왜곡」)
+      style={{ width: size * MARK_ASPECT, height: size }}
+      resizeMode="contain"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-    >
-      <Path
-        fill={social.google.mark.red}
-        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-      />
-      <Path
-        fill={social.google.mark.blue}
-        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-      />
-      <Path
-        fill={social.google.mark.yellow}
-        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-      />
-      <Path
-        fill={social.google.mark.green}
-        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-      />
-    </Svg>
+    />
   );
 }
+
+/**
+ * **20.** 브랜딩 가이드라인이 로고를 절대값으로 못박는다 — 표준 버튼(Android·Web
+ * 40 · iOS 44)에서든 마크는 20 이다. 카카오처럼 「컨테이너에 비례해 키우라」는
+ * 규정이 아니라서, 우리 버튼이 48 이어도 20 그대로 둔다.
+ */
+export const MARK_HEIGHT = 20;
+
+/** 원본 200×204 의 가로세로비 */
+const MARK_ASPECT = 200 / 204;

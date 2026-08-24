@@ -102,7 +102,7 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
   it("로그인 버튼을 두지 않는다 — 아직 무엇을 누를지 정하기 전이다", async () => {
     const { queryByText } = await render(<Splash />);
 
-    expect(queryByText(/카카오로 계속하기|Google로 계속하기|Apple로 계속하기/)).toBeNull();
+    expect(queryByText(/카카오 로그인|Google 계정으로 로그인|Apple로 로그인/)).toBeNull();
   });
 });
 

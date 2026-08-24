@@ -156,18 +156,25 @@ export const grid = { stroke: `rgba(${WARM},0.07)`, size: 32 } as const;
  * semantic 층이 아니므로 **다른 화면이 가져다 쓰지 않는다** — 로그인 전용이다.
  */
 export const social = {
-  kakao: { background: "#FEE500", label: "rgba(0,0,0,0.85)" },
   /**
-   * 흰 판 + 회색 1px 테두리 (공식 가이드).
-   * `mark` 는 4색 「G」 — Wanted 세트에 없어 공식 마크를 그대로 쓴다
-   * (`EXPORT_MANIFEST` §5). **틴트를 허용하지 않는다.**
+   * 카카오 — [디자인 가이드](https://developers.kakao.com/docs/ko/kakaologin/design-guide) 「색상」.
+   *
+   * ⚠ **심볼과 레이블이 다른 검정이다.** 가이드 표가 심볼 `#000000` · 레이블
+   * `#000000 85%` 로 **두 줄로 나눠** 적는다. 2026-08-24 이전에는 둘 다 85% 로
+   * 그렸는데, 말풍선이 규정보다 흐렸다는 뜻이다.
    */
-  google: {
-    background: "#FFFFFF",
-    label: "#1F1F1F",
-    border: "#747775",
-    mark: { red: "#EA4335", blue: "#4285F4", yellow: "#FBBC05", green: "#34A853" },
-  },
+  kakao: { background: "#FEE500", symbol: "#000000", label: "rgba(0,0,0,0.85)" },
+  /**
+   * 흰 판 + `#747775` 1px 테두리 + `#1F1F1F` 글자 — 공식 Light 테마
+   * ([브랜딩 가이드라인](https://developers.google.com/identity/branding-guidelines?hl=ko)).
+   *
+   * 테두리는 **inside 1px** 이다 — 바깥으로 그리면 버튼이 48 보다 커진다.
+   *
+   * 4색 「G」 hex 는 **여기서 지웠다**(2026-08-24). 공식 마크가 2025 년에
+   * 그라디언트로 바뀌어 색 넷으로 그릴 수 없게 됐다 — 이제 구글이 배포하는
+   * PNG 원본을 그대로 쓴다(`icons/GoogleMark.tsx`).
+   */
+  google: { background: "#FFFFFF", label: "#1F1F1F", border: "#747775" },
   /** 라이트에서 검정 판 + 흰 글자 (공식 규정) */
   apple: { background: "#000000", label: "#FFFFFF" },
 } as const;

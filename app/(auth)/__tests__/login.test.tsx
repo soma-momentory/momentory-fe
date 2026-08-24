@@ -48,7 +48,7 @@ describe("카카오 버튼 — 실제 로그인에 연결돼 있다", () => {
     const signIn = mockSignIn({ kind: "signed-in", onboardingRequired: true });
     const { getByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오로 계속하기"));
+    await fireEvent.press(getByText("카카오 로그인"));
 
     await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
     expect(replace).toHaveBeenCalledWith("/welcome");
@@ -58,7 +58,7 @@ describe("카카오 버튼 — 실제 로그인에 연결돼 있다", () => {
     mockSignIn({ kind: "signed-in", onboardingRequired: false });
     const { getByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오로 계속하기"));
+    await fireEvent.press(getByText("카카오 로그인"));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
   });
@@ -67,7 +67,7 @@ describe("카카오 버튼 — 실제 로그인에 연결돼 있다", () => {
     const signIn = mockSignIn({ kind: "cancelled" });
     const { getByText, queryByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오로 계속하기"));
+    await fireEvent.press(getByText("카카오 로그인"));
 
     await waitFor(() => expect(signIn).toHaveBeenCalled());
     expect(replace).not.toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
     useAuth.setState({ signInDev: dev });
     const { getByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Apple로 계속하기"));
+    await fireEvent.press(getByText("Apple로 로그인"));
 
     await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
     expect(dev).not.toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
     mockApple({ kind: "signed-in", onboardingRequired: false });
     const { getByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Apple로 계속하기"));
+    await fireEvent.press(getByText("Apple로 로그인"));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
   });
@@ -113,7 +113,7 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
     mockApple({ kind: "cancelled" });
     const { getByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Apple로 계속하기"));
+    await fireEvent.press(getByText("Apple로 로그인"));
 
     await waitFor(() => expect(replace).not.toHaveBeenCalled());
   });
@@ -153,7 +153,7 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
     useAuth.setState({ signingIn: true });
     const { getByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Apple로 계속하기"));
+    await fireEvent.press(getByText("Apple로 로그인"));
 
     expect(signIn).not.toHaveBeenCalled();
   });
@@ -170,7 +170,7 @@ describe("실패 안내 — 한 줄로 흡수한다", () => {
     useAuth.setState({ signInWithKakao: signIn });
     const { getByText, queryByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오로 계속하기"));
+    await fireEvent.press(getByText("카카오 로그인"));
 
     await waitFor(() => expect(getByText(message)).toBeTruthy());
     expect(replace).not.toHaveBeenCalled();
@@ -198,15 +198,20 @@ describe("Momentory DS 이관 — 구조가 바뀌었다", () => {
     expect(queryByText(/매일 쓰지 않아도/)).toBeNull();
   });
 
+  /**
+   * 순서와 **문구**를 함께 건다. 문구는 우리가 고른 말이 아니라 **각 사 규격이
+   * 정한 목록**에서 꺼낸 것이라(2026-08-24 · `login.tsx` 주석), 「…로 계속하기」로
+   * 다시 통일하려는 다음 사람을 여기서 멈춘다.
+   */
   it("소셜 3종 순서가 시안대로 카카오 → Google → Apple 이다", async () => {
     const { getAllByRole } = await render(<Login />);
     const buttons = getAllByRole("button");
 
     expect(buttons).toHaveLength(3);
-    expect(buttons.map((b) => within(b).getByText(/계속하기$/).props.children)).toEqual([
-      "카카오로 계속하기",
-      "Google로 계속하기",
-      "Apple로 계속하기",
+    expect(buttons.map((b) => within(b).getByText(/카카오|Google|Apple/).props.children)).toEqual([
+      "카카오 로그인",
+      "Google 계정으로 로그인",
+      "Apple로 로그인",
     ]);
   });
 
@@ -256,7 +261,7 @@ describe("중복 클릭", () => {
     useAuth.setState({ signingIn: true });
     const { getByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오로 계속하기"));
+    await fireEvent.press(getByText("카카오 로그인"));
 
     expect(signIn).not.toHaveBeenCalled();
   });
