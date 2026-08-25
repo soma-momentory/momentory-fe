@@ -290,7 +290,9 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
     // 20.64 한글의 ink 가 20.5 다 — 30 이어야 잘리지 않는다
     labelLineHeight: 30,
     gap: 0,
-    paddingHorizontal: space.lg,
+    // 완성형 PNG가 버튼 전체 320×48pt를 채운다. 예전 수제 조합용 패딩을 남기면
+    // Yoga의 콘텐츠 박스 기준으로 이미지가 축소·이동한다.
+    paddingHorizontal: 0,
     borderRadius: radius.medium,
   },
 };

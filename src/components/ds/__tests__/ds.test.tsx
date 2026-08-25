@@ -231,6 +231,7 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
     );
     const artwork = getByTestId("apple-official-button-artwork");
     expect(flatten(artwork.props.style)).toMatchObject({ width: "100%", height: "100%" });
+    expect(flatten(getByRole("button").props.style).paddingHorizontal).toBe(0);
     expect(queryByText("Apple로 로그인")).toBeNull();
     expect(getByRole("button").props.accessibilityLabel).toBe("Apple로 로그인");
   });
