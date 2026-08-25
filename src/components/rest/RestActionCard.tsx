@@ -64,7 +64,10 @@ const NOTE_LINES = 3;
  * 입력창을 낮추려고 32→28 로 줄였다(2026-08-24 · 하단 영역 축소).
  */
 const NOTE_BUTTON = 28;
-const NOTE_PADDING_Y = (NOTE_BUTTON - text.body1.lineHeight) / 2;
+// 느낀 점은 손글씨(`body1ReadingHand`)로 쓴다 — 입력·읽기·자세히 보기의 결을 맞춘다.
+// 높이 계산도 같은 단의 행간을 봐야 입력창이 글자를 자르지 않는다.
+const NOTE_TEXT = text.body1ReadingHand;
+const NOTE_PADDING_Y = (NOTE_BUTTON - NOTE_TEXT.lineHeight) / 2;
 /** 느낀 점 입력창 최소 높이 — 옛 `size.input.compact`(52)에서 낮췄다(하단 축소) */
 const NOTE_INPUT_MIN = 40;
 
@@ -215,7 +218,8 @@ export function RestActionCard({
           </View>
         ) : card.done && saved ? (
           <View style={styles.noteRead}>
-            <Text variant="body2" color={labelColor.neutral} numberOfLines={NOTE_LINES}>
+            {/* 느낀 점은 손글씨(교보 2025) — 입력창과 같은 결이라 저장해도 서체가 바뀌지 않는다 */}
+            <Text variant="body1ReadingHand" color={labelColor.neutral} numberOfLines={NOTE_LINES}>
               {card.reflection}
             </Text>
           </View>
@@ -285,10 +289,10 @@ const styles = StyleSheet.create({
     minHeight: NOTE_BUTTON,
     textAlignVertical: "center",
     // 1줄에서 최대 3줄까지만 (시안 규칙)
-    maxHeight: text.body1.lineHeight * NOTE_LINES + NOTE_PADDING_Y * 2,
+    maxHeight: NOTE_TEXT.lineHeight * NOTE_LINES + NOTE_PADDING_Y * 2,
     paddingVertical: NOTE_PADDING_Y,
     paddingHorizontal: 0,
-    ...text.body1,
+    ...NOTE_TEXT,
     color: labelColor.normal,
   },
   send: {

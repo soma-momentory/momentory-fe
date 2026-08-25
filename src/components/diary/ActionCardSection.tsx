@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { Button, Card, Icon, Text, TextField } from "@/components/ds";
-import { label as labelColor, space, status } from "@/design/ds";
+import { label as labelColor, line, space, status } from "@/design/ds";
 import type { ActionCard } from "@/features/diary/model/diary";
 import { formatKoreanDateShort } from "@/lib/day";
 
@@ -64,36 +64,59 @@ export function ActionCardSection({
         <Field label="목표 행동" value={card.targetAction} />
 
         {card.done ? (
-          <>
-            {/* 채워진 상태 + 해본 날짜. 실행 횟수를 세지 않는다 */}
-            <Button
-              label={`해봤어요 · ${card.doneAt == null ? "" : formatKoreanDateShort(card.doneAt.slice(0, 10))}`}
-              variant="outlined"
-              fill
-              leading={<Icon name="circle-check" size={20} color={status.positive} />}
-              accessibilityLabel="해봤어요 되돌리기"
-              disabled={readOnly}
-              onPress={() => onRequestUndo?.(card.id)}
-            />
+          readOnly ? (
+            // `A3-c` 읽기 — 해본 뒤의 기록. 상세는 **읽는 곳**이라 「해봤어요」 버튼·느낀
+            // 점 입력칸을 두지 않는다(조작은 쉼터에서 한다). 대신 목표 행동 아래 구분선을
+            // 긋고, 「날짜 - 느낀 점」 한 줄로 보여준다(느낀 점이 없으면 날짜만).
+            <>
+              <View style={styles.record}>
+                <Text variant="label2" color={labelColor.alternative}>
+                  기록
+                </Text>
+                {/* 「날짜 - 느낀 점」 한 줄 — 느낀 점이 없으면 날짜만 남는다.
+                    날짜·느낀 점 모두 손글씨(일기 본문과 같은 결)로 적는다 */}
+                <Text variant="body1ReadingHand" color={labelColor.normal}>
+                  {[
+                    card.doneAt == null ? null : formatKoreanDateShort(card.doneAt.slice(0, 10)),
+                    (card.reflection ?? "").length > 0 ? card.reflection : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" - ")}
+                </Text>
+              </View>
 
-            {/* 느낀 점은 **선택**이다 — 완료한 뒤에야 자리가 열린다 */}
-            {readOnly && (card.reflection ?? "").length === 0 ? null : (
+              <Text variant="caption1" color={labelColor.alternative}>
+                {`${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요`}
+              </Text>
+            </>
+          ) : (
+            <>
+              {/* 채워진 상태 + 해본 날짜. 실행 횟수를 세지 않는다 */}
+              <Button
+                label={`해봤어요 · ${card.doneAt == null ? "" : formatKoreanDateShort(card.doneAt.slice(0, 10))}`}
+                variant="outlined"
+                fill
+                leading={<Icon name="circle-check" size={20} color={status.positive} />}
+                accessibilityLabel="해봤어요 되돌리기"
+                onPress={() => onRequestUndo?.(card.id)}
+              />
+
+              {/* 느낀 점은 **선택**이다 — 완료한 뒤에야 자리가 열린다 */}
               <TextField
                 fieldLabel="느낀 점"
                 accessibilityLabel="느낀 점"
                 value={card.reflection ?? ""}
                 onChangeText={(t) => onSetReflection?.(card.id, t)}
                 onBlur={() => onCommitReflection?.(card.id)}
-                editable={!readOnly}
                 placeholder="한 줄 남겨도 좋아요"
                 multiline
               />
-            )}
 
-            <Text variant="caption1" color={labelColor.alternative}>
-              {`${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요`}
-            </Text>
-          </>
+              <Text variant="caption1" color={labelColor.alternative}>
+                {`${formatKoreanDateShort(diaryDate)} 회고에서 만들어졌어요`}
+              </Text>
+            </>
+          )
         ) : (
           <>
             {/* 서버 카드(읽기 전용)는 아직 「해봤어요」를 눌러도 저장할 곳이 없어 버튼을 닫는다 */}
@@ -131,4 +154,11 @@ const styles = StyleSheet.create({
   sectionLabel: { paddingLeft: space.xs },
   card: { gap: space.lg },
   field: { gap: space.xs },
+  // 목표 행동 아래 구분선 — 카드 안에 또 하나의 카드를 만들지 않는다(`DESIGN.md` §5)
+  record: {
+    gap: space.xs,
+    paddingTop: space.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: line.alternative,
+  },
 });

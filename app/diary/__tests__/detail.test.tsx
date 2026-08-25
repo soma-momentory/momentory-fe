@@ -55,39 +55,20 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     expect(r.queryByText(/\d+회 실행|연속|일째/)).toBeNull();
   });
 
-  it("[수정하기] 를 두지 않는다 — 저장한 일기는 그날의 기록이다", async () => {
-    // ⚠ `A4`(일기 수정)는 **기능이 아니다**(2026-08-20). 고칠 기회는 저장 전
-    // (`C6` 의 `직접 고치기`) 하나이고, 메뉴에 남은 것은 삭제뿐이다
+  it("상단 오른쪽은 쓰레기통 하나다 — ⋮ 메뉴도 수정하기도 없다", async () => {
+    // ⚠ `A4`(일기 수정)는 **기능이 아니다**(2026-08-20). 상세에서 할 일은 삭제뿐이라
+    // ⋮ 메뉴를 없애고 쓰레기통 아이콘 하나로 줄였다.
     const r = await render(<DiaryDetail />);
 
-    await fireEvent.press(r.getByLabelText("더보기"));
-
+    expect(r.getByLabelText("일기 삭제")).toBeTruthy();
+    expect(r.queryByLabelText("더보기")).toBeNull();
     expect(r.queryByText("수정하기")).toBeNull();
-    expect(r.getByText("삭제하기")).toBeTruthy();
   });
 
-  it("⋮ 는 열고 닫는다 — 바깥을 탭해도 닫힌다", async () => {
+  it("쓰레기통을 누르면 곧바로 삭제 확인이 뜬다 — 무엇이 사라지는지 먼저 말한다", async () => {
     const r = await render(<DiaryDetail />);
 
-    await fireEvent.press(r.getByLabelText("더보기"));
-    expect(r.getByText("삭제하기")).toBeTruthy();
-
-    await fireEvent.press(r.getByLabelText("메뉴 닫기"));
-    expect(r.queryByText("삭제하기")).toBeNull();
-  });
-
-  it("메뉴는 삭제 하나다", async () => {
-    const r = await render(<DiaryDetail />);
-    await fireEvent.press(r.getByLabelText("더보기"));
-
-    expect(r.getByText("삭제하기")).toBeTruthy();
-  });
-
-  it("⋮ 삭제는 무엇이 사라지는지 먼저 말한다", async () => {
-    const r = await render(<DiaryDetail />);
-
-    await fireEvent.press(r.getByLabelText("더보기"));
-    await fireEvent.press(r.getByText("삭제하기"));
+    await fireEvent.press(r.getByLabelText("일기 삭제"));
 
     expect(r.getByText("이 일기를 삭제할까요?")).toBeTruthy();
     // 카드가 있는 날이므로 함께 지워진다는 사실을 먼저 알린다
@@ -97,8 +78,7 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
   it("확인하면 일기와 그 일기의 행동 카드가 함께 사라진다 — 보관함으로 돌아간다", async () => {
     const r = await render(<DiaryDetail />);
 
-    await fireEvent.press(r.getByLabelText("더보기"));
-    await fireEvent.press(r.getByText("삭제하기"));
+    await fireEvent.press(r.getByLabelText("일기 삭제"));
     await fireEvent.press(r.getByText("일기 삭제"));
 
     expect(useDiary.getState().diaries.find((x) => x.id === ID)).toBeUndefined();
@@ -110,11 +90,58 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
   it("확인에서 그대로 두면 지워지지 않는다", async () => {
     const r = await render(<DiaryDetail />);
 
-    await fireEvent.press(r.getByLabelText("더보기"));
-    await fireEvent.press(r.getByText("삭제하기"));
+    await fireEvent.press(r.getByLabelText("일기 삭제"));
     await fireEvent.press(r.getByText("그대로 두기"));
 
     expect(useDiary.getState().diaries.find((x) => x.id === ID)).toBeTruthy();
+  });
+
+  it("해본 날이 있으면 기록으로 보여준다 — 「날짜 - 느낀 점」 한 줄(조작 요소는 없다)", async () => {
+    // 상세는 **읽는 곳**이라 「해봤어요」 버튼·느낀 점 입력칸을 두지 않는다 —
+    // 목표 행동 아래에 해본 날짜와 느낀 점을 한 줄 기록으로 보여준다.
+    useDiary.setState(() => ({
+      actionCards: [
+        {
+          id: "c-27",
+          diaryId: ID,
+          situation: "면접 연습을 시작할 때",
+          targetAction: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
+          done: true,
+          doneAt: "2026-07-28T09:00:00",
+          reflection: "생각보다 덜 떨렸다",
+          createdAt: "2026-07-27T21:00:00",
+        },
+      ],
+    }));
+    const r = await render(<DiaryDetail />);
+
+    expect(r.getByText("기록")).toBeTruthy();
+    // 「날짜 - 느낀 점」 한 줄
+    expect(r.getByText("7월 28일 - 생각보다 덜 떨렸다")).toBeTruthy();
+    // 읽는 곳이라 조작 요소는 없다
+    expect(r.queryByLabelText("해봤어요 되돌리기")).toBeNull();
+    expect(r.queryByLabelText("느낀 점")).toBeNull();
+  });
+
+  it("해봤지만 느낀 점이 없으면 날짜만 보여준다", async () => {
+    useDiary.setState(() => ({
+      actionCards: [
+        {
+          id: "c-27",
+          diaryId: ID,
+          situation: "면접 연습을 시작할 때",
+          targetAction: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
+          done: true,
+          doneAt: "2026-07-28T09:00:00",
+          reflection: null,
+          createdAt: "2026-07-27T21:00:00",
+        },
+      ],
+    }));
+    const r = await render(<DiaryDetail />);
+
+    expect(r.getByText("기록")).toBeTruthy();
+    expect(r.getByText("7월 28일")).toBeTruthy();
   });
 
   it("지워진 일기를 열면 보관함으로 되돌린다", async () => {

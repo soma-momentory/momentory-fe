@@ -288,6 +288,24 @@ describe("R3 · 누적 기록 — 행동 자체가 제목이다", () => {
     expect(queryByText(/\d+개 중/)).toBeNull();
   });
 
+  it("이 날의 수행·느낀 점을 보여준다 — 쉼터에서 적은 것이 여기 바로 반영된다", async () => {
+    // 「지난 기록」은 그날 카드 자신을 빼고 세므로, R2 에서 「했어요」·느낀 점을
+    // 적어도 R3 에 안 보였다. 이 날 기록을 따로 두어 같은 store 값이 바로 비친다.
+    const target = latest();
+    useDiary.setState({
+      actionCards: useDiary
+        .getState()
+        .actionCards.map((c) =>
+          c.id === target.id ? { ...c, done: true, reflection: "생각보다 개운했다" } : c,
+        ),
+    });
+    const { getByText } = await render(<RestCardTrail />);
+
+    expect(getByText("이 날 기록")).toBeTruthy();
+    expect(getByText("7월 27일 · 수행함")).toBeTruthy();
+    expect(getByText("생각보다 개운했다")).toBeTruthy();
+  });
+
   it("여기서는 수행을 바꾸지 않는다 — 읽는 화면이다", async () => {
     const { queryByText, queryByLabelText } = await render(<RestCardTrail />);
 

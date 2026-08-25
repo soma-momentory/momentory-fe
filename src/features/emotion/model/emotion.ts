@@ -32,6 +32,19 @@ export type Emotion = (typeof EMOTIONS)[number];
 export type EmotionId = Emotion["id"];
 
 /**
+ * **긍정 → 부정** 순. 보관함 리스트뷰(`A2`)의 감정 필터가 이 순서로 칩을 세운다 —
+ * 골라 좁혀 찾는 자리라 「좋았던 날」부터 훑는 게 자연스럽다. 회고의 감정 선택(`C3`)은
+ * 스펙 순서(`EMOTIONS`, id 1~9)를 그대로 쓰므로 **여기와 무관하게** 둔다.
+ *
+ * id·이름의 정본은 `EMOTIONS` 하나다 — 여기서는 **순서만** 다시 잡는다(값을 베끼지
+ * 않는다). 새 감정이 `EMOTIONS` 에 늘면 이 배열의 순서에도 넣어야 한다.
+ */
+const SENTIMENT_ORDER: readonly EmotionId[] = [4, 8, 9, 7, 5, 6, 1, 2, 3];
+export const EMOTIONS_BY_SENTIMENT: readonly Emotion[] = SENTIMENT_ORDER.map((id) =>
+  EMOTIONS.find((e) => e.id === id),
+).filter((e): e is Emotion => e != null);
+
+/**
  * id → 이름. 못 찾으면 **빈 문자열**이다 — 화면이 이름 자리에 `undefined` 를
  * 그리거나 옵셔널 체이닝을 매번 되풀이하지 않게 한다.
  */
