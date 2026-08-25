@@ -34,16 +34,31 @@ export function Icon({ name, size: px = size.icon.lg, color = label.normal }: Pr
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      {ICON_PATHS[name].map((p, i) => (
-        <Path
-          // 글리프 안의 조각들은 순서가 곧 정체다 — 재정렬되지 않으므로 index 로 충분하다
-          key={i}
-          d={p.d}
-          fill={color}
-          fillRule={"evenOdd" in p && p.evenOdd ? "evenodd" : "nonzero"}
-          transform={"transform" in p ? p.transform : undefined}
-        />
-      ))}
+      {ICON_PATHS[name].map((p, i) =>
+        "stroke" in p && p.stroke ? (
+          // 직접 그린 선 글리프 — 채우지 않고 둥근 끝·이음으로 세트의 얇은 선을 맞춘다.
+          // 선 두께는 24 그리드 기준 1.8 (반입 글리프들의 시각 두께와 같은 결).
+          // 선 글리프는 24 그리드에 바로 그려 transform 을 두지 않는다(반입분만 평행이동을 쓴다).
+          <Path
+            key={i}
+            d={p.d}
+            fill="none"
+            stroke={color}
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ) : (
+          <Path
+            // 글리프 안의 조각들은 순서가 곧 정체다 — 재정렬되지 않으므로 index 로 충분하다
+            key={i}
+            d={p.d}
+            fill={color}
+            fillRule={"evenOdd" in p && p.evenOdd ? "evenodd" : "nonzero"}
+            transform={"transform" in p ? p.transform : undefined}
+          />
+        ),
+      )}
     </Svg>
   );
 }

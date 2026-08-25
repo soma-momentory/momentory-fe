@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 
 import { Icon, Text } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
@@ -59,9 +60,22 @@ export function DayScheduleList({
       ) : null}
 
       {schedules.map((s) => {
-        // 점 모드: 완료/미완료 모두 점을 둔다. 기본 모드: 완료만 초록 체크, 미완료는 표식 없음
+        // 점 모드: 완료/미완료 모두 점을 둔다(채운=완료 · 빈=미완료). 기본 모드: 완료만 초록 체크.
+        // 점은 **SVG 원**이다 — View+borderRadius 는 안드로이드 New Arch 에서 크기 확정 전 반지름이
+        // 0 으로 깎여 first-paint 에 네모로 굳는다(`ds/Calendar.tsx` 의 `Dot` 과 같은 이유).
         const marker = showStatusDot ? (
-          <View style={[styles.dot, s.done ? styles.dotDone : styles.dotOpen]} />
+          <View style={styles.dotSlot}>
+            <Svg width={DOT} height={DOT}>
+              <Circle
+                cx={DOT / 2}
+                cy={DOT / 2}
+                r={(DOT - (s.done ? 0 : DOT_BORDER)) / 2}
+                fill={s.done ? status.positive : "none"}
+                stroke={s.done ? undefined : labelColor.assistive}
+                strokeWidth={s.done ? undefined : DOT_BORDER}
+              />
+            </Svg>
+          </View>
         ) : s.done ? (
           <Icon name="circle-check" size={16} color={status.positive} />
         ) : null;
@@ -85,8 +99,10 @@ export function DayScheduleList({
 
 // 체크(16) + 사이 여백(6) 만큼 — 완료한 줄과 글자 왼끝이 맞는다
 const INDENT = 22;
-/** 완료 점 지름. `body2`(15/22) 첫 줄 가운데에 서게 위 여백을 준다 */
+/** 완료/미완료 점 지름. `body2`(15/22) 첫 줄 가운데에 서게 위 여백을 준다 */
 const DOT = 8;
+/** 빈 점(미완료)의 획 굵기 — 가운데가 뚫려 보이는 최소값 */
+const DOT_BORDER = 1.5;
 
 const styles = StyleSheet.create({
   root: { gap: space.md },
@@ -94,10 +110,7 @@ const styles = StyleSheet.create({
   rowOpen: { paddingLeft: INDENT },
   done: { textDecorationLine: "line-through" },
 
-  // (22 - 8) / 2 = 7 — 8px 점을 22 line-height 첫 줄 세로 가운데에 세운다.
-  // 반지름은 `radius.full`(999)이 아니라 절반값이다 — 안드로이드가 과대 반지름을
-  // 크기로 깎는데 그 계산이 크기 확정 전에 돌면 네모가 된다(`ds/Calendar.tsx`)
-  dot: { width: DOT, height: DOT, borderRadius: DOT / 2, marginTop: 7 },
-  dotDone: { backgroundColor: status.positive },
-  dotOpen: { borderWidth: 1.5, borderColor: labelColor.assistive },
+  // (22 - 8) / 2 = 7 — 8px 점(SVG 원)을 22 line-height 첫 줄 세로 가운데에 세운다.
+  // 원은 `Svg`+`Circle` 이 그리고 여기는 위치만 잡는다(네모 버그 원천 차단)
+  dotSlot: { marginTop: 7 },
 });

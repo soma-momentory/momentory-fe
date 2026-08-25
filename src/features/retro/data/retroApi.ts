@@ -66,15 +66,20 @@ export type Reply = {
   measures: ReplyMeasure[] | null;
   actionCard: ReplyActionCard | null;
   diary: ReplyDiary | null;
-  /** 대화가 끝났다 — `diary` 가 있으면 정상 종료, 없으면 안전 중단(`phase==="ended"`) */
+  /**
+   * 대화가 끝났다 — `diary` 가 있으면 정상 종료, `phase==="ended"` 면 어뷰징 종료.
+   * ⚠ 위기 안내(`phase==="safety_hold"`)는 **끝이 아니다**(`done===false`) — 「이어서 얘기하기」로 잇는다.
+   */
   done: boolean;
   safetyLevel: string | null;
 };
 
 /** `ui` 값 — 슬라이더를 띄워야 한다는 신호 */
 export const UI_MEASURE = "measure";
-/** 안전 중단으로 끝난 phase */
+/** 어뷰징 종료 phase — 되돌릴 수 없다(나가는 길만) */
 export const PHASE_ENDED = "ended";
+/** 위기 안내 후 멈춘 phase — 「이어서 얘기하기」로 이어갈 수 있다(종결 아님) */
+export const PHASE_SAFETY_HOLD = "safety_hold";
 
 export type StartScheduleItem = { name: string; emotion: string };
 

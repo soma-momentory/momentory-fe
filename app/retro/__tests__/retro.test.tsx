@@ -63,6 +63,13 @@ describe("C2 · 오늘 일정 확인 — 읽기 전용이다", () => {
     expect(queryByText("면접 스터디")).toBeNull();
   });
 
+  it("오늘 일정이 없으면 빈 화면 대신 한 마디 건넨다", async () => {
+    useDay.setState({ schedules: [] });
+    const { getByText } = await render(<RetroConfirm />);
+
+    expect(getByText(/일정이 없네요/)).toBeTruthy();
+  });
+
   it("숫자로 압박하지 않는다 — 마침 개수도 단계 번호도 없다", async () => {
     const { queryByText } = await render(<RetroConfirm />);
 

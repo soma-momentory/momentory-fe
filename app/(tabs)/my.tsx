@@ -344,7 +344,7 @@ export default function My() {
         <Group label="계정">
           <ListCell
             title="로그아웃"
-            leading={<Icon name="arrow-left" size={20} color={labelColor.alternative} />}
+            leading={<Icon name="logout" size={20} color={labelColor.alternative} />}
             onPress={() => void signOut()}
             chevron
           />

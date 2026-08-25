@@ -109,7 +109,8 @@ export default function RetroDraft() {
         적어 두면 그게 그날의 기록으로 남는다.
       */}
       <View style={styles.head}>
-        <Text variant="title3Hand" color={labelColor.strong}>
+        {/* 날짜 제목은 일기 상세(A3)와 같은 크기로 — 저장 전후 같은 일기가 같은 서체·크기로 읽힌다 */}
+        <Text variant="title1Hand" color={labelColor.strong}>
           {`${formatKoreanDateShort(today)}의 일기`}
         </Text>
       </View>
@@ -143,16 +144,27 @@ export default function RetroDraft() {
               </Text>
             </>
           ) : (
-            <Text variant="body1ReadingHand" color={labelColor.normal}>
+            <Text variant="body1ReadingHandLg" color={labelColor.normal}>
               {body}
             </Text>
           )}
         </Card>
 
-        {/* 본문 아래 「오늘 일정」을 함께 기록 — 원본 구조 그대로다 */}
-        <View style={styles.schedules}>
-          <DayScheduleList schedules={visibleSchedules(schedules)} title="오늘 일정" />
-        </View>
+        {/* 본문 아래 「오늘 일정」을 함께 기록. 일기 상세(A3)의 「그날 일정」과 **같은 구조**다 —
+            제목은 label1/neutral, 목록은 완료 점(채운=완료·빈=미완료)과 함께 제목보다 조금
+            오른쪽으로 들여쓴다(요청 2026-08-25). 일정이 없으면 블록 자체를 숨긴다 */}
+        {visibleSchedules(schedules).length > 0 ? (
+          <View style={styles.schedules}>
+            <Text variant="label1" color={labelColor.neutral} style={styles.schedulesTitle}>
+              오늘 일정
+            </Text>
+            <DayScheduleList
+              schedules={visibleSchedules(schedules)}
+              showStatusDot
+              inset={space.md}
+            />
+          </View>
+        ) : null}
       </ScrollView>
 
       <View style={styles.dock}>
@@ -164,10 +176,10 @@ export default function RetroDraft() {
           <Button label="수정 완료" fill onPress={() => setEditing(false)} />
         ) : (
           <>
+            <Button label="일기 저장하기" fill onPress={save} />
             <View style={styles.secondary}>
               <Button label="직접 고치기" variant="text" onPress={() => setEditing(true)} />
             </View>
-            <Button label="일기 저장하기" fill onPress={save} />
           </>
         )}
       </View>
@@ -196,7 +208,9 @@ const styles = StyleSheet.create({
   // 읽기(`body1ReadingHand`)와 같은 손글씨로 — 고쳐도 본문의 결이 바뀌지 않는다
   input: { ...text.body1ReadingHand, color: labelColor.normal, padding: 0 },
   counter: { textAlign: "right", fontVariant: ["tabular-nums"] },
-  schedules: { paddingHorizontal: space.xs },
+  // 「오늘 일정」 섹션 — 일기 상세(A3)의 「그날 일정」과 같은 값(제목 gap·왼쪽 들여쓰기)
+  schedules: { gap: space.md },
+  schedulesTitle: { paddingLeft: space.xs },
 
   dock: { gap: space.xs },
   secondary: { alignItems: "center" },

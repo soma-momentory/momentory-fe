@@ -18,6 +18,12 @@ export type IconPath = {
   /** 기본 `nonzero`. 구멍이 뚫린 글리프는 `evenodd` */
   evenOdd?: true;
   transform?: string;
+  /**
+   * true 면 채우지 않고 **선으로** 그린다(둥근 끝·이음). Wanted 반입분은 전부 채움 path 라
+   * 이 값을 두지 않는다 — 세트에 없어 직접 그린 글리프(예: `logout`)가 얇은 선 스타일을
+   * 맞추려고만 쓴다.
+   */
+  stroke?: true;
 };
 
 export const ICON_PATHS = {
@@ -225,6 +231,15 @@ export const ICON_PATHS = {
       evenOdd: true,
       transform: "translate(2.572, 3.154)",
     },
+  ],
+  // 로그아웃(문 + 나가는 화살표). Wanted 세트에 exit 글리프가 없어 직접 그렸다 —
+  // 마이의 「로그아웃」 하나가 쓴다. 24 그리드·얇은 선(stroke)으로 세트의 결을 맞춘다.
+  logout: [
+    // 문틀 — 오른쪽이 열린 ㄷ, 모서리는 둥글게
+    { d: "M11 3 H6 A1.6 1.6 0 0 0 4.4 4.6 V19.4 A1.6 1.6 0 0 0 6 21 H11", stroke: true },
+    // 나가는 화살표 — 몸통은 문 안에서 오른쪽으로, 머리는 그 끝에서
+    { d: "M9.5 12 H20.5", stroke: true },
+    { d: "M16.5 8 L20.5 12 L16.5 16", stroke: true },
   ],
   "more-vertical": [
     {

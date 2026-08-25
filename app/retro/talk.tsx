@@ -25,6 +25,7 @@ import { visibleSchedules, useDay } from "@/features/home/model/day";
 import { useProfile } from "@/features/my/model/settings";
 import {
   PHASE_ENDED,
+  PHASE_SAFETY_HOLD,
   UI_MEASURE,
   sendTurn,
   startRetro,
@@ -103,6 +104,8 @@ export default function RetroTalk() {
   const [pickedId, setPickedId] = useState<string | null>(null);
   /** 척도 값 — 눈금별로 하나씩 */
   const [measureValues, setMeasureValues] = useState<Record<string, number>>({});
+  /** 위기 안내에서 「이어서 얘기하기」를 골랐나 — true 면 안내 버튼 대신 입력창을 연다 */
+  const [resuming, setResuming] = useState(false);
   // 시작 요청을 한 번만 보낸다 — 첫 렌더의 이펙트가 두 번 돌아도 세션이 둘 생기지 않게
   const starting = useRef(false);
 
@@ -122,6 +125,8 @@ export default function RetroTalk() {
   const applyServerReply = (reply: Reply) => {
     applyReply(reply);
     setPickedId(null);
+    // 새 응답이 왔으니 이어가기 상태를 내린다 — 이어간 뒤 또 위기면 안내 버튼을 다시 띄운다
+    setResuming(false);
     // 측정 슬라이더는 **가운데(중앙값)에서 시작**한다 — 0~10 이면 5.
     // 미리 채워 두면 사용자가 슬라이더를 건드리지 않아도 그 값이 서버로 실린다
     // (빈 채로 두면 `measureValues` 에 키가 없어 그 측정이 통째로 빠진다).
@@ -204,6 +209,8 @@ export default function RetroTalk() {
 
   const done = lastReply?.done === true;
   const ended = done && lastReply?.phase === PHASE_ENDED;
+  // 위기 안내 후 멈춤 — 끝이 아니라 갈림길이다(나가기 / 이어가기). done 은 false 다.
+  const safetyHold = lastReply?.phase === PHASE_SAFETY_HOLD;
   const options = lastReply?.options ?? null;
   const measures = lastReply?.measures ?? null;
   const isMeasure = lastReply?.ui === UI_MEASURE && (measures?.length ?? 0) > 0;
@@ -229,6 +236,9 @@ export default function RetroTalk() {
           error={error}
           ended={ended}
           done={done}
+          safetyHold={safetyHold}
+          resuming={resuming}
+          onContinue={() => setResuming(true)}
           pending={pending}
           onRetry={retryStart}
           onGoHome={goHome}
@@ -361,6 +371,11 @@ type DockProps = {
   error: string | null;
   ended: boolean;
   done: boolean;
+  /** 위기 안내로 멈췄다 — 나가기 버튼과 「이어서 얘기하기」를 함께 둔다 */
+  safetyHold: boolean;
+  /** 「이어서 얘기하기」를 골라 입력창으로 넘어갔다 */
+  resuming: boolean;
+  onContinue: () => void;
   pending: boolean;
   onRetry: () => void;
   onGoHome: () => void;
@@ -408,8 +423,15 @@ function RetroDock(p: DockProps) {
       ) : null}
 
       {p.ended ? (
-        // 안전 종료 — 마지막 버블이 안내를 담고, 여기선 나가는 길만 둔다
+        // 어뷰징 종료 — 마지막 버블이 안내를 담고, 여기선 나가는 길만 둔다
         <Button label="홈으로 돌아가기" fill onPress={() => router.replace("/home")} />
+      ) : p.safetyHold && !p.resuming ? (
+        // 위기 안내 후 멈춤 — 나가기를 위에, 「이어서 얘기하기」를 그 아래 글자 버튼으로.
+        // 이어가기를 고르면(resuming) 이 분기를 벗어나 아래 입력창으로 넘어간다.
+        <View style={styles.holdActions}>
+          <Button label="홈으로 돌아가기" fill onPress={() => router.replace("/home")} />
+          <Button label="이어서 얘기하기" variant="text" fill onPress={p.onContinue} />
+        </View>
       ) : p.done ? (
         <Button label="일기로 정리하기" fill onPress={() => router.push("/retro/draft")} />
       ) : p.showOptions ? (
@@ -437,6 +459,7 @@ function RetroDock(p: DockProps) {
 
 const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, alignSelf: "flex-start" },
+  holdActions: { gap: space.xs },
   rows: { gap: space.sm },
   row: { gap: 2, padding: space.lg, borderRadius: radius.medium },
   rowOff: { backgroundColor: background.elevated, borderWidth: 1, borderColor: line.neutral },
