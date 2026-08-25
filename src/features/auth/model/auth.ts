@@ -228,12 +228,12 @@ type AuthStore = {
    */
   syncMe: () => Promise<void>;
   /**
-   * `S1` 의 [카카오로 계속하기]. 카카오 SDK → 서버 교환 → SecureStore 순서다.
+   * `S1` 의 [카카오 로그인]. 카카오 SDK → 서버 교환 → SecureStore 순서다.
    * **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다.**
    */
   signInWithKakao: () => Promise<SignInOutcome>;
   /**
-   * `S1` 의 [Apple로 계속하기]. 애플 SDK → 서버 교환 → SecureStore 순서다 —
+   * `S1` 의 [Apple로 로그인]. 애플 SDK → 서버 교환 → SecureStore 순서다 —
    * **카카오와 같다**(2026-08-24 · `POST /api/v1/auth/apple`).
    * **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다.**
    */
@@ -753,6 +753,8 @@ export const useAuth = create<AuthStore>((set, get) => ({
         sdk.credential.identityToken,
         // nonce 원문 — 토큰과 **같은 인가에서** 나온 짝이어야 서버가 받아들인다
         sdk.credential.nonce,
+        // 탈퇴 때 애플 연결을 끊을 refresh token 으로 서버가 바꿔 둔다
+        sdk.credential.authorizationCode,
       );
       if (!exchanged.ok) {
         const message = APPLE_FAILURE_MESSAGES[exchanged.code];

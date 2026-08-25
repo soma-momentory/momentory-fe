@@ -129,23 +129,44 @@ export default function Login() {
         </Text>
       </View>
 
-      {/* 순서는 시안대로 카카오 → Google → Apple */}
+      {/*
+        순서는 시안대로 카카오 → Google → Apple.
+
+        ⚠ **세 문구는 우리가 지어낸 말이 아니다 — 각 사가 내놓은 목록에서 꺼냈다**
+        (2026-08-24). 셋 다 「로그인」으로 맞춘 것은 말투를 통일하려던 것이 아니라,
+        **각자의 목록에 로그인 변형이 있어서** 고를 수 있었던 것이다:
+
+        - 카카오: 완성형 「카카오 로그인」 / 축약형 「로그인」 둘이 기본 레이블이다
+          (디자인 가이드 「문구」의 국문 칸). 전체 폭 버튼이라 완성형을 쓴다
+        - Google: 「로그인 / 가입 / 계속」 셋을 권장한다. 이 화면은 가입과 로그인을
+          가르지 않으니 셋 중 어느 것도 되는데, 나머지 두 줄과 같은 「로그인」을 쓴다
+        - Apple: 공식 버튼 `type=sign-in` 의 `ko_KR` 문구가 그대로 이것이다
+          (`appleid.cdn-apple.com/appleid/button?...&locale=ko_KR`). **한 글자도 바뀌지
+          않았다.** `type=continue` 를 고르면 「Apple로 계속하기」가 된다
+
+        **한글이라서 규격을 벗어나는 것이 아니다.** 카카오는 가이드 표에 국문 칸이
+        따로 있고, 애플은 위 주소가 내려준 한국어 렌더 그대로이며, 구글은 원문이
+        현지화를 「permitted and encouraged」로 적는다.
+
+        ⚠ 문구를 손볼 일이 생기면 **각 사 목록 안에서만** 고른다 — 「…로 계속하기」
+        같은 우리 말투로 다시 쓰지 않는다.
+      */}
       <View style={styles.actions}>
         <SocialButton
           provider="kakao"
-          label="카카오로 계속하기"
+          label="카카오 로그인"
           disabled={signingIn}
           onPress={signInKakao}
         />
         <SocialButton
           provider="google"
-          label="Google로 계속하기"
+          label="Google 계정으로 로그인"
           disabled={signingIn}
           onPress={signInGoogle}
         />
         <SocialButton
           provider="apple"
-          label="Apple로 계속하기"
+          label="Apple로 로그인"
           disabled={signingIn}
           onPress={signInApple}
         />

@@ -177,7 +177,7 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 영속 저장(MMKV) · **소셜 SDK 셋은 전부 붙었다**(카카오는 2026-08-07 연결 · 토큰 갱신은
 2026-08-09 닫힘 · **HTTPS 도 2026-08-25 에 닫혔다** — `https://api.momentory.co.kr`,
 [`DISCUSSION.md`](docs/DISCUSSION.md) §1-6 ·
-**애플은 2026-08-24 에 SDK + 서버 교환 + nonce 까지 연결됐다** — 남은 것은 탈퇴 revoke §1-10 ·
+**애플은 2026-08-24 에 SDK + 교환 + nonce + 탈퇴 revoke 까지 연결됐다** — `.p8` 발급만 남았다 §1-10 ·
 **구글은 2026-08-25 에 연결됐다** — 소셜 셋이 전부 실제 로그인이다) ·
 OS 권한 중 **캘린더 연결**(알림은 2026-08-11 닫힘) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
 M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](docs/TASKS.md)
@@ -219,7 +219,8 @@ src/design/{theme.ts, tokens.mvp.ts, paper.ts}
                                           ← 1·1.5·2세대. 안 옮긴 화면이 아직 쓴다 — 최종 삭제 대상
 src/components/ds/{Text, Screen, GridBackground, Button, IconButton, SocialButton,
                    Card, TextField, Chip, TopNavigation, BottomNavigation,
-                   BottomSheet, Modal}.tsx + icons/{Icon.tsx, paths.ts, GoogleMark.tsx}
+                   BottomSheet, Modal}.tsx + icons/{Icon.tsx, paths.ts, GoogleMark.tsx,
+                                                       AppleMark.tsx}
                                           ← **3세대 공용 컴포넌트.** 새 화면은 여기서 조립한다.
                                             아이콘 26개는 Wanted 세트를 그대로 옮긴 것 —
                                             **없는 글리프를 만들지 않는다**(person 없음 → nav-my-page).
@@ -322,6 +323,11 @@ src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,appleSdk,appleAuth
                                             adoptSession 하나를 나눠 쓴다.
                                             nonce = 해시는 애플로 · 원문은 서버로
                                             (재생 방지 · appleSdk 가 만든다).
+                                            탈퇴 revoke 도 붙었다 — 로그인 때
+                                            authorizationCode 를 애플 refresh
+                                            token 으로 바꿔 서버가 보관한다.
+                                            ⛔ .p8 발급 전이라 그때까지 탈퇴가
+                                            연결 해제 없이 지나간다
                                             googleSdk·googleAuthApi = **구글**
                                             (2026-08-25 · `POST /api/v1/auth/google`).
                                             보내는 것은 **idToken 하나**다 —
@@ -335,8 +341,6 @@ src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,appleSdk,appleAuth
                                             (revokeAccess) — 서버가 든 구글 토큰이 없다.
                                             로그아웃은 signOut() 으로 기기의 로그인
                                             상태만 비운다(계정 선택을 다시 볼 수 있게).
-                                            ⛔ 남은 것: 탈퇴 시 애플 revoke 없음
-                                            (DISCUSSION §1-10 의 4)
 src/testing/fixtures.ts                   ← **테스트 전용 고정값.** 옛 `src/mocks/sample.ts`
                                             자리다(2026-08-21 삭제) — 화면이 보는 값은 이제
                                             서버에서만 온다. 앱 코드가 import 하면 린터가 막는다

@@ -61,3 +61,4 @@ export { BottomSheet } from "./BottomSheet";
 export { Modal } from "./Modal";
 export { Icon, type IconName } from "./icons/Icon";
 export { GoogleMark } from "./icons/GoogleMark";
+export { AppleMark } from "./icons/AppleMark";

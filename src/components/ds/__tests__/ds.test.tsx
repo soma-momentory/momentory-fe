@@ -1,4 +1,5 @@
 import { act, fireEvent, render } from "@testing-library/react-native";
+import { processColor } from "react-native";
 
 import {
   BottomNavigation,
@@ -24,6 +25,19 @@ import { interaction, label, primary, social, status, zIndex } from "@/design/ds
  */
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
+
+/** 렌더 트리에서 host 이름으로 첫 노드를 찾는다 — SVG 는 role 로 잡을 수 없다 */
+type Node = { type?: string; props?: Record<string, unknown>; children?: unknown } | null;
+const findByType = (node: unknown, type: string): { props: Record<string, unknown> } | null => {
+  if (node == null || typeof node !== "object") return null;
+  const n = node as Node & { children?: unknown[] };
+  if (n?.type === type) return { props: n.props ?? {} };
+  for (const child of n?.children ?? []) {
+    const hit = findByType(child, type);
+    if (hit) return hit;
+  }
+  return null;
+};
 
 /**
  * 누르는 것 넷은 **둥근 클립을 쓰지 않는다.**
@@ -167,6 +181,128 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
     );
     await fireEvent.press(getByRole("button"));
     expect(onPress).not.toHaveBeenCalled();
+  });
+
+  /**
+   * 2026-08-24 — 3사 공식 규격을 실제로 읽고 맞춘 값들이다(`SocialButton.tsx` 머리말).
+   * 「보기 좋게」 통일하려는 다음 사람을 여기서 멈춘다.
+   */
+  it("카카오 심볼은 100% 검정이다 — 레이블 85% 와 다른 값을 가이드가 못박는다", async () => {
+    const { toJSON } = await render(
+      <SocialButton provider="kakao" label="카카오 로그인" onPress={() => {}} />,
+    );
+
+    // 말풍선은 `Icon` 이 그린다 — 여기서 보는 것은 그 채움색 하나다
+    // `react-native-svg` 가 색을 `{ type, payload }` 로 싸서 넘긴다 — 알맹이만 본다
+    const symbol = findByType(toJSON(), "RNSVGPath");
+    expect(symbol?.props.fill).toMatchObject({ payload: processColor(social.kakao.symbol) });
+    expect(social.kakao.symbol).not.toBe(social.kakao.label);
+  });
+
+  /**
+   * 글자 크기는 **줄마다 다르다 — 통일할 수가 없다.** 애플은 「높이의 43%」를
+   * 요구하고(HIG · need to) 카카오는 「레이블 세로 길이 ≤ 높이의 1/3」로 막는데,
+   * Pretendard 한글 ink/em 이 0.88 이라 20.64 는 카카오 상한 16 을 넘는다.
+   * 둘 다 높이 대비 비율이라 버튼을 키워도 해소되지 않는다.
+   */
+  it.each([
+    ["kakao", 16], //    48 ÷ 3 — 「레이블 세로 길이 ≤ 높이의 1/3」
+    ["google", 14], //   「Roboto Medium | 14/20」
+    ["apple", 20.64], // 48 × 43% — HIG 가 요구하는 비율
+  ] as const)("%s 라벨 크기가 규격대로다", async (provider, expected) => {
+    const { getByText } = await render(
+      <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
+    );
+    expect(flatten(getByText("계속하기").props.style).fontSize).toBeCloseTo(expected, 2);
+  });
+
+  /**
+   * 애플 로고는 **아이콘 세트에서 오지 않는다.** HIG 가 「Use only the logo artwork
+   * downloaded from Apple Design Resources; never create a custom Apple logo」라고
+   * 못박아서, 2026-08-24 에 Wanted 세트의 `logo-apple` 을 지우고 애플 원본 경로를
+   * `AppleMark.tsx` 로 옮겼다. 세트로 되돌려 놓는 순간 그 규정을 어긴다.
+   */
+  it("애플 로고는 아이콘 세트가 아니라 애플 공식 아트워크에서 온다", async () => {
+    expect("logo-apple" in ICON_PATHS).toBe(false);
+
+    const { toJSON } = await render(
+      <SocialButton provider="apple" label="Apple로 로그인" onPress={() => {}} />,
+    );
+    // 「파일 높이 = 버튼 높이」 — 애플 파일 44 안의 글리프 19 가 버튼 48 에서는 20.73
+    const mark = findByType(toJSON(), "RNSVGSvgView");
+    expect(mark?.props.height).toBeCloseTo((48 * 19) / 44, 2);
+  });
+
+  // 애플 줄은 글자가 커진 만큼 행간도 커야 한다 — 20.64 한글의 ink 가 20.5 다
+  it("애플 라벨은 행간이 잘리지 않는다", async () => {
+    const { getByText } = await render(
+      <SocialButton provider="apple" label="Apple로 로그인" onPress={() => {}} />,
+    );
+    const style = flatten(getByText("Apple로 로그인").props.style);
+    expect(style.lineHeight as number).toBeGreaterThan((style.fontSize as number) * 1.05);
+  });
+
+  /**
+   * 굵기는 **500 이다.** 애플 공식 렌더의 획/높이가 0.1090 인데 Pretendard Medium 이
+   * 정확히 0.1090 이고 SemiBold 는 0.1282(+18%)다 — 600 으로 올리면 공식 버튼보다
+   * 두꺼워진다(`SocialButton.tsx` 「굵기는 500 이다」). 구글이 규격으로 못박는
+   * Roboto **Medium** 과도 같은 단이다.
+   */
+  it.each(["kakao", "google", "apple"] as const)("%s 라벨 굵기는 500 이다", async (provider) => {
+    const { getByText } = await render(
+      <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
+    );
+    const style = flatten(getByText("계속하기").props.style);
+    // 구글은 굵기가 **파일 이름**에 있고(번들 Roboto Medium), 시스템 서체를 쓰는
+    // 나머지 둘은 `fontWeight` 로 고른다 — 결과는 같은 500 이다
+    expect(style.fontFamily === "Roboto-Medium" || style.fontWeight === "500").toBe(true);
+  });
+
+  /**
+   * 서체 **종류**도 셋 다 각 사가 지정한 것이다 — 카카오 「OS 별 기본 시스템 서체」 ·
+   * 애플 「Prefer the system font」 · 구글 「Roboto Medium」. 앞의 둘은 `fontFamily` 를
+   * **비워 두는 것**이 곧 규격이라, Pretendard 를 도로 끼워 넣으면 규격을 벗어난다.
+   */
+  it.each([
+    ["kakao", undefined],
+    ["apple", undefined],
+    ["google", "Roboto-Medium"],
+  ] as const)("%s 라벨 서체가 규격대로다", async (provider, expected) => {
+    const { getByText } = await render(
+      <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
+    );
+    expect(flatten(getByText("계속하기").props.style).fontFamily).toBe(expected);
+  });
+
+  // 서체를 이름으로 지정하는 곳은 구글뿐이다 — 나머지 둘은 우리 서체로 둔다
+  it("Google 라벨만 Roboto Medium 이다", async () => {
+    const family = async (provider: "kakao" | "google" | "apple") => {
+      const { getByText } = await render(
+        <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
+      );
+      return flatten(getByText("계속하기").props.style).fontFamily;
+    };
+
+    expect(await family("google")).toBe("Roboto-Medium");
+    expect(await family("kakao")).not.toBe("Roboto-Medium");
+    expect(await family("apple")).not.toBe("Roboto-Medium");
+  });
+
+  // 공식 Light 테마의 흰 판은 테두리가 있어야 배경에서 떨어진다 (inside 1px)
+  it("Google 판에만 1px 테두리가 있다", async () => {
+    const border = async (provider: "kakao" | "google" | "apple") => {
+      const { getByRole } = await render(
+        <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
+      );
+      return flatten(getByRole("button").props.style);
+    };
+
+    expect(await border("google")).toMatchObject({
+      borderWidth: 1,
+      borderColor: social.google.border,
+    });
+    expect((await border("kakao")).borderWidth).toBeUndefined();
+    expect((await border("apple")).borderWidth).toBeUndefined();
   });
 });
 
@@ -427,10 +563,10 @@ describe("Toast", () => {
 });
 
 describe("아이콘 세트", () => {
-  it("27개가 다 있고 전부 path 를 든다 — 빈 글리프를 만들지 않는다", async () => {
-    // Wanted 반입 26 + 사용자 요청으로 더한 `list`(순수 3줄 · 2026-08-24) = 27
+  it("26개가 다 있고 전부 path 를 든다 — 빈 글리프를 만들지 않는다", async () => {
+    // Wanted 반입 26 + `list`(2026-08-24) − `logo-apple`(애플 공식 아트워크로 옮김) = 26
     const names = Object.keys(ICON_PATHS) as IconName[];
-    expect(names).toHaveLength(27);
+    expect(names).toHaveLength(26);
     for (const n of names) {
       expect(ICON_PATHS[n].length).toBeGreaterThan(0);
       for (const p of ICON_PATHS[n]) expect(p.d.startsWith("M")).toBe(true);

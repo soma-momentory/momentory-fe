@@ -270,17 +270,19 @@ describe("store — 애플 인가가 모멘토리 세션이 된다", () => {
     });
   });
 
-  it("서버에는 identity token 과 nonce 원문만 보낸다 — 나머지 셋은 꺼내 오고 버린다", async () => {
+  it("서버에 셋을 보낸다 — identity token · nonce 원문 · authorization code", async () => {
     const fetchMock = setFetch(async () => respondOk(SERVER_BODY));
 
     await useAuth.getState().signInWithApple();
 
     const [url, init] = fetchMock.mock.calls[0]! as unknown as [string, RequestInit];
     expect(url).toBe("http://api.test/api/v1/auth/apple");
-    // `authorizationCode`·`fullName`·`email` 을 얹지 않는다 — 서버가 토큰 안에서 읽는다
+    // 이름·이메일은 얹지 않는다 — 서버가 토큰 안에서 읽는다.
+    // authorization code 는 탈퇴 때 애플 연결을 끊을 refresh token 으로 바뀐다
     expect(JSON.parse(String(init.body))).toEqual({
       identityToken: "apple-identity-token-secret",
       nonce: NONCE_RAW,
+      authorizationCode: "apple-auth-code-secret",
     });
   });
 
