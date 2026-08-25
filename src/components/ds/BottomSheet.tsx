@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { Dimensions, Keyboard, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -38,6 +38,25 @@ import { Text } from "./Text";
  *
  * 그랩 핸들은 **잡아끌라는 표시가 아니다** — 제스처를 붙이지 않았다. 시트의 성격을
  * 알리는 표식이고, 닫는 길은 딤과 각 시트의 버튼이다.
+ *
+ * ## 키보드를 시트가 직접 피한다
+ *
+ * ⚠ **매니페스트의 `adjustResize` 를 믿을 수 없다.** edge-to-edge(Expo SDK 54+)에서
+ * 안드로이드 창은 키보드에 밀려 줄지 않고, 키보드가 그 위를 **덮는다** — 앱이 IME
+ * 를 inset 으로 직접 소비해야 한다(`features/home/ui/ScheduleEditBar.tsx` 가 같은
+ * 사실을 적어 두었다). 그리고 `useSafeAreaInsets()` 에는 키보드가 들어오지 않는다.
+ *
+ * 그래서 시트가 키보드 높이를 재서 **자기 바닥 여백에 얹는다.** 시트는 화면 바닥에
+ * 붙어 있으므로(`justifyContent: "flex-end"`) 바닥 여백이 늘면 그만큼 위로 선다.
+ *
+ * **`KeyboardAvoidingView` 를 쓰지 않는다.** 그것은 `onLayout` 이 주는 **부모 기준
+ * 좌표**로 키보드와의 거리를 재는데, 이 루트는 화면 전체를 덮는 절대 배치라 그
+ * 전제가 성립하지 않는다. 또 `behavior="padding"` 은 넘긴 style **뒤에** 자기
+ * `paddingBottom` 을 합성해서 아래 `paddingBottom` 과 부딪힌다(`ScheduleEditBar`
+ * 가 `keyboardVerticalOffset` 으로 상쇄하는 그 함정이다).
+ *
+ * ⚠ **키보드 높이를 inset 에 더하지 않고 대신한다.** 키보드는 내비게이션 바 자리를
+ * 덮으므로, 둘을 더하면 그만큼 시트가 붕 뜬다.
  */
 type Props = {
   children: ReactNode;
@@ -46,12 +65,62 @@ type Props = {
   onDismiss: () => void;
 };
 
+/**
+ * 화면 바닥에서 **키보드 윗변까지의 거리**. 닫혀 있으면 0 이다 (위 머리말).
+ *
+ * ⚠ **`endCoordinates.height` 를 쓰지 않는다.** 그 값은 안드로이드 edge-to-edge 에서
+ * **내비게이션 바를 뺀 높이**로 온다. 그런데 이 시트는 화면 전체를 덮는 절대 배치
+ * 안에 있어 **내비 바 뒤까지** 뻗어 있으므로, 그 높이를 그대로 바닥 여백으로 쓰면
+ * 딱 내비 바만큼(약 48dp) 모자라 **마지막 버튼이 키보드에 잘린다.**
+ * 실기기(Galaxy S25 · 3버튼 내비)에서 실제로 그렇게 잘렸다.
+ *
+ * 그래서 높이가 아니라 **좌표**로 잰다: 키보드 윗변의 화면 좌표(`screenY`)에서
+ * 화면 높이까지가 곧 우리가 비워야 할 자리다 — **무엇이 포함되고 빠졌는지 짐작할
+ * 필요가 없어진다.** 내비 바가 있든 없든, 제스처든 3버튼이든 같은 식이다.
+ *
+ * `screen` 을 쓰는 것도 같은 이유다(`window` 가 아니다) — edge-to-edge 에서 창은
+ * 시스템 바 뒤까지 가고, 시트도 거기까지 간다.
+ *
+ * iOS 는 `Will` 로 듣는다 — 애니메이션과 함께 올라와 시트가 같이 움직인다.
+ * 안드로이드는 `Will` 이벤트가 없어 `Did` 뿐이다.
+ */
+const useKeyboardInset = (): number => {
+  const [inset, setInset] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const shown = Keyboard.addListener(showEvent, (e) => {
+      const end = e.endCoordinates;
+      if (end == null) return;
+      // 좌표가 없거나 말이 안 되면 높이로 물러선다 — 못 재는 것보다 낫다
+      const fromCoordinate = Dimensions.get("screen").height - end.screenY;
+      setInset(fromCoordinate > 0 ? fromCoordinate : (end.height ?? 0));
+    });
+    const hidden = Keyboard.addListener(hideEvent, () => setInset(0));
+
+    return () => {
+      shown.remove();
+      hidden.remove();
+    };
+  }, []);
+
+  return inset;
+};
+
 export function BottomSheet({ children, title, onDismiss }: Props) {
   // 시트는 화면 아래에 붙으므로 **실제 하단 inset** 을 자기가 맡는다
   // (`Screen` 안에 들어가지 않는다). `layout.safeArea`(34)는 iOS 시안 값이라
   // 그대로 쓰면 Android·제스처 내비에서 여백이 뜨거나 시스템 UI 와 겹친다
   // (`metrics.ts` `layout` 주석 · `EXPORT_MANIFEST` §7).
   const insets = useSafeAreaInsets();
+  const keyboard = useKeyboardInset();
+
+  // 키보드가 올라와 있으면 **그 자리가 바닥 여백을 대신한다** — 이미 화면 바닥까지의
+  // 거리라 inset 을 더하면 그만큼 붕 뜬다(위 머리말). 얹는 `space.md` 는 마지막
+  // 버튼이 키보드에 딱 붙지 않게 하는 숨이다.
+  const bottomPad = keyboard > 0 ? keyboard + space.md : Math.max(insets.bottom, space.xl);
 
   return (
     <View testID="ds-bottom-sheet-overlay" style={styles.root}>
@@ -63,10 +132,7 @@ export function BottomSheet({ children, title, onDismiss }: Props) {
       />
       {/* inset 이 0 인 기기(버튼 내비 Android 등)에서도 내용이 바닥에 붙지 않게
           최소 여백을 둔다 — 시안의 34 는 iOS 홈 인디케이터 높이 그 자체다 */}
-      <View
-        testID="ds-bottom-sheet"
-        style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space.xl) }]}
-      >
+      <View testID="ds-bottom-sheet" style={[styles.sheet, { paddingBottom: bottomPad }]}>
         <View style={styles.handle} />
         {title != null ? (
           <Text variant="heading1" color={labelColor.strong}>

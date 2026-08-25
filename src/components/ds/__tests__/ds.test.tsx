@@ -1,5 +1,5 @@
 import { act, fireEvent, render } from "@testing-library/react-native";
-import { processColor } from "react-native";
+import { Dimensions, Keyboard, processColor } from "react-native";
 
 import {
   BottomNavigation,
@@ -50,6 +50,43 @@ const findByType = (node: unknown, type: string): { props: Record<string, unknow
  *
  * 클립은 필요하지도 않다 — 스크림이 자기 `borderRadius` 를 들고 있다.
  */
+
+/**
+ * 키보드 이벤트를 흉내 낸다 — RN 의 `Keyboard` 에는 테스트용 `emit` 이 없어서
+ * `addListener` 로 등록된 콜백을 가로채 직접 부른다. `beforeEach` 에서 건다.
+ */
+const keyboardHandlers = new Map<string, (e: unknown) => void>();
+const fireKeyboard = (kind: "show" | "hide", covered: number) => {
+  // 실제 이벤트처럼 **좌표**를 준다 — 컴포넌트가 재는 것이 `screenY` 이기 때문이다.
+  // `height` 는 일부러 **다른 값**으로 둔다: 안드로이드 edge-to-edge 가 내비 바를
+  // 뺀 높이를 주는 상황을 흉내 내서, 컴포넌트가 좌표를 본다는 것을 고정한다
+  const screenHeight = Dimensions.get("screen").height;
+  for (const [event, handler] of keyboardHandlers) {
+    if (kind === "show" && event.toLowerCase().includes("show")) {
+      handler({
+        endCoordinates: { screenY: screenHeight - covered, height: covered - 48 },
+      });
+    }
+    if (kind === "hide" && event.toLowerCase().includes("hide")) {
+      handler({ endCoordinates: { screenY: screenHeight, height: 0 } });
+    }
+  }
+};
+
+beforeEach(() => {
+  keyboardHandlers.clear();
+  jest
+    .spyOn(Keyboard, "addListener")
+    .mockImplementation((event: string, handler: (e: never) => void) => {
+      keyboardHandlers.set(event, handler as (e: unknown) => void);
+      return { remove: () => keyboardHandlers.delete(event) } as never;
+    });
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe("누름 스크림을 얹는 것들 — 둥근 클립을 쓰지 않는다", () => {
   const cases: [string, React.ReactElement][] = [
     ["Button", <Button key="b" label="저장" onPress={() => {}} />],
@@ -482,6 +519,44 @@ describe("BottomSheet", () => {
     const padding = flatten(getByTestId("ds-bottom-sheet").props.style).paddingBottom;
     expect(padding).toBe(20);
     expect(padding).not.toBe(34);
+  });
+
+  /**
+   * ⚠ **매니페스트의 `adjustResize` 는 여기서 아무 일도 하지 않는다.**
+   * edge-to-edge(Expo SDK 54+)에서 안드로이드 창은 키보드에 밀려 줄지 않고 키보드가
+   * 그 위를 덮는다. 시트 안에 입력이 들어간 첫 자리가 **회원 탈퇴 확인**이었고,
+   * 거기서 입력창이 키보드에 가려졌다.
+   *
+   * 고정하는 것은 픽셀이 아니라 규칙 셋이다:
+   * **키보드가 올라오면 시트가 그만큼 위로 선다** · **inset 에 더하지 않고 대신한다**
+   * (키보드가 내비게이션 바를 덮으므로 더하면 붕 뜬다) · **높이가 아니라 좌표로 잰다**
+   * (안드로이드 edge-to-edge 의 `height` 는 내비 바를 빼고 오는데, 시트는 그 뒤까지
+   * 뻗어 있어 딱 그만큼 마지막 버튼이 잘렸다 — 실기기에서 확인).
+   */
+  it("키보드가 가린 자리만큼 시트가 선다 — 높이가 아니라 좌표로 잰다", async () => {
+    const { getByTestId } = await render(
+      <BottomSheet title="회원 탈퇴" onDismiss={() => {}}>
+        <Text>내용</Text>
+      </BottomSheet>,
+    );
+    const padOf = () => flatten(getByTestId("ds-bottom-sheet").props.style).paddingBottom;
+
+    // 닫혀 있을 때는 지금까지와 같다 (테스트 환경 inset 0 → 최소 여백)
+    expect(padOf()).toBe(20);
+
+    await act(async () => {
+      fireKeyboard("show", 300);
+    });
+    // 키보드가 가린 300 + space.md(12).
+    // - **320(= 300 + 20)이 아니다** — 최소 여백을 더하지 않는다(키보드가 그 자리를 덮는다)
+    // - **264(= 252 + 12)도 아니다** — `endCoordinates.height`(내비 바를 뺀 값)를 보지 않는다.
+    //   실기기에서 이 차이만큼 마지막 버튼이 잘렸다
+    expect(padOf()).toBe(312);
+
+    await act(async () => {
+      fireKeyboard("hide", 0);
+    });
+    expect(padOf()).toBe(20);
   });
 });
 
