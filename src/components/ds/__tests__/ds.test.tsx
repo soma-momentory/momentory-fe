@@ -1,5 +1,5 @@
 import { act, fireEvent, render } from "@testing-library/react-native";
-import { processColor } from "react-native";
+import { Keyboard, processColor } from "react-native";
 
 import {
   BottomNavigation,
@@ -49,6 +49,38 @@ const findByType = (node: unknown, type: string): { props: Record<string, unknow
  *
  * 클립은 필요하지도 않다 — 스크림이 자기 `borderRadius` 를 들고 있다.
  */
+
+/**
+ * 키보드 이벤트를 흉내 낸다 — RN 의 `Keyboard` 에는 테스트용 `emit` 이 없어서
+ * `addListener` 로 등록된 콜백을 가로채 직접 부른다. `beforeEach` 에서 건다.
+ */
+const keyboardHandlers = new Map<string, (e: unknown) => void>();
+const fireKeyboard = (kind: "show" | "hide", height: number) => {
+  // 안드로이드·iOS 어느 쪽 이름으로 등록됐든 붙잡는다
+  for (const [event, handler] of keyboardHandlers) {
+    if (kind === "show" && event.toLowerCase().includes("show")) {
+      handler({ endCoordinates: { height } });
+    }
+    if (kind === "hide" && event.toLowerCase().includes("hide")) {
+      handler({ endCoordinates: { height: 0 } });
+    }
+  }
+};
+
+beforeEach(() => {
+  keyboardHandlers.clear();
+  jest
+    .spyOn(Keyboard, "addListener")
+    .mockImplementation((event: string, handler: (e: never) => void) => {
+      keyboardHandlers.set(event, handler as (e: unknown) => void);
+      return { remove: () => keyboardHandlers.delete(event) } as never;
+    });
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe("누름 스크림을 얹는 것들 — 둥근 클립을 쓰지 않는다", () => {
   const cases: [string, React.ReactElement][] = [
     ["Button", <Button key="b" label="저장" onPress={() => {}} />],
@@ -453,6 +485,39 @@ describe("BottomSheet", () => {
     const padding = flatten(getByTestId("ds-bottom-sheet").props.style).paddingBottom;
     expect(padding).toBe(20);
     expect(padding).not.toBe(34);
+  });
+
+  /**
+   * ⚠ **매니페스트의 `adjustResize` 는 여기서 아무 일도 하지 않는다.**
+   * edge-to-edge(Expo SDK 54+)에서 안드로이드 창은 키보드에 밀려 줄지 않고 키보드가
+   * 그 위를 덮는다. 시트 안에 입력이 들어간 첫 자리가 **회원 탈퇴 확인**이었고,
+   * 거기서 입력창이 키보드에 가려졌다.
+   *
+   * 고정하는 것은 픽셀이 아니라 규칙 둘이다:
+   * **키보드가 올라오면 시트가 그만큼 위로 선다** · **inset 에 더하지 않고 대신한다**
+   * (키보드가 내비게이션 바를 덮으므로 더하면 붕 뜬다).
+   */
+  it("키보드가 올라오면 그 높이가 바닥 여백을 대신한다 — inset 에 더하지 않는다", async () => {
+    const { getByTestId } = await render(
+      <BottomSheet title="회원 탈퇴" onDismiss={() => {}}>
+        <Text>내용</Text>
+      </BottomSheet>,
+    );
+    const padOf = () => flatten(getByTestId("ds-bottom-sheet").props.style).paddingBottom;
+
+    // 닫혀 있을 때는 지금까지와 같다 (테스트 환경 inset 0 → 최소 여백)
+    expect(padOf()).toBe(20);
+
+    await act(async () => {
+      fireKeyboard("show", 300);
+    });
+    // 300 + space.md(12). **320(= 300 + 20)이 아니다** — 최소 여백을 더하지 않는다
+    expect(padOf()).toBe(312);
+
+    await act(async () => {
+      fireKeyboard("hide", 0);
+    });
+    expect(padOf()).toBe(20);
   });
 });
 
