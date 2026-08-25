@@ -254,7 +254,7 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
       <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
     );
     const style = flatten(getByText("계속하기").props.style);
-    // Google Sans는 변수 글꼴이라 나머지 시스템 서체와 마찬가지로 500 축을 고른다.
+    // Google Sans는 정적 Medium 파일이고 스타일에도 500을 명시한다.
     expect(style.fontWeight).toBe("500");
   });
 
@@ -266,7 +266,7 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
   it.each([
     ["kakao", undefined],
     ["apple", undefined],
-    ["google", "GoogleSans-Variable"],
+    ["google", "GoogleSans-Medium"],
   ] as const)("%s 라벨 서체가 규격대로다", async (provider, expected) => {
     const { getByText } = await render(
       <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
@@ -283,9 +283,9 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
       return flatten(getByText("계속하기").props.style).fontFamily;
     };
 
-    expect(await family("google")).toBe("GoogleSans-Variable");
-    expect(await family("kakao")).not.toBe("GoogleSans-Variable");
-    expect(await family("apple")).not.toBe("GoogleSans-Variable");
+    expect(await family("google")).toBe("GoogleSans-Medium");
+    expect(await family("kakao")).not.toBe("GoogleSans-Medium");
+    expect(await family("apple")).not.toBe("GoogleSans-Medium");
   });
 
   // 공식 Light 테마의 흰 판은 테두리가 있어야 배경에서 떨어진다 (inside 1px)

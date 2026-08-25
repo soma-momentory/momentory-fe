@@ -87,16 +87,17 @@ SIL Open Font License 1.1 — 전문은 [`LICENSE.txt`](LICENSE.txt).
 
 ---
 
-## Google Sans Variable
+## Google Sans Medium
 
 ⚠ **우리 서체가 아니다 — 구글 로그인 버튼 한 줄에만 쓴다**(2026-08-25 ·
 `src/components/ds/SocialButton.tsx`). Google의 2026-07-07 브랜딩 가이드가 지정하는
-**Google Sans Medium 14/20**을 맞추기 위해 Google Fonts 공식 변수 TTF를 그대로
-넣고 `fontWeight: 500`으로 Medium 축을 선택한다.
+**Google Sans Medium 14/20**을 맞추기 위해 Google Fonts CSS API에 `opsz=18`,
+`weight=500`을 요청해 받은 공식 정적 TTF를 그대로 넣었다. 내부 이름은
+`Google Sans Flex Medium`, typographic subfamily는 `Medium`이다.
 
-| 파일                          | 사용 축 | sha256                                                            |
-| ----------------------------- | ------- | ----------------------------------------------------------------- |
-| `GoogleSans-VariableFont.ttf` | 500     | `53060ecc890021bc70dc57343a443dc3d2cbdd101039739453b5581afb43a8a7` |
+| 파일                       | weight | sha256                                                            |
+| -------------------------- | ------ | ----------------------------------------------------------------- |
+| `GoogleSans-Medium.ttf`    | 500    | `57d61bba609846324d21608a356efe817b02cfaf724dd6b1c42d35f6169f9e6a` |
 
 출처: <https://fonts.google.com/specimen/Google+Sans> (2026-08-25). Google Fonts가
 배포한 원본이며 파일의 라이선스 메타데이터를 보존한다.

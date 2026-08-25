@@ -90,8 +90,8 @@ import { Text } from "./Text";
  * | SemiBold 600 | 0.1282 | +18% |
  *
  * 그래서 500 이다. 구글 규격이 못박는 Google Sans **Medium** 도 같은 단이라 셋이 한
- * 굵기로 모인다. Google Sans는 변수 글꼴이라 `fontWeight: 500`으로 Medium 축을
- * 고른다. 카카오 표준 버튼은 이보다 가볍지만(획/높이 0.0769) 이미지가 26px 라
+ * 굵기로 모인다. Google Sans는 정적 Medium TTF이고 `fontWeight: 500`도 함께
+ * 명시한다. 카카오 표준 버튼은 이보다 가볍지만(획/높이 0.0769) 이미지가 26px 라
  * 400 과 500 을 가릴 해상도가 아니다 — 확실한 것은 **600 이 아니라는 것**이다.
  *
  * ⚠ 시스템 서체는 굵기를 파일 이름으로 고를 수 없어 `fontWeight` 로 준다
@@ -226,12 +226,13 @@ type Spec = {
 const APPLE_LABEL_SIZE = size.button.large * 0.43;
 
 /**
- * Google Sans 변수 글꼴 — **구글 버튼 한 줄만** 쓴다
- * (`assets/fonts/GoogleSans-VariableFont.ttf`). Medium은 `fontWeight: 500`으로 고른다.
+ * Google Sans Medium 정적 글꼴 — **구글 버튼 한 줄만** 쓴다
+ * (`assets/fonts/GoogleSans-Medium.ttf`). Google Fonts CSS API에 `font-weight: 500`을
+ * 요청해 받은 파일이며 내부 typographic subfamily도 Medium이다.
  * `fontFamily` 토큰에 올리지 않는 이유가 그것이다: 토큰은 「우리 서체」의 목록인데
  * 이건 구글 규격을 지키려고 들여온 남의 서체다. 다른 화면이 가져다 쓰면 안 된다.
  */
-const GOOGLE_SANS = "GoogleSans-Variable";
+const GOOGLE_SANS_MEDIUM = "GoogleSans-Medium";
 
 const PROVIDERS: Record<SocialProvider, Spec> = {
   /**
@@ -264,7 +265,7 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
       borderColor: social.google.border,
     },
     labelColor: social.google.label,
-    labelFamily: GOOGLE_SANS,
+    labelFamily: GOOGLE_SANS_MEDIUM,
     labelWeight: "500",
     // 14/20 — 가이드라인이 「Google Sans Medium | 14/20」으로 크기·행간을 함께 적는다
     labelSize: 14,

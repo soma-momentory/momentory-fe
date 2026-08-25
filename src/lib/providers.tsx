@@ -99,7 +99,7 @@ function useAppFonts() {
      * (`components/ds/SocialButton.tsx`). 그래서 `ds/typography.ts` 의
      * `fontFamily` 토큰에는 올리지 않았다 — 다른 화면이 집어 쓰면 안 된다.
      */
-    "GoogleSans-Variable": require("../../assets/fonts/GoogleSans-VariableFont.ttf"),
+    "GoogleSans-Medium": require("../../assets/fonts/GoogleSans-Medium.ttf"),
   });
 
   useEffect(() => {

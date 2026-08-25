@@ -34,20 +34,20 @@
 
 전문: <https://developers.google.com/identity/branding-guidelines?hl=ko>
 
-## `GoogleSans-VariableFont.ttf`
+## `GoogleSans-Medium.ttf`
 
 구글 로그인 버튼 레이블의 공식 서체. Google 브랜딩 가이드가 2026-07-07 개정에서
 기존 Roboto Medium 대신 **Google Sans Medium 14/20**을 지정해 교체했다.
 
 |         |                                                                                   |
 | ------- | --------------------------------------------------------------------------------- |
-| 받은 곳 | <https://fonts.google.com/specimen/Google+Sans>                                   |
+| 받은 곳 | Google Fonts CSS API (`Google Sans Flex`, `opsz=18`, `weight=500`)                  |
 | 받은 날 | 2026-08-25                                                                        |
-| 파일    | Google Sans Flex variable TrueType (`fontWeight: 500`으로 Medium 사용)             |
-| sha256  | `53060ecc890021bc70dc57343a443dc3d2cbdd101039739453b5581afb43a8a7`                |
+| 내부 이름 | `Google Sans Flex Medium` / typographic subfamily `Medium`                       |
+| sha256  | `57d61bba609846324d21608a356efe817b02cfaf724dd6b1c42d35f6169f9e6a`                |
 
 - Google 버튼 한 줄에서만 사용한다.
-- 변수 글꼴 파일 자체를 수정하거나 정적 글꼴로 다시 만들지 않는다.
+- Google이 제공한 정적 500 TTF를 수정하거나 다시 인스턴싱하지 않는다.
 - Google Fonts가 배포하는 원본이며, 앱에는 원본 파일의 라이선스 메타데이터가 포함된다.
 
 ## Apple 로고 — 파일이 아니라 `AppleMark.tsx` 안에 있다
