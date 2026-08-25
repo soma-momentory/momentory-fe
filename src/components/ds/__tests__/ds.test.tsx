@@ -155,13 +155,20 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
     expect(flatten(getByRole("button").props.style).backgroundColor).toBe(expected);
   });
 
-  it("높이 48 · radius 12 — 공통은 치수만 나눠 쓴다", async () => {
+  it("높이 48 · 카카오 radius 12", async () => {
     const { getByRole } = await render(
       <SocialButton provider="kakao" label="계속하기" onPress={() => {}} />,
     );
     const style = flatten(getByRole("button").props.style);
     expect(style.height).toBe(48);
     expect(style.borderRadius).toBe(12);
+  });
+
+  it("Google은 공식 Rectangular 형상의 radius 4다", async () => {
+    const { getByRole } = await render(
+      <SocialButton provider="google" label="Google 계정으로 로그인" onPress={() => {}} />,
+    );
+    expect(flatten(getByRole("button").props.style).borderRadius).toBe(4);
   });
 
   // DS 비활성 면(#DDE7E0)을 쓰면 브랜드 색이 사라져 어느 줄이 무엇이었는지 읽히지 않는다

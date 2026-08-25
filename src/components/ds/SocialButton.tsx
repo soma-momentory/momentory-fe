@@ -20,11 +20,11 @@ import { Text } from "./Text";
  * 소셜 로그인 버튼 — `DESIGN.md` 「로그인」 · **3사 공식 규격**(2026-08-24 개정).
  *
  * > 소셜 3종(카카오·Google·Apple) **공식 색·마크 유지**, 높이 48 · 간격 10.
- * > 공통은 **높이·Radius·간격만** — 색·로고는 손대지 않는다.
+ * > 공통은 **높이·버튼 간격만** — 색·로고·버튼 내부 형상은 각 사 규격을 따른다.
  *
  * 그래서 `Button` 의 변형이 아니라 **따로 있는 컴포넌트**다. `Button` 의 variant 로
  * 넣으면 팔레트 밖 색이 DS 버튼 안으로 들어와 다음 사람이 그걸 일반 버튼에 쓴다.
- * 공유하는 것은 치수(`size.button.large` 48 · `radius.medium` 12)와 누름 표현뿐이다.
+ * 공유하는 것은 높이(`size.button.large` 48)와 누름 표현뿐이다.
  *
  * ## 세 줄이 같은 값을 쓰지 않는다 — 규격이 서로 다르기 때문이다
  *
@@ -152,7 +152,7 @@ export function SocialButton({
       style={[
         styles.base,
         v.container,
-        { gap: v.gap, paddingHorizontal: v.paddingHorizontal },
+        { gap: v.gap, paddingHorizontal: v.paddingHorizontal, borderRadius: v.borderRadius },
         disabled ? styles.disabled : null,
         style,
       ]}
@@ -185,7 +185,10 @@ export function SocialButton({
           </Text>
 
           {pressed && !disabled ? (
-            <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.scrim]} />
+            <View
+              pointerEvents="none"
+              style={[StyleSheet.absoluteFill, styles.scrim, { borderRadius: v.borderRadius }]}
+            />
           ) : null}
         </>
       )}
@@ -210,6 +213,8 @@ type Spec = {
   gap: number;
   /** 가운데 정렬이라 **최소 여백**으로만 작동한다 — 규격값을 그대로 둔다 */
   paddingHorizontal: number;
+  /** 브랜드가 허용하는 버튼 형상 — Google은 공식 Rectangular, 나머지는 각 규격값 */
+  borderRadius: number;
 };
 
 /**
@@ -251,6 +256,7 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
     labelLineHeight: 24,
     gap: space.sm,
     paddingHorizontal: space.lg,
+    borderRadius: radius.medium,
   },
   /**
    * Google — 테두리는 **inside 1px** 이다. RN 의 `borderWidth` 는 안쪽으로 그리므로
@@ -273,6 +279,8 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
     labelLineHeight: 20,
     gap: Platform.select({ ios: 12, default: 10 }),
     paddingHorizontal: Platform.select({ ios: space.lg, default: space.md }),
+    // 공식 사전 승인 에셋의 Rectangular 형상: 180×40에서 모서리 4px
+    borderRadius: 4,
   },
   /** Apple — 공식 로고 파일 자체의 투명 여백이 로고~글자 간격을 포함한다. */
   apple: {
@@ -287,6 +295,7 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
     labelLineHeight: 30,
     gap: 0,
     paddingHorizontal: space.lg,
+    borderRadius: radius.medium,
   },
 };
 
@@ -296,9 +305,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radius.medium,
   },
   // 면은 브랜드 색 그대로 두고 흐리게만 — 어느 줄이 무엇인지는 남는다
   disabled: { opacity: 0.4 },
-  scrim: { backgroundColor: overlay.pressNormal, borderRadius: radius.medium },
+  scrim: { backgroundColor: overlay.pressNormal },
 });
