@@ -64,6 +64,33 @@ export default function RestCardTrail() {
               </Text>
             </View>
 
+            {/* 이 날 기록 — 쉼터(`R2`)에서 「했어요」·느낀 점을 적으면 **같은 store 라
+                여기 바로 반영된다**. 「지난 기록」이 그날 카드 자신은 빼고 세므로, 이 날의
+                수행·느낀 점은 따로 보여준다(지난 기록과 같은 줄 모양). */}
+            <View style={styles.trail}>
+              <Text variant="label1" color={labelColor.neutral} style={styles.trailTitle}>
+                이 날 기록
+              </Text>
+              <View style={styles.log}>
+                <Icon
+                  name={card.done ? "circle-check" : "clock"}
+                  size={16}
+                  color={card.done ? status.positive : labelColor.assistive}
+                />
+                <View style={styles.logCopy}>
+                  <Text variant="body2" color={labelColor.normal}>
+                    {`${formatKoreanDateShort(card.createdAt.slice(0, 10))} · ${card.done ? "수행함" : "수행 안 함"}`}
+                  </Text>
+                  {/* 느낀 점은 손글씨(교보 2025) — 일기 상세·쉼터와 결을 맞춘다 */}
+                  {card.reflection != null && card.reflection.length > 0 ? (
+                    <Text variant="label1Hand" color={labelColor.alternative}>
+                      {card.reflection}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            </View>
+
             <View style={styles.trail}>
               <Text variant="label1" color={labelColor.neutral} style={styles.trailTitle}>
                 지난 기록
@@ -86,9 +113,9 @@ export default function RestCardTrail() {
                       <Text variant="body2" color={labelColor.normal}>
                         {`${formatKoreanDateShort(d)} · ${c.done ? "수행함" : "수행 안 함"}`}
                       </Text>
-                      {/* 느낀 점이 있을 때만 둘째 줄이 열린다 (시안 규칙) */}
+                      {/* 느낀 점이 있을 때만 둘째 줄이 열린다 (시안 규칙) · 손글씨로 통일 */}
                       {c.reflection != null && c.reflection.length > 0 ? (
-                        <Text variant="caption1" color={labelColor.alternative}>
+                        <Text variant="label1Hand" color={labelColor.alternative}>
                           {c.reflection}
                         </Text>
                       ) : null}

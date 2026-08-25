@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet } from "react-native";
 
 import { Chip } from "@/components/ds";
 import { size } from "@/design/ds";
-import { EMOTIONS, type EmotionId } from "@/features/emotion/model/emotion";
+import { EMOTIONS_BY_SENTIMENT, type EmotionId } from "@/features/emotion/model/emotion";
 
 /**
  * 감정 필터 — `A2` · `Archive.dc.html` 「감정 필터는 9종 칩」.
@@ -51,7 +51,7 @@ export function EmotionFilter({ selected, onToggle, edgePadding = 0 }: Props) {
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={[styles.row, { paddingHorizontal: edgePadding }]}
     >
-      {EMOTIONS.map((e) => (
+      {EMOTIONS_BY_SENTIMENT.map((e) => (
         <Chip
           key={e.id}
           label={e.name}
