@@ -1,5 +1,6 @@
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { Platform } from "react-native";
 
 import Login from "../login";
 
@@ -290,6 +291,23 @@ describe("Momentory DS 이관 — 구조가 바뀌었다", () => {
       "Google 계정으로 로그인",
       "Apple로 로그인",
     ]);
+  });
+
+  it("Android에서는 Apple 버튼을 표시하지 않는다", async () => {
+    const platform = jest.replaceProperty(Platform, "OS", "android");
+
+    try {
+      const { getAllByRole, queryByLabelText } = await render(<Login />);
+      const buttons = getAllByRole("button");
+
+      expect(buttons.map((button) => button.props.accessibilityLabel)).toEqual([
+        "카카오 로그인",
+        "Google 계정으로 로그인",
+      ]);
+      expect(queryByLabelText("Apple로 로그인")).toBeNull();
+    } finally {
+      platform.restore();
+    }
   });
 
   // 약관 줄은 옛 화면에도 새 시안에도 있는 슬롯이라 **문안 정본(docs/spec/screens/S1.md)**
