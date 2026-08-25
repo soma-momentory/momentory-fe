@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Icon, Text } from "@/components/ds";
-import { label as labelColor, radius, space, status } from "@/design/ds";
+import { label as labelColor, space, status } from "@/design/ds";
 import type { Schedule } from "@/features/home/model/types";
 
 /**
@@ -94,8 +94,10 @@ const styles = StyleSheet.create({
   rowOpen: { paddingLeft: INDENT },
   done: { textDecorationLine: "line-through" },
 
-  // (22 - 8) / 2 = 7 — 8px 점을 22 line-height 첫 줄 세로 가운데에 세운다
-  dot: { width: DOT, height: DOT, borderRadius: radius.full, marginTop: 7 },
+  // (22 - 8) / 2 = 7 — 8px 점을 22 line-height 첫 줄 세로 가운데에 세운다.
+  // 반지름은 `radius.full`(999)이 아니라 절반값이다 — 안드로이드가 과대 반지름을
+  // 크기로 깎는데 그 계산이 크기 확정 전에 돌면 네모가 된다(`ds/Calendar.tsx`)
+  dot: { width: DOT, height: DOT, borderRadius: DOT / 2, marginTop: 7 },
   dotDone: { backgroundColor: status.positive },
   dotOpen: { borderWidth: 1.5, borderColor: labelColor.assistive },
 });

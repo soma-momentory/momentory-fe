@@ -6,6 +6,7 @@ import {
   BottomSheet,
   Button,
   Chip,
+  EmotionDot,
   IconButton,
   ListCell,
   Menu,
@@ -437,6 +438,34 @@ describe("오버레이는 스스로 화면 전체를 덮는다", () => {
     // Android 뒤로가기는 **취소**다 — 되돌릴 수 없는 행동을 실수로 실행하지 않는다
     (native.props.onRequestClose as () => void)();
     expect(onCancel).toHaveBeenCalled();
+  });
+});
+
+describe("작은 원 — 반지름을 크기의 절반으로 **직접** 준다", () => {
+  /**
+   * ⚠ `radius.full`(999)을 쓰면 안드로이드에서 **네모로 그려지는 프레임**이 생긴다.
+   *
+   * New Architecture 의 배경 렌더러는 과대 반지름을 `min(반지름, 크기/2)` 로 깎는데,
+   * 그 계산이 **크기가 확정되기 전에** 돌면 0 이 되고, 나중에 크기가 바뀌어도 이미
+   * 만든 배경을 다시 계산하지 않는다. 달력에서 이것이 「처음엔 네모, 탭을 바꿨다
+   * 오면 동그라미」로 드러났다 — 칸 폭을 `onLayout` 으로 재기 때문이다.
+   *
+   * **크기를 아는 자리에서는 깎을 일을 만들지 않는다.** 이 테스트가 고정하는 것은
+   * 모양이 아니라 그 규칙이다 — 999 로 되돌아가면 여기서 걸린다.
+   */
+  it("EmotionDot 은 지름의 절반을 쓴다 — 999 가 아니다", async () => {
+    const { toJSON } = await render(<EmotionDot id={4} size={10} />);
+    const style = flatten((toJSON() as unknown as { props: { style: unknown } }).props.style);
+
+    expect(style.borderRadius).toBe(5);
+    expect(style.borderRadius).not.toBe(999);
+  });
+
+  it("크기가 바뀌면 반지름도 따라간다 — 고정값을 박아 두지 않았다", async () => {
+    const { toJSON } = await render(<EmotionDot id={4} size={26} />);
+    const style = flatten((toJSON() as unknown as { props: { style: unknown } }).props.style);
+
+    expect(style.borderRadius).toBe(13);
   });
 });
 

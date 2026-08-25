@@ -1,6 +1,6 @@
 import { StyleSheet, View, type ViewStyle } from "react-native";
 
-import { emotion as emotionColor, emotionTint, fill, line, radius } from "@/design/ds";
+import { emotion as emotionColor, emotionTint, fill, line } from "@/design/ds";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /**
@@ -28,7 +28,11 @@ type Props = {
 };
 
 export function EmotionDot({ id, size = 10, style }: Props) {
-  const box: ViewStyle = { width: size, height: size, borderRadius: radius.full };
+  // 반지름은 **지름의 절반**이다 — `radius.full`(999)을 쓰지 않는다. 안드로이드
+  // New Architecture 는 과대 반지름을 크기로 깎는데, 그 계산이 크기 확정 전에 돌면
+  // 0 이 되어 네모로 남는다(`ds/Calendar.tsx` 의 달력 점에서 실제로 드러났다).
+  // 여기는 크기를 인자로 받으므로 계산해 줄 수 있다.
+  const box: ViewStyle = { width: size, height: size, borderRadius: size / 2 };
 
   return (
     <View
