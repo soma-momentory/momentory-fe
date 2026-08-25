@@ -290,10 +290,16 @@ const styles = StyleSheet.create({
   // 선택은 박스 링을 2px primary 로 덮는다 — 감정 채움(배경)은 그대로 남는다
   fillBoxSelected: { borderWidth: 2, borderColor: primary.normal },
   // 일정 점 — 감정 박스 아래 동그라미. 늘 자리를 잡고(투명) 일정 있는 날만 색(홈 CTA)
+  // ⚠ **`radius.full`(999)을 쓰지 않는다.** 크기가 정해진 원에는 절반값을 직접 준다 —
+  // 안드로이드 New Architecture 는 과대 반지름을 `min(반지름, 크기/2)` 로 깎는데,
+  // 그 계산이 **크기가 확정되기 전에** 돌면 0 이 되어 네모로 그려지고, 나중에 크기가
+  // 바뀌어도 이미 만든 배경을 다시 계산하지 않는다. 달력에서 이것이 「처음엔 네모,
+  // 탭을 바꿨다 오면 동그라미」로 보였다(칸 폭을 `onLayout` 으로 재기 때문).
+  // `radius.full` 은 **높이를 모르는 필(pill)** 의 값으로 그대로 둔다.
   scheduleDot: {
     width: SCHED_DOT,
     height: SCHED_DOT,
-    borderRadius: radius.full,
+    borderRadius: SCHED_DOT / 2,
     backgroundColor: "transparent",
   },
   // 숫자와 그 밑줄 바를 세로로 묶는다 — **폭을 주지 않아** 「22」가 줄바꿈되지 않는다
@@ -308,6 +314,7 @@ const styles = StyleSheet.create({
    * 스펙과 어긋나므로 굳으면 `docs/PRODUCT.md` 「상류와 차이」에 남긴다.
    */
   cellSelected: { borderWidth: 2, borderColor: primary.normal },
-  // 점 모드(쉼터 행동 카드) — 날짜 아래 점. 숫자에 조금 더 붙게 위로 당긴다
-  dot: { width: DOT, height: DOT, borderRadius: radius.full, marginTop: -3 },
+  // 점 모드(쉼터 행동 카드) — 날짜 아래 점. 숫자에 조금 더 붙게 위로 당긴다.
+  // 반지름은 위 `scheduleDot` 과 같은 이유로 절반값이다
+  dot: { width: DOT, height: DOT, borderRadius: DOT / 2, marginTop: -3 },
 });
