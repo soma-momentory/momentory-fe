@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { Screen, SocialButton, Text } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
@@ -87,8 +87,8 @@ export default function Login() {
    * 없어졌다(`appleAuthApi.ts` 머리말). 그래서 옛 `isAppleLineOpen` 을 지웠고
    * `disabled` 는 카카오와 같아졌다.
    *
-   * **`Platform.OS` 를 여기서 묻지 않는다.** 애플 줄은 두 플랫폼에 같은 모양으로
-   * 있고, 「이 기기에서 되는가」는 `appleSdk.ts` 가 판정해 안내 한 줄로 돌려준다.
+   * Apple 인증을 제공하는 iOS에서만 이 핸들러를 연결한다. Android 로그인 화면에는
+   * Apple 버튼 자체를 렌더하지 않는다.
    */
   const signInApple = async () => {
     const outcome = await useAuth.getState().signInWithApple();
@@ -130,7 +130,7 @@ export default function Login() {
       </View>
 
       {/*
-        순서는 시안대로 카카오 → Google → Apple.
+        순서는 카카오 → Google → Apple이며, Apple은 iOS에서만 표시한다.
 
         ⚠ **세 문구는 우리가 지어낸 말이 아니다 — 각 사가 내놓은 목록에서 꺼냈다**
         (2026-08-24). 셋 다 「로그인」으로 맞춘 것은 말투를 통일하려던 것이 아니라,
@@ -164,12 +164,14 @@ export default function Login() {
           disabled={signingIn}
           onPress={signInGoogle}
         />
-        <SocialButton
-          provider="apple"
-          label="Apple로 로그인"
-          disabled={signingIn}
-          onPress={signInApple}
-        />
+        {Platform.OS === "ios" ? (
+          <SocialButton
+            provider="apple"
+            label="Apple로 로그인"
+            disabled={signingIn}
+            onPress={signInApple}
+          />
+        ) : null}
       </View>
 
       {/*

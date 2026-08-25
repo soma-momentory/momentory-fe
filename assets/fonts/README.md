@@ -89,33 +89,29 @@ SIL Open Font License 1.1 — 전문은 [`LICENSE.txt`](LICENSE.txt).
 
 ## Roboto Medium
 
-⚠ **우리 서체가 아니다 — 구글 로그인 버튼 한 줄에만 쓴다**(2026-08-24 ·
-`src/components/ds/SocialButton.tsx`).
-
-구글 [브랜딩 가이드라인](https://developers.google.com/identity/branding-guidelines?hl=ko)이
-로그인 버튼 라벨의 서체를 **「Roboto Medium」이라고 이름까지 지정한다.** 3사 중
-서체를 이름으로 못박는 곳은 여기뿐이라 이 한 줄을 위해 들여왔다.
+⚠ **우리 서체가 아니다 — 구글 로그인 버튼 한 줄에만 쓴다**(2026-08-25 ·
+`src/components/ds/SocialButton.tsx`). 한국어 구글
+[브랜딩 가이드라인](https://developers.google.com/identity/branding-guidelines?hl=ko)이
+로그인 버튼 라벨에 지정한 **Roboto Medium 14/20**을 적용한다.
 
 그래서 [`src/design/ds/typography.ts`](../../src/design/ds/typography.ts) 의
 `fontFamily` 토큰에는 **올리지 않았다** — 토큰은 「우리 서체」의 목록이고, 다른
-화면이 이걸 집어 쓰면 위계가 서체로 갈라진다. 등록만
-[`src/lib/providers.tsx`](../../src/lib/providers.tsx) 에 있다.
+화면이 이걸 집어 쓰면 위계가 서체로 갈라진다.
 
 | 파일                | weight | sha256                                                             |
 | ------------------- | ------ | ------------------------------------------------------------------ |
-| `Roboto-Medium.ttf` | 500    | `2879a5ecb7fbfa13a7fc3e2cdd7fecbf73aa45e91b541dfdfa2c442eed0aac21` |
+| `Roboto-Medium.ttf` | 500    | `79343dc641a2e8d48a703a4667b71fc8dc6565cc8ce47dfc34fc52c12aadbf38` |
 
 **한글 글리프가 없다.** 「Google 계정으로 로그인」의 한글은 OS 서체로 폴백한다 —
 구글이 배포하는 한국어 버튼도 같은 방식이라 규격을 벗어나지 않는다.
 
 ### 출처
 
-|         |                                                         |
-| ------- | ------------------------------------------------------- |
-| 저장소  | https://github.com/googlefonts/roboto-2 (`src/hinted/`) |
-| 받은 날 | 2026-08-24                                              |
+|         |                                                                             |
+| ------- | --------------------------------------------------------------------------- |
+| 받은 곳 | Google Fonts의 `Google_Sans,Roboto.zip` → `Roboto/static/Roboto-Medium.ttf` |
+| 받은 날 | 2026-08-25                                                                  |
 
 ### 라이선스
 
-Apache License 2.0 — 임베딩·재배포 모두 허용된다. 파일을 그대로 담는 우리 쓰임에
-추가 조건이 붙지 않는다.
+ZIP에 동봉된 `Roboto/OFL.txt`를 `Roboto-OFL.txt`로 함께 보관한다.

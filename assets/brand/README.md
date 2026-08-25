@@ -34,19 +34,38 @@
 
 전문: <https://developers.google.com/identity/branding-guidelines?hl=ko>
 
-## Apple 로고 — 파일이 아니라 `AppleMark.tsx` 안에 있다
+## `Roboto-Medium.ttf`
 
-애플 로고도 **애플 공식 아트워크**다. 다만 여기 파일로 두지 않고 경로 데이터를
-[`src/components/ds/icons/AppleMark.tsx`](../../src/components/ds/icons/AppleMark.tsx)
-안에 둔다 — 이 저장소에 `react-native-svg-transformer` 가 없어서 `.svg` 파일을
-컴포넌트로 불러올 수 없기 때문이다. **경로는 한 글자도 고치지 않았다.**
+구글 로그인 버튼 레이블의 공식 서체. 요청한 한국어 Google 브랜딩 가이드가 지정한
+**Roboto Medium 14/20**을 적용했다.
 
-|             |                                                                                                |
-| ----------- | ---------------------------------------------------------------------------------------------- |
-| 받은 곳     | `https://devimages-cdn.apple.com/design/resources/download/Logo-Sign-in-with-Apple.dmg`        |
-| 받은 날     | 2026-08-24                                                                                     |
-| 쓴 파일     | `Sign in with Apple - Left Aligned/SVG/Logo - SIWA - Left-aligned - White - Small.svg` (24×44) |
-| sha256(dmg) | `99fba5c8a294a86653294b3766d7ce21dde47cc75a77367659c45ea168699af6`                             |
+|           |                                                                    |
+| --------- | ------------------------------------------------------------------ |
+| 받은 곳   | 브랜딩 가이드의 글꼴 링크 → Google Fonts 다운로드 ZIP              |
+| 받은 날   | 2026-08-25                                                         |
+| ZIP       | `Google_Sans,Roboto.zip` → `Roboto/static/Roboto-Medium.ttf`       |
+| 내부 이름 | family `Roboto` / typographic subfamily `Medium`                   |
+| sha256    | `79343dc641a2e8d48a703a4667b71fc8dc6565cc8ce47dfc34fc52c12aadbf38` |
+
+- Google 버튼 한 줄에서만 사용한다.
+- Google이 제공한 정적 500 TTF를 수정하지 않는다.
+- Google Fonts가 배포하는 원본이며, 앱에는 원본 파일의 라이선스 메타데이터가 포함된다.
+
+## `appleid_button.png`
+
+Apple 공식 버튼 생성기가 렌더한 **완성형 버튼**이다. 로고·한국어 문구·서체·배치를
+앱에서 다시 만들지 않고 PNG 전체를 320×48pt로 표시한다.
+
+다운로드 파일명은 `appleid_button@3x.png`였지만 React Native가 `@3x`를 배율 변형
+접미사로 해석하므로, 픽셀을 바꾸지 않고 저장 이름만 `appleid_button.png`로 정규화했다.
+
+|         |                                                                    |
+| ------- | ------------------------------------------------------------------ |
+| 설정    | Black · Sign in · `ko_KR` · @3x · 320×48pt · radius 12pt           |
+| 픽셀    | 960×144px                                                          |
+| 받은 날 | 2026-08-25                                                         |
+| sha256  | `49122c5c2b3090c214332b88715b7adcdb48a1350d5362a4ac82a9f9426b5e82` |
+| 생성기  | https://appleid.apple.com/signinwithapple/button                   |
 
 ### 라이선스 — **임베딩이 허용된다. 단 조건이 붙는다**
 

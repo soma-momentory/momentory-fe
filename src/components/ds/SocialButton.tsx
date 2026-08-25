@@ -1,18 +1,17 @@
 import {
+  Image,
   Platform,
   Pressable,
   StyleSheet,
-  View,
   type PressableProps,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
 
-import { overlay, radius, size, social, space } from "@/design/ds";
+import { radius, size, social, space } from "@/design/ds";
 
 import { Icon } from "./icons/Icon";
-import { AppleMark } from "./icons/AppleMark";
 import { GoogleMark, MARK_HEIGHT as GOOGLE_MARK } from "./icons/GoogleMark";
 import { Text } from "./Text";
 
@@ -20,11 +19,11 @@ import { Text } from "./Text";
  * 소셜 로그인 버튼 — `DESIGN.md` 「로그인」 · **3사 공식 규격**(2026-08-24 개정).
  *
  * > 소셜 3종(카카오·Google·Apple) **공식 색·마크 유지**, 높이 48 · 간격 10.
- * > 공통은 **높이·Radius·간격만** — 색·로고는 손대지 않는다.
+ * > 공통은 **높이·버튼 간격만** — 색·로고·버튼 내부 형상은 각 사 규격을 따른다.
  *
  * 그래서 `Button` 의 변형이 아니라 **따로 있는 컴포넌트**다. `Button` 의 variant 로
  * 넣으면 팔레트 밖 색이 DS 버튼 안으로 들어와 다음 사람이 그걸 일반 버튼에 쓴다.
- * 공유하는 것은 치수(`size.button.large` 48 · `radius.medium` 12)와 누름 표현뿐이다.
+ * 공유하는 것은 높이(`size.button.large` 48)와 누름 표현뿐이다.
  *
  * ## 세 줄이 같은 값을 쓰지 않는다 — 규격이 서로 다르기 때문이다
  *
@@ -35,43 +34,33 @@ import { Text } from "./Text";
  * | --- | --- | --- | --- | --- | --- |
  * | 카카오 | 24 (심볼 19.2×18.1) | 16 = 48÷3 | 8 | 16 | 컨테이너에 **비례** — 표준 90 버튼의 40%×37.8% |
  * | Google | 20 | 14 = 규격 그대로 | iOS 12 · 그 외 10 | iOS 16 · 그 외 12 | 브랜딩 가이드라인의 **절대값** |
- * | Apple | 15.85 (로고 12.90×15.85) | 20.64 = 48×43% | 10 | 16 | **공식 아트워크**(Small) · 파일 높이 = 버튼 높이 |
+ * | Apple | 공식 PNG 내장 | 공식 PNG 내장 | 공식 PNG 내장 | 공식 PNG 내장 | Apple 버튼 생성기 |
  *
- * 카카오·애플은 「컨테이너 크기에 비례해 키우라」는 규정이고 구글은 절대값 규정이라,
- * **같은 48 버튼인데도 마크가 24·20·15.5 로 갈린다.** 셋을 20 으로 통일하면 카카오
- * 심볼은 규정보다 22% 작고 애플 로고는 15% 크다 — 그래서 통일하지 않는다.
+ * Apple은 로고·문구·서체·간격을 앱에서 계산하지 않는다. 공식 생성기의 320×48pt
+ * 완성형 PNG를 같은 크기로 표시하므로 생성 결과가 그대로 유지된다.
  *
  * ## 글자 크기도 통일하지 않는다 — 통일할 수가 없다
  *
  * 처음에는 셋을 16 으로 맞췄다(2026-08-24 오전). 규격을 다시 읽어 보니 **세 회사가
  * 서로 다른 크기를 요구**하고 있었고, 그중 둘은 권장이 아니라 요구였다:
  *
- * - 애플 43% — HIG 커스텀 버튼 절이 서체·굵기·크기 조정은 허용하면서
- *   「the title and button height ... **need to** use the same proportions that the
- *   system uses」라고 적는다 → 48 × 43% = 20.64
+ * - 애플 — 생성기가 48pt 높이에 맞는 글자 크기를 직접 렌더한다
  * - 카카오 — 「폰트는 30Pt 크기」(표준 90 버튼) + 「레이블 세로 길이 ≤ 컨테이너
  *   높이의 1/3」 → 48 ÷ 3 = 16
- * - 구글 — 「Roboto Medium | **14/20**」으로 크기와 행간을 함께 못박는다
+ * - 구글 — 한국어 가이드가 「Roboto Medium | **14/20**」으로 크기와 행간을 지정한다
  *
- * ⚠ **셋을 한 크기로 맞추는 길은 없다.** 카카오 상한(높이의 37.8% — 한글 ink/em
- * 0.88 을 반영한 값)이 애플 요구(43%)보다 낮다. 둘 다 **높이에 대한 비율** 규칙이라
- * 버튼을 키워도 같이 커진다 — 어느 높이에서도 동시에 만족할 수 없다.
- *
- * **그래서 세 줄의 글자가 16 · 14 · 20.64 로 갈린다.** 보기 좋게 통일하려는
- * 다음 사람을 위해 적어 둔다: 통일하는 순간 최소 한 줄이 규격을 벗어난다.
+ * 그래서 카카오 16 · Google 14만 코드에서 지정하고, Apple은 생성 결과를 건드리지 않는다.
  *
  * ## 서체도 세 줄이 다르다 — **셋 다 각 사가 지정한 것**이다
  *
  * | | 서체 | 규격이 적는 말 |
  * | --- | --- | --- |
  * | 카카오 | **OS 시스템 서체** | 「폰트는 OS 별 기본 시스템 서체를 사용합니다」 |
- * | Google | **Roboto Medium**(번들) | 「버튼 글꼴은 TrueType 글꼴인 Roboto Medium」 |
- * | Apple | **OS 시스템 서체** | 「Prefer the system font for the title」 |
+ * | Google | **Roboto Medium**(번들) | 「Font: Roboto Medium | 14/20」 |
+ * | Apple | **공식 PNG 내장** | Apple 버튼 생성기가 직접 렌더 |
  *
- * 카카오·애플은 `labelFamily` 를 **비워 둔다** — RN 에서 그것이 곧 시스템 서체다.
- * iOS 에서는 SF Pro(한글은 Apple SD Gothic Neo)라 **애플이 렌더한 공식 버튼과 같은
- * 서체**가 되고, 카카오가 말하는 「OS 별 기본 시스템 서체」도 동시에 만족한다.
- * 구글만 번들 파일을 지정하는데, 규격이 서체를 이름으로 못박는 곳이 거기뿐이다.
+ * 카카오는 `labelFamily` 를 비워 OS 시스템 서체를 쓰고, 구글만 Roboto를 번들한다.
+ * Apple 라벨은 별도 Text 노드가 아니라 공식 PNG의 일부다.
  *
  * ⚠ **그래서 이 화면의 버튼 셋만 Pretendard 를 쓰지 않는다.** 워드마크·태그라인·
  * 약관 줄은 그대로 Pretendard 다. 규격이 서체를 지정하는 자리라서 생긴 예외이고,
@@ -89,8 +78,9 @@ import { Text } from "./Text";
  * | **Medium 500** | **0.1090** | **±0%** |
  * | SemiBold 600 | 0.1282 | +18% |
  *
- * 그래서 500 이다. 구글 규격이 못박는 Roboto **Medium** 도 같은 단이라 셋이 한
- * 굵기로 모인다. 카카오 표준 버튼은 이보다 가볍지만(획/높이 0.0769) 이미지가 26px 라
+ * 그래서 500 이다. 한국어 구글 규격이 지정하는 Roboto **Medium** 도 같은 단이라 셋이 한
+ * 굵기로 모인다. Roboto는 정적 Medium TTF이고 `fontWeight: 500`도 함께
+ * 명시한다. 카카오 표준 버튼은 이보다 가볍지만(획/높이 0.0769) 이미지가 26px 라
  * 400 과 500 을 가릴 해상도가 아니다 — 확실한 것은 **600 이 아니라는 것**이다.
  *
  * ⚠ 시스템 서체는 굵기를 파일 이름으로 고를 수 없어 `fontWeight` 로 준다
@@ -98,22 +88,16 @@ import { Text } from "./Text";
  * **Android 8 이하(API < 28)는 500 을 400 으로 떨어뜨린다** — 한 단 얇아질 뿐
  * 깨지지 않는다.
  *
- * 서체는 구글만 규격을 따라 **Roboto Medium** 이다(가이드라인이 서체를 이름으로
+ * 서체는 구글만 한국어 규격을 따라 **Roboto Medium** 이다(가이드라인이 서체를 이름으로
  * 지정하는 곳은 구글뿐이다). 한글은 Roboto 에 글리프가 없어 OS 서체로 폴백하는데,
  * 구글이 배포하는 한국어 버튼도 같은 방식이다. 카카오는 「OS 기본 시스템 서체」를
  * 규정하지만 Pretendard 로 둔다 — 애플 줄과 서체가 갈리면 두 줄이 따로 논다.
  *
- * ## 누름은 스크림이다
+ * ## 상호작용 중에도 브랜드 아트워크를 바꾸지 않는다
  *
- * 시안은 `filter: brightness(0.94)`(카카오)·배경 교체(Google·Apple)로 눌림을 그리는데
- * RN 에는 `filter` 가 없다. `Button` 과 같은 **스크림 오버레이**로 통일한다 —
- * 어두워진다는 결과가 같고, 브랜드 면 색 자체는 그대로 남는다(§6 의 방식).
- *
- * ## 비활성
- *
- * DS 버튼의 비활성 면(`interaction.disabled`)을 쓰지 않는다 — 그러면 브랜드 색이
- * 사라져 어느 줄이 무엇이었는지 읽히지 않는다. **면은 그대로 두고 흐리게만** 한다
- * (`momentory.css` `.off{opacity:.36}` 와 같은 방식). 경고 아이콘·문구는 붙이지 않는다.
+ * 공통 스크림이나 opacity를 적용하면 Google G·Kakao 지정 색·Apple 공식 PNG까지
+ * 변색된다. 따라서 눌림과 로그인 진행 중에도 시각 자산은 정상 상태 그대로 두고,
+ * `disabled`와 `accessibilityState.disabled`로 중복 입력만 차단한다.
  */
 export type SocialProvider = "kakao" | "google" | "apple";
 
@@ -145,49 +129,45 @@ export function SocialButton({
     <Pressable
       {...rest}
       accessibilityRole={accessibilityRole}
+      // Apple 공식 PNG는 화면에 Text 노드를 만들지 않으므로 버튼 이름을 명시한다.
+      accessibilityLabel={rest.accessibilityLabel ?? label}
       // 호출자 상태는 살리되 잠금은 우리가 쥔다
       accessibilityState={{ ...accessibilityState, disabled }}
       disabled={disabled}
       style={[
         styles.base,
         v.container,
-        { gap: v.gap, paddingHorizontal: v.paddingHorizontal },
-        disabled ? styles.disabled : null,
+        { gap: v.gap, paddingHorizontal: v.paddingHorizontal, borderRadius: v.borderRadius },
         style,
       ]}
     >
-      {({ pressed }) => (
-        <>
-          {provider === "google" ? <GoogleMark size={GOOGLE_MARK} /> : null}
-          {/* 카카오만 심볼이 라벨보다 진하다 — 가이드가 심볼 100% · 레이블 85% 다 */}
-          {provider === "kakao" ? (
-            <Icon name="logo-kakao" size={size.icon.lg} color={social.kakao.symbol} />
-          ) : null}
-          {provider === "apple" ? (
-            // 애플은 크기를 **버튼 높이에서** 계산한다 — HIG 「Match the height of the
-            // logo file to the height of the button」(`AppleMark.tsx`)
-            <AppleMark buttonHeight={size.button.large} color={v.labelColor} />
-          ) : null}
-
-          <Text
-            style={[
-              {
-                fontFamily: v.labelFamily,
-                fontWeight: v.labelWeight,
-                fontSize: v.labelSize,
-                lineHeight: v.labelLineHeight,
-                color: v.labelColor,
-              },
-            ]}
-          >
-            {label}
-          </Text>
-
-          {pressed && !disabled ? (
-            <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.scrim]} />
-          ) : null}
-        </>
-      )}
+      {provider === "apple" ? (
+        <Image
+          testID="apple-official-button-artwork"
+          source={require("../../../assets/brand/appleid_button.png")}
+          resizeMode="stretch"
+          style={styles.appleButtonArtwork}
+          accessible={false}
+        />
+      ) : null}
+      {provider === "google" ? <GoogleMark size={GOOGLE_MARK} /> : null}
+      {/* 카카오만 심볼이 라벨보다 진하다 — 가이드가 심볼 100% · 레이블 85% 다 */}
+      {provider === "kakao" ? (
+        <Icon name="logo-kakao" size={size.icon.lg} color={social.kakao.symbol} />
+      ) : null}
+      {provider !== "apple" ? (
+        <Text
+          style={{
+            fontFamily: v.labelFamily,
+            fontWeight: v.labelWeight,
+            fontSize: v.labelSize,
+            lineHeight: v.labelLineHeight,
+            color: v.labelColor,
+          }}
+        >
+          {label}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -209,6 +189,8 @@ type Spec = {
   gap: number;
   /** 가운데 정렬이라 **최소 여백**으로만 작동한다 — 규격값을 그대로 둔다 */
   paddingHorizontal: number;
+  /** 브랜드가 허용하는 버튼 형상 — Google은 공식 Rectangular, 나머지는 각 규격값 */
+  borderRadius: number;
 };
 
 /**
@@ -225,7 +207,9 @@ type Spec = {
 const APPLE_LABEL_SIZE = size.button.large * 0.43;
 
 /**
- * Roboto Medium — **구글 버튼 한 줄만** 쓴다(`assets/fonts/Roboto-Medium.ttf`).
+ * Roboto Medium 정적 글꼴 — **구글 버튼 한 줄만** 쓴다
+ * (`assets/fonts/Roboto-Medium.ttf`). 한국어 브랜딩 가이드가 연결한 다운로드 묶음의
+ * 정적 파일이며 내부 family와 typographic subfamily도 각각 Roboto, Medium이다.
  * `fontFamily` 토큰에 올리지 않는 이유가 그것이다: 토큰은 「우리 서체」의 목록인데
  * 이건 구글 규격을 지키려고 들여온 남의 서체다. 다른 화면이 가져다 쓰면 안 된다.
  */
@@ -247,6 +231,7 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
     labelLineHeight: 24,
     gap: space.sm,
     paddingHorizontal: space.lg,
+    borderRadius: radius.medium,
   },
   /**
    * Google — 테두리는 **inside 1px** 이다. RN 의 `borderWidth` 는 안쪽으로 그리므로
@@ -263,13 +248,16 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
     },
     labelColor: social.google.label,
     labelFamily: ROBOTO_MEDIUM,
-    // 14/20 — 가이드라인이 「Roboto Medium | 14/20」으로 크기·행간을 함께 적는다
+    labelWeight: "500",
+    // 14/20 — 한국어 가이드라인이 「Roboto Medium | 14/20」으로 함께 적는다
     labelSize: 14,
     labelLineHeight: 20,
     gap: Platform.select({ ios: 12, default: 10 }),
     paddingHorizontal: Platform.select({ ios: space.lg, default: space.md }),
+    // 공식 사전 승인 에셋의 Rectangular 형상: 180×40에서 모서리 4px
+    borderRadius: 4,
   },
-  /** Apple — 라이트에서 검정 판 + 흰 로고·글자. 로고~글자 10 은 공식 렌더 실측값 */
+  /** Apple — 공식 로고 파일 자체의 투명 여백이 로고~글자 간격을 포함한다. */
   apple: {
     container: { backgroundColor: social.apple.background },
     labelColor: social.apple.label,
@@ -280,8 +268,11 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
     labelSize: APPLE_LABEL_SIZE,
     // 20.64 한글의 ink 가 20.5 다 — 30 이어야 잘리지 않는다
     labelLineHeight: 30,
-    gap: 10,
-    paddingHorizontal: space.lg,
+    gap: 0,
+    // 완성형 PNG가 버튼 전체 320×48pt를 채운다. 예전 수제 조합용 패딩을 남기면
+    // Yoga의 콘텐츠 박스 기준으로 이미지가 축소·이동한다.
+    paddingHorizontal: 0,
+    borderRadius: radius.medium,
   },
 };
 
@@ -291,9 +282,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radius.medium,
   },
-  // 면은 브랜드 색 그대로 두고 흐리게만 — 어느 줄이 무엇인지는 남는다
-  disabled: { opacity: 0.4 },
-  scrim: { backgroundColor: overlay.pressNormal, borderRadius: radius.medium },
+  // Apple 생성기: Black · Sign in · ko_KR · @3x · 320×48pt · radius 12pt.
+  appleButtonArtwork: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+  },
 });
