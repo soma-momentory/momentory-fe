@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Keyboard, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Dimensions, Keyboard, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -66,20 +66,39 @@ type Props = {
 };
 
 /**
- * 지금 키보드가 가리는 높이. 닫혀 있으면 0 이다 (위 머리말).
+ * 화면 바닥에서 **키보드 윗변까지의 거리**. 닫혀 있으면 0 이다 (위 머리말).
+ *
+ * ⚠ **`endCoordinates.height` 를 쓰지 않는다.** 그 값은 안드로이드 edge-to-edge 에서
+ * **내비게이션 바를 뺀 높이**로 온다. 그런데 이 시트는 화면 전체를 덮는 절대 배치
+ * 안에 있어 **내비 바 뒤까지** 뻗어 있으므로, 그 높이를 그대로 바닥 여백으로 쓰면
+ * 딱 내비 바만큼(약 48dp) 모자라 **마지막 버튼이 키보드에 잘린다.**
+ * 실기기(Galaxy S25 · 3버튼 내비)에서 실제로 그렇게 잘렸다.
+ *
+ * 그래서 높이가 아니라 **좌표**로 잰다: 키보드 윗변의 화면 좌표(`screenY`)에서
+ * 화면 높이까지가 곧 우리가 비워야 할 자리다 — **무엇이 포함되고 빠졌는지 짐작할
+ * 필요가 없어진다.** 내비 바가 있든 없든, 제스처든 3버튼이든 같은 식이다.
+ *
+ * `screen` 을 쓰는 것도 같은 이유다(`window` 가 아니다) — edge-to-edge 에서 창은
+ * 시스템 바 뒤까지 가고, 시트도 거기까지 간다.
  *
  * iOS 는 `Will` 로 듣는다 — 애니메이션과 함께 올라와 시트가 같이 움직인다.
  * 안드로이드는 `Will` 이벤트가 없어 `Did` 뿐이다.
  */
 const useKeyboardInset = (): number => {
-  const [height, setHeight] = useState(0);
+  const [inset, setInset] = useState(0);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const shown = Keyboard.addListener(showEvent, (e) => setHeight(e.endCoordinates?.height ?? 0));
-    const hidden = Keyboard.addListener(hideEvent, () => setHeight(0));
+    const shown = Keyboard.addListener(showEvent, (e) => {
+      const end = e.endCoordinates;
+      if (end == null) return;
+      // 좌표가 없거나 말이 안 되면 높이로 물러선다 — 못 재는 것보다 낫다
+      const fromCoordinate = Dimensions.get("screen").height - end.screenY;
+      setInset(fromCoordinate > 0 ? fromCoordinate : (end.height ?? 0));
+    });
+    const hidden = Keyboard.addListener(hideEvent, () => setInset(0));
 
     return () => {
       shown.remove();
@@ -87,7 +106,7 @@ const useKeyboardInset = (): number => {
     };
   }, []);
 
-  return height;
+  return inset;
 };
 
 export function BottomSheet({ children, title, onDismiss }: Props) {
@@ -98,9 +117,9 @@ export function BottomSheet({ children, title, onDismiss }: Props) {
   const insets = useSafeAreaInsets();
   const keyboard = useKeyboardInset();
 
-  // 키보드가 올라와 있으면 **그 높이가 바닥 여백을 대신한다** — 키보드가 내비게이션
-  // 바를 덮으므로 둘을 더하면 시트가 붕 뜬다(위 머리말). 위에 얹는 `space.md` 는
-  // 마지막 줄이 키보드에 딱 붙지 않게 하는 숨이다.
+  // 키보드가 올라와 있으면 **그 자리가 바닥 여백을 대신한다** — 이미 화면 바닥까지의
+  // 거리라 inset 을 더하면 그만큼 붕 뜬다(위 머리말). 얹는 `space.md` 는 마지막
+  // 버튼이 키보드에 딱 붙지 않게 하는 숨이다.
   const bottomPad = keyboard > 0 ? keyboard + space.md : Math.max(insets.bottom, space.xl);
 
   return (

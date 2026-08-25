@@ -1,5 +1,5 @@
 import { act, fireEvent, render } from "@testing-library/react-native";
-import { Keyboard, processColor } from "react-native";
+import { Dimensions, Keyboard, processColor } from "react-native";
 
 import {
   BottomNavigation,
@@ -55,14 +55,19 @@ const findByType = (node: unknown, type: string): { props: Record<string, unknow
  * `addListener` 로 등록된 콜백을 가로채 직접 부른다. `beforeEach` 에서 건다.
  */
 const keyboardHandlers = new Map<string, (e: unknown) => void>();
-const fireKeyboard = (kind: "show" | "hide", height: number) => {
-  // 안드로이드·iOS 어느 쪽 이름으로 등록됐든 붙잡는다
+const fireKeyboard = (kind: "show" | "hide", covered: number) => {
+  // 실제 이벤트처럼 **좌표**를 준다 — 컴포넌트가 재는 것이 `screenY` 이기 때문이다.
+  // `height` 는 일부러 **다른 값**으로 둔다: 안드로이드 edge-to-edge 가 내비 바를
+  // 뺀 높이를 주는 상황을 흉내 내서, 컴포넌트가 좌표를 본다는 것을 고정한다
+  const screenHeight = Dimensions.get("screen").height;
   for (const [event, handler] of keyboardHandlers) {
     if (kind === "show" && event.toLowerCase().includes("show")) {
-      handler({ endCoordinates: { height } });
+      handler({
+        endCoordinates: { screenY: screenHeight - covered, height: covered - 48 },
+      });
     }
     if (kind === "hide" && event.toLowerCase().includes("hide")) {
-      handler({ endCoordinates: { height: 0 } });
+      handler({ endCoordinates: { screenY: screenHeight, height: 0 } });
     }
   }
 };
@@ -493,11 +498,13 @@ describe("BottomSheet", () => {
    * 그 위를 덮는다. 시트 안에 입력이 들어간 첫 자리가 **회원 탈퇴 확인**이었고,
    * 거기서 입력창이 키보드에 가려졌다.
    *
-   * 고정하는 것은 픽셀이 아니라 규칙 둘이다:
+   * 고정하는 것은 픽셀이 아니라 규칙 셋이다:
    * **키보드가 올라오면 시트가 그만큼 위로 선다** · **inset 에 더하지 않고 대신한다**
-   * (키보드가 내비게이션 바를 덮으므로 더하면 붕 뜬다).
+   * (키보드가 내비게이션 바를 덮으므로 더하면 붕 뜬다) · **높이가 아니라 좌표로 잰다**
+   * (안드로이드 edge-to-edge 의 `height` 는 내비 바를 빼고 오는데, 시트는 그 뒤까지
+   * 뻗어 있어 딱 그만큼 마지막 버튼이 잘렸다 — 실기기에서 확인).
    */
-  it("키보드가 올라오면 그 높이가 바닥 여백을 대신한다 — inset 에 더하지 않는다", async () => {
+  it("키보드가 가린 자리만큼 시트가 선다 — 높이가 아니라 좌표로 잰다", async () => {
     const { getByTestId } = await render(
       <BottomSheet title="회원 탈퇴" onDismiss={() => {}}>
         <Text>내용</Text>
@@ -511,7 +518,10 @@ describe("BottomSheet", () => {
     await act(async () => {
       fireKeyboard("show", 300);
     });
-    // 300 + space.md(12). **320(= 300 + 20)이 아니다** — 최소 여백을 더하지 않는다
+    // 키보드가 가린 300 + space.md(12).
+    // - **320(= 300 + 20)이 아니다** — 최소 여백을 더하지 않는다(키보드가 그 자리를 덮는다)
+    // - **264(= 252 + 12)도 아니다** — `endCoordinates.height`(내비 바를 뺀 값)를 보지 않는다.
+    //   실기기에서 이 차이만큼 마지막 버튼이 잘렸다
     expect(padOf()).toBe(312);
 
     await act(async () => {
