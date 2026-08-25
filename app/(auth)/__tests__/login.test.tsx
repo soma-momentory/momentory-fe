@@ -137,12 +137,15 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
 
     try {
       const { getAllByRole } = await render(<Login />);
-      const [kakao, , apple] = getAllByRole("button");
+      const [kakao, google, apple] = getAllByRole("button");
 
       expect(apple!.props.accessibilityState.disabled).toBe(false);
       expect(kakao!.props.accessibilityState.disabled).toBe(false);
-      // 구글 줄은 여기서 보지 않는다 — `DEV_SKIP_AUTH` 는 모듈이 읽힐 때 값을
-      // 붙잡으므로 전역만 바꾸는 이 테스트에는 릴리스로 보이지 않는다
+      // ✅ **구글 줄도 이제 여기 있다.** 전에는 볼 수 없었다 — 그 줄의 `disabled`
+      // 가 모듈 로드 시점에 붙잡은 `DEV_SKIP_AUTH` 에 걸려 있어서, 전역만 바꾸는
+      // 이 테스트에는 릴리스로 보이지 않았다. 개발 통로가 버튼을 떠나면서
+      // (워드마크 길게 누르기) 세 줄의 잠금 조건이 같아졌다
+      expect(google!.props.accessibilityState.disabled).toBe(false);
     } finally {
       globals.__DEV__ = wasDev;
     }
@@ -182,6 +185,80 @@ describe("실패 안내 — 한 줄로 흡수한다", () => {
     const { queryByText } = await render(<Login />);
 
     expect(queryByText(/다시 시도해 주세요/)).toBeNull();
+  });
+});
+
+describe("Google 버튼 — 실제 로그인에 연결돼 있다", () => {
+  /**
+   * ⚠ **이 줄은 개발 통로였다.** SDK 가 없던 동안 `signInDev` 로 가짜 세션을
+   * 만들어 온보딩으로 건너뛰는 자리였는데, 실제 로그인이 붙으면서 카카오·애플과
+   * 같아졌다. 개발 통로는 **워드마크 길게 누르기**로 옮겼다 — 아래에서 따로 건다.
+   */
+  const mockGoogle = (outcome: SignInOutcome) => {
+    const signIn = jest.fn(async () => outcome);
+    useAuth.setState({ signInWithGoogle: signIn });
+    return signIn;
+  };
+
+  it("누르면 구글 로그인을 부른다 — 개발 통로(가짜 세션)를 지나지 않는다", async () => {
+    const signIn = mockGoogle({ kind: "signed-in", onboardingRequired: true });
+    const dev = jest.fn(async () => {});
+    useAuth.setState({ signInDev: dev });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent.press(getByText("Google 계정으로 로그인"));
+
+    await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
+    expect(dev).not.toHaveBeenCalled();
+    expect(replace).toHaveBeenCalledWith("/welcome");
+  });
+
+  it("온보딩을 마친 사용자는 홈으로 보낸다", async () => {
+    mockGoogle({ kind: "signed-in", onboardingRequired: false });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent.press(getByText("Google 계정으로 로그인"));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
+  });
+
+  it("취소하면 화면을 옮기지 않는다", async () => {
+    mockGoogle({ kind: "cancelled" });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent.press(getByText("Google 계정으로 로그인"));
+
+    await waitFor(() => expect(replace).not.toHaveBeenCalled());
+  });
+});
+
+describe("개발 통로 — 버튼이 아니라 워드마크에 있다", () => {
+  it("워드마크를 길게 누르면 가짜 세션으로 온보딩에 들어간다", async () => {
+    const dev = jest.fn(async () => {});
+    useAuth.setState({ signInDev: dev });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent(getByText("모멘토리"), "longPress");
+
+    await waitFor(() => expect(dev).toHaveBeenCalledTimes(1));
+    expect(replace).toHaveBeenCalledWith("/welcome");
+  });
+
+  it("짧게 누르면 아무 일도 없다 — 워드마크는 버튼이 아니다", async () => {
+    const dev = jest.fn(async () => {});
+    useAuth.setState({ signInDev: dev });
+    const { getByText } = await render(<Login />);
+
+    await fireEvent.press(getByText("모멘토리"));
+
+    expect(dev).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("소셜 줄은 여전히 셋뿐이다 — 개발용 컨트롤을 새로 두지 않았다", async () => {
+    const { getAllByRole } = await render(<Login />);
+
+    expect(getAllByRole("button")).toHaveLength(3);
   });
 });
 

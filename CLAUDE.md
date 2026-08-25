@@ -174,10 +174,11 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 보관함 6 · 리포트 1 · 마이 3. 화면 ID ↔ 라우트 매핑은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표가 정본이다.
 
 ⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 남은 것은 **나머지 도메인의 BE 연결** ·
-영속 저장(MMKV) · 소셜 SDK **나머지 하나**(카카오는 2026-08-07 연결 · 토큰 갱신은
-2026-08-09 닫힘 — **HTTPS 만 대기**, [`DISCUSSION.md`](docs/DISCUSSION.md) §1-6 ·
+영속 저장(MMKV) · **소셜 SDK 셋은 전부 붙었다**(카카오는 2026-08-07 연결 · 토큰 갱신은
+2026-08-09 닫힘 · **HTTPS 도 2026-08-25 에 닫혔다** — `https://api.momentory.co.kr`,
+[`DISCUSSION.md`](docs/DISCUSSION.md) §1-6 ·
 **애플은 2026-08-24 에 SDK + 교환 + nonce + 탈퇴 revoke 까지 연결됐다** — `.p8` 발급만 남았다 §1-10 ·
-**구글은 아직 개발 통로**) ·
+**구글은 2026-08-25 에 연결됐다** — 소셜 셋이 전부 실제 로그인이다) ·
 OS 권한 중 **캘린더 연결**(알림은 2026-08-11 닫힘) · 계측 · 아웃박스 · 앱 잠금 게이트 ·
 M6(invariants 전수 테스트 · E2E · 배포). 목록은 [`docs/TASKS.md`](docs/TASKS.md)
 「화면 40장이 끝난 뒤 남은 것」에 있다.
@@ -299,6 +300,7 @@ src/features/onboarding/{model/{draft, completion, options, submit}.ts,
                                             못 받으면 대역으로 그린다 — 온보딩은 멈추지 않는다.
                                             실패 문구는 submit.ts 한 곳(10·M2 가 나눠 쓴다)
 src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,appleSdk,appleAuthApi,
+                                       googleSdk,googleAuthApi,
                                        loginSession,reissueApi,logoutApi}.ts}
                                           ← M2-0 부트스트랩(hydrate·가드·fail-closed) +
                                             M2-1 카카오 로그인 + 만료 토큰의 조용한 갱신
@@ -315,7 +317,7 @@ src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,appleSdk,appleAuth
                                             **릴리스 잠금(옛 isAppleLineOpen)을 지웠다.**
                                             「이 기기에서 되는가」(iOS 전용) 판정은
                                             appleSdk 하나 — 화면은 플랫폼을 모른다.
-                                            loginSession = **카카오·애플 공통 전송·응답
+                                            loginSession = **소셜 셋의 공통 전송·응답
                                             검증** — 응답이 글자 그대로 같아서 모았다.
                                             교환 뒤(저장·플래그·배웅)는 auth.ts 의
                                             adoptSession 하나를 나눠 쓴다.
@@ -326,6 +328,19 @@ src/features/auth/{model/auth.ts, data/{kakaoSdk,kakaoAuthApi,appleSdk,appleAuth
                                             token 으로 바꿔 서버가 보관한다.
                                             ⛔ .p8 발급 전이라 그때까지 탈퇴가
                                             연결 해제 없이 지나간다
+                                            googleSdk·googleAuthApi = **구글**
+                                            (2026-08-25 · `POST /api/v1/auth/google`).
+                                            보내는 것은 **idToken 하나**다 —
+                                            ⚠ **nonce 가 없다**: 무료 모듈에 그것을
+                                            넘길 자리가 없어서(유료 Universal 전용)
+                                            서버가 aud + **azp** 로 대신 조인다.
+                                            「이 기기에서 되는가」(Android Play 서비스)와
+                                            「설정이 됐는가」(클라이언트 ID) 판정은
+                                            googleSdk 하나 — 화면은 플랫폼을 모른다.
+                                            **탈퇴 시 구글 연결 해제는 앱이 한다**
+                                            (revokeAccess) — 서버가 든 구글 토큰이 없다.
+                                            로그아웃은 signOut() 으로 기기의 로그인
+                                            상태만 비운다(계정 선택을 다시 볼 수 있게).
 src/testing/fixtures.ts                   ← **테스트 전용 고정값.** 옛 `src/mocks/sample.ts`
                                             자리다(2026-08-21 삭제) — 화면이 보는 값은 이제
                                             서버에서만 온다. 앱 코드가 import 하면 린터가 막는다
@@ -373,8 +388,10 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 **expo-calendar**(`09` 기기 캘린더 — **읽기만**) ·
 **expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`) ·
 **expo-apple-authentication** + **expo-crypto**(`S1` 애플 로그인 — **iOS 전용** ·
-서버 교환·nonce 까지 연결됨 2026-08-24)
-— 여섯 다 네이티브라 **dev client 재빌드 필요**.
+서버 교환·nonce 까지 연결됨 2026-08-24) ·
+**@react-native-google-signin/google-signin**(`S1` 구글 로그인 — 두 플랫폼 ·
+서버 교환까지 연결됨 2026-08-25 · **nonce 는 무료 모듈에 없다**)
+— 일곱 다 네이티브라 **dev client 재빌드 필요**.
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 

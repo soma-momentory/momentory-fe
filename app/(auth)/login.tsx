@@ -32,21 +32,28 @@ import { openExternalLink, type ExternalLink } from "@/lib/links";
  */
 
 /**
- * **아직 SDK 가 없는 한 줄**(Google)의 개발 통로. **개발 빌드에서만 열린다.**
+ * 개발 통로 — **워드마크를 길게 누른다.** 개발 빌드에서만 열린다.
+ *
+ * ⚠ **자리를 옮겼다** (구글 로그인 연결). 전에는 Google 줄이 이 통로였다 —
+ * 그 줄에 SDK 가 없어서 비어 있었기 때문이다. 이제 세 줄이 전부 실제 SDK 와
+ * 서버 교환을 지나므로 **비어 있는 버튼이 하나도 없다.**
+ *
+ * 그래서 **버튼이 아닌 자리**로 옮긴다. 화면에 「개발용」 컨트롤을 새로 두면
+ * 릴리스에서 그것을 숨기는 일이 하나 더 생기고, 소셜 줄 중 하나를 다시
+ * 개발 통로로 쓰면 **실기기에서 그 공급자를 검증할 수 없다.**
+ * 길게 누르기는 릴리스에서 `__DEV__` 가 false 라 아무 일도 하지 않는다 —
+ * 보이지도, 눌리지도 않는다.
  *
  * `router.push` 로 건너뛰지 않는다 — `(onboarding)` 레이아웃의 라우트 가드가
  * 세션 없는 진입을 즉시 로그인으로 되돌린다(M2-0). 그래서 `signInDev` 가
- * SecureStore 에 가짜 세션을 만들고 나서 이동한다. 릴리스에서는 `__DEV__` 가
- * false 라 그 줄이 비활성으로 남는다 — 세션 없이 보호 흐름에 들어가지 않는다.
+ * SecureStore 에 가짜 세션을 만들고 나서 이동한다.
  *
- * 카카오와 **애플**은 이 통로를 쓰지 않는다 — 각자 실제 SDK 와 서버 교환을
- * 지난다(애플은 2026-08-24 부터).
+ * **로컬에서 이것이 유일한 로그인 통로다** — 카카오는 콘솔에 이 빌드의 키 해시가
+ * 있어야 하고, 구글은 SHA-1 이, 애플은 iOS 기기가 필요하다.
  */
-const DEV_SKIP_AUTH = __DEV__;
-
 const skipAuth = async () => {
-  // 다른 줄을 누르면 카카오 실패 안내는 지운다 — 지난 시도의 말이 남아 있으면
-  // 방금 누른 것의 결과로 읽힌다
+  if (!__DEV__) return;
+  // 지난 시도의 실패 안내는 지운다 — 남아 있으면 방금 한 것의 결과로 읽힌다
   useAuth.getState().clearSignInError();
   await useAuth.getState().signInDev();
   router.replace("/welcome");
@@ -89,12 +96,32 @@ export default function Login() {
     router.replace(outcome.onboardingRequired ? "/welcome" : "/home");
   };
 
+  /**
+   * 구글 로그인. **카카오·애플과 같은 모양으로 부른다** — 화면은 어느 공급자가
+   * 무엇을 못 하는지 모른다.
+   *
+   * 「이 기기에서 되는가」(Android 의 Play 서비스)와 「설정이 됐는가」
+   * (클라이언트 ID)는 `googleSdk.ts` 가 판정해 안내 한 줄로 돌려준다 —
+   * 애플 줄과 같은 규칙이다.
+   */
+  const signInGoogle = async () => {
+    const outcome = await useAuth.getState().signInWithGoogle();
+    if (outcome.kind !== "signed-in") return;
+    router.replace(outcome.onboardingRequired ? "/welcome" : "/home");
+  };
+
   return (
     <Screen>
       {/* 로고 영역이 남은 높이를 다 차지하고 **광학 중앙**에 온다 —
           아래 96 을 비워 시각적 무게를 위로 올린다 (`Login.dc.html` 「수직 균형」) */}
       <View style={styles.hero}>
-        <Text variant="wordmarkHand" color={labelColor.strong}>
+        <Text
+          variant="wordmarkHand"
+          color={labelColor.strong}
+          // 개발 통로 — 릴리스에서는 `skipAuth` 가 즉시 되돌아간다(위 머리말).
+          // `onPress` 를 주지 않으므로 짧게 눌러도 아무 일도 없다
+          onLongPress={skipAuth}
+        >
           모멘토리
         </Text>
         <Text variant="body2Reading" color={labelColor.neutral}>
@@ -134,8 +161,8 @@ export default function Login() {
         <SocialButton
           provider="google"
           label="Google 계정으로 로그인"
-          disabled={!DEV_SKIP_AUTH || signingIn}
-          onPress={skipAuth}
+          disabled={signingIn}
+          onPress={signInGoogle}
         />
         <SocialButton
           provider="apple"

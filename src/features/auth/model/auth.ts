@@ -6,6 +6,15 @@ import {
   type AppleAuthFailureCode,
 } from "@/features/auth/data/appleAuthApi";
 import { requestAppleCredential } from "@/features/auth/data/appleSdk";
+import {
+  exchangeGoogleIdToken,
+  type GoogleAuthFailureCode,
+} from "@/features/auth/data/googleAuthApi";
+import {
+  requestGoogleIdToken,
+  revokeGoogleAccess,
+  signOutGoogle,
+} from "@/features/auth/data/googleSdk";
 import { exchangeKakaoToken, type AuthFailureCode } from "@/features/auth/data/kakaoAuthApi";
 import { requestKakaoAccessToken } from "@/features/auth/data/kakaoSdk";
 import { type LoginSession } from "@/features/auth/data/loginSession";
@@ -167,6 +176,36 @@ const STORE_FAILED_MESSAGE = "로그인 정보를 저장하지 못했어요. 잠
  * `kakao` 는 사유를 조금 더 밝힌다 — 계정이 지워지지 않았음을 사용자가 알아야
  * 「탈퇴됐나?」를 확인하러 다시 들어오지 않는다. 나머지는 재시도가 답이라 같다.
  */
+/**
+ * 구글 실패 문구. **애플 것과 합치지 않는다** — 사유의 개수도 뜻도 다르고,
+ * 사용자가 누른 줄의 이름이 문장에 들어간다(`googleAuthApi.ts` 머리말).
+ *
+ * ⚠ `misconfigured`(앱의 클라이언트 ID 누락)와 `unconfigured`(API 주소 누락 ·
+ * `loginSession.ts`)는 **다른 것이다.** 이름이 비슷해 합치고 싶어지지만, 앞은
+ * 구글 줄만 막히고 뒤는 세 줄이 전부 막힌다 — 문구도 그래서 다르다.
+ *
+ * `misconfigured`(우리 설정 누락)와 `unavailable`(Play 서비스 없음)을 가르는 것은
+ * **재시도를 권할지가 갈리기** 때문이다 — 앞은 우리가 고칠 때까지 같고,
+ * 뒤는 이 기기에서 영영 안 된다.
+ */
+const GOOGLE_FAILURE_MESSAGES: Record<
+  GoogleAuthFailureCode | "sdk" | "unavailable" | "misconfigured",
+  string
+> = {
+  sdk: "Google 로그인을 마치지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+  unavailable: "이 기기에서는 Google 로그인을 쓸 수 없어요. 다른 방법으로 로그인해 주세요.",
+  misconfigured: "지금은 Google 로그인을 쓸 수 없어요. 다른 방법으로 로그인해 주세요.",
+  google_email_unavailable: "Google 계정 이메일을 확인할 수 없어요. 다른 방법으로 로그인해 주세요.",
+  google_token_invalid: "Google 로그인 정보가 만료됐어요. 다시 시도해 주세요.",
+  google_client_mismatch: "Google 로그인 정보가 만료됐어요. 다시 시도해 주세요.",
+  google_upstream: "Google 쪽 연결이 잠시 불안정해요. 잠시 뒤 다시 시도해 주세요.",
+  network: "지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.",
+  unconfigured: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  invalid_request: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  server: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+  malformed: "지금은 로그인할 수 없어요. 잠시 뒤 다시 시도해 주세요.",
+};
+
 const WITHDRAW_FAILURE_MESSAGES: Record<WithdrawFailureCode, string> = {
   unauthenticated: "다시 로그인한 뒤 시도해 주세요.",
   kakao: "카카오 연결 해제에 실패해 탈퇴하지 못했어요. 잠시 뒤 다시 시도해 주세요.",
@@ -199,6 +238,11 @@ type AuthStore = {
    * **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다.**
    */
   signInWithApple: () => Promise<SignInOutcome>;
+  /**
+   * 구글 로그인. 카카오·애플과 **같은 순서, 같은 코드**다 —
+   * SDK → 서버 교환 → SecureStore. 자물쇠(`signingIn`)도 셋이 나눠 쓴다.
+   */
+  signInWithGoogle: () => Promise<SignInOutcome>;
   /** 안내 한 줄을 지운다 — 다시 누를 때 지난 실패가 남아 있지 않게 */
   clearSignInError: () => void;
   /**
@@ -725,6 +769,59 @@ export const useAuth = create<AuthStore>((set, get) => ({
     }
   },
 
+  /**
+   * 구글 로그인. 카카오·애플과 **같은 순서, 같은 코드**다 —
+   * SDK → 서버 교환 → SecureStore.
+   *
+   * ## 애플 갈래와 한 줄만 다르다
+   *
+   * 서버로 보내는 것이 **ID token 하나뿐**이다 — nonce 가 없다. SDK 에 그것을
+   * 넘길 자리가 없어서이고(`googleSdk.ts` 머리말), 그래서 「토큰과 nonce 는 같은
+   * 인가에서 나온 짝이어야 한다」는 애플 쪽 규약이 여기에는 없다.
+   *
+   * ## 지키는 것 — 카카오·애플과 같다
+   *
+   * - **취소는 조용하다**
+   * - **실패는 한 줄이다** — 모달·재시도 버튼 없음(`RULES.md` 4)
+   * - **자물쇠는 하나다** — `signingIn` 을 셋이 나눠 쓴다. 세 줄을 번갈아
+   *   눌러도 시트는 한 번만 열린다
+   * - **어느 단계에서 멈춰도 `authenticated` 가 되지 않는다**
+   */
+  signInWithGoogle: async () => {
+    if (get().signingIn) return { kind: "busy" };
+    set({ signingIn: true, signInError: null });
+
+    try {
+      const sdk = await requestGoogleIdToken();
+
+      // 사용자의 답이다 — 안내 한 줄도 띄우지 않는다
+      if (sdk.kind === "cancelled") return { kind: "cancelled" };
+
+      if (sdk.kind !== "id-token") {
+        const message =
+          sdk.kind === "unavailable"
+            ? GOOGLE_FAILURE_MESSAGES.unavailable
+            : sdk.kind === "unconfigured"
+              ? GOOGLE_FAILURE_MESSAGES.misconfigured
+              : GOOGLE_FAILURE_MESSAGES.sdk;
+        set({ signInError: message });
+        return { kind: "failed", message };
+      }
+
+      const exchanged = await exchangeGoogleIdToken(sdk.idToken);
+      if (!exchanged.ok) {
+        const message = GOOGLE_FAILURE_MESSAGES[exchanged.code];
+        set({ signInError: message });
+        return { kind: "failed", message };
+      }
+
+      // 저장·플래그·배웅은 공급자를 묻지 않는다 — 카카오·애플과 같은 코드를 지난다
+      return await adoptSession(set, get, exchanged.session);
+    } finally {
+      set({ signingIn: false });
+    }
+  },
+
   clearSignInError: () => set({ signInError: null }),
 
   signInDev: async () => {
@@ -758,6 +855,15 @@ export const useAuth = create<AuthStore>((set, get) => ({
         if (!result.ok) warnInDev(result.code);
       });
     }
+
+    // 구글 SDK 가 기기에 남긴 로그인 상태도 비운다 — **연결을 끊는 것이 아니다.**
+    // 이것이 없으면 다음에 Google 줄을 눌렀을 때 계정 선택 없이 직전 계정으로
+    // 바로 들어가서, 계정을 바꾸려는 사용자가 바꿀 수 없다.
+    //
+    // 구글로 로그인한 적이 없어도 부른다 — SDK 가 조용히 넘어가고, 어느
+    // 공급자로 들어왔는지는 기기에 남겨 두지 않기 때문이다(세션에 provider 가 없다).
+    // 카카오·애플에는 대응하는 자리가 없다: 둘 다 기기에 로그인 상태를 남기지 않는다.
+    void signOutGoogle();
   },
 
   clearWithdrawError: () => set({ withdrawError: null }),
@@ -776,6 +882,15 @@ export const useAuth = create<AuthStore>((set, get) => ({
         set({ withdrawError: WITHDRAW_FAILURE_MESSAGES[result.code] });
         return false;
       }
+
+      // 구글 연결 해제는 **서버가 할 수 없다** — 우리가 받는 것은 ID token 하나뿐이고
+      // 보관하지 않아서, 끊을 수 있는 쪽은 access token 을 든 이 기기뿐이다
+      // (`googleSdk.ts`). 카카오·애플은 서버가 이미 끊었다(`UserWithdrawalService`).
+      //
+      // **기다리되 실패를 무시한다.** 서버가 계정을 지운 뒤라 여기서 되돌리면
+      // 「탈퇴됐다는데 계정이 남아 있다」가 된다 — 남는 것은 구글 계정 설정의
+      // 항목 하나이고 사용자가 직접 지울 수 있다.
+      await revokeGoogleAccess();
 
       // 서버가 계정을 지웠다 — 이제 기기의 흔적을 지운다. 지우기 전에 세션을 읽어
       // `userId` 를 든다(사용자별로 눕는 것을 비우는 데 필요하다).
