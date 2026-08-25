@@ -1,4 +1,4 @@
-import { fireEvent, render, waitFor, within } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import Login from "../login";
@@ -91,9 +91,9 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
     const signIn = mockApple({ kind: "failed", message: "애플 로그인은 아직 준비 중이에요." });
     const dev = jest.fn(async () => {});
     useAuth.setState({ signInDev: dev });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Apple로 로그인"));
+    await fireEvent.press(getByLabelText("Apple로 로그인"));
 
     await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
     expect(dev).not.toHaveBeenCalled();
@@ -102,18 +102,18 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
 
   it("세션이 생기면 카카오와 같은 곳으로 보낸다", async () => {
     mockApple({ kind: "signed-in", onboardingRequired: false });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Apple로 로그인"));
+    await fireEvent.press(getByLabelText("Apple로 로그인"));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
   });
 
   it("취소하면 화면을 옮기지 않는다", async () => {
     mockApple({ kind: "cancelled" });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Apple로 로그인"));
+    await fireEvent.press(getByLabelText("Apple로 로그인"));
 
     await waitFor(() => expect(replace).not.toHaveBeenCalled());
   });
@@ -154,9 +154,9 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
   it("진행 중이면 잠긴다 — 카카오와 자물쇠를 나눠 쓴다", async () => {
     const signIn = mockApple({ kind: "signed-in", onboardingRequired: true });
     useAuth.setState({ signingIn: true });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Apple로 로그인"));
+    await fireEvent.press(getByLabelText("Apple로 로그인"));
 
     expect(signIn).not.toHaveBeenCalled();
   });
@@ -285,7 +285,7 @@ describe("Momentory DS 이관 — 구조가 바뀌었다", () => {
     const buttons = getAllByRole("button");
 
     expect(buttons).toHaveLength(3);
-    expect(buttons.map((b) => within(b).getByText(/카카오|Google|Apple/).props.children)).toEqual([
+    expect(buttons.map((button) => button.props.accessibilityLabel)).toEqual([
       "카카오 로그인",
       "Google 계정으로 로그인",
       "Apple로 로그인",

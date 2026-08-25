@@ -215,7 +215,6 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
   it.each([
     ["kakao", 16], //    48 ÷ 3 — 「레이블 세로 길이 ≤ 높이의 1/3」
     ["google", 14], //   「Roboto Medium | 14/20」
-    ["apple", 20.64], // 48 × 43% — HIG 가 요구하는 비율
   ] as const)("%s 라벨 크기가 규격대로다", async (provider, expected) => {
     const { getByText } = await render(
       <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
@@ -223,31 +222,17 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
     expect(flatten(getByText("계속하기").props.style).fontSize).toBeCloseTo(expected, 2);
   });
 
-  /**
-   * 애플 로고는 **아이콘 세트에서 오지 않는다.** HIG 가 「Use only the logo artwork
-   * downloaded from Apple Design Resources; never create a custom Apple logo」라고
-   * 못박아서, 2026-08-24 에 Wanted 세트의 `logo-apple` 을 지우고 애플 원본 경로를
-   * `AppleMark.tsx` 로 옮겼다. 세트로 되돌려 놓는 순간 그 규정을 어긴다.
-   */
-  it("애플 로고는 아이콘 세트가 아니라 애플 공식 아트워크에서 온다", async () => {
+  /** Apple 생성기가 내려준 완성형 PNG를 로고와 텍스트로 다시 조립하지 않는다. */
+  it("Apple 버튼은 공식 생성기의 완성형 @3x 아트워크를 그대로 쓴다", async () => {
     expect("logo-apple" in ICON_PATHS).toBe(false);
 
-    const { toJSON } = await render(
+    const { getByRole, getByTestId, queryByText } = await render(
       <SocialButton provider="apple" label="Apple로 로그인" onPress={() => {}} />,
     );
-    // 「파일 높이 = 버튼 높이」 — 투명 여백을 포함한 공식 31×44 캔버스를 보존한다
-    const mark = findByType(toJSON(), "RNSVGSvgView");
-    expect(mark?.props.height).toBe(48);
-    expect(mark?.props.width).toBeCloseTo((48 * 31) / 44, 2);
-  });
-
-  // 애플 줄은 글자가 커진 만큼 행간도 커야 한다 — 20.64 한글의 ink 가 20.5 다
-  it("애플 라벨은 행간이 잘리지 않는다", async () => {
-    const { getByText } = await render(
-      <SocialButton provider="apple" label="Apple로 로그인" onPress={() => {}} />,
-    );
-    const style = flatten(getByText("Apple로 로그인").props.style);
-    expect(style.lineHeight as number).toBeGreaterThan((style.fontSize as number) * 1.05);
+    const artwork = getByTestId("apple-official-button-artwork");
+    expect(flatten(artwork.props.style)).toMatchObject({ width: "100%", height: "100%" });
+    expect(queryByText("Apple로 로그인")).toBeNull();
+    expect(getByRole("button").props.accessibilityLabel).toBe("Apple로 로그인");
   });
 
   /**
@@ -256,7 +241,7 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
    * 두꺼워진다(`SocialButton.tsx` 「굵기는 500 이다」). 구글이 규격으로 못박는
    * Roboto **Medium** 과도 같은 단이다.
    */
-  it.each(["kakao", "google", "apple"] as const)("%s 라벨 굵기는 500 이다", async (provider) => {
+  it.each(["kakao", "google"] as const)("%s 라벨 굵기는 500 이다", async (provider) => {
     const { getByText } = await render(
       <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
     );
@@ -272,7 +257,6 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
    */
   it.each([
     ["kakao", undefined],
-    ["apple", undefined],
     ["google", "Roboto-Medium"],
   ] as const)("%s 라벨 서체가 규격대로다", async (provider, expected) => {
     const { getByText } = await render(
@@ -292,7 +276,6 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
 
     expect(await family("google")).toBe("Roboto-Medium");
     expect(await family("kakao")).not.toBe("Roboto-Medium");
-    expect(await family("apple")).not.toBe("Roboto-Medium");
   });
 
   // 공식 Light 테마의 흰 판은 테두리가 있어야 배경에서 떨어진다 (inside 1px)

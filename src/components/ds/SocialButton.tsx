@@ -1,4 +1,5 @@
 import {
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -12,7 +13,6 @@ import {
 import { overlay, radius, size, social, space } from "@/design/ds";
 
 import { Icon } from "./icons/Icon";
-import { AppleMark } from "./icons/AppleMark";
 import { GoogleMark, MARK_HEIGHT as GOOGLE_MARK } from "./icons/GoogleMark";
 import { Text } from "./Text";
 
@@ -35,30 +35,22 @@ import { Text } from "./Text";
  * | --- | --- | --- | --- | --- | --- |
  * | 카카오 | 24 (심볼 19.2×18.1) | 16 = 48÷3 | 8 | 16 | 컨테이너에 **비례** — 표준 90 버튼의 40%×37.8% |
  * | Google | 20 | 14 = 규격 그대로 | iOS 12 · 그 외 10 | iOS 16 · 그 외 12 | 브랜딩 가이드라인의 **절대값** |
- * | Apple | 15.85 (로고 12.90×15.85) | 20.64 = 48×43% | 10 | 16 | **공식 아트워크**(Small) · 파일 높이 = 버튼 높이 |
+ * | Apple | 공식 PNG 내장 | 공식 PNG 내장 | 공식 PNG 내장 | 공식 PNG 내장 | Apple 버튼 생성기 |
  *
- * 카카오·애플은 「컨테이너 크기에 비례해 키우라」는 규정이고 구글은 절대값 규정이라,
- * **같은 48 버튼인데도 마크가 24·20·15.5 로 갈린다.** 셋을 20 으로 통일하면 카카오
- * 심볼은 규정보다 22% 작고 애플 로고는 15% 크다 — 그래서 통일하지 않는다.
+ * Apple은 로고·문구·서체·간격을 앱에서 계산하지 않는다. 공식 생성기의 320×48pt
+ * 완성형 PNG를 같은 크기로 표시하므로 생성 결과가 그대로 유지된다.
  *
  * ## 글자 크기도 통일하지 않는다 — 통일할 수가 없다
  *
  * 처음에는 셋을 16 으로 맞췄다(2026-08-24 오전). 규격을 다시 읽어 보니 **세 회사가
  * 서로 다른 크기를 요구**하고 있었고, 그중 둘은 권장이 아니라 요구였다:
  *
- * - 애플 43% — HIG 커스텀 버튼 절이 서체·굵기·크기 조정은 허용하면서
- *   「the title and button height ... **need to** use the same proportions that the
- *   system uses」라고 적는다 → 48 × 43% = 20.64
+ * - 애플 — 생성기가 48pt 높이에 맞는 글자 크기를 직접 렌더한다
  * - 카카오 — 「폰트는 30Pt 크기」(표준 90 버튼) + 「레이블 세로 길이 ≤ 컨테이너
  *   높이의 1/3」 → 48 ÷ 3 = 16
  * - 구글 — 한국어 가이드가 「Roboto Medium | **14/20**」으로 크기와 행간을 지정한다
  *
- * ⚠ **셋을 한 크기로 맞추는 길은 없다.** 카카오 상한(높이의 37.8% — 한글 ink/em
- * 0.88 을 반영한 값)이 애플 요구(43%)보다 낮다. 둘 다 **높이에 대한 비율** 규칙이라
- * 버튼을 키워도 같이 커진다 — 어느 높이에서도 동시에 만족할 수 없다.
- *
- * **그래서 세 줄의 글자가 16 · 14 · 20.64 로 갈린다.** 보기 좋게 통일하려는
- * 다음 사람을 위해 적어 둔다: 통일하는 순간 최소 한 줄이 규격을 벗어난다.
+ * 그래서 카카오 16 · Google 14만 코드에서 지정하고, Apple은 생성 결과를 건드리지 않는다.
  *
  * ## 서체도 세 줄이 다르다 — **셋 다 각 사가 지정한 것**이다
  *
@@ -66,12 +58,10 @@ import { Text } from "./Text";
  * | --- | --- | --- |
  * | 카카오 | **OS 시스템 서체** | 「폰트는 OS 별 기본 시스템 서체를 사용합니다」 |
  * | Google | **Roboto Medium**(번들) | 「Font: Roboto Medium | 14/20」 |
- * | Apple | **OS 시스템 서체** | 「Prefer the system font for the title」 |
+ * | Apple | **공식 PNG 내장** | Apple 버튼 생성기가 직접 렌더 |
  *
- * 카카오·애플은 `labelFamily` 를 **비워 둔다** — RN 에서 그것이 곧 시스템 서체다.
- * iOS 에서는 SF Pro(한글은 Apple SD Gothic Neo)라 **애플이 렌더한 공식 버튼과 같은
- * 서체**가 되고, 카카오가 말하는 「OS 별 기본 시스템 서체」도 동시에 만족한다.
- * 구글만 번들 파일을 지정하는데, 규격이 서체를 이름으로 못박는 곳이 거기뿐이다.
+ * 카카오는 `labelFamily` 를 비워 OS 시스템 서체를 쓰고, 구글만 Roboto를 번들한다.
+ * Apple 라벨은 별도 Text 노드가 아니라 공식 PNG의 일부다.
  *
  * ⚠ **그래서 이 화면의 버튼 셋만 Pretendard 를 쓰지 않는다.** 워드마크·태그라인·
  * 약관 줄은 그대로 Pretendard 다. 규격이 서체를 지정하는 자리라서 생긴 예외이고,
@@ -146,6 +136,8 @@ export function SocialButton({
     <Pressable
       {...rest}
       accessibilityRole={accessibilityRole}
+      // Apple 공식 PNG는 화면에 Text 노드를 만들지 않으므로 버튼 이름을 명시한다.
+      accessibilityLabel={rest.accessibilityLabel ?? label}
       // 호출자 상태는 살리되 잠금은 우리가 쥔다
       accessibilityState={{ ...accessibilityState, disabled }}
       disabled={disabled}
@@ -159,30 +151,35 @@ export function SocialButton({
     >
       {({ pressed }) => (
         <>
+          {provider === "apple" ? (
+            <Image
+              testID="apple-official-button-artwork"
+              source={require("../../../assets/brand/appleid_button.png")}
+              resizeMode="stretch"
+              style={styles.appleButtonArtwork}
+              accessible={false}
+            />
+          ) : null}
           {provider === "google" ? <GoogleMark size={GOOGLE_MARK} /> : null}
           {/* 카카오만 심볼이 라벨보다 진하다 — 가이드가 심볼 100% · 레이블 85% 다 */}
           {provider === "kakao" ? (
             <Icon name="logo-kakao" size={size.icon.lg} color={social.kakao.symbol} />
           ) : null}
-          {provider === "apple" ? (
-            // 애플은 크기를 **버튼 높이에서** 계산한다 — HIG 「Match the height of the
-            // logo file to the height of the button」(`AppleMark.tsx`)
-            <AppleMark buttonHeight={size.button.large} color={v.labelColor} />
+          {provider !== "apple" ? (
+            <Text
+              style={[
+                {
+                  fontFamily: v.labelFamily,
+                  fontWeight: v.labelWeight,
+                  fontSize: v.labelSize,
+                  lineHeight: v.labelLineHeight,
+                  color: v.labelColor,
+                },
+              ]}
+            >
+              {label}
+            </Text>
           ) : null}
-
-          <Text
-            style={[
-              {
-                fontFamily: v.labelFamily,
-                fontWeight: v.labelWeight,
-                fontSize: v.labelSize,
-                lineHeight: v.labelLineHeight,
-                color: v.labelColor,
-              },
-            ]}
-          >
-            {label}
-          </Text>
 
           {pressed && !disabled ? (
             <View
@@ -304,6 +301,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  // Apple 생성기: Black · Sign in · ko_KR · @3x · 320×48pt · radius 12pt.
+  appleButtonArtwork: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
   },
   // 면은 브랜드 색 그대로 두고 흐리게만 — 어느 줄이 무엇인지는 남는다
   disabled: { opacity: 0.4 },
