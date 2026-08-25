@@ -1,21 +1,11 @@
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { Card, EmotionDot, IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
 import { ActionCardSection } from "@/components/diary/ActionCardSection";
-import {
-  background,
-  elevation,
-  hairline,
-  label as labelColor,
-  layout,
-  radius,
-  space,
-  status,
-  zIndex,
-} from "@/design/ds";
+import { label as labelColor, space } from "@/design/ds";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 import { emotionName } from "@/features/emotion/model/emotion";
 import { useDay, visibleSchedules } from "@/features/home/model/day";
@@ -61,7 +51,6 @@ export default function DiaryDetail() {
    */
   const schedules = useDay((s) => s.schedules);
 
-  const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // 지워진 일기를 열고 있었다면 보관함으로 — 오류 화면을 만들지 않는다
@@ -77,12 +66,13 @@ export default function DiaryDetail() {
         leading="arrow-left"
         onLeadingPress={() => router.back()}
         trailing={
+          // ⋮ 메뉴(삭제 한 줄)를 없앴다 — 상세에서 할 일이 삭제뿐이라 쓰레기통 아이콘
+          // 하나로 줄이고, 누르면 곧바로 삭제 확인 모달을 연다.
           <IconButton
-            name="more-vertical"
-            accessibilityLabel="더보기"
-            accessibilityState={{ expanded: menuOpen }}
-            // ⋮ 를 다시 누르면 닫힌다 (`DESIGN.md` 「일정」의 ⋮ 문법과 같다)
-            onPress={() => setMenuOpen((open) => !open)}
+            name="trash"
+            size={20}
+            accessibilityLabel="일기 삭제"
+            onPress={() => setConfirmDelete(true)}
           />
         }
       />
@@ -93,36 +83,39 @@ export default function DiaryDetail() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.head}>
-          <Text variant="title3" color={labelColor.strong}>
-            {`${formatKoreanDateShort(diary.date)}의 일기`}
-          </Text>
-          {/* 감정은 **도트 + 이름**이다 — 색만으로 판단하게 하지 않는다 */}
-          <View style={styles.meta}>
-            {diary.emotions.map((e, i) => (
-              <View key={`${e}-${i}`} style={styles.metaItem}>
-                <EmotionDot id={e} />
-                <Text variant="caption1" color={labelColor.alternative}>
-                  {emotionName(e)}
-                </Text>
+          {/* 날짜 제목은 손글씨 — 일기 본문과 한 서체로 「손으로 쓴 결」을 만든다(회고 저장 화면과 같다) */}
+          <View style={styles.titleRow}>
+            <Text variant="title1Hand" color={labelColor.strong} style={styles.title}>
+              {`${formatKoreanDateShort(diary.date)}의 일기`}
+            </Text>
+            {/* 감정은 **도트 + 이름**이다(색만으로 판단하게 하지 않는다) — 날짜 제목 오른쪽에 둔다 */}
+            {diary.emotions.length > 0 ? (
+              <View style={styles.emotions}>
+                {diary.emotions.map((e, i) => (
+                  <View key={`${e}-${i}`} style={styles.emotionItem}>
+                    <EmotionDot id={e} />
+                    <Text variant="caption1" color={labelColor.alternative}>
+                      {emotionName(e)}
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ))}
-            {weatherLabel != null ? (
+            ) : null}
+          </View>
+          {/* 날씨는 있을 때만 한 줄로 */}
+          {weatherLabel != null ? (
+            <View style={styles.meta}>
               <Text variant="caption1" color={labelColor.alternative}>
                 {weatherLabel}
               </Text>
-            ) : null}
-          </View>
+            </View>
+          ) : null}
         </View>
 
         {/* 「내가 남긴 오늘」 한 면만 둔다 — 「바바가 함께 본 오늘」은 상세에서 뺐다(2026-08-20) */}
         <Card padding="loose" style={styles.diaryCard}>
-          {/* 고친 뒤에는 언제 고쳤는지까지 말한다 — 「수정함」은 언제인지를 말하지 못한다 */}
-          <Text variant="caption1" color={labelColor.alternative}>
-            {diary.editedAt != null
-              ? `회고 대화에서 작성 · ${formatKoreanDateShort(diary.editedAt.slice(0, 10))} 수정`
-              : "회고 대화에서"}
-          </Text>
-          <Text variant="body1Reading" color={labelColor.normal}>
+          {/* 본문도 손글씨 — 날짜 제목(title1Hand)과 짝을 이룬다. 읽기 전용이라 한 단 크게 읽는다 */}
+          <Text variant="body1ReadingHandLg" color={labelColor.normal}>
             {diary.body}
           </Text>
         </Card>
@@ -136,41 +129,6 @@ export default function DiaryDetail() {
         {/* 그날 일정 — **일정이 없는 날은 블록 자체를 숨긴다**(`app-flow.md` §2.3) */}
         <DayScheduleList schedules={daySchedules} title="그날 일정" />
       </ScrollView>
-
-      {/*
-        ⋮ 메뉴. **바깥을 탭하면 닫힌다**(`DESIGN.md` 「일정」) — 딤을 깔지 않고
-        투명한 면으로 받는다. 메뉴는 결정이 아니라 길이라 어둡게 덮지 않는다.
-
-        ⚠ 공용 `Menu` 를 아직 만들지 않았다(`components/ds` 「아직 없는 것」) —
-        일정(`Schedule`)이 같은 문법의 ⋮ 를 쓰므로 **그쪽이 만들 때 옮겨탄다.**
-        먼저 만들어 두면 실제로 필요한 모양과 어긋난 채 굳는다.
-      */}
-      {menuOpen ? (
-        <>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="메뉴 닫기"
-            onPress={() => setMenuOpen(false)}
-            style={styles.menuScrim}
-          />
-          <Card padding="none" style={styles.menu}>
-            {/*
-              ⚠ **「수정하기」가 사라졌다** (2026-08-20). 저장된 일기를 고치는 화면
-              (`A4`)은 **기능이 아니다** — 고칠 기회는 저장 전(`C6` 의 `직접 고치기`)
-              하나이고, 저장한 뒤의 일기는 그날의 기록으로 남는다.
-              메뉴에 남은 것은 삭제뿐이다.
-            */}
-            <MenuItem
-              label="삭제하기"
-              destructive
-              onPress={() => {
-                setMenuOpen(false);
-                setConfirmDelete(true);
-              }}
-            />
-          </Card>
-        </>
-      ) : null}
 
       {/*
         삭제는 **무엇이 사라지는지 먼저 말한다**(`A4.md`). 일기를 지우면 그 일기의 행동 카드도
@@ -201,56 +159,30 @@ export default function DiaryDetail() {
   );
 }
 
-/** 메뉴 한 줄. 위험한 쪽만 위험색이고 **면을 채우지 않는다** */
-function MenuItem({
-  label,
-  destructive = false,
-  onPress,
-}: {
-  label: string;
-  destructive?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.menuItem}>
-      <Text variant="body2" color={destructive ? status.negative : labelColor.normal}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   // 남은 높이를 다 쓰고 그 안에서만 스크롤한다 — 안 잡으면 내용 높이만큼 자라 넘친다
   scroll: { flex: 1, minHeight: 0 },
   content: { gap: space.lg, paddingBottom: space.xl2 },
 
   head: { gap: space.xs },
+  // 날짜 제목(왼쪽) + 감정(오른쪽) 한 줄. 감정이 여러 개여도 제목이 먼저 자리를 갖는다
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: space.sm,
+  },
+  title: { flexShrink: 1 },
   meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm },
-  metaItem: { flexDirection: "row", alignItems: "center", gap: space.xs },
 
   diaryCard: { gap: space.md },
-
-  // 바깥 탭을 받는 투명한 면 — 메뉴보다 아래, 본문보다 위
-  menuScrim: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    zIndex: zIndex.frame,
+  // 감정 줄 — 날짜 제목 오른쪽. 여러 개면 오른쪽으로 정렬해 접힌다
+  emotions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: space.sm,
   },
-  menu: {
-    position: "absolute",
-    // 상단 내비 바로 아래에서 열린다 — ⋮ 가 있던 자리에서 이어지도록
-    top: layout.topNav + space.xs,
-    right: 0,
-    minWidth: 140,
-    zIndex: zIndex.overlay,
-    backgroundColor: background.elevated,
-    borderRadius: radius.medium,
-    ...hairline.neutral,
-    ...elevation.floating,
-  },
-  menuItem: { minHeight: 44, justifyContent: "center", paddingHorizontal: space.lg },
+  emotionItem: { flexDirection: "row", alignItems: "center", gap: space.xs },
 });
