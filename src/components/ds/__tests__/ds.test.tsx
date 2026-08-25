@@ -207,7 +207,7 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
    */
   it.each([
     ["kakao", 16], //    48 ÷ 3 — 「레이블 세로 길이 ≤ 높이의 1/3」
-    ["google", 14], //   「Roboto Medium | 14/20」
+    ["google", 14], //   「Google Sans Medium | 14/20」
     ["apple", 20.64], // 48 × 43% — HIG 가 요구하는 비율
   ] as const)("%s 라벨 크기가 규격대로다", async (provider, expected) => {
     const { getByText } = await render(
@@ -228,9 +228,10 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
     const { toJSON } = await render(
       <SocialButton provider="apple" label="Apple로 로그인" onPress={() => {}} />,
     );
-    // 「파일 높이 = 버튼 높이」 — 애플 파일 44 안의 글리프 19 가 버튼 48 에서는 20.73
+    // 「파일 높이 = 버튼 높이」 — 투명 여백을 포함한 공식 31×44 캔버스를 보존한다
     const mark = findByType(toJSON(), "RNSVGSvgView");
-    expect(mark?.props.height).toBeCloseTo((48 * 19) / 44, 2);
+    expect(mark?.props.height).toBe(48);
+    expect(mark?.props.width).toBeCloseTo((48 * 31) / 44, 2);
   });
 
   // 애플 줄은 글자가 커진 만큼 행간도 커야 한다 — 20.64 한글의 ink 가 20.5 다
@@ -246,27 +247,26 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
    * 굵기는 **500 이다.** 애플 공식 렌더의 획/높이가 0.1090 인데 Pretendard Medium 이
    * 정확히 0.1090 이고 SemiBold 는 0.1282(+18%)다 — 600 으로 올리면 공식 버튼보다
    * 두꺼워진다(`SocialButton.tsx` 「굵기는 500 이다」). 구글이 규격으로 못박는
-   * Roboto **Medium** 과도 같은 단이다.
+   * Google Sans **Medium** 과도 같은 단이다.
    */
   it.each(["kakao", "google", "apple"] as const)("%s 라벨 굵기는 500 이다", async (provider) => {
     const { getByText } = await render(
       <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
     );
     const style = flatten(getByText("계속하기").props.style);
-    // 구글은 굵기가 **파일 이름**에 있고(번들 Roboto Medium), 시스템 서체를 쓰는
-    // 나머지 둘은 `fontWeight` 로 고른다 — 결과는 같은 500 이다
-    expect(style.fontFamily === "Roboto-Medium" || style.fontWeight === "500").toBe(true);
+    // Google Sans는 변수 글꼴이라 나머지 시스템 서체와 마찬가지로 500 축을 고른다.
+    expect(style.fontWeight).toBe("500");
   });
 
   /**
    * 서체 **종류**도 셋 다 각 사가 지정한 것이다 — 카카오 「OS 별 기본 시스템 서체」 ·
-   * 애플 「Prefer the system font」 · 구글 「Roboto Medium」. 앞의 둘은 `fontFamily` 를
+   * 애플 「Prefer the system font」 · 구글 「Google Sans Medium」. 앞의 둘은 `fontFamily` 를
    * **비워 두는 것**이 곧 규격이라, Pretendard 를 도로 끼워 넣으면 규격을 벗어난다.
    */
   it.each([
     ["kakao", undefined],
     ["apple", undefined],
-    ["google", "Roboto-Medium"],
+    ["google", "GoogleSans-Variable"],
   ] as const)("%s 라벨 서체가 규격대로다", async (provider, expected) => {
     const { getByText } = await render(
       <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
@@ -275,7 +275,7 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
   });
 
   // 서체를 이름으로 지정하는 곳은 구글뿐이다 — 나머지 둘은 우리 서체로 둔다
-  it("Google 라벨만 Roboto Medium 이다", async () => {
+  it("Google 라벨만 Google Sans 이다", async () => {
     const family = async (provider: "kakao" | "google" | "apple") => {
       const { getByText } = await render(
         <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
@@ -283,9 +283,9 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
       return flatten(getByText("계속하기").props.style).fontFamily;
     };
 
-    expect(await family("google")).toBe("Roboto-Medium");
-    expect(await family("kakao")).not.toBe("Roboto-Medium");
-    expect(await family("apple")).not.toBe("Roboto-Medium");
+    expect(await family("google")).toBe("GoogleSans-Variable");
+    expect(await family("kakao")).not.toBe("GoogleSans-Variable");
+    expect(await family("apple")).not.toBe("GoogleSans-Variable");
   });
 
   // 공식 Light 테마의 흰 판은 테두리가 있어야 배경에서 떨어진다 (inside 1px)

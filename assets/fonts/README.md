@@ -87,19 +87,33 @@ SIL Open Font License 1.1 — 전문은 [`LICENSE.txt`](LICENSE.txt).
 
 ---
 
-## Roboto Medium
+## Google Sans Variable
 
-⚠ **우리 서체가 아니다 — 구글 로그인 버튼 한 줄에만 쓴다**(2026-08-24 ·
-`src/components/ds/SocialButton.tsx`).
+⚠ **우리 서체가 아니다 — 구글 로그인 버튼 한 줄에만 쓴다**(2026-08-25 ·
+`src/components/ds/SocialButton.tsx`). Google의 2026-07-07 브랜딩 가이드가 지정하는
+**Google Sans Medium 14/20**을 맞추기 위해 Google Fonts 공식 변수 TTF를 그대로
+넣고 `fontWeight: 500`으로 Medium 축을 선택한다.
+
+| 파일                          | 사용 축 | sha256                                                            |
+| ----------------------------- | ------- | ----------------------------------------------------------------- |
+| `GoogleSans-VariableFont.ttf` | 500     | `53060ecc890021bc70dc57343a443dc3d2cbdd101039739453b5581afb43a8a7` |
+
+출처: <https://fonts.google.com/specimen/Google+Sans> (2026-08-25). Google Fonts가
+배포한 원본이며 파일의 라이선스 메타데이터를 보존한다.
+
+---
+
+## Roboto Medium (미사용 보관)
+
+2026-07-07 Google 브랜딩 가이드 개정 전 사용하던 파일이다. 이제 앱에서 로드하지
+않으며 이전 빌드와 자산 이력을 검증할 수 있도록 보관한다.
 
 구글 [브랜딩 가이드라인](https://developers.google.com/identity/branding-guidelines?hl=ko)이
-로그인 버튼 라벨의 서체를 **「Roboto Medium」이라고 이름까지 지정한다.** 3사 중
-서체를 이름으로 못박는 곳은 여기뿐이라 이 한 줄을 위해 들여왔다.
+당시 가이드는 로그인 버튼 라벨의 서체를 「Roboto Medium」으로 지정했다.
 
 그래서 [`src/design/ds/typography.ts`](../../src/design/ds/typography.ts) 의
 `fontFamily` 토큰에는 **올리지 않았다** — 토큰은 「우리 서체」의 목록이고, 다른
-화면이 이걸 집어 쓰면 위계가 서체로 갈라진다. 등록만
-[`src/lib/providers.tsx`](../../src/lib/providers.tsx) 에 있다.
+화면이 이걸 집어 쓰면 위계가 서체로 갈라진다.
 
 | 파일                | weight | sha256                                                             |
 | ------------------- | ------ | ------------------------------------------------------------------ |

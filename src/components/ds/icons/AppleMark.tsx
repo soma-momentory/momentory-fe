@@ -36,13 +36,10 @@ import Svg, { Path } from "react-native-svg";
  * 손대는 날 로고가 저절로 따라 움직인다. 파일 44 안에서 글리프가 14.532 를
  * 차지하므로 버튼 48 에서는 20.73 이다.
  *
- * viewBox 를 글리프 경계로 잡는 것은 **투명 여백만 걷어내는 것**이고 로고 자체는
- * 자르지 않는다(「Don't crop the logo file」). 애플 파일의 여백은 **좌측 정렬**
- * 배치용인데(폴더 이름이 Left Aligned 다) 우리 버튼은 가운데 정렬이라, 그 여백을
- * 그대로 두면 세 줄 중 애플 줄만 광학 중심이 3.35 밀린다. 대신 로고~글자 간격은
- * 애플 자체 렌더의 실측값 10 을 `SocialButton` 이 명시적으로 준다 — 파일에 내장된
- * 여백(48 환산 6.58)은 애플이 「minimum margin」이라 부르는 하한이고, 10 은 그
- * 하한을 넘는다.
+ * **공식 파일의 전체 31×44 viewBox와 투명 여백을 그대로 보존한다.** HIG가
+ * 「Don't crop the logo file」과 「Don't add vertical padding」을 명시하므로 글리프
+ * 경계로 viewBox를 좁히지 않는다. 로고 오른쪽 간격도 파일에 들어 있는 여백이
+ * 담당하므로 `SocialButton`은 별도 gap을 더하지 않는다.
  *
  * ## 라이선스 — 임베딩이 허용된 아트워크다
  *
@@ -61,14 +58,13 @@ import Svg, { Path } from "react-native-svg";
  * 붙는다 — 프로그램 멤버십이 끊기면 이 아트워크를 쓸 근거도 끊긴다.
  */
 export function AppleMark({ buttonHeight, color }: { buttonHeight: number; color: string }) {
-  const height = buttonHeight * (GLYPH.height / FILE_HEIGHT);
-
   return (
     <Svg
-      width={height * ASPECT}
-      height={height}
-      // 애플 파일의 글리프 경계 — 투명 여백만 걷어낸 것이지 로고를 자르지 않는다
-      viewBox={`${GLYPH.x} ${GLYPH.y} ${GLYPH.width} ${GLYPH.height}`}
+      // HIG: 공식 로고 파일 전체를 버튼 높이에 맞춘다. 투명 여백도 아트워크의
+      // 일부이므로 글리프 경계로 viewBox 를 좁히거나 잘라내지 않는다.
+      width={buttonHeight * (FILE_WIDTH / FILE_HEIGHT)}
+      height={buttonHeight}
+      viewBox={`0 0 ${FILE_WIDTH} ${FILE_HEIGHT}`}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
@@ -78,16 +74,9 @@ export function AppleMark({ buttonHeight, color }: { buttonHeight: number; color
   );
 }
 
-/** 애플 파일의 높이. 「파일 높이 = 버튼 높이」 규칙의 분모다 */
+/** 공식 Medium SVG의 전체 캔버스. 「파일 높이 = 버튼 높이」 규칙의 분모다. */
+const FILE_WIDTH = 31;
 const FILE_HEIGHT = 44;
-
-/**
- * 애플 파일(31×44) 안에서 글리프가 실제로 차지하는 상자. 브라우저 `getBBox()` 로
- * 잰 값이다 — 세 사이즈(Small·Medium·Large)의 가로세로비가 **0.8137 로 모두 같다** — 사이즈만 다르고 형태는 하나다.
- */
-const GLYPH = { x: 7.75, y: 10.5, width: 15.461, height: 19.0 } as const;
-
-const ASPECT = GLYPH.width / GLYPH.height;
 
 /**
  * ⚠ **애플 원본 경로다 — 고치지 않는다.** 라이선스가 `modify` 와
