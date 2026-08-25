@@ -35,6 +35,11 @@ export default function RetroLayout() {
         // 화면 사이 fade 동안 비치는 바닥 — 앱 기본 면이다.
         // 옛 배경색이 남으면 전환 때 한 번 번쩍인다
         contentStyle: { backgroundColor: background.normal },
+        // iOS 엣지 스와이프-백을 끈다. 회고는 시작하면 끝까지 가는 한 줄이고 나가는 길은
+        // ✕ 하나라(위 주석 · RULES.md 「회고」) 스와이프-백이 설계에 없다. 게다가 talk 의
+        // 0~10 감정 슬라이더(가로 드래그)와 엣지 제스처가 충돌해, 왼→오 슬라이드가 뒤로가기로
+        // 새던 문제가 있었다. Android native-stack 은 엣지-백이 없어 이 옵션이 무영향이다.
+        gestureEnabled: false,
       }}
     />
   );

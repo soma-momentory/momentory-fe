@@ -43,15 +43,20 @@ export default function RetroConfirm() {
     >
       <ChatBubble>오늘 있었던 일을 잠깐 떠올려봐요.</ChatBubble>
 
-      {/* 말풍선과 같은 쪽에 서는 카드 — 대화의 일부라 왼쪽에 붙고 폭을 다 쓰지 않는다 */}
+      {/* 말풍선과 같은 쪽에 서는 카드 — 대화의 일부라 왼쪽에 붙고 폭을 다 쓰지 않는다.
+          오늘 적어둔 일정이 없으면 빈 화면 대신 한 마디 건넨다 — 일정이 없어도 회고는 이어진다 */}
       {shown.length > 0 ? (
         <Card padding="loose" style={styles.card}>
           <Text variant="label2" color={labelColor.neutral}>
             {formatKoreanDate(today)}
           </Text>
-          <DayScheduleList schedules={shown} />
+          {/* 완료 점을 앞에 — 채운 점 = 완료 · 빈 점 = 미완료. 회고 시작에서 오늘 무엇을
+              했고 무엇이 남았는지 한눈에 보이게 한다(요청 2026-08-25) */}
+          <DayScheduleList schedules={shown} showStatusDot />
         </Card>
-      ) : null}
+      ) : (
+        <ChatBubble>오늘은 따로 적어둔 일정이 없네요. 그래도 오늘 하루를 같이 돌아봐요.</ChatBubble>
+      )}
     </ChatScaffold>
   );
 }

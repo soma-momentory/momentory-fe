@@ -140,6 +140,30 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.getByLabelText("금요일 기록 없음")).toBeTruthy();
   });
 
+  it("칸을 누르면 그날 감정을 글자로 드러낸다 — 색만으로 안 보이던 하루를 확인한다", async () => {
+    const r = await openReport();
+
+    // 누르기 전엔 그날 감정이 글자로 떠 있지 않다
+    expect(r.queryByText("일요일 · 피곤함")).toBeNull();
+
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("일요일 피곤함"));
+    });
+    expect(r.getByText("일요일 · 피곤함")).toBeTruthy();
+
+    // 기록 없는 날은 솔직히 「기록 없음」으로 말한다
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("수요일 기록 없음"));
+    });
+    expect(r.getByText("수요일 · 기록 없음")).toBeTruthy();
+
+    // 같은 칸을 다시 누르면 접힌다
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("수요일 기록 없음"));
+    });
+    expect(r.queryByText("수요일 · 기록 없음")).toBeNull();
+  });
+
   it("요약 멘트를 두 줄로 가르되 문장을 고치지 않는다", async () => {
     const r = await openReport();
 

@@ -126,8 +126,19 @@ export default function DiaryDetail() {
           <ActionCardSection card={card} diaryDate={diary.date} readOnly />
         ) : null}
 
-        {/* 그날 일정 — **일정이 없는 날은 블록 자체를 숨긴다**(`app-flow.md` §2.3) */}
-        <DayScheduleList schedules={daySchedules} title="그날 일정" />
+        {/* 그날 일정 — 「이 일기의 행동 카드」와 **같은 제목 스타일**(label1/neutral, 왼쪽 살짝
+            들여). 단 목록은 **카드 안에 넣지 않는다**(요청 2026-08-25) — 제목 아래 그대로 줄만 선다.
+            일정이 없는 날은 블록 자체를 숨긴다(`app-flow.md` §2.3).
+            완료 점을 앞에 둔다 — 채운 점 = 완료 · 빈 점 = 미완료. */}
+        {daySchedules.length > 0 ? (
+          <View style={styles.section}>
+            <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>
+              그날 일정
+            </Text>
+            {/* 목록만 제목보다 조금 오른쪽으로 들여 종속으로 보이게(요청 2026-08-25) */}
+            <DayScheduleList schedules={daySchedules} showStatusDot inset={space.md} />
+          </View>
+        ) : null}
       </ScrollView>
 
       {/*
@@ -176,6 +187,9 @@ const styles = StyleSheet.create({
   meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm },
 
   diaryCard: { gap: space.md },
+  // 「그날 일정」 섹션 — `ActionCardSection` 과 같은 값(제목 gap · 왼쪽 들여쓰기)
+  section: { gap: space.md },
+  sectionLabel: { paddingLeft: space.xs },
   // 감정 줄 — 날짜 제목 오른쪽. 여러 개면 오른쪽으로 정렬해 접힌다
   emotions: {
     flexDirection: "row",

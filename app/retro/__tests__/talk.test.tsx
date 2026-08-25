@@ -360,7 +360,7 @@ describe("종료", () => {
     expect(useRetro.getState().diary?.diary).toBe("오늘의 일기.");
   });
 
-  it("안전 종료면 홈으로 나가는 길만 둔다", async () => {
+  it("어뷰징 종료면 홈으로 나가는 길만 둔다", async () => {
     mockStart.mockResolvedValue({
       ok: true,
       data: {
@@ -373,5 +373,50 @@ describe("종료", () => {
     await waitFor(() => expect(r.getByText("홈으로 돌아가기")).toBeTruthy());
     await fireEvent.press(r.getByText("홈으로 돌아가기"));
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
+  });
+});
+
+describe("위기 안내 후 이어가기", () => {
+  const holdReply = () =>
+    reply({
+      text: "지금 많이 힘드시죠. 잠시 멈추고 아래 도움을 받아보실 수 있어요.",
+      phase: "safety_hold",
+      done: false,
+      safetyLevel: "imminent",
+    });
+
+  it("안내 뒤엔 [홈으로 돌아가기] 와 [이어서 얘기하기] 를 함께 둔다 — 입력창은 아직 없다", async () => {
+    mockStart.mockResolvedValue({ ok: true, data: { sessionId: 7, reply: holdReply() } });
+    const r = await render(<RetroTalk />);
+
+    await waitFor(() => expect(r.getByText("홈으로 돌아가기")).toBeTruthy());
+    expect(r.getByText("이어서 얘기하기")).toBeTruthy();
+    // 아직 이어가기를 고르지 않았으니 입력창은 뜨지 않는다
+    expect(r.queryByLabelText("답변")).toBeNull();
+  });
+
+  it("[이어서 얘기하기] 를 고르면 입력창이 열리고, 보낸 발화가 다음 턴으로 이어진다", async () => {
+    mockStart.mockResolvedValue({ ok: true, data: { sessionId: 7, reply: holdReply() } });
+    mockTurn.mockResolvedValue({
+      ok: true,
+      data: reply({ text: "그 마음을 더 들려줄래요?", phase: "intro" }),
+    });
+    const r = await render(<RetroTalk />);
+
+    await waitFor(() => expect(r.getByText("이어서 얘기하기")).toBeTruthy());
+    await fireEvent.press(r.getByText("이어서 얘기하기"));
+
+    // 입력창이 열린다 — 나가기·이어가기 버튼은 사라진다
+    await waitFor(() => expect(r.getByLabelText("답변")).toBeTruthy());
+    expect(r.queryByText("이어서 얘기하기")).toBeNull();
+
+    await fireEvent.changeText(r.getByLabelText("답변"), "사실 오늘 발표를 망쳤어요.");
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("보내기"));
+    });
+
+    // 이어간 발화가 그대로 다음 턴으로 간다(서버가 멈추기 전 phase 에서 처리한다)
+    expect(mockTurn).toHaveBeenCalledWith(7, { content: "사실 오늘 발표를 망쳤어요." });
+    await waitFor(() => expect(r.getByText("그 마음을 더 들려줄래요?")).toBeTruthy());
   });
 });

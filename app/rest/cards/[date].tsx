@@ -72,11 +72,15 @@ export default function RestCardTrail() {
                 이 날 기록
               </Text>
               <View style={styles.log}>
-                <Icon
-                  name={card.done ? "circle-check" : "clock"}
-                  size={16}
-                  color={card.done ? status.positive : labelColor.assistive}
-                />
+                {/* 아이콘을 첫 줄(body2 22) 세로 가운데에 맞춘다 — (22-16)/2 = 3.
+                    row 는 flex-start 라, 느낀 점 둘째 줄이 열려도 아이콘은 첫 줄에 머문다 */}
+                <View style={styles.logIcon}>
+                  <Icon
+                    name={card.done ? "circle-check" : "clock"}
+                    size={16}
+                    color={card.done ? status.positive : labelColor.assistive}
+                  />
+                </View>
                 <View style={styles.logCopy}>
                   <Text variant="body2" color={labelColor.normal}>
                     {`${formatKoreanDateShort(card.createdAt.slice(0, 10))} · ${card.done ? "수행함" : "수행 안 함"}`}
@@ -103,12 +107,15 @@ export default function RestCardTrail() {
               ) : (
                 past.map(({ card: c, date: d }) => (
                   <View key={c.id} style={styles.log}>
-                    {/* 수행 여부는 아이콘과 **글자가 함께** 말한다 — 색만으로 두지 않는다 */}
-                    <Icon
-                      name={c.done ? "circle-check" : "clock"}
-                      size={16}
-                      color={c.done ? status.positive : labelColor.assistive}
-                    />
+                    {/* 수행 여부는 아이콘과 **글자가 함께** 말한다 — 색만으로 두지 않는다.
+                        아이콘은 첫 줄 세로 가운데(marginTop 3)에 맞춘다 */}
+                    <View style={styles.logIcon}>
+                      <Icon
+                        name={c.done ? "circle-check" : "clock"}
+                        size={16}
+                        color={c.done ? status.positive : labelColor.assistive}
+                      />
+                    </View>
                     <View style={styles.logCopy}>
                       <Text variant="body2" color={labelColor.normal}>
                         {`${formatKoreanDateShort(d)} · ${c.done ? "수행함" : "수행 안 함"}`}
@@ -149,5 +156,7 @@ const styles = StyleSheet.create({
     gap: space.sm,
     paddingHorizontal: space.xs,
   },
+  // 16px 아이콘을 body2(22) 첫 줄 세로 가운데에 세운다 — (22-16)/2 = 3
+  logIcon: { marginTop: 3 },
   logCopy: { flex: 1, gap: 2 },
 });
