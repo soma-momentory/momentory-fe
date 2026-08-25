@@ -51,7 +51,7 @@ import { Text } from "./Text";
  *   system uses」라고 적는다 → 48 × 43% = 20.64
  * - 카카오 — 「폰트는 30Pt 크기」(표준 90 버튼) + 「레이블 세로 길이 ≤ 컨테이너
  *   높이의 1/3」 → 48 ÷ 3 = 16
- * - 구글 — 「Google Sans Medium | **14/20**」으로 크기와 행간을 함께 못박는다
+ * - 구글 — 한국어 가이드가 「Roboto Medium | **14/20**」으로 크기와 행간을 지정한다
  *
  * ⚠ **셋을 한 크기로 맞추는 길은 없다.** 카카오 상한(높이의 37.8% — 한글 ink/em
  * 0.88 을 반영한 값)이 애플 요구(43%)보다 낮다. 둘 다 **높이에 대한 비율** 규칙이라
@@ -65,7 +65,7 @@ import { Text } from "./Text";
  * | | 서체 | 규격이 적는 말 |
  * | --- | --- | --- |
  * | 카카오 | **OS 시스템 서체** | 「폰트는 OS 별 기본 시스템 서체를 사용합니다」 |
- * | Google | **Google Sans Medium**(번들) | 「Font: Google Sans Medium | 14/20」 |
+ * | Google | **Roboto Medium**(번들) | 「Font: Roboto Medium | 14/20」 |
  * | Apple | **OS 시스템 서체** | 「Prefer the system font for the title」 |
  *
  * 카카오·애플은 `labelFamily` 를 **비워 둔다** — RN 에서 그것이 곧 시스템 서체다.
@@ -89,8 +89,8 @@ import { Text } from "./Text";
  * | **Medium 500** | **0.1090** | **±0%** |
  * | SemiBold 600 | 0.1282 | +18% |
  *
- * 그래서 500 이다. 구글 규격이 못박는 Google Sans **Medium** 도 같은 단이라 셋이 한
- * 굵기로 모인다. Google Sans는 정적 Medium TTF이고 `fontWeight: 500`도 함께
+ * 그래서 500 이다. 한국어 구글 규격이 지정하는 Roboto **Medium** 도 같은 단이라 셋이 한
+ * 굵기로 모인다. Roboto는 정적 Medium TTF이고 `fontWeight: 500`도 함께
  * 명시한다. 카카오 표준 버튼은 이보다 가볍지만(획/높이 0.0769) 이미지가 26px 라
  * 400 과 500 을 가릴 해상도가 아니다 — 확실한 것은 **600 이 아니라는 것**이다.
  *
@@ -99,8 +99,8 @@ import { Text } from "./Text";
  * **Android 8 이하(API < 28)는 500 을 400 으로 떨어뜨린다** — 한 단 얇아질 뿐
  * 깨지지 않는다.
  *
- * 서체는 구글만 규격을 따라 **Google Sans Medium** 이다(가이드라인이 서체를 이름으로
- * 지정하는 곳은 구글뿐이다). 한글은 Google Sans 에 글리프가 없어 OS 서체로 폴백하는데,
+ * 서체는 구글만 한국어 규격을 따라 **Roboto Medium** 이다(가이드라인이 서체를 이름으로
+ * 지정하는 곳은 구글뿐이다). 한글은 Roboto 에 글리프가 없어 OS 서체로 폴백하는데,
  * 구글이 배포하는 한국어 버튼도 같은 방식이다. 카카오는 「OS 기본 시스템 서체」를
  * 규정하지만 Pretendard 로 둔다 — 애플 줄과 서체가 갈리면 두 줄이 따로 논다.
  *
@@ -231,14 +231,13 @@ type Spec = {
 const APPLE_LABEL_SIZE = size.button.large * 0.43;
 
 /**
- * Google Sans Medium 정적 글꼴 — **구글 버튼 한 줄만** 쓴다
- * (`assets/fonts/GoogleSans-Medium.ttf`). 브랜딩 가이드의 Google Sans 다운로드가
- * 제공하는 정적 파일이며 내부 family와 typographic subfamily도 각각 Google Sans,
- * Medium이다. 이름이 비슷한 Google Sans Flex로 대신하지 않는다.
+ * Roboto Medium 정적 글꼴 — **구글 버튼 한 줄만** 쓴다
+ * (`assets/fonts/Roboto-Medium.ttf`). 한국어 브랜딩 가이드가 연결한 다운로드 묶음의
+ * 정적 파일이며 내부 family와 typographic subfamily도 각각 Roboto, Medium이다.
  * `fontFamily` 토큰에 올리지 않는 이유가 그것이다: 토큰은 「우리 서체」의 목록인데
  * 이건 구글 규격을 지키려고 들여온 남의 서체다. 다른 화면이 가져다 쓰면 안 된다.
  */
-const GOOGLE_SANS_MEDIUM = "GoogleSans-Medium";
+const ROBOTO_MEDIUM = "Roboto-Medium";
 
 const PROVIDERS: Record<SocialProvider, Spec> = {
   /**
@@ -272,9 +271,9 @@ const PROVIDERS: Record<SocialProvider, Spec> = {
       borderColor: social.google.border,
     },
     labelColor: social.google.label,
-    labelFamily: GOOGLE_SANS_MEDIUM,
+    labelFamily: ROBOTO_MEDIUM,
     labelWeight: "500",
-    // 14/20 — 가이드라인이 「Google Sans Medium | 14/20」으로 크기·행간을 함께 적는다
+    // 14/20 — 한국어 가이드라인이 「Roboto Medium | 14/20」으로 함께 적는다
     labelSize: 14,
     labelLineHeight: 20,
     gap: Platform.select({ ios: 12, default: 10 }),
