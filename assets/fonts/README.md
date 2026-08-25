@@ -91,16 +91,18 @@ SIL Open Font License 1.1 — 전문은 [`LICENSE.txt`](LICENSE.txt).
 
 ⚠ **우리 서체가 아니다 — 구글 로그인 버튼 한 줄에만 쓴다**(2026-08-25 ·
 `src/components/ds/SocialButton.tsx`). Google의 2026-07-07 브랜딩 가이드가 지정하는
-**Google Sans Medium 14/20**을 맞추기 위해 Google Fonts CSS API에 `opsz=18`,
-`weight=500`을 요청해 받은 공식 정적 TTF를 그대로 넣었다. 내부 이름은
-`Google Sans Flex Medium`, typographic subfamily는 `Medium`이다.
+**Google Sans Medium 14/20**을 맞추기 위해 브랜딩 가이드가 연결하는 Google Fonts
+다운로드 ZIP의 정적 TTF를 그대로 넣었다. 내부 family는 `Google Sans`, typographic
+subfamily는 `Medium`, OS/2 weight class는 500이다. `Google Sans Flex Medium`은 이름이
+비슷하지만 다른 패밀리이므로 쓰지 않는다.
 
 | 파일                       | weight | sha256                                                            |
 | -------------------------- | ------ | ----------------------------------------------------------------- |
-| `GoogleSans-Medium.ttf`    | 500    | `57d61bba609846324d21608a356efe817b02cfaf724dd6b1c42d35f6169f9e6a` |
+| `GoogleSans-Medium.ttf`    | 500    | `b12e6ff46a55a968f0169e384c02c23ba91c418e1ea1b07676ad383755c2b130` |
 
-출처: <https://fonts.google.com/specimen/Google+Sans> (2026-08-25). Google Fonts가
-배포한 원본이며 파일의 라이선스 메타데이터를 보존한다.
+출처: <https://fonts.google.com/specimen/Google+Sans> (2026-08-25)에서 받은
+`Google_Sans,Roboto.zip`. ZIP의 `Google_Sans/OFL.txt`도 `GoogleSans-OFL.txt`로 함께
+보관하고 파일의 라이선스 메타데이터를 보존한다.
 
 ---
 

@@ -41,13 +41,15 @@
 
 |         |                                                                                   |
 | ------- | --------------------------------------------------------------------------------- |
-| 받은 곳 | Google Fonts CSS API (`Google Sans Flex`, `opsz=18`, `weight=500`)                  |
+| 받은 곳 | 브랜딩 가이드의 Google Sans 링크 → Google Fonts 다운로드 ZIP                     |
 | 받은 날 | 2026-08-25                                                                        |
-| 내부 이름 | `Google Sans Flex Medium` / typographic subfamily `Medium`                       |
-| sha256  | `57d61bba609846324d21608a356efe817b02cfaf724dd6b1c42d35f6169f9e6a`                |
+| ZIP     | `Google_Sans,Roboto.zip` → `Google_Sans/static/GoogleSans-Medium.ttf`              |
+| 내부 이름 | family `Google Sans` / typographic subfamily `Medium`                           |
+| sha256  | `b12e6ff46a55a968f0169e384c02c23ba91c418e1ea1b07676ad383755c2b130`                |
 
 - Google 버튼 한 줄에서만 사용한다.
 - Google이 제공한 정적 500 TTF를 수정하거나 다시 인스턴싱하지 않는다.
+- `Google Sans Flex`는 다른 패밀리다. 파일 크기나 weight 숫자가 같아도 대체하지 않는다.
 - Google Fonts가 배포하는 원본이며, 앱에는 원본 파일의 라이선스 메타데이터가 포함된다.
 
 ## Apple 로고 — 파일이 아니라 `AppleMark.tsx` 안에 있다

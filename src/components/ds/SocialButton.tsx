@@ -227,8 +227,9 @@ const APPLE_LABEL_SIZE = size.button.large * 0.43;
 
 /**
  * Google Sans Medium 정적 글꼴 — **구글 버튼 한 줄만** 쓴다
- * (`assets/fonts/GoogleSans-Medium.ttf`). Google Fonts CSS API에 `font-weight: 500`을
- * 요청해 받은 파일이며 내부 typographic subfamily도 Medium이다.
+ * (`assets/fonts/GoogleSans-Medium.ttf`). 브랜딩 가이드의 Google Sans 다운로드가
+ * 제공하는 정적 파일이며 내부 family와 typographic subfamily도 각각 Google Sans,
+ * Medium이다. 이름이 비슷한 Google Sans Flex로 대신하지 않는다.
  * `fontFamily` 토큰에 올리지 않는 이유가 그것이다: 토큰은 「우리 서체」의 목록인데
  * 이건 구글 규격을 지키려고 들여온 남의 서체다. 다른 화면이 가져다 쓰면 안 된다.
  */
