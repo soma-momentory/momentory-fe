@@ -171,14 +171,13 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
     expect(flatten(getByRole("button").props.style).borderRadius).toBe(4);
   });
 
-  // DS 비활성 면(#DDE7E0)을 쓰면 브랜드 색이 사라져 어느 줄이 무엇이었는지 읽히지 않는다
-  it("비활성이어도 브랜드 면은 남고 흐려지기만 한다", async () => {
+  it("비활성이어도 브랜드 색과 opacity를 바꾸지 않는다", async () => {
     const { getByRole } = await render(
       <SocialButton provider="kakao" label="계속하기" disabled onPress={() => {}} />,
     );
     const style = flatten(getByRole("button").props.style);
     expect(style.backgroundColor).toBe(social.kakao.background);
-    expect(style.opacity).toBeLessThan(1);
+    expect(style.opacity).toBeUndefined();
   });
 
   it("비활성이면 눌리지 않는다", async () => {

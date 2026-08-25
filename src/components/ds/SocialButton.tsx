@@ -3,14 +3,13 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  View,
   type PressableProps,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
 
-import { overlay, radius, size, social, space } from "@/design/ds";
+import { radius, size, social, space } from "@/design/ds";
 
 import { Icon } from "./icons/Icon";
 import { GoogleMark, MARK_HEIGHT as GOOGLE_MARK } from "./icons/GoogleMark";
@@ -94,17 +93,11 @@ import { Text } from "./Text";
  * 구글이 배포하는 한국어 버튼도 같은 방식이다. 카카오는 「OS 기본 시스템 서체」를
  * 규정하지만 Pretendard 로 둔다 — 애플 줄과 서체가 갈리면 두 줄이 따로 논다.
  *
- * ## 누름은 스크림이다
+ * ## 상호작용 중에도 브랜드 아트워크를 바꾸지 않는다
  *
- * 시안은 `filter: brightness(0.94)`(카카오)·배경 교체(Google·Apple)로 눌림을 그리는데
- * RN 에는 `filter` 가 없다. `Button` 과 같은 **스크림 오버레이**로 통일한다 —
- * 어두워진다는 결과가 같고, 브랜드 면 색 자체는 그대로 남는다(§6 의 방식).
- *
- * ## 비활성
- *
- * DS 버튼의 비활성 면(`interaction.disabled`)을 쓰지 않는다 — 그러면 브랜드 색이
- * 사라져 어느 줄이 무엇이었는지 읽히지 않는다. **면은 그대로 두고 흐리게만** 한다
- * (`momentory.css` `.off{opacity:.36}` 와 같은 방식). 경고 아이콘·문구는 붙이지 않는다.
+ * 공통 스크림이나 opacity를 적용하면 Google G·Kakao 지정 색·Apple 공식 PNG까지
+ * 변색된다. 따라서 눌림과 로그인 진행 중에도 시각 자산은 정상 상태 그대로 두고,
+ * `disabled`와 `accessibilityState.disabled`로 중복 입력만 차단한다.
  */
 export type SocialProvider = "kakao" | "google" | "apple";
 
@@ -145,50 +138,36 @@ export function SocialButton({
         styles.base,
         v.container,
         { gap: v.gap, paddingHorizontal: v.paddingHorizontal, borderRadius: v.borderRadius },
-        disabled ? styles.disabled : null,
         style,
       ]}
     >
-      {({ pressed }) => (
-        <>
-          {provider === "apple" ? (
-            <Image
-              testID="apple-official-button-artwork"
-              source={require("../../../assets/brand/appleid_button.png")}
-              resizeMode="stretch"
-              style={styles.appleButtonArtwork}
-              accessible={false}
-            />
-          ) : null}
-          {provider === "google" ? <GoogleMark size={GOOGLE_MARK} /> : null}
-          {/* 카카오만 심볼이 라벨보다 진하다 — 가이드가 심볼 100% · 레이블 85% 다 */}
-          {provider === "kakao" ? (
-            <Icon name="logo-kakao" size={size.icon.lg} color={social.kakao.symbol} />
-          ) : null}
-          {provider !== "apple" ? (
-            <Text
-              style={[
-                {
-                  fontFamily: v.labelFamily,
-                  fontWeight: v.labelWeight,
-                  fontSize: v.labelSize,
-                  lineHeight: v.labelLineHeight,
-                  color: v.labelColor,
-                },
-              ]}
-            >
-              {label}
-            </Text>
-          ) : null}
-
-          {pressed && !disabled ? (
-            <View
-              pointerEvents="none"
-              style={[StyleSheet.absoluteFill, styles.scrim, { borderRadius: v.borderRadius }]}
-            />
-          ) : null}
-        </>
-      )}
+      {provider === "apple" ? (
+        <Image
+          testID="apple-official-button-artwork"
+          source={require("../../../assets/brand/appleid_button.png")}
+          resizeMode="stretch"
+          style={styles.appleButtonArtwork}
+          accessible={false}
+        />
+      ) : null}
+      {provider === "google" ? <GoogleMark size={GOOGLE_MARK} /> : null}
+      {/* 카카오만 심볼이 라벨보다 진하다 — 가이드가 심볼 100% · 레이블 85% 다 */}
+      {provider === "kakao" ? (
+        <Icon name="logo-kakao" size={size.icon.lg} color={social.kakao.symbol} />
+      ) : null}
+      {provider !== "apple" ? (
+        <Text
+          style={{
+            fontFamily: v.labelFamily,
+            fontWeight: v.labelWeight,
+            fontSize: v.labelSize,
+            lineHeight: v.labelLineHeight,
+            color: v.labelColor,
+          }}
+        >
+          {label}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -312,7 +291,4 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  // 면은 브랜드 색 그대로 두고 흐리게만 — 어느 줄이 무엇인지는 남는다
-  disabled: { opacity: 0.4 },
-  scrim: { backgroundColor: overlay.pressNormal },
 });
