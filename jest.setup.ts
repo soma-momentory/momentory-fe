@@ -54,3 +54,41 @@ jest.mock("expo-secure-store", () => {
     }),
   };
 });
+
+// 구글 로그인 SDK 도 네이티브다 — **다른 것들과 달리 import 하는 순간 터진다.**
+// `TurboModuleRegistry.getEnforcing` 을 모듈 최상단에서 부르기 때문에, 목이 없으면
+// `auth.ts` 를 스치기만 해도 그 파일을 import 한 스위트 전부가 「suite failed to
+// run」이 된다(카카오는 그 시점에 네이티브를 만지지 않아 테스트 파일에서 목을 둔다).
+//
+// 그래서 여기서 **패키지 전체**를 대신한다. 라이브러리가 주는 목
+// (`google-signin/jest/build/jest/setup.js`)을 쓰지 않는 것은, 그것이 라이브러리
+// 안쪽 상대 경로를 mock 해서 **버전이 오르면 조용히 빗나가기** 때문이다.
+//
+// 기본값은 **성공**이다 — 대부분의 테스트는 구글을 신경 쓰지 않는데, 기본이
+// 실패면 관계없는 테스트가 함께 깨진다(expo-notifications 와 같은 판단).
+// 구글을 검사하는 테스트가 각자 이 목을 바꿔 쓴다.
+jest.mock("@react-native-google-signin/google-signin", () => {
+  const statusCodes = {
+    SIGN_IN_CANCELLED: "SIGN_IN_CANCELLED",
+    IN_PROGRESS: "IN_PROGRESS",
+    PLAY_SERVICES_NOT_AVAILABLE: "PLAY_SERVICES_NOT_AVAILABLE",
+    SIGN_IN_REQUIRED: "SIGN_IN_REQUIRED",
+    NULL_PRESENTER: "NULL_PRESENTER",
+  };
+  return {
+    __esModule: true,
+    statusCodes,
+    // 라이브러리의 것과 같은 판정이다 — `code` 를 든 객체인가
+    isErrorWithCode: (error: unknown) =>
+      typeof error === "object" && error !== null && "code" in error,
+    GoogleSignin: {
+      configure: jest.fn(),
+      hasPlayServices: jest.fn(() => Promise.resolve(true)),
+      signIn: jest.fn(() =>
+        Promise.resolve({ type: "success", data: { idToken: "google-id-token" } }),
+      ),
+      signOut: jest.fn(() => Promise.resolve(null)),
+      revokeAccess: jest.fn(() => Promise.resolve(null)),
+    },
+  };
+});

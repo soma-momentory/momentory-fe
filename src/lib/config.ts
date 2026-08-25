@@ -15,6 +15,8 @@ import Constants from "expo-constants";
 type Extra = {
   apiBaseUrl?: unknown;
   kakaoAppKey?: unknown;
+  googleIosClientId?: unknown;
+  googleWebClientId?: unknown;
 };
 
 const readExtra = (): Extra => (Constants.expoConfig?.extra ?? {}) as Extra;
@@ -42,3 +44,21 @@ export const getApiBaseUrl = (): string =>
  */
 export const getKakaoAppKey = (): string =>
   asString(readExtra().kakaoAppKey) || asString(process.env.EXPO_PUBLIC_KAKAO_APP_KEY);
+
+/**
+ * 구글 OAuth 클라이언트 ID 둘. **카카오 키와 달리 런타임에 실제로 쓰인다** —
+ * SDK 를 `configure()` 할 때 넘겨야 하는 값이라 빌드 때 네이티브에 박히지 않는다
+ * (`googleSdk.ts`).
+ *
+ * ⚠ **웹 클라이언트 ID 가 안드로이드에서 결정적이다.** 그것이 `serverClientId`
+ * 로 구글에 가고, 서버가 검증할 ID token 의 `aud` 가 된다 — 비면 Android 는
+ * ID token 을 **아예 받지 못한다**(로그인 시트는 뜬다).
+ *
+ * 둘 다 **공개 식별자**다(앱 바이너리에 그대로 있다). 그래도 로그로 찍지 않는 것은
+ * 카카오 키와 같은 습관이다(`docs/CONTRIBUTING.md` 「값을 다루는 세 등급」).
+ */
+export const getGoogleWebClientId = (): string =>
+  asString(readExtra().googleWebClientId) || asString(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+
+export const getGoogleIosClientId = (): string =>
+  asString(readExtra().googleIosClientId) || asString(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID);

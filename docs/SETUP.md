@@ -303,11 +303,11 @@ keytool -exportcert -alias androiddebugkey -keystore "$ks" -storepass android \
 
 ### 등록 체크리스트
 
-| 공급자     | 해야 할 것                                                                                           | 얻는 값                                                  | 비고                                                          |
-| ---------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------- |
-| **카카오** | 앱 등록 → 플랫폼에 패키지명 + 키 해시 → 카카오 로그인 ON → 동의항목 설정                             | 네이티브 앱 키 → `EXPO_PUBLIC_KAKAO_APP_KEY`             | 당일·무료                                                     |
-| **구글**   | Cloud Console OAuth 클라이언트 — Android(패키지명 + SHA-1) · iOS(번들 ID) · **Web**                  | Web/iOS 클라이언트 ID → `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | 당일·무료. `idToken` 검증에 **Web 클라이언트 ID 가 필요**하다 |
-| **애플**   | Developer Program 가입 → **App ID 등록**(Explicit) → 그 App ID 에 Sign In with Apple 체크 → Key 발급 | `.p8` · Key ID · Team ID → **백엔드로**                  | **$99/년 · 심사 1~2일**. App ID 는 2026-08-24 등록            |
+| 공급자     | 해야 할 것                                                                                                              | 얻는 값                                                  | 비고                                                          |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------- |
+| **카카오** | 앱 등록 → 플랫폼에 패키지명 + 키 해시 → 카카오 로그인 ON → 동의항목 설정                                                | 네이티브 앱 키 → `EXPO_PUBLIC_KAKAO_APP_KEY`             | 당일·무료                                                     |
+| **구글**   | Cloud Console OAuth 클라이언트 — Android(패키지명 + SHA-1) · iOS(번들 ID) · **Web** → **동의 화면을 프로덕션으로 게시** | Web/iOS 클라이언트 ID → `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | 당일·무료. ✅ **연결됨 2026-08-25** — 아래 「구글 콘솔에」 절 |
+| **애플**   | Developer Program 가입 → **App ID 등록**(Explicit) → 그 App ID 에 Sign In with Apple 체크 → Key 발급                    | `.p8` · Key ID · Team ID → **백엔드로**                  | **$99/년 · 심사 1~2일**. App ID 는 2026-08-24 등록            |
 
 **애플은 지금 미룰 수 있다.** iOS 전용이고 Android 빌드에는 필요 없다.
 다만 App Store 심사 규정(4.8)상 다른 소셜 로그인을 제공하는 iOS 앱은 Sign in with Apple 이
@@ -396,6 +396,62 @@ App ID 를 만들 때 **입력 칸이 둘이고 규칙이 정반대다** — 여
   다시 넣을 것이 없다. Android Studio 로 직접 빌드하는 사람만 자기 값을 더한다.
 - **release 키 해시는 아직 없다** — EAS 를 붙인 뒤 추가한다(위 「지문」 절 ⚠).
   스토어 빌드 전에 반드시 닫아야 하는 항목이다.
+
+### 구글 콘솔에 정확히 무엇을 넣는가 (2026-08-25 · 구글 로그인 연결)
+
+[Google Cloud Console](https://console.cloud.google.com) → **API 및 서비스 → 사용자 인증 정보**.
+**클라이언트를 셋 만든다** — 하나로 되지 않는다.
+
+| 클라이언트 종류 | 넣는 값                                 | 쓰이는 곳                                             |
+| --------------- | --------------------------------------- | ----------------------------------------------------- |
+| **웹**          | (없음)                                  | **서버 검증의 중심** · Android 의 `serverClientId`    |
+| **Android**     | 패키지명 `kr.momentory.app` + **SHA-1** | 구글이 앱을 알아보는 근거 — 앱은 이 ID 를 들지 않는다 |
+| **iOS**         | 번들 ID `kr.momentory.app`              | `iosClientId` + 역순 스킴                             |
+
+받은 값이 가는 자리:
+
+```
+웹 클라이언트 ID    → .env EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID  +  BE GOOGLE_ALLOWED_AUDIENCES
+iOS 클라이언트 ID   → .env EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID  +  BE GOOGLE_ALLOWED_AUDIENCES
+Android 클라이언트 ID →                     (앱은 안 든다)      BE GOOGLE_ALLOWED_AUDIENCES
+```
+
+- ⚠ **웹 클라이언트 ID 가 Android 에서도 필요하다.** 그것이 `serverClientId` 로 가서
+  **ID token 의 `aud`** 가 된다 — 비어 있으면 로그인 시트는 뜨는데 **토큰이 오지 않는다.**
+  이름 때문에 「웹은 우리와 무관」으로 읽히기 쉬운 자리다.
+- **역순 클라이언트 ID(`com.googleusercontent.apps.…`)를 `.env` 에 두지 않는다** —
+  iOS 클라이언트 ID 에서 `app.config.ts` 가 만들어 플러그인에 넘긴다. 손으로 적으면
+  한쪽만 고쳐지고, 그 어긋남은 **시트는 뜨는데 앱으로 돌아오지 않는** 모양으로만 드러난다.
+- **Android 클라이언트 ID 를 앱에 넣지 않는다** — 라이브러리가 `androidClientId` 를 받으면
+  개발 빌드에서 오류를 찍는다. 구글은 Android 앱을 **패키지명 + 지문**으로 알아본다.
+- 서버는 셋을 **전부 받아들인다**(`GOOGLE_ALLOWED_AUDIENCES` 는 목록이다) — 플랫폼마다
+  `aud` 에 앉는 값이 다르기 때문이다. 값은 `application.yml` 에 기본값으로 있어서
+  **환경변수 없이도 뜬다**(공개 식별자 · 애플 `client-id` 와 같은 등급).
+
+#### ⛔ 출시 전에 반드시 닫아야 하는 둘
+
+1. **OAuth 동의 화면을 「프로덕션」으로 게시한다.** 「테스트」 상태로 두면 테스트
+   사용자로 등록한 계정(최대 100개)만 로그인된다 — **스토어에 올려도 대부분의
+   사용자가 로그인하지 못한다.** 우리 스코프는 `openid`·`email`·`profile`(비민감)이라
+   **구글 심사 없이 즉시 게시된다.**
+   ⚠ 단 **커스텀 로고를 올리면 브랜드 검증 심사**가 붙어 수일이 걸린다 — 급하면
+   로고 없이 먼저 게시한다. 개인정보 처리방침·서비스 약관 URL 은 필수다
+   (`src/lib/links.ts` 가 여는 그 문서).
+2. **릴리스 SHA-1 과 Play 앱 서명 SHA-1 을 Android 클라이언트로 추가한다.**
+   지문 하나당 클라이언트 하나이므로 **Android 클라이언트가 셋이 된다**
+   (debug · release · Play 앱 서명). 카카오 키 해시와 같은 함정이고, 빠지면
+   **스토어 설치본에서만** 로그인이 실패한다(위 「지문」 절 ⚠).
+   서버는 `GOOGLE_CLIENT_ID_MISMATCH` 로 답하고 앱은 「Google 로그인 정보가
+   만료됐어요」를 띄운다 — 실기기에서 이 조합이 보이면 **구글이 거절한 것이 아니라
+   지문이 빠진 것**이다(`googleAuthApi.ts` 의 `google_client_mismatch`).
+
+> **네이티브라 dev client 재빌드가 필요하다** — `npx expo prebuild` → `npm run android`
+> (iOS 는 `npm run ios`). `@react-native-google-signin/google-signin` 이 Android 는
+> Credential Manager 를, iOS 는 URL 스킴을 건드린다.
+>
+> **개발 통로가 옮겨 갔다.** Google 줄은 SDK 가 없는 동안 `signInDev` 로 가짜 세션을
+> 만드는 자리였는데, 이제 실제 로그인이다. 로컬에서 세션이 필요하면
+> **로그인 화면의 워드마크(「모멘토리」)를 길게 누른다** — 개발 빌드에서만 열린다.
 
 ### API 서버 — 지금은 평문 HTTP 다 (⚠ 개발 전용)
 

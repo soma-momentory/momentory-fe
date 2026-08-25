@@ -6,6 +6,8 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
  */
 const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? "";
 const kakaoAppKey = process.env.EXPO_PUBLIC_KAKAO_APP_KEY ?? "";
+const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";
+const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
 
 /**
  * API 서버가 **평문 HTTP** 일 때의 호스트. HTTPS·미설정이면 빈 문자열이다.
@@ -35,6 +37,43 @@ type PluginEntry = NonNullable<ExpoConfig["plugins"]>[number];
  */
 const kakaoPlugin: PluginEntry[] = kakaoAppKey
   ? [["@react-native-seoul/kakao-login", { kakaoAppKey }]]
+  : [];
+
+/**
+ * 구글이 iOS 앱에 돌아올 때 쓰는 URL 스킴 — **iOS 클라이언트 ID 를 뒤집은 값**이다.
+ *
+ * `.env` 에 따로 두지 않고 여기서 만든다. 손으로 적으면 클라이언트 ID 를 바꿀 때
+ * 한쪽만 고쳐지고, 그 어긋남은 **로그인 시트는 뜨는데 앱으로 돌아오지 않는**
+ * 모양으로만 드러난다 — 원인을 찾기 어려운 실패다.
+ *
+ * ```
+ * 719283265966-s6jo83….apps.googleusercontent.com
+ *   → com.googleusercontent.apps.719283265966-s6jo83…
+ * ```
+ */
+const reversedIosClientId = (clientId: string): string => {
+  const suffix = ".apps.googleusercontent.com";
+  if (!clientId.endsWith(suffix)) return "";
+  return `com.googleusercontent.apps.${clientId.slice(0, -suffix.length)}`;
+};
+
+/**
+ * 구글 로그인. 카카오와 **같은 이유로 조건부**다 — 플러그인이 역순 클라이언트 ID 를
+ * Info.plist 의 URL 스킴에 넣는데, 값이 없으면 플러그인이 아예 던진다
+ * (`iosUrlScheme` 를 필수로 검사한다). `.env` 가 비면 통째로 뺀다: 빌드는 되고
+ * 구글 로그인만 안 된다.
+ *
+ * ⚠ **Android 에는 이 플러그인이 손대는 것이 없다.** 구글은 Android 앱을
+ * 패키지명 + 서명 지문으로 알아보므로 매니페스트에 넣을 키가 없다 — 앱이 드는
+ * 값은 `extra` 의 웹 클라이언트 ID 하나뿐이다(`googleSdk.ts`).
+ */
+const googlePlugin: PluginEntry[] = reversedIosClientId(googleIosClientId)
+  ? [
+      [
+        "@react-native-google-signin/google-signin",
+        { iosUrlScheme: reversedIosClientId(googleIosClientId) },
+      ],
+    ]
   : [];
 
 /**
@@ -155,6 +194,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // docs/SETUP.md 「애플 콘솔에서 정확히 무엇을 하는가」에 있다.
     "expo-apple-authentication",
     ...kakaoPlugin,
+    ...googlePlugin,
     ...insecureApiPlugin,
     // 스플래시도 **같은 로고 하나**다 — 런처 아이콘과 마찬가지로
     // `assets/logo.jpeg` 에서 배경을 지워 뽑았다.
@@ -196,7 +236,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     apiBaseUrl,
     kakaoAppKey,
-    googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "",
-    googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "",
+    googleIosClientId,
+    googleWebClientId,
   },
 });
