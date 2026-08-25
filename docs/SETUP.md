@@ -453,25 +453,29 @@ Android 클라이언트 ID →                     (앱은 안 든다)      BE G
 > 만드는 자리였는데, 이제 실제 로그인이다. 로컬에서 세션이 필요하면
 > **로그인 화면의 워드마크(「모멘토리」)를 길게 누른다** — 개발 빌드에서만 열린다.
 
-### API 서버 — 지금은 평문 HTTP 다 (⚠ 개발 전용)
+### API 서버 — ✅ HTTPS 다 (2026-08-25)
 
-개발 서버에 아직 HTTPS 가 없다. Android 9+ 와 iOS ATS 는 평문을 기본으로 막으므로
-[`plugins/withInsecureDevApi.ts`](../plugins/withInsecureDevApi.ts) 가 예외를 연다 —
-**`EXPO_PUBLIC_API_BASE_URL` 이 `http://` 일 때만** 동작하고, `https://` 로 바뀌면
-아무것도 하지 않는다. **HTTPS 전환은 `.env` 한 줄 + 재빌드가 전부다.**
+```
+EXPO_PUBLIC_API_BASE_URL=https://api.momentory.co.kr
+```
 
-- **Android** — 그 호스트 하나만 평문을 허용한다(`network_security_config.xml`).
-  나머지 평문 요청은 계속 막힌다.
-- **iOS** — ATS 의 예외 도메인은 **IP 주소를 받지 않는다**(Apple 제약). 그래서 주소가
-  IP 인 동안은 `NSAllowsArbitraryLoads`(앱 전체) 말고 좁힐 방법이 없다. 서버에 도메인이
-  붙으면 자동으로 좁은 예외로 내려간다.
-- ⛔ **운영 배포에는 이 서버를 쓰지 않는다.** 스토어 빌드의 주소는 HTTPS 여야 하고,
-  그러면 위 예외는 생성물에 아예 들어가지 않는다.
+ACM 인증서(Amazon RSA 2048 M04 · 2027-03-09 만료). **IP 가 아니라 도메인**이라
+iOS ATS 문제도 함께 사라졌다 — 예고대로 **`.env` 한 줄**로 끝났다
+([`DISCUSSION.md`](DISCUSSION.md) §1-6 · 2026-08-25 닫힘).
+
+- **평문 예외는 스스로 빠진다.** [`plugins/withInsecureDevApi.ts`](../plugins/withInsecureDevApi.ts)
+  는 `EXPO_PUBLIC_API_BASE_URL` 이 **`http://` 일 때만** 목록에 들어간다 —
+  `https://` 인 지금은 플러그인 자체가 없다(`npx expo config --type public --json` 으로 확인).
+- ⚠ **재빌드 전까지는 옛 예외가 네이티브에 남아 있다.** `android/.../network_security_config.xml`
+  과 iOS `NSExceptionDomains` 에 옛 ALB 주소가 그대로다 — **`npx expo prebuild` 를
+  다시 해야 지워진다.** 생성물이라 손으로 고치지 않는다.
 - 주소·앱 키를 바꾸면 네이티브 설정이 바뀐다 — `npm run android` 로 **다시 빌드**해야 한다.
+- **로컬 BE 에 붙을 때는 여전히 평문이다** — `.env` 를 `http://localhost:8080` 으로 바꾸면
+  플러그인이 되살아나 그 호스트 하나에만 예외를 연다(실기기는 `adb reverse` 를 먼저 건다).
 
-> **서버 쪽 사실**(BE 저장소 대조 · 2026-08-21) — 컨테이너는 **8080 평문**으로 듣는다
-> (`ecs-task-definition.json`). TLS 를 앞단(ALB 등)에서 끊는지는 BE 저장소에 안 보이므로
-> **HTTPS 여부는 BE 에 물어야 안다.**
+> **서버 쪽 사실**(BE 저장소 대조 · 2026-08-21 · HTTPS 갱신 2026-08-25) — 컨테이너는
+> **8080 평문**으로 듣는다(`ecs-task-definition.json`). ✅ **TLS 는 앞단(ALB)에서 끊는다** —
+> 앱이 보는 것은 HTTPS 이고 컨테이너 설정은 그대로다.
 >
 > 로컬로 띄운 서버에 붙일 때 알아 두면 편한 것:
 >
