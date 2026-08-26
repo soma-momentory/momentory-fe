@@ -287,19 +287,10 @@ keytool -exportcert -alias androiddebugkey -keystore "$ks" -storepass android \
 
 </details>
 
-> ⚠ **출시용(release) 지문은 이것과 다르고, 아직 존재하지 않는다.**
-> `android/app/build.gradle` 의 release 는 RN 템플릿 기본값 그대로 **debug 키를
-> 가리키고**, 서명 키는 EAS 를 붙일 때 생긴다(`eas.json` 이 아직 없다). 그때
-> `eas credentials` 로 릴리스 SHA-1 을 확인해 콘솔에 **따로 추가**한다.
-> 카카오가 받는 것은 base64 라 hex 를 바꿔 넣는다:
->
-> ```bash
-> echo <콜론을 뺀 SHA-1 hex> | xxd -r -p | openssl base64
-> ```
->
-> **Play 앱 서명을 쓰면 하나 더다** — 구글이 앱을 자기 키로 다시 서명하므로
-> Play Console 의 **앱 서명 인증서 SHA-1** 도 같은 방식으로 등록한다.
-> 이걸 빼먹으면 개발 중엔 되던 로그인이 **스토어 설치본에서만** 실패한다.
+> ✅ **출시용 지문이 생겼다 (2026-08-26).** EAS 는 쓰지 않는다 — 로컬 키스토어로
+> 서명하고, 그 설정은 `plugins/withReleaseSigning.ts` 가 넣는다.
+> **지문은 셋이고 각각 콘솔 등록이 따로 필요하다** — §8 「Android 출시」의 표를 본다.
+> 빼먹으면 개발 중엔 되던 로그인이 **그 키로 서명된 빌드에서만** 실패한다.
 
 ### 등록 체크리스트
 
@@ -394,8 +385,8 @@ App ID 를 만들 때 **입력 칸이 둘이고 규칙이 정반대다** — 여
 - 키 해시가 빠지면 로그인은 `AUTHORIZATION_FAILED: invalid android_key_hash` 로 실패한다.
   **`npm run android` 경로는 위 공용 값 하나로 팀 전원이 덮인다** — 팀원이 늘어도
   다시 넣을 것이 없다. Android Studio 로 직접 빌드하는 사람만 자기 값을 더한다.
-- **release 키 해시는 아직 없다** — EAS 를 붙인 뒤 추가한다(위 「지문」 절 ⚠).
-  스토어 빌드 전에 반드시 닫아야 하는 항목이다.
+- ✅ **release 키 해시 둘도 등록됐다 (2026-08-26)** — 업로드 키와 Play 앱 서명 키.
+  카카오는 키 해시를 여러 줄 받으므로 셋을 한 칸에 줄바꿈으로 넣는다. 값은 §8 표.
 
 ### 구글 콘솔에 정확히 무엇을 넣는가 (2026-08-25 · 구글 로그인 연결)
 
@@ -516,3 +507,134 @@ VS Code 기준 권장 확장:
   "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
 }
 ```
+
+---
+
+## 8. Android 출시 (릴리스 빌드 · Play Console)
+
+2026-08-26 에 처음 올리면서 정리한 절차다. **EAS 는 쓰지 않는다** — 로컬 키스토어로
+서명하고 `./gradlew` 로 AAB 를 만든다.
+
+### 준비물 — 이 기기에만 있고 저장소에는 없는 것
+
+| 무엇                   | 어디                                                   | 왜 저장소 밖인가                                                 |
+| ---------------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
+| 업로드 키스토어        | `~/keys/momentory-release.keystore`                    | 비밀이고, `/android` 안에 두면 `expo prebuild --clean` 이 지운다 |
+| 키스토어 비밀번호·별칭 | `~/.gradle/gradle.properties` 의 `MOMENTORY_RELEASE_*` | Gradle 이 사용자 홈에서 읽는다. 저장소는 **이름만 참조**한다     |
+
+```properties
+# ~/.gradle/gradle.properties
+MOMENTORY_RELEASE_STORE_FILE=/Users/<나>/keys/momentory-release.keystore
+MOMENTORY_RELEASE_STORE_PASSWORD=…
+MOMENTORY_RELEASE_KEY_ALIAS=momentory
+MOMENTORY_RELEASE_KEY_PASSWORD=…
+```
+
+⚠ **업로드 키를 잃으면 같은 앱을 갱신할 수 없다.** Play 앱 서명을 쓰므로 업로드 키
+재설정을 신청할 수는 있지만 며칠이 걸린다. 키스토어는 따로 백업한다.
+
+값이 없는 기기에서도 프로젝트는 **구성된다** — `withReleaseSigning` 이 `hasProperty`
+로 감싸고, 없으면 debug 키로 떨어지면서 빌드 로그에 경고를 찍는다. 조용히 떨어지면
+Play 가 「디버그 모드로 서명됨」으로 거절할 때에야 알게 된다.
+
+### 빌드
+
+```bash
+npx expo prebuild -p android              # /android 를 다시 만든다
+echo "sdk.dir=$HOME/Library/Android/sdk" > android/local.properties
+cd android
+JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home \
+  ./gradlew :app:bundleRelease            # → app/build/outputs/bundle/release/app-release.aab
+```
+
+**막히는 자리 둘. 둘 다 prebuild 가 원인이다.**
+
+- **`SDK location not found`** — `android/local.properties` 는 생성물이라 prebuild 가
+  지운다. `npm run android` 는 다시 만들어 주지만 **`./gradlew` 를 직접 부르면 안 만든다.**
+- **`configureCMakeRelWithDebInfo … FAILED`** — 기본 JDK 가 25 면 AGP 가 지원하지
+  않아 prefab 단계에서 깨진다. 오류 문구가 JVM 경고문("A restricted method in
+  java.lang.System has been called")이라 원인이 안 보인다. **JDK 21 로 빌드한다.**
+
+올리기 전에 서명을 확인한다. `CN=Android Debug` 가 보이면 잘못된 것이다:
+
+```bash
+keytool -J-Duser.language=en -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab
+```
+
+> `-J-Duser.language=en` 은 장식이 아니다 — Temurin 25 + 한국어 로캘에서
+> `keytool -list -v` 가 `IllegalFormatConversionException` 으로 죽는다(JDK 버그).
+
+### versionCode
+
+[`app.config.ts`](../app.config.ts) 의 `android.versionCode` 를 **업로드마다 1 씩** 올린다.
+Play 는 같은 값을 두 번 받지 않고, 심사 반려 뒤 재업로드도 포함이다.
+`android/app/build.gradle` 에서 올리면 다음 prebuild 에 1 로 되돌아간다.
+
+### 지문 셋 — 하나라도 빠지면 그 빌드에서만 로그인이 실패한다
+
+Android 는 **패키지명 + 서명 지문**으로 앱을 식별한다. 서명 키가 셋이므로 등록도 셋이다.
+
+| 키               | 언제 쓰이나        | SHA-1                                                         | 카카오 키 해시                 | 구글 클라이언트                      |
+| ---------------- | ------------------ | ------------------------------------------------------------- | ------------------------------ | ------------------------------------ |
+| debug            | `npm run android`  | `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25` | `Xo8WBi6jzSxKDVR4drqm84yr9iU=` | `…-sbcn188a2mhoqv1f0pt54s6dnjde6of1` |
+| 업로드 키        | AAB 직접 설치·검증 | `32:78:DA:5C:7A:89:EA:B6:CA:45:E0:12:7D:85:EA:73:C2:CC:23:8E` | `MnjaXHqJ6rbKReASfYXqc8LMI44=` | `…-8ali2jjss29dqkrkfp8ajps4co83mars` |
+| **Play 앱 서명** | **스토어 설치본**  | `BB:83:37:16:DE:82:71:9E:10:B7:1C:11:D6:BC:E5:0F:2D:C3:03:86` | `u4M3Ft6CcZ4QtxwR1rzlDy3DA4Y=` | `…-56os4edgbpkar5dh3p1j7l7kv4imv3v6` |
+
+- **카카오** — 플랫폼 › Android › 키 해시 한 칸에 셋을 줄바꿈으로 넣는다
+- **구글** — 지문 하나당 Android 클라이언트 하나다. **클라이언트 ID 는 앱에 넣지 않는다**
+  (`androidClientId` 를 받으면 라이브러리가 오류를 낸다). 앱이 드는 것은 web client ID 하나뿐
+- **서버** — `momentory-be` 의 `allowed-audiences` 에 **Android 클라이언트 ID 도 넣는다.**
+  구글 ID token 의 `azp` 에 그 값이 앉고 서버가 `aud` 와 함께 대조한다
+  (`GoogleIdTokenVerifier.requireOurClient`). **새 지문을 만들면 여기도 늘린다.**
+
+> **Play 앱 서명 SHA-1 은 Play Console 화면에서 눈으로 옮기지 말 것.** 「앱 서명 키」
+> 화면에는 **「양자 내성 암호화 키」 지문이 나란히** 있고, 그걸 복사하면 카카오·구글이
+> **동시에** 막힌다(2026-08-26 에 실제로 그랬다). 확실한 방법은 스토어 설치본에서
+> 직접 뽑는 것이다:
+>
+> ```bash
+> adb shell pm path kr.momentory.app                    # base.apk 경로
+> adb pull <base.apk 경로> /tmp/store-base.apk
+> $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs /tmp/store-base.apk
+> ```
+>
+> hex → 카카오 키 해시: `echo <콜론 뺀 hex> | xxd -r -p | openssl base64`
+
+### 릴리스 빌드를 기기에서 직접 검증하기
+
+Play 반영을 기다리지 않고 로그인 경로를 확인할 수 있다. **업로드 키** 지문으로 도는 검증이라
+Play 앱 서명 경로는 여전히 스토어 설치본으로 확인해야 한다.
+
+```bash
+./gradlew :app:assembleRelease   # JAVA_HOME 은 위와 같다
+adb uninstall kr.momentory.app   # debug 빌드와 서명이 달라 덮어쓰기가 안 된다
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+릴리스 빌드는 실패 사유를 화면에 숨긴다(`__DEV__` 에서만 `console.warn`). 안 될 때는
+`adb logcat` 을 본다.
+
+### Play Console — 개인 계정이 걸리는 둘
+
+**① 카테고리·태그가 건강 계열이면 개인 계정으로 출시할 수 없다.**
+금융·건강(의료)·VPN·정부 앱은 **조직 계정 전용**이다. 카테고리를 「건강 및 피트니스」로
+두면 「건강 앱」 선언에서 **「건강 기능 없음」을 고를 수조차 없고**, 제출은 정책 위반으로
+거절된다. 모멘토리는 **라이프스타일**이고, 태그에서도 건강 계열을 뺀다.
+
+> 마음을 다루는 앱이라고 해서 건강 앱이 아니다. Play 가 묻는 것은 「규제 대상 건강
+> 서비스를 제공하는가」다 — 진단·치료·의료기기·임상연구. 회고와 일기는 해당하지 않는다.
+> 스토어 설명의 「스트레스 완화」·「정신건강」 같은 표현도 같은 이유로 피한다.
+
+**② 프로덕션에 바로 못 간다.**
+개인 개발자 계정은 **비공개 테스트를 일정 인원(콘솔 표시) × 14일 연속** 돌린 뒤에야
+프로덕션 액세스를 신청할 수 있다. **내부 테스트는 이 요건에 들어가지 않는다.**
+14일은 출시일이 아니라 **인원이 다 옵트인한 시점부터** 센다.
+
+### 심사는 세 번이다
+
+|                      | 언제              | 비고                                             |
+| -------------------- | ----------------- | ------------------------------------------------ |
+| 내부 테스트          | **없음**          | 심사 없이 몇 분~몇 시간 뒤 설치 가능             |
+| 비공개·공개 테스트   | 트랙에 올릴 때    | 신규 앱 첫 심사는 며칠                           |
+| 프로덕션 액세스 신청 | 14일 요건 충족 후 | 테스터 피드백을 서술해야 한다 — **기록해 둘 것** |
+| 프로덕션 출시        | 액세스 승인 후    | 버전마다 다시 심사                               |
