@@ -14,6 +14,7 @@ import {
 
 import { Icon } from "./icons/Icon";
 import { IconButton } from "./IconButton";
+import { singleLineInput } from "./singleLineInput";
 
 /**
  * 검색 입력 — `Archive.dc.html` A2.
@@ -82,11 +83,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     padding: 0,
-    // 값도 플레이스홀더도 칸 높이의 **가운데**에 선다 — 바깥(`field`)의
-    // `alignItems: "center"` 가 놓는다. ⚠ **줄 간격을 주지 않는다** — iOS 는 한 줄
-    // 입력에 줄 간격이 있으면 글자를 줄 상자 바닥에 붙여 그린다(`TextField` 와 같은 이유).
-    // 안드로이드는 `padding: 0` 일 때 글자를 위로 붙이는 일이 있어 명시한다
-    textAlignVertical: "center",
+    // 세로 정렬(받침 잘림 · 아래 쏠림)은 한 곳에서 푼다 — `singleLineInput` 머리말
+    ...singleLineInput(text.body2.fontSize),
     // 입력값은 Regular 400 — 본문(500)과 다르다(`DESIGN.md` §2)
     fontFamily: fontFamily.regular,
     fontSize: text.body2.fontSize,

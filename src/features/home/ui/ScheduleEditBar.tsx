@@ -3,7 +3,7 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button, IconButton, Text } from "@/components/ds";
+import { Button, IconButton, singleLineInput, Text } from "@/components/ds";
 import {
   background,
   elevation,
@@ -91,12 +91,14 @@ export function ScheduleEditBar({
           닫혀 있는 동안(합성값 0) 덮여 사라진다.
 
           그래서 여백은 안팎에 나뉘어 있고 `keyboardVerticalOffset` 이 둘을 잇는다 —
-          키보드가 올라오면 회피 패딩에서 안쪽 여백(`bottomPad`)만큼 빼고 숨
-          (`androidNavGap`)을 더해, **닫혔든 열렸든 바닥 숨이 같다.**
+          키보드가 올라오면 회피 패딩에서 안쪽 여백(`bottomPad`)만큼 빼고
+          `keyboardGap` 을 더한다. 키보드가 시스템 바 자리를 덮으므로 **바닥 숨의
+          기준이 시스템 바에서 키보드 윗변으로 넘어간다** — 그래서 열린 동안의
+          숨은 `bottomPad` 가 아니라 `keyboardGap` 이다(안 그러면 딱 붙는다).
           면은 바깥이 든다: 회피 패딩 자리까지 앱 배경으로 이어져야 한다 */}
       <KeyboardAvoidingView
         behavior="padding"
-        keyboardVerticalOffset={layout.androidNavGap - bottomPad}
+        keyboardVerticalOffset={layout.keyboardGap - bottomPad}
         style={styles.dockSurface}
       >
         <View style={[styles.dock, { paddingBottom: bottomPad }]}>
@@ -193,11 +195,9 @@ const styles = StyleSheet.create({
     fontSize: text.body1Reading.fontSize,
     color: labelColor.normal,
     padding: 0,
-    // 값도 플레이스홀더도 알약 높이의 **가운데**에 선다 — 바깥(`bar`)의
-    // `alignItems: "center"` 가 놓는다. ⚠ **줄 간격을 주지 않는다** — iOS 는 한 줄
-    // 입력에 줄 간격이 있으면 글자를 줄 상자 바닥에 붙여 그린다(`TextField` 와 같은 이유).
-    // 안드로이드는 `padding: 0` 일 때 글자를 위로 붙이는 일이 있어 명시한다
-    textAlignVertical: "center",
+    // 값도 플레이스홀더도 알약 높이의 **가운데**에 서고 받침이 잘리지 않는다 —
+    // 그 두 가지는 한 곳에서 푼다(`components/ds/singleLineInput.ts` 머리말)
+    ...singleLineInput(text.body1Reading.fontSize),
   },
   clear: { width: size.icon.lg, height: size.icon.lg },
   add: { width: layout.minTouch, height: layout.minTouch, borderRadius: radius.full },

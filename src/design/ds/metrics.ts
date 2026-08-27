@@ -58,6 +58,13 @@ export const bubbleRadius = {
 } as const;
 
 /**
+ * **안드로이드에서만** 시스템 바 인셋 위에 더 얹는 숨 — `layout.androidNavGap`
+ * 의 실제 값이다. `layout` 안의 `keyboardGap` 이 이 값을 참조해야 해서
+ * 객체 밖으로 뽑아 뒀다(객체 리터럴은 자기 형제를 읽지 못한다).
+ */
+const androidNavGap = Platform.OS === "android" ? space.lg : 0;
+
+/**
  * 화면 틀(`DESIGN.md` §3·§10).
  *
  * `statusBar`·`safeArea` 는 시안의 고정값이다 — **구현에서는
@@ -105,13 +112,30 @@ export const layout = {
    * 인셋과 **더한다**(하한이 아니다). 이 값을 지나는 곳: `Screen` ·
    * `ScheduleEditBar`. 탭 화면 아래는 탭바가 면으로 이어져 있어 해당 없다.
    *
-   * **키보드가 올라온 동안에도 같은 숨을 남긴다** — `KeyboardAvoidingView` 의
-   * `behavior="padding"` 은 독의 아래를 키보드 윗변에 정확히 맞춰서, 그냥 두면
-   * 이 숨이 키보드가 뜨는 순간 사라진다. 그래서 독을 든 셋(`ChatScaffold` ·
-   * `ScheduleEditBar` · `BasicInfoEditor`)이 `keyboardVerticalOffset` 으로
-   * 같은 값을 넘긴다.
+   * **키보드가 올라온 동안에도 같은 숨을 남긴다** — 그 일은 아래
+   * `keyboardGap` 이 맡는다(안드로이드에서는 값이 같다).
    */
-  androidNavGap: Platform.OS === "android" ? space.lg : 0,
+  androidNavGap,
+  /**
+   * **키보드 윗변과 하단 독 사이의 숨.**
+   *
+   * `KeyboardAvoidingView` 의 `behavior="padding"` 은 독의 아래를 키보드 윗변에
+   * **정확히** 맞춘다 — 그냥 두면 입력창이 키보드에 딱 붙는다. iOS 는 키보드가
+   * 올라오는 순간 홈 인디케이터 인셋(≈34)이 키보드에 덮여 사라지므로 숨이 아예
+   * 없어진다(2026-08-28 실기기에서 확인).
+   *
+   * ⚠ **예측 입력 줄(QuickType)을 따로 재지 않는다.** 그 줄은 설정·언어·기기마다
+   * 있기도 없기도 한데, OS 가 알려주는 키보드 프레임에 **이미 포함돼** 온다 —
+   * 우리는 「무엇이 포함됐는지」가 아니라 **윗변까지의 거리**만 쓰므로 두 경우 다
+   * 같은 숨이 남는다. 줄의 유무를 감지하려 들면 그때부터 틀린다.
+   *
+   * 안드로이드는 `androidNavGap`(16)이 이미 그 역할을 하고 있었다 — 값을 낮추면
+   * 실기기(Galaxy S25)에서 맞춰 둔 숨이 줄어들어 **큰 쪽**을 쓴다.
+   *
+   * 이 값을 지나는 넷: `ChatScaffold` · `ScheduleEditBar` · `BasicInfoEditor` ·
+   * `BottomSheet`(이쪽은 KAV 를 안 쓰고 직접 얹는다).
+   */
+  keyboardGap: Math.max(space.md, androidNavGap),
   /** 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 */
   scrollClearance: 76,
   /** 모든 탭 대상 최소 (아이콘이 작으면 hitSlop 으로 채운다) */

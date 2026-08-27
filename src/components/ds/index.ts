@@ -52,6 +52,7 @@ export { ChoiceGrid, type Choice } from "./ChoiceGrid";
 export { ChatBubble, TypingBubble } from "./ChatBubble";
 export { ChatDock } from "./ChatDock";
 export { Slider } from "./Slider";
+export { singleLineInput } from "./singleLineInput";
 export { Spinner } from "./Spinner";
 export { WheelPicker, type WheelColumn } from "./WheelPicker";
 export { TopNavigation } from "./TopNavigation";

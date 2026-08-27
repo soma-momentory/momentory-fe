@@ -14,6 +14,7 @@ import {
 } from "@/design/ds";
 
 import { IconButton } from "./IconButton";
+import { singleLineInput } from "./singleLineInput";
 import { Text } from "./Text";
 
 /**
@@ -172,18 +173,14 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   /**
-   * 한 줄 입력은 **칸 높이의 가운데**다 — 값도 플레이스홀더도.
+   * 한 줄 입력은 **칸 높이의 가운데**이고 받침이 잘리지 않는다 — 값도 플레이스홀더도.
+   * 그 두 가지를 어떻게 잡는지는 한 곳에 적혀 있다(`singleLineInput` 머리말).
    *
-   * ⚠ **줄 간격(`lineHeight`)을 주지 않는다.** iOS 는 한 줄 입력에 줄 간격이 있으면
-   * 글자를 그 줄 상자의 **바닥에 붙여** 그린다 — 16/26 이라 10 만큼 내려앉아
-   * 「맨 아래 붙은」 것으로 보였다. `textAlignVertical` 은 안드로이드 전용이라
-   * 이걸 되돌리지 못한다. 빼면 글자 상자가 글꼴 높이가 되고 바깥(`field`)의
-   * `alignItems: "center"` 가 가운데로 놓는다 — 한 줄짜리에 줄 간격은 뜻이 없어
-   * 잃는 것도 없다.
-   *
-   * 안드로이드는 `padding: 0` 을 주면 글자를 위로 붙이는 일이 있어 명시한다.
+   * ⚠ **줄 간격(`lineHeight`)으로 풀려고 하지 말 것.** iOS 는 한 줄 입력에 줄 간격이
+   * 있으면 글자를 그 줄 상자의 **바닥에 붙여** 그린다 — 16/26 이라 10 만큼 내려앉아
+   * 「맨 아래 붙은」 것으로 보였다.
    */
-  singleLine: { textAlignVertical: "center" },
+  singleLine: singleLineInput(text.body1Reading.fontSize),
   // 여러 줄은 위에서부터 쌓인다 — 줄 간격은 여기서만 뜻을 갖는다
   multilineInput: { lineHeight: text.body1Reading.lineHeight },
   // 3줄 = lineHeight 26 × 3 + 상하 패딩. 여러 줄은 위에서부터 쌓인다
