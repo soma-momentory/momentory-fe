@@ -120,6 +120,16 @@ const insecureApiPlugin: PluginEntry[] = insecureApiHost
   ? [["./plugins/withInsecureDevApi", { host: insecureApiHost }]]
   : [];
 
+/**
+ * **운영 빌드에서만** Expo Dev Launcher 의 로컬 네트워크 흔적을 지운다
+ * (`plugins/withoutDevLauncherNetwork.ts` 머리말).
+ *
+ * 개발 빌드에는 붙이지 않는다 — 지우면 dev client 가 Metro 를 못 찾는다.
+ * 목록의 **맨 뒤**에 둔다: 앞선 플러그인들이 넣은 키를 지우는 일이라 마지막에 돌아야 한다.
+ */
+const productionCleanupPlugins: PluginEntry[] =
+  buildEnvironment === "production" ? ["./plugins/withoutDevLauncherNetwork"] : [];
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "모멘토리",
@@ -149,6 +159,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: false,
     bundleIdentifier: "kr.momentory.app",
+    /**
+     * 빌드 번호 — **App Store Connect 에 올린 어떤 빌드보다 커야 한다.**
+     *
+     * 같은 `version`(0.1.0) 으로 다시 올리려면 이 값이 반드시 올라가야 하고,
+     * 한 번 올린 번호는 그 버전에서 재사용할 수 없다(업로드가 거부된다).
+     * 적지 않으면 Expo 가 `1` 로 만든다 — 첫 제출이 그 번호였다.
+     *
+     * `2` = Reminders·Face ID 권한 문구를 뺀 재제출 빌드(2026-08-28).
+     * ⚠ **다음 업로드 전에 반드시 올린다.** 아카이브를 다시 만들 때마다가 아니라,
+     * App Store Connect 에 **올릴 때마다**다.
+     */
+    buildNumber: "2",
   },
   android: {
     package: "kr.momentory.app",
@@ -276,6 +298,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ],
       },
     ],
+    // ⚠ **맨 뒤여야 한다** — 앞선 플러그인들이 넣은 키를 지우는 일이다
+    ...productionCleanupPlugins,
   ],
 
   experiments: {
