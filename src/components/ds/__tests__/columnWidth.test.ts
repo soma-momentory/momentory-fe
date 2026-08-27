@@ -8,11 +8,16 @@ import { columnWidth } from "../columnWidth";
  *
  * 핵심 단언은 하나다: **칸 폭의 합 + 간격이 부모를 넘지 않는다.** 넘는 순간
  * `flexWrap` 이 마지막 칸을 다음 줄로 밀어낸다.
+ *
+ * ⚠ **합을 `Math.fround` 로 잰다.** 여기서 나온 배정밀도 값은 Yoga 로 넘어갈 때
+ * 32비트 float 으로 좁혀지고, 그때 위로 반올림되면 딱 맞던 격자가 넘친다 —
+ * 13 Pro Max·17 Pro Max 에서만 감정 3×3 이 2열로 접히던 원인이다. double 로 재면
+ * 그 버그가 테스트를 그냥 통과한다.
  */
 const fits = (total: number, columns: number, gap = 0) => {
   const cell = columnWidth(total, columns, gap);
   if (cell == null) throw new Error("잴 수 있는 폭이어야 한다");
-  return cell * columns + gap * (columns - 1) <= total;
+  return Math.fround(cell) * columns + gap * (columns - 1) <= total;
 };
 
 describe("columnWidth", () => {
@@ -38,11 +43,30 @@ describe("columnWidth", () => {
     }
   });
 
+  it("float32 로 좁혀져도 3×3 이 유지된다 — 13 Pro Max·17 Pro Max 회귀", () => {
+    // ⚠ **밀도를 3 으로 갈아 끼운다.** jest 의 기본은 2 이고, 이 버그는 3배 밀도에서만
+    // 난다 — 기본값으로 두면 이 테스트가 아무것도 재현하지 못하고 그냥 통과한다.
+    const scale = jest.spyOn(PixelRatio, "get").mockReturnValue(3);
+    try {
+      // 실기기의 대화 영역 폭(화면 폭 - 좌우 20). 셋 다 남은 폭이 3의 배수라
+      // 내림이 아무것도 깎지 않아 「딱 맞는」 격자가 되던 자리다
+      for (const total of [353, 388, 400]) {
+        expect(fits(total, 3, 12)).toBe(true);
+      }
+      // 달력 7칸도 같은 밀도에서 한 줄을 지킨다
+      for (const total of [353, 388, 400]) {
+        expect(fits(total, 7)).toBe(true);
+      }
+    } finally {
+      scale.mockRestore();
+    }
+  });
+
   it("기기 픽셀 격자 아래로 내림한다 — 반올림이 합을 부모 위로 밀지 않게", () => {
     const scale = PixelRatio.get();
     const cell = columnWidth(100, 7);
     expect(cell).not.toBeNull();
     // 픽셀 격자에 정확히 얹혀 있다
-    expect((cell as number) * scale).toBe(Math.floor((cell as number) * scale));
+    expect((cell as number) * scale).toBe(Math.round((cell as number) * scale));
   });
 });
