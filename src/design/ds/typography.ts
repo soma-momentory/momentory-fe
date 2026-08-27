@@ -1,4 +1,4 @@
-import type { TextStyle } from "react-native";
+import { Dimensions, type TextStyle } from "react-native";
 
 /**
  * Momentory DS — 타이포. 정본은 `docs/DESIGN.md` §2.
@@ -46,10 +46,46 @@ export type FontWeightName = keyof typeof fontFamily;
  */
 type Style = Required<Pick<TextStyle, "fontFamily" | "fontSize" | "lineHeight">>;
 
+/**
+ * **기준 기기 폭.** 이 저장소가 화면을 맞춰 온 기기가 iPhone 16(393)이다 —
+ * 시안의 375 가 아니다. 375 를 기준으로 잡으면 이미 검수를 마친 기준 기기의
+ * 글자까지 커진다.
+ */
+const REFERENCE_WIDTH = 393;
+
+/**
+ * 넓은 기기의 상한. 17 Pro Max(440)가 440/393 = 1.12 라 사실상 그 기기가 천장이고,
+ * 더 넓은 기기가 나와도 여기서 멈춘다 — 고정 높이 그릇(Button 48 · Chip 36 · 탭바)은
+ * 함께 커지지 않기 때문에 배율을 끝없이 올리면 글자가 그릇을 뚫는다.
+ */
+const MAX_TYPE_SCALE = 1.12;
+
+/**
+ * **기기 폭 보정.** 넓은 화면에서 글자가 작아 보이던 것을 되돌린다.
+ *
+ * 같은 pt 의 글자는 화면이 넓을수록 작아 **보인다** — 눈이 글자를 화면 대비로 읽기
+ * 때문이다. 실제로 Pro Max 둘(428·440)에서만 「글자가 작다」는 말이 나왔다
+ * (2026-08-28). 그래서 기준 기기보다 넓은 만큼만 키우고, 좁은 기기는 **건드리지
+ * 않는다**(하한 1) — SE·13 mini 는 이미 빠듯하다.
+ *
+ * 12단 전체가 함께 커진다. **손글씨(교보)도 같이 커진다** — 한쪽만 키우면 한 화면
+ * 안에서 두 서체의 크기 관계가 기기마다 달라진다.
+ *
+ * ⚠ 세로 화면 전용 앱이라 모듈이 올라올 때 한 번 잰다(`supportsTablet: false` ·
+ * 회전 없음). 회전을 열게 되면 이 값이 갱신되지 않는다는 것을 먼저 본다.
+ */
+export const typeScale = Math.min(
+  Math.max(Dimensions.get("window").width / REFERENCE_WIDTH, 1),
+  MAX_TYPE_SCALE,
+);
+
+/** 보정한 단 — 반올림해 정수로 떨어뜨린다(픽셀 격자에 얹혀 또렷하게) */
+const scaled = (v: number) => Math.round(v * typeScale);
+
 const style = (family: FontWeightName, fontSize: number, lineHeight: number): Style => ({
   fontFamily: fontFamily[family],
-  fontSize,
-  lineHeight,
+  fontSize: scaled(fontSize),
+  lineHeight: scaled(lineHeight),
 });
 
 export const text = {
@@ -133,7 +169,11 @@ export type TextToken = keyof typeof text;
  * `components/ds/Text` 가 이 값을 `maxFontSizeMultiplier` 로 넘긴다. **글자 높이로
  * 여백을 계산하는 쪽도 같은 천장을 봐야 한다** — 화면이 1.3 을 따로 적으면
  * 천장이 둘이 되고, 한쪽만 고쳐졌을 때 배율 큰 기기에서만 어긋난다.
+ *
+ * ⚠ **기기 폭 보정(`typeScale`)만큼 나눈다.** 이 천장이 지키려는 것은 「시안 크기의
+ * 1.3 배까지」이지 「지금 그리는 크기의 1.3 배까지」가 아니다 — 넓은 기기에서 이미
+ * 1.12 배로 그리는데 거기에 또 1.3 을 곱하면 1.46 이 되어, 그 기기에서만 그릇이 뚫린다.
  */
-export const maxFontScale = 1.3;
+export const maxFontScale = 1.3 / typeScale;
 
 export const typography = { fontFamily, text } as const;
