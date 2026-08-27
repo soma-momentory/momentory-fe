@@ -179,7 +179,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-status-bar",
     // M2-0 인증 부트스트랩 — 세션 토큰 저장 (ARCHITECTURE §3)
-    "expo-secure-store",
+    [
+      "expo-secure-store",
+      {
+        // `requireAuthentication` 을 쓰지 않는다 — Face ID 를 요청하는 자리가 없다.
+        // 기본값을 두면 플러그인의 영문 기본 문구가 Info.plist 에 들어가고,
+        // Reminders 와 같은 종류의 자동 심사 대상이 된다.
+        faceIDPermission: false,
+      },
+    ],
     // 회고 시간 알림(08 · M3) — 전부 로컬 알림이다. 푸시 토큰도 서버도 없다.
     // Android 상태바 아이콘은 **알파만 쓴다**(모양만 남고 색은 tint 로 칠해진다) —
     // 단색 실루엣인 모노크롬 아이콘이 그대로 맞는다. 색은 primary.
