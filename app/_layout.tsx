@@ -35,6 +35,22 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: "transparent" },
           }}
         />
+
+        {/*
+          ⚠ **회고는 여기서도 스와이프-백을 끈다.** `app/retro/_layout.tsx` 가 이미
+          껐지만 그것은 **회고 스택 안쪽**(intro→…→talk)에만 걸린다 — 회고 전체가
+          이 루트 스택의 화면 하나라, 바깥 제스처는 살아 있어서 **회고 한 벌이
+          통째로 닫혔다.**
+
+          `talk` 의 0~10 슬라이더를 **왼쪽 끝에서 오른쪽으로** 끌 때마다 대화가
+          사라지던 자리다(2026-08-28 실기기) — 엄지가 왼쪽에 있을 때 드래그 시작점이
+          iOS 엣지 제스처 영역 안이라 시스템이 그걸 뒤로가기로 가져간다.
+          `PanResponder`(JS)는 네이티브 엣지 제스처를 막지 못한다.
+
+          설계상으로도 이쪽이 맞다 — 회고에서 나가는 길은 상단 `✕` 하나다
+          (`RULES.md` 「회고」 · `app/retro/_layout.tsx`).
+        */}
+        <Stack.Screen name="retro" options={{ gestureEnabled: false }} />
       </Stack>
     </AppProviders>
   );

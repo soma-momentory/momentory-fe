@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
 import { background, fill, label as labelColor, primary, radius, space } from "@/design/ds";
 
+import { useScrollLock } from "./scrollLock";
 import { Text } from "./Text";
 
 /**
@@ -55,6 +56,16 @@ export function Slider({
   /** 트랙의 화면 절대 좌(page X) — 터치의 pageX 에서 빼서 트랙 기준으로 옮긴다 */
   const [trackLeft, setTrackLeft] = useState(0);
   const trackRef = useRef<View>(null);
+  /**
+   * 손을 대고 있는 동안 부모 스크롤을 멈춘다 — 대각선으로 끌면 값이 바뀌면서
+   * 화면이 같이 위아래로 밀렸다. `PanResponder` 는 JS 응답자라 **네이티브 스크롤
+   * 뷰를 못 막는다**(`onShouldBlockNativeResponder` 로도 안 됐다) — 스크롤을 가진
+   * 쪽이 직접 꺼야 한다(`scrollLock.ts`).
+   */
+  const setScrollLocked = useScrollLock();
+
+  // 끄는 도중에 화면이 바뀌면 스크롤이 잠긴 채 남는다 — 사라질 때 반드시 푼다
+  useEffect(() => () => setScrollLocked(false), [setScrollLocked]);
 
   const onLayout = (e: LayoutChangeEvent) => {
     setWidth(e.nativeEvent.layout.width);
@@ -82,8 +93,15 @@ export function Slider({
     onPanResponderTerminationRequest: () => false,
     onShouldBlockNativeResponder: () => true,
     // gestureState 의 x0·moveX 는 **화면 절대 좌표**라 어느 자식을 눌러도 정확하다
-    onPanResponderGrant: (_e, g) => onChange(valueAt(g.x0)),
+    onPanResponderGrant: (_e, g) => {
+      setScrollLocked(true);
+      onChange(valueAt(g.x0));
+    },
     onPanResponderMove: (_e, g) => onChange(valueAt(g.moveX)),
+    // 손을 떼는 길이 둘이다 — 놓거나(release), 다른 제스처에 뺏기거나(terminate).
+    // 하나만 풀면 나머지 길로 나갔을 때 스크롤이 죽은 채 남는다
+    onPanResponderRelease: () => setScrollLocked(false),
+    onPanResponderTerminate: () => setScrollLocked(false),
   });
 
   const ratio = max === min ? 0 : (value - min) / (max - min);

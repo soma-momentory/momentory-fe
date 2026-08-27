@@ -69,7 +69,7 @@ export function BasicInfoEditor({ title, changed, ready = true, patch, children 
       <KeyboardAvoidingView
         style={styles.fill}
         behavior="padding"
-        keyboardVerticalOffset={layout.androidNavGap}
+        keyboardVerticalOffset={layout.keyboardGap}
       >
         <View style={styles.body}>{children}</View>
 

@@ -118,9 +118,10 @@ export function BottomSheet({ children, title, onDismiss }: Props) {
   const keyboard = useKeyboardInset();
 
   // 키보드가 올라와 있으면 **그 자리가 바닥 여백을 대신한다** — 이미 화면 바닥까지의
-  // 거리라 inset 을 더하면 그만큼 붕 뜬다(위 머리말). 얹는 `space.md` 는 마지막
-  // 버튼이 키보드에 딱 붙지 않게 하는 숨이다.
-  const bottomPad = keyboard > 0 ? keyboard + space.md : Math.max(insets.bottom, space.xl);
+  // 거리라 inset 을 더하면 그만큼 붕 뜬다(위 머리말). 얹는 `layout.keyboardGap` 은
+  // 마지막 버튼이 키보드에 딱 붙지 않게 하는 숨이다 — 독을 든 넷이 같은 값을 쓴다.
+  const bottomPad =
+    keyboard > 0 ? keyboard + layout.keyboardGap : Math.max(insets.bottom, space.xl);
 
   return (
     <View testID="ds-bottom-sheet-overlay" style={styles.root}>
