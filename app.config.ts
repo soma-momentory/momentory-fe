@@ -162,6 +162,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         calendarPermission:
           "일정 제목을 모멘토리에 저장해 회고 질문을 만드는 데 사용해요. 캘린더 원본은 수정하지 않고, 다른 사람에게 공유하지 않아요.",
+        // Apple Reminders(미리 알림)는 사용하지 않는다. expo-calendar의 기본값을
+        // 그대로 두면 두 Reminders purpose string이 Info.plist에 추가되어 심사 대상이 된다.
+        remindersPermission: false,
       },
     ],
     // 카카오 SDK 는 Maven Central 에 없다 — 카카오 저장소를 Gradle 에 알린다.
