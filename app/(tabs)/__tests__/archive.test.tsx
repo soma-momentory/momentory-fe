@@ -199,28 +199,30 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     expect(r.getByText("7월 22일의 일기")).toBeTruthy();
   });
 
-  it("여러 감정을 함께 고른다 — 교집합(모두 붙은 일기)으로 좁히고 앞 선택이 풀리지 않는다", async () => {
-    // 2026-08-24 「한 번에 하나만」에서 다중 선택으로 바꿈 (PRODUCT.md 상류와 차이)
-    // 뿌듯함(8): 7/8[4,8]·7/22[3,8] · 화남·답답함(3): 7/22[3,8]
+  it("여러 감정을 함께 고른다 — 합집합(하나라도 붙은 일기)으로 넓히고 앞 선택이 풀리지 않는다", async () => {
+    // 2026-08-24 「한 번에 하나만」 → 다중 선택(교집합) → 2026-08-28 합집합
+    // (PRODUCT.md 상류와 차이). 칩을 더 누를수록 결과가 사라지는 것이
+    // 필터를 「끄는」 것처럼 읽혔다 — 칩 하나는 이제 「이 감정도 보여줘」다.
+    // 7/22[3,8] = 화남·답답함 + 뿌듯함 · 7/8[4,8] = 뿌듯함만
     const { r, filter, chip } = await openList();
 
-    // 뿌듯함만 — 뿌듯함이 붙은 7/8·7/22 가 함께 보인다
-    await fireEvent.press(filter.getByText("뿌듯함"));
-    expect(r.getByText("7월 8일의 일기")).toBeTruthy();
+    // 화남·답답함만 — 그게 붙은 7/22 는 남고 7/8 은 빠진다
+    await fireEvent.press(filter.getByText("화남·답답함"));
     expect(r.getByText("7월 22일의 일기")).toBeTruthy();
+    expect(r.queryByText("7월 8일의 일기")).toBeNull();
 
-    // 화남·답답함을 더 고르면 앞 선택(뿌듯함)이 유지되고, **둘 다** 가진 일기만 남는다
-    await fireEvent.press(filter.getByText("화남·답답함"));
-    expect(chip("뿌듯함")?.props.accessibilityState.selected).toBe(true);
+    // 뿌듯함을 더 고르면 앞 선택이 유지되고, **둘 중 하나라도** 가진 일기가 남는다
+    await fireEvent.press(filter.getByText("뿌듯함"));
     expect(chip("화남·답답함")?.props.accessibilityState.selected).toBe(true);
-    expect(r.getByText("7월 22일의 일기")).toBeTruthy(); // 화남·답답함 + 뿌듯함 둘 다
-    expect(r.queryByText("7월 8일의 일기")).toBeNull(); // 뿌듯함만 있어 빠진다
-
-    // 화남·답답함을 다시 누르면 그 하나만 풀린다 — 뿌듯함은 남고 7/8 이 돌아온다
-    await fireEvent.press(filter.getByText("화남·답답함"));
     expect(chip("뿌듯함")?.props.accessibilityState.selected).toBe(true);
-    expect(chip("화남·답답함")?.props.accessibilityState.selected).toBe(false);
-    expect(r.getByText("7월 8일의 일기")).toBeTruthy();
+    expect(r.getByText("7월 22일의 일기")).toBeTruthy();
+    expect(r.getByText("7월 8일의 일기")).toBeTruthy(); // 뿌듯함만 있어도 들어온다
+
+    // 뿌듯함을 다시 누르면 그 하나만 풀린다 — 화남·답답함은 남고 7/8 이 다시 빠진다
+    await fireEvent.press(filter.getByText("뿌듯함"));
+    expect(chip("화남·답답함")?.props.accessibilityState.selected).toBe(true);
+    expect(chip("뿌듯함")?.props.accessibilityState.selected).toBe(false);
+    expect(r.queryByText("7월 8일의 일기")).toBeNull();
   });
 
   it("고른 칩은 색뿐 아니라 테두리 굵기·글자색으로도 표시한다", async () => {

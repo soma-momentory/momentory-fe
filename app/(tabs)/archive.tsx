@@ -110,7 +110,8 @@ export default function Archive() {
   // 보관함이 여는 달은 건너온 날(없으면 오늘)이 속한 달이다 — `‹ ›` 로 옮기면 두 면이 함께 따라간다
   const [month, setMonth] = useState(monthOf(openedAt));
   const [selectedDate, setSelectedDate] = useState(openedAt);
-  // 감정 필터는 **여러 개 함께** 고른다(합집합) — 빈 배열이면 필터 없음
+  // 감정 필터는 **여러 개 함께** 고른다(합집합) — 빈 배열이면 필터 없음.
+  // 고른 감정 중 **하나라도** 붙은 일기가 남는다(아래 `listed`)
   const [filters, setFilters] = useState<EmotionId[]>([]);
   const toggleFilter = (e: EmotionId) =>
     setFilters((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
@@ -139,8 +140,10 @@ export default function Archive() {
   const listed = byLatest(
     listSource.filter(
       (d) =>
-        // 고른 감정을 **모두** 가진 일기만(교집합) — 아무것도 안 골랐으면 통과
-        filters.every((f) => d.emotions.includes(f)) &&
+        // 고른 감정 중 **하나라도** 붙은 일기(합집합) — 아무것도 안 골랐으면 통과.
+        // ⚠ `some` 은 빈 배열에서 `false` 라 「고른 게 없다」를 먼저 걸러야 한다 —
+        // 안 그러면 필터를 다 풀었을 때 목록이 통째로 비어 버린다
+        (filters.length === 0 || filters.some((f) => d.emotions.includes(f))) &&
         (keyword.length === 0 || d.body.includes(keyword)),
     ),
   );
