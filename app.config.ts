@@ -8,6 +8,42 @@ const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? "";
 const kakaoAppKey = process.env.EXPO_PUBLIC_KAKAO_APP_KEY ?? "";
 const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";
 const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
+const buildEnvironment = process.env.MOMENTORY_BUILD_ENV ?? "development";
+
+/**
+ * Xcode 배포용 prebuild는 `MOMENTORY_BUILD_ENV=production`을 명시한다.
+ * 개발 환경은 빈 설정으로도 UI를 열 수 있지만, 배포 바이너리는 로그인이나 API가
+ * 조용히 빠진 채 만들어지면 안 된다. 네이티브 프로젝트를 만들기 전에 여기서 막는다.
+ */
+const validateProductionEnvironment = () => {
+  if (buildEnvironment !== "production") return;
+
+  const required = {
+    EXPO_PUBLIC_API_BASE_URL: apiBaseUrl,
+    EXPO_PUBLIC_KAKAO_APP_KEY: kakaoAppKey,
+    EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: googleIosClientId,
+    EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: googleWebClientId,
+  };
+  const missing = Object.entries(required)
+    .filter(([, value]) => value.trim() === "")
+    .map(([key]) => key);
+
+  if (missing.length > 0) {
+    throw new Error(`[production config] 필수 환경변수가 없습니다: ${missing.join(", ")}`);
+  }
+
+  let apiUrl: URL;
+  try {
+    apiUrl = new URL(apiBaseUrl);
+  } catch {
+    throw new Error("[production config] EXPO_PUBLIC_API_BASE_URL이 올바른 URL이 아닙니다.");
+  }
+  if (apiUrl.protocol !== "https:") {
+    throw new Error("[production config] EXPO_PUBLIC_API_BASE_URL은 https:// 주소여야 합니다.");
+  }
+};
+
+validateProductionEnvironment();
 
 /**
  * API 서버가 **평문 HTTP** 일 때의 호스트. HTTPS·미설정이면 빈 문자열이다.

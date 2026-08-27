@@ -506,7 +506,9 @@ describe("M1 · 마이 기본", () => {
     const r = await render(<My />);
     expect(r.getByText("매일 밤 9:30")).toBeTruthy();
 
-    useSettings.getState().toggle("retro");
+    await act(async () => {
+      useSettings.getState().toggle("retro");
+    });
 
     expect(await r.findByText("꺼짐")).toBeTruthy();
   });
