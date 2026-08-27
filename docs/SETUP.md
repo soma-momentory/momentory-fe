@@ -459,6 +459,16 @@ Android 클라이언트 ID →                     (앱은 안 든다)      BE G
 EXPO_PUBLIC_API_BASE_URL=https://api.momentory.co.kr
 ```
 
+Xcode로 App Store 배포용 iOS 프로젝트를 만들 때는 운영 검증을 명시적으로 켠다.
+이 값이 `production`이면 API 주소·카카오 키·Google iOS/Web 클라이언트 ID가 모두
+있는지, API 주소가 HTTPS인지 `app.config.ts`가 prebuild 전에 검사한다.
+
+```bash
+MOMENTORY_BUILD_ENV=production npx expo prebuild --platform ios --clean
+```
+
+개발 빌드는 `.env`의 `MOMENTORY_BUILD_ENV=development`를 그대로 사용한다.
+
 ACM 인증서(Amazon RSA 2048 M04 · 2027-03-09 만료). **IP 가 아니라 도메인**이라
 iOS ATS 문제도 함께 사라졌다 — 예고대로 **`.env` 한 줄**로 끝났다
 ([`DISCUSSION.md`](DISCUSSION.md) §1-6 · 2026-08-25 닫힘).
