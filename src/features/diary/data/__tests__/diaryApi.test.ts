@@ -25,8 +25,8 @@ describe("DiaryResponse → Diary", () => {
   const raw = {
     id: 12,
     retrospectId: 34,
-    currentEmotion: "depressed", // 2
-    scheduleEmotion: "anxious", // 1
+    currentEmotion: "depressed", // 8
+    scheduleEmotion: "anxious", // 7
     original: "오늘은 면접 준비를 했다.",
     reframed: "바바가 다시 본 오늘.",
     createdAt: "2026-08-14T02:23:47.850Z",
@@ -62,22 +62,22 @@ describe("DiaryResponse → Diary", () => {
 
   it("두 감정 키를 [현재, 일정] 순 태그로 편다 — 현재 감정이 대표다", () => {
     const d = toDiary(raw);
-    expect(d?.emotions).toEqual([2, 1]); // 현재(depressed=2) → 일정(anxious=1)
-    expect(d?.startEmotion).toBe(2); // 현재 감정 = 회고 시작 감정
-    expect(d?.storyEmotion).toBe(1); // 일정 감정
+    expect(d?.emotions).toEqual([8, 7]); // 현재(depressed=8) → 일정(anxious=7)
+    expect(d?.startEmotion).toBe(8); // 현재 감정 = 회고 시작 감정
+    expect(d?.storyEmotion).toBe(7); // 일정 감정
   });
 
   it("일정 감정이 없으면 현재 감정 하나만 — storyEmotion 은 null", () => {
     const { scheduleEmotion, ...noSchedule } = raw;
     const d = toDiary(noSchedule);
-    expect(d?.emotions).toEqual([2]);
+    expect(d?.emotions).toEqual([8]);
     expect(d?.storyEmotion).toBeNull();
-    expect(d?.startEmotion).toBe(2);
+    expect(d?.startEmotion).toBe(8);
   });
 
   it("두 감정이 같으면 하나로 접는다", () => {
     const d = toDiary({ ...raw, scheduleEmotion: "depressed" });
-    expect(d?.emotions).toEqual([2]);
+    expect(d?.emotions).toEqual([8]);
   });
 
   it("모르는 감정 키는 버린다 — 이름을 지어내지 않는다", () => {

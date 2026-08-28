@@ -51,29 +51,32 @@ export const SCHEDULES_PATH = "/api/v1/schedules";
 export const SCHEDULES_TIMEOUT_MS = 8_000;
 
 /**
- * 감정 id(1~9) → 일정 API 의 감정 코드.
+ * 감정 id(1~10) → 일정 API 의 감정 코드 (채팅흐름_v2 긍정→부정 재번호).
  *
  * ⚠ **회고의 `EMOTION_KEYS` 와 다르다.** 서버 안에 감정 enum 이 두 벌 있고
- * (`retrospect/Emotion` 소문자 키 · `schedule/ScheduleEmotion` 대문자 enum)
- * **3번의 이름이 서로 다르다**(`angry` vs `ANGRY_FRUSTRATED`). 한쪽을 재사용하면
- * 그 한 감정만 조용히 400 이 된다 — 그래서 표를 따로 둔다.
- * 순서는 `features/emotion` 의 `EMOTIONS` 와 같지만 번호가 아니라 코드로 명시한다.
+ * (`retrospect/Emotion` 소문자 키 · `schedule/ScheduleEmotion` 대문자 enum) 이름이 갈린다.
+ * ⚠ **스케줄 enum 은 아직 `화남·답답함`을 합친 `ANGRY_FRUSTRATED` 한 값이다**(BE 스케줄 감정은
+ * 미분리). 그래서 v2 로 분리한 화남(9)·답답함(10)을 **둘 다 `ANGRY_FRUSTRATED` 로 보낸다**. 되돌릴
+ * 때는 대표로 화남(9)으로 매핑한다(아래 override). 스케줄 감정 분리는 별도 후속 작업.
  */
 export const SCHEDULE_EMOTIONS: Record<EmotionId, string> = {
-  1: "ANXIOUS",
-  2: "DEPRESSED",
-  3: "ANGRY_FRUSTRATED",
-  4: "HAPPY",
+  1: "HAPPY",
+  2: "PROUD",
+  3: "CALM",
+  4: "TIRED",
   5: "STUCK",
   6: "LETHARGIC",
-  7: "TIRED",
-  8: "PROUD",
-  9: "CALM",
+  7: "ANXIOUS",
+  8: "DEPRESSED",
+  9: "ANGRY_FRUSTRATED",
+  10: "ANGRY_FRUSTRATED",
 };
 
 const EMOTION_IDS: Record<string, EmotionId> = Object.fromEntries(
   Object.entries(SCHEDULE_EMOTIONS).map(([id, code]) => [code, Number(id) as EmotionId]),
 );
+// 화남(9)·답답함(10)이 같은 코드라 반전 시 충돌한다 — 대표를 화남(9)으로 확정한다.
+EMOTION_IDS.ANGRY_FRUSTRATED = 9;
 
 /** 실패 사유 — **코드**다. 화면 문구는 여기서 만들지 않는다 */
 export type ScheduleFailureCode =

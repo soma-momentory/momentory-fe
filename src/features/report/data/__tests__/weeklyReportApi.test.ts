@@ -18,11 +18,11 @@ const raw = {
   startDate: "2026-08-17",
   endDate: "2026-08-23",
   dailyMoods: [
-    { date: "2026-08-17", emotion: "tired" }, // 7
-    { date: "2026-08-18", emotion: "calm" }, // 9
+    { date: "2026-08-17", emotion: "tired" }, // 4
+    { date: "2026-08-18", emotion: "calm" }, // 3
     { date: "2026-08-19", emotion: null },
     { date: "2026-08-20", emotion: "calm" },
-    { date: "2026-08-21", emotion: "angry" }, // 3
+    { date: "2026-08-21", emotion: "angry" }, // 9
     { date: "2026-08-22", emotion: null },
     { date: "2026-08-23", emotion: "calm" },
   ],
@@ -39,8 +39,8 @@ describe("WeeklyReportResponse → WeeklyReport", () => {
   it("감정 키를 id 로 옮기고 기록 없는 날은 null 로 남긴다", () => {
     const report = toWeeklyReport(raw);
 
-    expect(report?.days.map((d) => d.emotion)).toEqual([7, 9, null, 9, 3, null, 9]);
-    expect(report?.dominantEmotion).toBe(9);
+    expect(report?.days.map((d) => d.emotion)).toEqual([4, 3, null, 3, 9, null, 3]);
+    expect(report?.dominantEmotion).toBe(3);
   });
 
   it("셈과 날짜를 그대로 옮긴다", () => {

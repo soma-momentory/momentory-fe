@@ -3,9 +3,18 @@ import { StyleSheet, View } from "react-native";
 
 import { Button, Card, Icon, Screen, Text } from "@/components/ds";
 import { label as labelColor, primary, space, status, withAlpha } from "@/design/ds";
-import { useRetro } from "@/features/retro/model/retro";
+import { emotionName } from "@/features/emotion/model/emotion";
+import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
 import { useTodayContext } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
+
+/** 감정 키 목록 → 이름 문자열("화남, 답답함"). 모르는 키는 건너뛴다 */
+const emotionNames = (keys: string[]): string =>
+  keys
+    .map(emotionIdOfKey)
+    .filter((id): id is NonNullable<typeof id> => id != null)
+    .map(emotionName)
+    .join(", ");
 
 /**
  * `C7` · 저장 완료 → 홈
@@ -28,9 +37,13 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 나가는 두 길 모두 비우고 나간다.
  */
 export default function RetroDone() {
-  const actionCard = useRetro((s) => s.actionCard);
+  const wishCard = useRetro((s) => s.wishCard);
   const resetRetro = useRetro((s) => s.reset);
   const { date: today } = useTodayContext();
+
+  const wishLabel = wishCard?.sentiment === "positive" ? "내 마음을 채워준 것" : "내 마음이 바랐던 것";
+  const emotions = wishCard != null ? emotionNames(wishCard.emotions) : "";
+  const needs = wishCard != null ? wishCard.needs.map((n) => n.word).join(", ") : "";
 
   /** 나가는 길은 둘 뿐이고 **둘 다 회고를 닫고** 나간다 */
   const leave = (to: "/home" | "/rest/cards") => {
@@ -49,15 +62,15 @@ export default function RetroDone() {
           <Text variant="title3" color={labelColor.strong} style={styles.centered}>
             오늘의 일기를 저장했어요.
           </Text>
-          {actionCard != null ? (
+          {wishCard != null ? (
             <Text variant="body2Reading" color={labelColor.neutral} style={styles.centered}>
-              오늘 이야기에서 하나 챙겨봤어요.
+              오늘 이야기에서 마음을 하나 챙겨봤어요.
             </Text>
           ) : null}
         </View>
 
-        {/* 쉼터(R2)와 같은 anatomy·같은 문구 — 수행 체크만 거기에 있다 */}
-        {actionCard != null ? (
+        {/* 바람 카드 — 감정 탐색을 거친 경우에만. 비운 항목은 숨긴다 */}
+        {wishCard != null ? (
           <Card padding="loose" style={styles.card}>
             <View style={styles.cardHead}>
               <Text variant="headline1" color={labelColor.strong}>
@@ -73,16 +86,49 @@ export default function RetroDone() {
                 상황
               </Text>
               <Text variant="body2" color={labelColor.normal}>
-                {actionCard.situation}
+                {wishCard.situation}
               </Text>
             </View>
 
+            {emotions.length > 0 ? (
+              <View style={styles.field}>
+                <Text variant="label2" color={labelColor.alternative}>
+                  감정
+                </Text>
+                <Text variant="body2" color={labelColor.normal}>
+                  {emotions}
+                </Text>
+              </View>
+            ) : null}
+
+            {needs.length > 0 ? (
+              <View style={styles.field}>
+                <Text variant="label2" color={labelColor.alternative}>
+                  {wishLabel}
+                </Text>
+                <Text variant="body2" color={labelColor.normal}>
+                  {needs}
+                </Text>
+              </View>
+            ) : null}
+
+            {wishCard.desiredState != null ? (
+              <View style={styles.field}>
+                <Text variant="label2" color={labelColor.alternative}>
+                  바랐던 모습
+                </Text>
+                <Text variant="body2" color={labelColor.normal}>
+                  {wishCard.desiredState}
+                </Text>
+              </View>
+            ) : null}
+
             <View style={styles.field}>
               <Text variant="label2" color={labelColor.alternative}>
-                제안된 행동
+                작은 행동
               </Text>
               <Text variant="body1" color={labelColor.strong}>
-                {actionCard.action}
+                {wishCard.smallAction ?? "아직 정하지 않음"}
               </Text>
             </View>
           </Card>
@@ -91,7 +137,7 @@ export default function RetroDone() {
 
       <View style={styles.dock}>
         <Button label="홈으로 돌아가기" fill onPress={() => leave("/home")} />
-        {actionCard != null ? (
+        {wishCard != null ? (
           <View style={styles.secondary}>
             {/*
               쉼터 행동카드(R2)로 바로 간다. `/rest` 는 (tabs)·(onboarding) 두 그룹에

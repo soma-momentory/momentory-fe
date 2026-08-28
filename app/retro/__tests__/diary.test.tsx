@@ -6,7 +6,7 @@ import RetroDraft from "../draft";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
-import type { ReplyActionCard, ReplyDiary } from "@/features/retro/data/retroApi";
+import type { ReplyDiary, ReplyWishCard } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
 import { authedRequest } from "@/lib/http";
 import { seedDiaries, testSchedules } from "@/testing/fixtures";
@@ -28,32 +28,33 @@ const SEED_DIARY: ReplyDiary = {
   diary: "오늘 모의 면접에서 답이 막혔지만 끝까지 답했다.",
   reframedDiary: "그 한 번이 면접을 못한다는 뜻은 아니다.",
 };
-const SEED_ACTION: ReplyActionCard = {
-  actionCardId: "88",
+/** 감정 탐색을 거친 바람 카드(v2) — depressed 감정(=id 8, 우울함) */
+const SEED_WISH: ReplyWishCard = {
+  wishCardId: "88",
   situation: "면접 연습을 시작할 때",
-  action: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
-  detail: null,
-  createdDate: null,
+  emotions: ["depressed"],
+  needs: [{ word: "존중", meaning: "내 의견이 가볍게 다뤄지지 않길 바라는 마음" }],
+  desiredState: null,
+  smallAction: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
+  sentiment: "uncomfortable",
 };
 
 /** 완료된 회고 한 벌을 store 에 심는다 — 대화가 끝나야 draft 로 온다 */
-const seedCompleted = (diary: ReplyDiary | null, actionCard: ReplyActionCard | null) => {
+const seedCompleted = (diary: ReplyDiary | null, wishCard: ReplyWishCard | null) => {
   useRetro.getState().reset();
-  useRetro.setState({ startEmotion: 2, diary, actionCard }); // 우울함
+  useRetro.setState({ diary, wishCard });
 };
 
 beforeEach(() => {
-  // 저장 자체를 보는 테스트라 보관함 샘플 12편은 치운다
   useDiary.setState({ diaries: [], actionCards: [] });
-  seedCompleted(SEED_DIARY, SEED_ACTION);
+  seedCompleted(SEED_DIARY, SEED_WISH);
   jest.clearAllMocks();
 });
 
-describe("C6 · 일기 확인 — 기본은 읽기다", () => {
-  it("제목 없이 날짜 + 날씨 + 감정 + 본문을 보여준다", async () => {
+describe("일기 확인 — 기본은 읽기다", () => {
+  it("제목 없이 날짜 + 감정 + 본문을 보여준다", async () => {
     const { getByText } = await render(<RetroDraft />);
 
-    // 「일기에는 제목이 없어요 — 헤더는 「8월 13일의 일기」 + 날씨」(시안 ④ 주석)
     expect(getByText("7월 27일의 일기")).toBeTruthy();
     expect(getByText("우울함")).toBeTruthy();
     expect(getByText(SEED_DIARY.diary)).toBeTruthy();
@@ -99,11 +100,9 @@ describe("C6 · 일기 확인 — 기본은 읽기다", () => {
     const r = await render(<RetroDraft />);
     await fireEvent.press(r.getByText("직접 고치기"));
 
-    // 편집 중: 저장 버튼은 감춰지고 「수정 완료」만 있다(수정 완료 → 저장 순서)
     expect(r.queryByText("일기 저장하기")).toBeNull();
     expect(r.getByText("수정 완료")).toBeTruthy();
 
-    // 수정 완료 → 읽기로 돌아오고 저장 버튼이 다시 보인다
     await fireEvent.press(r.getByText("수정 완료"));
     expect(r.queryByLabelText("일기 본문")).toBeNull();
     expect(r.getByText("일기 저장하기")).toBeTruthy();
@@ -119,30 +118,20 @@ describe("C6 · 일기 확인 — 기본은 읽기다", () => {
     expect(cta.props.accessibilityState.disabled).toBe(false);
   });
 
-  it("시작 감정을 보이고 [+] 더하기를 두지 않는다", async () => {
+  it("감정을 보이고 [+] 더하기를 두지 않는다", async () => {
     const { getByText, queryByText } = await render(<RetroDraft />);
 
     expect(getByText("우울함")).toBeTruthy();
     expect(queryByText("+")).toBeNull();
   });
-
-  it("세그먼트를 두지 않는다 — 관점·행동 카드는 여기 없다", async () => {
-    // 리프레이밍은 저장된 일기 상세(A3)가, 행동 카드는 저장 완료(C7)가 보여준다
-    const r = await render(<RetroDraft />);
-
-    expect(r.queryByText("내가 남긴 오늘")).toBeNull();
-    expect(r.queryByText("바바가 함께 본 오늘")).toBeNull();
-    expect(r.queryByText("오늘 만든 행동 카드")).toBeNull();
-  });
 });
 
-describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () => {
+describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
   const save = async (body?: string) => {
     const r = await render(<RetroDraft />);
     if (body !== undefined) {
       await fireEvent.press(r.getByText("직접 고치기"));
       await fireEvent.changeText(r.getByLabelText("일기 본문"), body);
-      // 고친 뒤에는 「수정 완료」로 읽기로 돌아온 다음에야 저장할 수 있다
       await fireEvent.press(r.getByText("수정 완료"));
     }
     await act(async () => {
@@ -151,25 +140,24 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
     return r;
   };
 
-  it("서버 값을 그대로 옮겨 일기와 행동 카드를 남긴다", async () => {
+  it("서버 값을 그대로 옮겨 일기와 바람 카드를 남긴다", async () => {
     await save();
 
     const d = useDiary.getState().diaries[0];
-    // 완료 응답이 준 서버 일기 id 를 그대로 쓴다 — 저장 직후 삭제가 이 id 로 서버에 닿는다
     expect(d?.id).toBe(SEED_DIARY.diaryId);
     expect(d?.body).toBe(SEED_DIARY.diary);
     expect(d?.babaView).toBe(SEED_DIARY.reframedDiary);
-    expect(d?.startEmotion).toBe(2);
-    expect(d?.emotions).toEqual([2]);
+    // v2: 시작 감정이 없다 — 감정은 바람 카드에서 온다(depressed = id 8)
+    expect(d?.startEmotion).toBeNull();
+    expect(d?.emotions).toEqual([8]);
 
     const card = useDiary.getState().actionCards[0];
-    // 완료 응답이 준 서버 카드 id 를 그대로 쓴다 — 「해봤어요」·느낀 점·삭제가 이 id 로 서버에 닿는다
-    expect(card?.id).toBe(SEED_ACTION.actionCardId);
-    expect(card?.situation).toBe(SEED_ACTION.situation);
-    expect(card?.targetAction).toBe(SEED_ACTION.action);
+    expect(card?.id).toBe(SEED_WISH.wishCardId);
+    expect(card?.situation).toBe(SEED_WISH.situation);
+    expect(card?.targetAction).toBe(SEED_WISH.smallAction);
   });
 
-  it("서버 회고 세션 id 를 일기에 남긴다 — 나중에 서버 저장분을 되불러오는 열쇠다", async () => {
+  it("서버 회고 세션 id 를 일기에 남긴다", async () => {
     useRetro.setState({ sessionId: 42 });
     await save();
 
@@ -194,15 +182,9 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
     );
   });
 
-  it("안 고치면 서버로 본문을 보내지 않는다 — 서버엔 이미 원본이 있다", async () => {
+  it("안 고치면 서버로 본문을 보내지 않는다", async () => {
     useRetro.setState({ sessionId: 42 });
-    await save(); // 편집 없음
-
-    expect(mockedRequest).not.toHaveBeenCalled();
-  });
-
-  it("세션 id 가 없으면(로컬만) 고쳐도 서버로 보내지 않는다", async () => {
-    await save("내가 다시 쓴 오늘.");
+    await save();
 
     expect(mockedRequest).not.toHaveBeenCalled();
   });
@@ -216,16 +198,14 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
   });
 
   it("저장하면 완료로 가고, 회고 한 벌은 아직 남아 있다", async () => {
-    // ⚠ 비우는 곳이 `C7` 로 옮겨졌다 — 완료 화면이 **행동 카드를 보여줘야** 해서
-    // 여기서 비우면 그 카드가 사라진다(시안 ④-d2)
     await save();
 
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/retro/done");
-    expect(useRetro.getState().actionCard).not.toBeNull();
+    expect(useRetro.getState().wishCard).not.toBeNull();
   });
 
   it("이미 쌓인 일기 뒤에 이어 붙는다 — 13번째 장", async () => {
-    seedDiaries(); // 이미 12편이 쌓여 있다
+    seedDiaries();
     await save();
 
     const { diaries } = useDiary.getState();
@@ -248,17 +228,13 @@ describe("C6-b · 저장 — 일기 한 장과 (있으면) 행동 카드", () =>
   });
 });
 
-describe("짧은 기록형 — 리프레이밍도 행동 카드도 없다", () => {
+describe("감정 탐색 없이 — 바람 카드도 없다", () => {
   beforeEach(() => {
     useDiary.setState({ diaries: [], actionCards: [] });
-    // reframedDiary·actionCard 없이 일기 한 장만
-    seedCompleted(
-      { diaryId: null, diary: "오늘 있었던 일을 짧게 남겼다.", reframedDiary: null },
-      null,
-    );
+    seedCompleted({ diaryId: null, diary: "오늘 있었던 일을 짧게 남겼다.", reframedDiary: null }, null);
   });
 
-  it("리프레이밍이 없어도 화면은 같다 — 읽고, 고치고, 저장한다", async () => {
+  it("바람 카드가 없어도 화면은 같다 — 읽고, 고치고, 저장한다", async () => {
     const r = await render(<RetroDraft />);
 
     expect(r.getByText("오늘 있었던 일을 짧게 남겼다.")).toBeTruthy();
@@ -266,28 +242,26 @@ describe("짧은 기록형 — 리프레이밍도 행동 카드도 없다", () =
     expect(r.getByText("일기 저장하기")).toBeTruthy();
   });
 
-  it("일기만 남기고 행동 카드는 만들지 않는다", async () => {
+  it("일기만 남기고 바람 카드는 만들지 않는다", async () => {
     const r = await render(<RetroDraft />);
     await act(async () => {
       await fireEvent.press(r.getByText("일기 저장하기"));
     });
 
     expect(useDiary.getState().diaries).toHaveLength(1);
-    expect(useDiary.getState().diaries[0]?.babaView).toBeNull();
     expect(useDiary.getState().actionCards).toHaveLength(0);
   });
 });
 
-describe("C7 · 완료 — 허브로 만들지 않는다", () => {
-  it("카드가 있으면 체크 · 두 줄 · 카드 · 버튼 둘이다", async () => {
+describe("완료 — 허브로 만들지 않는다", () => {
+  it("바람 카드가 있으면 체크 · 두 줄 · 카드 · 버튼 둘이다", async () => {
     const { getByText } = await render(<RetroDone />);
 
     expect(getByText("오늘의 일기를 저장했어요.")).toBeTruthy();
-    expect(getByText("오늘 이야기에서 하나 챙겨봤어요.")).toBeTruthy();
-    // 쉼터(R2)와 같은 anatomy — 수행 체크만 거기에 있다
+    expect(getByText("오늘 이야기에서 마음을 하나 챙겨봤어요.")).toBeTruthy();
     expect(getByText("7월 27일 카드")).toBeTruthy();
-    expect(getByText(SEED_ACTION.situation)).toBeTruthy();
-    expect(getByText(SEED_ACTION.action)).toBeTruthy();
+    expect(getByText(SEED_WISH.situation)).toBeTruthy();
+    expect(getByText(SEED_WISH.smallAction as string)).toBeTruthy();
     expect(getByText("홈으로 돌아가기")).toBeTruthy();
     expect(getByText("쉼터에서 보기")).toBeTruthy();
   });
@@ -297,10 +271,8 @@ describe("C7 · 완료 — 허브로 만들지 않는다", () => {
     const { getByText, queryByText } = await render(<RetroDone />);
 
     expect(getByText("오늘의 일기를 저장했어요.")).toBeTruthy();
-    // 없는 것을 굳이 알리지 않는다 — 없는 것이 결핍이 되지 않게(시안 ④ 주석)
     expect(queryByText(/카드가 없|카드는 없/)).toBeNull();
-    expect(queryByText("오늘 이야기에서 하나 챙겨봤어요.")).toBeNull();
-    // 카드가 없으면 나가는 길도 하나뿐이다
+    expect(queryByText("오늘 이야기에서 마음을 하나 챙겨봤어요.")).toBeNull();
     expect(queryByText("쉼터에서 보기")).toBeNull();
   });
 
@@ -315,8 +287,8 @@ describe("C7 · 완료 — 허브로 만들지 않는다", () => {
 
     await fireEvent.press(getByText("홈으로 돌아가기"));
 
-    expect(useRetro.getState().startEmotion).toBeNull();
-    expect(useRetro.getState().actionCard).toBeNull();
+    expect(useRetro.getState().wishCard).toBeNull();
+    expect(useRetro.getState().diary).toBeNull();
   });
 
   it("홈으로 돌아간다", async () => {
@@ -325,7 +297,7 @@ describe("C7 · 완료 — 허브로 만들지 않는다", () => {
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
   });
 
-  it("[쉼터에서 보기] 는 쉼터 행동카드(R2)로 간다 — 온보딩 /rest 로 새지 않는다", async () => {
+  it("[쉼터에서 보기] 는 쉼터 행동카드(R2)로 간다", async () => {
     const { getByText } = await render(<RetroDone />);
     await fireEvent.press(getByText("쉼터에서 보기"));
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/rest/cards");

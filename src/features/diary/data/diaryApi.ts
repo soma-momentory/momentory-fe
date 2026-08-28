@@ -55,15 +55,16 @@ const ARCHIVE_TIMEOUT_MS = 8_000;
  * scheduleApi 처럼 자기 표를 두어 다른 feature 의 store 를 import 하지 않는다.
  */
 const EMOTION_BY_KEY: Record<string, EmotionId> = {
-  anxious: 1,
-  depressed: 2,
-  angry: 3,
-  happy: 4,
+  happy: 1,
+  proud: 2,
+  calm: 3,
+  tired: 4,
   stuck: 5,
   lethargic: 6,
-  tired: 7,
-  proud: 8,
-  calm: 9,
+  anxious: 7,
+  depressed: 8,
+  angry: 9,
+  frustrated: 10,
 };
 
 /** 소문자 키 → id. 모르는 키는 `null` — 이름을 지어내지 않는다 */
