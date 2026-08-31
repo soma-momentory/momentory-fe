@@ -235,7 +235,7 @@ describe("종료 — 일기 확인하러 가기", () => {
           text: "오늘 이야기를 정리해뒀어요.",
           phase: "complete",
           done: true,
-          diary: { diaryId: "10", diary: "오늘의 일기.", reframedDiary: null },
+          diary: { diaryId: "10", diary: "오늘의 일기.", reframedDiary: null, emotions: [] },
         }),
       },
     });

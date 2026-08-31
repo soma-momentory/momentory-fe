@@ -15,7 +15,7 @@ import {
 import { visibleSchedules, useDay } from "@/features/home/model/day";
 import { useProfile } from "@/features/my/model/settings";
 import {
-  PHASE_AWAIT_BRANCH,
+  PHASE_EMOTION_EXPLORATION,
   PHASE_ENDED,
   PHASE_SAFETY_HOLD,
   sendTurn,
@@ -26,7 +26,7 @@ import {
   type StartScheduleItem,
   type TurnInput,
 } from "@/features/retro/data/retroApi";
-import { emotionKeyOf, useRetro } from "@/features/retro/model/retro";
+import { useRetro } from "@/features/retro/model/retro";
 
 /**
  * 회고 대화 (채팅흐름_v2) — **서버가 주도한다.** 화면은 `startRetro`/`sendTurn` 을 부르고 응답의
@@ -96,11 +96,8 @@ export default function RetroTalk() {
     setPending(true);
     setError(null);
     setStartErrorCode(null);
-    // v2: 시작 시 감정을 고르지 않는다. 일정 감정 태그는 있으면 소재로 싣고, 없으면 생략한다.
-    const items: StartScheduleItem[] = visibleSchedules(schedules).map((s) => {
-      const first = s.emotions[0];
-      return { name: s.title, emotion: first == null ? null : emotionKeyOf(first) };
-    });
+    // v2: 시작 시 감정을 붙이지 않는다 — 감정은 대화로 알아간다. 일정은 이름만 소재로 싣는다.
+    const items: StartScheduleItem[] = visibleSchedules(schedules).map((s) => ({ name: s.title }));
 
     const result = await startRetro({ schedules: items, nickname: nickname || null });
     setPending(false);
@@ -148,7 +145,11 @@ export default function RetroTalk() {
   const goHome = () => router.replace("/home");
 
   const phase = lastReply?.phase ?? "";
-  const singleSelect = phase === PHASE_AWAIT_BRANCH;
+  // 「직접 적기」가 없는 선지 묶음은 양자택일(분기점·단답 체크인) → 하나만 고른다.
+  // 감정·바람·작은 행동처럼 직접 적기가 있는 추천은 여러 개 고를 수 있다.
+  const singleSelect =
+    (lastReply?.options ?? []).length > 0 &&
+    !(lastReply?.options ?? []).some((o) => o.input === true);
 
   const toggle = (o: ReplyOption) => {
     if (o.input) {
@@ -158,7 +159,8 @@ export default function RetroTalk() {
     }
     setCustomOpen(false);
     setPickedIds((prev) => {
-      if (singleSelect) return [o.id];
+      // 단일 선택 — 다시 누르면 해제(취소)된다. 해제하면 후보 스텝은 다시 입력창이 뜬다.
+      if (singleSelect) return prev.includes(o.id) ? [] : [o.id];
       if (prev.includes(o.id)) return prev.filter((x) => x !== o.id);
       // 상한 도달 — 가장 오래된 것을 밀어내고 새 것을 담는다
       if (prev.length >= MAX_PICK) return [...prev.slice(1), o.id];
@@ -172,7 +174,12 @@ export default function RetroTalk() {
   const options = lastReply?.options ?? null;
   const noSession = sessionId == null;
   const startTerminal = startErrorCode === "already_today";
-  const showOptions = !done && options != null && options.length > 0 && !customOpen;
+  // 선택지 목록은 옵션이 있으면 늘 보인다.
+  const hasOptions = !done && options != null && options.length > 0;
+  // 후보 추천 스텝(감정 탐색) — 입력창을 늘 띄우고, 후보를 하나 고르면 「보내기」로 바뀐다(취소하면 다시 입력창).
+  const candidateStep = phase === PHASE_EMOTION_EXPLORATION;
+  // 독: 「보내기」를 보일지. 후보 스텝은 하나 골랐을 때만, 그 외(분기점·체크인)는 옵션이 있으면 늘.
+  const showOptions = hasOptions && (!candidateStep || pickedIds.length > 0);
 
   return (
     <ChatScaffold
@@ -207,9 +214,10 @@ export default function RetroTalk() {
         </ChatBubble>
       ))}
 
-      {/* 선택지는 질문 바로 아래, 대화 안에 붙는다 */}
-      {showOptions && options != null ? (
-        rich(options) ? (
+      {/* 선택지는 질문 바로 아래, 대화 안에 붙는다 — `직접 적기` 입력 중에도 계속 보인다.
+          감정 탐색(감정·바람·작은 행동)은 모두 바람 추천과 같은 줄(OptionRow) 형태로 통일한다. */}
+      {hasOptions && options != null ? (
+        phase === PHASE_EMOTION_EXPLORATION || rich(options) ? (
           <View style={styles.rows}>
             {options.map((o) => (
               <OptionRow
@@ -360,7 +368,8 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, alignSelf: "flex-start" },
   holdActions: { gap: space.xs },
   rows: { gap: space.sm },
-  row: { gap: 2, padding: space.lg, borderRadius: radius.medium },
+  // 세로 패딩을 줄여 칸 높이를 낮춘다(바람 단계처럼 선택지가 많을 때 목록이 길어지지 않게)
+  row: { gap: 2, paddingVertical: space.md, paddingHorizontal: space.lg, borderRadius: radius.medium },
   rowOff: { backgroundColor: background.elevated, borderWidth: 1, borderColor: line.neutral },
   rowOn: { backgroundColor: selectedTint, borderWidth: 2, borderColor: primary.normal },
 });
