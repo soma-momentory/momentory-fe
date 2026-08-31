@@ -191,6 +191,10 @@ export const testDiaryData = (): { diaries: Diary[]; actionCards: ActionCard[] }
         id: `ac-fixture-${d.day}`,
         diaryId: diary.id,
         situation: d.action.situation,
+        emotions: [],
+        needs: [],
+        desiredState: null,
+        sentiment: "uncomfortable",
         targetAction: d.action.targetAction,
         done: d.action.done ?? false,
         // 해본 날짜는 만든 다음 날로 둔다 — 「해봤어요 · 7월 21일」처럼 보인다

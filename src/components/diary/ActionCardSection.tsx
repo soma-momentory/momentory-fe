@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { Button, Card, Icon, Text, TextField } from "@/components/ds";
+import { WishCardFields } from "@/components/diary/WishCardFields";
 import { label as labelColor, line, space, status } from "@/design/ds";
 import type { ActionCard } from "@/features/diary/model/diary";
 import { formatKoreanDateShort } from "@/lib/day";
@@ -56,12 +57,18 @@ export function ActionCardSection({
   return (
     <View style={styles.section}>
       <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>
-        이 일기의 행동 카드
+        이 일기의 바람 카드
       </Text>
 
       <Card padding="loose" style={styles.card}>
-        <Field label="상황" value={card.situation} />
-        <Field label="목표 행동" value={card.targetAction} />
+        <WishCardFields
+          situation={card.situation}
+          emotions={card.emotions}
+          needs={card.needs}
+          desiredState={card.desiredState}
+          smallAction={card.targetAction}
+          positive={card.sentiment === "positive"}
+        />
 
         {card.done ? (
           readOnly ? (
@@ -135,25 +142,10 @@ export function ActionCardSection({
   );
 }
 
-/** 라벨이 값 위에 선다 — 카드 안에서 역할과 내용이 두 줄로 갈린다(`Diary.dc.html` ④-d2) */
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.field}>
-      <Text variant="label2" color={labelColor.alternative}>
-        {label}
-      </Text>
-      <Text variant="body1" color={labelColor.normal}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   section: { gap: space.md },
   sectionLabel: { paddingLeft: space.xs },
   card: { gap: space.lg },
-  field: { gap: space.xs },
   // 목표 행동 아래 구분선 — 카드 안에 또 하나의 카드를 만들지 않는다(`DESIGN.md` §5)
   record: {
     gap: space.xs,

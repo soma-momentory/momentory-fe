@@ -50,7 +50,13 @@ export type ReplyWishCard = {
  * 일기 — `diaryId` 는 완료 턴이 서버에 방금 저장한 일기의 id(문자열). store 에 넣어 두면 그 id 로
  * 삭제할 수 있다. 서버가 안 주면 `null`.
  */
-export type ReplyDiary = { diaryId: string | null; diary: string; reframedDiary: string | null };
+export type ReplyDiary = {
+  diaryId: string | null;
+  diary: string;
+  reframedDiary: string | null;
+  /** 일기에서 드러난 감정 태그 키 — 저장 직후에도 화면이 바로 감정을 보여주게 함께 온다 */
+  emotions: string[];
+};
 
 /** 한 턴의 서버 응답. 프론트는 이걸 보고 무엇을 그릴지 정한다 */
 export type Reply = {
@@ -77,8 +83,8 @@ export const PHASE_ENDED = "ended";
 /** 위기 안내 후 멈춘 phase — 「이어서 얘기하기」로 이어갈 수 있다(종결 아님) */
 export const PHASE_SAFETY_HOLD = "safety_hold";
 
-/** 오늘의 일정 하나 — 감정 태그(홈에서 단 것)는 있어도 없어도 된다 */
-export type StartScheduleItem = { name: string; emotion?: string | null };
+/** 오늘의 일정 하나 — 이름만 싣는다. 채팅흐름_v2 는 감정을 대화로 알아가므로 시작 시 감정을 붙이지 않는다 */
+export type StartScheduleItem = { name: string };
 
 export type StartInput = {
   /** 오늘의 일정. 비우면 '오늘 하루'를 돌아본다. 서버가 이 중 개인화 소재 하나를 고른다 */
@@ -231,7 +237,10 @@ const toDiary = (v: unknown): ReplyDiary | null => {
   if (!isObject(v)) return null;
   const diary = asString(v.diary);
   if (diary == null) return null;
-  return { diaryId: asId(v.diaryId), diary, reframedDiary: asString(v.reframedDiary) };
+  const emotions = Array.isArray(v.emotions)
+    ? v.emotions.filter((e): e is string => typeof e === "string")
+    : [];
+  return { diaryId: asId(v.diaryId), diary, reframedDiary: asString(v.reframedDiary), emotions };
 };
 
 /**

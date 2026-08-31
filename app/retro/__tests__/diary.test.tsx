@@ -27,6 +27,7 @@ const SEED_DIARY: ReplyDiary = {
   diaryId: "77",
   diary: "오늘 모의 면접에서 답이 막혔지만 끝까지 답했다.",
   reframedDiary: "그 한 번이 면접을 못한다는 뜻은 아니다.",
+  emotions: ["depressed"], // 일기에서 드러난 감정 태그(= id 8, 우울함)
 };
 /** 감정 탐색을 거친 바람 카드(v2) — depressed 감정(=id 8, 우울함) */
 const SEED_WISH: ReplyWishCard = {
@@ -231,7 +232,10 @@ describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
 describe("감정 탐색 없이 — 바람 카드도 없다", () => {
   beforeEach(() => {
     useDiary.setState({ diaries: [], actionCards: [] });
-    seedCompleted({ diaryId: null, diary: "오늘 있었던 일을 짧게 남겼다.", reframedDiary: null }, null);
+    seedCompleted(
+      { diaryId: null, diary: "오늘 있었던 일을 짧게 남겼다.", reframedDiary: null, emotions: [] },
+      null,
+    );
   });
 
   it("바람 카드가 없어도 화면은 같다 — 읽고, 고치고, 저장한다", async () => {

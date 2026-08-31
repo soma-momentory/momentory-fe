@@ -34,7 +34,7 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
   it("행동 카드가 일기 아래에 붙는다 — 따로 목록을 만들지 않는다", async () => {
     const { getByText } = await render(<DiaryDetail />);
 
-    expect(getByText("이 일기의 행동 카드")).toBeTruthy();
+    expect(getByText("이 일기의 바람 카드")).toBeTruthy();
     expect(getByText("면접 연습을 시작할 때")).toBeTruthy();
     expect(getByText("예상 질문 하나를 골라 핵심 세 문장으로 답해보기")).toBeTruthy();
   });
@@ -105,6 +105,10 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
           id: "c-27",
           diaryId: ID,
           situation: "면접 연습을 시작할 때",
+          emotions: [],
+          needs: [],
+          desiredState: null,
+          sentiment: "uncomfortable" as const,
           targetAction: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
           done: true,
           doneAt: "2026-07-28T09:00:00",
@@ -130,6 +134,10 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
           id: "c-27",
           diaryId: ID,
           situation: "면접 연습을 시작할 때",
+          emotions: [],
+          needs: [],
+          desiredState: null,
+          sentiment: "uncomfortable" as const,
           targetAction: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
           done: true,
           doneAt: "2026-07-28T09:00:00",

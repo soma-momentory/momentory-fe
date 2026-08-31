@@ -63,8 +63,9 @@ export default function RetroDraft() {
   // 완료 일기 없이 들어올 수 없다 — 대화가 끝나야 여기 온다
   if (diary == null) return <Redirect href="/retro/talk" />;
 
-  // v2: 감정은 시작 시 고르지 않고 바람 카드(감정 탐색을 거친 경우)에서 온다. 키를 id 로 되돌린다.
-  const emotions = (wishCard?.emotions ?? [])
+  // 일기 감정 태그 — 완료 응답이 준 '일기에서 드러난 감정 전체'(감정 탐색을 안 거쳐도 추출 감정이 온다).
+  // 키를 id 로 되돌린다. 낙관적 일기가 저장 직후에도 이 감정을 바로 보여준다.
+  const emotions = (diary.emotions ?? [])
     .map(emotionIdOfKey)
     .filter((x): x is EmotionId => x != null);
   const leadEmotion = emotions[0] ?? null;
@@ -86,6 +87,12 @@ export default function RetroDraft() {
       weather: null,
       situation: wishCard?.situation ?? null,
       targetAction: wishCard?.smallAction ?? null,
+      // 바람 카드 리치 필드 — 완료 직후 쉼터/상세에서도 바로 채워 보이게 함께 싣는다.
+      cardEmotions:
+        wishCard?.emotions.map(emotionIdOfKey).filter((e): e is EmotionId => e != null) ?? [],
+      needs: wishCard?.needs.map((n) => n.word) ?? [],
+      desiredState: wishCard?.desiredState ?? null,
+      sentiment: wishCard?.sentiment === "positive" ? "positive" : "uncomfortable",
       // 완료 턴이 준 서버 카드 id — 있으면 저장 직후에도 완료/느낀 점/삭제가 서버에 닿는다
       actionCardId: wishCard?.wishCardId ?? null,
       retrospectId: sessionId != null ? String(sessionId) : null,
@@ -211,8 +218,9 @@ const styles = StyleSheet.create({
 
   card: { gap: space.md },
   emotionRow: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
-  // 읽기(`body1ReadingHand`)와 같은 손글씨로 — 고쳐도 본문의 결이 바뀌지 않는다
-  input: { ...text.body1ReadingHand, color: labelColor.normal, padding: 0 },
+  // 읽기(`body1ReadingHandLg` 18/30)와 같은 손글씨·같은 크기로 — 고치기로 들어가도 본문 크기가
+  // 바뀌지 않는다(읽기와 편집을 큰 쪽으로 통일)
+  input: { ...text.body1ReadingHandLg, color: labelColor.normal, padding: 0 },
   counter: { textAlign: "right", fontVariant: ["tabular-nums"] },
   // 「오늘 일정」 섹션 — 일기 상세(A3)의 「그날 일정」과 같은 값(제목 gap·왼쪽 들여쓰기)
   schedules: { gap: space.md },

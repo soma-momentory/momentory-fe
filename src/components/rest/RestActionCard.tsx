@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { Button, Card, Icon, IconButton, Text } from "@/components/ds";
+import { WishCardFields } from "@/components/diary/WishCardFields";
 import {
   background,
   fill,
@@ -151,23 +152,14 @@ export function RestActionCard({
         ) : null}
       </View>
 
-      <View style={styles.field}>
-        <Text variant="label2" color={labelColor.alternative}>
-          상황
-        </Text>
-        <Text variant="body2" color={labelColor.neutral}>
-          {card.situation}
-        </Text>
-      </View>
-
-      <View style={styles.field}>
-        <Text variant="label2" color={labelColor.alternative}>
-          제안된 행동
-        </Text>
-        <Text variant="body1" color={labelColor.strong}>
-          {card.targetAction}
-        </Text>
-      </View>
+      <WishCardFields
+        situation={card.situation}
+        emotions={card.emotions}
+        needs={card.needs}
+        desiredState={card.desiredState}
+        smallAction={card.targetAction}
+        positive={card.sentiment === "positive"}
+      />
 
       <View style={styles.foot}>
         <View style={styles.statusRow}>
@@ -251,7 +243,6 @@ const styles = StyleSheet.create({
   headName: { flexDirection: "row", alignItems: "baseline", gap: space.sm, flexShrink: 1 },
   // 44 히트는 지키되 머리 줄의 높이를 밀지 않게 위아래·오른쪽으로 당긴다
   more: { marginVertical: -space.md, marginRight: -space.md },
-  field: { gap: space.xs },
 
   // 상태·느낀 점은 카드 안에서 한 겹 아래다 — 위 선 하나로 나눈다
   foot: {

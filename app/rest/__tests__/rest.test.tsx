@@ -43,6 +43,10 @@ const seedOneCard = () => {
     id: "ac-1",
     diaryId: "d-1",
     situation: "회의가 길어져 지쳤다",
+    emotions: [],
+    needs: [],
+    desiredState: null,
+    sentiment: "uncomfortable" as const,
     targetAction: "10분 걷기",
     done: false,
     doneAt: null,
@@ -112,7 +116,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     const { getByText } = await render(<RestCards />);
 
     expect(getByText("상황")).toBeTruthy();
-    expect(getByText("제안된 행동")).toBeTruthy();
+    expect(getByText("작은 행동")).toBeTruthy();
     expect(getByText(card.situation)).toBeTruthy();
   });
 
@@ -276,7 +280,7 @@ describe("R3 · 누적 기록 — 행동 자체가 제목이다", () => {
     const card = latest();
     const { getByText } = await render(<RestCardTrail />);
 
-    expect(getByText(card.targetAction)).toBeTruthy();
+    expect(getByText(card.targetAction ?? "")).toBeTruthy();
     expect(getByText("이 카드가 만들어진 상황")).toBeTruthy();
     expect(getByText(card.situation)).toBeTruthy();
   });
