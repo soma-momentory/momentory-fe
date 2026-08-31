@@ -182,7 +182,11 @@ describe("감정 탐색 — 최대 2개 선택 + 직접 적기", () => {
           text: "그때 내 마음이 바랐던 것은 무엇에 가까웠을까요?",
           phase: "emotion_exploration",
           options: [
-            option({ id: "1", label: "존중", description: "내 의견이 가볍게 다뤄지지 않길 바라는 마음" }),
+            option({
+              id: "1",
+              label: "존중",
+              description: "내 의견이 가볍게 다뤄지지 않길 바라는 마음",
+            }),
             option({ id: "2", label: "소통", description: "마음이 서로 잘 통하길 바라는 마음" }),
             option({ id: "3", label: "인정", description: "내 노력을 알아봐 주길 바라는 마음" }),
             option({ id: "4", label: "직접 적기", input: true }),

@@ -41,7 +41,8 @@ export default function RetroDone() {
   const resetRetro = useRetro((s) => s.reset);
   const { date: today } = useTodayContext();
 
-  const wishLabel = wishCard?.sentiment === "positive" ? "내 마음을 채워준 것" : "내 마음이 바랐던 것";
+  const wishLabel =
+    wishCard?.sentiment === "positive" ? "내 마음을 채워준 것" : "내 마음이 바랐던 것";
   const emotions = wishCard != null ? emotionNames(wishCard.emotions) : "";
   const needs = wishCard != null ? wishCard.needs.map((n) => n.word).join(", ") : "";
 

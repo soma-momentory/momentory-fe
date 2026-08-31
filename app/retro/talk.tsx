@@ -2,7 +2,15 @@ import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Button, ChatBubble, ChatDock, ChatScaffold, Chip, Text, TypingBubble } from "@/components/ds";
+import {
+  Button,
+  ChatBubble,
+  ChatDock,
+  ChatScaffold,
+  Chip,
+  Text,
+  TypingBubble,
+} from "@/components/ds";
 import {
   background,
   label as labelColor,
@@ -369,7 +377,12 @@ const styles = StyleSheet.create({
   holdActions: { gap: space.xs },
   rows: { gap: space.sm },
   // 세로 패딩을 줄여 칸 높이를 낮춘다(바람 단계처럼 선택지가 많을 때 목록이 길어지지 않게)
-  row: { gap: 2, paddingVertical: space.md, paddingHorizontal: space.lg, borderRadius: radius.medium },
+  row: {
+    gap: 2,
+    paddingVertical: space.md,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.medium,
+  },
   rowOff: { backgroundColor: background.elevated, borderWidth: 1, borderColor: line.neutral },
   rowOn: { backgroundColor: selectedTint, borderWidth: 2, borderColor: primary.normal },
 });

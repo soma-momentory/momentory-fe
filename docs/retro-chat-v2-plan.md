@@ -14,7 +14,7 @@
     `design/ds/color.ts` 감정 10색 재배치 + 답답함(10) 색 신설(초안).
 - ⚠ **`npm test` 25개 실패** — 두 부류:
   1. 순수 taxonomy 기대값 갱신 필요: `emotion.test`·`scheduleApi.test`·`diaryApi.test`·`weeklyReportApi.test`
-     + 화면 감정이름/필터 테스트(`home`·`archive`·`report-my`). → 새 번호로 기대값만 고치면 됨.
+     - 화면 감정이름/필터 테스트(`home`·`archive`·`report-my`). → 새 번호로 기대값만 고치면 됨.
   2. **흐름 결합(= 화면 재작성 필요)**: `retro.test` C3 시작감정 9종, `talk.test` currentEmotion 전송,
      `diary.test` C6 시작감정. **v2 가 `emotion.tsx`(C3)를 없애고 start 에서 감정을 빼므로** 지금 고치면 throwaway.
 
