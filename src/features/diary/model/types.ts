@@ -70,10 +70,18 @@ export type Diary = {
 export type ActionCard = {
   id: string;
   diaryId: string;
-  /** 언제 꺼내는가 */
+  /** 감정이 생긴 핵심 장면 */
   situation: string;
-  /** 무엇을 하는가 · 한 문장 · 관찰 가능한 행동. **사용자가 말한 것을 옮긴다** */
-  targetAction: string;
+  /** 확인한 감정(최대 2). 감정 탐색을 안 거쳤으면 빈 목록 */
+  emotions: EmotionId[];
+  /** 바란 것(단어, 최대 2). 안 골랐으면 빈 목록 */
+  needs: string[];
+  /** 바랐던 모습(불편)/좋았던 모습(긍정) — 없으면 null */
+  desiredState: string | null;
+  /** 감정 성격 — 라벨 워딩이 갈린다(불편 vs 긍정) */
+  sentiment: "uncomfortable" | "positive";
+  /** 작은 행동 · 한 문장. **사용자가 말한 것을 옮긴다.** 안 정했으면 null */
+  targetAction: string | null;
   /** `[해봤어요]` — 토글이 아니라 **한 번의 기록**이다(`A3`·`A3-c`) */
   done: boolean;
   doneAt: string | null;

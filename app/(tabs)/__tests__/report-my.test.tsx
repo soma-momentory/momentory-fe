@@ -31,15 +31,15 @@ const weeklyReport = (over: Partial<WeeklyReport> = {}): WeeklyReport => ({
   startDate: THIS_WEEK,
   endDate: "2026-08-01",
   days: [
-    { date: "2026-07-26", emotion: 7 }, // 일 · 피곤함
-    { date: "2026-07-27", emotion: 9 }, // 월 · 평온함
-    { date: "2026-07-28", emotion: 9 },
+    { date: "2026-07-26", emotion: 4 }, // 일 · 피곤함 (v2 재번호)
+    { date: "2026-07-27", emotion: 3 }, // 월 · 평온함
+    { date: "2026-07-28", emotion: 3 },
     { date: "2026-07-29", emotion: null }, // 수 · 기록 없음
-    { date: "2026-07-30", emotion: 9 },
+    { date: "2026-07-30", emotion: 3 },
     { date: "2026-07-31", emotion: null }, // 금 · 기록 없음
-    { date: "2026-08-01", emotion: 4 }, // 토
+    { date: "2026-08-01", emotion: 1 }, // 토 · 행복함
   ],
-  dominantEmotion: 9,
+  dominantEmotion: 3,
   moodMessage:
     "이번 주에는 평온한 마음을 가장 많이 느꼈어요. " +
     "나를 편안하게 해준 환경이나 행동을 다음 주에도 이어가 보세요.",

@@ -39,7 +39,7 @@ export default function RetroConfirm() {
     <ChatScaffold
       leading="close"
       onLeadingPress={() => router.replace("/home")}
-      dock={<Button label="다음" fill onPress={() => router.push("/retro/emotion")} />}
+      dock={<Button label="다음" fill onPress={() => router.push("/retro/talk")} />}
     >
       <ChatBubble>오늘 있었던 일을 잠깐 떠올려봐요.</ChatBubble>
 

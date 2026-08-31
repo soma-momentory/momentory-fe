@@ -44,7 +44,8 @@ describe("ScheduleResponse → 스키마 Schedule", () => {
   });
 
   it("감정 하나를 배열로 담는다 — 타입은 스키마대로 배열이다", () => {
-    expect(toSchedule(raw)?.emotions).toEqual([1]);
+    // ANXIOUS 는 v2 재번호에서 7번(불안함)이다
+    expect(toSchedule(raw)?.emotions).toEqual([7]);
     expect(toSchedule({ ...raw, emotion: null })?.emotions).toEqual([]);
   });
 
@@ -61,19 +62,20 @@ describe("ScheduleResponse → 스키마 Schedule", () => {
 });
 
 describe("감정 표 — 회고와 다른 어휘다", () => {
-  it("9종을 빠짐없이 덮는다", () => {
+  it("10종을 빠짐없이 덮는다 — 스케줄 enum 은 화남·답답함을 합쳐 9개 코드다", () => {
     for (const e of EMOTIONS) expect(SCHEDULE_EMOTIONS[e.id]).toBeTruthy();
+    // 화남(9)·답답함(10)이 같은 ANGRY_FRUSTRATED 라 코드는 9종
     expect(new Set(Object.values(SCHEDULE_EMOTIONS)).size).toBe(9);
   });
 
-  it("3번은 회고의 `angry` 가 아니라 `ANGRY_FRUSTRATED` 다", () => {
-    // 서버 안에 감정 enum 이 두 벌이고 이 한 칸만 이름이 다르다 —
-    // 회고의 EMOTION_KEYS 를 재사용하면 이 감정만 조용히 400 이 된다
-    expect(SCHEDULE_EMOTIONS[3]).toBe("ANGRY_FRUSTRATED");
+  it("화남(9)·답답함(10)은 회고와 달리 합쳐진 ANGRY_FRUSTRATED 다", () => {
+    // 스케줄 enum 은 아직 미분리 — 회고의 angry/frustrated 를 재사용하면 조용히 400 이 된다
+    expect(SCHEDULE_EMOTIONS[9]).toBe("ANGRY_FRUSTRATED");
+    expect(SCHEDULE_EMOTIONS[10]).toBe("ANGRY_FRUSTRATED");
   });
 
-  it("순서가 EMOTIONS 와 같다 — 1 불안함 … 9 평온함", () => {
-    expect(SCHEDULE_EMOTIONS[1]).toBe("ANXIOUS");
-    expect(SCHEDULE_EMOTIONS[9]).toBe("CALM");
+  it("순서가 EMOTIONS 와 같다 — 1 행복함 … 3 평온함", () => {
+    expect(SCHEDULE_EMOTIONS[1]).toBe("HAPPY");
+    expect(SCHEDULE_EMOTIONS[3]).toBe("CALM");
   });
 });

@@ -36,7 +36,7 @@ export const testSchedules = (): Schedule[] => [
     externalId: "cal-1",
     done: true,
     doneAt: `${SAMPLE_TODAY}T11:20:00`,
-    emotions: [3],
+    emotions: [9],
     hidden: false,
   },
   {
@@ -48,7 +48,7 @@ export const testSchedules = (): Schedule[] => [
     externalId: "cal-2",
     done: true,
     doneAt: `${SAMPLE_TODAY}T13:40:00`,
-    emotions: [4],
+    emotions: [1],
     hidden: false,
   },
   {
@@ -60,7 +60,7 @@ export const testSchedules = (): Schedule[] => [
     externalId: "cal-3",
     done: false,
     doneAt: null,
-    emotions: [1],
+    emotions: [7],
     hidden: false,
   },
   {
@@ -100,25 +100,25 @@ export const TEST_DIARY_MONTH = "2026-07";
  * 나온다. 값이 바뀌면 그 화면 테스트의 숫자도 함께 바뀐다.
  */
 const DIARY_SEEDS: DiarySeed[] = [
-  { day: 1, emotions: [5, 4], body: "새 달의 첫날. 계획을 세우다 말았지만 그래도 적어는 뒀다." },
-  { day: 4, emotions: [9, 4], body: "오랜만에 늦잠을 잤다. 죄책감보다 개운함이 컸다." },
-  { day: 8, emotions: [4, 8], body: "발표 준비를 끝냈다. 마지막 장을 덮을 때가 제일 좋다." },
+  { day: 1, emotions: [5, 1], body: "새 달의 첫날. 계획을 세우다 말았지만 그래도 적어는 뒀다." },
+  { day: 4, emotions: [3, 1], body: "오랜만에 늦잠을 잤다. 죄책감보다 개운함이 컸다." },
+  { day: 8, emotions: [1, 2], body: "발표 준비를 끝냈다. 마지막 장을 덮을 때가 제일 좋다." },
   {
     day: 13,
-    emotions: [3, 1],
+    emotions: [9, 7],
     body: "메일 하나에 하루 기분이 흔들렸다. 답장은 내일 쓰기로 했다.",
     action: { situation: "답장이 밀렸을 때", targetAction: "한 줄만 먼저 보내기", done: true },
   },
-  { day: 15, emotions: [7, 6], body: "몸이 무거운 하루. 그래도 저녁에 일찍 누웠다." },
+  { day: 15, emotions: [4, 6], body: "몸이 무거운 하루. 그래도 저녁에 일찍 누웠다." },
   {
     day: 17,
-    emotions: [5, 2],
+    emotions: [5, 8],
     body: "그런 날도 있다. 이런 날은 그냥 지나가게 두기로 했다.",
     action: { situation: "아무것도 하기 싫을 때", targetAction: "10분만 밖에 나가 보기" },
   },
   {
     day: 20,
-    emotions: [7, 8],
+    emotions: [4, 2],
     body: "미루던 운동을 10분이라도 했다. 시작하니 생각보다 가벼웠다.",
     action: {
       situation: "운동을 미루고 싶을 때",
@@ -126,10 +126,10 @@ const DIARY_SEEDS: DiarySeed[] = [
       done: true,
     },
   },
-  { day: 21, emotions: [1, 9], body: "면접 일정이 잡혔다. 걱정이 앞섰지만 일단 달력에 적었다." },
+  { day: 21, emotions: [7, 3], body: "면접 일정이 잡혔다. 걱정이 앞섰지만 일단 달력에 적었다." },
   {
     day: 22,
-    emotions: [3, 8],
+    emotions: [9, 2],
     body: "회의는 답답했지만, 그 답답함은 내 의견을 전하고 싶다는 마음에서 왔다.",
     action: {
       situation: "회의에서 말이 막힐 때",
@@ -137,10 +137,10 @@ const DIARY_SEEDS: DiarySeed[] = [
       done: true,
     },
   },
-  { day: 24, emotions: [9, 4], body: "산책하다 해가 지는 걸 오래 봤다. 별일 없는 날이 좋았다." },
+  { day: 24, emotions: [3, 1], body: "산책하다 해가 지는 걸 오래 봤다. 별일 없는 날이 좋았다." },
   {
     day: 26,
-    emotions: [9, 4],
+    emotions: [3, 1],
     body: "주말 내내 아무것도 안 했다. 그게 필요했던 것 같다.",
     action: {
       situation: "쉬고 나서도 개운하지 않을 때",
@@ -149,7 +149,7 @@ const DIARY_SEEDS: DiarySeed[] = [
   },
   {
     day: 27,
-    emotions: [1, 2],
+    emotions: [7, 8],
     body: "오늘 모의 면접에서 내 차례가 되자 준비했던 말이 잘 떠오르지 않았다. 다른 사람들은 자연스럽게 답하는 것 같아 나만 부족하다는 생각이 들었고, 집에 온 뒤에도 마음이 무거웠다. 그래도 중간에 포기하지 않고 기억나는 내용부터 다시 말해 끝까지 답했다.",
     babaView:
       "오늘 모의 면접에서 긴장해 답이 막혔지만, 그 한 번이 면접을 못한다는 뜻은 아니다. 중간에 포기하지 않고 다시 말을 이어 끝까지 답했다. 다음에는 예상 질문 하나를 골라 핵심 세 문장으로 답하는 연습부터 해보려고 한다.",
@@ -191,6 +191,10 @@ export const testDiaryData = (): { diaries: Diary[]; actionCards: ActionCard[] }
         id: `ac-fixture-${d.day}`,
         diaryId: diary.id,
         situation: d.action.situation,
+        emotions: [],
+        needs: [],
+        desiredState: null,
+        sentiment: "uncomfortable",
         targetAction: d.action.targetAction,
         done: d.action.done ?? false,
         // 해본 날짜는 만든 다음 날로 둔다 — 「해봤어요 · 7월 21일」처럼 보인다

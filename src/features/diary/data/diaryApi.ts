@@ -55,15 +55,16 @@ const ARCHIVE_TIMEOUT_MS = 8_000;
  * scheduleApi 처럼 자기 표를 두어 다른 feature 의 store 를 import 하지 않는다.
  */
 const EMOTION_BY_KEY: Record<string, EmotionId> = {
-  anxious: 1,
-  depressed: 2,
-  angry: 3,
-  happy: 4,
+  happy: 1,
+  proud: 2,
+  calm: 3,
+  tired: 4,
   stuck: 5,
   lethargic: 6,
-  tired: 7,
-  proud: 8,
-  calm: 9,
+  anxious: 7,
+  depressed: 8,
+  angry: 9,
+  frustrated: 10,
 };
 
 /** 소문자 키 → id. 모르는 키는 `null` — 이름을 지어내지 않는다 */
@@ -127,15 +128,18 @@ export const toDiary = (v: unknown): Diary | null => {
   const date = kstDate(createdAt);
   if (date == null) return null;
 
-  // 회고 시작 감정(현재) 필수 · 일정 감정은 없을 수 있음
-  const start = emotionOf(v.currentEmotion);
-  const story = emotionOf(v.scheduleEmotion);
+  // 대표 감정(주 감정) — 달력 색·리포트가 쓴다.
+  const start = emotionOf(v.primaryEmotion);
 
-  // 태그 배열은 [현재 감정, 일정 감정] 순 — 중복·빈 값을 접는다.
-  // **현재 감정(회고 시작)이 대표다** — 달력 대표 점이 emotions[0] 을 쓴다.
+  // `emotions` 는 일기에서 드러난 감정 **전체**(서버 감정 태그). 상세에서 모두 보여준다.
+  // 주 감정을 앞에 세우고 나머지 태그를 잇는다(중복·빈 값 접기). 옛 일기는 태그가 비어 주 감정만 남는다.
   const emotions: EmotionId[] = [];
-  for (const e of [start, story]) {
-    if (e != null && !emotions.includes(e)) emotions.push(e);
+  if (start != null) emotions.push(start);
+  if (Array.isArray(v.emotions)) {
+    for (const raw of v.emotions) {
+      const e = emotionOf(raw);
+      if (e != null && !emotions.includes(e)) emotions.push(e);
+    }
   }
 
   return {
@@ -150,7 +154,7 @@ export const toDiary = (v: unknown): Diary | null => {
     editedAt: null,
     ordinal: 0,
     retrospectId,
-    storyEmotion: story,
+    storyEmotion: null,
     startEmotion: start,
     weather: null,
   };
@@ -168,10 +172,9 @@ export const toActionCard = (
   const id = asId(v.id);
   const retrospectId = asId(v.retrospectId);
   const situation = asString(v.situation);
-  const targetAction = asString(v.targetAction);
   const createdAt = asString(v.createdAt);
-  if (id == null || retrospectId == null || situation == null || targetAction == null) return null;
-  if (createdAt == null) return null;
+  // v2 바람 카드는 작은 행동(targetAction)을 안 정할 수 있어 필수에서 뺀다 — 상황만 필수다.
+  if (id == null || retrospectId == null || situation == null || createdAt == null) return null;
 
   const diaryId = diaryIdByRetrospect.get(retrospectId);
   if (diaryId == null) return null;
@@ -179,11 +182,29 @@ export const toActionCard = (
   const createdDate = kstDate(createdAt);
   if (createdDate == null) return null;
 
+  // 바람 카드 필드 — 감정 탐색을 거친 카드만 채워진다. 안 거쳤으면 빈 값으로 둔다.
+  const emotions: EmotionId[] = [];
+  if (Array.isArray(v.emotions)) {
+    for (const raw of v.emotions) {
+      const e = emotionOf(raw);
+      if (e != null && !emotions.includes(e)) emotions.push(e);
+    }
+  }
+  const needs: string[] = Array.isArray(v.needs)
+    ? v.needs
+        .map((n) => (isObject(n) ? asString(n.word) : null))
+        .filter((w): w is string => w != null)
+    : [];
+
   return {
     id,
     diaryId,
     situation,
-    targetAction,
+    emotions: emotions.slice(0, 2),
+    needs: needs.slice(0, 2),
+    desiredState: asString(v.desiredState),
+    sentiment: v.sentiment === "positive" ? "positive" : "uncomfortable",
+    targetAction: asString(v.targetAction),
     done: v.done === true,
     // 「해봤어요」 이후에만 채워진다 — 없으면 자리를 열지 않는다
     doneAt: asString(v.doneAt),

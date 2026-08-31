@@ -46,15 +46,16 @@ export const WEEK_LENGTH = 7;
  * 회고 store 라 여기서 끌어오면 리포트가 회고 상태를 함께 들게 된다. 표만 옮긴다.
  */
 const EMOTION_IDS: Record<string, EmotionId> = {
-  anxious: 1,
-  depressed: 2,
-  angry: 3,
-  happy: 4,
+  happy: 1,
+  proud: 2,
+  calm: 3,
+  tired: 4,
   stuck: 5,
   lethargic: 6,
-  tired: 7,
-  proud: 8,
-  calm: 9,
+  anxious: 7,
+  depressed: 8,
+  angry: 9,
+  frustrated: 10,
 };
 
 /** 「이번 주의 마음」 한 칸 — 기록이 없는 날은 `emotion` 이 `null` 이다 */

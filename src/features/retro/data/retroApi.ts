@@ -1,26 +1,21 @@
 import { authedRequest, type HttpError } from "@/lib/http";
 
 /**
- * 회고 채팅 API 경계 — `POST /api/v1/retrospect`(시작) · `POST …/{id}/messages`(턴).
+ * 회고 채팅 API 경계 (채팅흐름_v2) — `POST /api/v1/retrospect`(시작) · `POST …/{id}/messages`(턴).
  *
- * **대화는 서버가 주도한다.** 클라이언트는 `Reply` 의 *형태* 를 보고 무엇을 그릴지
- * 정하고(텍스트·선택지·슬라이더), 그 턴에 맞는 값 하나만 되돌려보낸다. 흐름·문안·
- * 방향·일기는 전부 서버가 만든다 — 그래서 옛 `FOLLOW_UPS`·`DRAFT_DEMO` 하드코딩이
- * 여기로 대체됐다.
+ * **대화는 서버가 주도한다.** 클라이언트는 `Reply` 의 *형태* 를 보고 무엇을 그릴지 정하고(자유 입력·
+ * 선택지), 그 턴에 맞는 값을 되돌려보낸다(자유 텍스트 또는 선택지 번호들). 흐름·문안·일기·바람 카드는
+ * 전부 서버가 만든다.
  *
- * **phase 가 아니라 형태로 분기한다.** 같은 `script` phase 에서도 텍스트 질문·선택지·
- * 측정이 번갈아 나온다 — `options` 가 있으면 선택, `ui==="measure"` 면 슬라이더,
- * `done` 이면 종료다.
+ * v2: 시작 시 감정을 고르지 않는다(일기 작성부터). 슬라이더가 없어졌고, 행동 카드가 바람 카드로 바뀌었다.
+ * 감정·바람은 최대 2개 선택이라 턴 요청은 `optionIds`(복수)로 보낸다.
  *
- * 서버 응답을 **런타임에 검사한다**(`toReply`) — `fetch` 는 형태를 보장하지 않고,
- * 대충 단언하면 필드가 빠진 200 이 그대로 화면에 오른다.
+ * 서버 응답을 **런타임에 검사한다**(`toReply`).
  */
 
 /**
- * 선택지 하나. `id` 는 1-base 번호 문자열 — 턴 요청의 `optionId` 로 돌려보낸다.
- *
- * `hint` 는 화면 배지용 맥락 한 줄(예: "지난 비슷한 상황에서 정한 행동"). `input` 이 true 면
- * "직접 입력" 옵션이라, 고르면 텍스트 필드를 열고 `optionId` 대신 `content` 로 돌려보낸다.
+ * 선택지 하나. `id` 는 1-base 번호 문자열 — 턴 요청의 `optionIds` 로 돌려보낸다. `input` 이 true 면
+ * "직접 적기" 선지라, 고르면 텍스트 필드를 열고 `content` 로 돌려보낸다.
  */
 export type ReplyOption = {
   id: string;
@@ -30,83 +25,87 @@ export type ReplyOption = {
   input: boolean;
 };
 
-/** 슬라이더 하나. `id` 는 measure 필드 키 — 턴 요청 `measures` 의 키로 돌려보낸다 */
-export type ReplyMeasure = { id: string; label: string; min: number; max: number };
+/** 바람(욕구) 하나 — 단어 + 뜻(고정 목록 밖 직접 적기면 뜻 없음). */
+export type ReplyNeed = { word: string; meaning: string | null };
 
 /**
- * 행동 카드 — 방향에 따라 없을 수 있다(짧은 기록형 등).
+ * 바람 카드 — 감정 탐색을 거친 경우에만 온다(결정 ①로 기존 행동 카드 대체).
  *
- * `actionCardId` 는 완료 턴이 서버에 방금 저장한 카드의 id(문자열 · 일기 `diaryId` 와 같은 결).
- * 이 값을 store 에 넣어 두면 다음 조회를 기다리지 않고 그 id 로 「해봤어요」·느낀 점·삭제를
- * 곧바로 서버에 보낼 수 있다. 서버가 안 주면(옛 서버 등) `null`.
+ * `wishCardId` 는 완료 턴이 서버에 방금 저장한 카드의 id(문자열). store 에 넣어 두면 그 id 로
+ * 「해봤어요」·느낀 점·삭제를 곧바로 보낼 수 있다. 비운 항목(모르겠어요·여기까지)은 null/빈 목록.
  */
-export type ReplyActionCard = {
-  actionCardId: string | null;
+export type ReplyWishCard = {
+  wishCardId: string | null;
   situation: string;
-  action: string;
-  detail: string | null;
-  createdDate: string | null;
+  /** 확인된 감정 키(최대 2). 이름은 `features/emotion` 이 매핑한다 */
+  emotions: string[];
+  needs: ReplyNeed[];
+  desiredState: string | null;
+  smallAction: string | null;
+  /** "uncomfortable" | "positive" — 항목 라벨 분기 */
+  sentiment: string | null;
 };
 
 /**
- * 일기 — 짧은 기록형은 `reframedDiary` 가 없어 한 면만 그린다.
- *
- * `diaryId` 는 완료 턴이 서버에 방금 저장한 일기의 id(문자열). 이 값을 그대로 store 에 넣어
- * 두면 다음 조회를 기다리지 않고 그 id 로 삭제할 수 있다. 서버가 안 주면(옛 서버 등) `null`.
+ * 일기 — `diaryId` 는 완료 턴이 서버에 방금 저장한 일기의 id(문자열). store 에 넣어 두면 그 id 로
+ * 삭제할 수 있다. 서버가 안 주면 `null`.
  */
-export type ReplyDiary = { diaryId: string | null; diary: string; reframedDiary: string | null };
+export type ReplyDiary = {
+  diaryId: string | null;
+  diary: string;
+  reframedDiary: string | null;
+  /** 일기에서 드러난 감정 태그 키 — 저장 직후에도 화면이 바로 감정을 보여주게 함께 온다 */
+  emotions: string[];
+};
 
 /** 한 턴의 서버 응답. 프론트는 이걸 보고 무엇을 그릴지 정한다 */
 export type Reply = {
   text: string | null;
   phase: string;
   options: ReplyOption[] | null;
-  /** `"measure"` 면 슬라이더를 띄운다 */
-  ui: string | null;
-  measures: ReplyMeasure[] | null;
-  actionCard: ReplyActionCard | null;
+  wishCard: ReplyWishCard | null;
   diary: ReplyDiary | null;
   /**
-   * 대화가 끝났다 — `diary` 가 있으면 정상 종료, `phase==="ended"` 면 어뷰징 종료.
-   * ⚠ 위기 안내(`phase==="safety_hold"`)는 **끝이 아니다**(`done===false`) — 「이어서 얘기하기」로 잇는다.
+   * 대화가 끝났다 — `phase==="complete"` 정상 종료, `phase==="ended"` 어뷰징 종료.
+   * ⚠ 위기 안내(`safety_hold`)는 끝이 아니다(`done===false`) — 「이어서 얘기하기」로 잇는다.
    */
   done: boolean;
   safetyLevel: string | null;
 };
 
-/** `ui` 값 — 슬라이더를 띄워야 한다는 신호 */
-export const UI_MEASURE = "measure";
+/** phase 값 — 화면 분기용 */
+export const PHASE_DIARY_CHAT = "diary_chat";
+export const PHASE_AWAIT_BRANCH = "await_branch";
+export const PHASE_EMOTION_EXPLORATION = "emotion_exploration";
+export const PHASE_COMPLETE = "complete";
 /** 어뷰징 종료 phase — 되돌릴 수 없다(나가는 길만) */
 export const PHASE_ENDED = "ended";
 /** 위기 안내 후 멈춘 phase — 「이어서 얘기하기」로 이어갈 수 있다(종결 아님) */
 export const PHASE_SAFETY_HOLD = "safety_hold";
 
-export type StartScheduleItem = { name: string; emotion: string };
+/** 오늘의 일정 하나 — 이름만 싣는다. 채팅흐름_v2 는 감정을 대화로 알아가므로 시작 시 감정을 붙이지 않는다 */
+export type StartScheduleItem = { name: string };
 
 export type StartInput = {
-  /** 오늘의 일정(각 감정 태그 포함). 비우면 현재 감정 하나로 '오늘 하루'를 돌아본다 */
+  /** 오늘의 일정. 비우면 '오늘 하루'를 돌아본다. 서버가 이 중 개인화 소재 하나를 고른다 */
   schedules: StartScheduleItem[];
-  /** 현재 감정 키(9종). 필수 */
-  currentEmotion: string;
   nickname?: string | null;
   interest?: string | null;
 };
 
 export type StartResponse = { sessionId: number; reply: Reply };
 
-/** 셋 중 그 턴에 맞는 하나만 채워 보낸다 */
+/** 자유 텍스트이거나 선택지 번호들(분기점 1개, 감정·바람 최대 2개). */
 export type TurnInput = {
   content?: string;
-  optionId?: string;
-  /** 측정 턴에서만. 슬라이더 id → 0~10 값 */
-  measures?: Record<string, number>;
+  optionIds?: string[];
 };
 
 /**
  * 실패 사유 — **코드**다. 화면 문구는 store 가 정한다(같은 실패에 두 문구가 생기지 않게).
  */
 export type RetroFailureCode =
-  /** 400 — 우리가 잘못 보냈다(감정 키 오류 등) */
+  /** 400 — 우리가 잘못 보냈다 */
   | "invalid_request"
   /** 409 — 오늘 이미 회고를 마쳤다(하루 한 번 가드) */
   | "already_today"
@@ -143,13 +142,7 @@ const readBodyCode = (body: unknown): RetroFailureCode | null => {
 
 /**
  * http 계층 오류 → 회고 사유. 본문 코드가 있으면 그것을, 없으면 상태 코드로 접는다.
- *
- * `notFound` 는 **본문 코드 없는 404 를 무엇으로 볼 것인가**다 — 요청마다 다르기
- * 때문에 밖에서 받는다. 세션을 지목한 요청(`sendTurn`)의 404 는 정말 그 세션이
- * 없는 것이지만, **시작 요청에는 지목할 세션이 없다** — 거기서 온 404 는 세션이
- * 아니라 서버 쪽 문제(엔드포인트 부재·경로 오타)다. 그걸 `session_not_found` 로
- * 접으면 「처음부터 다시 시작해 주세요」라고 안내해 놓고 다시 시작해도 같은 자리에
- * 서게 된다 — 사용자가 할 수 있는 일이 없는데 할 일을 시키는 문구가 된다.
+ * `notFound` 는 본문 코드 없는 404 를 무엇으로 볼 것인가다(요청마다 달라 밖에서 받는다).
  */
 const mapError = (error: HttpError, notFound: RetroFailureCode): RetroFailureCode => {
   switch (error.code) {
@@ -185,6 +178,15 @@ const asId = (v: unknown): string | null => {
   return null;
 };
 
+const toStringArray = (v: unknown): string[] => {
+  if (!Array.isArray(v)) return [];
+  const out: string[] = [];
+  for (const item of v) {
+    if (typeof item === "string") out.push(item);
+  }
+  return out;
+};
+
 const toOptions = (v: unknown): ReplyOption[] | null => {
   if (!Array.isArray(v)) return null;
   const out: ReplyOption[] = [];
@@ -198,38 +200,36 @@ const toOptions = (v: unknown): ReplyOption[] | null => {
       label,
       description: asString(item.description),
       hint: asString(item.hint),
-      // 서버는 "직접 입력" 옵션에만 input:true 를 싣는다(NON_NULL) — 없으면 보통 옵션
       input: item.input === true,
     });
   }
   return out;
 };
 
-const toMeasures = (v: unknown): ReplyMeasure[] | null => {
-  if (!Array.isArray(v)) return null;
-  const out: ReplyMeasure[] = [];
+const toNeeds = (v: unknown): ReplyNeed[] => {
+  if (!Array.isArray(v)) return [];
+  const out: ReplyNeed[] = [];
   for (const item of v) {
-    if (!isObject(item)) return null;
-    const id = asString(item.id);
-    const label = asString(item.label);
-    if (id == null || label == null) return null;
-    if (typeof item.min !== "number" || typeof item.max !== "number") return null;
-    out.push({ id, label, min: item.min, max: item.max });
+    if (!isObject(item)) continue;
+    const word = asString(item.word);
+    if (word == null) continue;
+    out.push({ word, meaning: asString(item.meaning) });
   }
   return out;
 };
 
-const toActionCard = (v: unknown): ReplyActionCard | null => {
+const toWishCard = (v: unknown): ReplyWishCard | null => {
   if (!isObject(v)) return null;
   const situation = asString(v.situation);
-  const action = asString(v.action);
-  if (situation == null || action == null) return null;
+  if (situation == null) return null;
   return {
-    actionCardId: asId(v.actionCardId),
+    wishCardId: asId(v.wishCardId),
     situation,
-    action,
-    detail: asString(v.detail),
-    createdDate: asString(v.createdDate),
+    emotions: toStringArray(v.emotions),
+    needs: toNeeds(v.needs),
+    desiredState: asString(v.desiredState),
+    smallAction: asString(v.smallAction),
+    sentiment: asString(v.sentiment),
   };
 };
 
@@ -237,13 +237,15 @@ const toDiary = (v: unknown): ReplyDiary | null => {
   if (!isObject(v)) return null;
   const diary = asString(v.diary);
   if (diary == null) return null;
-  return { diaryId: asId(v.diaryId), diary, reframedDiary: asString(v.reframedDiary) };
+  const emotions = Array.isArray(v.emotions)
+    ? v.emotions.filter((e): e is string => typeof e === "string")
+    : [];
+  return { diaryId: asId(v.diaryId), diary, reframedDiary: asString(v.reframedDiary), emotions };
 };
 
 /**
- * 서버 응답 하나를 `Reply` 로 옮긴다 — **필수(phase·done)가 어긋나면 `null`**.
- * 서버가 `@JsonInclude(NON_NULL)` 이라 없는 필드는 아예 오지 않는다 — 그래서
- * 나머지는 있으면 검사하고 없으면 `null` 로 둔다.
+ * 서버 응답 하나를 `Reply` 로 옮긴다 — **필수(phase·done)가 어긋나면 `null`**. 서버가
+ * `@JsonInclude(NON_NULL)` 이라 없는 필드는 아예 오지 않는다.
  */
 export const toReply = (v: unknown): Reply | null => {
   if (!isObject(v)) return null;
@@ -251,13 +253,10 @@ export const toReply = (v: unknown): Reply | null => {
   if (phase == null) return null;
   if (typeof v.done !== "boolean") return null;
 
-  // 있는데 형태가 어긋난 것은 받지 않는다 — 없는 것(undefined)과 구분한다
   const options = v.options === undefined ? null : toOptions(v.options);
   if (v.options !== undefined && options == null) return null;
-  const measures = v.measures === undefined ? null : toMeasures(v.measures);
-  if (v.measures !== undefined && measures == null) return null;
-  const actionCard = v.actionCard === undefined ? null : toActionCard(v.actionCard);
-  if (v.actionCard !== undefined && actionCard == null) return null;
+  const wishCard = v.wishCard === undefined ? null : toWishCard(v.wishCard);
+  if (v.wishCard !== undefined && wishCard == null) return null;
   const diary = v.diary === undefined ? null : toDiary(v.diary);
   if (v.diary !== undefined && diary == null) return null;
 
@@ -265,9 +264,7 @@ export const toReply = (v: unknown): Reply | null => {
     text: asString(v.text),
     phase,
     options,
-    ui: asString(v.ui),
-    measures,
-    actionCard,
+    wishCard,
     diary,
     done: v.done,
     safetyLevel: asString(v.safetyLevel),
@@ -278,8 +275,6 @@ export const toReply = (v: unknown): Reply | null => {
 
 /**
  * 회고 턴 타임아웃 — 서버가 Gemini 를 부르고 오므로 기본 조회(25초)보다 길게 잡는다.
- * 로컬·혼잡 시 한 턴이 25초를 넘겨 "연결이 불안정" 으로 끊기던 것을 늘려 흡수한다.
- * 무한 대기는 입력칸이 영영 잠기는 것과 같아 상한은 둔다.
  */
 const RETRO_TIMEOUT_MS = 45_000;
 
@@ -292,7 +287,6 @@ export async function startRetro(
     ...options,
     timeoutMs: RETRO_TIMEOUT_MS,
   });
-  // 아직 세션이 없다 — 여기서의 404 는 서버가 이 길을 열어두지 않았다는 뜻이다
   if (!result.ok) return { ok: false, code: mapError(result.error, "server") };
 
   if (!isObject(result.data)) return { ok: false, code: "malformed" };

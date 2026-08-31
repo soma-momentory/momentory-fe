@@ -6,11 +6,11 @@ import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { Button, Card, EmotionDot, Screen, Text, TopNavigation } from "@/components/ds";
 import { label as labelColor, space, text } from "@/design/ds";
 import { updateDiaryBody } from "@/features/diary/data/diaryApi";
-import { emotionName } from "@/features/emotion/model/emotion";
+import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 import { useDiary } from "@/features/diary/model/diary";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
-import { useRetro } from "@/features/retro/model/retro";
+import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -42,9 +42,8 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 행동 카드는 여기가 아니라 저장 완료(`C7`)가 보여준다(시안 5번).
  */
 export default function RetroDraft() {
-  const startEmotion = useRetro((s) => s.startEmotion);
   const diary = useRetro((s) => s.diary);
-  const actionCard = useRetro((s) => s.actionCard);
+  const wishCard = useRetro((s) => s.wishCard);
   // 서버 회고 세션 id — 저장하는 일기에 실어 두면 나중에 서버 저장분을 되불러온다
   const sessionId = useRetro((s) => s.sessionId);
   const saveDiary = useDiary((s) => s.save);
@@ -61,9 +60,15 @@ export default function RetroDraft() {
    */
   const saving = useRef(false);
 
-  // 감정·완료 일기 없이 들어올 수 없다 — 대화가 끝나야 여기 온다
-  if (startEmotion == null) return <Redirect href="/retro/emotion" />;
+  // 완료 일기 없이 들어올 수 없다 — 대화가 끝나야 여기 온다
   if (diary == null) return <Redirect href="/retro/talk" />;
+
+  // 일기 감정 태그 — 완료 응답이 준 '일기에서 드러난 감정 전체'(감정 탐색을 안 거쳐도 추출 감정이 온다).
+  // 키를 id 로 되돌린다. 낙관적 일기가 저장 직후에도 이 감정을 바로 보여준다.
+  const emotions = (diary.emotions ?? [])
+    .map(emotionIdOfKey)
+    .filter((x): x is EmotionId => x != null);
+  const leadEmotion = emotions[0] ?? null;
 
   const save = () => {
     if (saving.current) return;
@@ -76,14 +81,20 @@ export default function RetroDraft() {
       body,
       babaView: diary.reframedDiary,
       babaViewBasis: null,
-      emotions: [startEmotion],
+      emotions,
       storyEmotion: null,
-      startEmotion,
+      startEmotion: null,
       weather: null,
-      situation: actionCard?.situation ?? null,
-      targetAction: actionCard?.action ?? null,
+      situation: wishCard?.situation ?? null,
+      targetAction: wishCard?.smallAction ?? null,
+      // 바람 카드 리치 필드 — 완료 직후 쉼터/상세에서도 바로 채워 보이게 함께 싣는다.
+      cardEmotions:
+        wishCard?.emotions.map(emotionIdOfKey).filter((e): e is EmotionId => e != null) ?? [],
+      needs: wishCard?.needs.map((n) => n.word) ?? [],
+      desiredState: wishCard?.desiredState ?? null,
+      sentiment: wishCard?.sentiment === "positive" ? "positive" : "uncomfortable",
       // 완료 턴이 준 서버 카드 id — 있으면 저장 직후에도 완료/느낀 점/삭제가 서버에 닿는다
-      actionCardId: actionCard?.actionCardId ?? null,
+      actionCardId: wishCard?.wishCardId ?? null,
       retrospectId: sessionId != null ? String(sessionId) : null,
       edited,
     });
@@ -121,12 +132,14 @@ export default function RetroDraft() {
         showsVerticalScrollIndicator={false}
       >
         <Card padding="loose" style={styles.card}>
-          <View style={styles.emotionRow}>
-            <EmotionDot id={startEmotion} />
-            <Text variant="caption1" color={labelColor.normal}>
-              {emotionName(startEmotion)}
-            </Text>
-          </View>
+          {leadEmotion != null ? (
+            <View style={styles.emotionRow}>
+              <EmotionDot id={leadEmotion} />
+              <Text variant="caption1" color={labelColor.normal}>
+                {emotionName(leadEmotion)}
+              </Text>
+            </View>
+          ) : null}
 
           {editing ? (
             <>
@@ -205,8 +218,9 @@ const styles = StyleSheet.create({
 
   card: { gap: space.md },
   emotionRow: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
-  // 읽기(`body1ReadingHand`)와 같은 손글씨로 — 고쳐도 본문의 결이 바뀌지 않는다
-  input: { ...text.body1ReadingHand, color: labelColor.normal, padding: 0 },
+  // 읽기(`body1ReadingHandLg` 18/30)와 같은 손글씨·같은 크기로 — 고치기로 들어가도 본문 크기가
+  // 바뀌지 않는다(읽기와 편집을 큰 쪽으로 통일)
+  input: { ...text.body1ReadingHandLg, color: labelColor.normal, padding: 0 },
   counter: { textAlign: "right", fontVariant: ["tabular-nums"] },
   // 「오늘 일정」 섹션 — 일기 상세(A3)의 「그날 일정」과 같은 값(제목 gap·왼쪽 들여쓰기)
   schedules: { gap: space.md },

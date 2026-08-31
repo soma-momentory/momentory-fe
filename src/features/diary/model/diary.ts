@@ -95,6 +95,11 @@ type DiaryStore = {
     weather?: string | null;
     situation?: string | null;
     targetAction?: string | null;
+    /** 바람 카드 리치 필드 — 감정 탐색을 거친 카드에만. 낙관적 카드에 그대로 실어 완료 직후에도 채워 보인다. */
+    cardEmotions?: EmotionId[];
+    needs?: string[];
+    desiredState?: string | null;
+    sentiment?: "uncomfortable" | "positive";
     /**
      * 서버가 방금 저장한 행동 카드의 id — 완료 턴 응답(`ReplyActionCard.actionCardId`)에서 온다.
      * 있으면 카드 id 로 그대로 써서, 저장 직후에도 「해봤어요」·느낀 점·삭제가 이 서버 id 로 닿는다.
@@ -254,6 +259,10 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     weather = null,
     situation = null,
     targetAction = null,
+    cardEmotions = [],
+    needs = [],
+    desiredState = null,
+    sentiment = "uncomfortable",
     actionCardId = null,
     retrospectId = null,
     edited,
@@ -263,12 +272,8 @@ export const useDiary = create<DiaryStore>((set, get) => ({
       // 없으면 로컬 임시 id(옛 서버 대비 안전망).
       const diaryId = id ?? nextId("d");
       const now = clock.now().toISOString();
-      // 상황·목표 행동이 둘 다 있을 때만 행동 카드를 만든다 — 짧은 기록형은 일기만
-      const hasCard =
-        situation != null &&
-        situation.length > 0 &&
-        targetAction != null &&
-        targetAction.length > 0;
+      // 바람 카드는 상황이 있으면 만든다(감정 탐색을 거친 경우). 작은 행동은 없을 수 있다(v2).
+      const hasCard = situation != null && situation.length > 0;
       return {
         diaries: [
           ...s.diaries,
@@ -297,6 +302,11 @@ export const useDiary = create<DiaryStore>((set, get) => ({
                 id: actionCardId ?? nextId("ac"),
                 diaryId,
                 situation,
+                // 바람 카드 리치 필드 — 완료 턴이 준 값을 그대로 실어 완료 직후에도 채워 보인다.
+                emotions: cardEmotions,
+                needs,
+                desiredState,
+                sentiment,
                 targetAction,
                 done: false,
                 doneAt: null,

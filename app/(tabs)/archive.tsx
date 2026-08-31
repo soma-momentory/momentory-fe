@@ -171,9 +171,11 @@ export default function Archive() {
 
     const mark: CalendarMark = {};
     if (diary != null) {
-      const top = diary.emotions[0];
+      // 달력 색은 그날의 **주 감정**으로 채운다 — emotions[0] 이 주 감정이다(서버·낙관적 일기 모두
+      // 대표 감정을 맨 앞에 싣는다). 감정이 없으면(감정 없이 끝난 일기) 옅은 회색.
+      const primary = diary.emotions[0] ?? null;
       mark.emphasized = true;
-      mark.dotColor = top == null ? labelColor.assistive : emotionColor[top];
+      mark.dotColor = primary == null ? labelColor.assistive : emotionColor[primary];
     }
     // 그날 일정 — 홈 CTA(「지금 하루 돌아보기」) 색을 연하게 낮춘 점으로 찍는다
     if (scheduled) mark.underlineColor = withAlpha(primary.heavy, 0.6);
