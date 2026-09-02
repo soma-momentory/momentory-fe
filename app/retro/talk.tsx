@@ -104,8 +104,17 @@ export default function RetroTalk() {
     setPending(true);
     setError(null);
     setStartErrorCode(null);
-    // v2: 시작 시 감정을 붙이지 않는다 — 감정은 대화로 알아간다. 일정은 이름만 소재로 싣는다.
-    const items: StartScheduleItem[] = visibleSchedules(schedules).map((s) => ({ name: s.title }));
+    // v2: 시작 시 감정을 붙이지 않는다 — 감정은 대화로 알아간다.
+    // id 는 회고 토픽을 그 일정에 잇는 데, completed 는 서버가 1턴 소재를 고르는 데 쓴다
+    // (끝난 일 우선 — 아직 안 한 일은 돌아볼 거리가 없다).
+    const items: StartScheduleItem[] = visibleSchedules(schedules).map((s) => {
+      const id = Number(s.id);
+      return {
+        name: s.title,
+        ...(Number.isSafeInteger(id) && id > 0 ? { id } : {}),
+        completed: s.done,
+      };
+    });
 
     const result = await startRetro({ schedules: items, nickname: nickname || null });
     setPending(false);
