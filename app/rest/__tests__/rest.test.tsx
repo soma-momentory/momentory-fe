@@ -66,15 +66,25 @@ const latest = () => {
 };
 
 describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
-  it("룸 3종을 두지 않는다 — 구현하지 않은 자리를 그리지 않는다", async () => {
-    const { queryByText } = await render(<Rest />);
+  it("행동카드 아래에 쉼 콘텐츠 넷이 2×2 로 있다 — 안내 한 줄과 함께", async () => {
+    const { getByText } = await render(<Rest />);
 
-    for (const room of ["대나무 숲", "감각 연못", "걱정 상자"]) {
-      expect(queryByText(room)).toBeNull();
+    expect(getByText("지금 나에게 맞는 쉼을 골라보세요")).toBeTruthy();
+    for (const title of ["감각연못", "걱정상자", "오늘의 보물함", "몸에 힘 빼기"]) {
+      expect(getByText(title)).toBeTruthy();
     }
   });
 
-  it("항목은 행동카드 하나이고 카드 전체가 진입점이다", async () => {
+  it("쉼 콘텐츠는 아직 눌리지 않는다 — 갈 곳이 없는 줄을 누르게 두지 않는다", async () => {
+    const { getAllByRole } = await render(<Rest />);
+
+    // 누를 수 있는 것은 행동카드 진입점 하나뿐이다
+    const buttons = getAllByRole("button");
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]?.props.accessibilityLabel).toBe("행동카드 보기");
+  });
+
+  it("행동카드가 첫 항목이고 카드 전체가 진입점이다", async () => {
     const { getByText, getByLabelText } = await render(<Rest />);
 
     expect(getByText("행동카드")).toBeTruthy();
