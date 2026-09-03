@@ -19,7 +19,7 @@ const emotionNames = (keys: string[]): string =>
 /**
  * `C7` · 저장 완료 → 홈
  *
- * `DESIGN.md` 「일기」 5번: 「저장 완료: **행동카드가 없으면 안내만, 있으면 쉼터와
+ * `DESIGN.md` 「일기」 5번: 「저장 완료: **바람카드가 없으면 안내만, 있으면 쉼터와
  * 동일한 카드를 함께 보여줘요**」
  *
  * - **다음 행동 제안을 늘리지 않는다** — 버튼은 `홈으로 돌아가기` 하나이고,
@@ -141,10 +141,15 @@ export default function RetroDone() {
         {wishCard != null ? (
           <View style={styles.secondary}>
             {/*
-              쉼터 행동카드(R2)로 바로 간다. `/rest` 는 (tabs)·(onboarding) 두 그룹에
+              쉼터 바람카드(R2)로 바로 간다. `/rest` 는 (tabs)·(onboarding) 두 그룹에
               같은 경로가 있어 온보딩으로 새는 반면, `/rest/cards` 는 실제 경로라 안전하다.
             */}
-            <Button label="쉼터에서 보기" variant="text" onPress={() => leave("/rest/cards")} />
+            <Button
+              label="쉼터에서 보기"
+              variant="text"
+              size="small"
+              onPress={() => leave("/rest/cards")}
+            />
           </View>
         ) : null}
       </View>

@@ -191,7 +191,12 @@ export default function RetroDraft() {
           <>
             <Button label="일기 저장하기" fill onPress={save} />
             <View style={styles.secondary}>
-              <Button label="직접 고치기" variant="text" onPress={() => setEditing(true)} />
+              <Button
+                label="직접 고치기"
+                variant="text"
+                size="small"
+                onPress={() => setEditing(true)}
+              />
             </View>
           </>
         )}

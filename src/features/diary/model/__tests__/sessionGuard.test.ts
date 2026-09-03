@@ -10,7 +10,7 @@ import { testDiaryData } from "@/testing/fixtures";
  *
  * 이 store 의 비동기 작업 셋은 끝날 때 목록에 **무언가를 넣는다** — 조회 결과,
  * 삭제 실패의 되살리기 둘. 그 사이에 로그아웃하고 다른 사람이 로그인해 있으면
- * 앞 사람의 일기·행동카드가 새 보관함에 나타난다. 값을 고치기만 하는 쓰기와
+ * 앞 사람의 일기·바람카드가 새 보관함에 나타난다. 값을 고치기만 하는 쓰기와
  * 달리 **되살리기는 없는 것을 만들어 내기 때문**이다.
  *
  * `reset()`(로그아웃이 부른다)이 세대를 올리고, 시작할 때 붙잡아 둔 세대와
@@ -119,7 +119,7 @@ describe("삭제 중 로그아웃", () => {
     expect(useToast.getState().current).toBeNull();
   });
 
-  it("행동카드 묘비를 남기지 못해도 되살리지 않는다", async () => {
+  it("바람카드 묘비를 남기지 못해도 되살리지 않는다", async () => {
     useDiary.setState({ actionCards: [card("7")] });
 
     useDiary.getState().removeActionCard("7");

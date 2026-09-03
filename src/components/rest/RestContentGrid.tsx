@@ -5,7 +5,7 @@ import { label as labelColor, primary, space } from "@/design/ds";
 import type { RestContent } from "@/features/rest/model/contents";
 
 /**
- * 쉼 콘텐츠 2×2 격자 — `R1` 쉼터 진입의 행동카드 **아래**.
+ * 쉼 콘텐츠 2×2 격자 — `R1` 쉼터 진입의 바람카드 **아래**.
  *
  * ## 두 줄 × 두 칸으로 자른다
  *
@@ -17,13 +17,13 @@ import type { RestContent } from "@/features/rest/model/contents";
  *
  * 각 콘텐츠의 화면이 아직 없다. **눌리는데 아무 일도 없는 줄을 만들지 않는다**
  * (`CLAUDE.md` · `TASKS.md` 「마이의 편집 경로」)라 `Pressable` 을 두지 않는다 —
- * 화면이 생기면 `onPress` 를 받아 카드를 통째로 진입점으로 바꾼다(행동카드와 같은 규칙).
+ * 화면이 생기면 `onPress` 를 받아 카드를 통째로 진입점으로 바꾼다(바람카드와 같은 규칙).
  *
  * ## 우상단에 작은 아이콘 하나
  *
  * 글자만 있으면 기능 메뉴처럼 읽힌다 — 쉼터는 **공간**이라 칸마다 시각 포인트를
  * 하나 둔다(2026-09-02). Wanted 세트에 없어 `logout` 처럼 직접 선으로 그린 글리프
- * 넷(`paths.ts` 「쉼터 콘텐츠」)이다. 20 · `primary.strong` — 행동카드의 하트와 같은 결.
+ * 넷(`paths.ts` 「쉼터 콘텐츠」)이다. 20 · `primary.strong` — 바람카드의 하트와 같은 결.
  *
  * ## 위아래를 넉넉히
  *

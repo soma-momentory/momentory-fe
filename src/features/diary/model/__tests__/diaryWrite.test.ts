@@ -174,10 +174,10 @@ describe("삭제 결과 한 줄", () => {
 });
 
 /**
- * 행동카드 삭제 — 서버가 준 카드는 서버에서 지운다(`DELETE /action-cards/{id}`).
+ * 바람카드 삭제 — 서버가 준 카드는 서버에서 지운다(`DELETE /action-cards/{id}`).
  * 로컬 전용 카드만 기기 묘비로 처리한다(`deletedCards.test.ts` 가 그 경로를 본다).
  */
-describe("행동카드 삭제", () => {
+describe("바람카드 삭제", () => {
   it("서버 카드는 그 id 로 서버에서 지운다 — 일기는 건드리지 않는다", async () => {
     useDiary.setState({ diaries: [diary("42")], actionCards: [card("7", "42")] });
 
@@ -188,7 +188,7 @@ describe("행동카드 삭제", () => {
     expect(useDiary.getState().actionCards).toHaveLength(0);
     // 카드와 일기는 서로의 삭제를 부르지 않는다
     expect(useDiary.getState().diaries).toHaveLength(1);
-    expect(toast()).toMatchObject({ message: "행동카드를 삭제했어요.", variant: "positive" });
+    expect(toast()).toMatchObject({ message: "바람카드를 삭제했어요.", variant: "positive" });
   });
 
   it("서버가 받지 못하면 카드를 되살리고 실패 한 줄 — 서버에 살아 있는 것을 감추지 않는다", async () => {
@@ -200,7 +200,7 @@ describe("행동카드 삭제", () => {
 
     expect(useDiary.getState().actionCards.map((c) => c.id)).toEqual(["7"]);
     expect(toast()).toMatchObject({
-      message: "행동카드를 삭제하지 못했어요.",
+      message: "바람카드를 삭제하지 못했어요.",
       variant: "negative",
     });
   });

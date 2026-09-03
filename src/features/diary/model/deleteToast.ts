@@ -1,9 +1,9 @@
 import { showToast } from "@/lib/toast";
 
 /**
- * 삭제 결과 한 줄 — **일기와 행동카드가 같은 말을 쓴다.**
+ * 삭제 결과 한 줄 — **일기와 바람카드가 같은 말을 쓴다.**
  *
- * 지우는 자리가 둘(보관함의 일기 상세 · 쉼터의 행동카드)인데 각자 문안을 쓰면
+ * 지우는 자리가 둘(보관함의 일기 상세 · 쉼터의 바람카드)인데 각자 문안을 쓰면
  * 같은 일에 다른 말이 붙는다. 문장 틀을 하나 두고 **무엇을 지웠는지만** 갈아
  * 끼운다.
  *
@@ -19,7 +19,7 @@ import { showToast } from "@/lib/toast";
  * `Toast` 의 변형이 바꾸는 것은 아이콘 글리프뿐이고 글자는 늘 같은 색이다 —
  * 성공인지 실패인지는 **문장이** 말한다.
  */
-export type DeleteTarget = "일기" | "행동카드";
+export type DeleteTarget = "일기" | "바람카드";
 
 /** 문안 정본 — 화면이 자기 말을 만들지 않게 여기서 만든다 */
 export const deleteToastMessage = (target: DeleteTarget, ok: boolean): string =>

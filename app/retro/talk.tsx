@@ -18,8 +18,10 @@ import {
   primary,
   radius,
   selectedTint,
+  size,
   space,
 } from "@/design/ds";
+import { EMOTIONS } from "@/features/emotion/model/emotion";
 import { visibleSchedules, useDay } from "@/features/home/model/day";
 import { useProfile } from "@/features/my/model/settings";
 import {
@@ -234,7 +236,21 @@ export default function RetroTalk() {
       {/* 선택지는 질문 바로 아래, 대화 안에 붙는다 — `직접 적기` 입력 중에도 계속 보인다.
           감정 탐색(감정·바람·작은 행동)은 모두 바람 추천과 같은 줄(OptionRow) 형태로 통일한다. */}
       {hasOptions && options != null ? (
-        phase === PHASE_EMOTION_EXPLORATION || rich(options) ? (
+        isEmotionChoice(options) ? (
+          // 감정은 짧은 낱말이라 줄로 펴면 칸이 글자에 비해 너무 길다 — 칩으로 세우고
+          // 감정끼리는 폭을 맞춘다(「화남」도 「행복함」과 같은 칸).
+          <View style={styles.chips}>
+            {options.map((o) => (
+              <Chip
+                key={o.id}
+                label={o.label}
+                selected={pickedIds.includes(o.id)}
+                onPress={() => toggle(o)}
+                style={EMOTION_NAMES.has(o.label) ? styles.emotionChip : undefined}
+              />
+            ))}
+          </View>
+        ) : phase === PHASE_EMOTION_EXPLORATION || rich(options) ? (
           <View style={styles.rows}>
             {options.map((o) => (
               <OptionRow
@@ -267,6 +283,17 @@ export default function RetroTalk() {
 /** 설명을 들고 온 선택지가 하나라도 있으면 줄로 편다(바람의 뜻 등) */
 const rich = (options: readonly ReplyOption[]) =>
   options.some((o) => o.hint != null || o.description != null);
+
+const EMOTION_NAMES = new Set<string>(EMOTIONS.map((e) => e.name));
+
+/**
+ * 감정 고르기 턴인가 — 감정 이름이 하나라도 섞여 있으면.
+ *
+ * 나머지 선지는 「직접 적기」·「아직 잘 모르겠어요」뿐이라 이 검사로 갈린다. 바람·작은 행동은
+ * 감정 이름과 겹치지 않으므로 지금처럼 줄로 편다.
+ */
+const isEmotionChoice = (options: readonly ReplyOption[]) =>
+  options.some((o) => EMOTION_NAMES.has(o.label));
 
 function OptionRow({
   option,
@@ -383,6 +410,8 @@ function RetroDock(p: DockProps) {
 
 const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, alignSelf: "flex-start" },
+  // 감정끼리 폭을 맞춘다 — 「화남」(2글자)도 「행복함」(3글자)과 같은 칸이 되게.
+  emotionChip: { minWidth: size.chip.emotionMinWidth },
   holdActions: { gap: space.xs },
   rows: { gap: space.sm },
   // 세로 패딩을 줄여 칸 높이를 낮춘다(바람 단계처럼 선택지가 많을 때 목록이 길어지지 않게)

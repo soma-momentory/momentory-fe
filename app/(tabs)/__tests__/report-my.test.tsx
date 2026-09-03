@@ -187,7 +187,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.getByText("여러 마음이 번갈아 찾아온 한 주였어요.")).toBeTruthy();
   });
 
-  it("일정·행동카드는 「몇 개 중 몇 개」로 적는다", async () => {
+  it("일정·바람카드는 「몇 개 중 몇 개」로 적는다", async () => {
     const r = await openReport();
 
     expect(r.getByText("이번 주 한눈에")).toBeTruthy();
@@ -196,7 +196,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(schedule.getByText("12개 중")).toBeTruthy();
     expect(schedule.getByText("9개 완료")).toBeTruthy();
 
-    const cards = within(r.getByText("행동카드").parent!.parent!);
+    const cards = within(r.getByText("바람카드").parent!.parent!);
     expect(cards.getByText("5개 중")).toBeTruthy();
     expect(cards.getByText("3개 실천")).toBeTruthy();
   });

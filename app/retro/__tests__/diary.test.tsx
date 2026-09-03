@@ -301,7 +301,7 @@ describe("완료 — 허브로 만들지 않는다", () => {
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
   });
 
-  it("[쉼터에서 보기] 는 쉼터 행동카드(R2)로 간다", async () => {
+  it("[쉼터에서 보기] 는 쉼터 바람카드(R2)로 간다", async () => {
     const { getByText } = await render(<RetroDone />);
     await fireEvent.press(getByText("쉼터에서 보기"));
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/rest/cards");

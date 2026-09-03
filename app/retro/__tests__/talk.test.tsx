@@ -20,7 +20,7 @@ jest.mock("@/features/retro/data/retroApi", () => ({
 const mockStart = jest.mocked(startRetro);
 const mockTurn = jest.mocked(sendTurn);
 
-/** 응답 하나 — 필요한 필드만 덮어쓴다 (v2: 슬라이더 없음, 행동카드→바람카드) */
+/** 응답 하나 — 필요한 필드만 덮어쓴다 (v2: 슬라이더 없음, 바람카드→바람카드) */
 const reply = (over: Partial<Reply> = {}): Reply => ({
   text: null,
   phase: "diary_chat",
