@@ -119,6 +119,16 @@ describe("일기 확인 — 기본은 읽기다", () => {
     expect(cta.props.accessibilityState.disabled).toBe(false);
   });
 
+  it("감정이 여럿이면 전부 보여준다 — 하나만 세우면 마음이 바뀐 흐름이 사라진다", async () => {
+    // 「우울했는데 라면 먹고 기분 좋아졌어」 — 앞의 감정만 보이면 뒤가 없던 일이 된다.
+    seedCompleted({ ...SEED_DIARY, emotions: ["depressed", "happy"] }, SEED_WISH);
+
+    const { getByText } = await render(<RetroDraft />);
+
+    expect(getByText("우울함")).toBeTruthy();
+    expect(getByText("행복함")).toBeTruthy();
+  });
+
   it("감정을 보이고 [+] 더하기를 두지 않는다", async () => {
     const { getByText, queryByText } = await render(<RetroDraft />);
 

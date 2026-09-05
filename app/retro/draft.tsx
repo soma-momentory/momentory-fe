@@ -68,7 +68,6 @@ export default function RetroDraft() {
   const emotions = (diary.emotions ?? [])
     .map(emotionIdOfKey)
     .filter((x): x is EmotionId => x != null);
-  const leadEmotion = emotions[0] ?? null;
 
   const save = () => {
     if (saving.current) return;
@@ -132,12 +131,18 @@ export default function RetroDraft() {
         showsVerticalScrollIndicator={false}
       >
         <Card padding="loose" style={styles.card}>
-          {leadEmotion != null ? (
+          {/* 감정은 **전부** 보여준다 — 하나만 세우면 「우울했는데 좋아졌다」의 뒤쪽이 사라진다.
+              보관함 카드·일기 상세와 같은 도트+이름 줄이다(색만으로 판단하게 하지 않는다). */}
+          {emotions.length > 0 ? (
             <View style={styles.emotionRow}>
-              <EmotionDot id={leadEmotion} />
-              <Text variant="caption1" color={labelColor.normal}>
-                {emotionName(leadEmotion)}
-              </Text>
+              {emotions.map((e, i) => (
+                <View key={`${e}-${i}`} style={styles.emotionItem}>
+                  <EmotionDot id={e} />
+                  <Text variant="caption1" color={labelColor.normal}>
+                    {emotionName(e)}
+                  </Text>
+                </View>
+              ))}
             </View>
           ) : null}
 
@@ -222,7 +227,14 @@ const styles = StyleSheet.create({
   },
 
   card: { gap: space.md },
-  emotionRow: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
+  emotionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: space.xs,
+    alignSelf: "flex-start",
+  },
+  emotionItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   // 읽기(`body1ReadingHandLg` 18/30)와 같은 손글씨·같은 크기로 — 고치기로 들어가도 본문 크기가
   // 바뀌지 않는다(읽기와 편집을 큰 쪽으로 통일)
   input: { ...text.body1ReadingHandLg, color: labelColor.normal, padding: 0 },
