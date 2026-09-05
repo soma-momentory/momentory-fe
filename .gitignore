@@ -62,3 +62,12 @@ desktop.ini
 # 디자인 반입 원본 아카이브 — 정본만 `docs/DESIGN.md` 로 남기고 나머지는 지웠다
 # (2026-08-20 · `PLAN.md` A-18). 압축본을 이력에 담지 않는 것은 그대로다
 /Momentory design system.zip
+
+# 기기 버그리포트 — 로그·기기 식별자·계정/네트워크 진단이 들어 있다.
+# 디버깅용으로 받아 두는 것은 자유지만 이력에는 담지 않는다.
+bugreport*.zip
+
+# 감각연못 일러스트의 **디자이너 원본** — 앱이 쓰는 것은 여백을 잘라 낸
+# `assets/sensory-pond/*.png` 이고, 원본은 8MB 가 넘어 이력에 담지 않는다.
+# 그림이 바뀌면 원본을 여기 두고 앱용을 다시 만든다 (docs/DESIGN.md 「감각연못」)
+assets/sensory-pond/source/

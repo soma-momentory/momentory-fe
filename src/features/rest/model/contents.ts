@@ -5,8 +5,9 @@
  * 문안이라 디자인이 아니라 **도메인**에 둔다(`CLAUDE.md` 「디자인 파일에 제품 규칙을
  * 넣지 않는다」). 순서는 화면에 놓이는 순서 그대로다 — 왼쪽 위부터 읽는 순서.
  *
- * 각 콘텐츠의 **실제 화면은 아직 없다** — 이 목록은 「무엇이 있는가」만 말하고,
- * 어디로 가는지는 화면이 생길 때 여기에 라우트를 더한다.
+ * 화면이 생긴 콘텐츠만 `route` 를 든다 — 감각연못은 2026-09-03 에 첫 단계가
+ * 생겼다(`app/rest/sense-pond.tsx`). 나머지 셋은 아직 화면이 없어 `route` 가 없고
+ * 격자에서 눌리지 않는다(`RestContentGrid`).
  */
 import type { IconName } from "@/components/ds";
 
@@ -23,6 +24,8 @@ export type RestContent = {
   description: string;
   /** 카드 우상단의 작은 시각 포인트 — 기능 메뉴가 아니라 **공간**으로 읽히게 */
   icon: IconName;
+  /** 여는 화면. **없으면 아직 화면이 없다** — 카드가 눌리지 않는다 */
+  route?: "/rest/sense-pond";
 };
 
 export const REST_CONTENTS: readonly RestContent[] = [
@@ -31,6 +34,7 @@ export const REST_CONTENTS: readonly RestContent[] = [
     title: "감각연못",
     description: "보이는 것과 들리는 소리를\n하나씩 찾아봐요",
     icon: "wave",
+    route: "/rest/sense-pond",
   },
   {
     id: "worryBox",

@@ -75,13 +75,19 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     }
   });
 
-  it("쉼 콘텐츠는 아직 눌리지 않는다 — 갈 곳이 없는 줄을 누르게 두지 않는다", async () => {
+  it("화면이 있는 콘텐츠만 눌린다 — 갈 곳이 없는 줄을 누르게 두지 않는다", async () => {
     const { getAllByRole } = await render(<Rest />);
 
-    // 누를 수 있는 것은 바람카드 진입점 하나뿐이다
-    const buttons = getAllByRole("button");
-    expect(buttons).toHaveLength(1);
-    expect(buttons[0]?.props.accessibilityLabel).toBe("바람카드 보기");
+    // 누를 수 있는 것은 바람카드 진입점과 감각연못뿐이다 — 나머지 셋은 화면이 아직 없다
+    const labels = getAllByRole("button").map((b) => b.props.accessibilityLabel);
+    expect(labels).toEqual(["바람카드 보기", "감각연못 열기"]);
+  });
+
+  it("감각연못 카드는 통째로 진입점이다", async () => {
+    const { getByLabelText } = await render(<Rest />);
+
+    await fireEvent.press(getByLabelText("감각연못 열기"));
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/sense-pond");
   });
 
   it("바람카드가 첫 항목이고 카드 전체가 진입점이다", async () => {
