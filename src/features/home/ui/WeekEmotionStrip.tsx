@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { EmotionDot, SectionHeader, Text } from "@/components/ds";
+import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
+import { SectionHeader, Text } from "@/components/ds";
 import {
   emotion as emotionColor,
   emotionTint,
@@ -12,7 +13,7 @@ import {
   space,
   withAlpha,
 } from "@/design/ds";
-import { emotionName } from "@/features/emotion/model/emotion";
+import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";
 
 /**
@@ -30,8 +31,12 @@ import type { WeekDay } from "@/features/report/model/report";
  *
  * 감정 9색은 대비가 낮아(`ds/color.ts` 머리말) **이름을 늘 함께 쓴다**는 규칙이
  * 이 팔레트를 떠받친다. 알약 옆에는 요일밖에 없으므로 두 길을 둔다:
- * 낭독기에는 `「월요일 · 불안함」` 을 그대로 읽히고, 눈으로 보는 사람에게는
- * **누르면 아래에 이름 한 줄**이 선다(시안과 같다).
+ * 낭독기에는 `「월요일 · 우울함, 행복함」` 을 그대로 읽히고, 눈으로 보는 사람에게는
+ * **누르면 아래에 이름 줄**이 선다(시안과 같다).
+ *
+ * ⚠ **누르면 그날 감정이 전부 나온다**(2026-09-05). 도트는 하루에 하나뿐이라 색은
+ * 첫 감정만 맡는데, 「우울했는데 라면 먹고 기분 좋아졌어」 같은 하루는 감정이 둘이다 —
+ * 나머지가 보이는 곳이 여기밖에 없다. 전에는 여기서도 `emotions[0]` 만 세웠다.
  *
  * ⚠ 그래서 **누를 것은 도트가 아니라 칸 전체다** — 도트만 26 이라 손가락이
  * 비껴간다. `Pressable` 은 요일 글자까지 품은 칸이고 도트는 그 안에서 가운데 선다.
@@ -61,10 +66,15 @@ type Props = {
 /** 도트 지름 — 시안 캡슐의 높이(26)를 그대로 지름으로 쓴다 */
 const DOT_SIZE = 26;
 
+/** 낭독기가 읽을 그날의 감정 — 눈으로 보는 사람이 눌러서 얻는 것과 같은 값이다 */
+const namesOf = (emotions: readonly EmotionId[]) => {
+  const names = emotions.map(emotionName).filter((n) => n.length > 0);
+  return names.length > 0 ? names.join(", ") : "기록 없음";
+};
+
 export function WeekEmotionStrip({ days, today }: Props) {
   const [picked, setPicked] = useState<string | null>(null);
   const day = days.find((d) => d.date === picked) ?? null;
-  const dayEmotion = day?.emotions[0] ?? null;
 
   return (
     <View>
@@ -72,10 +82,11 @@ export function WeekEmotionStrip({ days, today }: Props) {
 
       <View style={styles.row}>
         {days.map((d) => {
+          // 도트는 하루에 하나다(양이 아니라 그날의 결) — 색은 첫 감정이 맡는다
           const id = d.emotions[0] ?? null;
           const isToday = d.date === today;
           const on = d.date === picked;
-          const name = emotionName(id);
+          const names = namesOf(d.emotions);
 
           return (
             <Pressable
@@ -83,7 +94,7 @@ export function WeekEmotionStrip({ days, today }: Props) {
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
               // 색으로 말한 것을 낭독기에는 말로 말한다
-              accessibilityLabel={`${d.label}요일 · ${name.length > 0 ? name : "기록 없음"}`}
+              accessibilityLabel={`${d.label}요일 · ${names}`}
               onPress={() => setPicked(on ? null : d.date)}
               style={styles.day}
             >
@@ -117,11 +128,18 @@ export function WeekEmotionStrip({ days, today }: Props) {
 
       {day != null ? (
         <View style={styles.detail}>
-          {/* 도트는 하나다 — 보관함·리포트·일기가 쓰는 것과 같은 것을 쓴다 */}
-          <EmotionDot id={dayEmotion} size={space.md} />
-          <Text variant="caption1" color={labelColor.normal}>
-            {`${day.label}요일 · ${emotionName(dayEmotion).length > 0 ? emotionName(dayEmotion) : "기록 없음"}`}
-          </Text>
+          {/* 가운뎃점까지 한 글자 덩어리로 둔다 — 「월요일」만 떼면 위쪽 날짜 머리와
+              같은 글자가 화면에 둘이 된다 */}
+          <Text variant="caption1" color={labelColor.normal}>{`${day.label}요일 ·`}</Text>
+          {day.emotions.length > 0 ? (
+            /* 감정은 **전부** 세운다 — 도트 하나가 첫 감정 색만 맡으므로, 하루에 감정이
+               둘 이상이면 여기서만 나머지가 보인다. 일기 화면들과 같은 줄을 쓴다 */
+            <DiaryEmotionRow emotions={day.emotions} />
+          ) : (
+            <Text variant="caption1" color={labelColor.alternative}>
+              기록 없음
+            </Text>
+          )}
         </View>
       ) : null}
     </View>
@@ -142,6 +160,7 @@ const styles = StyleSheet.create({
   detail: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: space.sm,
     marginTop: space.sm,
     paddingTop: space.sm,
