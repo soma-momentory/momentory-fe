@@ -171,7 +171,13 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     expect(queryByLabelText("수행")).toBeNull();
   });
 
-  it("[했어요] 를 누르면 상태가 바뀌고 느낀 점 입력창이 카드 안에서 열린다", async () => {
+  /**
+   * 2026-09-06 개정 — 예전에는 「했어요」가 **입력창까지 열었다.**
+   *
+   * 대부분은 적지 않고 넘어가는데 카드가 늘 입력창을 물고 있어서 닫을 길이 없었다.
+   * 지금은 **체크와 「느낀 점 적기」**만 서고, 적겠다고 누른 사람에게만 자리를 연다.
+   */
+  it("[했어요] 를 누르면 체크와 [느낀 점 적기] 가 서고, 입력창은 아직 열리지 않는다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({
         ...c,
@@ -185,13 +191,28 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     await fireEvent.press(r.getByText("했어요"));
 
     expect(latest().done).toBe(true);
-    expect(r.getByLabelText("느낀 점")).toBeTruthy();
-    expect(r.getByText("남기지 않아도 괜찮아요.")).toBeTruthy();
+    // 「수행했어요」라는 글자는 두지 않는다 — 그 자리를 「느낀 점 적기」가 쓴다
+    // (체크와 오른쪽 「수행 취소」가 이미 수행을 말한다 · 2026-09-06)
+    expect(r.queryByText("수행했어요")).toBeNull();
+    expect(r.getByText("느낀 점 적기")).toBeTruthy();
+    expect(r.queryByLabelText("느낀 점")).toBeNull();
     // 화면을 옮기지 않는다 — 카드 안에서 끝난다
     expect(jest.mocked(router.push)).not.toHaveBeenCalled();
+
+    // 누르면 그때 자리가 열린다
+    await fireEvent.press(r.getByText("느낀 점 적기"));
+    expect(r.getByLabelText("느낀 점")).toBeTruthy();
+    /**
+     * ⚠ 적는 동안에는 **아래 줄이 비어 있다**(2026-09-06). 예전에는 「남기지 않아도
+     * 괜찮아요.」가 있었는데, 그 줄이 자리를 차지하는 바람에 입력창이 위로 밀려
+     * 올라갔다 — 지금은 그 자리가 입력창이 아래로 자랄 자리다. 남겨도 된다는 말은
+     * **빈 채로 눌리는 보내기 버튼**이 대신한다.
+     */
+    expect(r.queryByText("남기지 않아도 괜찮아요.")).toBeNull();
+    expect(r.getByLabelText("느낀 점 없이 넘어가기")).toBeTruthy();
   });
 
-  it("느낀 점은 선택이다 — 비어 있으면 저장을 누를 수 없다", async () => {
+  it("느낀 점은 선택이다 — 적어서 보내면 그대로 남는다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({
         ...c,
@@ -201,15 +222,44 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     });
     const r = await render(<RestCards />);
 
-    expect(r.getByLabelText("느낀 점 저장").props.accessibilityState.disabled).toBe(true);
-
+    await fireEvent.press(r.getByText("느낀 점 적기"));
     await fireEvent.changeText(r.getByLabelText("느낀 점"), "생각보다 개운했다");
     await fireEvent.press(r.getByLabelText("느낀 점 저장"));
 
     expect(latest().reflection).toBe("생각보다 개운했다");
   });
 
-  it("저장하면 읽기 블록 + [고치기] 가 된다", async () => {
+  /**
+   * 열어 놓고 마음이 바뀌면 **빈 채로 보내 닫는다** — 보내기는 비어 있어도 눌린다.
+   * 서버로 가는 것은 없고 자리만 처음으로 돌아간다.
+   */
+  it("열었다가 빈 채로 보내면 아무것도 남기지 않고 닫힌다", async () => {
+    useDiary.setState({
+      actionCards: useDiary.getState().actionCards.map((c) => ({
+        ...c,
+        done: true,
+        reflection: null,
+      })),
+    });
+    const r = await render(<RestCards />);
+
+    await fireEvent.press(r.getByText("느낀 점 적기"));
+    await fireEvent.press(r.getByLabelText("느낀 점 없이 넘어가기"));
+
+    expect(r.queryByLabelText("느낀 점")).toBeNull();
+    expect(latest().reflection).toBeNull();
+    // 자리는 처음으로 — 다시 적으러 들어갈 수 있다
+    expect(r.getByText("느낀 점 적기")).toBeTruthy();
+  });
+
+  /**
+   * 2026-09-06 개정 — 「고치기」 버튼을 없애고 **적어 둔 글 자체를 누르게** 했다.
+   *
+   * 버튼을 아래 줄에 두면 그 줄만큼 하단이 커지고, 같은 줄에 두면 느낀 점이 쓸 폭이
+   * 반으로 줄어(495 → 278px) 상한이 24 → 14 자가 됐다. 글을 누르게 하면 자리도 폭도
+   * 그대로다.
+   */
+  it("저장한 느낀 점을 누르면 다시 고칠 수 있다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({
         ...c,
@@ -221,8 +271,10 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
 
     expect(r.getByText("생각보다 개운했다")).toBeTruthy();
     expect(r.queryByLabelText("느낀 점")).toBeNull();
+    // 버튼은 없다 — 글이 곧 버튼이다
+    expect(r.queryByText("고치기")).toBeNull();
 
-    await fireEvent.press(r.getByText("고치기"));
+    await fireEvent.press(r.getByLabelText("느낀 점 고치기"));
     expect(r.getByLabelText("느낀 점")).toBeTruthy();
   });
 
@@ -236,6 +288,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     });
     const r = await render(<RestCards />);
 
+    await fireEvent.press(r.getByText("느낀 점 적기"));
     await fireEvent.changeText(r.getByLabelText("느낀 점"), "적다 말았다");
     await fireEvent.press(r.getByText("수행 취소"));
 

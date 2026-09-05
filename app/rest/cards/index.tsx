@@ -157,6 +157,9 @@ export default function RestCards() {
               </Card>
             ) : (
               <RestActionCard
+                // 날짜를 옮기면 **카드 안 상태를 새로 시작한다** — 적던 초안과
+                // 「적지 않기로」가 다음 카드로 따라가면 남의 자리에서 보인다
+                key={card.id}
                 card={card}
                 date={formatKoreanDateShort(selected)}
                 dateNote={selected === today ? "오늘" : undefined}
