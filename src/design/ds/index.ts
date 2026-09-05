@@ -35,6 +35,7 @@ export {
   label,
   line,
   overlay,
+  pond,
   primary,
   secondary,
   selectedTint,
@@ -51,6 +52,18 @@ export {
   type FontWeightName,
   type TextToken,
 } from "./typography";
+
+export {
+  capybaraSpace,
+  isWaterSpot,
+  pondLayout,
+  pondMotion,
+  pondSize,
+  pondVeil,
+  surfaceRippleMs,
+  type PondPointKind,
+  type PondSpot,
+} from "./pond";
 
 export {
   bubbleRadius,
