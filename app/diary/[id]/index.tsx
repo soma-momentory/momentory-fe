@@ -3,11 +3,11 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
-import { Card, EmotionDot, IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
+import { Card, IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
 import { ActionCardSection } from "@/components/diary/ActionCardSection";
+import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
 import { label as labelColor, space } from "@/design/ds";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
-import { emotionName } from "@/features/emotion/model/emotion";
 import { useDay, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
 
@@ -88,19 +88,8 @@ export default function DiaryDetail() {
             <Text variant="title1Hand" color={labelColor.strong} style={styles.title}>
               {`${formatKoreanDateShort(diary.date)}의 일기`}
             </Text>
-            {/* 감정은 **도트 + 이름**이다(색만으로 판단하게 하지 않는다) — 날짜 제목 오른쪽에 둔다 */}
-            {diary.emotions.length > 0 ? (
-              <View style={styles.emotions}>
-                {diary.emotions.map((e, i) => (
-                  <View key={`${e}-${i}`} style={styles.emotionItem}>
-                    <EmotionDot id={e} />
-                    <Text variant="caption1" color={labelColor.alternative}>
-                      {emotionName(e)}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
+            {/* 회고 직후 일기 확인(`C6`)과 같은 줄을 쓴다 — 날짜 제목 오른쪽이라 오른쪽으로 접힌다 */}
+            <DiaryEmotionRow emotions={diary.emotions} align="flex-end" />
           </View>
           {/* 날씨는 있을 때만 한 줄로 */}
           {weatherLabel != null ? (
@@ -190,13 +179,4 @@ const styles = StyleSheet.create({
   // 「그날 일정」 섹션 — `ActionCardSection` 과 같은 값(제목 gap · 왼쪽 들여쓰기)
   section: { gap: space.md },
   sectionLabel: { paddingLeft: space.xs },
-  // 감정 줄 — 날짜 제목 오른쪽. 여러 개면 오른쪽으로 정렬해 접힌다
-  emotions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: space.sm,
-  },
-  emotionItem: { flexDirection: "row", alignItems: "center", gap: space.xs },
 });
