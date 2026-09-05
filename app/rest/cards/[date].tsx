@@ -9,7 +9,7 @@ import { cardOn, datedCards, pastCards } from "@/features/rest/model/cards";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
- * `R3` · 같은 행동카드의 **누적 기록** (`Rest.dc.html` R3).
+ * `R3` · 같은 바람카드의 **누적 기록** (`Rest.dc.html` R3).
  *
  * **행동 자체가 제목이다**(시안 주석) — 「행동 카드」라는 이름표 대신 무엇을
  * 하기로 했는지가 Title 3 로 선다. 그 아래 「이 카드가 만들어진 상황」이 붙는다.
@@ -41,7 +41,7 @@ export default function RestCardTrail() {
         {card == null ? (
           // 없는 날짜는 조용히 빈 상태다 — 오류 화면을 만들지 않는다
           <Text variant="body2" color={labelColor.neutral}>
-            이 날의 행동카드가 없어요.
+            이 날의 바람카드가 없어요.
           </Text>
         ) : (
           <>

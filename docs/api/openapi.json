@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:8080",
+      "url": "https://dev.momentory.co.kr",
       "description": "Generated server url"
     }
   ],
@@ -1442,6 +1442,143 @@
         }
       }
     },
+    "/api/v1/auth/google": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "구글 Native 로그인",
+        "description": "React Native 구글 로그인 SDK ID Token을 검증하고 모멘토리 토큰을 발급합니다.",
+        "operationId": "login_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleLoginResponse"
+                },
+                "example": {
+                  "accessToken": "발급된 모멘토리 Access Token",
+                  "refreshToken": "발급된 모멘토리 Refresh Token",
+                  "tokenType": "Bearer",
+                  "accessTokenExpiresIn": 1800,
+                  "userId": 1,
+                  "onboardingRequired": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "validationError": {
+                    "description": "validationError",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "idToken은 필수입니다."
+                    }
+                  },
+                  "GOOGLE_EMAIL_UNAVAILABLE": {
+                    "description": "GOOGLE_EMAIL_UNAVAILABLE",
+                    "value": {
+                      "code": "GOOGLE_EMAIL_UNAVAILABLE",
+                      "message": "유효하고 인증된 구글계정 이메일이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "구글 ID Token 검증 실패",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "GOOGLE_TOKEN_INVALID": {
+                    "description": "GOOGLE_TOKEN_INVALID",
+                    "value": {
+                      "code": "GOOGLE_TOKEN_INVALID",
+                      "message": "구글 인증에 실패했습니다."
+                    }
+                  },
+                  "GOOGLE_CLIENT_ID_MISMATCH": {
+                    "description": "GOOGLE_CLIENT_ID_MISMATCH",
+                    "value": {
+                      "code": "GOOGLE_CLIENT_ID_MISMATCH",
+                      "message": "구글 인증에 실패했습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "구글 인증 서버 또는 응답 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "GOOGLE_API_SERVER_ERROR": {
+                    "description": "GOOGLE_API_SERVER_ERROR",
+                    "value": {
+                      "code": "GOOGLE_API_SERVER_ERROR",
+                      "message": "구글 서비스에 일시적인 오류가 발생했습니다."
+                    }
+                  },
+                  "GOOGLE_API_RESPONSE_ERROR": {
+                    "description": "GOOGLE_API_RESPONSE_ERROR",
+                    "value": {
+                      "code": "GOOGLE_API_RESPONSE_ERROR",
+                      "message": "구글 서비스 응답을 처리할 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "구글 인증 서버 네트워크 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "GOOGLE_API_NETWORK_ERROR": {
+                    "description": "GOOGLE_API_NETWORK_ERROR",
+                    "value": {
+                      "code": "GOOGLE_API_NETWORK_ERROR",
+                      "message": "구글 서비스에 연결할 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/apple": {
       "post": {
         "tags": [
@@ -1449,7 +1586,7 @@
         ],
         "summary": "애플 Native 로그인",
         "description": "React Native 애플 로그인 SDK Identity Token을 검증하고 모멘토리 토큰을 발급합니다.",
-        "operationId": "login_1",
+        "operationId": "login_2",
         "requestBody": {
           "content": {
             "application/json": {
@@ -3115,23 +3252,25 @@
             "description": "그날의 회고 id — 행동 카드 조회에 쓴다",
             "example": 10
           },
-          "currentEmotion": {
+          "primaryEmotion": {
             "type": "string",
-            "description": "현재 감정 키",
+            "description": "대표 감정 키 — 없을 수 있음",
             "example": "depressed"
           },
-          "scheduleEmotion": {
-            "type": "string",
-            "description": "일정 감정 키 — 없을 수 있음",
-            "example": "anxious"
+          "emotions": {
+            "type": "array",
+            "description": "감정 태그 키 목록(일기에서 드러난 감정 전체)",
+            "example": [
+              "angry",
+              "frustrated"
+            ],
+            "items": {
+              "type": "string"
+            }
           },
           "original": {
             "type": "string",
             "description": "일기 본문"
-          },
-          "reframed": {
-            "type": "string",
-            "description": "다시 본 오늘(리프레임) — 없을 수 있음"
           },
           "createdAt": {
             "type": "string",
@@ -3356,8 +3495,13 @@
           },
           "emotion": {
             "type": "string",
-            "description": "이 일정에 연결된 감정 키",
+            "description": "이 일정에 연결된 감정 키(선택)",
             "example": "anxious"
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "오늘 이 일정을 마쳤는지(선택, 기본 false)",
+            "example": true
           }
         }
       },
@@ -3371,12 +3515,6 @@
               "$ref": "#/components/schemas/ScheduleItemRequest"
             }
           },
-          "currentEmotion": {
-            "type": "string",
-            "description": "현재 감정 키",
-            "example": "depressed",
-            "minLength": 1
-          },
           "nickname": {
             "type": "string",
             "description": "호칭 프리픽스(선택)",
@@ -3386,27 +3524,6 @@
             "type": "string",
             "description": "관심분야(선택)",
             "example": "취업 준비"
-          }
-        },
-        "required": [
-          "currentEmotion"
-        ]
-      },
-      "ActionCardDto": {
-        "type": "object",
-        "properties": {
-          "actionCardId": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "situation": {
-            "type": "string"
-          },
-          "action": {
-            "type": "string"
-          },
-          "createdDate": {
-            "type": "string"
           }
         }
       },
@@ -3420,27 +3537,22 @@
           "diary": {
             "type": "string"
           },
-          "reframedDiary": {
-            "type": "string"
+          "emotions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
-      "MeasureDto": {
+      "NeedDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "word": {
             "type": "string"
           },
-          "label": {
+          "meaning": {
             "type": "string"
-          },
-          "min": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "max": {
-            "type": "integer",
-            "format": "int32"
           }
         }
       },
@@ -3479,20 +3591,11 @@
               "$ref": "#/components/schemas/OptionDto"
             }
           },
-          "ui": {
-            "type": "string"
-          },
-          "measures": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MeasureDto"
-            }
-          },
-          "actionCard": {
-            "$ref": "#/components/schemas/ActionCardDto"
-          },
           "diary": {
             "$ref": "#/components/schemas/DiaryDto"
+          },
+          "wishCard": {
+            "$ref": "#/components/schemas/WishCardDto"
           },
           "done": {
             "type": "boolean"
@@ -3516,6 +3619,39 @@
           }
         }
       },
+      "WishCardDto": {
+        "type": "object",
+        "properties": {
+          "wishCardId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "situation": {
+            "type": "string"
+          },
+          "emotions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NeedDto"
+            }
+          },
+          "desiredState": {
+            "type": "string"
+          },
+          "smallAction": {
+            "type": "string"
+          },
+          "sentiment": {
+            "type": "string"
+          }
+        }
+      },
       "TurnRequest": {
         "type": "object",
         "properties": {
@@ -3524,20 +3660,15 @@
             "description": "자유 텍스트 답변",
             "example": "발표에서 말이 막혀서 계속 곱씹게 돼요."
           },
-          "optionId": {
-            "type": "string",
-            "description": "선택지 턴에서 고른 버튼 id",
-            "example": "1"
-          },
-          "measures": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "description": "측정 턴의 슬라이더 값(0~10)",
-            "example": {
-              "current_emotion": 6
+          "optionIds": {
+            "type": "array",
+            "description": "고른 선택지 id 들(분기점 1개, 감정·바람 최대 2개)",
+            "example": [
+              "1",
+              "3"
+            ],
+            "items": {
+              "type": "string"
             }
           }
         }
@@ -3600,6 +3731,54 @@
         ]
       },
       "KakaoLoginResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "모멘토리 Access Token"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "모멘토리 Refresh Token"
+          },
+          "tokenType": {
+            "type": "string",
+            "description": "Access Token 인증 방식",
+            "example": "Bearer"
+          },
+          "accessTokenExpiresIn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Access Token 만료까지 남은 시간(초)",
+            "example": 1800
+          },
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "모멘토리 사용자 ID",
+            "example": 1
+          },
+          "onboardingRequired": {
+            "type": "boolean",
+            "description": "온보딩 필요 여부",
+            "example": true
+          }
+        }
+      },
+      "GoogleLoginRequest": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "구글 로그인 SDK에서 발급한 ID Token(JWT)",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "idToken"
+        ]
+      },
+      "GoogleLoginResponse": {
         "type": "object",
         "properties": {
           "accessToken": {
@@ -3892,8 +4071,19 @@
           },
           "emotion": {
             "type": "string",
-            "description": "그날의 현재 감정 키 — 기록이 없으면 null",
+            "description": "그날의 대표 감정 키 — 기록이 없으면 null",
             "example": "calm"
+          },
+          "emotions": {
+            "type": "array",
+            "description": "그날 감정 키 전체(대표 감정이 맨 앞)",
+            "example": [
+              "depressed",
+              "happy"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -4054,7 +4244,7 @@
           "id": {
             "type": "integer",
             "format": "int64",
-            "description": "행동 카드 id",
+            "description": "바람 카드 id",
             "example": 1
           },
           "retrospectId": {
@@ -4066,12 +4256,40 @@
           "situation": {
             "type": "string",
             "description": "상황",
-            "example": "발표를 앞두고 긴장했던 상황"
+            "example": "팀플 회의에서 의견을 말하던 중 팀원이 말을 끊었다"
+          },
+          "emotions": {
+            "type": "array",
+            "description": "확인된 감정 키 목록",
+            "example": [
+              "angry",
+              "frustrated"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "needs": {
+            "type": "array",
+            "description": "내 마음이 바랐던 것(단어+뜻)",
+            "items": {
+              "$ref": "#/components/schemas/NeedDto"
+            }
+          },
+          "desiredState": {
+            "type": "string",
+            "description": "바랐던 모습",
+            "example": "내 말을 끝까지 듣고 나서 의견을 말해주는 것"
           },
           "targetAction": {
             "type": "string",
-            "description": "목표 행동",
-            "example": "떨리는 건 준비를 잘했다는 신호라고 생각하며 심호흡을 세 번 하고 시작하기"
+            "description": "작은 행동(없을 수 있음)",
+            "example": "회의가 끝난 뒤 느낀 점을 한 문장으로 전해보기"
+          },
+          "sentiment": {
+            "type": "string",
+            "description": "감정 성격",
+            "example": "uncomfortable"
           },
           "createdDate": {
             "type": "string",

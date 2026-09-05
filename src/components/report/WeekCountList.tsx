@@ -5,7 +5,7 @@ import { interaction, label as labelColor, space } from "@/design/ds";
 import type { WeeklyReport } from "@/features/report/model/weeklyReport";
 
 /**
- * `W1` · 「**이번 주 한눈에**」 — 일정 · 행동카드 · 일기를 한 줄씩 센다.
+ * `W1` · 「**이번 주 한눈에**」 — 일정 · 바람카드 · 일기를 한 줄씩 센다.
  *
  * ## 분모를 함께 적는다 (2026-08-24)
  *
@@ -21,7 +21,7 @@ import type { WeeklyReport } from "@/features/report/model/weeklyReport";
  * 셀 것이 하나도 없는 줄은 「0개 중 0개 완료」로 적지 않는다 — **없던 일에 0 을 붙이면
  * 못 한 것처럼 읽힌다.** 그런 줄은 「없음」 한 마디로 닫는다.
  *
- * ⚠ **행동카드의 분모는 「그 주에 만든 카드」다**(BE `WeeklyReport`) — 지난주에 만든
+ * ⚠ **바람카드의 분모는 「그 주에 만든 카드」다**(BE `WeeklyReport`) — 지난주에 만든
  * 카드를 이번 주에 해봤다면 어느 쪽에도 잡히지 않는다. 그래서 두 값이 같은 분모를
  * 나눠 갖고, 「n개 중 m개」가 성립한다.
  *
@@ -54,7 +54,7 @@ export const weekCounts = (report: WeeklyReport): WeekCount[] => [
   },
   {
     icon: "heart",
-    label: "행동카드",
+    label: "바람카드",
     ...countOf(report.actionCardCreated, report.actionCardCompleted, "실천"),
   },
   { icon: "document", label: "일기", ...diaryCountOf(report.diaryCount) },

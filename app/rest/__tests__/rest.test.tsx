@@ -66,7 +66,7 @@ const latest = () => {
 };
 
 describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
-  it("행동카드 아래에 쉼 콘텐츠 넷이 2×2 로 있다 — 안내 한 줄과 함께", async () => {
+  it("바람카드 아래에 쉼 콘텐츠 넷이 2×2 로 있다 — 안내 한 줄과 함께", async () => {
     const { getByText } = await render(<Rest />);
 
     expect(getByText("지금 나에게 맞는 쉼을 골라보세요")).toBeTruthy();
@@ -78,25 +78,25 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
   it("쉼 콘텐츠는 아직 눌리지 않는다 — 갈 곳이 없는 줄을 누르게 두지 않는다", async () => {
     const { getAllByRole } = await render(<Rest />);
 
-    // 누를 수 있는 것은 행동카드 진입점 하나뿐이다
+    // 누를 수 있는 것은 바람카드 진입점 하나뿐이다
     const buttons = getAllByRole("button");
     expect(buttons).toHaveLength(1);
-    expect(buttons[0]?.props.accessibilityLabel).toBe("행동카드 보기");
+    expect(buttons[0]?.props.accessibilityLabel).toBe("바람카드 보기");
   });
 
-  it("행동카드가 첫 항목이고 카드 전체가 진입점이다", async () => {
+  it("바람카드가 첫 항목이고 카드 전체가 진입점이다", async () => {
     const { getByText, getByLabelText } = await render(<Rest />);
 
-    expect(getByText("행동카드")).toBeTruthy();
+    expect(getByText("바람카드")).toBeTruthy();
 
-    await fireEvent.press(getByLabelText("행동카드 보기"));
+    await fireEvent.press(getByLabelText("바람카드 보기"));
     expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards");
   });
 
   it("여기서는 캘린더·수행 기록을 설명하지 않는다", async () => {
     const { queryByText } = await render(<Rest />);
 
-    expect(queryByText("지난 행동카드")).toBeNull();
+    expect(queryByText("지난 바람카드")).toBeNull();
     expect(queryByText(/했어요|수행했어요|아직 하지 않았어요/)).toBeNull();
     expect(queryByText("상황")).toBeNull();
   });
@@ -114,8 +114,8 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     const { getByLabelText, getByText } = await render(<Rest />);
 
     // 요약 줄은 회고가 먼저라는 사실만 말하되, 진입은 막지 않는다
-    expect(getByText("회고를 마치면 그날의 행동카드가 여기 남아요")).toBeTruthy();
-    await fireEvent.press(getByLabelText("행동카드 보기"));
+    expect(getByText("회고를 마치면 그날의 바람카드가 여기 남아요")).toBeTruthy();
+    await fireEvent.press(getByLabelText("바람카드 보기"));
     expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards");
   });
 });
@@ -130,7 +130,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     expect(getByText(card.situation)).toBeTruthy();
   });
 
-  it("카드 없는 날도 고를 수 있고, 그 자리에 「행동카드가 없어요」를 보여준다", async () => {
+  it("카드 없는 날도 고를 수 있고, 그 자리에 「바람카드가 없어요」를 보여준다", async () => {
     seedOneCard(); // 2026-07-27 에 카드 한 장
     const r = await render(<RestCards />);
 
@@ -139,7 +139,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
 
     // 카드가 없는 15일을 골라도 잠기지 않고, 카드 자리에 없다는 문구가 뜬다
     await fireEvent.press(r.getByLabelText("15일"));
-    expect(r.getByText("7월 15일에 만들어진 행동카드가 없어요.")).toBeTruthy();
+    expect(r.getByText("7월 15일에 만들어진 바람카드가 없어요.")).toBeTruthy();
   });
 
   it("카드가 하나도 없어도 캘린더로 날짜를 둘러볼 수 있다", async () => {
@@ -147,9 +147,9 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     const r = await render(<RestCards />);
 
     // 아직 아무 날도 안 골랐으면 회고가 먼저라는 것을, 날을 고르면 그 날 카드가 없다는 것을
-    expect(r.getByText("회고를 마치면 그날의 행동카드가 여기 남아요.")).toBeTruthy();
+    expect(r.getByText("회고를 마치면 그날의 바람카드가 여기 남아요.")).toBeTruthy();
     await fireEvent.press(r.getByLabelText("15일"));
-    expect(r.getByText(/15일에 만들어진 행동카드가 없어요\./)).toBeTruthy();
+    expect(r.getByText(/15일에 만들어진 바람카드가 없어요\./)).toBeTruthy();
   });
 
   it("왼쪽은 상태, 오른쪽은 행동 버튼이다 — 체크박스를 두지 않는다", async () => {
@@ -245,7 +245,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     await fireEvent.press(r.getByText("삭제하기"));
 
     // 되돌릴 수 없는 행동이라 **먼저 묻는다** — 아직 지우지 않았다
-    expect(r.getByText("이 행동카드를 삭제할까요?")).toBeTruthy();
+    expect(r.getByText("이 바람카드를 삭제할까요?")).toBeTruthy();
     expect(useDiary.getState().actionCards.find((c) => c.id === target.id)).toBeTruthy();
 
     await fireEvent.press(r.getByText("삭제"));
@@ -255,7 +255,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     // (규칙 전체는 `features/diary/model/__tests__/deletedCards.test.ts`)
     await waitFor(() =>
       expect(useToast.getState().current).toMatchObject({
-        message: "행동카드를 삭제했어요.",
+        message: "바람카드를 삭제했어요.",
         variant: "positive",
       }),
     );
@@ -332,6 +332,6 @@ describe("R3 · 누적 기록 — 행동 자체가 제목이다", () => {
     mockParams = { date: "1999-01-01" };
     const { getByText } = await render(<RestCardTrail />);
 
-    expect(getByText("이 날의 행동카드가 없어요.")).toBeTruthy();
+    expect(getByText("이 날의 바람카드가 없어요.")).toBeTruthy();
   });
 });

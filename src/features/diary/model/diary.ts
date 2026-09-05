@@ -123,7 +123,7 @@ type DiaryStore = {
    *
    * ⚠ **되돌리기가 없다**(2026-08-21). 화면에서 빼고 **곧바로 서버로 보낸다** —
    * 앞에 확인 모달이 있으므로 되돌리기 줄은 같은 것을 두 번 묻는 셈이었다.
-   * 행동카드 삭제와 문법이 같아졌고, `DESIGN.md` 「삭제는 확인 모달 1회」와도 맞는다.
+   * 바람카드 삭제와 문법이 같아졌고, `DESIGN.md` 「삭제는 확인 모달 1회」와도 맞는다.
    * 차이 기록: `docs/PRODUCT.md` 「상류와 차이」(`A4.md` 는 되돌리기 줄을 말한다).
    *
    * **서버 일기 id 로 지운다.** 회고를 막 끝낸 일기도 완료 응답이 그 일기의 서버 id 를 실어
@@ -201,7 +201,7 @@ let inFlight: Promise<void> | null = null;
  *
  * 이 store 의 비동기 작업 중 셋(`load` · 일기 삭제 실패 · 카드 삭제 실패)은
  * 끝날 때 **목록에 무언가를 넣는다.** 그 사이에 로그아웃하고 다른 사람이
- * 로그인해 있으면, 앞 사람의 일기·행동카드가 **새 사람의 보관함에 나타난다.**
+ * 로그인해 있으면, 앞 사람의 일기·바람카드가 **새 사람의 보관함에 나타난다.**
  * 값을 고치기만 하는 쓰기(`markActionDone` 등)는 id 로 찾아 고치므로 비어 있는
  * store 에서 아무 일도 하지 않지만, **되살리기는 없는 것을 만들어 낸다.**
  *
@@ -392,7 +392,7 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     const kept = get().actionCards.find((c) => c.id === cardId);
     // 이미 없는 카드다 — 지운 척하지 않는다
     if (kept == null) {
-      notifyDeleteResult("행동카드", false);
+      notifyDeleteResult("바람카드", false);
       return;
     }
 
@@ -402,7 +402,7 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     // 서버가 준 카드에만 보낸다 — 로컬 전용(`*-local-*`)은 서버에 없으니 이미 끝났다.
     // 회고를 막 끝낸 카드도 완료 응답의 서버 id 를 들고 있어 여기로 온다(일기 삭제와 같은 결).
     if (!isServerId(cardId)) {
-      notifyDeleteResult("행동카드", true);
+      notifyDeleteResult("바람카드", true);
       return;
     }
 
@@ -410,12 +410,12 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     void deleteActionCard(cardId).then((result) => {
       if (!still()) return;
       if (result.ok) {
-        notifyDeleteResult("행동카드", true);
+        notifyDeleteResult("바람카드", true);
         return;
       }
       // 실패하면 되살린다 — 요청이 못 나갔으면 카드는 서버에 그대로 살아 있다(일기 삭제와 같다)
       set((s) => ({ actionCards: restoredCards(s.actionCards, kept) }));
-      notifyDeleteResult("행동카드", false);
+      notifyDeleteResult("바람카드", false);
     });
   },
 

@@ -3,10 +3,11 @@ import { useRef, useState } from "react";
 import { ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
-import { Button, Card, EmotionDot, Screen, Text, TopNavigation } from "@/components/ds";
+import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
+import { Button, Card, Screen, Text, TopNavigation } from "@/components/ds";
 import { label as labelColor, space, text } from "@/design/ds";
 import { updateDiaryBody } from "@/features/diary/data/diaryApi";
-import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
+import { type EmotionId } from "@/features/emotion/model/emotion";
 import { useDiary } from "@/features/diary/model/diary";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
@@ -68,7 +69,6 @@ export default function RetroDraft() {
   const emotions = (diary.emotions ?? [])
     .map(emotionIdOfKey)
     .filter((x): x is EmotionId => x != null);
-  const leadEmotion = emotions[0] ?? null;
 
   const save = () => {
     if (saving.current) return;
@@ -132,14 +132,8 @@ export default function RetroDraft() {
         showsVerticalScrollIndicator={false}
       >
         <Card padding="loose" style={styles.card}>
-          {leadEmotion != null ? (
-            <View style={styles.emotionRow}>
-              <EmotionDot id={leadEmotion} />
-              <Text variant="caption1" color={labelColor.normal}>
-                {emotionName(leadEmotion)}
-              </Text>
-            </View>
-          ) : null}
+          {/* 일기 상세(`A3`)와 같은 줄을 쓴다 — 값을 각자 들면 또 갈린다 */}
+          <DiaryEmotionRow emotions={emotions} />
 
           {editing ? (
             <>
@@ -191,7 +185,12 @@ export default function RetroDraft() {
           <>
             <Button label="일기 저장하기" fill onPress={save} />
             <View style={styles.secondary}>
-              <Button label="직접 고치기" variant="text" onPress={() => setEditing(true)} />
+              <Button
+                label="직접 고치기"
+                variant="text"
+                size="small"
+                onPress={() => setEditing(true)}
+              />
             </View>
           </>
         )}
@@ -217,7 +216,6 @@ const styles = StyleSheet.create({
   },
 
   card: { gap: space.md },
-  emotionRow: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start" },
   // 읽기(`body1ReadingHandLg` 18/30)와 같은 손글씨·같은 크기로 — 고치기로 들어가도 본문 크기가
   // 바뀌지 않는다(읽기와 편집을 큰 쪽으로 통일)
   input: { ...text.body1ReadingHandLg, color: labelColor.normal, padding: 0 },

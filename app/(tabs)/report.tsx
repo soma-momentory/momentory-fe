@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { Button, Card, Icon, Spinner, TabScreen, Text } from "@/components/ds";
@@ -60,10 +60,21 @@ export default function Report() {
 
   const [picking, setPicking] = useState(false);
 
-  // 탭은 `replace` 라 들어올 때마다 새로 마운트된다 — 그때마다 **이번 주부터** 다시 연다
-  useEffect(() => {
-    void useWeeklyReport.getState().open();
-  }, []);
+  /**
+   * 들어올 때마다 **이번 주부터 다시 연다**.
+   *
+   * ⚠ **`useEffect` 가 아니라 `useFocusEffect` 다**(2026-09-05). 지금은 탭이
+   * `replace` 라(`TabScreen`) 나갈 때 화면이 죽고 돌아올 때 새로 마운트돼 둘이 같게
+   * 동작하지만, 그건 **탭을 어떻게 옮기느냐에 딸린 사정**이다. 화면을 살려 두는
+   * 방식으로 한 번만 바뀌면 리포트는 조용히 옛 주 수치를 든 채로 남는다 —
+   * 「돌아오면 다시 받는다」를 화면이 직접 말하게 둔다. 부르는 횟수는 그대로다
+   * (마운트와 포커스가 함께 오는 자리라 한 번이다).
+   */
+  useFocusEffect(
+    useCallback(() => {
+      void useWeeklyReport.getState().open();
+    }, []),
+  );
 
   /**
    * 머리의 날짜는 **보고 있는 주**에서 만든다 — 받아 온 값(`report.startDate`)을 쓰면

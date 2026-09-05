@@ -1,5 +1,8 @@
 import { render, act, fireEvent, waitFor, within } from "@testing-library/react-native";
 import { Dimensions } from "react-native";
+// jest.mock 팩토리는 `mock` 으로 시작하는 이름만 밖에서 끌어 쓸 수 있다(호이스팅 가드)
+import { useEffect as mockUseEffect } from "react";
+
 import { router } from "expo-router";
 
 import My from "../my";
@@ -15,6 +18,8 @@ import { seedDiaries, seedProfile } from "@/testing/fixtures";
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
+  // 리포트는 **포커스마다** 다시 받는다 — 테스트에는 화면이 하나뿐이라 마운트가 곧 포커스다
+  useFocusEffect: (effect: () => void | (() => void)) => mockUseEffect(effect, [effect]),
 }));
 
 /**
@@ -31,13 +36,14 @@ const weeklyReport = (over: Partial<WeeklyReport> = {}): WeeklyReport => ({
   startDate: THIS_WEEK,
   endDate: "2026-08-01",
   days: [
-    { date: "2026-07-26", emotion: 4 }, // 일 · 피곤함 (v2 재번호)
-    { date: "2026-07-27", emotion: 3 }, // 월 · 평온함
-    { date: "2026-07-28", emotion: 3 },
-    { date: "2026-07-29", emotion: null }, // 수 · 기록 없음
-    { date: "2026-07-30", emotion: 3 },
-    { date: "2026-07-31", emotion: null }, // 금 · 기록 없음
-    { date: "2026-08-01", emotion: 1 }, // 토 · 행복함
+    { date: "2026-07-26", emotion: 4, emotions: [4] }, // 일 · 피곤함 (v2 재번호)
+    // 월은 감정이 둘이다 — 점은 대표(평온함) 색만 맡고, 뿌듯함은 눌러야 보인다
+    { date: "2026-07-27", emotion: 3, emotions: [3, 2] }, // 월 · 평온함 · 뿌듯함
+    { date: "2026-07-28", emotion: 3, emotions: [3] },
+    { date: "2026-07-29", emotion: null, emotions: [] }, // 수 · 기록 없음
+    { date: "2026-07-30", emotion: 3, emotions: [3] },
+    { date: "2026-07-31", emotion: null, emotions: [] }, // 금 · 기록 없음
+    { date: "2026-08-01", emotion: 1, emotions: [1] }, // 토 · 행복함
   ],
   dominantEmotion: 3,
   moodMessage:
@@ -144,18 +150,28 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     const r = await openReport();
 
     // 누르기 전엔 그날 감정이 글자로 떠 있지 않다
-    expect(r.queryByText("일요일 · 피곤함")).toBeNull();
+    expect(r.queryByText("일요일 ·")).toBeNull();
 
     await act(async () => {
       await fireEvent.press(r.getByLabelText("일요일 피곤함"));
     });
-    expect(r.getByText("일요일 · 피곤함")).toBeTruthy();
+    expect(r.getByText("일요일 ·")).toBeTruthy();
+    expect(r.getByText("피곤함")).toBeTruthy();
+
+    // 하루에 감정이 여럿이면 **전부** 선다 — 점 하나는 대표 감정 색만 맡는다
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("월요일 평온함, 뿌듯함"));
+    });
+    expect(r.getByText("월요일 ·")).toBeTruthy();
+    expect(r.getByText("평온함")).toBeTruthy();
+    expect(r.getByText("뿌듯함")).toBeTruthy();
 
     // 기록 없는 날은 솔직히 「기록 없음」으로 말한다
     await act(async () => {
       await fireEvent.press(r.getByLabelText("수요일 기록 없음"));
     });
-    expect(r.getByText("수요일 · 기록 없음")).toBeTruthy();
+    expect(r.getByText("수요일 ·")).toBeTruthy();
+    expect(r.getByText("기록 없음")).toBeTruthy();
 
     // 같은 칸을 다시 누르면 접힌다
     await act(async () => {
@@ -187,7 +203,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.getByText("여러 마음이 번갈아 찾아온 한 주였어요.")).toBeTruthy();
   });
 
-  it("일정·행동카드는 「몇 개 중 몇 개」로 적는다", async () => {
+  it("일정·바람카드는 「몇 개 중 몇 개」로 적는다", async () => {
     const r = await openReport();
 
     expect(r.getByText("이번 주 한눈에")).toBeTruthy();
@@ -196,7 +212,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(schedule.getByText("12개 중")).toBeTruthy();
     expect(schedule.getByText("9개 완료")).toBeTruthy();
 
-    const cards = within(r.getByText("행동카드").parent!.parent!);
+    const cards = within(r.getByText("바람카드").parent!.parent!);
     expect(cards.getByText("5개 중")).toBeTruthy();
     expect(cards.getByText("3개 실천")).toBeTruthy();
   });
@@ -358,7 +374,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     reportApi.fetchWeeklyReport.mockResolvedValue({
       ok: true,
       data: weeklyReport({
-        days: weeklyReport().days.map((d) => ({ ...d, emotion: null })),
+        days: weeklyReport().days.map((d) => ({ ...d, emotion: null, emotions: [] })),
         dominantEmotion: null,
         moodMessage: "아직 이번 주에 기록된 마음이 없어요.",
         scheduleTotal: 0,

@@ -206,7 +206,20 @@ export const size = {
   /** §8 — 카드 내부 패딩 16~22 */
   card: { radius: radius.large, paddingMin: 16, paddingMax: 22 },
   /** §9 — 칩 높이 36 · 간격 8 · 선택은 테두리 2px + 600 */
-  chip: { height: 36, gap: space.sm, radius: radius.full, selectedBorderWidth: 2 },
+  chip: {
+    height: 36,
+    gap: space.sm,
+    radius: radius.full,
+    selectedBorderWidth: 2,
+    /**
+     * 감정 칩의 최소 폭 — 「행복함」(3글자)이 들어가는 크기다.
+     *
+     * 감정 10종은 「화남」만 2글자이고 나머지는 3글자다. 폭을 글자에 맡기면 「화남」만 좁아
+     * 칸이 들쭉날쭉해진다. 셋을 담을 만큼만 잡아 <b>전부 같은 폭</b>으로 세운다 —
+     * label2(13) 3글자 + 좌우 space.md.
+     */
+    emotionMinWidth: 68,
+  },
   /** §10 — 아이콘 3단(24 그리드) */
   icon: { sm: 16, md: 20, lg: 24 },
   /** §11 — 시트/모달 r20 · 시간 휠 40px 행 */

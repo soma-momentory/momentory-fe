@@ -58,11 +58,14 @@ const EMOTION_IDS: Record<string, EmotionId> = {
   frustrated: 10,
 };
 
-/** 「이번 주의 마음」 한 칸 — 기록이 없는 날은 `emotion` 이 `null` 이다 */
+/** 「이번 주의 마음」 한 칸 — 기록이 없는 날은 `emotion` 이 `null` 이고 `emotions` 가 빈 목록이다 */
 export type WeeklyMoodDay = {
   /** `2026-08-17` */
   date: string;
+  /** 점 하나가 맡는 대표 감정 */
   emotion: EmotionId | null;
+  /** 그날 감정 **전부**(대표 감정이 맨 앞) — 점이 하나뿐이라 눌러야 나머지가 보인다 */
+  emotions: EmotionId[];
 };
 
 /**
@@ -141,7 +144,20 @@ const toEmotion = (v: unknown): EmotionId | null =>
 const toDay = (v: unknown): WeeklyMoodDay | null => {
   if (!isObject(v)) return null;
   const date = asDate(v.date);
-  return date == null ? null : { date, emotion: toEmotion(v.emotion) };
+  if (date == null) return null;
+
+  // 대표 감정을 앞에 세우고 나머지 태그를 잇는다(중복·모르는 키 접기). 서버가 `emotions` 를
+  // 안 주는 옛 응답이면 대표 감정 하나짜리가 된다 — 화면은 그대로 돈다.
+  const emotion = toEmotion(v.emotion);
+  const emotions: EmotionId[] = [];
+  if (emotion != null) emotions.push(emotion);
+  if (Array.isArray(v.emotions)) {
+    for (const raw of v.emotions) {
+      const e = toEmotion(raw);
+      if (e != null && !emotions.includes(e)) emotions.push(e);
+    }
+  }
+  return { date, emotion, emotions };
 };
 
 /**

@@ -28,14 +28,11 @@ export type WeekDay = {
   /** 「월」…「일」 */
   label: string;
   date: string;
-  /** 하루 최대 3개. 비어 있으면 「기록 없음」 칸이다 */
+  /** 그날 일기의 감정 <b>전부</b>. 비어 있으면 「기록 없음」 칸이다 */
   emotions: EmotionId[];
 };
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
-
-/** 하루 최대 3개 — 넘으면 늘리지 않는다(`W1.md`) */
-export const MAX_DAY_DOTS = 3;
 
 /**
  * 요일별 칸 — **막대가 아니라 점**이다. 감정에 강도를 입력받지 않으므로
@@ -52,7 +49,7 @@ export function weekDays(diaries: readonly Diary[], start: string, end: string):
     return {
       label: WEEKDAYS[day.getDay()] ?? "",
       date: iso,
-      emotions: byDate.get(iso)?.emotions.slice(0, MAX_DAY_DOTS) ?? [],
+      emotions: byDate.get(iso)?.emotions ?? [],
     };
   });
 }

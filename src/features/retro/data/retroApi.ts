@@ -83,8 +83,16 @@ export const PHASE_ENDED = "ended";
 /** 위기 안내 후 멈춘 phase — 「이어서 얘기하기」로 이어갈 수 있다(종결 아님) */
 export const PHASE_SAFETY_HOLD = "safety_hold";
 
-/** 오늘의 일정 하나 — 이름만 싣는다. 채팅흐름_v2 는 감정을 대화로 알아가므로 시작 시 감정을 붙이지 않는다 */
-export type StartScheduleItem = { name: string };
+/**
+ * 오늘의 일정 하나. 감정은 붙이지 않는다 — 채팅흐름_v2 는 대화로 알아간다.
+ *
+ * `id` 와 `completed` 는 서버가 쓴다:
+ * - `id` — 회고가 만든 토픽을 그 일정에 잇는다(없으면 자유 텍스트로만 남아 집계가 끊긴다).
+ *   목록에서 온 일정에만 있다. 서버가 소유권을 검증하므로 남의 id 는 무시된다.
+ * - `completed` — 서버가 1턴 소재를 고를 때 **끝난 일을 먼저** 본다. 아직 안 한 일은 돌아볼
+ *   거리가 없다. v2 는 마침에 감정을 묻지 않으므로 감정으로는 알 수 없어 따로 싣는다.
+ */
+export type StartScheduleItem = { name: string; id?: number; completed?: boolean };
 
 export type StartInput = {
   /** 오늘의 일정. 비우면 '오늘 하루'를 돌아본다. 서버가 이 중 개인화 소재 하나를 고른다 */

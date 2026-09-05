@@ -20,10 +20,10 @@ import { cardDaysIn, cardOn, datedCards, latestCardDay } from "@/features/rest/m
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
- * `R2` · 날짜별 행동카드 (`Rest.dc.html` R2-a·b·c).
+ * `R2` · 날짜별 바람카드 (`Rest.dc.html` R2-a·b·c).
  *
  * **위계가 둘이다**(시안 주석): 고른 날의 카드만 **흰 카드**(Primary)이고,
- * 「지난 행동카드」는 **배경 위에 직접** 놓인다(Secondary). 카드가 둘로 보이면
+ * 「지난 바람카드」는 **배경 위에 직접** 놓인다(Secondary). 카드가 둘로 보이면
  * 어느 것이 오늘 할 일인지가 흐려진다.
  *
  * ## 캘린더는 날짜 탐색만 한다
@@ -36,7 +36,7 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 달력은 「있었다」와 「했다」를 말할 뿐 잘했는지를 말하지 않는다. 카드가 있는 날은
  * 점 색으로 **수행 여부**를 나눈다(초록 = 수행함 · 브랜드색 = 아직 안 함).
  *
- * 카드가 **없는 날도 고를 수 있다** — 그 자리에 「그 날 만들어진 행동카드가 없어요」를
+ * 카드가 **없는 날도 고를 수 있다** — 그 자리에 「그 날 만들어진 바람카드가 없어요」를
  * 보여준다. 카드가 없어 못 들어오는 화면이 아니라, 들어와서 날짜로 둘러보는 화면이다.
  *
  * ## 삭제는 ⋮ → 확인 모달 → 토스트
@@ -107,7 +107,7 @@ export default function RestCards() {
 
   /**
    * 고른 날짜를 놓아 준다 — `picked` 를 비우면 `latestCardDay` 가 다시 고른다.
-   * 빈 날에 머물러 있으면 방금 지운 자리에서 「행동카드가 없어요」를 보게 되고,
+   * 빈 날에 머물러 있으면 방금 지운 자리에서 「바람카드가 없어요」를 보게 되고,
    * 삭제가 실패해 카드가 되돌아오면 그 카드의 날짜로 다시 선다.
    *
    * **결과 한 줄은 store 가 알린다** — 묘비를 남긴 뒤에야 성공인지 알 수 있어서다
@@ -125,7 +125,7 @@ export default function RestCards() {
       <Screen>
         <TopNavigation
           leading="arrow-left"
-          title="행동카드"
+          title="바람카드"
           titleHand
           onLeadingPress={() => router.back()}
         />
@@ -155,8 +155,8 @@ export default function RestCards() {
               <Card padding="loose">
                 <Text variant="body2" color={labelColor.neutral}>
                   {selected == null
-                    ? "회고를 마치면 그날의 행동카드가 여기 남아요."
-                    : `${formatKoreanDateShort(selected)}에 만들어진 행동카드가 없어요.`}
+                    ? "회고를 마치면 그날의 바람카드가 여기 남아요."
+                    : `${formatKoreanDateShort(selected)}에 만들어진 바람카드가 없어요.`}
                 </Text>
               </Card>
             ) : (
@@ -180,7 +180,7 @@ export default function RestCards() {
             )}
           </ScrollView>
 
-          {/* 「지난 행동카드」 머리글은 뺐다(2026-08-24). 카드가 화면의 주인공이라
+          {/* 「지난 바람카드」 머리글은 뺐다(2026-08-24). 카드가 화면의 주인공이라
               그 위 세로를 머리글에 내주지 않는다 */}
           <Calendar
             month={shownMonth}
@@ -221,8 +221,8 @@ export default function RestCards() {
       {/* 되돌릴 수 없는 행동이라 **묻는다** — 오류가 아니므로 규칙과 어긋나지 않는다 */}
       {asking ? (
         <Modal
-          title="이 행동카드를 삭제할까요?"
-          description="삭제한 행동카드는 되돌릴 수 없어요."
+          title="이 바람카드를 삭제할까요?"
+          description="삭제한 바람카드는 되돌릴 수 없어요."
           cancelLabel="그대로 두기"
           confirmLabel="삭제"
           destructive
