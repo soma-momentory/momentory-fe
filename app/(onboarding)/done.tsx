@@ -1,3 +1,4 @@
+import { captureAnalytics } from "@/features/analytics";
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -51,6 +52,7 @@ export default function Done() {
     setSubmitting(true);
     setError(null);
 
+    const record = captureAnalytics();
     const draft = useDraft.getState();
     const result = await completeOnboarding({
       nickname: draft.nickname,
@@ -74,6 +76,9 @@ export default function Done() {
       );
       return;
     }
+
+    record("onboarding_step_completed", { step: "done" });
+    record("onboarding_completed", {}, "onboarding");
 
     // 답을 실사용 store 로 옮긴 **뒤에** 초안을 비운다. 순서가 바뀌면 빈 값이 넘어간다
     adoptProfile({

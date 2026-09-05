@@ -1,3 +1,5 @@
+import { track } from "@/features/analytics";
+import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -87,6 +89,7 @@ export default function Report() {
   const range = `${formatKoreanDateShort(start)} ~ ${formatKoreanDateShort(end)}`;
 
   const pick = (week: string) => {
+    if (week !== weekStart) track("report_week_selected", { week_start: week });
     setPicking(false);
     void useWeeklyReport.getState().selectWeek(week);
   };
@@ -105,6 +108,14 @@ export default function Report() {
         ) : null
       }
     >
+      <AnalyticsResource
+        kind="report"
+        id={status === "ready" && report?.startDate === weekStart ? report.startDate : null}
+        isReady={() => {
+          const current = useWeeklyReport.getState();
+          return current.status === "ready" && current.report?.startDate === weekStart;
+        }}
+      />
       {/*
         날짜 줄 **전체**가 주를 고르는 문이다 — 날짜를 눌러도 아이콘을 눌러도 같은 시트가
         열린다. 아이콘은 **줄 오른쪽 끝**에 선다(2026-08-24 · 사용자 요청): 날짜 옆에

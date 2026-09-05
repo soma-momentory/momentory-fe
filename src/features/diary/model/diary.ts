@@ -1,3 +1,4 @@
+import { captureAnalytics } from "@/features/analytics";
 import { create } from "zustand";
 
 import {
@@ -428,7 +429,9 @@ export const useDiary = create<DiaryStore>((set, get) => ({
       ),
     }));
     if (!isServerId(cardId)) return;
+    const record = captureAnalytics();
     void putActionCardCompletion(cardId, true, before.reflection).then((r) => {
+      if (r.ok) record("wish_card_completion_changed", { wish_card_id: cardId, completed: true });
       if (r.ok || !serverRefusedWrite(r.code)) return;
       // 서버가 거부했다 — 되돌린다
       set((s) => ({
@@ -449,7 +452,9 @@ export const useDiary = create<DiaryStore>((set, get) => ({
       ),
     }));
     if (!isServerId(cardId)) return;
+    const record = captureAnalytics();
     void putActionCardCompletion(cardId, false, null).then((r) => {
+      if (r.ok) record("wish_card_completion_changed", { wish_card_id: cardId, completed: false });
       if (r.ok || !serverRefusedWrite(r.code)) return;
       set((s) => ({
         actionCards: s.actionCards.map((c) =>

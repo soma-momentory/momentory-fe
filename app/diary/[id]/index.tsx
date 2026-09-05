@@ -1,3 +1,4 @@
+import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -62,6 +63,7 @@ export default function DiaryDetail() {
 
   return (
     <Screen>
+      <AnalyticsResource kind="diary" id={diary.id} />
       <TopNavigation
         leading="arrow-left"
         onLeadingPress={() => router.back()}

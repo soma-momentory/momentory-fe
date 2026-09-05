@@ -1,3 +1,4 @@
+import { captureAnalytics } from "@/features/analytics";
 /**
  * 보관함 서버 경계 — 월별 일기·행동 카드 조회를 프론트 `Diary`/`ActionCard` 로 옮긴다.
  *
@@ -364,10 +365,12 @@ export const deleteDiary = async (
   serverId: string,
   options?: { signal?: AbortSignal },
 ): Promise<DiaryWriteResult> => {
+  const record = captureAnalytics();
   const result = await authedRequest<null>("DELETE", `${DIARIES_PATH}/${serverId}`, undefined, {
     timeoutMs: WRITE_TIMEOUT_MS,
     signal: options?.signal,
   });
+  if (result.ok) record("diary_deleted", { diary_id: serverId });
   return result.ok ? { ok: true } : { ok: false, code: mapWriteError(result.error) };
 };
 
@@ -405,12 +408,14 @@ export const deleteActionCard = async (
   serverId: string,
   options?: { signal?: AbortSignal },
 ): Promise<DiaryWriteResult> => {
+  const record = captureAnalytics();
   const result = await authedRequest<null>(
     "DELETE",
     `${ACTION_CARDS_PATH}/${serverId}`,
     undefined,
     { timeoutMs: WRITE_TIMEOUT_MS, signal: options?.signal },
   );
+  if (result.ok) record("wish_card_deleted", { wish_card_id: serverId });
   return result.ok ? { ok: true } : { ok: false, code: mapWriteError(result.error) };
 };
 
@@ -428,11 +433,13 @@ export const updateDiaryBody = async (
   original: string,
   options?: { signal?: AbortSignal },
 ): Promise<DiaryWriteResult> => {
+  const record = captureAnalytics();
   const result = await authedRequest<unknown>(
     "PUT",
     `${DIARIES_PATH}/by-retrospect/${retrospectId}`,
     { original },
     { timeoutMs: WRITE_TIMEOUT_MS, signal: options?.signal },
   );
+  if (result.ok) record("diary_updated", { retrospect_id: retrospectId });
   return result.ok ? { ok: true } : { ok: false, code: mapWriteError(result.error) };
 };

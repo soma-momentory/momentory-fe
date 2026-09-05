@@ -13,6 +13,15 @@ MVP 40화면(2026-08-06 상류 v2)을 **둘이 나눠 가기 위한** 목록이�
 
 ---
 
+## 2026-09-05 · FE Amplitude 파일럿
+
+△ 기능 브랜치 feat/frontend-analytics에서 구현 완료. 67 suites / 1,048 tests 및 품질 게이트 통과. [PR #127](https://github.com/soma-momentory/momentory-fe/pull/127)로 전달했다.
+[구현 계획](superpowers/plans/2026-09-05-frontend-analytics.md)과 [이벤트 사전·설정·검증](ANALYTICS.md)을 참조한다.
+페이지 체류 시간/알림 계측은 제외하며 BE 변경은 없다. 실제 프로젝트 키 설정,
+새 네이티브 빌드의 실기기 이벤트 도착 확인은 배포 전 남은 작업이다.
+
+---
+
 ## 나누는 축
 
 컴포넌트 재사용 구조를 따라 가른다. 상류 문서가 이미 답을 줬다 —

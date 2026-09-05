@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 
 import { Button } from "@/components/ds";
@@ -25,7 +26,10 @@ export default function Gender() {
   const gender = useDraft((s) => s.gender);
   const set = useDraft((s) => s.set);
 
-  const goNext = () => router.push("/interests");
+  const goNext = () => {
+    track("onboarding_step_completed", { step: "gender" });
+    router.push("/interests");
+  };
 
   const skip = () => {
     // 건너뛰면 고른 것도 지운다 — 「선택 안 함」과 다른 답이다

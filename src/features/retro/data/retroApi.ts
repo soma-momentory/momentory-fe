@@ -1,3 +1,5 @@
+import { captureAnalytics } from "@/features/analytics";
+import type { Track } from "@/features/analytics/client";
 import { authedRequest, type HttpError } from "@/lib/http";
 
 /**
@@ -291,16 +293,20 @@ export async function startRetro(
   input: StartInput,
   options?: { signal?: AbortSignal },
 ): Promise<RetroResult<StartResponse>> {
+  const record = captureAnalytics();
   const result = await authedRequest<unknown>("POST", RETROSPECT_PATH, input, {
     ...options,
     timeoutMs: RETRO_TIMEOUT_MS,
   });
-  if (!result.ok) return { ok: false, code: mapError(result.error, "server") };
+  if (!result.ok) return trackedFailure(record, "start", mapError(result.error, "server"));
 
-  if (!isObject(result.data)) return { ok: false, code: "malformed" };
+  if (!isObject(result.data)) return trackedFailure(record, "start", "malformed");
   const sessionId = result.data.sessionId;
   const reply = toReply(result.data.reply);
-  if (typeof sessionId !== "number" || reply == null) return { ok: false, code: "malformed" };
+  if (typeof sessionId !== "number" || reply == null)
+    return trackedFailure(record, "start", "malformed");
+  record("retrospect_started", { retrospect_id: String(sessionId) }, String(sessionId));
+  recordCompletion(record, sessionId, reply);
   return { ok: true, data: { sessionId, reply } };
 }
 
@@ -310,15 +316,44 @@ export async function sendTurn(
   input: TurnInput,
   options?: { signal?: AbortSignal },
 ): Promise<RetroResult<Reply>> {
+  const record = captureAnalytics();
   const result = await authedRequest<unknown>(
     "POST",
     `${RETROSPECT_PATH}/${sessionId}/messages`,
     input,
     { ...options, timeoutMs: RETRO_TIMEOUT_MS },
   );
-  if (!result.ok) return { ok: false, code: mapError(result.error, "session_not_found") };
+  if (!result.ok)
+    return trackedFailure(record, "turn", mapError(result.error, "session_not_found"));
 
   const reply = toReply(result.data);
-  if (reply == null) return { ok: false, code: "malformed" };
+  if (reply == null) return trackedFailure(record, "turn", "malformed");
+  record("retrospect_turn_succeeded", {
+    retrospect_id: String(sessionId),
+    input_kind: input.content != null ? "text" : "selection",
+  });
+  recordCompletion(record, sessionId, reply);
   return { ok: true, data: reply };
+}
+
+function trackedFailure(
+  record: Track,
+  operation: "start" | "turn",
+  code: RetroFailureCode,
+): { ok: false; code: RetroFailureCode } {
+  record("retrospect_request_failed", { operation, code });
+  return { ok: false, code };
+}
+
+function recordCompletion(record: Track, sessionId: number, reply: Reply) {
+  if (!reply.done || reply.phase !== PHASE_COMPLETE) return;
+  const retrospect_id = String(sessionId);
+  record("retrospect_completed", { retrospect_id }, retrospect_id);
+  if (reply.wishCard?.wishCardId != null) {
+    record(
+      "wish_card_created",
+      { retrospect_id, wish_card_id: reply.wishCard.wishCardId },
+      reply.wishCard.wishCardId,
+    );
+  }
 }

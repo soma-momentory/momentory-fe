@@ -1,3 +1,4 @@
+import { track, captureAnalytics } from "@/features/analytics";
 import { router } from "expo-router";
 import { useRef } from "react";
 import { StyleSheet, View } from "react-native";
@@ -39,7 +40,9 @@ export default function CalendarLink() {
     if (asking.current) return;
     asking.current = true;
 
+    const record = captureAnalytics();
     const access = await requestCalendarAccess();
+    record("calendar_permission_result", { granted: access.granted });
     set("calendarLinked", access.granted);
 
     if (access.granted) {
@@ -49,11 +52,13 @@ export default function CalendarLink() {
     }
 
     asking.current = false;
+    track("onboarding_step_completed", { step: "calendar" });
     router.push("/done");
   };
 
   const later = () => {
     set("calendarLinked", false);
+    track("onboarding_step_completed", { step: "calendar" });
     router.push("/done");
   };
 

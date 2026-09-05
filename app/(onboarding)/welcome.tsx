@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 
 import { Button, Text } from "@/components/ds";
@@ -24,7 +25,14 @@ export default function Welcome() {
       <Text variant="caption1" color={labelColor.alternative} style={{ textAlign: "center" }}>
         금방 끝나요 · 답변은 마이에서 언제든 바꿀 수 있어요
       </Text>
-      <Button label="시작하기" fill onPress={() => router.push("/nickname")} />
+      <Button
+        label="시작하기"
+        fill
+        onPress={() => {
+          track("onboarding_step_completed", { step: "welcome" });
+          router.push("/nickname");
+        }}
+      />
     </OnboardingChat>
   );
 }
