@@ -26,6 +26,7 @@ import { typography } from "./typography";
 
 export {
   background,
+  cardFrame,
   color,
   emotion,
   emotionTint,
