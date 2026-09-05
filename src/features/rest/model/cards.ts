@@ -40,10 +40,3 @@ export const cardDaysIn = (all: readonly DatedCard[], month: string): string[] =
  * 카드가 하나도 없으면 `null` 이고 화면은 빈 상태를 그린다.
  */
 export const latestCardDay = (all: readonly DatedCard[]): string | null => all[0]?.date ?? null;
-
-/**
- * 상세의 **지난 기록** — 그날보다 **이전** 카드만 최신순으로. 기본 6건
- * (`app-flow.md` §2.4). 그날 카드 자신은 빼고 센다.
- */
-export const pastCards = (all: readonly DatedCard[], before: string, limit = 6): DatedCard[] =>
-  all.filter((x) => x.date < before).slice(0, limit);

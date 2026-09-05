@@ -3,7 +3,6 @@ import { router } from "expo-router";
 
 import Rest from "../../(tabs)/rest";
 import RestCards from "../cards/index";
-import RestCardTrail from "../cards/[date]";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { datedCards } from "@/features/rest/model/cards";
@@ -11,11 +10,13 @@ import { useToast } from "@/lib/toast";
 import { seedDiaries } from "@/testing/fixtures";
 
 /**
- * 쉼터는 **세 화면**이 됐다(`Rest.dc.html` · 2026-08-20):
- * `R1` 진입(항목 하나) → `R2` 날짜별 카드 + 캘린더 → `R3` 누적 기록.
+ * 쉼터는 **두 화면**이다: `R1` 진입(항목 하나) → `R2` 날짜별 카드 + 캘린더.
  *
- * 옛 구조는 탭이 곧 카드 화면이었다 — 그 시절 단언(카드 탭 가로채기 · 상세 이동)은
- * 화면이 갈리면서 자리가 바뀌었고, **규칙 단언**으로 옮겨 적었다.
+ * `Rest.dc.html`(2026-08-20)은 셋이었고 `R3` 누적 기록이 있었는데 **2026-09-06 에
+ * 지웠다**(`docs/PRODUCT.md` 「상류와 차이」 #35) — 그 화면 테스트도 함께 걷었다.
+ *
+ * 그보다 더 옛 구조는 탭이 곧 카드 화면이었다 — 그 시절 단언(카드 탭 가로채기 ·
+ * 상세 이동)은 화면이 갈리면서 자리가 바뀌었고, **규칙 단언**으로 옮겨 적었다.
  */
 let mockParams: { date: string } = { date: "2026-07-27" };
 
@@ -272,66 +273,5 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
 
     expect(useDiary.getState().actionCards).toHaveLength(before);
     expect(useToast.getState().current).toBeNull();
-  });
-
-  it("[자세히 보기] 가 누적 기록으로 간다", async () => {
-    const r = await render(<RestCards />);
-
-    await fireEvent.press(r.getByText("자세히 보기"));
-
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith(
-      expect.objectContaining({ pathname: "/rest/cards/[date]" }),
-    );
-  });
-});
-
-describe("R3 · 누적 기록 — 행동 자체가 제목이다", () => {
-  it("제안된 행동이 제목이고 상황이 그 아래 붙는다", async () => {
-    const card = latest();
-    const { getByText } = await render(<RestCardTrail />);
-
-    expect(getByText(card.targetAction ?? "")).toBeTruthy();
-    expect(getByText("이 카드가 만들어진 상황")).toBeTruthy();
-    expect(getByText(card.situation)).toBeTruthy();
-  });
-
-  it("지난 기록을 세지 않고 나열한다", async () => {
-    const { getByText, queryByText } = await render(<RestCardTrail />);
-
-    expect(getByText("지난 기록")).toBeTruthy();
-    expect(queryByText(/\d+개 중/)).toBeNull();
-  });
-
-  it("이 날의 수행·느낀 점을 보여준다 — 쉼터에서 적은 것이 여기 바로 반영된다", async () => {
-    // 「지난 기록」은 그날 카드 자신을 빼고 세므로, R2 에서 「했어요」·느낀 점을
-    // 적어도 R3 에 안 보였다. 이 날 기록을 따로 두어 같은 store 값이 바로 비친다.
-    const target = latest();
-    useDiary.setState({
-      actionCards: useDiary
-        .getState()
-        .actionCards.map((c) =>
-          c.id === target.id ? { ...c, done: true, reflection: "생각보다 개운했다" } : c,
-        ),
-    });
-    const { getByText } = await render(<RestCardTrail />);
-
-    expect(getByText("이 날 기록")).toBeTruthy();
-    expect(getByText("7월 27일 · 수행함")).toBeTruthy();
-    expect(getByText("생각보다 개운했다")).toBeTruthy();
-  });
-
-  it("여기서는 수행을 바꾸지 않는다 — 읽는 화면이다", async () => {
-    const { queryByText, queryByLabelText } = await render(<RestCardTrail />);
-
-    expect(queryByText("했어요")).toBeNull();
-    expect(queryByText("수행 취소")).toBeNull();
-    expect(queryByLabelText("느낀 점")).toBeNull();
-  });
-
-  it("없는 날짜는 조용히 빈 상태다 — 오류 화면을 만들지 않는다", async () => {
-    mockParams = { date: "1999-01-01" };
-    const { getByText } = await render(<RestCardTrail />);
-
-    expect(getByText("이 날의 바람카드가 없어요.")).toBeTruthy();
   });
 });

@@ -172,31 +172,30 @@ export default function RestCards() {
                   setReflection(card.id, t);
                   saveReflection(card.id);
                 }}
-                onOpenTrail={() =>
-                  router.push({ pathname: "/rest/cards/[date]", params: { date: selected } })
-                }
                 // 누른 지점(창 기준) 바로 아래에 메뉴가 선다 — 메뉴는 `Screen` 밖
                 // 레이어라 인셋을 빼지 않는다
                 onMore={(atY) => setMenuTop(atY + space.md)}
               />
             )}
-          </ScrollView>
+          </View>
 
           {/* 「지난 바람카드」 머리글은 뺐다(2026-08-24). 카드가 화면의 주인공이라
-              그 위 세로를 머리글에 내주지 않는다 */}
-          <Calendar
-            month={shownMonth}
-            selectedDate={selected}
-            onSelect={(date) => {
-              setPicked(date);
-              setMonth(date.slice(0, 7));
-            }}
-            onMonthStep={step}
-            markOf={markOf}
-          />
+              그 위 세로를 머리글에 내주지 않는다.
 
-          {/* 달력 아래 숨 — 짧은 기기에서는 이 자리를 카드에 내준다(아래 주석) */}
-          <View style={styles.belowCalendar} />
+              달력은 **시스템 바 바로 위**에 앉는다 — `styles.calendarSeat` 주석 */}
+          <View style={styles.calendarSeat}>
+            <Calendar
+              month={shownMonth}
+              selectedDate={selected}
+              onSelect={(date) => {
+                setPicked(date);
+                setMonth(date.slice(0, 7));
+              }}
+              onMonthStep={step}
+              markOf={markOf}
+              reserveRows={CALENDAR_ROWS}
+            />
+          </View>
         </View>
       </Screen>
 
