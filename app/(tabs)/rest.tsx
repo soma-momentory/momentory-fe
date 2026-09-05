@@ -69,18 +69,15 @@ export default function Rest() {
 
       <Pressable accessibilityRole="button" accessibilityLabel="바람카드 보기" onPress={open}>
         <Card padding="loose" style={styles.entry}>
+          {/* 이름은 왼쪽, 하트는 **오른쪽 끝**이다(2026-09-06). 예전에는 하트가
+              이름 앞에 붙고 오른쪽에 「보기」가 서 있었는데, **카드 전체가 진입점**
+              이라 그 글자는 눌리지도 않는 표시일 뿐이었다 — 없애고 그 자리를 하트에
+              내줬다. 들어가는 길은 카드를 누르는 것 하나로 남는다 */}
           <View style={styles.head}>
-            <View style={styles.name}>
-              <Icon name="heart" size={20} color={primary.strong} />
-              <Text variant="headline1" color={labelColor.strong}>
-                바람카드
-              </Text>
-            </View>
-            {/* 카드 전체가 진입점이라 이 글자는 **표시**다 — 따로 눌리지 않는다.
-                카드가 없어도 들어가 날짜로 둘러볼 수 있어 늘 보여 준다 */}
-            <Text variant="label2" color={primary.heavy}>
-              보기
+            <Text variant="headline1" color={labelColor.strong}>
+              바람카드
             </Text>
+            <Icon name="heart" size={20} color={primary.strong} />
           </View>
 
           <Text variant="body2" color={labelColor.neutral}>
@@ -115,6 +112,5 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: space.md,
   },
-  name: { flexDirection: "row", alignItems: "center", gap: space.sm },
   contents: { paddingTop: space.xl2, gap: space.md },
 });
