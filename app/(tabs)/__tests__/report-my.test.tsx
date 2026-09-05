@@ -1,5 +1,8 @@
 import { render, act, fireEvent, waitFor, within } from "@testing-library/react-native";
 import { Dimensions } from "react-native";
+// jest.mock 팩토리는 `mock` 으로 시작하는 이름만 밖에서 끌어 쓸 수 있다(호이스팅 가드)
+import { useEffect as mockUseEffect } from "react";
+
 import { router } from "expo-router";
 
 import My from "../my";
@@ -15,6 +18,8 @@ import { seedDiaries, seedProfile } from "@/testing/fixtures";
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
+  // 리포트는 **포커스마다** 다시 받는다 — 테스트에는 화면이 하나뿐이라 마운트가 곧 포커스다
+  useFocusEffect: (effect: () => void | (() => void)) => mockUseEffect(effect, [effect]),
 }));
 
 /**
