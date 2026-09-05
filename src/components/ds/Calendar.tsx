@@ -77,6 +77,16 @@ type Props = {
    * 박스 아래 **동그란 점**으로 선다. 기본(false)은 점 모드(쉼터의 수행/미수행 점).
    */
   dateFill?: boolean;
+  /**
+   * 격자가 **늘 잡아 두는 주 줄 수**. 한 달은 5줄일 때도 6줄일 때도 있어서, 그 달의
+   * 줄 수만큼만 높으면 달을 넘길 때 격자 높이가 한 줄(40)씩 오르내린다 — 달력을
+   * 바닥에 붙여 놓은 화면(쉼터 `R2`)에서는 그때마다 **달력 상단이 움직인다.**
+   * 최대 줄 수(6)를 주면 5줄인 달은 마지막 줄 자리를 비워 두고 높이가 고정된다.
+   *
+   * 없으면 그 달의 줄 수만큼만 높다 — 보관함은 달력이 스크롤 안에 있어서 높이가
+   * 변해도 그 위가 밀리지 않고, 빈 줄을 그리면 카드 안이 괜히 비어 보인다.
+   */
+  reserveRows?: number;
 };
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -92,6 +102,7 @@ export function Calendar({
   onMonthStep,
   markOf,
   dateFill = false,
+  reserveRows,
 }: Props) {
   const [gridWidth, setGridWidth] = useState(0);
   const cell = columnWidth(gridWidth, WEEKDAYS.length);
@@ -102,6 +113,16 @@ export function Calendar({
   // 1일의 요일만큼 앞을 비운다 — 요일 머리글과 줄이 맞아야 달력으로 읽힌다
   const lead = new Date(Number(y), Number(m) - 1, 1).getDay();
   const days = new Date(Number(y), Number(m), 0).getDate();
+
+  /**
+   * 예약 높이 = 요일 머리글 + 줄 수 × (칸 + 줄 간격).
+   *
+   * `rowGap` 은 머리글과 첫 줄 사이에도 한 번 들어가서 **줄 수와 간격 수가 같다** —
+   * 그래서 `(N-1)` 이 아니라 `N` 을 곱한다. 남는 자리는 `alignContent: flex-start`
+   * 덕에 **아래**에 남는다(`styles.grid`).
+   */
+  const reservedGridHeight =
+    reserveRows == null ? null : HEAD_HEIGHT + reserveRows * (CELL_HEIGHT + ROW_GAP);
 
   return (
     <View style={styles.root}>
@@ -125,7 +146,10 @@ export function Calendar({
         />
       </View>
 
-      <View style={styles.grid} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
+      <View
+        style={[styles.grid, reservedGridHeight != null ? { minHeight: reservedGridHeight } : null]}
+        onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
+      >
         {WEEKDAYS.map((d) => (
           <View key={d} style={[styles.head, cellSize]}>
             <Text variant="caption2" color={labelColor.assistive}>
@@ -266,6 +290,10 @@ function Dot({
 }
 
 const CELL_HEIGHT = 38;
+/** 요일 머리글 줄 높이 — 예약 높이(`reserveRows`)가 이 값을 쓴다 */
+const HEAD_HEIGHT = 24;
+/** 줄 사이 간격(시안 2px) — 머리글과 첫 줄 사이에도 같은 값이 들어간다 */
+const ROW_GAP = 2;
 const DOT = 8;
 /** 빈 점의 테두리 굵기 — 점 가운데가 뚫려 보이는 최소값 */
 const DOT_BORDER = 1.5;
@@ -291,8 +319,16 @@ const styles = StyleSheet.create({
   // ⚠ **가운데 정렬하지 않는다** — 마지막 주는 칸이 일곱보다 적어서, 가운데로
   // 모으면 그 주의 날짜가 요일 머리글과 어긋난다. 내림하고 남는 2px 남짓은
   // 오른쪽 끝에 그대로 둔다
-  grid: { flexDirection: "row", flexWrap: "wrap", rowGap: 2, columnGap: 0 },
-  head: { height: 24, alignItems: "center", justifyContent: "center" },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: ROW_GAP,
+    columnGap: 0,
+    // 남는 줄 자리는 **아래**에 남긴다 — `reserveRows` 로 6줄을 잡아 둔 달력에서
+    // 5줄인 달이 가운데로 내려오면 상단이 움직여 예약한 뜻이 사라진다
+    alignContent: "flex-start",
+  },
+  head: { height: HEAD_HEIGHT, alignItems: "center", justifyContent: "center" },
   cell: {
     height: CELL_HEIGHT,
     alignItems: "center",
