@@ -50,7 +50,7 @@
 - [x] `docs/ANALYTICS.md`: 실제 이벤트 사전, 설치/키/기기 검증 순서, 퍼널과 비율 분모, 측정 한계. `docs/TASKS.md`에 진행 상태 연결.
 - [x] typecheck, lint, format:check, 전체 Jest, 비밀 파일 추적 방지, diff 검토. 백엔드 변경 없음 확인.
 - [x] 독립 코드 리뷰로 신원·중복·개인정보·UI 회귀 점검 후 필요한 수정.
-- [ ] 기능 브랜치 커밋/push, 저장소 템플릿으로 PR 하나 생성. 실제 키/기기 미확인 항목은 PR과 최종 응답에 남긴다.
+- [x] 기능 브랜치 커밋/push, 저장소 템플릿으로 PR 하나 생성. 실제 키/기기 미확인 항목은 PR과 최종 응답에 남긴다.
 
 ## 수집 해석
 
@@ -63,3 +63,5 @@
 - iOS/Android Hermes 번들 export 성공. 네이티브 autolinking 검증 성공.
 - 독립 리뷰: 초기화 대기 큐의 신원 전환 보존, AsyncStorage 중복 해소, 갱신 토큰 폐기 시 analytics 신원 초기화를 보완했고 재검토 완료.
 - 실제 Amplitude 프로젝트 키를 통한 도착 확인/실기기 네이티브 실행은 배포 전 수동 검증으로 남는다.
+
+PR: [#127 — FE Amplitude 파일럿](https://github.com/soma-momentory/momentory-fe/pull/127). 대상은 main이며 병합 전이다.
