@@ -33,8 +33,9 @@ import { formatKoreanDateShort } from "@/lib/day";
  *
  * 「기능이 늘면 R1 에 항목을 더해요」가 그 자리다 — 감각연못 · 걱정상자 · 오늘의
  * 보물함 · 몸에 힘 빼기를 **2×2** 로 놓는다(`features/rest/model/contents.ts`).
- * 바람카드는 그대로 첫 항목이고 진입점이다. 콘텐츠 넷은 화면이 아직 없어
- * **눌리지 않는다**(`RestContentGrid`).
+ * 바람카드는 그대로 첫 항목이고 진입점이다. 콘텐츠는 **화면이 생긴 것만 눌린다** —
+ * 감각연못이 첫 번째다(2026-09-03 · `/rest/sense-pond`). 나머지 셋은 아직
+ * 눌리지 않는다(`RestContentGrid`).
  */
 export default function Rest() {
   const cards = useDiary((s) => s.actionCards);
@@ -94,7 +95,12 @@ export default function Rest() {
         <Text variant="body2" color={labelColor.neutral}>
           {REST_CONTENTS_PROMPT}
         </Text>
-        <RestContentGrid items={REST_CONTENTS} />
+        <RestContentGrid
+          items={REST_CONTENTS}
+          onOpen={(item) => {
+            if (item.route != null) router.push(item.route);
+          }}
+        />
       </View>
     </TabScreen>
   );
