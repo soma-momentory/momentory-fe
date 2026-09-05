@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -131,6 +132,13 @@ export default function RetroTalk() {
 
   const runTurn = async (input: TurnInput) => {
     if (sessionId == null || pending) return;
+    if (lastReply?.phase === "await_branch" && input.optionIds?.length === 1) {
+      // API의 고정 분기 1/2만 매핑한다. 감정/바람 선택 값은 기록하지 않는다.
+      const selected = input.optionIds[0];
+      if (selected === "1" || selected === "2") {
+        track("retrospect_branch_selected", { branch: selected === "1" ? "explore" : "diary" });
+      }
+    }
     setPending(true);
     setError(null);
     const result = await sendTurn(sessionId, input);

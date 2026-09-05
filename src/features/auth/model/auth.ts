@@ -1,3 +1,4 @@
+import { captureAnalytics, identifyAnalytics, resetAnalytics, track } from "@/features/analytics";
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 
@@ -354,6 +355,7 @@ const warnInDev = (reason: string) => {
  * (§3-5 · §4 "큐는 계정에 묶인다. 로그아웃 시 비운다").
  */
 const clearUserScopedStores = (userId?: number) => {
+  resetAnalytics();
   useDraft.getState().reset();
   useOnboardingCompletion.getState().reset();
   useRetro.getState().reset();
@@ -391,6 +393,7 @@ const adoptSession = async (
   set: (partial: Partial<AuthStore>) => void,
   get: () => AuthStore,
   session: LoginSession,
+  provider: "kakao" | "apple" | "google",
 ): Promise<SignInOutcome> => {
   const stored = await persist({
     accessToken: session.accessToken,
@@ -403,6 +406,7 @@ const adoptSession = async (
   if (!stored) {
     // 기기에 남기지 못한 세션은 앱을 끄면 사라진다 — 그 사실을 지금 말한다
     set({ signInError: STORE_FAILED_MESSAGE });
+    track("login_not_completed", { provider, outcome: "failed" });
     return { kind: "failed", message: STORE_FAILED_MESSAGE };
   }
 
@@ -412,6 +416,8 @@ const adoptSession = async (
   if (session.onboardingRequired) completion.reset();
   else completion.complete();
 
+  identifyAnalytics(session.userId);
+  track("login_succeeded", { provider, onboarding_required: session.onboardingRequired });
   set({ status: "authenticated" });
 
   // 프로필을 뒤따라 채운다 — **기다리지 않는다.** 다음 화면은 위 플래그가
@@ -580,7 +586,10 @@ export const getAccessToken = async (): Promise<string | null> => {
       // 세션이 실제로 사라졌을 때만 로그아웃 상태로 내린다 — 일시적 실패로는
       // 세션이 그대로 남아 있으니 다음 호출이 다시 시도한다. `stale` 이면
       // 세션을 바꾼 쪽이 이미 판정했으므로 여기서 덧쓰지 않는다.
-      if (result.reason === "evicted") useAuth.setState({ status: "anonymous" });
+      if (result.reason === "evicted") {
+        resetAnalytics();
+        useAuth.setState({ status: "anonymous" });
+      }
       return null;
     }
     return result.session.accessToken;
@@ -604,10 +613,12 @@ export const useAuth = create<AuthStore>((set, get) => ({
         // fail-closed 이고, 죽은 값은 지워서 다음 부트가 같은 판정을 반복하지
         // 않게 한다 — 없을 때의 삭제는 아무 일도 하지 않는다.
         await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
+        resetAnalytics();
         set({ status: "anonymous" });
         return;
       }
       if (!isExpired(session)) {
+        identifyAnalytics(session.userId);
         set({ status: "authenticated" });
         await get().syncMe();
         return;
@@ -623,13 +634,16 @@ export const useAuth = create<AuthStore>((set, get) => ({
       // 실패(네트워크 등)는 여기서 재로그인을 강제하지 않는다 — 세션은 남아
       // 있으니 authenticated 로 들여보내고, 화면의 첫 API 호출이 다시 시도한다.
       if (!result.ok && result.reason === "evicted") {
+        resetAnalytics();
         set({ status: "anonymous" });
         return;
       }
+      identifyAnalytics(session.userId);
       set({ status: "authenticated" });
       await get().syncMe();
     } catch {
       // 읽기 오류·복호화 실패 — 판단이 안 서면 로그인 화면이다 (§3-4)
+      resetAnalytics();
       set({ status: "anonymous" });
     }
   },
@@ -673,16 +687,19 @@ export const useAuth = create<AuthStore>((set, get) => ({
     // 두 요청이 겹치면 나중에 끝난 쪽이 앞선 세션을 덮어쓴다.
     if (get().signingIn) return { kind: "busy" };
     set({ signingIn: true, signInError: null });
+    track("login_started", { provider: "kakao" });
 
     try {
       const sdk = await requestKakaoAccessToken();
       if (sdk.kind === "cancelled") {
         // 사용자의 답이다 — 안내 한 줄도 띄우지 않는다
+        track("login_not_completed", { provider: "kakao", outcome: "cancelled" });
         return { kind: "cancelled" };
       }
       if (sdk.kind === "failed") {
         const message = FAILURE_MESSAGES.sdk;
         set({ signInError: message });
+        track("login_not_completed", { provider: "kakao", outcome: "failed" });
         return { kind: "failed", message };
       }
 
@@ -690,11 +707,12 @@ export const useAuth = create<AuthStore>((set, get) => ({
       if (!exchanged.ok) {
         const message = FAILURE_MESSAGES[exchanged.code];
         set({ signInError: message });
+        track("login_not_completed", { provider: "kakao", outcome: "failed" });
         return { kind: "failed", message };
       }
 
       // 저장·플래그·배웅은 공급자를 묻지 않는다 — 애플과 같은 코드를 지난다
-      return await adoptSession(set, get, exchanged.session);
+      return await adoptSession(set, get, exchanged.session, "kakao");
     } finally {
       set({ signingIn: false });
     }
@@ -733,12 +751,16 @@ export const useAuth = create<AuthStore>((set, get) => ({
     // 중복 클릭 — 카카오와 같은 자물쇠다. 애플 시트는 한 번에 하나만 열린다
     if (get().signingIn) return { kind: "busy" };
     set({ signingIn: true, signInError: null });
+    track("login_started", { provider: "apple" });
 
     try {
       const sdk = await requestAppleCredential();
 
       // 사용자의 답이다 — 안내 한 줄도 띄우지 않는다
-      if (sdk.kind === "cancelled") return { kind: "cancelled" };
+      if (sdk.kind === "cancelled") {
+        track("login_not_completed", { provider: "apple", outcome: "cancelled" });
+        return { kind: "cancelled" };
+      }
 
       if (sdk.kind !== "credential") {
         const message =
@@ -746,6 +768,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
             ? APPLE_FAILURE_MESSAGES.unavailable
             : APPLE_FAILURE_MESSAGES.sdk;
         set({ signInError: message });
+        track("login_not_completed", { provider: "apple", outcome: "failed" });
         return { kind: "failed", message };
       }
 
@@ -759,11 +782,12 @@ export const useAuth = create<AuthStore>((set, get) => ({
       if (!exchanged.ok) {
         const message = APPLE_FAILURE_MESSAGES[exchanged.code];
         set({ signInError: message });
+        track("login_not_completed", { provider: "apple", outcome: "failed" });
         return { kind: "failed", message };
       }
 
       // 저장·플래그·배웅은 공급자를 묻지 않는다 — 카카오와 같은 코드를 지난다
-      return await adoptSession(set, get, exchanged.session);
+      return await adoptSession(set, get, exchanged.session, "apple");
     } finally {
       set({ signingIn: false });
     }
@@ -790,12 +814,16 @@ export const useAuth = create<AuthStore>((set, get) => ({
   signInWithGoogle: async () => {
     if (get().signingIn) return { kind: "busy" };
     set({ signingIn: true, signInError: null });
+    track("login_started", { provider: "google" });
 
     try {
       const sdk = await requestGoogleIdToken();
 
       // 사용자의 답이다 — 안내 한 줄도 띄우지 않는다
-      if (sdk.kind === "cancelled") return { kind: "cancelled" };
+      if (sdk.kind === "cancelled") {
+        track("login_not_completed", { provider: "google", outcome: "cancelled" });
+        return { kind: "cancelled" };
+      }
 
       if (sdk.kind !== "id-token") {
         const message =
@@ -805,6 +833,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
               ? GOOGLE_FAILURE_MESSAGES.misconfigured
               : GOOGLE_FAILURE_MESSAGES.sdk;
         set({ signInError: message });
+        track("login_not_completed", { provider: "google", outcome: "failed" });
         return { kind: "failed", message };
       }
 
@@ -812,11 +841,12 @@ export const useAuth = create<AuthStore>((set, get) => ({
       if (!exchanged.ok) {
         const message = GOOGLE_FAILURE_MESSAGES[exchanged.code];
         set({ signInError: message });
+        track("login_not_completed", { provider: "google", outcome: "failed" });
         return { kind: "failed", message };
       }
 
       // 저장·플래그·배웅은 공급자를 묻지 않는다 — 카카오·애플과 같은 코드를 지난다
-      return await adoptSession(set, get, exchanged.session);
+      return await adoptSession(set, get, exchanged.session, "google");
     } finally {
       set({ signingIn: false });
     }
@@ -834,14 +864,17 @@ export const useAuth = create<AuthStore>((set, get) => ({
     };
     // 개발 통로다 — 저장이 실패해도 이 세션 동안은 진행한다
     await persist(session);
+    identifyAnalytics(session.userId);
     set({ status: "authenticated" });
   },
 
   signOut: async () => {
+    const record = captureAnalytics();
     // 지우기 전에 refresh token 을 든다 — 폐기 요청이 가리킬 것이 이것뿐이다
     const session = await readSession();
 
     await SecureStore.deleteItemAsync(SESSION_KEY).catch(() => {});
+    if (session != null) record("logout_completed", {});
     clearUserScopedStores(session?.userId);
     set({ status: "anonymous", signInError: null });
 
@@ -872,6 +905,8 @@ export const useAuth = create<AuthStore>((set, get) => ({
     // 중복 실행 방지 — 확인 버튼을 두 번 눌러도 요청은 한 번이다
     if (get().withdrawing) return false;
     set({ withdrawing: true, withdrawError: null });
+    const record = captureAnalytics();
+    record("withdrawal_submitted", {});
 
     try {
       // **로그아웃과 다르게 기다린다.** 서버가 카카오 연결부터 끊는데 그게 실패하면
@@ -879,6 +914,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
       // 계정이 살아 있는 상태가 된다(다음 로그인에 되살아난다).
       const result = await deleteAccount();
       if (!result.ok) {
+        record("withdrawal_failed", {});
         set({ withdrawError: WITHDRAW_FAILURE_MESSAGES[result.code] });
         return false;
       }
@@ -890,6 +926,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
       // **기다리되 실패를 무시한다.** 서버가 계정을 지운 뒤라 여기서 되돌리면
       // 「탈퇴됐다는데 계정이 남아 있다」가 된다 — 남는 것은 구글 계정 설정의
       // 항목 하나이고 사용자가 직접 지울 수 있다.
+      record("withdrawal_completed", {});
       await revokeGoogleAccess();
 
       // 서버가 계정을 지웠다 — 이제 기기의 흔적을 지운다. 지우기 전에 세션을 읽어

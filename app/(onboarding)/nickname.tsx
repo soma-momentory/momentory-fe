@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { StyleSheet } from "react-native";
 
@@ -38,6 +39,7 @@ export default function Nickname() {
   const goNext = () => {
     // 앞뒤 공백은 저장할 때 잘라낸다 (04.md)
     set("nickname", trimmed);
+    track("onboarding_step_completed", { step: "nickname" });
     router.push("/age");
   };
 

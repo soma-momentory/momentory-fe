@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 
 import { Button, TextField } from "@/components/ds";
@@ -29,7 +30,10 @@ export default function Age() {
   const set = useDraft((s) => s.set);
   const ready = age.trim().length > 0;
 
-  const goNext = () => router.push("/gender");
+  const goNext = () => {
+    track("onboarding_step_completed", { step: "age" });
+    router.push("/gender");
+  };
 
   const skip = () => {
     // 건너뛰면 적던 값도 지운다 — 안 고른 것이 답이다

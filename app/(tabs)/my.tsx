@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -128,6 +129,7 @@ export default function My() {
 
   /** 확인 시트를 연다 — 지난 실패 한 줄과 입력값을 지우고 연다 */
   const openWithdraw = () => {
+    track("withdrawal_opened", {});
     clearWithdrawError();
     setWithdrawConfirmText("");
     setConfirmingWithdraw(true);
@@ -135,6 +137,7 @@ export default function My() {
 
   /** 시트를 닫고 입력값을 버린다 — 딤을 누르거나 취소했을 때 */
   const cancelWithdraw = () => {
+    if (!withdrawing) track("withdrawal_cancelled", {});
     setConfirmingWithdraw(false);
     setWithdrawConfirmText("");
   };
@@ -345,7 +348,10 @@ export default function My() {
           <ListCell
             title="로그아웃"
             leading={<Icon name="logout" size={20} color={labelColor.alternative} />}
-            onPress={() => void signOut()}
+            onPress={() => {
+              track("logout_clicked", {});
+              void signOut();
+            }}
             chevron
           />
         </Group>

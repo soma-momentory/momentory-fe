@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -51,7 +52,10 @@ export default function Rest() {
         ? "오늘의 바람카드가 있어요"
         : `가장 최근 카드는 ${formatKoreanDateShort(latest)}이에요`;
 
-  const open = () => router.push("/rest/cards");
+  const open = () => {
+    track("wish_card_open_clicked", { source: "rest" });
+    router.push("/rest/cards");
+  };
 
   return (
     <TabScreen active="쉼터">

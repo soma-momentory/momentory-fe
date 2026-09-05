@@ -4,6 +4,8 @@ import { useEffect, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 
+import { AnalyticsObserver } from "@/features/analytics/AnalyticsObserver";
+
 import { ToastHost } from "@/components/ds";
 import { startCalendarForegroundSync } from "@/features/calendar/model/foregroundSync";
 import { startDayRollover } from "@/features/home/model/dayRollover";
@@ -70,6 +72,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       {/* 토스트는 **라우트 위**에 산다 — 화면 안에 두면 화면이 바뀔 때 알림도
           함께 사라진다(`lib/toast.ts`). 자리만 차지하지 않게 `box-none` 이다 */}
       <View style={styles.root}>
+        <AnalyticsObserver />
         {children}
         <ToastHost />
       </View>

@@ -1,3 +1,4 @@
+import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -34,6 +35,7 @@ export default function RestCardTrail() {
 
   return (
     <Screen>
+      <AnalyticsResource kind="wish_card" id={card?.id ?? null} source="trail" />
       {/* 제목을 두지 않는다 — 아래 행동 문장이 이 화면의 제목이다 */}
       <TopNavigation leading="arrow-left" onLeadingPress={() => router.back()} />
 

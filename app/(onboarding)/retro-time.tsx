@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -77,6 +78,7 @@ export default function RetroTime() {
     // 알림만 끈다 — 회고 시각은 남는다 (08.md)
     if (!notify) {
       set("notifyRetro", false);
+      track("onboarding_step_completed", { step: "retroTime" });
       router.push("/calendar");
       return;
     }
@@ -86,6 +88,7 @@ export default function RetroTime() {
     const { granted } = await requestNotificationPermission();
     set("notifyRetro", granted);
     setAsking(false);
+    track("onboarding_step_completed", { step: "retroTime" });
     router.push("/calendar");
   };
 

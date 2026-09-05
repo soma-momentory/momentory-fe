@@ -1,3 +1,4 @@
+import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
@@ -123,6 +124,7 @@ export default function RestCards() {
   return (
     <>
       <Screen>
+        <AnalyticsResource kind="wish_card" id={card?.id ?? null} source="cards" />
         <TopNavigation
           leading="arrow-left"
           title="바람카드"

@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -88,6 +89,7 @@ export default function Rest() {
 
   const goNext = () => {
     if (etcOn) commitOther();
+    track("onboarding_step_completed", { step: "rest" });
     router.push("/retro-time");
   };
 

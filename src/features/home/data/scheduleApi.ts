@@ -1,3 +1,4 @@
+import { captureAnalytics } from "@/features/analytics";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 import type { Schedule } from "@/features/home/model/types";
 import { authedRequest, type HttpError } from "@/lib/http";
@@ -207,40 +208,72 @@ export const fetchSchedulesInPeriod = (
   );
 
 /** `12-e` 직접 추가 — **제목 하나만** 보낸다. 서버가 순서를 끝에 붙여 돌려준다 */
-export const createSchedule = (date: string, title: string): Promise<ScheduleResult<Schedule>> =>
-  call("POST", SCHEDULES_PATH, { date, title }, toSchedule);
+export const createSchedule = async (
+  date: string,
+  title: string,
+): Promise<ScheduleResult<Schedule>> => {
+  const record = captureAnalytics();
+  const result = await call("POST", SCHEDULES_PATH, { date, title }, toSchedule);
+  if (result.ok)
+    record(
+      "schedule_created",
+      { schedule_id: result.data.id, source: result.data.source },
+      result.data.id,
+    );
+  return result;
+};
 
 /**
  * `12-c` 「이 일정 삭제」. **돌려받을 것이 없다**(`204`) — 그래서 본문을 보지
  * 않는다. `call` 은 `null` 을 「모양이 어긋났다」로 읽으므로 여기만 따로 닫는다.
  */
 export const deleteSchedule = async (id: string): Promise<ScheduleResult<true>> => {
+  const record = captureAnalytics();
   const result = await authedRequest<unknown>(
     "DELETE",
     `${SCHEDULES_PATH}/${encodeURIComponent(id)}`,
     undefined,
     { timeoutMs: SCHEDULES_TIMEOUT_MS },
   );
+  if (result.ok) record("schedule_deleted", { schedule_id: id });
   return result.ok ? { ok: true, data: true } : { ok: false, code: mapError(result.error) };
 };
 
 /** 가져온 일정은 캘린더 원본을 지우지 않고 Momentory 홈에서만 감춘다. */
-export const patchScheduleVisibility = (
+export const patchScheduleVisibility = async (
   id: string,
   hidden: boolean,
-): Promise<ScheduleResult<true>> =>
-  call("PATCH", `${SCHEDULES_PATH}/${encodeURIComponent(id)}/visibility`, { hidden }, () => true);
+): Promise<ScheduleResult<true>> => {
+  const record = captureAnalytics();
+  const result = await call(
+    "PATCH",
+    `${SCHEDULES_PATH}/${encodeURIComponent(id)}/visibility`,
+    { hidden },
+    () => true as const,
+  );
+  if (result.ok) record("schedule_visibility_changed", { schedule_id: id, hidden });
+  return result;
+};
 
 /**
  * 제목 수정 — `12-c` 편집 모드. **날짜도 함께 보낸다**(`ScheduleRequest` 가 둘 다
  * 필수). 날짜는 그날 그대로라 옮기는 뜻이 아니다.
  */
-export const patchScheduleTitle = (
+export const patchScheduleTitle = async (
   id: string,
   date: string,
   title: string,
-): Promise<ScheduleResult<Schedule>> =>
-  call("PATCH", `${SCHEDULES_PATH}/${encodeURIComponent(id)}`, { date, title }, toSchedule);
+): Promise<ScheduleResult<Schedule>> => {
+  const record = captureAnalytics();
+  const result = await call(
+    "PATCH",
+    `${SCHEDULES_PATH}/${encodeURIComponent(id)}`,
+    { date, title },
+    toSchedule,
+  );
+  if (result.ok) record("schedule_updated", { schedule_id: id });
+  return result;
+};
 
 /**
  * 순서. **그날의 id 를 원하는 차례대로 통째로 보낸다**(`ScheduleOrderRequest`) —
@@ -260,12 +293,13 @@ export const patchScheduleOrder = (
  * 400 이고, 마침을 끄면 서버가 감정을 지운다(`Schedule.changeCompletion`).
  * 그 규칙을 store 가 지키고 여기서는 보낼 수 있는 모양만 만든다.
  */
-export const putCompletion = (
+export const putCompletion = async (
   id: string,
   completed: boolean,
   emotion: EmotionId | null,
-): Promise<ScheduleResult<{ completed: boolean; emotions: EmotionId[] }>> =>
-  call(
+): Promise<ScheduleResult<{ completed: boolean; emotions: EmotionId[] }>> => {
+  const record = captureAnalytics();
+  const result = await call(
     "PUT",
     `${SCHEDULES_PATH}/${encodeURIComponent(id)}/completion`,
     { completed, emotion: completed && emotion != null ? SCHEDULE_EMOTIONS[emotion] : null },
@@ -274,3 +308,7 @@ export const putCompletion = (
         ? { completed: v.completed, emotions: toEmotions(v.emotion) }
         : null,
   );
+  if (result.ok)
+    record("schedule_completion_changed", { schedule_id: id, completed: result.data.completed });
+  return result;
+};

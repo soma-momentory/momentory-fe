@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
@@ -154,7 +155,10 @@ export default function Archive() {
   ].sort((a, b) => b.localeCompare(a));
   const listMonthLabel = listMonth == null ? "전체 보기" : formatKoreanMonth(listMonth);
 
-  const open = (id: string) => router.push(`/diary/${id}`);
+  const open = (id: string) => {
+    track("diary_open_clicked", { diary_id: id, source: view });
+    router.push(`/diary/${id}`);
+  };
 
   /**
    * 달력 칸의 표시 규칙 — **두 채널**이다(`dateFill` 채움 모드):
@@ -184,6 +188,7 @@ export default function Archive() {
 
   // 달을 옮기면 고른 날도 그달의 첫날로 간다 — 31일이 없는 달로 넘어가지 않게
   const goMonth = (step: -1 | 1) => {
+    track("archive_month_changed", { direction: step < 0 ? "previous" : "next" });
     const next = shiftMonth(month, step);
     setMonth(next);
     setSelectedDate(`${next}-01`);
@@ -208,6 +213,7 @@ export default function Archive() {
                 label="전체 보기"
                 selected={listMonth == null}
                 onPress={() => {
+                  track("archive_period_changed", { period: "all" });
                   setListMonth(null);
                   setMonthPickerOpen(false);
                 }}
@@ -218,6 +224,7 @@ export default function Archive() {
                   label={formatKoreanMonth(m)}
                   selected={listMonth === m}
                   onPress={() => {
+                    track("archive_period_changed", { period: "month" });
                     setListMonth(m);
                     setMonthPickerOpen(false);
                   }}
@@ -233,7 +240,14 @@ export default function Archive() {
         <Text variant="title3Hand" color={labelColor.strong}>
           보관함
         </Text>
-        <ViewSwitcher options={VIEWS} active={view} onChange={setView} />
+        <ViewSwitcher
+          options={VIEWS}
+          active={view}
+          onChange={(next) => {
+            if (next !== view) track("archive_view_changed", { view: next });
+            setView(next);
+          }}
+        />
       </View>
 
       {view === "calendar" ? (
@@ -247,7 +261,15 @@ export default function Archive() {
             <Calendar
               month={month}
               selectedDate={selectedDate}
-              onSelect={setSelectedDate}
+              onSelect={(date) => {
+                track("archive_date_selected", {
+                  days_from_today: Math.round(
+                    (Date.parse(date) - Date.parse(todayDate)) / 86400000,
+                  ),
+                  has_diary: diaries.some((d) => d.date === date),
+                });
+                setSelectedDate(date);
+              }}
               onMonthStep={goMonth}
               markOf={markOf}
               dateFill

@@ -1,3 +1,4 @@
+import { captureAnalytics } from "@/features/analytics";
 import type { SyncEvent, SyncRange } from "@/features/calendar/model/types";
 import { authedRequest, type HttpError } from "@/lib/http";
 
@@ -85,6 +86,7 @@ export async function syncCalendarSnapshot(
   range: SyncRange,
   events: SyncEvent[],
 ): Promise<{ ok: true; data: CalendarSyncResult } | { ok: false; error: HttpError }> {
+  const record = captureAnalytics();
   const result = await authedRequest<unknown>(
     "POST",
     CALENDAR_SYNC_PATH,
@@ -93,5 +95,11 @@ export async function syncCalendarSnapshot(
   );
 
   if (!result.ok) return result;
-  return { ok: true, data: toResult(result.data) };
+  const data = toResult(result.data);
+  record("calendar_sync_succeeded", {
+    created: data.created,
+    updated: data.updated,
+    deleted: data.deleted,
+  });
+  return { ok: true, data };
 }
