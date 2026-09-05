@@ -5,7 +5,7 @@ import { isAnalyticsEnabled, track } from "./index";
 
 type Props =
   | { kind: "diary"; id: string | null }
-  | { kind: "wish_card"; id: string | null; source: "cards" | "trail" }
+  | { kind: "wish_card"; id: string | null; source: "cards" }
   | { kind: "report"; id: string | null; isReady: () => boolean };
 
 /** 실제 데이터가 보이는 화면 안에 둔다. 목록 프리페치/빈 상태는 조회로 세지 않는다. */
