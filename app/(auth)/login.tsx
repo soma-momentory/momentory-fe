@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
 
 import { Screen, SocialButton, Text } from "@/components/ds";
-import { label as labelColor, space, status } from "@/design/ds";
+import { gothic, label as labelColor, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { openExternalLink, type ExternalLink } from "@/lib/links";
 
@@ -124,7 +124,10 @@ export default function Login() {
         >
           모멘토리
         </Text>
-        <Text variant="body2Reading" color={labelColor.neutral}>
+        {/* 앱은 손글씨 하나로 갔지만 **로그인만 고딕이다**(2026-09-06 · `ds/typography.ts`
+            의 `gothic`). 워드마크는 원래부터 손글씨(`wordmarkHand`)라 그대로 둔다 —
+            넘기는 굵기는 그 단이 원래 쓰던 것이다(`body2Reading` = Regular) */}
+        <Text variant="body2Reading" color={labelColor.neutral} style={gothic.regular}>
           오늘을 돌아보고, 내일을 조금 다르게.
         </Text>
       </View>
@@ -184,7 +187,7 @@ export default function Login() {
         <Text
           variant="caption1"
           color={status.negative}
-          style={styles.centered}
+          style={[styles.centered, gothic.medium]}
           accessibilityLiveRegion="polite"
           accessibilityRole="alert"
         >
@@ -193,7 +196,11 @@ export default function Login() {
       ) : null}
 
       <View style={styles.legal}>
-        <Text variant="caption2" color={labelColor.alternative} style={styles.centered}>
+        <Text
+          variant="caption2"
+          color={labelColor.alternative}
+          style={[styles.centered, gothic.semibold]}
+        >
           로그인하면 <LegalLink label="이용약관" link="terms" />과{" "}
           <LegalLink label="개인정보 처리방침" link="privacy" />에 동의하게 돼요. 마이에서 언제든
           다시 확인할 수 있어요.
@@ -225,7 +232,7 @@ function LegalLink({ label, link }: { label: string; link: ExternalLink }) {
       color={labelColor.neutral}
       accessibilityRole="link"
       onPress={() => void openExternalLink(link)}
-      style={styles.legalLink}
+      style={[styles.legalLink, gothic.semibold]}
     >
       {label}
     </Text>
