@@ -193,6 +193,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: "./assets/android-icon-monochrome.png",
     },
     predictiveBackGestureEnabled: false,
+
+    // 스토어가 「이 빌드가 저것보다 새 것인가」를 판단하는 **유일한** 근거다
+    // (`version` 은 사람이 읽는 이름일 뿐 순서를 만들지 않는다). Play 는 같은 값을
+    // 두 번 받지 않으므로 **업로드마다 1 씩 올린다** — 심사에서 반려돼 다시 올릴
+    // 때도 올려야 한다.
+    //
+    // ⚠ `android/app/build.gradle` 이 아니라 여기에 둔다. 그 파일은 prebuild 가
+    // 다시 만드는 생성물이라, 거기서 올린 숫자는 다음 prebuild 에 1 로 되돌아간다.
+    versionCode: 3,
   },
 
   // ⚠ 플러그인의 유일한 출처. `npx expo install` 이 app.json 을 만들어 여기 목록을
@@ -235,11 +244,38 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     // 카카오 SDK 는 Maven Central 에 없다 — 카카오 저장소를 Gradle 에 알린다.
     // (`@react-native-seoul/kakao-login` README 「EXPO」)
+    //
+    // R8 도 **여기서만 켤 수 있다.** `android/gradle.properties` 를 직접 고쳐도
+    // 다음 prebuild 에 사라진다 — `withReleaseSigning` 을 만든 것과 같은 이유다.
     [
       "expo-build-properties",
       {
         android: {
           extraMavenRepos: ["https://devrepo.kakao.com/nexus/content/groups/public/"],
+
+          // 코드 축소·난독화. **릴리스 빌드에서만 돈다** — 개발 중에는 무엇이 깨졌는지
+          // 드러나지 않으므로, 이 값을 건드린 뒤에는 릴리스 산출물을 실기기에 깔아
+          // 로그인 3종 · 알림 딥링크 · 캘린더 · 세션 복원을 손으로 확인한다.
+          enableMinifyInReleaseBuilds: true,
+
+          // 리소스 축소. 위 항목이 **전제 조건**이다(플러그인이 검사해서 던진다).
+          // RN 앱은 이미지가 JS 번들 asset 이라 `res/` 에 거의 없어 절감폭은 작다.
+          enableShrinkResourcesInReleaseBuilds: true,
+
+          /**
+           * ⚠ 여기 적은 것만 살아남는다 — `android/app/proguard-rules.pro` 는 생성물이다.
+           *
+           * 네이티브 의존은 대부분 자기 keep 룰을 AAR 에 담아 온다
+           * (`consumerProguardFiles` — expo-modules-core · expo-notifications ·
+           * expo-image · react-native-svg · kakao-login · google-signin 확인함).
+           * **Amplitude 만 없다** — 리플렉션으로 이름을 찾다 깨지면 「빌드는 되는데
+           * 이벤트만 안 올라간다」로 드러나서 알아채기 어렵다. 그래서 통째로 남긴다.
+           */
+          extraProguardRules: [
+            "# @amplitude/analytics-react-native — AAR 에 consumer 룰이 없다 (2026-09-06 확인)",
+            "-keep class com.amplitude.** { *; }",
+            "-dontwarn com.amplitude.**",
+          ].join("\n"),
         },
       },
     ],
@@ -270,6 +306,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...kakaoPlugin,
     ...googlePlugin,
     ...insecureApiPlugin,
+    // release 를 출시용 키스토어로 서명한다. 키·비밀번호는 저장소에 없다 —
+    // `~/.gradle/gradle.properties` 의 `MOMENTORY_RELEASE_*` 를 이름으로 참조할 뿐이다.
+    // 값이 없는 기기에서는 debug 키로 떨어지고 빌드 로그에 경고가 찍힌다.
+    "./plugins/withReleaseSigning",
+    // 출시본에서 `SYSTEM_ALERT_WINDOW`(다른 앱 위에 표시)를 뺀다 — expo-dev-client 가
+    // 개발자 메뉴 때문에 넣는 권한이라 출시본에는 쓸 일이 없는데 사용자에게는 보인다.
+    // debug 는 그대로 둔다(release 소스셋에만 쓴다).
+    "./plugins/withoutDevOverlayPermission",
     // 스플래시도 **같은 로고 하나**다 — 런처 아이콘과 마찬가지로
     // `assets/logo.jpeg` 에서 배경을 지워 뽑았다.
     //
