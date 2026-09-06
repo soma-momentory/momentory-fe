@@ -16,7 +16,6 @@ const routes: Record<string, ScreenName> = {
   "retro/done": "retro_done",
   "diary/[id]": "diary_detail",
   "rest/cards": "wish_cards",
-  "rest/cards/[date]": "wish_card_trail",
   "my/profile": "profile",
   "my/nickname": "profile_nickname",
   "my/age": "profile_age",

@@ -1,7 +1,7 @@
 import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import {
   Calendar,
@@ -14,7 +14,7 @@ import {
   type CalendarMark,
 } from "@/components/ds";
 import { RestActionCard } from "@/components/rest/RestActionCard";
-import { label as labelColor, maxFontScale, primary, space, status } from "@/design/ds";
+import { label as labelColor, layout, primary, space, status } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { cardDaysIn, cardOn, datedCards, latestCardDay } from "@/features/rest/model/cards";
@@ -71,17 +71,6 @@ export default function RestCards() {
   const days = cardDaysIn(all, shownMonth);
 
   /**
-   * 카드 자리 높이는 **글자 높이를 따라간다.**
-   *
-   * 안에 든 것이 거의 전부 글자라, 시스템 글꼴 배율이 오르면 같은 카드가 그만큼
-   * 높아진다 — 높이를 고정 숫자로만 두면 그 사용자에게만 카드가 조금씩 잘린다.
-   * 천장은 `Text` 가 쓰는 것과 **같은 `maxFontScale`(1.3)** 이다. 다른 천장을 쓰면
-   * 글자는 1.3 에서 멈췄는데 그릇만 더 커진다.
-   */
-  const { fontScale } = useWindowDimensions();
-  const cardAreaHeight = CARD_AREA * Math.min(fontScale, maxFontScale);
-
-  /**
    * 카드 존재 · 수행 · 선택을 **셋으로 나눠** 표시한다(시안 규칙).
    * **카드가 없는 날도 고를 수 있다** — 강조·점 없이 두되 잠그지 않는다.
    * 카드가 있으면 날짜를 진하게(존재), **점의 모양**으로 수행 여부를 나눈다:
@@ -132,24 +121,29 @@ export default function RestCards() {
           onLeadingPress={() => router.back()}
         />
 
-        {/* **달력은 화면 위에서 늘 같은 자리에 선다.**
+        {/* **달력은 화면 바닥에 붙박여 있고, 6줄 자리를 늘 잡는다**(2026-09-06).
 
-            카드 자리(`cardArea`)의 높이가 고정이라 달력이 그 아래 붙박여 있다 —
-            「했어요」를 눌러 카드가 커졌다 작아져도 달력이 따라 움직이지 않고,
-            카드가 없는 날에도 같은 자리에 있다. 화면이 길든 짧든 달력의 자리가
-            같고, 남는 높이는 **달력 아래**로 흘러간다(2026-08-28).
+            한 달은 5줄일 때도 6줄일 때도 있다. 달력이 그 달의 줄 수만큼만 높으면
+            달을 넘길 때마다 높이가 한 줄(40)씩 오르내리고, 바닥에 붙어 있는 이
+            화면에서는 그게 곧 **달력 상단이 움직이는 것**으로 보인다. 그래서
+            `reserveRows={6}` 으로 최대 줄 수 자리를 늘 잡는다 — 5줄인 달은 마지막
+            줄 자리가 비어 있을 뿐 격자의 위치는 그대로다.
 
-            옛 구조는 달력을 화면 **바닥**에 고정했는데, 그러면 위 칸이 남는 높이를
-            전부 먹어 세로가 긴 기기에서 가운데가 크게 비고(17 Pro Max) 짧은
-            기기(SE)에서는 카드가 잘린 채 갇혔다. */}
+            남는 높이는 **카드 자리**(위)가 먹는다. 높이가 고정된 달력이 바닥에
+            붙어 있으므로 달력 상단이 기기와 무관하게 「바닥에서 같은 거리」에
+            선다 — 안드로이드와 iOS 에서 달력 자리가 달랐던 것이 이 때문이었다.
+
+            ⚠ 2026-08-28 에는 반대로 했다 — 카드 자리를 340 으로 **고정**하고 남는
+            높이를 달력 **아래**로 보냈다. 그러면 기기마다 달력이 바닥에서 다른
+            거리에 서고, 짧은 기기에서는 `flexShrink` 가 카드 자리를 깎아 달마다
+            달력이 위아래로 움직였다. 그때 걱정했던 「긴 기기에서 가운데가 크게
+            빈다」는 남지만, 카드가 **위에 붙어** 있어 빈 자리는 카드 아래로 가고
+            짧은 기기에서는 카드 자리만 스크롤된다. */}
         <View style={styles.body}>
-          <ScrollView
-            style={[styles.cardArea, { height: cardAreaHeight }]}
-            contentContainerStyle={styles.cardAreaContent}
-            showsVerticalScrollIndicator={false}
-            // 키보드가 올라온 채로도 카드 안 버튼이 한 번에 눌린다
-            keyboardShouldPersistTaps="handled"
-          >
+          {/* 카드 자리는 이제 **스크롤하지 않는다** — 카드가 스스로 이 자리에 맞춰
+              줄고, 넘치는 몫은 카드 안에서 스크롤한다(`RestActionCard` 의 `fields`).
+              바깥이 자르던 때는 카드 아랫변이 평평하게 끊겨 달력과 이어져 보였다 */}
+          <View style={styles.cardArea}>
             {card == null || selected == null ? (
               // 카드가 놓일 자리에 「없다」를 **같은 카드 모양으로** 말한다 — 면이
               // 사라지면 그 날만 화면 구조가 달라 보인다. 고른 날이 있으면 그 날
@@ -163,6 +157,9 @@ export default function RestCards() {
               </Card>
             ) : (
               <RestActionCard
+                // 날짜를 옮기면 **카드 안 상태를 새로 시작한다** — 적던 초안과
+                // 「적지 않기로」가 다음 카드로 따라가면 남의 자리에서 보인다
+                key={card.id}
                 card={card}
                 date={formatKoreanDateShort(selected)}
                 dateNote={selected === today ? "오늘" : undefined}
@@ -172,31 +169,30 @@ export default function RestCards() {
                   setReflection(card.id, t);
                   saveReflection(card.id);
                 }}
-                onOpenTrail={() =>
-                  router.push({ pathname: "/rest/cards/[date]", params: { date: selected } })
-                }
                 // 누른 지점(창 기준) 바로 아래에 메뉴가 선다 — 메뉴는 `Screen` 밖
                 // 레이어라 인셋을 빼지 않는다
                 onMore={(atY) => setMenuTop(atY + space.md)}
               />
             )}
-          </ScrollView>
+          </View>
 
           {/* 「지난 바람카드」 머리글은 뺐다(2026-08-24). 카드가 화면의 주인공이라
-              그 위 세로를 머리글에 내주지 않는다 */}
-          <Calendar
-            month={shownMonth}
-            selectedDate={selected}
-            onSelect={(date) => {
-              setPicked(date);
-              setMonth(date.slice(0, 7));
-            }}
-            onMonthStep={step}
-            markOf={markOf}
-          />
+              그 위 세로를 머리글에 내주지 않는다.
 
-          {/* 달력 아래 숨 — 짧은 기기에서는 이 자리를 카드에 내준다(아래 주석) */}
-          <View style={styles.belowCalendar} />
+              달력은 **시스템 바 바로 위**에 앉는다 — `styles.calendarSeat` 주석 */}
+          <View style={styles.calendarSeat}>
+            <Calendar
+              month={shownMonth}
+              selectedDate={selected}
+              onSelect={(date) => {
+                setPicked(date);
+                setMonth(date.slice(0, 7));
+              }}
+              onMonthStep={step}
+              markOf={markOf}
+              reserveRows={CALENDAR_ROWS}
+            />
+          </View>
         </View>
       </Screen>
 
@@ -237,41 +233,58 @@ export default function RestCards() {
 }
 
 /**
- * 카드 자리 높이(글꼴 배율 1 기준) — **상태에 따라 변하지 않는다.**
+ * 달력이 늘 잡아 두는 주 줄 수 — **한 달이 가질 수 있는 최대**다.
  *
- * 달력이 늘 같은 자리에 서려면 그 위 칸이 「했어요」·「수행 취소」에 따라 늘었다 줄면
- * 안 된다. 입력창이 열린 **가장 큰 카드**가 들어가는 높이로 잡았고(≈317 + 숨),
- * 그보다 긴 카드(아주 긴 상황·저장된 느낀 점)는 **이 칸만** 스크롤한다. 실제로 쓰는
- * 값은 여기에 글꼴 배율을 곱한 것이다(`cardAreaHeight`).
+ * 31일이 토요일에 시작하면 앞 빈칸 6 + 31 = 37 칸이라 6줄이 된다. 그보다 긴 달은
+ * 없으므로 6 이 천장이고, 6 을 예약하면 어떤 달에도 격자가 잘리지 않으면서 높이가
+ * 변하지 않는다.
  *
  * ⚠ **`design/ds` 로 올리지 않는다.** `metrics.ts` 의 `size` 는 「시스템 차원에서 정한
  * 값만」 두고 **화면 하나에서만 쓰는 숫자는 그 화면에 둔다**고 스스로 못박아 두었다
  * (`metrics.ts` `size` 머리말 · `CLAUDE.md` 「디자인 파일에 제품 규칙을 넣지 않는다」).
  * `Calendar` 의 칸 높이, `Slider` 의 엄지 지름도 같은 이유로 각자 파일에 있다.
  */
-const CARD_AREA = 340;
+const CALENDAR_ROWS = 6;
 
 const styles = StyleSheet.create({
   body: { flex: 1 },
   /**
-   * 높이는 `cardAreaHeight` 가 인라인으로 준다 — 여기 있는 것은 그 높이가 지켜지게
-   * 하는 두 값이다.
+   * 카드 자리 — **남는 높이를 전부 먹는다.**
    *
-   * ⚠ **`flexGrow: 0` 을 반드시 적는다.** `ScrollView` 의 기본 스타일에 `flexGrow: 1`
-   * 이 들어 있어서(`ScrollView.js` 의 `baseVertical`), 높이만 주면 그 위를 덮지 못하고
-   * **남는 높이를 그대로 먹는다** — 높이를 340 으로 주든 200 으로 주든 화면이 똑같이
-   * 그려져서 한참 헤맸다(2026-08-28).
-   *
-   * `flex: 1` 이 아닌 이유는 그 반대다 — 남는 높이를 먹으면 기기마다 달력의 자리가
-   * 달라진다. 다만 화면이 짧아 다 못 담을 때는(SE) 줄어든다(`flexShrink`) —
-   * 안 그러면 달력 아랫줄이 잘린다.
+   * 달력이 6줄 높이로 바닥에 붙박여 있으므로 기기마다 다른 남는 높이는 전부 이리로
+   * 온다. 카드는 이 자리에 **맞춰 줄고**(`RestActionCard` 의 `card`), 넘치는 몫은
+   * 카드 안에서 스크롤한다 — 달력은 따라 움직이지 않고, 「했어요」를 눌러 카드가
+   * 커졌다 작아져도 마찬가지다.
    */
-  cardArea: { flexGrow: 0, flexShrink: 1 },
-  cardAreaContent: { paddingBottom: space.lg },
+  // 아래 여백이 **카드와 달력 사이의 유일한 간격**이다 — 카드가 자리를 꽉 채우므로
+  // (`RestActionCard` 의 `card`) 이 값이 곧 둘 사이의 거리다. 16 → 8 → **4** 로
+  // 좁혔다(2026-09-06). 달력이 자기 위로 12(`calendarSeat` 의 `paddingTop`)를 더
+  // 잡고 있어서, 둘이 붙어 보이지 않는 몫은 그쪽이 맡는다
+  cardArea: { flex: 1, paddingBottom: space.xs },
   /**
-   * 달력 아래 숨. **짧은 기기에서는 이 숨이 먼저 줄어 카드 자리를 지킨다** —
-   * 줄어드는 양이 `flexShrink × 높이` 로 나뉘므로, 카드 자리(340)보다 훨씬 작은 이
-   * 칸이 같은 비중으로 줄면 티도 안 난다. 그래서 4 를 준다.
+   * 달력이 앉는 자리 — **시스템 바 바로 위, 다만 딱 붙지는 않게.**
+   *
+   * `Screen` 의 아래 여백은 `max(인셋, 하한) + androidNavGap` 인데, 뒤의 한 뼘은
+   * 「하단 독이 시스템 바에 **딱 맞닿지** 않게」 두는 숨이다(`Screen` 머리말).
+   * 달력은 독이 아니라 격자라서 그 숨을 통째로 두면 화면 끝에서 떠 보였다 —
+   * 그래서 되가져오되 **`space.xs2` 만 남긴다.** 6줄인 달은 마지막 줄이 실제로
+   * 이 끝까지 내려오므로, 0 으로 두면 날짜가 제스처 바에 닿는다.
+   *
+   * `Math.max(…, 0)` 이 **iOS 를 지킨다** — 거기서는 `androidNavGap` 이 0 이라
+   * 빼면 음수가 되어 달력이 되레 위로 밀린다. 홈 인디케이터 인셋이 이미 그 자리를
+   * 맡고 있어 iOS 는 **화면 끝에서부터** 재는 것이 맞다(2026-09-06 결정).
+   *
+   * 위쪽 `paddingTop` 은 **달 표기 위로 차지하는 자리**다. 카드 자리와 달력 사이에는
+   * 선이 없어서, 스크롤로 잘린 카드의 아랫변과 달 표기가 바짝 붙으면 한 덩어리로
+   * 읽힌다. 달력이 바닥에 붙박여 있으므로 이 자리는 **위로** 자란다 — 그만큼 카드
+   * 자리가 줄고 달력 안의 것들은 움직이지 않는다.
+   *
+   * 값은 달력이 **자기 안에서 쓰는 간격**과 같은 `space.md` 다(`Calendar` 의
+   * `root: { gap: space.md }` — 달 표기와 격자 사이). 그래서 달 표기는 위아래로
+   * 같은 여백을 두고 서고, 새 숫자를 만들지 않는다.
    */
-  belowCalendar: { height: space.xl5, flexShrink: 4 },
+  calendarSeat: {
+    paddingTop: space.md,
+    marginBottom: -Math.max(layout.androidNavGap - space.xs2, 0),
+  },
 });

@@ -3,34 +3,66 @@ import { Dimensions, type TextStyle } from "react-native";
 /**
  * Momentory DS — 타이포. 정본은 `docs/DESIGN.md` §2.
  *
- * Pretendard 4웨이트(400·500·600·700). Wanted 19단 스케일에서 앱이 쓰는 **12단만** 꺼냈다
- * (`DESIGN.md` 본문은 「11단」이라 적었지만 표에는 12줄이 있다 — 표를 따랐다).
- * Display·Title 1 은 앱에서 쓰지 않는다.
+ * Wanted 19단 스케일에서 앱이 쓰는 **12단만** 꺼냈다(`DESIGN.md` 본문은 「11단」이라
+ * 적었지만 표에는 12줄이 있다 — 표를 따랐다). Display·Title 1 은 앱에서 쓰지 않는다.
  *
- * ⚠ **웨이트를 `fontWeight` 로 주지 않는다.** Android 에서 안 먹는다 —
- * **파일 이름**(`Pretendard-SemiBold`)으로 준다(`CLAUDE.md` 규칙 5).
- * 네 파일 다 `assets/fonts/` 에 있고 `src/lib/providers.tsx` 가 로드한다.
+ * ## 서체는 **교보손글씨 하나다** (2026-09-06)
  *
- * 본문 기본 웨이트는 **Medium 500** 이다. Regular 400 은 **입력값·플레이스홀더·읽기
- * 본문**에만 쓴다 — 그래서 `bodyReading` 계열이 따로 있다.
+ * 그전에는 Pretendard 4웨이트가 본문을 맡고 손글씨는 제목·일기에만 썼다. 지금은
+ * **로그인(`S1`)을 뺀 앱 전체**가 손글씨다.
+ *
+ * ⚠ **웨이트로 위계를 만들 수 없다.** 교보손글씨는 파일이 하나여서 `regular` ·
+ * `medium` · `semibold` · `bold` 가 **전부 같은 글자**로 그려진다 — 이름은 단이
+ * 원래 뜻하던 굵기의 **기록**으로 남겨 둔 것이고(되돌릴 때 그대로 쓴다), 실제
+ * 위계는 이제 **크기·색·자리**만으로 선다. 굵기를 올려 강조하려는 코드는 아무
+ * 일도 하지 않는다.
+ *
+ * ⚠ 그래도 **웨이트를 `fontWeight` 로 주지 않는다** — Android 에서 안 먹는다.
+ * **파일 이름**으로 준다(`CLAUDE.md` 규칙 5).
  */
-export const fontFamily = {
+
+/** 교보손글씨 2025 lyb — `assets/fonts/` 에 파일 하나, 웨이트도 하나다 */
+const HAND = "KyoboHandwriting2025lyb";
+
+/**
+ * **로그인(`S1`) 하나만 쓰는 고딕**(2026-09-06).
+ *
+ * 로그인은 앱을 처음 만나는 자리이고 약관·오류 같은 **읽고 판단하는 글**이 모여
+ * 있어서, 여기만 Pretendard 로 남긴다. 네 파일 다 `assets/fonts/` 에 있고
+ * `src/lib/providers.tsx` 가 계속 로드한다 — 다른 화면이 집어 쓰지 않도록
+ * `fontFamily` 토큰에는 올리지 않았다(구글 버튼의 Roboto 와 같은 취급이다).
+ */
+export const gothicFamily = {
   regular: "Pretendard-Regular",
   medium: "Pretendard-Medium",
   semibold: "Pretendard-SemiBold",
   bold: "Pretendard-Bold",
-  /**
-   * **손글씨 — 제목과 일기 본문에 쓴다**(2026-08-22 · 교보손글씨 2025 lyb).
-   *
-   * 홈의 날짜와 탭 제목 셋(쉼터·보관함·마이), 그리고 **일기 확인 화면의 날짜
-   * 제목·본문**(2026-08-24)이 이걸 쓴다. 웨이트가 **하나뿐**이라 굵기로 위계를
-   * 만들 수 없으니, 위계가 필요한 라벨·버튼에는 여전히 쓰지 않는다 — 서체를
-   * 섞는 자리를 늘리면 위계가 굵기가 아니라 서체로 읽히기 시작한다.
-   *
-   * 일기는 예외다: 「손으로 쓴 결」이 곧 그 화면의 성격이라, 날짜 제목부터 본문
-   * 전체가 한 서체여도 위계가 흔들리지 않는다.
-   */
-  hand: "KyoboHandwriting2025lyb",
+} as const;
+
+/**
+ * 단이 고르는 서체. **네 이름이 전부 같은 파일을 가리킨다** — 위 머리말 참고.
+ * `hand` 는 원래부터 이 서체였고, 이름을 쓰던 자리(제목·일기)를 그대로 둔다.
+ */
+export const fontFamily = {
+  regular: HAND,
+  medium: HAND,
+  semibold: HAND,
+  bold: HAND,
+  hand: HAND,
+} as const;
+
+/**
+ * 로그인 예외를 거는 손잡이 — **크기·행간은 단 그대로 두고 서체만 되돌린다.**
+ *
+ * `Text` 가 `style` 을 `variant` **뒤에** 얹으므로 이것 하나만 넘기면 된다
+ * (`components/ds/Text.tsx`). 부르는 쪽이 그 단의 원래 굵기를 골라 준다 —
+ * `fontFamily` 가 굵기를 잃어서 단 이름만으로는 되찾을 수 없다.
+ */
+export const gothic = {
+  regular: { fontFamily: gothicFamily.regular },
+  medium: { fontFamily: gothicFamily.medium },
+  semibold: { fontFamily: gothicFamily.semibold },
+  bold: { fontFamily: gothicFamily.bold },
 } as const;
 
 /**

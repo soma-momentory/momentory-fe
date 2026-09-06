@@ -3,7 +3,6 @@ import { router } from "expo-router";
 
 import Rest from "../../(tabs)/rest";
 import RestCards from "../cards/index";
-import RestCardTrail from "../cards/[date]";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { datedCards } from "@/features/rest/model/cards";
@@ -11,11 +10,13 @@ import { useToast } from "@/lib/toast";
 import { seedDiaries } from "@/testing/fixtures";
 
 /**
- * 쉼터는 **세 화면**이 됐다(`Rest.dc.html` · 2026-08-20):
- * `R1` 진입(항목 하나) → `R2` 날짜별 카드 + 캘린더 → `R3` 누적 기록.
+ * 쉼터는 **두 화면**이다: `R1` 진입(항목 하나) → `R2` 날짜별 카드 + 캘린더.
  *
- * 옛 구조는 탭이 곧 카드 화면이었다 — 그 시절 단언(카드 탭 가로채기 · 상세 이동)은
- * 화면이 갈리면서 자리가 바뀌었고, **규칙 단언**으로 옮겨 적었다.
+ * `Rest.dc.html`(2026-08-20)은 셋이었고 `R3` 누적 기록이 있었는데 **2026-09-06 에
+ * 지웠다**(`docs/PRODUCT.md` 「상류와 차이」 #35) — 그 화면 테스트도 함께 걷었다.
+ *
+ * 그보다 더 옛 구조는 탭이 곧 카드 화면이었다 — 그 시절 단언(카드 탭 가로채기 ·
+ * 상세 이동)은 화면이 갈리면서 자리가 바뀌었고, **규칙 단언**으로 옮겨 적었다.
  */
 let mockParams: { date: string } = { date: "2026-07-27" };
 
@@ -170,7 +171,13 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     expect(queryByLabelText("수행")).toBeNull();
   });
 
-  it("[했어요] 를 누르면 상태가 바뀌고 느낀 점 입력창이 카드 안에서 열린다", async () => {
+  /**
+   * 2026-09-06 개정 — 예전에는 「했어요」가 **입력창까지 열었다.**
+   *
+   * 대부분은 적지 않고 넘어가는데 카드가 늘 입력창을 물고 있어서 닫을 길이 없었다.
+   * 지금은 **체크와 「느낀 점 적기」**만 서고, 적겠다고 누른 사람에게만 자리를 연다.
+   */
+  it("[했어요] 를 누르면 체크와 [느낀 점 적기] 가 서고, 입력창은 아직 열리지 않는다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({
         ...c,
@@ -184,13 +191,28 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     await fireEvent.press(r.getByText("했어요"));
 
     expect(latest().done).toBe(true);
-    expect(r.getByLabelText("느낀 점")).toBeTruthy();
-    expect(r.getByText("남기지 않아도 괜찮아요.")).toBeTruthy();
+    // 「수행했어요」라는 글자는 두지 않는다 — 그 자리를 「느낀 점 적기」가 쓴다
+    // (체크와 오른쪽 「수행 취소」가 이미 수행을 말한다 · 2026-09-06)
+    expect(r.queryByText("수행했어요")).toBeNull();
+    expect(r.getByText("느낀 점 적기")).toBeTruthy();
+    expect(r.queryByLabelText("느낀 점")).toBeNull();
     // 화면을 옮기지 않는다 — 카드 안에서 끝난다
     expect(jest.mocked(router.push)).not.toHaveBeenCalled();
+
+    // 누르면 그때 자리가 열린다
+    await fireEvent.press(r.getByText("느낀 점 적기"));
+    expect(r.getByLabelText("느낀 점")).toBeTruthy();
+    /**
+     * ⚠ 적는 동안에는 **아래 줄이 비어 있다**(2026-09-06). 예전에는 「남기지 않아도
+     * 괜찮아요.」가 있었는데, 그 줄이 자리를 차지하는 바람에 입력창이 위로 밀려
+     * 올라갔다 — 지금은 그 자리가 입력창이 아래로 자랄 자리다. 남겨도 된다는 말은
+     * **빈 채로 눌리는 보내기 버튼**이 대신한다.
+     */
+    expect(r.queryByText("남기지 않아도 괜찮아요.")).toBeNull();
+    expect(r.getByLabelText("느낀 점 없이 넘어가기")).toBeTruthy();
   });
 
-  it("느낀 점은 선택이다 — 비어 있으면 저장을 누를 수 없다", async () => {
+  it("느낀 점은 선택이다 — 적어서 보내면 그대로 남는다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({
         ...c,
@@ -200,15 +222,44 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     });
     const r = await render(<RestCards />);
 
-    expect(r.getByLabelText("느낀 점 저장").props.accessibilityState.disabled).toBe(true);
-
+    await fireEvent.press(r.getByText("느낀 점 적기"));
     await fireEvent.changeText(r.getByLabelText("느낀 점"), "생각보다 개운했다");
     await fireEvent.press(r.getByLabelText("느낀 점 저장"));
 
     expect(latest().reflection).toBe("생각보다 개운했다");
   });
 
-  it("저장하면 읽기 블록 + [고치기] 가 된다", async () => {
+  /**
+   * 열어 놓고 마음이 바뀌면 **빈 채로 보내 닫는다** — 보내기는 비어 있어도 눌린다.
+   * 서버로 가는 것은 없고 자리만 처음으로 돌아간다.
+   */
+  it("열었다가 빈 채로 보내면 아무것도 남기지 않고 닫힌다", async () => {
+    useDiary.setState({
+      actionCards: useDiary.getState().actionCards.map((c) => ({
+        ...c,
+        done: true,
+        reflection: null,
+      })),
+    });
+    const r = await render(<RestCards />);
+
+    await fireEvent.press(r.getByText("느낀 점 적기"));
+    await fireEvent.press(r.getByLabelText("느낀 점 없이 넘어가기"));
+
+    expect(r.queryByLabelText("느낀 점")).toBeNull();
+    expect(latest().reflection).toBeNull();
+    // 자리는 처음으로 — 다시 적으러 들어갈 수 있다
+    expect(r.getByText("느낀 점 적기")).toBeTruthy();
+  });
+
+  /**
+   * 2026-09-06 개정 — 「고치기」 버튼을 없애고 **적어 둔 글 자체를 누르게** 했다.
+   *
+   * 버튼을 아래 줄에 두면 그 줄만큼 하단이 커지고, 같은 줄에 두면 느낀 점이 쓸 폭이
+   * 반으로 줄어(495 → 278px) 상한이 24 → 14 자가 됐다. 글을 누르게 하면 자리도 폭도
+   * 그대로다.
+   */
+  it("저장한 느낀 점을 누르면 다시 고칠 수 있다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({
         ...c,
@@ -220,8 +271,10 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
 
     expect(r.getByText("생각보다 개운했다")).toBeTruthy();
     expect(r.queryByLabelText("느낀 점")).toBeNull();
+    // 버튼은 없다 — 글이 곧 버튼이다
+    expect(r.queryByText("고치기")).toBeNull();
 
-    await fireEvent.press(r.getByText("고치기"));
+    await fireEvent.press(r.getByLabelText("느낀 점 고치기"));
     expect(r.getByLabelText("느낀 점")).toBeTruthy();
   });
 
@@ -235,6 +288,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     });
     const r = await render(<RestCards />);
 
+    await fireEvent.press(r.getByText("느낀 점 적기"));
     await fireEvent.changeText(r.getByLabelText("느낀 점"), "적다 말았다");
     await fireEvent.press(r.getByText("수행 취소"));
 
@@ -278,66 +332,5 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
 
     expect(useDiary.getState().actionCards).toHaveLength(before);
     expect(useToast.getState().current).toBeNull();
-  });
-
-  it("[자세히 보기] 가 누적 기록으로 간다", async () => {
-    const r = await render(<RestCards />);
-
-    await fireEvent.press(r.getByText("자세히 보기"));
-
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith(
-      expect.objectContaining({ pathname: "/rest/cards/[date]" }),
-    );
-  });
-});
-
-describe("R3 · 누적 기록 — 행동 자체가 제목이다", () => {
-  it("제안된 행동이 제목이고 상황이 그 아래 붙는다", async () => {
-    const card = latest();
-    const { getByText } = await render(<RestCardTrail />);
-
-    expect(getByText(card.targetAction ?? "")).toBeTruthy();
-    expect(getByText("이 카드가 만들어진 상황")).toBeTruthy();
-    expect(getByText(card.situation)).toBeTruthy();
-  });
-
-  it("지난 기록을 세지 않고 나열한다", async () => {
-    const { getByText, queryByText } = await render(<RestCardTrail />);
-
-    expect(getByText("지난 기록")).toBeTruthy();
-    expect(queryByText(/\d+개 중/)).toBeNull();
-  });
-
-  it("이 날의 수행·느낀 점을 보여준다 — 쉼터에서 적은 것이 여기 바로 반영된다", async () => {
-    // 「지난 기록」은 그날 카드 자신을 빼고 세므로, R2 에서 「했어요」·느낀 점을
-    // 적어도 R3 에 안 보였다. 이 날 기록을 따로 두어 같은 store 값이 바로 비친다.
-    const target = latest();
-    useDiary.setState({
-      actionCards: useDiary
-        .getState()
-        .actionCards.map((c) =>
-          c.id === target.id ? { ...c, done: true, reflection: "생각보다 개운했다" } : c,
-        ),
-    });
-    const { getByText } = await render(<RestCardTrail />);
-
-    expect(getByText("이 날 기록")).toBeTruthy();
-    expect(getByText("7월 27일 · 수행함")).toBeTruthy();
-    expect(getByText("생각보다 개운했다")).toBeTruthy();
-  });
-
-  it("여기서는 수행을 바꾸지 않는다 — 읽는 화면이다", async () => {
-    const { queryByText, queryByLabelText } = await render(<RestCardTrail />);
-
-    expect(queryByText("했어요")).toBeNull();
-    expect(queryByText("수행 취소")).toBeNull();
-    expect(queryByLabelText("느낀 점")).toBeNull();
-  });
-
-  it("없는 날짜는 조용히 빈 상태다 — 오류 화면을 만들지 않는다", async () => {
-    mockParams = { date: "1999-01-01" };
-    const { getByText } = await render(<RestCardTrail />);
-
-    expect(getByText("이 날의 바람카드가 없어요.")).toBeTruthy();
   });
 });

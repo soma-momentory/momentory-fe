@@ -326,18 +326,27 @@ describe("하단 탭", () => {
     }
   });
 
-  it("활성 칸을 색만으로 표시하지 않는다 — 굵기도 함께 바뀐다", async () => {
+  it("활성 칸을 색만으로 표시하지 않는다 — 크기도 함께 바뀐다", async () => {
     const { getAllByRole } = await render(<Home />);
     const [home, , archive] = getAllByRole("tab");
 
     expect(home?.props.accessibilityState.selected).toBe(true);
     expect(archive?.props.accessibilityState.selected).toBe(false);
 
-    const weightOf = (tab: typeof home) =>
-      flatten(within(tab!).getByText(/./).props.style).fontFamily;
-    // 활성 label2(600) / 비활성 caption1(500) — `DESIGN.md` §10
-    expect(weightOf(home)).toBe("Pretendard-SemiBold");
-    expect(weightOf(archive)).toBe("Pretendard-Medium");
+    const sizeOf = (tab: typeof home): number =>
+      Number(flatten(within(tab!).getByText(/./).props.style).fontSize);
+    /**
+     * 활성 `label1`(14) / 비활성 `caption1`(12) — `DESIGN.md` §10.
+     *
+     * 예전에는 **굵기**로 갈랐다(`label2` 600 vs `caption1` 500). 앱 서체가 교보손글씨
+     * 하나로 가면서 웨이트가 사라져(2026-09-06 · `ds/typography.ts`) 그 신호가 색만
+     * 남았고, **크기 단차**로 옮겼다. 크기를 비교하는 이유가 그것이다 — 굵기로
+     * 되돌리면 이 테스트가 다시 깨진다.
+     *
+     * ⚠ 값을 그대로 적지 않는다 — `typeScale` 이 기기 폭에 따라 단을 키운다.
+     * 확인할 것은 **활성이 더 크다**는 사실이다.
+     */
+    expect(sizeOf(home)).toBeGreaterThan(sizeOf(archive));
   });
 
   it("탭 이동은 쌓이지 않는다", async () => {

@@ -141,6 +141,19 @@ export const overlay = {
   pressStrong: "rgba(60,46,34,0.18)",
 } as const;
 
+/**
+ * **카드 액자** — 쉼터 `R2` 의 바람카드가 쓰는 두 색 (2026-09-06).
+ *
+ * 타로 카드 결의 테두리를 위해 이름을 만들었다. `label` 이나 `line` 을 쓰지 않은
+ * 이유: 잉크(`label.strong` #241F19)는 검게 보여 종이 카드의 손그림 선이 안 되고,
+ * `line.*` 는 반투명이라 크림 띠 위에서 색이 흐려진다. **불투명한 웜 브라운**이
+ * 있어야 띠 위든 카드 위든 같은 선으로 읽힌다.
+ *
+ * - `stroke` 바깥·안쪽 두 선. 검정이 아닌 **연한 갈색**
+ * - `ornament` 모서리 장식 칸의 마름모. 선보다 **한 단 더 연하게**
+ */
+export const cardFrame = { stroke: "#8B7D70", ornament: "#BDB2A5" } as const;
+
 /** 배경 격자 — 32px 정격자. 기기 프레임에 고정되고 스크롤과 무관하다 */
 export const grid = { stroke: `rgba(${WARM},0.07)`, size: 32 } as const;
 
