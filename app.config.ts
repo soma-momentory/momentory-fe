@@ -201,7 +201,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     //
     // ⚠ `android/app/build.gradle` 이 아니라 여기에 둔다. 그 파일은 prebuild 가
     // 다시 만드는 생성물이라, 거기서 올린 숫자는 다음 prebuild 에 1 로 되돌아간다.
-    versionCode: 2,
+    versionCode: 3,
   },
 
   // ⚠ 플러그인의 유일한 출처. `npx expo install` 이 app.json 을 만들어 여기 목록을
@@ -244,11 +244,38 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     // 카카오 SDK 는 Maven Central 에 없다 — 카카오 저장소를 Gradle 에 알린다.
     // (`@react-native-seoul/kakao-login` README 「EXPO」)
+    //
+    // R8 도 **여기서만 켤 수 있다.** `android/gradle.properties` 를 직접 고쳐도
+    // 다음 prebuild 에 사라진다 — `withReleaseSigning` 을 만든 것과 같은 이유다.
     [
       "expo-build-properties",
       {
         android: {
           extraMavenRepos: ["https://devrepo.kakao.com/nexus/content/groups/public/"],
+
+          // 코드 축소·난독화. **릴리스 빌드에서만 돈다** — 개발 중에는 무엇이 깨졌는지
+          // 드러나지 않으므로, 이 값을 건드린 뒤에는 릴리스 산출물을 실기기에 깔아
+          // 로그인 3종 · 알림 딥링크 · 캘린더 · 세션 복원을 손으로 확인한다.
+          enableMinifyInReleaseBuilds: true,
+
+          // 리소스 축소. 위 항목이 **전제 조건**이다(플러그인이 검사해서 던진다).
+          // RN 앱은 이미지가 JS 번들 asset 이라 `res/` 에 거의 없어 절감폭은 작다.
+          enableShrinkResourcesInReleaseBuilds: true,
+
+          /**
+           * ⚠ 여기 적은 것만 살아남는다 — `android/app/proguard-rules.pro` 는 생성물이다.
+           *
+           * 네이티브 의존은 대부분 자기 keep 룰을 AAR 에 담아 온다
+           * (`consumerProguardFiles` — expo-modules-core · expo-notifications ·
+           * expo-image · react-native-svg · kakao-login · google-signin 확인함).
+           * **Amplitude 만 없다** — 리플렉션으로 이름을 찾다 깨지면 「빌드는 되는데
+           * 이벤트만 안 올라간다」로 드러나서 알아채기 어렵다. 그래서 통째로 남긴다.
+           */
+          extraProguardRules: [
+            "# @amplitude/analytics-react-native — AAR 에 consumer 룰이 없다 (2026-09-06 확인)",
+            "-keep class com.amplitude.** { *; }",
+            "-dontwarn com.amplitude.**",
+          ].join("\n"),
         },
       },
     ],
