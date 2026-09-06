@@ -34,7 +34,6 @@ export {
   grid,
   interaction,
   label,
-  cardFrame,
   line,
   overlay,
   pond,
