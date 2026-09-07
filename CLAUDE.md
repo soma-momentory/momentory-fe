@@ -420,4 +420,8 @@ npm start            npm run typecheck    npm run lint
 npm run test         npm run format:check
 npm run sync:api     # 서버 OpenAPI 계약 재반입 — docs/api/README.md
 npm run android      # 공식 개발 환경인 dev client 빌드 — Expo Go 는 지원하지 않는다
+
+scripts/screen-sweep.sh   # 화면 크기 훑기 — 기기 하나로 크기·글꼴 배율 다섯 벌을 재현해
+                          # 라우트 전부를 찍는다. **판정하지 않는다**(스크립트 머리말 참조) —
+                          # 찍은 것을 눈으로 대조하는 도구다. 로그인된 기기 + 로컬 BE 가 전제다
 ```
