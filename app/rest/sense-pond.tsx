@@ -217,6 +217,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  words: { alignSelf: "stretch", maxWidth: 320, alignItems: "center", gap: space.xs },
+  // 「가운데」는 부모(overlay)가 정하는데 stretch 가 그걸 덮는다 — maxWidth 320 과 만나면
+  // 320dp 보다 넓은 화면(폴드·태블릿)에서 교차축 시작점, 즉 왼쪽에 붙어 그려진다.
+  words: { alignSelf: "center", maxWidth: 320, alignItems: "center", gap: space.xs },
   bottomSafe: { backgroundColor: background.elevated },
 });
