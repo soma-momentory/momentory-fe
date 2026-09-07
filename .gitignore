@@ -71,3 +71,7 @@ bugreport*.zip
 # `assets/sensory-pond/*.png` 이고, 원본은 8MB 가 넘어 이력에 담지 않는다.
 # 그림이 바뀌면 원본을 여기 두고 앱용을 다시 만든다 (docs/DESIGN.md 「감각연못」)
 assets/sensory-pond/source/
+
+# 화면 크기 훑기 결과 — `scripts/screen-sweep.sh` 가 찍는 스크린샷 수백 장.
+# 그때그때 눈으로 보고 버리는 것이라 이력에 담지 않는다
+.screen-sweep/
