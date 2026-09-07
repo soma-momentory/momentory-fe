@@ -26,6 +26,13 @@ import type { RestContent } from "@/features/rest/model/contents";
  * 하나 둔다(2026-09-02). Wanted 세트에 없어 `logout` 처럼 직접 선으로 그린 글리프
  * 넷(`paths.ts` 「쉼터 콘텐츠」)이다. 20 · `primary.strong` — 바람카드의 하트와 같은 결.
  *
+ * ## 아직 화면이 없는 칸은 그렇다고 적는다
+ *
+ * `route` 가 없는 칸은 눌리지 않는데, 카드만 봐서는 그 이유를 알 수 없다 — 눌러
+ * 보고서야 아는 일이 없게 제목 아래에 `note` 한 줄을 둔다(`contents.ts`).
+ * **제목과 같은 줄에 두지 않는다**: 반 폭 카드에서 제목 + 「(개발 중이에요)」 +
+ * 아이콘은 한 줄에 들어가지 않아 제목이 글자 단위로 접힌다(2026-09-07).
+ *
  * ## 위아래를 넉넉히
  *
  * 기본 카드 패딩(16)이면 텍스트 상자처럼 보여 위아래를 20 으로, 제목과 설명 사이를
@@ -54,6 +61,11 @@ export function RestContentGrid({ items, onOpen }: Props) {
                   </Text>
                   <Icon name={item.icon} size={20} color={primary.strong} />
                 </View>
+                {item.note != null ? (
+                  <Text variant="caption2" color={labelColor.alternative}>
+                    {item.note}
+                  </Text>
+                ) : null}
                 <Text variant="caption1" color={labelColor.neutral}>
                   {item.description}
                 </Text>

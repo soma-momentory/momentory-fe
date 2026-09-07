@@ -24,6 +24,14 @@ export type RestContent = {
   description: string;
   /** 카드 우상단의 작은 시각 포인트 — 기능 메뉴가 아니라 **공간**으로 읽히게 */
   icon: IconName;
+  /**
+   * 아직 화면이 없는 콘텐츠임을 카드에 적는 한 줄. `route` 가 없는 칸이 왜 눌리지
+   * 않는지 **카드 안에서** 알려 준다 — 눌러 보고서야 아는 일이 없게(2026-09-07).
+   *
+   * 제목 옆이 아니라 **아래 줄**이다. 반 폭 카드에서 「걱정상자 (개발 중이에요)」는
+   * 제목과 아이콘 사이를 넘겨 제목이 글자 단위로 접힌다.
+   */
+  note?: string;
   /** 여는 화면. **없으면 아직 화면이 없다** — 카드가 눌리지 않는다 */
   route?: "/rest/sense-pond";
 };
@@ -39,18 +47,21 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "worryBox",
     title: "걱정상자",
+    note: "(개발 중이에요)",
     description: "걱정을 적고\n잠시 상자에 맡겨봐요",
     icon: "box",
   },
   {
     id: "treasureBox",
     title: "오늘의 보물함",
+    note: "(개발 중이에요)",
     description: "오늘 잘한 일이나\n소중한 순간을 담아봐요",
     icon: "treasure",
   },
   {
     id: "bodyRelease",
     title: "몸에 힘 빼기",
+    note: "(개발 중이에요)",
     description: "몸에 힘을 줬다가\n천천히 풀어봐요",
     icon: "capybara-rest",
   },
