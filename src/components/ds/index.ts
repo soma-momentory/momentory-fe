@@ -46,6 +46,7 @@ export { SearchField } from "./SearchField";
 export { Chip } from "./Chip";
 export { Calendar, type CalendarMark } from "./Calendar";
 export { EmotionDot } from "./EmotionDot";
+export { EmotionSticker } from "./EmotionSticker";
 export { ViewSwitcher, type ViewOption } from "./ViewSwitcher";
 export { ChatScaffold } from "./ChatScaffold";
 export { ChoiceGrid, type Choice } from "./ChoiceGrid";

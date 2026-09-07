@@ -10,6 +10,7 @@ import {
   BottomSheet,
   Calendar,
   Card,
+  EmotionSticker,
   Icon,
   InfoBlock,
   ListCell,
@@ -20,17 +21,11 @@ import {
   type CalendarMark,
   type ViewOption,
 } from "@/components/ds";
-import {
-  emotion as emotionColor,
-  label as labelColor,
-  primary,
-  space,
-  withAlpha,
-} from "@/design/ds";
+import { label as labelColor, scheduleDot, space, withAlpha } from "@/design/ds";
 import { byLatest, diariesInMonth, monthOf } from "@/features/archive/model/archive";
 import { useMonthSchedules } from "@/features/archive/model/monthSchedules";
 import { useDiary } from "@/features/diary/model/diary";
-import type { EmotionId } from "@/features/emotion/model/emotion";
+import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 import { useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
 
@@ -57,8 +52,8 @@ import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
  * - 목록은 **최신순 고정**이고 정렬 옵션을 두지 않는다
  * - 필터는 **여러 감정을 함께**(교집합 · 고른 감정을 **모두** 가진 일기 ·
  *   2026-08-24 「한 번에 하나만」에서 바꿈). 미리보기는 **두 줄 말줄임**
- * - **색만으로 판단하게 하지 않는다** — 달력의 점이 아니라 기록 카드의 감정
- *   이름이 무엇이었는지를 말한다
+ * - **색만으로 판단하게 하지 않는다** — 달력의 스티커는 감정마다 눈·입 모양이
+ *   달라 색이 안 보여도 갈리고, 이름은 기록 카드와 칸의 낭독기 이름이 말한다
  * - 빈 날·빈 결과는 **전용 레이아웃이 아니라 같은 자리의 한 장**이다(`A1.md`)
  */
 const VIEWS: readonly ViewOption<"calendar" | "list">[] = [
@@ -161,12 +156,21 @@ export default function Archive() {
   };
 
   /**
-   * 달력 칸의 표시 규칙 — **두 채널**이다(`dateFill` 채움 모드):
-   * - **감정 색 박스(+진한 날짜)** = 일기. 대표 감정 하나로 칸을 채운다(태그 없으면
-   *   중립색). 한 칸에 셋을 칠하면 38px 안에서 구분되지 않는다(`A1.md`).
-   * - **날짜 밑 동그란 점** = 그날 일정이 있다. 색은 홈의 「지금 하루 돌아보기」
-   *   버튼 색(`primary.heavy`)을 **연하게**(60%) 낮춘 것 — 감정 채움 위에서 튀지
-   *   않게 한다. 채움과 다른 채널이라 둘 다 있는 날도 갈린다.
+   * 달력 칸의 표시 규칙 — **두 채널**이다(`dateSticker` 스티커 모드):
+   * - **감정 스티커** = 일기. 그날 **주 감정**의 얼굴 하나를 날짜 아래 놓는다.
+   *   한 칸에 셋을 놓으면 40px 남짓한 칸에서 구분되지 않는다(`A1.md`).
+   * - **날짜와 얼굴 사이의 작은 연두 점** = 그날 일정이 있다(`scheduleDot`) —
+   *   브랜드 초록보다 노랗고 밝아 감정색과 섞이지 않는다. 그림과 점이라 **채널이 갈려서** 둘 다
+   *   있는 날도 섞이지 않는다. ⚠ 날짜 글자 색으로 말하지 않는다(2026-09-07 · 사용자
+   *   요청) — 고른 날은 흰 글자라 그 채널이 사라지고, 감정 얼굴 위에서도 덜 읽혔다.
+   *
+   * ⚠ **일기가 있다고 날짜를 진하게 하지 않는다**(2026-09-07 · 사용자 결정) —
+   * 얼굴이 있다는 것이 이미 「그날 썼다」다. 글자 굵기까지 함께 바꾸면 같은 말을
+   * 두 번 하면서 「일정 있음」의 초록과 뒤섞인다.
+   *
+   * 그림도 색도 낭독기에는 없다. 그래서 **감정 이름과 「일정 있음」을 `label` 로
+   * 함께 준다** — 칸이 「27일, 불안함, 일정 있음」으로 읽힌다(`ds/Calendar.tsx` ·
+   * `RULES.md` 「보관함」).
    */
   const markOf = (date: string): CalendarMark => {
     const diary = monthly.find((d) => d.date === date);
@@ -174,15 +178,25 @@ export default function Archive() {
     if (diary == null && !scheduled) return {};
 
     const mark: CalendarMark = {};
+    const said: string[] = [];
     if (diary != null) {
-      // 달력 색은 그날의 **주 감정**으로 채운다 — emotions[0] 이 주 감정이다(서버·낙관적 일기 모두
-      // 대표 감정을 맨 앞에 싣는다). 감정이 없으면(감정 없이 끝난 일기) 옅은 회색.
-      const primary = diary.emotions[0] ?? null;
-      mark.emphasized = true;
-      mark.dotColor = primary == null ? labelColor.assistive : emotionColor[primary];
+      // 얼굴은 그날의 **주 감정**이다 — emotions[0] 이 주 감정이다(서버·낙관적 일기 모두
+      // 대표 감정을 맨 앞에 싣는다). 감정이 없으면(감정 없이 끝난 일기) 얼굴을 지어내지
+      // 않고 중립 원으로 「썼다」만 말한다(`EmotionSticker`)
+      const main = diary.emotions[0] ?? null;
+      mark.sticker = <EmotionSticker id={main} />;
+      said.push(main == null ? "기록 있음" : emotionName(main));
     }
-    // 그날 일정 — 홈 CTA(「지금 하루 돌아보기」) 색을 연하게 낮춘 점으로 찍는다
-    if (scheduled) mark.underlineColor = withAlpha(primary.heavy, 0.6);
+    // 그날 일정 — 날짜와 얼굴 사이에 **연두** 점을 찍는다. 브랜드 초록(sage)은 얼굴
+    // 위에서 무겁고 감정색과 섞여 보였다(2026-09-07 · 사용자 요청) — `scheduleDot` 은
+    // 그 자리를 위해 이름 붙인 색이다(`ds/color.ts`)
+    if (scheduled) {
+      // 80% — 카드 면에 살짝 잠기게 한다(2026-09-07 · 사용자 요청). 얼굴 위에 놓이는
+      // 점이 아니라 **날짜 옆의 표시**라 카드 배경에만 섞인다
+      mark.dotColor = withAlpha(scheduleDot, 0.8);
+      said.push("일정 있음");
+    }
+    if (said.length > 0) mark.label = said.join(", ");
     return mark;
   };
 
@@ -272,7 +286,7 @@ export default function Archive() {
               }}
               onMonthStep={goMonth}
               markOf={markOf}
-              dateFill
+              dateSticker
             />
           </Card>
 

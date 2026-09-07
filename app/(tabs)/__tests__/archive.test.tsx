@@ -89,6 +89,22 @@ describe("A1 · 보관함 달력", () => {
     expect(r.getByText("장보기")).toBeTruthy();
   });
 
+  it("일정이 있는 날은 날짜와 얼굴 사이에 작은 초록 점이 선다", async () => {
+    // 2026-09-07 사용자 요청 — 날짜 글자색으로 말하던 것을 점으로 바꿨다(고른 날은
+    // 흰 글자라 그 채널이 사라졌다). 점도 낭독기에 없으므로 칸 이름이 「일정 있음」을 싣는다
+    jest.spyOn(scheduleApi, "fetchSchedulesInPeriod").mockResolvedValue({
+      ok: true,
+      data: [schedule("s-1", "2026-07-23", "장보기", false)],
+    });
+    const r = await render(<Archive />);
+
+    // 23일은 일기가 없고 일정만 있는 날 — 얼굴 없이 점만 선다
+    const day = await r.findByLabelText("23일, 일정 있음");
+    expect(within(day).queryByTestId("schedule-dot")).not.toBeNull();
+    // 일정이 없는 날에는 점이 없다 — 자리만 비어 있다
+    expect(within(r.getByLabelText("22일, 화남")).queryByTestId("schedule-dot")).toBeNull();
+  });
+
   it("연속 일수를 세지 않고 화살표로 압박하지 않는다", async () => {
     const { queryByText } = await render(<Archive />);
 
@@ -111,16 +127,27 @@ describe("A1 · 보관함 달력", () => {
   it("일기가 있는 날도 없는 날도 칸은 있다", async () => {
     const { getByLabelText } = await render(<Archive />);
 
-    // 7월 22일은 일기가 있다
-    expect(getByLabelText("22일")).toBeTruthy();
+    // 7월 22일은 일기가 있다 — 칸 이름에 그날 감정이 붙는다(아래 테스트)
+    expect(getByLabelText("22일, 화남")).toBeTruthy();
     // 없는 날도 칸은 있다 — 달력이 성기면 날짜를 못 찾는다
     expect(getByLabelText("23일")).toBeTruthy();
+  });
+
+  it("칸의 낭독기 이름이 그날 감정을 말한다 — 스티커도 색도 읽히지 않는다", async () => {
+    // 감정을 색(과 이제 그림)만으로 판단하게 하지 않는다(`RULES.md` 「보관함」).
+    // 격자 안에는 이름을 적을 자리가 없어서, 낭독기 이름이 그 몫을 진다
+    const r = await render(<Archive />);
+
+    expect(r.getByLabelText("22일, 화남")).toBeTruthy(); // 주 감정 = emotions[0]
+    expect(r.queryByLabelText("22일")).toBeNull();
+    // 일기가 없는 날은 날짜만 — 없는 감정을 지어내지 않는다
+    expect(r.getByLabelText("23일")).toBeTruthy();
   });
 
   it("날짜를 누르면 그날 일기가 이름과 함께 열린다 — 색만으로 판단하지 않게", async () => {
     const r = await render(<Archive />);
 
-    await fireEvent.press(r.getByLabelText("22일"));
+    await fireEvent.press(r.getByLabelText("22일, 화남"));
 
     expect(r.getByText("7월 22일의 일기")).toBeTruthy();
     expect(r.getByText("화남")).toBeTruthy(); // 얼굴이 아니라 이름으로 (v2: 화남·답답함 분리)
@@ -130,7 +157,7 @@ describe("A1 · 보관함 달력", () => {
 
   it("링크는 「일기 열어보기」다 — 여는 것은 그날의 한 장이다", async () => {
     const r = await render(<Archive />);
-    await fireEvent.press(r.getByLabelText("22일"));
+    await fireEvent.press(r.getByLabelText("22일, 화남"));
 
     expect(r.queryByText(/전체 일기 보기/)).toBeNull();
   });
@@ -144,16 +171,31 @@ describe("A1 · 보관함 달력", () => {
     expect(r.queryByText("일기 열어보기 ›")).toBeNull();
   });
 
-  it("선택된 날은 감정 박스 테두리를 굵혀 표시한다 — 색만으로 구분하지 않는다", async () => {
-    // 채움 모드에선 선택 표시가 셀이 아니라 **가로로 좁은 감정 박스**에 붙는다.
-    // 박스는 날짜 숫자를 감싸므로 그 숫자 Text 의 부모가 박스다.
+  it("선택된 날은 날짜를 감싸는 초록 알약으로 표시한다 — 없던 면이 생긴다", async () => {
+    // 스티커가 칸을 거의 채워서 칸을 두르는 링은 그림에 달라붙어 보인다.
+    // 대신 **날짜를 감싸는 작은 알약**이 선다(2026-09-07 · 사용자 요청) — 자리는
+    // 늘 잡아 두고 면만 생기므로 숫자가 움직이지 않고, 「색만 바뀌는」 표시도 아니다.
+    // 흰 글자가 얹히는 초록 면은 `primary.heavy` 하나뿐이다(`ds/color.ts`).
+    // 면은 `View` 배경이 아니라 **SVG**다 — 실기기(안드로이드)에서 View 반지름이
+    // 네모로 굳어서(2026-09-07 확인) `Dot` 과 같은 길을 택했다
     const r = await render(<Archive />);
-    const boxOf = (label: string, day: string) =>
-      within(r.getByLabelText(label)).getByText(day).parent;
+    const fillIn = (label: string) => within(r.getByLabelText(label)).queryByTestId("date-pill");
 
-    expect(flatten(boxOf("22일", "22")?.props.style).borderWidth).not.toBe(2);
-    await fireEvent.press(r.getByLabelText("22일"));
-    expect(flatten(boxOf("22일", "22")?.props.style).borderWidth).toBe(2);
+    expect(fillIn("22일, 화남")).toBeNull();
+    await fireEvent.press(r.getByLabelText("22일, 화남"));
+    expect(fillIn("22일, 화남")).not.toBeNull();
+    // 다른 날에는 면이 없다 — 「고른 날 하나」다
+    expect(fillIn("23일")).toBeNull();
+  });
+
+  it("일기가 있다고 날짜를 진하게 하지 않는다 — 얼굴이 이미 그 말을 한다", async () => {
+    // 2026-09-07 사용자 결정. 스티커가 있다는 것이 「그날 썼다」이므로 글자 굵기까지
+    // 함께 바꾸면 같은 말을 두 번 하고, 「일정 있음」의 초록 날짜와 뒤섞인다
+    const r = await render(<Archive />);
+    const dayColor = (label: string, day: string) =>
+      flatten(within(r.getByLabelText(label)).getByText(day).props.style).color;
+
+    expect(dayColor("22일, 화남", "22")).toBe(dayColor("23일", "23")); // 일기 있는 날 = 없는 날
   });
 });
 
@@ -437,7 +479,7 @@ describe("A1 · 리포트에서 건너오기", () => {
     expect(r.getByText("2026년 7월")).toBeTruthy();
     expect(r.getByLabelText("19일").props.accessibilityState.selected).toBe(true);
     // 오늘(27일)이 아니라 건너온 날이 고른 칸이다
-    expect(r.getByLabelText("27일").props.accessibilityState.selected).toBe(false);
+    expect(r.getByLabelText("27일, 불안함").props.accessibilityState.selected).toBe(false);
   });
 
   it("지난 달의 주로 건너오면 그 달이 열린다", async () => {
@@ -453,7 +495,7 @@ describe("A1 · 리포트에서 건너오기", () => {
     const r = await render(<Archive />);
 
     expect(r.getByText("2026년 7월")).toBeTruthy();
-    expect(r.getByLabelText("27일").props.accessibilityState.selected).toBe(true);
+    expect(r.getByLabelText("27일, 불안함").props.accessibilityState.selected).toBe(true);
   });
 
   it("모양이 어긋난 날짜는 없는 것으로 친다 — 깨진 달을 그리지 않는다", async () => {
@@ -462,6 +504,6 @@ describe("A1 · 리포트에서 건너오기", () => {
     const r = await render(<Archive />);
 
     expect(r.getByText("2026년 7월")).toBeTruthy();
-    expect(r.getByLabelText("27일").props.accessibilityState.selected).toBe(true);
+    expect(r.getByLabelText("27일, 불안함").props.accessibilityState.selected).toBe(true);
   });
 });
