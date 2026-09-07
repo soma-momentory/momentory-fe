@@ -104,6 +104,19 @@ export const status = {
   negative: "#B94C30",
 } as const;
 
+/**
+ * 보관함 달력의 **일정 점** — 연한 연두 (2026-09-07 · 사용자가 색을 지정했다).
+ * 브랜드 초록(sage `primary`)보다 노랗고 훨씬 밝아 감정 얼굴 위에서 섞이지 않는다.
+ *
+ * ⚠⚠ 배경 대비 **1.59**(카드 면)다(사용자가 고른 값에서 2026-09-07 에 한 톤 낮춘 것).
+ * 보관함은 여기에 **80% 를 얹어** 더 옅게 쓴다(`withAlpha` · 실효 1.45).
+ * `emotion` 10색(1.46~3.31)의 아래쪽과 같은 자리라 **약한 시각 신호**다 —
+ * 「이 색으로만 말하지 않는다」가 그만큼 더 엄한 조건이 된다.
+ * 달력 칸의 낭독기 이름이 「일정 있음」을 싣고, 고른 날 아래 「○월 ○일의 일정」 목록이
+ * 글자로 말한다. **점·장식 전용이다** — 글자·아이콘·면에 쓰지 않는다.
+ */
+export const scheduleDot = "#BBD494";
+
 export const interaction = {
   /** ⚠ 시안 `#C2BAAA`(1.72) 보정 — 비활성 탭은 비활성 컨트롤이 아니라 갈 수 있는 곳이다 */
   inactive: "#796D57",
@@ -295,6 +308,7 @@ export const color = {
   primary,
   secondary,
   status,
+  scheduleDot,
   interaction,
   fill,
   line,
