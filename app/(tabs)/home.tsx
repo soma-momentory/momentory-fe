@@ -26,6 +26,8 @@ import {
   visibleSchedules,
   weekStartOf,
 } from "@/features/home/model/day";
+import { HomeCapybara } from "@/features/home/ui/HomeCapybara";
+import { ScallopButton } from "@/features/home/ui/ScallopButton";
 import { ScheduleList } from "@/features/home/ui/ScheduleList";
 import { WeekEmotionStrip } from "@/features/home/ui/WeekEmotionStrip";
 import { useSettings } from "@/features/my/model/settings";
@@ -46,11 +48,22 @@ import { formatKoreanTime } from "@/lib/time";
  * Solid Primary CTA 이고, **화면에서 유일한 solid 버튼**이다(`DESIGN.md` §6).
  * 회고를 여는 병아리가 없어졌으니 문이 다시 글자로 돌아온 셈이다.
  *
+ * ## 카피바라가 그 카드에 앉았다 (2026-09-10 · 사용자 시안)
+ *
+ * 씬 전체가 사라졌던 자리에 **캐릭터 하나가 돌아왔다** — 하늘도 언덕도 없이,
+ * 「하루 돌아보기」 카드의 오른쪽 아래에 앉는다(`HomeCapybara`). 카드가 **두 칸**이
+ * 되면서 CTA 는 **왼쪽 칸을 가로로 다 쓰고**, 오른쪽 칸이 그림 자리다.
+ *
+ * ⚠ **「일러스트를 두지 않는다」와 부딪히지 않는다.** 그 규칙은 아래 `12-b`,
+ * 즉 **비어 있는 자리를 달래는 그림**을 겨냥한 것이고 거기는 지금도 글자뿐이다.
+ * 카피바라는 빈칸이 아니라 **말을 거는 카드**에 앉아 있다.
+ *
  * ## 지키는 규칙
  *
  * - **`12-b` 는 별도 레이아웃이 아니다** — 머리도 `＋ 추가`도 자리를 지키고
  *   **목록 슬롯의 줄만 초대 문구로 바뀐다**
- * - **일러스트·안내 그림을 두지 않는다** — 비어 있는 것은 문제가 아니라 시작이다
+ * - **빈 자리에 안내 그림을 두지 않는다** — 비어 있는 것은 문제가 아니라 시작이다
+ *   (⚠ 카드의 카피바라는 빈 자리가 아니다 — 위 「카피바라가 그 카드에 앉았다」)
  * - **진행률·연속 배지·점수를 두지 않는다.** 「N개 남음」은 **남은 수**이지
  *   달성률이 아니다(`DESIGN.md` 「홈」이 「2/4 마침」을 이 말로 바꿨다)
  * - **완료에 감정을 묻지 않는다**(N7 · `PLAN.md` A-8). 체크박스 한 번으로 끝나고
@@ -92,6 +105,23 @@ const HAND_TOP_BEARING = 0.1;
  * 안 맞아 보인다. 그 **차이만큼** 요일을 들여쓰면 둘의 첫 획이 한 줄에 선다.
  */
 const HAND_LEFT_BEARING = 0.22;
+
+/**
+ * 카피바라가 카드 안쪽 패딩으로 파고드는 양 — 카드 패딩(`padding="loose"` · 22)보다
+ * 작아야 **카드 안에 머문다.** 오른쪽·아래에 같은 값으로 걸리므로 **이 값을 줄이면
+ * 그림이 왼쪽 위로 함께 옮겨 간다.**
+ *
+ * 16 이었는데 8 로 줄였다(2026-09-10 · 사용자 요청) — 모서리에 너무 붙어 있었다.
+ * 이제 카드 안쪽 가장자리에서 14 를 띄우고 앉는다.
+ */
+const CHAR_BLEED = 8;
+
+/**
+ * CTA 를 카드 안쪽 패딩 쪽으로 밀어 넣는 양 — **아주 조금**이다
+ * (2026-09-10 · 사용자 요청). 왼쪽으로 이 만큼 나가고 오른쪽에서 같은 만큼
+ * 물러나므로 **폭은 그대로고 자리만 옮긴다.**
+ */
+const CTA_NUDGE = 6;
 
 export default function Home() {
   const schedules = useDay((s) => s.schedules);
@@ -280,19 +310,34 @@ export default function Home() {
         </View>
 
         <Card padding="loose" style={styles.cta}>
-          <View style={styles.ctaText}>
-            <Text variant="body1" color={labelColor.normal}>
-              오늘 하루는 어땠어요?
-            </Text>
-            <Text variant="body2Reading" color={labelColor.alternative}>
-              {/* 알림을 켜지 않은 사람에게 정하지 않은 시각을 말하지 않는다 (12.md) */}
-              {retroNotify.enabled && retroNotify.time != null
-                ? `${formatKoreanTime(retroNotify.time)}엔 제가 먼저 말 걸어요`
-                : "편할 때 언제든 돌아볼 수 있어요"}
-            </Text>
+          <View style={styles.ctaBody}>
+            <View style={styles.ctaText}>
+              {/* 카드가 말을 거는 한 줄 — `body1`(16/24)에서 **한 단 올렸다**
+                  (2026-09-10 · 사용자 요청). 옆줄(`body2Reading` 15)과 크기가 거의
+                  같아 어느 쪽이 묻는 말인지 흐렸다. `DESIGN.md` §2 의 단을 그대로
+                  쓰므로 18/26 에는 600 이 딸려 온다 — 새 단을 만들지 않는다 */}
+              <Text variant="headline1" color={labelColor.normal}>
+                오늘 하루는 어땠어요?
+              </Text>
+              <Text variant="body2Reading" color={labelColor.alternative}>
+                {/* 알림을 켜지 않은 사람에게 정하지 않은 시각을 말하지 않는다 (12.md) */}
+                {retroNotify.enabled && retroNotify.time != null
+                  ? `${formatKoreanTime(retroNotify.time)}엔 제가 먼저 말 걸어요`
+                  : "편할 때 언제든 돌아볼 수 있어요"}
+              </Text>
+            </View>
+            {/* 이 화면의 유일한 Solid Primary — 하루의 주 행동이다 (`DESIGN.md` §6).
+             ⚠ **DS 버튼이 아니라 홈 전용 구름 모양이다**(`ScallopButton`) — 규격
+             (높이·면 색·누름 스크림)은 §6 그대로이고 모양만 다르다.
+             폭은 **글자 칸을 다 쓴다** — 카피바라 자리는 이 칸 밖이라 겹치지 않는다 */}
+            <ScallopButton
+              label="지금 하루 돌아보기"
+              onPress={() => router.push("/retro/confirm")}
+            />
           </View>
-          {/* 이 화면의 유일한 Solid Primary — 하루의 주 행동이다 (`DESIGN.md` §6) */}
-          <Button label="지금 하루 돌아보기" fill onPress={() => router.push("/retro/confirm")} />
+          <View style={styles.ctaChar}>
+            <HomeCapybara />
+          </View>
         </Card>
 
         <View style={styles.section}>
@@ -386,8 +431,21 @@ const styles = StyleSheet.create({
    */
   // 44 히트는 지키되 날짜 줄의 높이를 밀지 않게 오른쪽으로 당긴다
   bell: { marginRight: -space.md },
-  cta: { gap: 22 },
+  /**
+   * 「하루 돌아보기」 카드는 **두 칸이다**(2026-09-10 · 사용자 시안) — 글자·버튼이
+   * 왼쪽에 서고 카피바라가 오른쪽 아래에 앉는다. 바닥을 맞추는 이유는 카피바라가
+   * **앉아 있는 그림**이라서다: 가운데 정렬하면 공중에 뜬다.
+   */
+  cta: { flexDirection: "row", alignItems: "flex-end", gap: space.sm },
+  ctaBody: { flex: 1, gap: 22 },
+  // 폭은 그대로 두고 왼쪽으로만 조금 — 오른쪽에서 같은 값을 되돌려 준다
+  ctaButton: { marginLeft: -CTA_NUDGE, marginRight: CTA_NUDGE },
   ctaText: { gap: space.sm },
+  /**
+   * 카피바라가 카드 안쪽 패딩(22)으로 파고드는 양. **카드 밖으로는 나가지 않는다** —
+   * `overflow` 가 기기마다 다르게 잘리는 자리를 만들지 않는다.
+   */
+  ctaChar: { marginRight: -CHAR_BLEED, marginBottom: -CHAR_BLEED },
   // 섹션 ↔ 섹션 (`DESIGN.md` §3 — 20~28)
   section: { paddingTop: space.xl },
   invite: { paddingVertical: space.xl, gap: space.sm },
