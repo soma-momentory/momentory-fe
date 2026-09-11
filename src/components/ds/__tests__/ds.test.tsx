@@ -7,6 +7,9 @@ import {
   Button,
   Chip,
   EmotionDot,
+  EmotionPebble,
+  SelectLift,
+  WeekEmptyDot,
   IconButton,
   ListCell,
   Menu,
@@ -480,6 +483,69 @@ describe("작은 원 — 반지름을 크기의 절반으로 **직접** 준다",
    * **크기를 아는 자리에서는 깎을 일을 만들지 않는다.** 이 테스트가 고정하는 것은
    * 모양이 아니라 그 규칙이다 — 999 로 되돌아가면 여기서 걸린다.
    */
+  /**
+   * 주간 줄의 조약돌(`EmotionPebble`). **`EmotionDot` 은 그대로 두는 것**이 이 변경의
+   * 핵심이라(일기 줄의 10dp 표식은 그림이 들어가면 뭉개진다) 둘이 갈린 채로 산다는
+   * 것을 여기서 못 박는다.
+   */
+  it("EmotionPebble 는 감정마다 다른 그림을 건다", async () => {
+    const a = await render(<EmotionPebble id={1} />);
+    const b = await render(<EmotionPebble id={9} />);
+
+    const uri = (json: unknown) => JSON.stringify(json).match(/"testUri":"[^"]+"/)?.[0];
+
+    expect(uri(a.toJSON())).toBeDefined();
+    expect(uri(a.toJSON())).not.toBe(uri(b.toJSON()));
+  });
+
+  /**
+   * 「이번 주 감정」의 고른 칸(`SelectLift`). 선택은 **링이 아니라 들어 올림**이라
+   * 테두리가 생기면 안 된다 — 조약돌에 둥근 링을 두르면 깨진 테두리로 보였다(2026-09-11).
+   */
+  it("SelectLift 는 고른 칸에 테두리도, 뒤 판도 깔지 않는다 — 커지기만 한다", async () => {
+    const { toJSON } = await render(
+      <SelectLift selected size={26}>
+        <EmotionPebble id={4} />
+      </SelectLift>,
+    );
+
+    const json = JSON.stringify(toJSON());
+    expect(json).not.toContain("borderWidth");
+    // 옅은 빛(뒤 판)을 깔았다가 뺐다(2026-09-11) — 조약돌 뒤에 불투명한 판이 한 겹 더 보였다
+    expect(json).not.toContain("backgroundColor");
+  });
+
+  it("SelectLift 는 칸 크기만큼만 자리를 차지한다 — 옆 칸을 밀지 않는다", async () => {
+    const { toJSON } = await render(
+      <SelectLift selected={false} size={26}>
+        <EmotionPebble id={4} />
+      </SelectLift>,
+    );
+
+    // 커진 크기(26 × 1.18 ≈ 31)로 상자를 잡고 음수 여백(−2.5)으로 26 만큼만 차지한다
+    const json = JSON.stringify(toJSON());
+    expect(json).toContain('"width":31');
+    expect(json).toContain('"margin":-2.5');
+  });
+
+  /**
+   * 기록 없는 날의 원(`WeekEmptyDot`). 리포트만 `EmotionDot` 의 테두리 있는 원을 빌려 써서
+   * 홈과 달라 보였다(2026-09-11) — **테두리는 오늘에만 선다.**
+   */
+  it("WeekEmptyDot 은 테두리가 없다 — 오늘일 때만 옅은 링이 선다", async () => {
+    const plain = await render(<WeekEmptyDot />);
+    const today = await render(<WeekEmptyDot today />);
+
+    expect(JSON.stringify(plain.toJSON())).not.toContain("borderWidth");
+    expect(JSON.stringify(today.toJSON())).toContain('"borderWidth":1.5');
+  });
+
+  it("EmotionPebble 도 지름의 절반을 쓴다 — 999 가 아니다", async () => {
+    const { toJSON } = await render(<EmotionPebble id={4} size={10} />);
+
+    expect(JSON.stringify(toJSON())).toContain('"borderRadius":5');
+  });
+
   it("EmotionDot 은 지름의 절반을 쓴다 — 999 가 아니다", async () => {
     const { toJSON } = await render(<EmotionDot id={4} size={10} />);
     const style = flatten((toJSON() as unknown as { props: { style: unknown } }).props.style);

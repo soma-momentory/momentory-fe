@@ -46,5 +46,5 @@ out = out.crop(box)
 height = round(WIDTH * out.height / out.width)
 
 os.makedirs(OUT, exist_ok=True)
-out.resize((WIDTH, height), Image.LANCZOS).save(os.path.join(OUT, "cta-scallop.png"))
+out.resize((WIDTH, height), Image.LANCZOS).save(os.path.join(OUT, "cta-grass.png"))
 print(f"잘라낸 모양 {out.size} → {WIDTH}×{height} (비 {out.width / out.height:.2f})")

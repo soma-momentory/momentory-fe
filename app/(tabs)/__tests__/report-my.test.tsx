@@ -157,6 +157,9 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     });
     expect(r.getByText("일요일 ·")).toBeTruthy();
     expect(r.getByText("피곤함")).toBeTruthy();
+    // ⚠ 드러난 글자는 **카드 제목 줄 안**에 선다 — 점 줄 아래에 새 줄을 세우면 요약 문장이
+    // 밀려 내려갔다(2026-09-11). 자리가 아래로 돌아가면 이 검사가 깨진다
+    expect(within(r.getByTestId("week-mood-head")).getByText("일요일 ·")).toBeTruthy();
 
     // 하루에 감정이 여럿이면 **전부** 선다 — 점 하나는 대표 감정 색만 맡는다
     await act(async () => {

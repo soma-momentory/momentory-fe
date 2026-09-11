@@ -71,6 +71,20 @@ import { Image, Pressable, StyleSheet } from "react-native";
  * 넉넉한 문턱으로는 체커와 함께 지워진다. 그래서 잘라 낸 상자가 **그림자까지 품고**,
  * 그만큼 가로가 넓어져 `WIDTH` 를 함께 올렸다.
  */
+/*
+ * ## 그림자는 한 장이고, 바뀌는 것은 캐릭터뿐이다 (2026-09-11 · 사용자 요청)
+ *
+ * 받은 두 장은 그림자의 **색**(기본은 회색 · 인사는 밝은 올리브빛)도 **높이**(인사 장이 4px 아래)도
+ * 달라서, 누를 때마다 그림자가 색이 튀고 내려앉았다. 게다가 인사 장은 발이 4px 더 내려가 몸이
+ * 아래로 늘어나 보였다.
+ *
+ * 그래서 키아웃이 캐릭터 두 장에서 **그림자를 떼어 내고**, 인사 장 그림자 색으로 **한 장**을 따로
+ * 만든다(`capybara-shadow.png` · 기본 장 발 밑에 맞춤). 인사 장은 **팔 아래부터 발까지만 눌러** 발을
+ * 기본 장에 맞췄다(`scripts/keyout-home-capybara.py`). 화면은 그림자를 **맨 밑에 한 번만** 깔고 그 위에서
+ * 캐릭터 두 장만 오간다 — 누를 때 바뀌는 것은 **눈과 든 팔**뿐이다.
+ *
+ * ⚠ 그림자를 캐릭터 그림에 도로 태우지 않는다 — 태우면 두 장의 그림자가 다시 따로 놀아 누를 때 튄다.
+ */
 type Props = {
   /** 그림의 폭 — 높이는 그림의 비율이 정한다 */
   width?: number;
@@ -86,16 +100,19 @@ type Props = {
 const WIDTH = 118;
 
 /**
- * 가로 ÷ 세로 — 잘라 낸 그림에서 잰 값(384 × 389 · **발밑 그림자 포함**).
+ * 가로 ÷ 세로 — 잘라 낸 그림에서 잰 값(384 × 387 · **발밑 그림자 포함**).
  * **두 장이 같은 상자에서 잘렸으므로 비율도 같다**(`scripts/keyout-home-capybara.py`).
  */
-const ASPECT = 384 / 389;
+const ASPECT = 384 / 387;
 
 /**
  * 팔을 든 채로 머무는 시간 — **누른 순간 올라가고** 이만큼 뒤에 내려온다.
  * 짧으면 깜빡인 것처럼 지나가고, 길면 인사가 아니라 굳은 자세로 보인다.
  */
 const RAISED_MS = 420;
+
+/** 두 장이 함께 쓰는 발밑 그림자 — 캐릭터 밑에 한 번만 깐다(⚠ 위 「그림자는 한 장」) */
+const SHADOW = require("../../../../assets/home/capybara-shadow.png");
 
 const FRAMES = {
   idle: require("../../../../assets/home/capybara-idle.png"),
@@ -130,6 +147,13 @@ export function HomeCapybara({ width = WIDTH }: Props) {
     >
       {/* 폭만 정하고 높이는 비율이 정한다 — 늘어난 캐릭터는 「고장 났다」로 읽힌다.
           ⚠ 둘 다 붙여 두고 `opacity` 만 바꾼다(⚠ 위 「처음부터 둘 다 붙여 둔다」) */}
+      {/* 그림자는 **바뀌지 않는다** — 캐릭터만 그 위에서 오간다 */}
+      <Image
+        testID="home-capybara-shadow"
+        source={SHADOW}
+        style={[styles.frame, { width, height }]}
+        resizeMode="contain"
+      />
       <Image
         testID="home-capybara-idle"
         source={FRAMES.idle}

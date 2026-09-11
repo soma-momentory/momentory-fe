@@ -27,7 +27,7 @@ import {
   weekStartOf,
 } from "@/features/home/model/day";
 import { HomeCapybara } from "@/features/home/ui/HomeCapybara";
-import { ScallopButton } from "@/features/home/ui/ScallopButton";
+import { GrassButton } from "@/features/home/ui/GrassButton";
 import { ScheduleList } from "@/features/home/ui/ScheduleList";
 import { WeekEmotionStrip } from "@/features/home/ui/WeekEmotionStrip";
 import { useSettings } from "@/features/my/model/settings";
@@ -113,15 +113,30 @@ const HAND_LEFT_BEARING = 0.22;
  *
  * 16 이었는데 8 로 줄였다(2026-09-10 · 사용자 요청) — 모서리에 너무 붙어 있었다.
  * 이제 카드 안쪽 가장자리에서 14 를 띄우고 앉는다.
+ *
+ * ⚠ 2026-09-11 에 아래쪽만 2 로 줄여 캐릭터를 6dp 올려 봤다(그림자 아래끝을 잔디 버튼 아래끝에
+ * 맞추려고). 실기기에서 보니 **원래 자리가 더 나아** 되돌렸다 — 발이 버튼 아래끝보다 살짝 내려앉은
+ * 지금 모습이 카드에 앉아 있는 느낌을 준다.
  */
 const CHAR_BLEED = 8;
 
 /**
- * CTA 를 카드 안쪽 패딩 쪽으로 밀어 넣는 양 — **아주 조금**이다
- * (2026-09-10 · 사용자 요청). 왼쪽으로 이 만큼 나가고 오른쪽에서 같은 만큼
- * 물러나므로 **폭은 그대로고 자리만 옮긴다.**
+ * CTA 를 글자 덩어리에서 더 떨어뜨리는 양 — **아주 조금**이다
+ * (2026-09-10 · 사용자 요청). 카드가 그만큼 높아진다 — 버튼만 내려앉을 자리가
+ * 카드 안에 따로 없어서, 왼쪽 칸이 길어지고 카드가 따라 늘어난다.
  */
-const CTA_NUDGE = 6;
+const CTA_DROP = 6;
+
+/**
+ * CTA 의 크기 — 기본 버튼(48 · 글자 칸 전체)보다 **조금 작게** 둔다(2026-09-11 · 사용자 요청).
+ * 높이는 44, 폭은 글자 칸의 90% 다. 글자 크기는 그대로다 — 줄이는 것은 잔디 면뿐이다.
+ *
+ * ⚠ **왼쪽 끝은 제목 「오늘 하루는 어땠어요?」의 「오」와 같은 선이다**(같은 날 요청). 왼쪽으로
+ * 빼던 값을 지웠다 — 잔디의 가장 넓은 줄이 상자 왼쪽 끝에 닿아, 밀지 않으면 제목 첫 획과
+ * 정확히 맞는다(실기기에서 둘 다 x=130px 로 쟀다).
+ */
+const CTA_HEIGHT = 44;
+const CTA_WIDTH = "90%";
 
 export default function Home() {
   const schedules = useDay((s) => s.schedules);
@@ -327,12 +342,13 @@ export default function Home() {
               </Text>
             </View>
             {/* 이 화면의 유일한 Solid Primary — 하루의 주 행동이다 (`DESIGN.md` §6).
-             ⚠ **DS 버튼이 아니라 홈 전용 구름 모양이다**(`ScallopButton`) — 규격
+             ⚠ **DS 버튼이 아니라 홈 전용 잔디 모양이다**(`GrassButton`) — 규격
              (높이·면 색·누름 스크림)은 §6 그대로이고 모양만 다르다.
-             폭은 **글자 칸을 다 쓴다** — 카피바라 자리는 이 칸 밖이라 겹치지 않는다 */}
-            <ScallopButton
+             폭은 **글자 칸의 90%**이고 왼쪽 끝은 제목 「오」와 맞춘다 — 카피바라 자리는 이 칸 밖이라 겹치지 않는다 */}
+            <GrassButton
               label="지금 하루 돌아보기"
               onPress={() => router.push("/retro/confirm")}
+              style={styles.ctaButton}
             />
           </View>
           <View style={styles.ctaChar}>
@@ -439,7 +455,8 @@ const styles = StyleSheet.create({
   cta: { flexDirection: "row", alignItems: "flex-end", gap: space.sm },
   ctaBody: { flex: 1, gap: 22 },
   // 폭은 그대로 두고 왼쪽으로만 조금 — 오른쪽에서 같은 값을 되돌려 준다
-  ctaButton: { marginLeft: -CTA_NUDGE, marginRight: CTA_NUDGE },
+  // 제목과 같은 시작선 · 조금 작은 크기 — 세로 칸의 기본(stretch)을 끄고 폭을 직접 준다
+  ctaButton: { marginTop: CTA_DROP, alignSelf: "flex-start", width: CTA_WIDTH, height: CTA_HEIGHT },
   ctaText: { gap: space.sm },
   /**
    * 카피바라가 카드 안쪽 패딩(22)으로 파고드는 양. **카드 밖으로는 나가지 않는다** —

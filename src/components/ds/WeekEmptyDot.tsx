@@ -1,0 +1,49 @@
+import { View, type ViewStyle } from "react-native";
+
+import { fill, line } from "@/design/ds";
+
+/**
+ * 「이번 주 감정」의 **기록이 없는 날** — 홈의 주간 줄과 리포트의 7일 흐름이 함께 쓴다
+ * (2026-09-11 · 사용자 요청 「리포트도 홈처럼 테두리 없애줘」).
+ *
+ * 색도 테두리도 없는 **옅은 원 하나**로 자리만 지킨다 — 빈 칸을 강조하지 않는다.
+ *
+ * ## 두 화면이 각자 그리던 것을 한 곳으로
+ *
+ * 홈은 테두리 없는 원을 직접 그렸고, 리포트는 `EmotionDot` 의 중립 원(옅은 테두리 1.5)을
+ * 빌려 썼다. 같은 「기록 없는 날」인데 한쪽만 테두리가 있어 **두 화면이 달라 보였다.**
+ * 같아야 하는 원은 한 곳에서만 정한다(`DiaryEmotionRow` 머리말과 같은 판단).
+ *
+ * ⚠ `EmotionDot` 은 고치지 않았다 — 그 도트는 일기 줄의 작은 표식으로도 쓰이고, 거기서는
+ * 테두리가 틴트 면을 떠받친다.
+ *
+ * ## 테두리는 「오늘」에만 선다
+ *
+ * 홈은 아직 기록이 없는 **오늘** 칸을 옅은 링으로 알린다(`today`). 리포트는 지난 주도
+ * 넘겨보는 화면이라 「오늘」을 따로 말하지 않는다 — 넘기지 않는다.
+ */
+type Props = {
+  /** 지름 — 홈·리포트 모두 26 */
+  size?: number;
+  /** 아직 기록이 없는 오늘 — 옅은 링으로 자리를 알린다(홈만 쓴다) */
+  today?: boolean;
+};
+
+export function WeekEmptyDot({ size = 26, today = false }: Props) {
+  // 반지름은 **지름의 절반**이다 — `radius.full`(999)을 쓰지 않는다(`EmotionDot` 주석의
+  // 안드로이드 New Architecture 사정이 그대로 적용된다)
+  const box: ViewStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    backgroundColor: fill.normal,
+  };
+
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={today ? [box, { borderWidth: 1.5, borderColor: line.normal }] : box}
+    />
+  );
+}

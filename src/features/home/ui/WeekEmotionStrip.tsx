@@ -2,17 +2,8 @@ import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
-import { SectionHeader, Text } from "@/components/ds";
-import {
-  emotion as emotionColor,
-  emotionTint,
-  fill,
-  label as labelColor,
-  line,
-  radius,
-  space,
-  withAlpha,
-} from "@/design/ds";
+import { EmotionPebble, SectionHeader, SelectLift, Text, WeekEmptyDot } from "@/components/ds";
+import { label as labelColor, space } from "@/design/ds";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";
 
@@ -32,7 +23,8 @@ import type { WeekDay } from "@/features/report/model/report";
  * 감정 9색은 대비가 낮아(`ds/color.ts` 머리말) **이름을 늘 함께 쓴다**는 규칙이
  * 이 팔레트를 떠받친다. 알약 옆에는 요일밖에 없으므로 두 길을 둔다:
  * 낭독기에는 `「월요일 · 우울함, 행복함」` 을 그대로 읽히고, 눈으로 보는 사람에게는
- * **누르면 아래에 이름 줄**이 선다(시안과 같다).
+ * **누르면 제목 줄 오른쪽에 이름**이 선다 — 아래에 줄을 세우면 「오늘 일정」이 밀려서
+ * 옮겼다(2026-09-11).
  *
  * ⚠ **누르면 그날 감정이 전부 나온다**(2026-09-05). 도트는 하루에 하나뿐이라 색은
  * 첫 감정만 맡는데, 「우울했는데 라면 먹고 기분 좋아졌어」 같은 하루는 감정이 둘이다 —
@@ -78,7 +70,31 @@ export function WeekEmotionStrip({ days, today }: Props) {
 
   return (
     <View>
-      <SectionHeader size="small" title="이번 주 감정" />
+      {/* 누른 날의 감정은 **제목 줄 오른쪽**에 선다(2026-09-11 · 사용자 요청) — 아래에 줄을
+          새로 세우면 그만큼 「오늘 일정」이 밀려 내려갔다. 제목 줄은 원래 있던 높이(18)이고
+          감정 줄은 16 이라, 글자가 들어와도 화면이 흔들리지 않는다 */}
+      <SectionHeader
+        size="small"
+        title="이번 주 감정"
+        trailing={
+          day != null ? (
+            <View style={styles.picked}>
+              {/* 가운뎃점까지 한 글자 덩어리로 둔다 — 「월요일」만 떼면 위쪽 날짜 머리와
+                  같은 글자가 화면에 둘이 된다 */}
+              <Text variant="caption1" color={labelColor.normal}>{`${day.label}요일 ·`}</Text>
+              {day.emotions.length > 0 ? (
+                /* 감정은 **전부** 세운다 — 조약돌 하나가 첫 감정만 맡으므로, 하루에 감정이
+                   둘 이상이면 여기서만 나머지가 보인다. 일기 화면들과 같은 줄을 쓴다 */
+                <DiaryEmotionRow emotions={day.emotions} align="flex-end" />
+              ) : (
+                <Text variant="caption1" color={labelColor.alternative}>
+                  기록 없음
+                </Text>
+              )}
+            </View>
+          ) : null
+        }
+      />
 
       <View style={styles.row}>
         {days.map((d) => {
@@ -98,23 +114,17 @@ export function WeekEmotionStrip({ days, today }: Props) {
               onPress={() => setPicked(on ? null : d.date)}
               style={styles.day}
             >
-              <View
-                style={[
-                  styles.dot,
-                  id != null
-                    ? {
-                        backgroundColor: emotionTint(id),
-                        borderColor: withAlpha(emotionColor[id], 0.9),
-                      }
-                    : {
-                        backgroundColor: fill.normal,
-                        borderColor: isToday ? line.normal : "transparent",
-                      },
-                  // 고른 날은 **테두리가 굵어진다** — 11px 단이 하나뿐이라
-                  // 글자 굵기 대신 테두리로 말한다(색만으로 표시하지 않는다)
-                  on ? styles.dotPicked : null,
-                ]}
-              />
+              {/* 감정이 있는 날은 **수채 조약돌 한 장**(`EmotionPebble` · 2026-09-11 시안),
+                  없는 날은 자리만 지키는 중립 원이다 — 빈 칸을 강조하지 않는다.
+                  고른 날은 **살짝 커진다**(`SelectLift`) — 조약돌은
+                  정원이 아니라 둥근 링을 두르면 깨진 테두리로 보였다 */}
+              <SelectLift selected={on} size={DOT_SIZE}>
+                {id != null ? (
+                  <EmotionPebble id={id} size={DOT_SIZE} />
+                ) : (
+                  <WeekEmptyDot size={DOT_SIZE} today={isToday} />
+                )}
+              </SelectLift>
               <Text
                 variant="caption2"
                 color={on || isToday ? labelColor.strong : labelColor.alternative}
@@ -125,23 +135,6 @@ export function WeekEmotionStrip({ days, today }: Props) {
           );
         })}
       </View>
-
-      {day != null ? (
-        <View style={styles.detail}>
-          {/* 가운뎃점까지 한 글자 덩어리로 둔다 — 「월요일」만 떼면 위쪽 날짜 머리와
-              같은 글자가 화면에 둘이 된다 */}
-          <Text variant="caption1" color={labelColor.normal}>{`${day.label}요일 ·`}</Text>
-          {day.emotions.length > 0 ? (
-            /* 감정은 **전부** 세운다 — 도트 하나가 첫 감정 색만 맡으므로, 하루에 감정이
-               둘 이상이면 여기서만 나머지가 보인다. 일기 화면들과 같은 줄을 쓴다 */
-            <DiaryEmotionRow emotions={day.emotions} />
-          ) : (
-            <Text variant="caption1" color={labelColor.alternative}>
-              기록 없음
-            </Text>
-          )}
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -149,22 +142,17 @@ export function WeekEmotionStrip({ days, today }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: space.sm },
   day: { flex: 1, alignItems: "center", gap: space.xs },
-  // 정원 — 칸 폭을 다 쓰지 않고 가운데 선다(늘어나면 타원이 된다)
-  dot: {
-    width: DOT_SIZE,
-    height: DOT_SIZE,
-    borderRadius: radius.full,
-    borderWidth: 1.5,
-  },
-  dotPicked: { borderWidth: 2.5 },
-  detail: {
+  /**
+   * 누른 날의 감정 — 제목 줄 오른쪽. ⚠ **`alignSelf: center` 가 핵심이다.** 제목 줄은 글자
+   * 바닥선에 맞춰 줄을 세우는데(`SectionHeader`), 글자가 아닌 묶음은 바닥선이 없어 아래
+   * 끝을 바닥선에 붙이고 그만큼 줄을 위로 늘린다 — 그러면 누를 때마다 2dp 가 들썩인다.
+   * 가운데로 따로 세우면 줄 높이는 제목(18)이 정한 그대로다.
+   */
+  picked: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
     gap: space.sm,
-    marginTop: space.sm,
-    paddingTop: space.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: line.alternative,
+    flexShrink: 1,
+    alignSelf: "center",
   },
 });

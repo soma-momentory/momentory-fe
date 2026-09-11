@@ -59,6 +59,22 @@ describe("HomeCapybara", () => {
     expect(shown(r, "home-capybara-wave")).toBe(false);
   });
 
+  it("그림자는 한 장이고 누를 때도 그대로다 — 캐릭터만 바뀐다", async () => {
+    const r = await render(<HomeCapybara />);
+    // 그림자는 opacity 로 오가지 않는다 — 늘 보인다
+    const opacityOf = () => styleOf(r, "home-capybara-shadow").find((s) => s.opacity != null);
+
+    expect(at(r, "home-capybara-shadow")).toBeTruthy();
+    expect(opacityOf()).toBeUndefined();
+
+    await press(r);
+    await tick(1);
+
+    // 캐릭터는 갈렸는데 그림자는 그대로 — 두 장의 그림자가 달라 누를 때 튀던 것을 막는다(2026-09-11)
+    expect(shown(r, "home-capybara-wave")).toBe(true);
+    expect(opacityOf()).toBeUndefined();
+  });
+
   it("누르면 팔을 든 장으로 갈린다", async () => {
     const r = await render(<HomeCapybara />);
 
@@ -91,7 +107,7 @@ describe("HomeCapybara", () => {
     const box = styleOf(r, "home-capybara-idle").find((s) => s.width != null);
 
     expect(box?.width).toBe(112);
-    // 두 장이 같은 상자에서 잘려 384 × 389 다(발밑 그림자를 품은 상자)
-    expect(box?.height).toBeCloseTo(112 / (384 / 389), 3);
+    // 두 장이 같은 상자에서 잘려 384 × 387 이다(발밑 그림자를 품은 상자)
+    expect(box?.height).toBeCloseTo(112 / (384 / 387), 3);
   });
 });
