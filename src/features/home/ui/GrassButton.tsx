@@ -14,12 +14,12 @@ import { Text } from "@/components/ds";
 import { label as labelColor, motion, overlay, size, space } from "@/design/ds";
 
 /**
- * 홈 「지금 하루 돌아보기」 버튼 — **위가 구름처럼 봉긋한 Solid Primary**
+ * 홈 「지금 하루 돌아보기」 버튼 — **위가 잔디처럼 봉긋한 Solid Primary**
  * (2026-09-10 · 사용자 시안).
  *
  * ## 모양은 받은 그림 그대로다
  *
- * 구름 윤곽을 코드로 계산하지 않고 **시안 PNG 를 그대로 깐다**(사용자 요청).
+ * 잔디 윤곽을 코드로 계산하지 않고 **시안 PNG 를 그대로 깐다**(사용자 요청).
  * 봉우리 넷의 크기와 간격, 끝이 옆으로 흘러내리는 결까지 그림이 가진 것이 정본이고,
  * 코드가 다시 그리면 **그림과 미묘하게 다른 것이 하나 더 생긴다.**
  *
@@ -34,7 +34,7 @@ import { label as labelColor, motion, overlay, size, space } from "@/design/ds";
  * ## DS 버튼이 아니라 홈의 장식이다
  *
  * `components/ds/Button` 을 고치지 않고 여기 따로 뒀다. 그 버튼은 **화면 40장이 함께
- * 쓰는 것**이라 모양을 바꾸면 온보딩·회고·모달의 확인까지 전부 구름이 된다.
+ * 쓰는 것**이라 모양을 바꾸면 온보딩·회고·모달의 확인까지 전부 잔디가 된다.
  * 지금 이 모양을 원하는 자리는 **홈 카드 하나**다.
  *
  * ⚠ **두 번째 화면이 같은 모양을 원하면 그때 `components/ds/` 로 올린다.** 그 전에
@@ -46,12 +46,12 @@ import { label as labelColor, motion, overlay, size, space } from "@/design/ds";
  *
  * 지키는 것은 그대로다 — 높이는 `size.button.large`, 좌우 여백도 DS 버튼과 같아
  * **같은 라벨이면 같은 폭이 나온다.** 누름은 **면 색을 바꾸지 않고 스크림을 얹는다**
- * (`DESIGN.md` §6) — 사각형 스크림을 덮으면 구름 밖까지 어두워지므로 **같은 그림을
+ * (`DESIGN.md` §6) — 사각형 스크림을 덮으면 잔디 밖까지 어두워지므로 **같은 그림을
  * 스크림 색으로 tint 해서** 겹친다. 화면의 유일한 solid 라는 규칙도 그대로다.
  *
  * ## 누름은 **눌린다** (2026-09-10 · 사용자 요청)
  *
- * 스크림 하나로는 반응이 약했다 — 구름은 면이 넓고 색이 짙어서, 그 위에 12% 를 얹어
+ * 스크림 하나로는 반응이 약했다 — 잔디는 면이 넓고 색이 짙어서, 그 위에 12% 를 얹어
  * 봐야 눈에 거의 안 들어온다. 그래서 둘을 함께 쓴다: **스크림을 한 단 올리고
  * (`pressStrong`) 버튼을 살짝 줄인다**(`PRESS_SCALE`).
  *
@@ -81,7 +81,7 @@ const HEIGHT = size.button.large;
  * 라벨을 버튼 한가운데에서 아래로 내리는 양(dp) — **아주 조금**이다
  * (2026-09-10 · 사용자 요청).
  *
- * 구름은 위가 파여 있어서 면의 무게가 아래쪽에 쏠린다. 상자의 기하학적 중앙에
+ * 잔디는 위가 파여 있어서 면의 무게가 아래쪽에 쏠린다. 상자의 기하학적 중앙에
  * 두면 글자가 그 무게보다 위에 떠 보인다. 계곡선 아래의 정중앙(≈14)까지 내리면
  * 이번엔 바닥에 붙어 보여서, **그 절반쯤**에서 멈춘다.
  */
@@ -93,20 +93,31 @@ const LABEL_DROP = 8;
  */
 const PRESS_SCALE = 0.97;
 
-const ART = require("../../../../assets/home/cta-scallop.png");
+const ART = require("../../../../assets/home/cta-grass.png");
 
 /** 누름이 들어오고 나가는 시간 — 화면의 다른 움직임과 같은 박자(`DESIGN.md` §12) */
 const PRESS_MS = motion.duration;
 
-export function ScallopButton({ label, onPress, style }: Props) {
+export function GrassButton({ label, onPress, style }: Props) {
   /**
-   * 잰 폭. **0 인 동안에는 면을 그리지 않는다** — 크기를 모르는 채로 그리면 첫
+   * 잰 폭과 높이. **0 인 동안에는 면을 그리지 않는다** — 크기를 모르는 채로 그리면 첫
    * 프레임에 원본 크기(768)의 초록 덩어리가 스친다. 라벨은 그 프레임에도 제자리에
    * 있으므로 버튼이 사라져 보이지는 않는다.
    */
-  const [width, setWidth] = useState(0);
-  const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
-  const face = { position: "absolute" as const, left: 0, top: 0, width, height: HEIGHT };
+  // ⚠ 높이도 잰다 — 부르는 쪽이 `style` 로 높이를 바꾸면(홈은 44) 그림이 그 높이를 따라가야 한다.
+  // 고정값(48)으로 그리면 상자보다 그림이 커져 아래로 삐져나온다(2026-09-11)
+  const [box, setBox] = useState({ width: 0, height: 0 });
+  const onLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setBox({ width, height });
+  };
+  const face = {
+    position: "absolute" as const,
+    left: 0,
+    top: 0,
+    width: box.width,
+    height: box.height,
+  };
 
   const [down, setDown] = useState(false);
   // 저장소 관례(`ChatBubble`·`SurfaceRipple`) — ref 는 렌더 중 읽지 않는다
@@ -136,10 +147,10 @@ export function ScallopButton({ label, onPress, style }: Props) {
     >
       {/* 줄어드는 것은 **안쪽 판**이다 — 바깥 상자가 그대로여야 자리가 안 밀린다 */}
       <Animated.View style={[styles.face, { transform: [{ scale }] }]}>
-        {width > 0 ? (
+        {box.width > 0 && box.height > 0 ? (
           <>
             <Image source={ART} style={face} resizeMode="stretch" />
-            {/* 누름 스크림 — 같은 그림을 스크림 색으로 칠해 덮는다(구름 밖은 그대로).
+            {/* 누름 스크림 — 같은 그림을 스크림 색으로 칠해 덮는다(잔디 밖은 그대로).
                 ⚠ 늘 붙어 있고 짙기만 오간다(⚠ 위 머리말) */}
             <Animated.Image
               source={ART}
