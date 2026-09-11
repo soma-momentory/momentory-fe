@@ -65,6 +65,7 @@ export {
   isWaterSpot,
   pondLayout,
   pondMotion,
+  pondPanelVeil,
   pondSize,
   pondVeil,
   surfaceRippleMs,

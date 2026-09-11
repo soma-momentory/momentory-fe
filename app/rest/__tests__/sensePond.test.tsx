@@ -15,8 +15,9 @@ import { pondMotion, surfaceRippleMs } from "@/design/ds";
  * 건드리면 그 자리에서 물결이 퍼지고 셈이 하나 오른다(감각 단계만 잠시 누르기).
  *
  * 여기서 고정하는 것: 연못에 새로 생기는 것이 없다 · 물인 자리만 센다(글·카피바라는
- * 아니다) · 건드린 자리에서 물결이 퍼진다 · 아래 판은 진행 중에 한 줄이고 다 지난
- * 뒤에만 셋을 펼친다.
+ * 아니다) · 건드린 자리에서 물결이 퍼진다 · 아래 판은 **첫 손짓 전에는 없고**, 찾을
+ * 때마다 그 단계의 칸이 가운데에 뜨고 차오른다(2026-09-11) · 다 채우면 「다 채웠어요」 ·
+ * 감각 단계는 「꾸욱」을 두 번 말한다.
  */
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -85,8 +86,12 @@ const decor = (r: Q) => r.queryAllByTestId("pond-decor-flower", HIDDEN);
 const waves = (r: Q) => r.queryAllByTestId("pond-surface-ripple", HIDDEN);
 const glows = (r: Q) => r.queryAllByTestId("pond-hold-glow", HIDDEN);
 
-/** 아래 판이 다 지난 뒤에만 펼치는 세 칸 */
+/** 아래 판 — 첫 손짓 전에는 없다 */
+const panel = (r: Q) => r.queryByTestId("pond-panel", HIDDEN);
+/** 그중 떠오른 칸 — 그 단계의 첫 손짓에 하나씩 */
 const cells = (r: Q) => r.queryAllByTestId("pond-panel-cell", HIDDEN);
+/** 칸 하나가 낭독기에 읽히는 말 — 「보이는 것 · 1 / 3」 */
+const count = (r: Q, text: string) => r.getByLabelText(text);
 
 /** 보기 셋 · 듣기 둘을 다 채우고 감각 단계까지 간다 */
 const reachFeel = async (r: Q) => {
@@ -146,14 +151,15 @@ describe("감각연못 · 들어온 직후", () => {
     expect(labels).toEqual(["뒤로", "보이는 것 하나 찾기"].sort());
   });
 
-  it("아래 판은 한 줄뿐이다 — 셋을 펼쳐 남은 양을 먼저 읽히지 않는다", async () => {
+  it("들어온 직후에는 아래 판이 없다 — 빈 칸도 동그라미도 없다", async () => {
     const r = await render(<SensePondScreen />);
     await layout(r);
 
-    expect(r.getByText("보이는 것 · 0 / 3")).toBeTruthy();
+    expect(panel(r)).toBeNull();
     expect(cells(r)).toHaveLength(0);
-    expect(r.queryByText("지금 찾은 것")).toBeNull();
-    expect(r.queryByText("0 / 2")).toBeNull();
+    expect(r.queryByText("다 채웠어요")).toBeNull();
+    expect(r.queryByText("보이는 것")).toBeNull();
+    expect(r.queryByText("0 / 3")).toBeNull();
     expect(r.queryByText("닿는 감각")).toBeNull();
   });
 
@@ -204,7 +210,7 @@ describe("감각연못 · 찾아 가기", () => {
     await layout(r);
 
     await tapPond(r, WATER);
-    expect(r.getByText("보이는 것 · 1 / 3")).toBeTruthy();
+    expect(count(r, "보이는 것 · 1 / 3")).toBeTruthy();
     expect(waves(r).length).toBeGreaterThan(0);
 
     // 물결은 다 퍼지면 지워진다 — 연잎도 꽃도 새로 생기지 않는다
@@ -238,7 +244,7 @@ describe("감각연못 · 찾아 가기", () => {
     await tapPond(r, { x: 0.15, y: 0.7 }); // 카피바라가 앉은 왼쪽 물가
     await tapPond(r, { x: 0.5, y: 0.92 }); // 아래 판 언저리
 
-    expect(r.getByText("보이는 것 · 0 / 3")).toBeTruthy();
+    expect(panel(r)).toBeNull();
     expect(waves(r)).toHaveLength(0);
   });
 
@@ -248,7 +254,38 @@ describe("감각연못 · 찾아 가기", () => {
 
     await tapPond(r);
 
-    expect(r.getByText("보이는 것 · 1 / 3")).toBeTruthy();
+    expect(count(r, "보이는 것 · 1 / 3")).toBeTruthy();
+  });
+
+  it("첫 손짓에 판이 올라와 가운데에 칸 하나가 뜬다 — 다음 단계의 첫 손짓에 하나가 더 뜬다", async () => {
+    const r = await render(<SensePondScreen />);
+    await layout(r);
+
+    // 보기의 첫 손짓 — 판이 올라오고 눈 칸 하나만 뜬다
+    await tapPond(r, WATER);
+    expect(panel(r)).toBeTruthy();
+    expect(cells(r)).toHaveLength(1);
+    expect(r.getByTestId("pond-panel-eye", HIDDEN)).toBeTruthy();
+    expect(r.getByText("1 / 3")).toBeTruthy();
+
+    // 같은 단계의 손짓은 칸을 늘리지 않고 그 칸을 채운다
+    await settle("see");
+    await tapPond(r, WATER);
+    expect(cells(r)).toHaveLength(1);
+    expect(r.getByText("2 / 3")).toBeTruthy();
+
+    await settle("see");
+    await tapPond(r, WATER);
+    await wait(pondMotion.stepHold + 50);
+    // 듣기로 넘어가도 둘째 칸은 아직 비어 있다 — 첫 소리를 찾아야 떠오른다
+    expect(cells(r)).toHaveLength(1);
+
+    await tapPond(r, WATER);
+    expect(cells(r)).toHaveLength(2);
+    expect(r.getByTestId("pond-panel-sound", HIDDEN)).toBeTruthy();
+    expect(count(r, "보이는 것 · 3 / 3")).toBeTruthy();
+    expect(count(r, "들리는 소리 · 1 / 2")).toBeTruthy();
+    expect(r.queryByTestId("pond-panel-hand", HIDDEN)).toBeNull();
   });
 
   it("셋을 다 찾으면 잠시 머문 뒤 같은 화면에서 「들리는 소리」로 넘어간다", async () => {
@@ -261,7 +298,7 @@ describe("감각연못 · 찾아 가기", () => {
     }
     // 마지막 하나는 셈이 오른 것을 눈으로 볼 시간(`stepHold`)이 지나기 전에 본다
     await tapPond(r, WATER);
-    expect(r.getByText("보이는 것 · 3 / 3")).toBeTruthy();
+    expect(count(r, "보이는 것 · 3 / 3")).toBeTruthy();
 
     await wait(pondMotion.stepHold + 50);
     await swap();
@@ -269,9 +306,9 @@ describe("감각연못 · 찾아 가기", () => {
     expect(
       r.getByText("잠시 귀를 기울여봐요. 하나 들렸다면 연못을 가볍게 건드려보세요."),
     ).toBeTruthy();
-    expect(r.getByText("들리는 소리 · 0 / 2")).toBeTruthy();
-    // 아직 펼치지 않는다 — 지나온 단계의 셈도 함께 보여 주지 않는다
-    expect(cells(r)).toHaveLength(0);
+    // 지나온 칸은 가득 찬 채 남고, 소리 칸은 첫 소리를 찾기 전까지 뜨지 않는다
+    expect(cells(r)).toHaveLength(1);
+    expect(r.queryByText("다 채웠어요")).toBeNull();
   });
 
   it("듣기도 같은 손짓이다 — 표시를 찾지 않고 수면을 건드린다", async () => {
@@ -285,10 +322,10 @@ describe("감각연못 · 찾아 가기", () => {
 
     expect(surface(r).props.accessibilityLabel).toBe("들리는 소리 하나 찾기");
     await tapPond(r, WATER);
-    expect(r.getByText("들리는 소리 · 1 / 2")).toBeTruthy();
+    expect(count(r, "들리는 소리 · 1 / 2")).toBeTruthy();
   });
 
-  it("감각은 톡이 아니라 잠시 누르기다 — 짧은 누름은 세지 않는다", async () => {
+  it("감각은 톡이 아니라 꾸욱 누르기다 — 짧은 누름은 세지 않고 「조금 더 오래」를 말한다", async () => {
     const r = await render(<SensePondScreen />);
     await layout(r);
     await reachFeel(r);
@@ -296,16 +333,43 @@ describe("감각연못 · 찾아 가기", () => {
 
     expect(r.getByText("몸에 닿는 감각 1개")).toBeTruthy();
     expect(
-      r.getByText("몸에 닿는 감각 하나를 느껴봐요. 느껴졌다면 연못을 잠시 눌러보세요."),
+      r.getByText("몸에 닿는 감각 하나를 느껴봐요. 느껴졌다면 연못을 꾸욱 눌러보세요."),
     ).toBeTruthy();
+    // 설명 끝에 묻어 두지 않고 알약으로 한 번 더 말한다
+    expect(r.getByTestId("pond-hold-hint")).toBeTruthy();
+    expect(r.getByText("손을 떼지 말고 꾸욱, 오래 눌러요")).toBeTruthy();
 
     await holdPond(r, WATER);
     expect(glows(r).length).toBeGreaterThan(0);
     await wait(pondMotion.hold - 200);
     await releasePond(r);
 
-    expect(r.getByText("몸에 닿는 감각 · 0 / 1")).toBeTruthy();
+    expect(r.queryByLabelText("몸에 닿는 감각 · 1 / 1")).toBeNull();
+    expect(cells(r)).toHaveLength(2);
     expect(waves(r)).toHaveLength(0);
+
+    // 일찍 뗐다 — 알약이 다시 말하고, 잠시 뒤 원래 말로 돌아온다
+    expect(r.getByText("조금 더 오래 눌러요")).toBeTruthy();
+    await wait(pondMotion.holdHint.nudge + 20);
+    expect(r.getByText("손을 떼지 말고 꾸욱, 오래 눌러요")).toBeTruthy();
+  });
+
+  it("「꾸욱」 알약은 감각 단계에만 선다 — 톡 단계와 완료에는 없다", async () => {
+    const r = await render(<SensePondScreen />);
+    await layout(r);
+    await wait(pondMotion.introHold + 20);
+    await swap();
+    expect(r.queryByTestId("pond-hold-hint")).toBeNull();
+
+    await reachFeel(r);
+    await swap();
+    expect(r.getByTestId("pond-hold-hint")).toBeTruthy();
+
+    await holdPond(r, WATER);
+    await wait(pondMotion.hold + 20);
+    await wait(pondMotion.doneHold + 100);
+    await swap();
+    expect(r.queryByTestId("pond-hold-hint")).toBeNull();
   });
 
   it("잠시 누르고 있으면 가장 큰 물결 한 번 뒤 완료가 같은 자리에 선다", async () => {
@@ -315,7 +379,7 @@ describe("감각연못 · 찾아 가기", () => {
 
     await holdPond(r, WATER);
     await wait(pondMotion.hold + 20);
-    expect(r.getByText("몸에 닿는 감각 · 1 / 1")).toBeTruthy();
+    expect(count(r, "몸에 닿는 감각 · 1 / 1")).toBeTruthy();
     expect(waves(r).length).toBeGreaterThan(0);
 
     // 물결이 다 퍼진 **뒤에** 완료가 온다 — 마지막 반응이 잘리지 않는다
@@ -324,8 +388,8 @@ describe("감각연못 · 찾아 가기", () => {
     expect(r.getByText("잘 찾았어요")).toBeTruthy();
     expect(r.getByText("잠시 지금 이 순간에 머물렀어요.")).toBeTruthy();
 
-    // 그때 처음으로 셋을 펼친다
-    expect(r.getByText("지금 찾은 것")).toBeTruthy();
+    // 차오른 칸 셋은 그대로이고, 「다 채웠어요」와 돌아가는 길이 붙는다
+    expect(r.getByText("다 채웠어요")).toBeTruthy();
     expect(cells(r)).toHaveLength(3);
     expect(r.getByText("3 / 3")).toBeTruthy();
     expect(r.getByText("2 / 2")).toBeTruthy();
@@ -345,12 +409,12 @@ describe("감각연못 · 찾아 가기", () => {
     const r = await render(<SensePondScreen />);
     await layout(r);
     await reachFeel(r);
-    expect(r.getByText("몸에 닿는 감각 · 0 / 1")).toBeTruthy();
+    expect(r.queryByLabelText("몸에 닿는 감각 · 1 / 1")).toBeNull();
 
     await fireEvent(surface(r), "accessibilityAction", {
       nativeEvent: { actionName: "activate" },
     });
-    expect(r.getByText("몸에 닿는 감각 · 1 / 1")).toBeTruthy();
+    expect(count(r, "몸에 닿는 감각 · 1 / 1")).toBeTruthy();
 
     await wait(pondMotion.doneHold + 100);
     await swap();

@@ -95,6 +95,13 @@ export type SensePondStep = {
   point: SensePointKind;
   /** 이 단계의 손짓 */
   input: PondInput;
+  /**
+   * 설명 아래 **알약 하나로 한 번 더** 말하는 손짓 — 잠시 누르기 단계에만 있다
+   * (2026-09-11 · 사용자 요청). 톡 두 단계를 지나온 손은 셋째에서도 톡 치기 쉬워서,
+   * 「오래 눌러야 한다」는 설명 문장 끝에 묻어 두지 않고 따로 세운다.
+   * `again` 은 일찍 손을 뗐을 때 잠시 바뀌는 말이다.
+   */
+  hint?: { text: string; again: string };
 };
 
 export const SENSE_POND_TITLE = "감각연못";
@@ -107,8 +114,11 @@ export const SENSE_POND_TITLE = "감각연못";
  */
 export const SENSE_POND_SUBTITLE = "연못처럼 잔잔하게, 지금 이 순간을 찾아봐요";
 
-/** 아래 패널의 머리 — 셋을 한눈에 보여 주는 자리다(진행률이 아니라 **찾은 것**) */
-export const SENSE_POND_PANEL_TITLE = "지금 찾은 것";
+/**
+ * 아래 패널의 머리 — 셋이 다 차면 그 위에 뜬다(2026-09-11 · 사용자 요청 · 옛 「지금 찾은 것」).
+ * 진행 중에는 머리가 없다 — 칸이 가운데에서 하나씩 뜨는 것으로 충분하다.
+ */
+export const SENSE_POND_PANEL_TITLE = "다 채웠어요";
 
 export const SENSE_POND_STEPS: readonly SensePondStep[] = [
   {
@@ -134,12 +144,13 @@ export const SENSE_POND_STEPS: readonly SensePondStep[] = [
   {
     id: "feel",
     title: "몸에 닿는 감각 1개",
-    description: "몸에 닿는 감각 하나를 느껴봐요. 느껴졌다면 연못을 잠시 눌러보세요.",
+    description: "몸에 닿는 감각 하나를 느껴봐요. 느껴졌다면 연못을 꾸욱 눌러보세요.",
     goal: 1,
     counterLabel: "몸에 닿는 감각",
     panelLabel: "닿는 감각",
     point: "hand",
     input: "hold",
+    hint: { text: "손을 떼지 말고 꾸욱, 오래 눌러요", again: "조금 더 오래 눌러요" },
   },
 ];
 
@@ -170,11 +181,11 @@ export const SENSE_POND_DONE = {
 } as const;
 
 /**
- * 진행 중 아래에 **작게** 서는 한 줄 — 「보이는 것 · 1 / 3」 (2026-09-06).
+ * 아래 판 **한 칸을 낭독기가 읽는 말** — 「보이는 것 · 1 / 3」.
  *
- * 옛 판은 셋을 늘 크게 펼쳐 놓아서(0/3 · 0/2 · 0/1) 지금 할 일보다 **남은 양**이
- * 먼저 읽혔다. 진행 중에는 지금 단계와 거기까지의 셈 하나면 된다 — 나머지는
- * 다 끝난 뒤에 한 번 보여 준다. 손짓 안내는 위 문안이 이미 말하므로 여기 두지 않는다.
+ * 2026-09-06 에는 진행 중 판에 서는 한 줄이었다. 2026-09-11 에 판이 **찾을 때마다
+ * 칸이 하나씩 차오르는** 모양으로 바뀌면서(사용자 요청) 눈에는 아이콘·이름·셈이
+ * 따로 보이고, 낭독기에는 칸 하나가 이 한 문장으로 읽힌다.
  */
 export const progressText = (step: SensePondStep, found: number) =>
   `${step.counterLabel} · ${Math.min(found, step.goal)} / ${step.goal}`;
