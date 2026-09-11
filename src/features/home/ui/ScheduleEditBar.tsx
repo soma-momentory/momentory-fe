@@ -60,7 +60,7 @@ export function ScheduleEditBar({
   const ready = title.trim().length > 0 && !readOnly;
 
   /** 바 아래 시스템 바 여백 — 키보드가 없을 때의 바닥 숨 */
-  const bottomPad = Math.max(insets.bottom, layout.minBottomInset) + layout.androidNavGap;
+  const bottomPad = Math.max(insets.bottom, layout.minBottomInset);
 
   const close = () => router.back();
   const submit = () => {

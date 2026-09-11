@@ -1,4 +1,4 @@
-import { Platform, StyleSheet, type ViewStyle } from "react-native";
+import { StyleSheet, type ViewStyle } from "react-native";
 
 import { line } from "./color";
 
@@ -58,13 +58,6 @@ export const bubbleRadius = {
 } as const;
 
 /**
- * **안드로이드에서만** 시스템 바 인셋 위에 더 얹는 숨 — `layout.androidNavGap`
- * 의 실제 값이다. `layout` 안의 `keyboardGap` 이 이 값을 참조해야 해서
- * 객체 밖으로 뽑아 뒀다(객체 리터럴은 자기 형제를 읽지 못한다).
- */
-const androidNavGap = Platform.OS === "android" ? space.lg : 0;
-
-/**
  * 화면 틀(`DESIGN.md` §3·§10).
  *
  * `statusBar`·`safeArea` 는 시안의 고정값이다 — **구현에서는
@@ -98,24 +91,13 @@ export const layout = {
    * 시작하기」·일정 입력)이 시스템 버튼에 붙어 보였다. iOS 는 홈 인디케이터
    * 인셋(≈34)이 이 값보다 커서 영향받지 않는다. 하단에 붙는 것은 전부 이 하한을
    * 지난다 — Screen · TabScreen · ScheduleEditBar · ToastHost.
+   *
+   * ⚠⚠ **안드로이드는 내비게이션 바 윗변이 화면 끝이다** (2026-09-11 · 사용자 결정). 예전에는 인셋 위에
+   * 16(`androidNavGap`)을 **더 얹어** 숨을 뒀다 — 하단 독이 시스템 바에 딱 맞닿아 보이던 것을 띄우려고.
+   * 그 숨을 지웠다: 인셋(3버튼 내비 48 · 제스처 바 24)이 이미 시스템 바 자리를 비워 두므로 **그 윗변까지가
+   * 화면**이고 독은 거기 붙는다. iOS 는 바뀐 것이 없다 — 홈 인디케이터 인셋(≈34)이 그대로 아래 여백이다.
    */
   minBottomInset: 24,
-  /**
-   * **안드로이드에서만** 시스템 바 인셋 위에 더 얹는 숨.
-   *
-   * `minBottomInset` 은 인셋이 0 으로 오는 기기의 **하한**이라, 인셋이 제대로
-   * 오는 기기(3버튼 내비 48 · 제스처 바 24)에서는 아무 일도 하지 않는다 —
-   * 그 기기에서는 하단 독이 **시스템 바에 딱 맞닿아** 붙어 보였다(회고의
-   * 「다음」·「이야기 시작하기」·채팅 입력·일정 입력).
-   *
-   * iOS 는 홈 인디케이터 인셋(≈34)이 이미 그 숨을 만들어 준다 — 그래서 0 이다.
-   * 인셋과 **더한다**(하한이 아니다). 이 값을 지나는 곳: `Screen` ·
-   * `ScheduleEditBar`. 탭 화면 아래는 탭바가 면으로 이어져 있어 해당 없다.
-   *
-   * **키보드가 올라온 동안에도 같은 숨을 남긴다** — 그 일은 아래
-   * `keyboardGap` 이 맡는다(안드로이드에서는 값이 같다).
-   */
-  androidNavGap,
   /**
    * **키보드 윗변과 하단 독 사이의 숨.**
    *
@@ -129,13 +111,13 @@ export const layout = {
    * 우리는 「무엇이 포함됐는지」가 아니라 **윗변까지의 거리**만 쓰므로 두 경우 다
    * 같은 숨이 남는다. 줄의 유무를 감지하려 들면 그때부터 틀린다.
    *
-   * 안드로이드는 `androidNavGap`(16)이 이미 그 역할을 하고 있었다 — 값을 낮추면
-   * 실기기(Galaxy S25)에서 맞춰 둔 숨이 줄어들어 **큰 쪽**을 쓴다.
+   * 안드로이드도 같은 값이다. 예전에는 시스템 바 위에 얹던 숨(`androidNavGap` 16)과 **큰 쪽**을
+   * 썼는데, 그 숨은 2026-09-11 에 사라졌다(`minBottomInset` 머리말) — 키보드 위 숨은 그것과 무관하게 필요하다.
    *
    * 이 값을 지나는 넷: `ChatScaffold` · `ScheduleEditBar` · `BasicInfoEditor` ·
    * `BottomSheet`(이쪽은 KAV 를 안 쓰고 직접 얹는다).
    */
-  keyboardGap: Math.max(space.md, androidNavGap),
+  keyboardGap: space.md,
   /** 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 */
   scrollClearance: 76,
   /** 모든 탭 대상 최소 (아이콘이 작으면 hitSlop 으로 채운다) */

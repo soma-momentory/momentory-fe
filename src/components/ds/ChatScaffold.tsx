@@ -25,9 +25,8 @@ import { TopNavigation } from "./TopNavigation";
  * 가려진다. 그래서 두 플랫폼 모두 `padding` 으로 피한다.
  *
  * ⚠ **피하기만 하면 독이 키보드에 딱 붙는다.** `padding` 은 독의 아래를 키보드
- * 윗변에 **정확히** 맞춘다 — 키보드가 없을 때 있던 숨(안드로이드는
- * `layout.androidNavGap`, iOS 는 홈 인디케이터 인셋)이 키보드가 올라오는 순간
- * 사라진다. `keyboardVerticalOffset` 에 `layout.keyboardGap` 을 줘 키보드 윗변을
+ * 윗변에 **정확히** 맞춘다 — 키보드가 없을 때 있던 숨(iOS 는 홈 인디케이터 인셋)이
+ * 키보드가 올라오는 순간 사라진다. `keyboardVerticalOffset` 에 `layout.keyboardGap` 을 줘 키보드 윗변을
  * 그만큼 위로 친다. 예측 입력 줄(QuickType)이 있든 없든 같은 숨이 남는다 —
  * 그 줄은 OS 가 주는 키보드 프레임에 이미 포함돼 온다(`metrics.ts` `keyboardGap`).
  */
