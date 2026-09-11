@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 import { Button, Card, Icon, Screen, Text } from "@/components/ds";
-import { label as labelColor, primary, space, status, withAlpha } from "@/design/ds";
+import { label as labelColor, layout, primary, space, status, withAlpha } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
 import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
 import { useTodayContext } from "@/features/home/model/day";
@@ -181,6 +181,7 @@ const styles = StyleSheet.create({
   },
   field: { gap: space.xs },
 
-  dock: { gap: space.xs },
+  // 주 버튼과 보조 버튼 사이 — 같은 짝을 쓰는 화면이 전부 같은 값이다(`layout.dockActionGap`)
+  dock: { gap: layout.dockActionGap },
   secondary: { alignItems: "center" },
 });

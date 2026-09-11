@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { BottomSheet, Button, Icon, Text, WheelPicker } from "@/components/ds";
 import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
-import { background, hairline, label as labelColor, radius, space } from "@/design/ds";
+import { background, hairline, label as labelColor, layout, radius, space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { requestNotificationPermission } from "@/lib/notifications";
 import {
@@ -189,5 +189,7 @@ const styles = StyleSheet.create({
     ...hairline.neutral,
   },
   hint: { textAlign: "center" },
-  secondary: { alignItems: "center" },
+  // 주 버튼과의 사이는 같은 짝을 쓰는 화면과 같은 값이다(`layout.dockActionGap`) —
+  // 대화 독이 기본으로 주는 간격(`layout.keyboardGap` 과 같은 12)에서 그만큼 되당긴다
+  secondary: { alignItems: "center", marginTop: layout.dockActionGap - space.md },
 });

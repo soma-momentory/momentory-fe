@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
 import { Button, Card, Screen, Text, TopNavigation } from "@/components/ds";
-import { label as labelColor, space, text } from "@/design/ds";
+import { label as labelColor, layout, space, text } from "@/design/ds";
 import { updateDiaryBody } from "@/features/diary/data/diaryApi";
 import { type EmotionId } from "@/features/emotion/model/emotion";
 import { useDiary } from "@/features/diary/model/diary";
@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
   schedules: { gap: space.md },
   schedulesTitle: { paddingLeft: space.xs },
 
-  dock: { gap: space.xs },
+  // 주 버튼과 보조 버튼 사이 — 같은 짝을 쓰는 화면이 전부 같은 값이다(`layout.dockActionGap`)
+  dock: { gap: layout.dockActionGap },
   secondary: { alignItems: "center" },
 });
