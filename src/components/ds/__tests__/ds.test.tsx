@@ -551,15 +551,13 @@ describe("작은 원 — 반지름을 크기의 절반으로 **직접** 준다",
   });
 
   /**
-   * 기록 없는 날의 원(`WeekEmptyDot`). 리포트만 `EmotionDot` 의 테두리 있는 원을 빌려 써서
-   * 홈과 달라 보였다(2026-09-11) — **테두리는 오늘에만 선다.**
+   * 기록 없는 날의 원(`WeekEmptyDot`) — **빈 칸은 전부 같다.** 오늘 칸에만 옅은 링을 두르던 것을
+   * 지웠다(2026-09-11 · 사용자 요청): 일기를 지운 날이 그 링 때문에 다른 빈 칸과 달라 보였다.
    */
-  it("WeekEmptyDot 은 테두리가 없다 — 오늘일 때만 옅은 링이 선다", async () => {
-    const plain = await render(<WeekEmptyDot />);
-    const today = await render(<WeekEmptyDot today />);
+  it("WeekEmptyDot 은 테두리가 없다 — 오늘도 마찬가지다", async () => {
+    const { toJSON } = await render(<WeekEmptyDot />);
 
-    expect(JSON.stringify(plain.toJSON())).not.toContain("borderWidth");
-    expect(JSON.stringify(today.toJSON())).toContain('"borderWidth":1.5');
+    expect(JSON.stringify(toJSON())).not.toContain("borderWidth");
   });
 
   it("EmotionPebble 도 지름의 절반을 쓴다 — 999 가 아니다", async () => {

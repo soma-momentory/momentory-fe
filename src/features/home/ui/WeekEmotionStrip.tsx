@@ -10,6 +10,10 @@ import type { WeekDay } from "@/features/report/model/report";
 /**
  * 이번 주 감정 — 홈의 두 번째 칸(`Home Sample.dc.html`).
  *
+ * ⚠ **빈 칸은 이유와 상관없이 전부 같다**(2026-09-11 · 사용자 요청). 기록 없는 **오늘** 칸에 옅은 링을
+ * 둘렀었는데, **일기를 지운 날**이 그 링 때문에 다른 빈 칸과 달라 보였다 — 「지웠는데 뭔가 남았다」로
+ * 읽힌다. 오늘이 어디인지는 **요일 글자**(`label.strong`)가 말한다.
+ *
  * **막대도 비율도 아니다.** 하루에 **동그라미 하나**, 그날 남긴 감정의 **55% 틴트
  * 면 + 원색 링**(`DESIGN.md` §1 「도트·캡슐은 55% 틴트 + 원색 1.5px 링」)이고,
  * 기록이 없는 날은 옅은 면으로 자리만 지킨다. 세거나 평가하지 않는다.
@@ -51,7 +55,7 @@ import type { WeekDay } from "@/features/report/model/report";
  */
 type Props = {
   days: readonly WeekDay[];
-  /** 오늘 — 아직 아무것도 없어도 테두리로 자리를 알린다 */
+  /** 오늘 — 요일 글자를 진하게 세워 자리를 알린다 */
   today: string;
 };
 
@@ -122,7 +126,7 @@ export function WeekEmotionStrip({ days, today }: Props) {
                 {id != null ? (
                   <EmotionPebble id={id} size={DOT_SIZE} />
                 ) : (
-                  <WeekEmptyDot size={DOT_SIZE} today={isToday} />
+                  <WeekEmptyDot size={DOT_SIZE} />
                 )}
               </SelectLift>
               <Text
