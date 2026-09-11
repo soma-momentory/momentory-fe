@@ -167,6 +167,22 @@ export const overlay = {
  */
 export const cardFrame = { stroke: "#8B7D70", ornament: "#BDB2A5" } as const;
 
+/**
+ * **회고 대화 화면의 러그** (2026-09-11 · 사용자 요청) — 바바가 앉고 화면 바닥까지 채우는 큰 둥근 러그.
+ *
+ * **아이보리 단색**이다. 흙갈색(`#C49A72`) → 오트·라테 빛(`#D9B991`) → 아이보리(`#EFE4CC` · 반점·두께 띠)를
+ * 거쳐 질감 없이 한 색으로 돌아왔다. 윤곽을 그려 주던 두께 띠가 빠져서 **`#EFE4CC` 에서 한 단 짙게** 잡았다 —
+ * 그 값은 화면 바탕과 1.15 라 러그의 둥근 윗변이 거의 안 보인다(지금 1.20).
+ *
+ * - `fill` 러그 면. 독의 오류 한 줄(`label.neutral`)이 이 위에 얹혀 4.88 — 러그를 더 짙게 바꾸면
+ *   `contrast.test.ts` 가 먼저 깨진다
+ * - `shadow` 빈백이 러그에 드리운 **그림자** — 바바가 러그 위에 앉아 보이게. 장식 전용
+ */
+export const retroRug = {
+  fill: "#EBDFC5",
+  shadow: "rgba(122,90,60,0.18)",
+} as const;
+
 /** 배경 격자 — 32px 정격자. 기기 프레임에 고정되고 스크롤과 무관하다 */
 export const grid = { stroke: `rgba(${WARM},0.07)`, size: 32 } as const;
 

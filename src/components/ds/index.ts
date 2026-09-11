@@ -30,7 +30,7 @@
  * 재사용한다** — 시안에선 두 파일에 각각 인라인이었다(`EXPORT_MANIFEST` §4).
  */
 export { Text } from "./Text";
-export { Screen } from "./Screen";
+export { Screen, useScreenBottomInset } from "./Screen";
 export { GridBackground } from "./GridBackground";
 export { Button, type ButtonSize, type ButtonVariant } from "./Button";
 export { IconButton } from "./IconButton";
@@ -54,7 +54,7 @@ export { ViewSwitcher, type ViewOption } from "./ViewSwitcher";
 export { ChatScaffold } from "./ChatScaffold";
 export { ChoiceGrid, type Choice } from "./ChoiceGrid";
 export { ChatBubble, TypingBubble } from "./ChatBubble";
-export { ChatDock } from "./ChatDock";
+export { CHAT_DOCK_HEIGHT, ChatDock } from "./ChatDock";
 export { Slider } from "./Slider";
 export { singleLineInput } from "./singleLineInput";
 export { Spinner } from "./Spinner";

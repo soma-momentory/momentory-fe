@@ -42,7 +42,21 @@ type Props = {
   grid?: boolean;
   /** Safe Area 를 적용할 변. 탭바가 있는 화면은 아래를 탭바가 맡는다 */
   edges?: readonly ("top" | "bottom" | "left" | "right")[];
+  /**
+   * 격자 위·콘텐츠 아래에 까는 **장면 한 겹**(회고 대화의 러그). 패딩·Safe Area 밖까지 화면 전체에
+   * 깔리고 눌리지 않는다. 키보드를 따라 움직이지 않는다.
+   */
+  backdrop?: ReactNode;
 };
+
+/**
+ * `Screen` 이 아래에 주는 패딩과 **같은 값** — 화면 바닥에 맞춰 그리는 배경(`backdrop`)이
+ * 콘텐츠의 바닥선을 알아야 할 때 쓴다. 식을 두 곳에 적으면 한쪽만 고쳐졌을 때 어긋난다.
+ */
+export function useScreenBottomInset() {
+  const insets = useSafeAreaInsets();
+  return Math.max(insets.bottom, layout.minBottomInset);
+}
 
 export function Screen({
   children,
@@ -50,8 +64,10 @@ export function Screen({
   padded = true,
   grid = true,
   edges = ["top", "bottom"],
+  backdrop,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const bottomInset = useScreenBottomInset();
   const on = (edge: "top" | "bottom" | "left" | "right") => edges.includes(edge);
 
   // 좌우는 화면 패딩(20)과 인셋을 **더한다** — 둘 중 하나로 덮으면 노치 기기에서
@@ -59,7 +75,7 @@ export function Screen({
   const side = padded ? layout.screenPadding : 0;
   const safe = {
     paddingTop: on("top") ? insets.top : 0,
-    paddingBottom: on("bottom") ? Math.max(insets.bottom, layout.minBottomInset) : 0,
+    paddingBottom: on("bottom") ? bottomInset : 0,
     paddingLeft: side + (on("left") ? insets.left : 0),
     paddingRight: side + (on("right") ? insets.right : 0),
   };
@@ -67,6 +83,11 @@ export function Screen({
   return (
     <View style={[styles.root, { backgroundColor: background[surface] }]}>
       {grid ? <GridBackground /> : null}
+      {backdrop != null ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {backdrop}
+        </View>
+      ) : null}
       <View style={[styles.body, safe]}>{children}</View>
     </View>
   );

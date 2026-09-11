@@ -38,6 +38,7 @@ export {
   overlay,
   pond,
   primary,
+  retroRug,
   scheduleDot,
   secondary,
   selectedTint,

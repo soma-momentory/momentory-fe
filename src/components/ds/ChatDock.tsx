@@ -35,6 +35,12 @@ import { Icon } from "./icons/Icon";
  * 44 이고(`ds.test` 가 고정한다), 대화 중 가장 자주 눌리는 버튼을 최소 히트
  * 영역 아래로 내릴 이유가 없다. 알약 높이가 4 커지는 것이 대가다.
  */
+/**
+ * 한 줄일 때 독의 높이 — 보내기(44) + 위아래 여백 + 테두리. 대화 화면이 그림을 **입력창 위에**
+ * 앉힐 때 이 값만큼 띄운다(`ChatScaffold` 의 `companionLift`). 여러 줄로 자라도 그림은 따라 뜨지 않는다.
+ */
+export const CHAT_DOCK_HEIGHT = layout.minTouch + space.xs * 2 + StyleSheet.hairlineWidth * 2;
+
 type Props = {
   value: string;
   onChangeText: (value: string) => void;

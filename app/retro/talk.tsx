@@ -1,7 +1,7 @@
 import { track } from "@/features/analytics";
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 
 import {
   Button,
@@ -15,6 +15,7 @@ import {
 import {
   background,
   label as labelColor,
+  layout,
   line,
   primary,
   radius,
@@ -38,6 +39,8 @@ import {
   type TurnInput,
 } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
+import { RETRO_BABA_LEFT, RetroBaba } from "@/features/retro/ui/RetroBaba";
+import { RETRO_BABA_LIFT } from "@/features/retro/ui/RetroRug";
 
 /**
  * 회고 대화 (채팅흐름_v2) — **서버가 주도한다.** 화면은 `startRetro`/`sendTurn` 을 부르고 응답의
@@ -48,6 +51,16 @@ import { useRetro } from "@/features/retro/model/retro";
  * 행동) → 종료. 감정을 시작 시 고르지 않으므로 마운트하면 바로 시작한다.
  *
  * 지키는 것: 지난 버블을 지우지 않는다 · 오류는 한 줄로 흡수(모달 금지) · 진행률/숫자 압박 없음.
+ *
+ * ## 바바가 왼쪽 아래에 앉아 있다 (2026-09-11 · 사용자 요청)
+ *
+ * 대화는 바바의 **머리 위에서 끝난다** — 새 질문이 머리 위에 뜨고, 내 답은 지금처럼 그 질문 바로
+ * 밑에 쌓인다. 바바는 입력창 위에 떠 앉는다. 선택지가 뜨면 독이 자라며 바바를 아래부터 덮는다. 입력창은
+ * 키보드 위로 올라가고 바바는 제자리다.
+ *
+ * ⚠ **러그(`RetroRug`)는 지금 깔지 않는다**(2026-09-11 · 사용자 요청으로 빼 보는 중). 컴포넌트는 남겨 뒀다 —
+ * 되돌리려면 `ChatScaffold` 에 `backdrop={<RetroRug />}` 한 줄이면 된다. 바바를 띄우는 높이는 러그와 함께
+ * 맞춘 값을 그대로 쓴다.
  */
 
 /** 실패 사유 → 화면 한 줄. 사용자가 할 수 있는 일이 같으면 문구도 같다 */
@@ -65,6 +78,12 @@ const FAILURE_MESSAGES: Record<RetroFailureCode, string> = {
 /** 감정·바람은 최대 2개까지 고른다 */
 const MAX_PICK = 2;
 
+/**
+ * 독에 앉은 선택지가 차지할 수 있는 화면 높이의 몫 — 넘치면 안에서 스크롤된다.
+ * 바람 추천처럼 설명 달린 줄이 여럿이면 `직접 적기` 입력창·키보드와 겹쳐 대화가 사라진다.
+ */
+const OPTIONS_MAX_HEIGHT_RATIO = 0.4;
+
 export default function RetroTalk() {
   const nickname = useProfile((s) => s.nickname);
   const sessionId = useRetro((s) => s.sessionId);
@@ -74,6 +93,7 @@ export default function RetroTalk() {
   const applyReply = useRetro((s) => s.applyReply);
   const addMyTurn = useRetro((s) => s.addMyTurn);
   const schedules = useDay((s) => s.schedules);
+  const { height: windowHeight } = useWindowDimensions();
 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -208,12 +228,56 @@ export default function RetroTalk() {
   // 독: 「보내기」를 보일지. 후보 스텝은 하나 골랐을 때만, 그 외(분기점·체크인)는 옵션이 있으면 늘.
   const showOptions = hasOptions && (!candidateStep || pickedIds.length > 0);
 
+  const optionList =
+    hasOptions && options != null ? (
+      isEmotionChoice(options) ? (
+        // 감정은 짧은 낱말이라 줄로 펴면 칸이 글자에 비해 너무 길다 — 칩으로 세우고
+        // 감정끼리는 폭을 맞춘다(「화남」도 「행복함」과 같은 칸).
+        <View style={styles.chips}>
+          {options.map((o) => (
+            <Underlay key={o.id} shape="chip">
+              <Chip
+                label={o.label}
+                selected={pickedIds.includes(o.id)}
+                onPress={() => toggle(o)}
+                style={EMOTION_NAMES.has(o.label) ? styles.emotionChip : undefined}
+              />
+            </Underlay>
+          ))}
+        </View>
+      ) : phase === PHASE_EMOTION_EXPLORATION || rich(options) ? (
+        <View style={styles.rows}>
+          {options.map((o) => (
+            <OptionRow
+              key={o.id}
+              option={o}
+              selected={pickedIds.includes(o.id)}
+              onPress={() => toggle(o)}
+            />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.chips}>
+          {options.map((o) => (
+            <Underlay key={o.id} shape="chip">
+              <Chip label={o.label} selected={pickedIds.includes(o.id)} onPress={() => toggle(o)} />
+            </Underlay>
+          ))}
+        </View>
+      )
+    ) : null;
+
   return (
     <ChatScaffold
       leading="close"
       onLeadingPress={() => router.replace("/home")}
+      companion={<RetroBaba />}
+      companionLift={RETRO_BABA_LIFT}
+      companionLeft={RETRO_BABA_LEFT}
       dock={
         <RetroDock
+          optionList={optionList}
+          optionsMaxHeight={windowHeight * OPTIONS_MAX_HEIGHT_RATIO}
           noSession={noSession}
           startTerminal={startTerminal}
           error={error}
@@ -241,48 +305,6 @@ export default function RetroTalk() {
         </ChatBubble>
       ))}
 
-      {/* 선택지는 질문 바로 아래, 대화 안에 붙는다 — `직접 적기` 입력 중에도 계속 보인다.
-          감정 탐색(감정·바람·작은 행동)은 모두 바람 추천과 같은 줄(OptionRow) 형태로 통일한다. */}
-      {hasOptions && options != null ? (
-        isEmotionChoice(options) ? (
-          // 감정은 짧은 낱말이라 줄로 펴면 칸이 글자에 비해 너무 길다 — 칩으로 세우고
-          // 감정끼리는 폭을 맞춘다(「화남」도 「행복함」과 같은 칸).
-          <View style={styles.chips}>
-            {options.map((o) => (
-              <Chip
-                key={o.id}
-                label={o.label}
-                selected={pickedIds.includes(o.id)}
-                onPress={() => toggle(o)}
-                style={EMOTION_NAMES.has(o.label) ? styles.emotionChip : undefined}
-              />
-            ))}
-          </View>
-        ) : phase === PHASE_EMOTION_EXPLORATION || rich(options) ? (
-          <View style={styles.rows}>
-            {options.map((o) => (
-              <OptionRow
-                key={o.id}
-                option={o}
-                selected={pickedIds.includes(o.id)}
-                onPress={() => toggle(o)}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.chips}>
-            {options.map((o) => (
-              <Chip
-                key={o.id}
-                label={o.label}
-                selected={pickedIds.includes(o.id)}
-                onPress={() => toggle(o)}
-              />
-            ))}
-          </View>
-        )
-      ) : null}
-
       {pending ? <TypingBubble /> : null}
     </ChatScaffold>
   );
@@ -303,6 +325,17 @@ const EMOTION_NAMES = new Set<string>(EMOTIONS.map((e) => e.name));
 const isEmotionChoice = (options: readonly ReplyOption[]) =>
   options.some((o) => EMOTION_NAMES.has(o.label));
 
+/**
+ * 선택지 뒤에 까는 **불투명한 바탕.** 선택 면이 초록 18% 틴트(`selectedTint`)라 반투명한데, 독 뒤로 바바의
+ * 러그가 깔려 있어 고른 칩에 러그가 비쳐 색이 달라졌다(2026-09-11 실기기). 바탕을 칩과 같은 모양으로 한 겹
+ * 깔면 뒤에 무엇이 있든(바바 · 러그) 같은 색으로 보인다.
+ */
+function Underlay({ shape, children }: { shape: "chip" | "row"; children: ReactNode }) {
+  return (
+    <View style={shape === "chip" ? styles.underlayChip : styles.underlayRow}>{children}</View>
+  );
+}
+
 function OptionRow({
   option,
   selected,
@@ -313,31 +346,36 @@ function OptionRow({
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={[styles.row, selected ? styles.rowOn : styles.rowOff]}
-    >
-      {option.hint != null ? (
-        <Text variant="label2" color={labelColor.alternative}>
-          {option.hint}
+    <Underlay shape="row">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ selected }}
+        onPress={onPress}
+        style={[styles.row, selected ? styles.rowOn : styles.rowOff]}
+      >
+        {option.hint != null ? (
+          <Text variant="label2" color={labelColor.alternative}>
+            {option.hint}
+          </Text>
+        ) : null}
+        <Text variant="body1" color={labelColor.strong}>
+          {option.label}
         </Text>
-      ) : null}
-      <Text variant="body1" color={labelColor.strong}>
-        {option.label}
-      </Text>
-      {option.description != null ? (
-        <Text variant="caption1" color={labelColor.neutral}>
-          {option.description}
-        </Text>
-      ) : null}
-    </Pressable>
+        {option.description != null ? (
+          <Text variant="caption1" color={labelColor.neutral}>
+            {option.description}
+          </Text>
+        ) : null}
+      </Pressable>
+    </Underlay>
   );
 }
 
-/** 하단 독 — 이번 턴에 무엇을 할 수 있는지 하나만 보여준다 */
+/** 하단 독 — 이번 턴의 선택지와, 무엇을 할 수 있는지 하나만 보여준다 */
 type DockProps = {
+  /** 이번 턴의 선택지 — 독 맨 위에 앉아 바바를 덮는다. `직접 적기` 입력 중에도 계속 보인다 */
+  optionList: ReactNode;
+  optionsMaxHeight: number;
   noSession: boolean;
   startTerminal: boolean;
   error: string | null;
@@ -364,9 +402,16 @@ function RetroDock(p: DockProps) {
     if (p.error != null) {
       return (
         <>
-          <Text variant="caption1" color={labelColor.neutral}>
-            {p.error}
-          </Text>
+          {/* 안내 한 줄은 body2 — caption1(12)은 「오늘은 이미 회고를 마쳤어요」가 너무 작게 읽혔다
+              (2026-09-11 · 사용자 요청). 이 화면에서 할 수 있는 일을 알려 주는 유일한 글이다.
+              자리는 **바바(빈백 아랫단)와 버튼 윗변의 한가운데** — 칸을 그 사이 전체로 펴고(독 간격까지
+              음수 여백으로 먹는다) 글을 세로 가운데에 둔다. 가로도 가운데다 — 두 줄로 접혀도 줄마다 가운데로
+              선다. 좁은 기기에서 두 줄로 접히면 칸이 자란다 */}
+          <View style={styles.startError}>
+            <Text variant="body2" color={labelColor.neutral} style={styles.startErrorText}>
+              {p.error}
+            </Text>
+          </View>
           {p.startTerminal ? (
             <Button label="홈으로 돌아가기" fill onPress={p.onGoHome} />
           ) : (
@@ -380,8 +425,20 @@ function RetroDock(p: DockProps) {
 
   return (
     <>
+      {p.optionList != null ? (
+        <ScrollView
+          style={{ maxHeight: p.optionsMaxHeight }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          // 선택지가 짧으면 스크롤할 것이 없다 — 튕김으로 독이 흔들려 보이지 않게
+          bounces={false}
+        >
+          {p.optionList}
+        </ScrollView>
+      ) : null}
+
       {p.error != null ? (
-        <Text variant="caption1" color={labelColor.neutral}>
+        <Text variant="body2" color={labelColor.neutral}>
           {p.error}
         </Text>
       ) : null}
@@ -389,9 +446,14 @@ function RetroDock(p: DockProps) {
       {p.ended ? (
         <Button label="홈으로 돌아가기" fill onPress={() => router.replace("/home")} />
       ) : p.safetyHold && !p.resuming ? (
+        /* 위기 안내의 두 갈래는 **일기 저장 화면(`draft`)과 같은 배치**다(2026-09-11 · 사용자 요청):
+           주 행동은 채운 버튼, 보조는 그 아래 **작은 텍스트 버튼이 가운데**. 같은 모양의 갈림길이
+           화면마다 다르게 서 있으면 어느 쪽이 주 행동인지 매번 다시 읽어야 한다 */
         <View style={styles.holdActions}>
           <Button label="홈으로 돌아가기" fill onPress={() => router.replace("/home")} />
-          <Button label="이어서 얘기하기" variant="text" fill onPress={p.onContinue} />
+          <View style={styles.holdSecondary}>
+            <Button label="이어서 얘기하기" variant="text" size="small" onPress={p.onContinue} />
+          </View>
         </View>
       ) : p.done ? (
         <Button label="일기 확인하러 가기" fill onPress={() => router.push("/retro/draft")} />
@@ -420,7 +482,29 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, alignSelf: "flex-start" },
   // 감정끼리 폭을 맞춘다 — 「화남」(2글자)도 「행복함」(3글자)과 같은 칸이 되게.
   emotionChip: { minWidth: size.chip.emotionMinWidth },
-  holdActions: { gap: space.xs },
+  /**
+   * 위기 안내의 두 버튼 — 「이어서 얘기하기의 위아래 공간을 각각 반으로」(2026-09-11 · 사용자 요청).
+   *
+   * - **위**(주 버튼과의 사이): 12 → **6**(`layout.dockActionGap` · 같은 짝을 쓰는 화면이 전부 이 값이다)
+   * - **아래**: 화면이 스스로 내려앉았다 — 안드로이드에서 시스템 바 위에 얹던 한 뼘(16)을 같은 날
+   *   지웠다(`metrics.ts` `minBottomInset` 머리말). 그래서 여기서 **따로 파고들지 않는다**
+   *
+   * ⚠⚠ **Safe Area 패딩 전체의 절반을 먹으면 안 된다.** 그 값에는 **시스템 내비게이션 바(48)** 가 들어
+   * 있어서, 절반만 파고들어도 보조 버튼이 내비 바 밑으로 들어가 글자가 가렸다(2026-09-11 실기기).
+   *
+   */
+  holdActions: { gap: layout.dockActionGap },
+  // `draft` 의 `secondary` 와 같은 값 — 보조 버튼은 가운데 선다
+  holdSecondary: { alignItems: "center" },
+  startError: {
+    justifyContent: "center",
+    // 바바 아랫단(독 바닥에서 RETRO_BABA_LIFT)부터 버튼 윗변(size.button.large)까지
+    minHeight: RETRO_BABA_LIFT - size.button.large,
+    marginBottom: -space.md,
+  },
+  startErrorText: { textAlign: "center" },
+  underlayChip: { borderRadius: radius.full, backgroundColor: background.elevated },
+  underlayRow: { borderRadius: radius.medium, backgroundColor: background.elevated },
   rows: { gap: space.sm },
   // 세로 패딩을 줄여 칸 높이를 낮춘다(바람 단계처럼 선택지가 많을 때 목록이 길어지지 않게)
   row: {

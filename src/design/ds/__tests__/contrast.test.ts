@@ -1,4 +1,13 @@
-import { background, emotion, interaction, label, primary, status, withAlpha } from "@/design/ds";
+import {
+  background,
+  emotion,
+  interaction,
+  label,
+  primary,
+  retroRug,
+  status,
+  withAlpha,
+} from "@/design/ds";
 import { EMOTIONS } from "@/features/emotion/model/emotion";
 
 /**
@@ -121,6 +130,16 @@ describe("감정 9색", () => {
   it("원색 도트는 3:1 을 못 넘는다 — 그래서 이름 없는 감정 도트를 만들지 않는다", () => {
     const below = EMOTIONS.filter((e) => worstOn(emotion[e.id]) < 3);
     expect(below.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * 회고 대화의 **러그**(아이보리 면) — 화면 바닥까지 깔려 독의 오류 한 줄이 늘 그 위에 얹힌다.
+ * 러그 색을 짙게 바꾸면 여기가 먼저 깨진다(갈색 러그였을 때는 `neutral` 이 2.5 까지 떨어졌다).
+ */
+describe("회고 러그 위의 글자", () => {
+  it("오류 한 줄(label.neutral)은 러그 면에서 4.5 를 넘는다", () => {
+    expect(contrast(label.neutral, retroRug.fill)).toBeGreaterThanOrEqual(4.5);
   });
 });
 
