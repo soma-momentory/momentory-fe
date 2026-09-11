@@ -71,6 +71,8 @@ type Props = {
   /** 지금 단계의 손짓 — 톡 · 잠시 누르기 */
   input: PondInput;
   onFound: () => void;
+  /** 잠시 누르기를 다 채우기 전에 손을 뗐다 — 화면이 「조금 더 오래」를 한 번 더 말한다 */
+  onHoldCancel?: () => void;
   /** 3·2·1 을 다 지났다 — 손짓을 그만 받고 연못만 남는다 */
   finished?: boolean;
 };
@@ -78,7 +80,7 @@ type Props = {
 type Ripple = { id: number; x: number; y: number; step: SensePondStepId };
 type Size = { width: number; height: number };
 
-export function PondScene({ step, point, input, onFound, finished = false }: Props) {
+export function PondScene({ step, point, input, onFound, onHoldCancel, finished = false }: Props) {
   const [size, setSize] = useState<Size | null>(null);
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [holdAt, setHoldAt] = useState<PondSpot | null>(null);
@@ -168,11 +170,12 @@ export function PondScene({ step, point, input, onFound, finished = false }: Pro
     }, pondMotion.hold);
   };
 
-  /** 누르다 말았다 — 아무 일도 없었던 것으로 (빛은 스스로 사그라든다) */
+  /** 누르다 말았다 — 세지 않는다. 빛은 사그라들고, 화면이 더 오래 누르라고 한 번 더 말한다 */
   const pressOut = () => {
     if (holdTimer.current == null) return;
     clearHold();
     setHoldAt(null);
+    onHoldCancel?.();
   };
 
   /** 낭독기·스위치 제어의 활성화 — 잠시 누르기를 대신한다 */

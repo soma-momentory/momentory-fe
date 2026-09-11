@@ -28,8 +28,10 @@ export type WeekDay = {
   /** 「월」…「일」 */
   label: string;
   date: string;
-  /** 그날 일기의 감정 <b>전부</b>. 비어 있으면 「기록 없음」 칸이다 */
+  /** 그날 일기의 감정 <b>전부</b>. 비어 있으면 「기록 없음」이거나 감정 없이 끝난 일기다 */
   emotions: EmotionId[];
+  /** 그날 일기가 있는가 — 감정이 비어도 썼으면 `true`(빈 조약돌 칸) */
+  written: boolean;
 };
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
@@ -50,6 +52,7 @@ export function weekDays(diaries: readonly Diary[], start: string, end: string):
       label: WEEKDAYS[day.getDay()] ?? "",
       date: iso,
       emotions: byDate.get(iso)?.emotions ?? [],
+      written: byDate.has(iso),
     };
   });
 }

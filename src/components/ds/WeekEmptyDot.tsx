@@ -1,6 +1,6 @@
 import { View, type ViewStyle } from "react-native";
 
-import { fill, line } from "@/design/ds";
+import { fill } from "@/design/ds";
 
 /**
  * 「이번 주 감정」의 **기록이 없는 날** — 홈의 주간 줄과 리포트의 7일 흐름이 함께 쓴다
@@ -17,19 +17,20 @@ import { fill, line } from "@/design/ds";
  * ⚠ `EmotionDot` 은 고치지 않았다 — 그 도트는 일기 줄의 작은 표식으로도 쓰이고, 거기서는
  * 테두리가 틴트 면을 떠받친다.
  *
- * ## 테두리는 「오늘」에만 선다
+ * ## 「오늘」에도 링을 두르지 않는다 (2026-09-11 · 사용자 요청)
  *
- * 홈은 아직 기록이 없는 **오늘** 칸을 옅은 링으로 알린다(`today`). 리포트는 지난 주도
- * 넘겨보는 화면이라 「오늘」을 따로 말하지 않는다 — 넘기지 않는다.
+ * 홈은 기록 없는 **오늘** 칸에 옅은 링을 둘렀었다. 그런데 **일기를 지운 날**(대개 오늘)이 그 링 때문에
+ * 다른 빈 칸과 달라 보였다 — 「지웠는데 뭔가 남아 있다」로 읽힌다. 빈 칸은 **이유와 상관없이 전부 같다**:
+ * 아직 안 쓴 날도, 썼다가 지운 날도 같은 원 하나다.
+ *
+ * 오늘이 어디인지는 **요일 글자**가 말한다(`WeekEmotionStrip` — 오늘만 `label.strong`).
  */
 type Props = {
   /** 지름 — 홈·리포트 모두 26 */
   size?: number;
-  /** 아직 기록이 없는 오늘 — 옅은 링으로 자리를 알린다(홈만 쓴다) */
-  today?: boolean;
 };
 
-export function WeekEmptyDot({ size = 26, today = false }: Props) {
+export function WeekEmptyDot({ size = 26 }: Props) {
   // 반지름은 **지름의 절반**이다 — `radius.full`(999)을 쓰지 않는다(`EmotionDot` 주석의
   // 안드로이드 New Architecture 사정이 그대로 적용된다)
   const box: ViewStyle = {
@@ -40,10 +41,6 @@ export function WeekEmptyDot({ size = 26, today = false }: Props) {
   };
 
   return (
-    <View
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={today ? [box, { borderWidth: 1.5, borderColor: line.normal }] : box}
-    />
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={box} />
   );
 }

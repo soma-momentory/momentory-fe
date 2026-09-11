@@ -5,7 +5,7 @@ import { StyleSheet, View } from "react-native";
 
 import { Button, Card, Icon, Text } from "@/components/ds";
 import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
-import { label as labelColor, primary, space } from "@/design/ds";
+import { label as labelColor, layout, primary, space } from "@/design/ds";
 import { syncDeviceCalendar } from "@/features/calendar/model/foregroundSync";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { requestCalendarAccess } from "@/lib/calendar";
@@ -94,5 +94,7 @@ const styles = StyleSheet.create({
   // 질문 버블과 같은 폭으로 대화 안에 앉는다
   notice: { alignSelf: "flex-start", maxWidth: 288, gap: space.sm },
   noticeHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  secondary: { alignItems: "center" },
+  // 주 버튼과의 사이는 같은 짝을 쓰는 화면과 같은 값이다(`layout.dockActionGap`) —
+  // 대화 독이 기본으로 주는 간격(`layout.keyboardGap` 과 같은 12)에서 그만큼 되당긴다
+  secondary: { alignItems: "center", marginTop: layout.dockActionGap - space.md },
 });

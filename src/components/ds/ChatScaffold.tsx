@@ -25,9 +25,8 @@ import { TopNavigation } from "./TopNavigation";
  * 가려진다. 그래서 두 플랫폼 모두 `padding` 으로 피한다.
  *
  * ⚠ **피하기만 하면 독이 키보드에 딱 붙는다.** `padding` 은 독의 아래를 키보드
- * 윗변에 **정확히** 맞춘다 — 키보드가 없을 때 있던 숨(안드로이드는
- * `layout.androidNavGap`, iOS 는 홈 인디케이터 인셋)이 키보드가 올라오는 순간
- * 사라진다. `keyboardVerticalOffset` 에 `layout.keyboardGap` 을 줘 키보드 윗변을
+ * 윗변에 **정확히** 맞춘다 — 키보드가 없을 때 있던 숨(iOS 는 홈 인디케이터 인셋)이
+ * 키보드가 올라오는 순간 사라진다. `keyboardVerticalOffset` 에 `layout.keyboardGap` 을 줘 키보드 윗변을
  * 그만큼 위로 친다. 예측 입력 줄(QuickType)이 있든 없든 같은 숨이 남는다 —
  * 그 줄은 OS 가 주는 키보드 프레임에 이미 포함돼 온다(`metrics.ts` `keyboardGap`).
  */
@@ -41,15 +40,60 @@ type Props = {
   children: ReactNode;
   /** 하단 독 — 입력·헬퍼·CTA */
   dock?: ReactNode;
+  /**
+   * 화면 **왼쪽 아래에 고정으로 앉는 그림**(회고의 바바). 대화는 그림의 머리 위에서 끝난다 —
+   * 그래서 마지막 질문이 머리 위에 뜬다. 독이 자라면(선택지) 그 위를 덮는다.
+   *
+   * ⚠ **키보드·독을 따라 움직이지 않는다.** 입력창은 키보드 위로 올라가고, 그림은 제자리에서
+   * 키보드·독에 덮일 뿐이다.
+   */
+  companion?: ReactNode;
+  /**
+   * 그림을 층 바닥에서 **얼마나 띄워 앉히나** — 입력창 높이만큼 주면 그림이 입력창 **위에** 앉는다.
+   * 독 높이를 재서 따라가지 않고 고정값을 받는다: 선택지가 떠 독이 커질 때 그림이 들썩이면 안 된다.
+   */
+  companionLift?: number;
+  /**
+   * 그림의 왼쪽 끝 — Screen 의 좌우 패딩(20) 안쪽이 0 이다. **음수면 패딩 밖으로** 나가 화면 끝에 가까워진다.
+   */
+  companionLeft?: number;
+  /** 화면 전체에 까는 장면 한 겹 — `Screen` 의 `backdrop` 으로 넘긴다(회고 대화의 러그) */
+  backdrop?: ReactNode;
 };
 
-export function ChatScaffold({ leading, onLeadingPress, trailing, children, dock }: Props) {
+export function ChatScaffold({
+  leading,
+  onLeadingPress,
+  trailing,
+  children,
+  dock,
+  companion,
+  companionLift = 0,
+  companionLeft = 0,
+  backdrop,
+}: Props) {
   const scroll = useRef<ScrollView>(null);
   /**
    * 대화 안의 슬라이더가 도는 동안 **세로 스크롤을 멈춘다**(`scrollLock.ts`).
    * 대각선으로 끌면 값이 바뀌면서 대화가 같이 밀려 올라가던 자리다.
    */
   const [scrollLocked, setScrollLocked] = useState(false);
+
+  /**
+   * 그림이 독 위로 **얼마나 솟아 있나** — 대화가 그만큼 비켜서 머리 위에서 끝난다.
+   *
+   * 셋을 재서 푼다: 대화 층 전체 높이 · 독의 윗변 · 그림의 높이(+ 띄운 높이). 독의 윗변은 키보드 회피
+   * 패딩과 독 자신의 높이(선택지·여러 줄 입력)를 **이미 반영한** 자리라, 키보드가 올라오거나
+   * 선택지가 늘면 비킬 몫이 저절로 줄어 0 이 된다(그림이 다 덮였다).
+   */
+  const [layerHeight, setLayerHeight] = useState(0);
+  const [dockTop, setDockTop] = useState(0);
+  const [companionHeight, setCompanionHeight] = useState(0);
+  const dockFromBottom = dock != null ? layerHeight - dockTop : 0;
+  const clearance =
+    companion != null && layerHeight > 0
+      ? Math.max(0, companionLift + companionHeight - dockFromBottom)
+      : 0;
 
   /**
    * 대화의 **맨 아래**로 — 새 질문이 입력창 바로 위에 오게 한다.
@@ -88,16 +132,37 @@ export function ChatScaffold({ leading, onLeadingPress, trailing, children, dock
   }, []);
 
   return (
-    <Screen>
+    <Screen backdrop={backdrop}>
       {leading != null || trailing != null ? (
         <TopNavigation leading={leading} onLeadingPress={onLeadingPress} trailing={trailing} />
       ) : null}
 
+      {/*
+       * ⚠⚠ **`KeyboardAvoidingView` 는 Screen 의 직계 자식으로 둔다.** 키보드와 겹친 높이를
+       * 자기 `onLayout` 의 `y + height` 로 재는데 그 `y` 는 **부모 기준**이다 — 사이에 View 를
+       * 하나 끼우면 `y` 가 상단바 높이(56)만큼 줄어 독이 그만큼 덜 올라가고 입력창이 키보드
+       * 뒤로 숨는다(2026-09-11 · 그림을 넣으며 실기기에서 밟았다).
+       */}
       <KeyboardAvoidingView
+        testID="ds-chat-layer"
         style={styles.fill}
         behavior="padding"
         keyboardVerticalOffset={layout.keyboardGap}
+        onLayout={(e) => setLayerHeight(e.nativeEvent.layout.height)}
       >
+        {/* 그림은 회피 층 **안에서 절대 위치**로 앉는다. 절대 위치의 `bottom` 은 부모의 패딩을
+            세지 않으므로, 키보드가 올라와 층에 아래 패딩이 얹혀도 그림은 제자리다 */}
+        {companion != null ? (
+          <View
+            testID="ds-chat-companion"
+            pointerEvents="none"
+            style={[styles.companion, { bottom: companionLift, left: companionLeft }]}
+            onLayout={(e) => setCompanionHeight(e.nativeEvent.layout.height)}
+          >
+            {companion}
+          </View>
+        ) : null}
+
         <ScrollView
           ref={scroll}
           // 슬라이더가 이 스크롤을 잠그는지 테스트가 여기로 확인한다(`__tests__/slider`)
@@ -117,7 +182,19 @@ export function ChatScaffold({ leading, onLeadingPress, trailing, children, dock
           </ScrollLockContext.Provider>
         </ScrollView>
 
-        {dock != null ? <View style={styles.dock}>{dock}</View> : null}
+        {/* 그림의 머리 높이만큼 비워 둔다 — 대화 뷰포트가 여기서 끝나서, 지난 말풍선이
+              스크롤되며 그림 위를 지나가지 않는다 */}
+        {clearance > 0 ? <View testID="ds-chat-clearance" style={{ height: clearance }} /> : null}
+
+        {dock != null ? (
+          <View
+            testID="ds-chat-dock"
+            style={styles.dock}
+            onLayout={(e) => setDockTop(e.nativeEvent.layout.y)}
+          >
+            {dock}
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -125,6 +202,9 @@ export function ChatScaffold({ leading, onLeadingPress, trailing, children, dock
 
 const styles = StyleSheet.create({
   fill: { flex: 1, minHeight: 0 },
+  // 회피 층의 바닥(= 키보드가 없을 때 독의 아랫변)에서 `companionLift` 만큼 띄우고, 패딩 안쪽 왼쪽 끝에서
+  // `companionLeft` 만큼 옮겨 앉는다
+  companion: { position: "absolute" },
   // 대화는 아래 정렬 — 적을 때도 바닥에 붙어 있고 위가 빈다
   conversation: {
     flexGrow: 1,

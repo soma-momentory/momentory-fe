@@ -38,6 +38,8 @@ export {
   overlay,
   pond,
   primary,
+  restRipple,
+  retroRug,
   scheduleDot,
   secondary,
   selectedTint,
@@ -63,6 +65,7 @@ export {
   isWaterSpot,
   pondLayout,
   pondMotion,
+  pondPanelVeil,
   pondSize,
   pondVeil,
   surfaceRippleMs,
@@ -81,6 +84,7 @@ export {
   space,
   zIndex,
   motion,
+  cardRipple,
 } from "./metrics";
 
 /** 묶음 하나로 들고 다닐 때 — `import ds from "@/design/ds"` */

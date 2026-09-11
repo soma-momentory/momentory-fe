@@ -1,14 +1,23 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button, Icon, Screen } from "@/components/ds";
-import { PondTopVeil } from "@/components/rest/pond/PondTopVeil";
+import { PondTopVeil, VeilGradient } from "@/components/rest/pond/PondTopVeil";
 import { SensePanel } from "@/components/rest/pond/SensePanel";
 import { PondScene } from "@/components/rest/pond/PondScene";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
-import { background, label as labelColor, line, pondMotion, space } from "@/design/ds";
+import {
+  background,
+  label as labelColor,
+  line,
+  pond,
+  pondLayout,
+  pondMotion,
+  pondPanelVeil,
+  space,
+} from "@/design/ds";
 import {
   SENSE_POND_DONE,
   SENSE_POND_STEPS,
@@ -61,12 +70,30 @@ import {
  *
  * 마지막 손짓의 물결이 **다 퍼질 때까지**(`pondMotion.doneHold`) 그대로 두고,
  * 그 뒤 **장면을 그대로 둔 채** 위 문안이 `SENSE_POND_DONE` 으로 바뀐다.
- * 아래 판은 그때 처음으로 셋을 펼쳐 3/3 · 2/2 · 1/1 을 보여 주며 「쉼터로
- * 돌아가기」를 단다 — 진행 중에는 「보이는 것 · 1 / 3」 한 줄뿐이었다.
+ * 아래 판은 진행 중에 이미 칸 셋이 차올라 있고(2026-09-11), 완료에는 그 위에
+ * 「다 채웠어요」가 뜨고 아래에 「쉼터로 돌아가기」가 붙는다.
+ *
+ * ## 판은 첫 손짓에 올라온다 (2026-09-11 · 사용자 요청)
+ *
+ * 들어온 직후에는 아래 판이 없고 연못이 화면 끝까지 이어진다. 첫 손짓에 판이 올라와
+ * 가운데에 칸 하나를 띄운다(`SensePanel` · 바탕 없음). 판은 장면 **위에 겹친다** —
+ * 장면 아래에 쌓으면 판이 나타나는 순간 장면이 줄어 연못 그림과 카피바라가 손끝
+ * 아래서 움직인다.
+ *
+ * 완료에는 판이 「다 채웠어요」와 버튼만큼 높아져 왼쪽 물가의 카피바라를 덮는다
+ * (실기기에서 귀만 남았다 · 2026-09-11). 그래서 그때 **장면을 위로 비켜 올린다**
+ * (`scenePan`) — 카피바라 발밑이 판 위에 오도록 필요한 만큼만. 줄이지 않고 옮기므로
+ * 그림이 다시 잘리지 않고, 완료에는 손짓을 받지 않으니 물 자리가 어긋나도 괜찮다.
  * 돌아가기는 회고 완료와 같은 `router.replace` 다 — 딥링크로 들어와 뒤가 없어도
  * 쉼터 탭에 선다. ⚠ `/rest` 라고만 쓰면 `(onboarding)/rest`(쉬는 방법)에 먼저
  * 잡힌다 — 이름이 같은 라우트가 둘이라 **그룹을 명시한다**(에뮬레이터에서 실제로
  * 온보딩으로 갔다 · 2026-09-03).
+ *
+ * ## 오래 누르기는 두 번 말한다 (2026-09-11 · 사용자 요청)
+ *
+ * 감각 단계의 머리글에는 설명 아래 「꾸욱」 알약(`HoldHint`)이 붙고, 다 채우기 전에
+ * 손을 떼면(`onHoldCancel`) 그 알약이 한 번 톡 튀며 「조금 더 오래 눌러요」로 바뀐다.
+ * 짧은 누름은 여전히 세지 않는다 — 대신 **아무 일도 없는 화면**으로 두지 않는다.
  *
  * 세는 것은 이 화면의 상태(`stepIndex`·`found`·`finished`)뿐이고 어디에도 저장하지 않는다.
  */
@@ -77,6 +104,13 @@ export default function SensePondScreen() {
   const [finished, setFinished] = useState(false);
   // 소개 문구가 아직 위에 있다 — 한 호흡이 지나거나 첫 포인트를 찾으면 내려간다
   const [intro, setIntro] = useState(true);
+  // 잠시 누르기에서 일찍 손을 뗀 횟수 — 오를 때마다 「꾸욱」 알약이 다시 말한다
+  const [nudge, setNudge] = useState(0);
+  // 장면과 판의 높이 — 완료에 판이 카피바라를 덮는 만큼 장면을 올리려고 잰다
+  const [sceneHeight, setSceneHeight] = useState(0);
+  const [panelHeight, setPanelHeight] = useState(0);
+  // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다(react-hooks/refs)
+  const [pan] = useState(() => new Animated.Value(0));
   const step = SENSE_POND_STEPS[stepIndex]!;
   const done = isStepDone(step, found);
   const hasNext = stepIndex + 1 < SENSE_POND_STEPS.length;
@@ -104,6 +138,26 @@ export default function SensePondScreen() {
     return () => clearTimeout(t);
   }, [done, hasNext]);
 
+  /**
+   * 완료에 장면을 올리는 거리 — 판의 윗변이 카피바라 발밑보다 높은 만큼(+ 숨 한 칸).
+   * 진행 중에는 판이 낮아 카피바라에 닿지 않으므로 움직이지 않는다.
+   */
+  const lift =
+    finished && sceneHeight > 0 && panelHeight > 0
+      ? Math.max(0, panelHeight - sceneHeight * pondLayout.capybaraBottom + space.lg)
+      : 0;
+
+  useEffect(() => {
+    const it = Animated.timing(pan, {
+      toValue: -lift,
+      duration: pondMotion.scenePan,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: true,
+    });
+    it.start();
+    return () => it.stop();
+  }, [lift, pan]);
+
   /** 판이 보여 주는 셈 — 지난 단계는 다 채운 것으로, 아직 안 온 단계는 0 으로 */
   const counts = SENSE_POND_STEPS.reduce(
     (acc, s, i) => {
@@ -121,22 +175,32 @@ export default function SensePondScreen() {
     ? { title: SENSE_POND_TITLE, description: SENSE_POND_SUBTITLE }
     : finished
       ? { title: SENSE_POND_DONE.title, description: SENSE_POND_DONE.description }
-      : { title: step.title, description: step.description };
+      : { title: step.title, description: step.description, hint: step.hint };
 
   return (
     <Screen grid={false} padded={false} edges={[]}>
-      <View style={styles.scene}>
-        <PondScene
-          step={step.id}
-          point={step.point}
-          input={step.input}
-          onFound={() => {
-            // 손짓이 시작됐다 — 소개는 여기서 끝난다(타이머를 기다리지 않는다)
-            setIntro(false);
-            setFound((n) => nextFound(step, n));
-          }}
-          finished={finished}
-        />
+      <View style={styles.scene} onLayout={(e) => setSceneHeight(e.nativeEvent.layout.height)}>
+        {/* 완료에만 위로 비켜 올라간다 — 크기는 그대로라 그림이 다시 잘리지 않는다 */}
+        <Animated.View style={[styles.pan, { transform: [{ translateY: pan }] }]}>
+          <PondScene
+            step={step.id}
+            point={step.point}
+            input={step.input}
+            onFound={() => {
+              // 손짓이 시작됐다 — 소개는 여기서 끝난다(타이머를 기다리지 않는다)
+              setIntro(false);
+              setFound((n) => nextFound(step, n));
+            }}
+            onHoldCancel={() => setNudge((n) => n + 1)}
+            finished={finished}
+          />
+          {/* 올라가며 드러나는 그림의 아래 끝을 바닥색으로 녹인다 — 완료에만 */}
+          {finished ? (
+            <View pointerEvents="none" style={styles.edge}>
+              <VeilGradient id="pond-scene-edge" stops={EDGE_STOPS} />
+            </View>
+          ) : null}
+        </Animated.View>
 
         {/* 장면 위에 뜬 것들 — `box-none` 이라 빈 곳의 손짓은 아래 연못이 받는다 */}
         <View
@@ -164,27 +228,32 @@ export default function SensePondScreen() {
               tone={intro ? "intro" : "step"}
               title={heading.title}
               description={heading.description}
+              hint={"hint" in heading ? heading.hint : undefined}
+              nudge={nudge}
             />
           </View>
         </View>
       </View>
 
-      {/* 진행 중에는 한 줄, 다 지나면 셋과 돌아가는 길 */}
-      <SensePanel
-        current={finished ? null : step.id}
-        found={counts}
-        footer={
-          finished ? (
-            <Button
-              label={SENSE_POND_DONE.cta}
-              fill
-              onPress={() => router.replace("/(tabs)/rest")}
-            />
-          ) : undefined
-        }
-      />
-      {/* 판이 화면 바닥까지 이어진다 — 제스처 바 아래로 크림이 끊기면 판이 떠 보인다 */}
-      <View style={[styles.bottomSafe, { height: insets.bottom }]} />
+      {/* 첫 손짓 전에는 판이 없다. 그 뒤로 찾을 때마다 칸이 뜨고, 다 지나면 돌아가는 길이 붙는다 */}
+      {finished || counts[SENSE_POND_STEPS[0]!.id] > 0 ? (
+        <SensePanel
+          current={finished ? null : step.id}
+          found={counts}
+          // 버튼이 제스처 바·내비 바 위에 선다
+          bottomInset={insets.bottom}
+          onLayout={(e) => setPanelHeight(e.nativeEvent.layout.height)}
+          footer={
+            finished ? (
+              <Button
+                label={SENSE_POND_DONE.cta}
+                fill
+                onPress={() => router.replace("/(tabs)/rest")}
+              />
+            ) : undefined
+          }
+        />
+      ) : null}
     </Screen>
   );
 }
@@ -192,9 +261,19 @@ export default function SensePondScreen() {
 /** 뒤로가기 원의 지름 — 글이 그 아래에서 시작하도록 여백 계산에도 쓴다 */
 const BACK = 40;
 
+/** 그림 아래 끝이 바닥색(`pond.veil`)으로 완전히 녹는다 */
+const EDGE_STOPS = [
+  { offset: 0, opacity: 0 },
+  { offset: 1, opacity: 1 },
+] as const;
+
 const styles = StyleSheet.create({
-  // 장면이 남는 높이를 전부 가진다 — 판만큼만 비켜 준다(스크롤을 두지 않는다)
-  scene: { flex: 1, minHeight: 0 },
+  // 장면이 화면을 전부 가진다 — 판은 그 위 바닥에 겹치므로 판이 떠도 장면이 줄지 않는다
+  // 바닥은 판 뒤 빛(`pond.veil`)과 같은 색 — 완료에 장면이 위로 비켜 올라가며 드러나도
+  // 빛의 가장 짙은 끝과 이어져 띠로 보이지 않는다
+  scene: { flex: 1, minHeight: 0, backgroundColor: pond.veil },
+  pan: { flex: 1 },
+  edge: { position: "absolute", left: 0, right: 0, bottom: 0, height: pondPanelVeil.edge },
   overlay: {
     position: "absolute",
     left: 0,
@@ -220,5 +299,4 @@ const styles = StyleSheet.create({
   // 「가운데」는 부모(overlay)가 정하는데 stretch 가 그걸 덮는다 — maxWidth 320 과 만나면
   // 320dp 보다 넓은 화면(폴드·태블릿)에서 교차축 시작점, 즉 왼쪽에 붙어 그려진다.
   words: { alignSelf: "center", maxWidth: 320, alignItems: "center", gap: space.xs },
-  bottomSafe: { backgroundColor: background.elevated },
 });

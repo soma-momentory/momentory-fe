@@ -1,5 +1,7 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
+  Animated,
+  Easing,
   Pressable,
   StyleSheet,
   View,
@@ -12,6 +14,7 @@ import {
   hairline,
   interaction,
   label as labelColor,
+  motion,
   overlay,
   primary,
   radius,
@@ -60,6 +63,17 @@ import { Text } from "./Text";
  *
  * **한 화면에 solid 는 하나다**(`DESIGN.md` §6 CTA 위계). 보조는 `outlined`,
  * 3순위는 `text` — 코드가 강제할 수 없으니 화면에서 지킨다.
+ *
+ * ## 누르면 **살짝 줄었다 돌아온다** (2026-09-11 · 사용자 요청)
+ *
+ * 누름 스크림(면 위에 얹는 옅은 막)만으로는 「눌렸다」가 약하게 읽혔다 — 손가락이 버튼을 덮고 있어
+ * 색 변화가 잘 안 보인다. 그래서 **크기**를 함께 쓴다.
+ *
+ * **홈의 잔디 CTA(`GrassButton`)가 먼저 같은 이유로 이렇게 했다** — 값도 그대로 가져온다:
+ * 3%(`PRESS_SCALE`) · `motion.duration`(120ms) · `Easing.out(quad)`. 앱 안에서 누름의 박자가 한 벌이다.
+ *
+ * - **비활성은 움직이지 않는다** — 눌리지 않는 버튼이 반응하면 「눌렸는데 아무 일도 안 났다」가 된다
+ * - 네이티브 드라이버로 돌린다(레이아웃이 아니라 변환이라 JS 스레드가 막혀도 끊기지 않는다)
  */
 export type ButtonVariant = "solid" | "outlined" | "text" | "destructive";
 export type ButtonSize = "large" | "medium" | "small";
@@ -76,6 +90,11 @@ type Props = Omit<PressableProps, "style" | "children"> & {
   style?: StyleProp<ViewStyle>;
 };
 
+/**
+ * 누르는 동안 줄어드는 비율 — `GrassButton` 과 같은 값이다. 3% 는 **눈으로 보이지만 덜컹거리지는 않는** 폭이다.
+ */
+const PRESS_SCALE = 0.97;
+
 export function Button({
   label,
   variant = "solid",
@@ -91,9 +110,35 @@ export function Button({
   const v = VARIANTS[variant];
   const height = size.button[sizeName];
 
+  const [down, setDown] = useState(false);
+  // 저장소 관례(`ChatBubble`·`GrassButton`) — ref 는 렌더 중 읽지 않는다
+  const [press] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    const run = Animated.timing(press, {
+      toValue: down ? 1 : 0,
+      duration: motion.duration,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    });
+    run.start();
+    return () => run.stop();
+  }, [down, press]);
+
+  const scale = press.interpolate({ inputRange: [0, 1], outputRange: [1, PRESS_SCALE] });
+
   return (
-    <Pressable
+    <AnimatedPressable
       {...rest}
+      // 호출자가 준 `onPressIn`·`onPressOut` 도 그대로 부른다 — 우리가 덮어쓰지 않는다
+      onPressIn={(e) => {
+        setDown(true);
+        rest.onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        setDown(false);
+        rest.onPressOut?.(e);
+      }}
       accessibilityRole={accessibilityRole}
       // 호출자 상태는 살리되 잠금은 우리가 쥔다 — 뒤에 두면 disabled 가 덮인다
       accessibilityState={{ ...accessibilityState, disabled }}
@@ -104,6 +149,8 @@ export function Button({
         v.container,
         fill ? styles.fill : null,
         disabled ? styles.disabled : null,
+        // 비활성은 줄어들지 않는다 — 값이 1 에 묶인다
+        disabled ? null : { transform: [{ scale }] },
         style,
       ]}
     >
@@ -125,9 +172,11 @@ export function Button({
           ) : null}
         </>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type Variant = { container: ViewStyle; labelColor: string; scrim: string };
 

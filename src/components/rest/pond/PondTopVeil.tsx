@@ -36,22 +36,34 @@ export function PondTopVeil() {
       importantForAccessibility="no-hide-descendants"
       style={styles.veil}
     >
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id={GRADIENT_ID} x1="0" y1="0" x2="0" y2="1">
-            {pondVeil.stops.map((s) => (
-              <Stop
-                key={s.offset}
-                offset={s.offset}
-                stopColor={pond.veil}
-                stopOpacity={s.opacity}
-              />
-            ))}
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${GRADIENT_ID})`} />
-      </Svg>
+      <VeilGradient id={GRADIENT_ID} stops={pondVeil.stops} />
     </View>
+  );
+}
+
+/**
+ * 부모를 꽉 채우는 **위 → 아래 빛** 한 장 — 색은 늘 `pond.veil` 이고 짙기만 받는다.
+ * 위쪽 글(`PondTopVeil`) · 아래 칸 묶음(`SensePanel`) · 완료의 그림 끝이 함께 쓴다
+ * (2026-09-11). `id` 는 그림 안의 이름이라 한 화면에서 겹치지 않게 준다.
+ */
+export function VeilGradient({
+  id,
+  stops,
+}: {
+  id: string;
+  stops: readonly { offset: number; opacity: number }[];
+}) {
+  return (
+    <Svg width="100%" height="100%">
+      <Defs>
+        <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          {stops.map((s) => (
+            <Stop key={s.offset} offset={s.offset} stopColor={pond.veil} stopOpacity={s.opacity} />
+          ))}
+        </LinearGradient>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
+    </Svg>
   );
 }
 

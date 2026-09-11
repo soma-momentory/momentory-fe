@@ -1,4 +1,4 @@
-import { render, fireEvent, act, waitFor } from "@testing-library/react-native";
+import { render, fireEvent, act, waitFor, within } from "@testing-library/react-native";
 
 import RetroTalk from "../talk";
 
@@ -59,6 +59,13 @@ describe("시작 — 감정 없이 마운트하면 서버가 첫 질문을 준�
     const arg = mockStart.mock.calls[0]![0];
     expect(arg).toHaveProperty("schedules");
     expect(arg).not.toHaveProperty("currentEmotion");
+  });
+
+  it("바바가 왼쪽 아래에 앉아 있다 — 대화와 함께 늘 보인다", async () => {
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(r.getByTestId("ds-chat-companion")).toBeTruthy());
+    // 낭독기에는 숨긴 그림이라 숨은 요소까지 찾는다
+    expect(r.getByTestId("retro-baba", { includeHiddenElements: true })).toBeTruthy();
   });
 
   it("서버의 첫 질문을 버블로 보여준다", async () => {
@@ -163,6 +170,9 @@ describe("분기점 — 감정을 더 알아볼까(단일 선택)", () => {
     const r = await render(<RetroTalk />);
 
     await waitFor(() => expect(r.getByText("감정을 더 알아볼래요")).toBeTruthy());
+    // 선택지는 대화가 아니라 **아래 독**에 앉는다 — 바바를 덮는 자리다
+    expect(within(r.getByTestId("ds-chat-dock")).getByText("감정을 더 알아볼래요")).toBeTruthy();
+    expect(within(r.getByTestId("ds-chat-scroll")).queryByText("감정을 더 알아볼래요")).toBeNull();
     await fireEvent.press(r.getByText("감정을 더 알아볼래요"));
     await act(async () => {
       await fireEvent.press(r.getByText("보내기"));

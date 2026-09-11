@@ -1,7 +1,6 @@
-import { Image, StyleSheet, View, type ImageStyle, type ViewStyle } from "react-native";
+import { Image, type ImageStyle } from "react-native";
 
 import type { EmotionId } from "@/features/emotion/model/emotion";
-import { fill, line } from "@/design/ds";
 
 /**
  * 감정 스티커 — 보관함 달력이 「그날 무슨 마음이었는지」를 **얼굴 하나**로 말한다.
@@ -23,8 +22,10 @@ import { fill, line } from "@/design/ds";
  * 카피바라 그림과 같은 판단이다(`DESIGN.md` 「쉼터」) — 열 장은 각자 색을 들고
  * 있고 여기서 tint 하지 않는다. 원본을 갈아 끼우면 색도 함께 바뀐다.
  *
- * `id` 가 `null` 이면 **감정 없이 끝난 일기**다. 얼굴을 지어내지 않고 잔잔한 중립
- * 원으로 「썼지만 감정은 안 골랐다」 자리만 지킨다 — `EmotionDot` 의 빈 자리와 같다.
+ * `id` 가 `null` 이면 **감정 없이 끝난 일기**다(일기는 썼는데 감정이 추출되지 않은 날).
+ * 표정을 지어내지 않고 **선으로만 그린 빈 얼굴**(`no-emotion.png`)로 「썼지만 감정은
+ * 안 잡혔다」 자리를 지킨다(2026-09-11 · 사용자 반입). 전에는 잔잔한 중립 원이었는데,
+ * 얼굴들 사이에서 원 하나만 결이 달라 「무언가 빠진 칸」으로 읽혔다.
  */
 type Props = {
   id: EmotionId | null;
@@ -36,24 +37,11 @@ type Props = {
 };
 
 export function EmotionSticker({ id, size }: Props) {
-  const box: ImageStyle & ViewStyle = size == null ? FILL : { width: size, height: size };
-
-  if (id == null) {
-    return (
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        // 반지름은 **지름의 절반**이다 — `radius.full` 을 쓰지 않는다(`EmotionDot` 주석).
-        // 크기를 안 받았으면(부모를 채우는 자리) 반지름도 못 셈하므로 자리 크기의
-        // 절반이 될 만큼 큰 값을 주지 않고, 부모가 정사각인 것을 믿고 절반을 쓴다
-        style={[styles.blank, box, size == null ? styles.blankFill : { borderRadius: size / 2 }]}
-      />
-    );
-  }
+  const box: ImageStyle = size == null ? FILL : { width: size, height: size };
 
   return (
     <Image
-      source={STICKERS[id]}
+      source={id == null ? NO_EMOTION : STICKERS[id]}
       style={box}
       // 정사각 원본이라 늘어날 일이 없지만, 원본이 갈릴 때를 대비해 비율을 지킨다
       resizeMode="contain"
@@ -83,11 +71,8 @@ const STICKERS: Record<EmotionId, number> = {
   10: require("../../../assets/emotion/frustrated.png"),
 };
 
+/** 감정 없이 끝난 일기 — 선으로만 그린 빈 얼굴(`scripts/make-no-emotion-marks.py`) */
+const NO_EMOTION: number = require("../../../assets/emotion/no-emotion.png");
+
 /** 크기를 안 받았을 때 — 부모(달력의 그림 자리)를 그대로 채운다 */
 const FILL = { width: "100%", height: "100%" } as const;
-
-const styles = StyleSheet.create({
-  blank: { backgroundColor: fill.alternative, borderWidth: 1.5, borderColor: line.alternative },
-  // 부모를 채우는 자리는 지름을 모른다 — 달력 칸(≤34)에서 원이 되는 값이면 충분하다
-  blankFill: { borderRadius: 17 },
-});

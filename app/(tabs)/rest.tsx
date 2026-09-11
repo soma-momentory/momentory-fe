@@ -1,9 +1,10 @@
 import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useMemo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { Card, Icon, TabScreen, Text } from "@/components/ds";
+import { RestCardPressable } from "@/components/rest/RestCardPressable";
 import { RestContentGrid } from "@/components/rest/RestContentGrid";
 import { label as labelColor, primary, space } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
@@ -67,14 +68,16 @@ export default function Rest() {
         </Text>
       </View>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="바람카드 보기" onPress={open}>
+      <RestCardPressable accessibilityLabel="바람카드 보기" onPress={open}>
         <Card padding="loose" style={styles.entry}>
           {/* 이름은 왼쪽, 하트는 **오른쪽 끝**이다(2026-09-06). 예전에는 하트가
               이름 앞에 붙고 오른쪽에 「보기」가 서 있었는데, **카드 전체가 진입점**
               이라 그 글자는 눌리지도 않는 표시일 뿐이었다 — 없애고 그 자리를 하트에
               내줬다. 들어가는 길은 카드를 누르는 것 하나로 남는다 */}
+          {/* 이름은 한 단 크게(`heading1` 22 · 2026-09-11 사용자 요청) — 아래 칸 제목(18)보다
+              한 단 위라 「첫 항목이자 진입점」 위계가 그대로 남는다 */}
           <View style={styles.head}>
-            <Text variant="headline1" color={labelColor.strong}>
+            <Text variant="heading1" color={labelColor.strong}>
               바람카드
             </Text>
             <Icon name="heart" size={20} color={primary.strong} />
@@ -84,7 +87,7 @@ export default function Rest() {
             {summary}
           </Text>
         </Card>
-      </Pressable>
+      </RestCardPressable>
 
       {/* 안내 한 줄 + 2×2. 구역 제목(`SectionHeader`)이 아니라 **권유 문장**이라
           본문 급(`body2`)으로 쓴다 — 바람카드 제목과 위계를 다투지 않는다 */}

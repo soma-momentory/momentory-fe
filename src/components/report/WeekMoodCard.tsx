@@ -46,7 +46,14 @@ import { WeekMoodReveal, WeekMoodRow } from "./WeekMoodRow";
  * 고정 문장 아홉 벌). 그 문장은 서버 것이라 여기서 고치지 않는다 — BE 가 「그 주에는」
  * 으로 바꾸거나 주차별로 갈라 주어야 닫힌다.
  */
-export function WeekMoodCard({ report, thisWeek }: { report: WeeklyReport; thisWeek: boolean }) {
+type Props = {
+  report: WeeklyReport;
+  thisWeek: boolean;
+  /** 일기가 있는 날 — 감정 없이 끝난 일기에 빈 조약돌을 세우는 데 쓴다(`WeekMoodRow`) */
+  writtenDates: ReadonlySet<string>;
+};
+
+export function WeekMoodCard({ report, thisWeek, writtenDates }: Props) {
   const { lead, follow } = splitMoodMessage(report.moodMessage);
   const [selected, setSelected] = useState<string | null>(null);
   // 다른 주로 넘기면 고른 날이 그 주에 없다 — 찾지 못하면 아무것도 적지 않는다
@@ -59,9 +66,16 @@ export function WeekMoodCard({ report, thisWeek }: { report: WeeklyReport; thisW
           <Text variant="headline1" color={labelColor.strong} style={styles.title}>
             {thisWeek ? "이번 주의 마음" : "이 주의 마음"}
           </Text>
-          {picked != null ? <WeekMoodReveal day={picked} /> : null}
+          {picked != null ? (
+            <WeekMoodReveal day={picked} written={writtenDates.has(picked.date)} />
+          ) : null}
         </View>
-        <WeekMoodRow days={report.days} selected={selected} onSelect={setSelected} />
+        <WeekMoodRow
+          days={report.days}
+          writtenDates={writtenDates}
+          selected={selected}
+          onSelect={setSelected}
+        />
       </View>
 
       {lead.length > 0 ? (

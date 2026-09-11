@@ -8,6 +8,7 @@ import {
   Chip,
   EmotionDot,
   EmotionPebble,
+  EmotionSticker,
   SelectLift,
   WeekEmptyDot,
   IconButton,
@@ -111,6 +112,28 @@ describe("Button", () => {
   it("solid 면은 primary.heavy 다 — 시안의 primary.normal 은 흰 글자에서 2.9 라 못 쓴다", async () => {
     const { getByRole } = await render(<Button label="저장" onPress={() => {}} />);
     expect(flatten(getByRole("button").props.style).backgroundColor).toBe(primary.heavy);
+  });
+
+  /**
+   * 누름 반응은 **스크림 + 크기**다(`Button.tsx` 머리말 · `GrassButton` 과 같은 판단). 네이티브 드라이버로
+   * 도는 값이라 테스트에서 숫자가 흐르지는 않는다 — **연결만** 본다: 눌리는 버튼에는 크기 값이 걸려 있고,
+   * 비활성에는 걸리지 않는다.
+   */
+  it("누르면 줄어들 크기 값이 걸려 있다 — 스크림만으로는 눌린 것이 약하게 읽혔다", async () => {
+    const { getByRole } = await render(<Button label="저장" onPress={() => {}} />);
+    const transform = flatten(getByRole("button").props.style).transform as
+      { scale?: number }[] | undefined;
+    const scale = transform?.[0]?.scale;
+
+    // 손을 대기 전에는 1 — 눌림은 네이티브 드라이버로 흐르므로 여기서는 시작값과 연결만 본다
+    expect(scale).toBe(1);
+    await fireEvent(getByRole("button"), "pressIn", { nativeEvent: {} });
+    await fireEvent(getByRole("button"), "pressOut", { nativeEvent: {} });
+  });
+
+  it("비활성에는 크기 값이 걸리지 않는다 — 눌리지 않는 버튼이 반응하면 눌린 줄 안다", async () => {
+    const { getByRole } = await render(<Button label="다음" disabled onPress={() => {}} />);
+    expect(flatten(getByRole("button").props.style).transform).toBeUndefined();
   });
 
   it("비활성이면 눌리지 않고 상태를 알린다", async () => {
@@ -529,15 +552,30 @@ describe("작은 원 — 반지름을 크기의 절반으로 **직접** 준다",
   });
 
   /**
-   * 기록 없는 날의 원(`WeekEmptyDot`). 리포트만 `EmotionDot` 의 테두리 있는 원을 빌려 써서
-   * 홈과 달라 보였다(2026-09-11) — **테두리는 오늘에만 선다.**
+   * 기록 없는 날의 원(`WeekEmptyDot`) — **빈 칸은 전부 같다.** 오늘 칸에만 옅은 링을 두르던 것을
+   * 지웠다(2026-09-11 · 사용자 요청): 일기를 지운 날이 그 링 때문에 다른 빈 칸과 달라 보였다.
    */
-  it("WeekEmptyDot 은 테두리가 없다 — 오늘일 때만 옅은 링이 선다", async () => {
-    const plain = await render(<WeekEmptyDot />);
-    const today = await render(<WeekEmptyDot today />);
+  it("WeekEmptyDot 은 테두리가 없다 — 오늘도 마찬가지다", async () => {
+    const { toJSON } = await render(<WeekEmptyDot />);
 
-    expect(JSON.stringify(plain.toJSON())).not.toContain("borderWidth");
-    expect(JSON.stringify(today.toJSON())).toContain('"borderWidth":1.5');
+    expect(JSON.stringify(toJSON())).not.toContain("borderWidth");
+  });
+
+  /**
+   * 감정 없이 끝난 일기(일기는 썼는데 감정 추출이 안 된 날) — 달력은 **빈 얼굴**, 주간 줄은
+   * **빈 조약돌** 그림을 건다(2026-09-11 · 사용자 반입). 색 원으로 되돌아가면 여기서 걸린다.
+   */
+  it("감정이 없으면 스티커·조약돌 모두 감정 그림과 다른 빈 그림을 건다", async () => {
+    const uri = (json: unknown) => JSON.stringify(json).match(/"testUri":"[^"]+"/)?.[0];
+
+    const sticker = await render(<EmotionSticker id={null} size={30} />);
+    const stickerFace = await render(<EmotionSticker id={1} size={30} />);
+    expect(uri(sticker.toJSON())).toContain("no-emotion");
+    expect(uri(sticker.toJSON())).not.toBe(uri(stickerFace.toJSON()));
+
+    const pebble = await render(<EmotionPebble id={null} />);
+    expect(uri(pebble.toJSON())).toContain("no-emotion");
+    expect(uri(pebble.toJSON())).not.toBe(uri(sticker.toJSON()));
   });
 
   it("EmotionPebble 도 지름의 절반을 쓴다 — 999 가 아니다", async () => {

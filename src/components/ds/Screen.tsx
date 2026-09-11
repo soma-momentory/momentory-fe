@@ -26,12 +26,11 @@ import { GridBackground } from "./GridBackground";
  * 저절로 여백 노릇을 해서 보이지 않던 문제다. 그래서 인셋과
  * `layout.minBottomInset` 중 **큰 쪽**을 쓴다(라이브러리에 하한 옵션이 없다).
  *
- * ## 안드로이드는 그 위에 한 뼘 더 얹는다
+ * ## 안드로이드는 내비게이션 바 윗변이 화면 끝이다 (2026-09-11 · 사용자 결정)
  *
- * 인셋이 **제대로 오는** 안드로이드 기기에서는 하한이 아무 일도 하지 않아서,
- * 하단 독(「다음」·「이야기 시작하기」·채팅 입력)이 시스템 바에 **딱 맞닿아**
- * 있었다. `layout.androidNavGap` 을 인셋에 **더해** 숨을 만든다 — iOS 는 홈
- * 인디케이터 인셋이 이미 그 일을 해서 0 이다.
+ * 예전에는 인셋 위에 한 뼘(`layout.androidNavGap` 16)을 **더 얹어** 하단 독이 시스템 바에 딱
+ * 맞닿지 않게 했다. 그 숨을 지웠다 — 인셋이 이미 시스템 바 자리를 비워 두므로 **그 윗변까지가
+ * 화면**이고 독은 거기 붙는다. iOS 는 홈 인디케이터 인셋(≈34)이 그대로 아래 여백이다.
  */
 type Props = {
   children: ReactNode;
@@ -43,7 +42,21 @@ type Props = {
   grid?: boolean;
   /** Safe Area 를 적용할 변. 탭바가 있는 화면은 아래를 탭바가 맡는다 */
   edges?: readonly ("top" | "bottom" | "left" | "right")[];
+  /**
+   * 격자 위·콘텐츠 아래에 까는 **장면 한 겹**(회고 대화의 러그). 패딩·Safe Area 밖까지 화면 전체에
+   * 깔리고 눌리지 않는다. 키보드를 따라 움직이지 않는다.
+   */
+  backdrop?: ReactNode;
 };
+
+/**
+ * `Screen` 이 아래에 주는 패딩과 **같은 값** — 화면 바닥에 맞춰 그리는 배경(`backdrop`)이
+ * 콘텐츠의 바닥선을 알아야 할 때 쓴다. 식을 두 곳에 적으면 한쪽만 고쳐졌을 때 어긋난다.
+ */
+export function useScreenBottomInset() {
+  const insets = useSafeAreaInsets();
+  return Math.max(insets.bottom, layout.minBottomInset);
+}
 
 export function Screen({
   children,
@@ -51,8 +64,10 @@ export function Screen({
   padded = true,
   grid = true,
   edges = ["top", "bottom"],
+  backdrop,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const bottomInset = useScreenBottomInset();
   const on = (edge: "top" | "bottom" | "left" | "right") => edges.includes(edge);
 
   // 좌우는 화면 패딩(20)과 인셋을 **더한다** — 둘 중 하나로 덮으면 노치 기기에서
@@ -60,9 +75,7 @@ export function Screen({
   const side = padded ? layout.screenPadding : 0;
   const safe = {
     paddingTop: on("top") ? insets.top : 0,
-    paddingBottom: on("bottom")
-      ? Math.max(insets.bottom, layout.minBottomInset) + layout.androidNavGap
-      : 0,
+    paddingBottom: on("bottom") ? bottomInset : 0,
     paddingLeft: side + (on("left") ? insets.left : 0),
     paddingRight: side + (on("right") ? insets.right : 0),
   };
@@ -70,6 +83,11 @@ export function Screen({
   return (
     <View style={[styles.root, { backgroundColor: background[surface] }]}>
       {grid ? <GridBackground /> : null}
+      {backdrop != null ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {backdrop}
+        </View>
+      ) : null}
       <View style={[styles.body, safe]}>{children}</View>
     </View>
   );
