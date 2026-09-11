@@ -88,7 +88,8 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     const { getByLabelText } = await render(<Rest />);
 
     await fireEvent.press(getByLabelText("감각연못 열기"));
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/sense-pond");
+    // 누른 자리의 물결이 카드를 다 덮은 뒤에 간다(`RestCardPressable`)
+    await waitFor(() => expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/sense-pond"));
   });
 
   it("바람카드가 첫 항목이고 카드 전체가 진입점이다", async () => {
@@ -97,7 +98,7 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     expect(getByText("바람카드")).toBeTruthy();
 
     await fireEvent.press(getByLabelText("바람카드 보기"));
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards");
+    await waitFor(() => expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards"));
   });
 
   it("여기서는 캘린더·수행 기록을 설명하지 않는다", async () => {
@@ -123,7 +124,7 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     // 요약 줄은 회고가 먼저라는 사실만 말하되, 진입은 막지 않는다
     expect(getByText("회고를 마치면 그날의 바람카드가 여기 남아요")).toBeTruthy();
     await fireEvent.press(getByLabelText("바람카드 보기"));
-    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards");
+    await waitFor(() => expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards"));
   });
 });
 
