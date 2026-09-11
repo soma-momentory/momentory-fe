@@ -62,10 +62,14 @@ type Props = {
 /** 도트 지름 — 시안 캡슐의 높이(26)를 그대로 지름으로 쓴다 */
 const DOT_SIZE = 26;
 
-/** 낭독기가 읽을 그날의 감정 — 눈으로 보는 사람이 눌러서 얻는 것과 같은 값이다 */
-const namesOf = (emotions: readonly EmotionId[]) => {
+/**
+ * 낭독기가 읽을 그날의 감정 — 눈으로 보는 사람이 눌러서 얻는 것과 같은 값이다.
+ * 감정 없이 끝난 일기는 「기록 있음」이다(보관함 달력 칸과 같은 말 · `archive.tsx`)
+ */
+const namesOf = (emotions: readonly EmotionId[], written: boolean) => {
   const names = emotions.map(emotionName).filter((n) => n.length > 0);
-  return names.length > 0 ? names.join(", ") : "기록 없음";
+  if (names.length > 0) return names.join(", ");
+  return written ? "기록 있음" : "기록 없음";
 };
 
 export function WeekEmotionStrip({ days, today }: Props) {
@@ -92,7 +96,7 @@ export function WeekEmotionStrip({ days, today }: Props) {
                 <DiaryEmotionRow emotions={day.emotions} align="flex-end" />
               ) : (
                 <Text variant="caption1" color={labelColor.alternative}>
-                  기록 없음
+                  {namesOf(day.emotions, day.written)}
                 </Text>
               )}
             </View>
@@ -106,7 +110,7 @@ export function WeekEmotionStrip({ days, today }: Props) {
           const id = d.emotions[0] ?? null;
           const isToday = d.date === today;
           const on = d.date === picked;
-          const names = namesOf(d.emotions);
+          const names = namesOf(d.emotions, d.written);
 
           return (
             <Pressable
@@ -119,11 +123,12 @@ export function WeekEmotionStrip({ days, today }: Props) {
               style={styles.day}
             >
               {/* 감정이 있는 날은 **수채 조약돌 한 장**(`EmotionPebble` · 2026-09-11 시안),
-                  없는 날은 자리만 지키는 중립 원이다 — 빈 칸을 강조하지 않는다.
+                  일기는 썼는데 감정이 없는 날은 **빈 조약돌**(테두리만),
+                  일기가 없는 날은 자리만 지키는 중립 원이다 — 빈 칸을 강조하지 않는다.
                   고른 날은 **살짝 커진다**(`SelectLift`) — 조약돌은
                   정원이 아니라 둥근 링을 두르면 깨진 테두리로 보였다 */}
               <SelectLift selected={on} size={DOT_SIZE}>
-                {id != null ? (
+                {id != null || d.written ? (
                   <EmotionPebble id={id} size={DOT_SIZE} />
                 ) : (
                   <WeekEmptyDot size={DOT_SIZE} />

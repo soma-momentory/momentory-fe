@@ -3,6 +3,7 @@ import { router } from "expo-router";
 
 import Home from "../home";
 
+import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import type { Schedule } from "@/features/home/model/types";
 import { seedDiaries, testSchedules } from "@/testing/fixtures";
@@ -85,6 +86,21 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     expect(getByText("월요일 ·")).toBeTruthy();
     expect(getByText("불안함")).toBeTruthy();
     expect(getByText("우울함")).toBeTruthy();
+  });
+
+  it("일기는 썼는데 감정이 없는 날은 「기록 없음」이 아니라 「기록 있음」이다", async () => {
+    // 감정 추출이 안 된 일기 — 빈 조약돌이 서고, 안 쓴 날(`WeekEmptyDot`)과 갈린다
+    const [sample] = useDiary.getState().diaries;
+    useDiary.setState({
+      diaries: [
+        ...useDiary.getState().diaries,
+        { ...sample!, id: "no-emotion", date: "2026-07-31", emotions: [] },
+      ],
+    });
+    const { getByLabelText, getByText } = await render(<Home />);
+
+    await fireEvent.press(getByLabelText("금요일 · 기록 있음"));
+    expect(getByText("기록 있음")).toBeTruthy();
   });
 
   it("일정 4건과 「2개 남음」을 보인다 — 남은 수이지 달성률이 아니다", async () => {

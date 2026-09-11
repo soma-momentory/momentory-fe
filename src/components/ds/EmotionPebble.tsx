@@ -23,17 +23,20 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
  * (2026-09-11 · 실기기). 그래서 테두리를 아예 두지 않는다 — 고른 칸은 부르는 쪽이
  * `SelectLift` 로 **살짝 들어 올린다**.
  *
- * ## 기록이 없는 날은 여기 오지 않는다
+ * ## 감정 없이 끝난 일기는 **빈 조약돌**이다
  *
- * `id` 가 없는 날의 빈 자리는 **부르는 쪽이 그린다** — 홈은 `fill.normal` 에 오늘만
- * 테두리를, 리포트는 `EmotionDot` 의 중립 원을 쓴다. 둘의 빈 칸 결이 원래 다르고,
- * 이번에 바꾸기로 한 것은 **감정이 있는 자리**뿐이다.
+ * `id` 가 `null` 이면 **일기는 썼는데 감정이 추출되지 않은 날**이다 — 테두리만 있는
+ * 조약돌(`no-emotion.png`)로 「썼다」를 말한다(2026-09-11 · 사용자 반입). 색을 지어내지 않는다.
+ *
+ * ⚠ **일기가 없는 날은 여기 오지 않는다** — 그 빈 자리는 부르는 쪽이 `WeekEmptyDot` 으로
+ * 그린다. 「썼는데 감정이 없다」와 「안 썼다」는 다른 칸이라, 무엇인지는 부르는 쪽이 안다.
  *
  * 조약돌은 장식이라 낭독기에 읽히지 않는다 — 감정 이름은 칸의 접근성 라벨이 이미 읽는다
  * (`EmotionDot` 과 같은 판단 · 색만으로 판단하게 하지 않는다).
  */
 type Props = {
-  id: EmotionId;
+  /** `null` — 일기는 있는데 감정이 없는 날(빈 조약돌) */
+  id: EmotionId | null;
   /** 지름 — 홈·리포트 모두 26 */
   size?: number;
 };
@@ -52,6 +55,9 @@ const MARKS = {
   10: require("../../../assets/emotion-pebble/frustrated.png"),
 } as const;
 
+/** 감정 없이 끝난 일기 — 테두리만 있는 빈 조약돌(`scripts/make-no-emotion-marks.py`) */
+const NO_EMOTION = require("../../../assets/emotion-pebble/no-emotion.png");
+
 export function EmotionPebble({ id, size = 26 }: Props) {
   // 반지름은 **지름의 절반**이다 — `radius.full`(999)을 쓰지 않는다(`EmotionDot` 주석의
   // 안드로이드 New Architecture 사정이 그대로 적용된다)
@@ -59,7 +65,11 @@ export function EmotionPebble({ id, size = 26 }: Props) {
 
   return (
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={box}>
-      <Image source={MARKS[id]} style={[styles.art, box as ImageStyle]} resizeMode="contain" />
+      <Image
+        source={id == null ? NO_EMOTION : MARKS[id]}
+        style={[styles.art, box as ImageStyle]}
+        resizeMode="contain"
+      />
     </View>
   );
 }

@@ -146,6 +146,24 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.getByLabelText("금요일 기록 없음")).toBeTruthy();
   });
 
+  it("일기는 썼는데 감정이 없는 날은 「기록 있음」이다 — 서버 칸은 안 쓴 날과 똑같이 비어 온다", async () => {
+    // 서버는 수요일을 `emotion: null` 로 주지만 로컬에는 그날 일기가 있다(감정 추출 실패)
+    const [sample] = useDiary.getState().diaries;
+    useDiary.setState({
+      diaries: [
+        ...useDiary.getState().diaries,
+        { ...sample!, id: "no-emotion", date: "2026-07-29", emotions: [] },
+      ],
+    });
+    const r = await openReport();
+
+    expect(r.getByLabelText("금요일 기록 없음")).toBeTruthy();
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("수요일 기록 있음"));
+    });
+    expect(within(r.getByTestId("week-mood-head")).getByText("기록 있음")).toBeTruthy();
+  });
+
   it("칸을 누르면 그날 감정을 글자로 드러낸다 — 색만으로 안 보이던 하루를 확인한다", async () => {
     const r = await openReport();
 

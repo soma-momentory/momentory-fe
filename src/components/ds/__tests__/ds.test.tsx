@@ -8,6 +8,7 @@ import {
   Chip,
   EmotionDot,
   EmotionPebble,
+  EmotionSticker,
   SelectLift,
   WeekEmptyDot,
   IconButton,
@@ -558,6 +559,23 @@ describe("작은 원 — 반지름을 크기의 절반으로 **직접** 준다",
     const { toJSON } = await render(<WeekEmptyDot />);
 
     expect(JSON.stringify(toJSON())).not.toContain("borderWidth");
+  });
+
+  /**
+   * 감정 없이 끝난 일기(일기는 썼는데 감정 추출이 안 된 날) — 달력은 **빈 얼굴**, 주간 줄은
+   * **빈 조약돌** 그림을 건다(2026-09-11 · 사용자 반입). 색 원으로 되돌아가면 여기서 걸린다.
+   */
+  it("감정이 없으면 스티커·조약돌 모두 감정 그림과 다른 빈 그림을 건다", async () => {
+    const uri = (json: unknown) => JSON.stringify(json).match(/"testUri":"[^"]+"/)?.[0];
+
+    const sticker = await render(<EmotionSticker id={null} size={30} />);
+    const stickerFace = await render(<EmotionSticker id={1} size={30} />);
+    expect(uri(sticker.toJSON())).toContain("no-emotion");
+    expect(uri(sticker.toJSON())).not.toBe(uri(stickerFace.toJSON()));
+
+    const pebble = await render(<EmotionPebble id={null} />);
+    expect(uri(pebble.toJSON())).toContain("no-emotion");
+    expect(uri(pebble.toJSON())).not.toBe(uri(sticker.toJSON()));
   });
 
   it("EmotionPebble 도 지름의 절반을 쓴다 — 999 가 아니다", async () => {

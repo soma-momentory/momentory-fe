@@ -1,7 +1,7 @@
 import { track } from "@/features/analytics";
 import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { Button, Card, Icon, Spinner, TabScreen, Text } from "@/components/ds";
@@ -88,6 +88,10 @@ export default function Report() {
   const thisWeek = isThisWeek(weekStart);
   const range = `${formatKoreanDateShort(start)} ~ ${formatKoreanDateShort(end)}`;
 
+  // 일기가 있는 날 — 서버 칸은 「안 쓴 날」과 「썼는데 감정이 없는 날」을 똑같이 비워 주므로,
+  // 빈 조약돌을 세울 날은 로컬 일기가 가른다(`WeekMoodRow`)
+  const writtenDates = useMemo(() => new Set(diaries.map((d) => d.date)), [diaries]);
+
   const pick = (week: string) => {
     if (week !== weekStart) track("report_week_selected", { week_start: week });
     setPicking(false);
@@ -165,7 +169,7 @@ export default function Report() {
           </Card>
         ) : (
           <>
-            <WeekMoodCard report={report} thisWeek={thisWeek} />
+            <WeekMoodCard report={report} thisWeek={thisWeek} writtenDates={writtenDates} />
 
             <View style={styles.section}>
               <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>

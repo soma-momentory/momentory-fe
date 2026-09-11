@@ -45,26 +45,36 @@ import { koreanWeekday } from "@/lib/day";
  */
 const DOT_SIZE = 26;
 
-/** 낭독기가 읽을 그날의 감정 — 눈으로 눌러 얻는 것과 같은 값이어야 한다 */
-const namesOf = (emotions: readonly EmotionId[]) => {
+/**
+ * 낭독기가 읽을 그날의 감정 — 눈으로 눌러 얻는 것과 같은 값이어야 한다.
+ * 감정 없이 끝난 일기는 「기록 있음」이다(보관함 달력 칸과 같은 말 · `archive.tsx`)
+ */
+const namesOf = (emotions: readonly EmotionId[], written: boolean) => {
   const names = emotions.map(emotionName).filter((n) => n.length > 0);
-  return names.length > 0 ? names.join(", ") : "기록 없음";
+  if (names.length > 0) return names.join(", ");
+  return written ? "기록 있음" : "기록 없음";
 };
 
 type Props = {
   days: readonly WeeklyMoodDay[];
+  /**
+   * 일기가 있는 날(`YYYY-MM-DD`). 서버 칸은 「안 쓴 날」과 「썼는데 감정이 없는 날」을 똑같이
+   * `emotion: null` 로 주므로, 둘을 가르는 것은 **로컬 일기 목록**이다 — 뒤쪽이면 빈 조약돌을 세운다
+   */
+  writtenDates: ReadonlySet<string>;
   /** 고른 날(`YYYY-MM-DD`) — 카드가 들고 있다 */
   selected: string | null;
   /** 칸을 눌렀다 — 같은 칸을 다시 누르면 `null` 로 접는다 */
   onSelect: (date: string | null) => void;
 };
 
-export function WeekMoodRow({ days, selected, onSelect }: Props) {
+export function WeekMoodRow({ days, writtenDates, selected, onSelect }: Props) {
   return (
     <View style={styles.row}>
       {days.map((d) => {
         const weekday = koreanWeekday(d.date);
-        const names = namesOf(d.emotions);
+        const written = writtenDates.has(d.date);
+        const names = namesOf(d.emotions, written);
         const isSelected = d.date === selected;
 
         return (
@@ -80,10 +90,11 @@ export function WeekMoodRow({ days, selected, onSelect }: Props) {
             style={styles.col}
           >
             {/* 감정이 있는 날은 **수채 조약돌 한 장**(`EmotionPebble` · 2026-09-11 시안),
-                없는 날은 홈과 같은 테두리 없는 원(`WeekEmptyDot`)이 자리를 지킨다.
+                일기는 썼는데 감정이 없는 날은 **빈 조약돌**(테두리만),
+                일기가 없는 날은 홈과 같은 테두리 없는 원(`WeekEmptyDot`)이 자리를 지킨다.
                 고른 칸은 **살짝 커진다**(`SelectLift`) — 홈과 같은 결이다 */}
             <SelectLift selected={isSelected} size={DOT_SIZE}>
-              {d.emotion != null ? (
+              {d.emotion != null || written ? (
                 <EmotionPebble id={d.emotion} size={DOT_SIZE} />
               ) : (
                 <WeekEmptyDot size={DOT_SIZE} />
@@ -94,7 +105,7 @@ export function WeekMoodRow({ days, selected, onSelect }: Props) {
               color={
                 isSelected
                   ? labelColor.strong
-                  : d.emotion == null
+                  : d.emotion == null && !written
                     ? labelColor.assistive
                     : labelColor.neutral
               }
@@ -115,7 +126,7 @@ export function WeekMoodRow({ days, selected, onSelect }: Props) {
  * 카드 **제목 줄 오른쪽**에 선다(⚠ 위 「고른 날은 이 줄이 아니라 카드가 든다」). 줄 높이는
  * 제목(26)이 정하고 이 묶음은 18 이라 가운데로 따로 선다 — 들어와도 카드가 흔들리지 않는다.
  */
-export function WeekMoodReveal({ day }: { day: WeeklyMoodDay }) {
+export function WeekMoodReveal({ day, written }: { day: WeeklyMoodDay; written: boolean }) {
   return (
     <View style={styles.reveal}>
       <Text variant="label2" color={labelColor.neutral}>
@@ -125,7 +136,7 @@ export function WeekMoodReveal({ day }: { day: WeeklyMoodDay }) {
         <DiaryEmotionRow emotions={day.emotions} align="flex-end" />
       ) : (
         <Text variant="label2" color={labelColor.assistive}>
-          기록 없음
+          {namesOf(day.emotions, written)}
         </Text>
       )}
     </View>
