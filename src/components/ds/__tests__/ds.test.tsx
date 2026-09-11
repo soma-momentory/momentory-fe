@@ -113,6 +113,28 @@ describe("Button", () => {
     expect(flatten(getByRole("button").props.style).backgroundColor).toBe(primary.heavy);
   });
 
+  /**
+   * 누름 반응은 **스크림 + 크기**다(`Button.tsx` 머리말 · `GrassButton` 과 같은 판단). 네이티브 드라이버로
+   * 도는 값이라 테스트에서 숫자가 흐르지는 않는다 — **연결만** 본다: 눌리는 버튼에는 크기 값이 걸려 있고,
+   * 비활성에는 걸리지 않는다.
+   */
+  it("누르면 줄어들 크기 값이 걸려 있다 — 스크림만으로는 눌린 것이 약하게 읽혔다", async () => {
+    const { getByRole } = await render(<Button label="저장" onPress={() => {}} />);
+    const transform = flatten(getByRole("button").props.style).transform as
+      { scale?: number }[] | undefined;
+    const scale = transform?.[0]?.scale;
+
+    // 손을 대기 전에는 1 — 눌림은 네이티브 드라이버로 흐르므로 여기서는 시작값과 연결만 본다
+    expect(scale).toBe(1);
+    await fireEvent(getByRole("button"), "pressIn", { nativeEvent: {} });
+    await fireEvent(getByRole("button"), "pressOut", { nativeEvent: {} });
+  });
+
+  it("비활성에는 크기 값이 걸리지 않는다 — 눌리지 않는 버튼이 반응하면 눌린 줄 안다", async () => {
+    const { getByRole } = await render(<Button label="다음" disabled onPress={() => {}} />);
+    expect(flatten(getByRole("button").props.style).transform).toBeUndefined();
+  });
+
   it("비활성이면 눌리지 않고 상태를 알린다", async () => {
     const onPress = jest.fn();
     const { getByRole } = await render(<Button label="다음" disabled onPress={onPress} />);
