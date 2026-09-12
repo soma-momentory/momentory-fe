@@ -6,64 +6,81 @@
 
 ## 무엇이 어디 있나
 
-| 찾는 것                                                    | 정본                                                                                                 |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| 불변 규칙 · 범위 · 접근성 · 샘플 데이터 기준               | [`spec/RULES.md`](spec/RULES.md)                                                                     |
-| 상태 기계 7개 (화면 하나 = `states.<키>` 하나)             | [`spec/momentory.states.mvp.json`](spec/momentory.states.mvp.json)                                   |
-| 엔티티 7개 · 파생값 8개 · 세지 않는 것 · `meta.sampleData` | [`spec/momentory.schema.mvp.json`](spec/momentory.schema.mvp.json)                                   |
-| 값 (색·크기·반경·여백) — **새 디자인** (2026-08-14 전환)   | [`design/design-system.md`](design/design-system.md) + `design/prototype/` — 아래 「값을 찾는 순서」 |
-| 값 — 로그인·온보딩 (리스킨 제외 범위) 전용                 | [`spec/momentory.css`](spec/momentory.css)                                                           |
-| 화면별 규칙·문안·계측 이름                                 | [`spec/screens/<ID>.md`](spec/screens/)                                                              |
-| 파트별 구현 사양 서술                                      | [`spec/범위.md`](spec/범위.md)                                                                       |
-| 컴포넌트 인벤토리 (⚠ 원본 기준 — 값은 css 가 이긴다)       | [`spec/COMPONENTS.md`](spec/COMPONENTS.md)                                                           |
-| 상류 미결·기본값(R-nn)                                     | [`spec/OPEN-ISSUES-요약.md`](spec/OPEN-ISSUES-요약.md)                                               |
-| **서버 API 계약** — 엔드포인트·DTO 의 모양                 | [`api/openapi.json`](api/openapi.json) (반입 스냅샷 · 직접 수정 금지 · `npm run sync:api`)           |
-| 서버 계약의 **읽는 법** — 어댑터 매핑 · 오류 코드 · 경계   | [`api/README.md`](api/README.md) — 모양이 말하지 않는 것은 [`DISCUSSION.md`](DISCUSSION.md) §1       |
-| RN 도메인 타입의 소유자                                    | `src/features/<도메인>/model/types.ts` — mock 이 아니라 feature 가 소유한다                          |
-| RN 토큰                                                    | `src/design/paper.ts`(**새 정본**) — `theme.ts`·`tokens.mvp.ts` 는 동결·삭제 예정                    |
+| 찾는 것                                                    | 정본                                                                                           |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 불변 규칙 · 범위 · 접근성 · 샘플 데이터 기준               | [`spec/RULES.md`](spec/RULES.md)                                                               |
+| 상태 기계 7개 (화면 하나 = `states.<키>` 하나)             | [`spec/momentory.states.mvp.json`](spec/momentory.states.mvp.json)                             |
+| 엔티티 7개 · 파생값 8개 · 세지 않는 것 · `meta.sampleData` | [`spec/momentory.schema.mvp.json`](spec/momentory.schema.mvp.json)                             |
+| **디자인 SSOT** — 시각 값 · 화면 흐름 (2026-08-20 3세대)   | [`DESIGN.md`](DESIGN.md) — 스펙과 부딪히면 이쪽이 이긴다(결정 N0·N6)                           |
+| 값 (색·크기·반경·여백) — 코드가 쓰는 토큰                  | [`src/design/ds/`](../src/design/ds/index.ts) — 여기만 hex 를 든다                             |
+| 화면별 규칙·문안·계측 이름                                 | [`spec/screens/<ID>.md`](spec/screens/)                                                        |
+| 파트별 구현 사양 서술                                      | [`spec/범위.md`](spec/범위.md)                                                                 |
+| 컴포넌트 인벤토리 (⚠ 원본 기준 — 값은 css 가 이긴다)       | [`spec/COMPONENTS.md`](spec/COMPONENTS.md)                                                     |
+| 상류 미결·기본값(R-nn)                                     | [`spec/OPEN-ISSUES-요약.md`](spec/OPEN-ISSUES-요약.md)                                         |
+| **서버 API 계약** — 엔드포인트·DTO 의 모양                 | [`api/openapi.json`](api/openapi.json) (반입 스냅샷 · 직접 수정 금지 · `npm run sync:api`)     |
+| 서버 계약의 **읽는 법** — 어댑터 매핑 · 오류 코드 · 경계   | [`api/README.md`](api/README.md) — 모양이 말하지 않는 것은 [`DISCUSSION.md`](DISCUSSION.md) §1 |
+| RN 도메인 타입의 소유자                                    | `src/features/<도메인>/model/types.ts` — mock 이 아니라 feature 가 소유한다                    |
+| RN 토큰                                                    | [`src/design/ds/`](../src/design/ds/index.ts) — **유일한 정본**(옛 셋은 2026-08-20 삭제)       |
 
-**값을 찾는 순서** — 위에서부터 보고, 없을 때만 아래로 내려간다 (2026-08-14 개정 — [`/PLAN.md`](../PLAN.md)):
+**값을 찾는 순서** — 위에서부터 보고, 없을 때만 아래로 내려간다 (2026-08-20 3세대 개정 —
+[`/PLAN.md`](../PLAN.md) A · [`/CLAUDE.md`](../CLAUDE.md) 과 같은 표다):
 
-1. `spec/screens/<ID>.md` — 그 화면의 규칙·**문안** (문안은 항상 여기)
-2. `src/design/paper.ts` — **새 디자인 토큰 정본** (코드가 쓰는 값)
-3. `design/design-system.md` — 새 디자인 스펙. 값 충돌 시 `design/prototype/*.dc.html` 이 이긴다
-4. `spec/momentory.css` — ⚠ 옛 값 정본. **로그인·온보딩(리스킨 제외 범위) 전용**
-5. `spec/COMPONENTS.md` — ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다
+1. `spec/screens/<ID>.md` — 그 화면의 규칙·**문안** (⚠ `DESIGN.md` 와 겹치면 그쪽이 이긴다)
+2. `src/design/ds/` — **토큰 정본** (코드가 쓰는 값 · `color` `typography` `metrics` `pond`)
+3. `DESIGN.md` — **디자인 SSOT.** `ds/` 에 없는 값·규칙은 여기서 확인하고 `ds/` 에 이름을 만든다
+4. `spec/COMPONENTS.md` — ⚠ **원본 기준.** 구조 참고용 — 배너를 먼저 읽는다
 
-## 화면 ID ↔ 라우트 매핑 (40화면)
+⚠ 옛 정본 셋(`spec/momentory.css` · `design/design-system.md` · `src/design/paper.ts`)은
+**더는 값의 출처가 아니다** — 2·3세대 전환에서 `paper.ts` 와 반입 패키지는 지웠고
+(`PLAN.md` A-16·A-18), `momentory.css` 는 스냅샷으로만 남아 있다.
 
-| 파트   | 화면 ID                   | 라우트 파일                                       | 비고                                                                             |
-| ------ | ------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
-| 진입   | `S0`                      | `app/index.tsx`                                   | 진입 분기 (세션 없음→로그인 · 온보딩 전→온보딩 · 완료→홈)                        |
-| 진입   | `S1`                      | `app/(auth)/login.tsx`                            | 카카오 · 애플 · **Google 전부 연결됨** (개발 통로는 워드마크 길게 누르기로 이동) |
-| 온보딩 | `03`                      | `app/(onboarding)/welcome.tsx`                    |                                                                                  |
-| 온보딩 | `04`                      | `app/(onboarding)/nickname.tsx`                   |                                                                                  |
-| 온보딩 | `05-b`                    | `app/(onboarding)/profile.tsx`                    | 나이·성별 (선택)                                                                 |
-| 온보딩 | `06` `06-b` `06-c`        | `app/(onboarding)/interests.tsx`                  | 한 파일이 세 상태                                                                |
-| 온보딩 | `07`                      | `app/(onboarding)/rest.tsx`                       |                                                                                  |
-| 온보딩 | `08`                      | `app/(onboarding)/retro-time.tsx`                 | OS 시간 피커                                                                     |
-| 온보딩 | `09`                      | `app/(onboarding)/calendar.tsx`                   |                                                                                  |
-| 온보딩 | `10` `10-b`               | `app/(onboarding)/done.tsx`                       | 한 파일이 두 상태                                                                |
-| 홈     | `12` `12-b`               | `app/(tabs)/home.tsx`                             | 일정 있음/없음 — 별도 레이아웃 아님                                              |
-| 홈     | `12-c`                    | `app/home/schedule/[id].tsx`                      | 투명 모달 시트                                                                   |
-| 홈     | ~~`12-d`~~                | **없음 — 2026-08-14 삭제**                        | 새 홈에 순간 카드가 없다 (차이 대장 #18)                                         |
-| 홈     | (신규)                    | `app/home/emotion/[id].tsx`                       | 마침 원을 누르면 뜨는 감정 시트 (`/PLAN.md` D11)                                 |
-| 홈     | `12-e`                    | `app/home/schedule/new.tsx`                       | 〃                                                                               |
-| 회고   | `C1`                      | `app/retro/intro.tsx`                             |                                                                                  |
-| 회고   | `C2`                      | `app/retro/confirm.tsx`                           | 홈과 같은 store·컴포넌트                                                         |
-| 회고   | `C3`                      | `app/retro/emotion.tsx`                           | 시작 감정 — 필수                                                                 |
-| 회고   | `C4` `C4-b` `C4-d` `C4-e` | `app/retro/talk.tsx`                              | 같은 대화의 다른 순간 — 라우트를 나누지 않는다                                   |
-| 회고   | `C4-c` `C4-c2`            | `app/retro/talk.tsx` (`DirectionSheet`)           | 방향 시트                                                                        |
-| 회고   | `C6` `C6-b`               | `app/retro/draft.tsx`                             | 세그먼트 두 면                                                                   |
-| 회고   | `C7`                      | `app/retro/done.tsx`                              |                                                                                  |
-| 보관함 | `A1` `A2`                 | `app/(tabs)/archive.tsx`                          | 달력/목록 — 세그먼트 두 면                                                       |
-| 보관함 | `A3` `A3-c`               | `app/diary/[id]/index.tsx`                        | 한 면(읽기) + 행동 카드 **읽기 전용** — A3-b 바바 면 제거(차이 24) · 조작은 쉼터 |
-| 보관함 | `A4`                      | `app/diary/[id]/edit.tsx`                         | 내 문장·감정 태그만 수정                                                         |
-| 리포트 | `W1`                      | `app/(tabs)/report.tsx`                           | 일기 7편부터                                                                     |
-| 마이   | `M1`                      | `app/(tabs)/my.tsx`                               |                                                                                  |
-| 마이   | `M3`                      | `app/(tabs)/my.tsx` (`BottomSheet`)               | 알림 설정 — 2026-08-20 부터 화면이 아니라 시트 (PLAN A-10)                       |
-| 마이   | `M2`                      | `app/my/profile.tsx`                              | 목록 — 지금 값만 보인다 (기본 정보 섹션: 아래 차이 대장)                         |
-| 마이   | `M2` (항목별)             | `app/my/{nickname,age,gender,interests,rest}.tsx` | 한 화면 일괄 편집이 다섯 라우트로 갈렸다 (PLAN A-10)                             |
+## 화면 ID ↔ 라우트 매핑 (라우트 31개 · 2026-09-12 대조)
+
+⚠ **화면 ID 와 라우트는 더는 1:1 이 아니다.** 상류 MVP 는 40화면이었는데, 그 뒤
+**회고 채팅 v2**(`C1`·`C3` 삭제)와 **쉼터**(탭 + 감각연못)가 들어왔다. 그래서 이 표에는
+① 스펙 ID 가 있는 라우트, ② **스펙에 없는 라우트**(쉼터·감각연못·마이 항목별)가 섞여 있다.
+없어진 ID 는 지우지 않고 어디로 갔는지 적는다 — 지우면 스펙을 읽던 사람이 길을 잃는다.
+
+| 파트   | 화면 ID            | 라우트 파일                                       | 비고                                                                                |
+| ------ | ------------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 진입   | `S0`               | `app/index.tsx`                                   | 진입 분기 (세션 없음→로그인 · 온보딩 전→온보딩 · 완료→홈). 완료 여부의 정본은 서버  |
+| 진입   | `S1`               | `app/(auth)/login.tsx`                            | 카카오 · 애플 · 구글 **전부 실제 로그인** (개발 통로는 워드마크 길게 누르기)        |
+| 온보딩 | `03`               | `app/(onboarding)/welcome.tsx`                    |                                                                                     |
+| 온보딩 | `04`               | `app/(onboarding)/nickname.tsx`                   |                                                                                     |
+| 온보딩 | `05-a` `05-b`      | `app/(onboarding)/age.tsx`                        | 나이 (선택) — 옛 `profile.tsx` 가 둘로 갈렸다 (PLAN A-9)                            |
+| 온보딩 | `05-c` `05-d`      | `app/(onboarding)/gender.tsx`                     | 성별 (선택) — 〃                                                                    |
+| 온보딩 | `06` `06-b` `06-c` | `app/(onboarding)/interests.tsx`                  | 한 파일이 세 상태                                                                   |
+| 온보딩 | `07`               | `app/(onboarding)/rest.tsx`                       | 쉬는 방법 (+ 「기타」 인라인 입력 · 차이 15)                                        |
+| 온보딩 | `08`               | `app/(onboarding)/retro-time.tsx`                 | OS 시간 피커                                                                        |
+| 온보딩 | `09`               | `app/(onboarding)/calendar.tsx`                   |                                                                                     |
+| 온보딩 | `10` `10-b`        | `app/(onboarding)/done.tsx`                       | 한 파일이 두 상태                                                                   |
+| 홈     | `12` `12-b`        | `app/(tabs)/home.tsx`                             | 일정 있음/없음 — 별도 레이아웃 아님                                                 |
+| 홈     | `12-c`             | `app/home/schedule/[id].tsx`                      | 일정 수정 — 투명 모달 시트                                                          |
+| 홈     | `12-e`             | `app/home/schedule/new.tsx`                       | 일정 직접 추가 — 〃                                                                 |
+| 홈     | ~~`12-d`~~         | **없음 — 2026-08-14 삭제**                        | 새 홈에 순간 카드가 없다 (차이 #18)                                                 |
+| 회고   | ~~`C1`~~           | **없음**                                          | 확인 모달이 열리며 사라졌다 (`DESIGN.md` N2)                                        |
+| 회고   | `C2`               | `app/retro/confirm.tsx`                           | 오늘 일정 확인 — 대화의 첫 턴                                                       |
+| 회고   | ~~`C3`~~           | **없음 — 2026-08-28 (v2)**                        | v2 는 **시작 감정을 묻지 않는다** — 일기 작성부터 연다                              |
+| 회고   | `C4` 계열          | `app/retro/talk.tsx`                              | **한 화면이 세 국면**: 일기 작성 → 분기점 → 감정 탐색. 무엇을 그릴지는 서버 `phase` |
+| 회고   | `C6` `C6-b`        | `app/retro/draft.tsx`                             | 완성된 일기 확인 · 감정 태그(다중)                                                  |
+| 회고   | `C7`               | `app/retro/done.tsx`                              | 저장 완료 + **바람 카드**(감정 탐색을 거친 경우)                                    |
+| 보관함 | `A1` `A2`          | `app/(tabs)/archive.tsx`                          | 달력/목록 — 아이콘 스위처. 달력은 **감정 스티커**(차이 #36)                         |
+| 보관함 | `A3` `A3-c`        | `app/diary/[id]/index.tsx`                        | 한 면(읽기) + 바람 카드 **읽기 전용** — `A3-b` 제거(차이 24) · 조작은 쉼터          |
+| 보관함 | ~~`A4`~~           | **없음 — 2026-08-20 삭제**                        | 저장 뒤 수정 화면을 두지 않는다 (차이 #24·26)                                       |
+| 리포트 | `W1`               | `app/(tabs)/report.tsx`                           | **처음부터 열려 있다**(차이 #32) · 주 고르기는 목록(#33)                            |
+| 쉼터   | `R1`               | `app/(tabs)/rest.tsx`                             | 진입 — 바람카드 + 쉼 콘텐츠 2×2. **스펙 밖**(정본은 `DESIGN.md` 「쉼터」)           |
+| 쉼터   | `R2`               | `app/rest/cards/index.tsx`                        | 날짜별 바람카드 (달력 + 카드). `R3` 는 지웠다(차이 #35)                             |
+| 쉼터   | (신규)             | `app/rest/sense-pond.tsx`                         | 감각연못 3-2-1. 나머지 쉼 콘텐츠 셋은 **화면이 없다**(카드에 「개발 중이에요」)     |
+| 마이   | `M1`               | `app/(tabs)/my.tsx`                               | 마이 기본                                                                           |
+| 마이   | `M3`               | `app/(tabs)/my.tsx` (`BottomSheet`)               | 알림 설정 — 화면이 아니라 **시트**다 (PLAN A-10)                                    |
+| 마이   | `M2`               | `app/my/profile.tsx`                              | 기본 정보 **목록** — 지금 값만 보인다 (차이 #5)                                     |
+| 마이   | `M2` (항목별)      | `app/my/{nickname,age,gender,interests,rest}.tsx` | 한 화면 일괄 편집이 다섯 라우트로 갈렸다 (PLAN A-10)                                |
+
+> ⚠ **코드 주석의 `M3`~`M8` 은 이 표의 번호가 아니다.** `app/my/profile.tsx` 는 자신을
+> `M3`, 항목별 다섯을 `M4`~`M8` 이라고 적는데, **스펙에는 `M4` 이상이 없다**
+> (`spec/screens/` 는 `M1`·`M2`·`M3` 셋뿐이고 `M3` 는 알림 설정이다). 구현이 편의로 붙인
+> 번호이므로 **문서·대화에서는 이 표의 스펙 번호를 쓴다.** 코드 주석을 일괄로 고치는 것은
+> 별도 작업이다 — 지금은 이 한 줄로 어긋남을 드러내 둔다.
 
 데이터 흐름·레이어 책임은 [`ARCHITECTURE.md`](ARCHITECTURE.md), 화면별 진행 상태는 [`TASKS.md`](TASKS.md).
 
@@ -123,5 +140,9 @@
 
 | 36 | **`A1` 달력의 감정 표시를 점·색 박스에서 감정 스티커(얼굴 그림)로 바꿨다** — `A1.md` 는 「달력 **점**은 일기가 있는 날에만 · 하루 최대 3개 · 감정 태그가 없는 일기는 **중립색 점 하나**」로 적고, `DESIGN.md` 「보관함」도 점을 전제한다(2026-08-24 이후 구현은 감정색 채움 박스였다). 사용자 요청(2026-09-07)으로 **날짜 아래에 그날 주 감정의 얼굴 한 장**을 놓는다 — 칸 하나에 그림 하나이므로 「하루 최대 3개」는 그대로 지켜지지 않고 **주 감정 하나만** 선다(옛 채움 박스도 이미 하나였다). ⚠ 딸려 온 것 셋: (1) 감정 태그가 없는 일기는 얼굴을 지어내지 않고 **중립 원**으로 선다(`EmotionSticker` 의 `id=null`), (2) 그림도 색도 낭독기에 없으므로 **칸 이름에 감정 이름을 붙였다** — 「22일, 화남」(`RULES.md` 「보관함」의 '색만으로 판단하게 하지 않는다'를 격자 안에서 지키는 자리), (3) 칸이 38 → **28+얼굴**(360dp 에서 64)로 높아져 달력 카드가 그만큼 길어졌다(보관함 달력은 스크롤 안이라 잘리지 않는다), (4) 2026-09-07 사용자 요청으로 **얼굴을 칸 폭까지 키우고**(여백 5 · 최대 37 · 360dp 에서 36) 선택 표시를 칸 링에서 **날짜 알약**으로 옮겼으며, 일정은 **날짜 밑·얼굴 위의 작은 연두 점**(`scheduleDot` — 이 자리를 위해 만든 토큰)으로(한때 초록 날짜였다가 같은 날 되돌렸다 — 고른 날은 흰 글자라 그 채널이 사라진다), 「일기 있는 날은 진한 날짜」는 **없앴다**(얼굴이 이미 그 말을 한다) | 사용자 요청(2026-09-07) vs `docs/spec/screens/A1.md` 「달력 점」 · `docs/DESIGN.md` 「보관함」 | FE `src/components/ds/EmotionSticker.tsx` · `src/components/ds/Calendar.tsx`(`dateSticker`) · `app/(tabs)/archive.tsx` · `assets/emotion/*.png`(+ `README.md` · `scripts/keyout-emotion-stickers.py`) · `app/(tabs)/__tests__/archive.test.tsx` · 이 행 | 상류가 스티커를 받아들이거나 점으로 되돌리라고 답한다 | **FE 결정** |
 | 37 | **홈 「하루 돌아보기」 카드에 카피바라를 앉히고 CTA 를 fill 에서 hug 로 바꿨다** — `DESIGN.md` 「홈」은 「날짜 + 알림 → 하루 돌아보기 CTA → 이번 주 감정 → 오늘 일정」 네 칸뿐이고, 3세대 전환(`PLAN.md` A Phase 4)이 날씨 씬(하늘·언덕·카피바라·병아리)을 **통째로 걷어 내면서** 「일러스트·안내 그림을 두지 않는다」를 홈의 규칙으로 적어 뒀다. 사용자 시안(2026-09-10)으로 **그 카드 오른쪽 아래에만** 캐릭터가 돌아온다 — 씬이 아니라 그림 한 장이고, `12-b`(일정 없음)의 초대 문구 자리는 **여전히 글자뿐이라** 「빈 자리를 달래는 그림」 금지는 그대로다. ⚠ 딸려 온 것 넷: (1) 오른쪽이 그림 자리가 되어 **CTA 가 꽉 차던 것에서 hug 로** 바뀌었고, 같은 날 **모양도 「위가 잔디처럼 봉긋한」 시안 그림으로** 바뀌었다(`GrassButton` · `assets/home/cta-grass.png`) — 높이·여백·면 색·누름 스크림은 §6 그대로이고 모양만 다르다. ⚠ **DS 버튼은 안 건드렸다** — 이 모양은 홈 카드 하나의 장식이고, 두 번째 화면이 원하면 그때 `components/ds/` 로 올린다(화면의 유일한 solid 라는 §6 규칙은 그대로), (2) **누르면 손을 흔든다** — 눈 뜨고 팔 내린 장에서 **눈 감고 웃으며 팔 든 장**으로 **한 번 갈렸다가 0.42초 뒤 돌아오는 것**이 전부이고 코드가 보태는 움직임은 없다(`HomeCapybara`). 처음에는 네 번 갈아 끼워 두 번 흔들었는데 부산스러워서 한 번으로 줄였다(사용자 요청). ⚠ 처음 받은 두 장은 팔이 「늘어나는」 차이뿐이라 몸통을 6° 기울여야 손짓으로 읽혔는데, 같은 날 **팔을 확실히 든 두 장**으로 갈아 끼우면서 기울기도 만화식 효과선도 뺐다(사용자 요청). 발밑 그림자도 **그림에 이미 있는 것을 쓰고** 코드는 그리지 않는다 — 그림자를 살리려고 키아웃의 채도 문턱을 좁혔고, 상자가 그림자만큼 넓어져 그림 폭을 112 → 118 로 올렸다, (3) 손짓은 **그것으로 끝난다** — 회고로 가는 문은 버튼 하나뿐이고 카피바라는 낭독기에서 숨긴다(눌러도 얻는 것이 없다), (4) 좁은 기기(360dp)에서는 알림 시각 줄이 **두 줄로 접힌다** — 제목 한 줄(142)이 남는 폭에서 그림 크기를 잡았다 | 사용자 시안(2026-09-10) vs `docs/DESIGN.md` 「홈」 · `PLAN.md` A Phase 4 「일러스트를 두지 않는다」 | FE `src/features/home/ui/HomeCapybara.tsx` · `app/(tabs)/home.tsx` · `assets/home/*.png`(+ `README.md` · `scripts/keyout-home-capybara.py`) · `src/features/home/__tests__/homeCapybara.test.tsx` · 이 행 | 상류가 캐릭터를 받아들이거나 홈을 다시 글자만으로 되돌리라고 답한다 | **FE 결정** |
+
+| 38 | **회고가 v2 로 갈렸다 — `C1`·`C3` 가 사라지고 행동 카드가 「바람 카드」가 됐다** — `docs/spec/` 의 회고는 「`C1` 진입 → `C2` 일정 확인 → `C3` 시작 감정(필수) → `C4` 대화 → `C6` 일기 → `C7` 완료」이고 산출물은 **행동 카드**다. 2026-08-28 에 BE 와 함께 **채팅흐름 v2**(BE `#60`~`#62`)로 옮겼다: 시작 감정을 묻지 않고 **일기 작성부터** 열고, 대화 중 「감정을 더 알아볼까요」 분기점을 거쳐 감정 탐색으로 들어가며, 산출물은 상황·감정(≤2)·바람(≤2)·바랐던 모습·작은 행동을 담는 **바람 카드**다. 근거: 시작 감정을 고르게 하면 그 감정에 대화가 갇히고, 「무엇을 할까」보다 「무엇을 바랐나」가 회고에 맞는다(사용자·BE 합의). 임시 기록 자리: `docs/retro-chat-v2-plan.md`(FE 실행 계획) · 정본은 `momentory-be/docs/retro-chat-v2-plan.md`. 닫히는 조건: 상류가 회고 상태 기계를 v2 로 갱신하면 — 그때까지 `spec/screens/C1.md`·`C3.md`·`C4-c*.md` 는 **읽되 구현하지 않는다** |
+| 39 | **감정이 9종에서 10종이 됐다 — 「화남·답답함」이 둘로 갈리고 번호를 긍정→부정으로 다시 매겼다** — 스키마·`DESIGN.md` §1 은 감정 **9종**이고 3번이 「화남·답답함」이다(차이 #21). v2 에서 **화남(9)·답답함(10)** 으로 나누고 `1 행복 … 10 답답함` 순으로 재번호했다(2026-08-28). 번호는 **프론트 로컬 규약**이고 서버와는 문자열 키로 오간다(`EMOTION_KEYS`)라 저장된 값이 깨지지 않는다. ⚠ **일정 감정만 아직 합쳐져 있다** — BE `ScheduleEmotion` 에 `ANGRY_FRUSTRATED` 하나뿐이라 9·10 이 같은 코드로 가고 되돌아올 때 **화남(9)으로 정한다**(`scheduleApi.ts`). 닫히는 조건: BE enum 분리 + 마이그레이션(retro v2 범위 밖) |
+| 40 | **쉼 콘텐츠 「감각연못」은 스펙에도 시안에도 없는 화면이다** — `DESIGN.md` 「쉼터」의 룸 3종(대나무 숲 · 감각 연못 · 걱정 상자)은 오래 「구현 범위 밖」이었다(`features/rest/model/cards.ts`). 사용자 요청(2026-09-03)으로 **감각연못만** 실제 플레이 화면으로 만들었다(3-2-1 · 꾹 누르기 · 연못 일러스트). 근거·값은 `DESIGN.md` 「감각연못」에 그때그때 적어 왔다 — **그 절이 이 화면의 정본이다.** 나머지 셋(걱정상자·보물상자·몸풀기)은 카드만 있고 **눌리지 않으며 「(개발 중이에요)」라고 적는다**(2026-09-07). 닫히는 조건: 셋에 화면이 생기거나 목록에서 빠질 때 |
 
 새 행을 추가할 때: 차이·근거·임시 기록 자리·닫히는 조건을 전부 채운다 — 하나라도 비면 "조용한 이탈"이 된다.
