@@ -1,30 +1,21 @@
-import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { Card, Text } from "@/components/ds";
-import { label as labelColor, line, space } from "@/design/ds";
+import { Text } from "@/components/ds";
+import { label as labelColor, space } from "@/design/ds";
 import { splitMoodMessage, type WeeklyReport } from "@/features/report/model/weeklyReport";
 
-import { WeekMoodReveal, WeekMoodRow } from "./WeekMoodRow";
-
 /**
- * `W1` · 첫 카드 「**이번 주의 마음**」 — 일곱 칸의 점 + 구분선 + 요약 문장.
+ * `W1` · 화면 첫 줄 — 그 주를 **한 문장으로** 말한다.
  *
- * 시안이 「첫 카드가 가장 중요 — 제목 → 7일 흐름 → 구분선 → 요약」이라고 못박은
- * 그 카드다. 감정 **비율**(도넛·%)은 여기에도 어디에도 없다(`DESIGN.md` 「리포트」).
+ * ## 일곱 칸이 여기서 떠났다 (2026-09-12)
  *
- * ## 누른 날의 감정은 제목 줄 오른쪽에 선다
+ * 예전에는 이 카드가 「제목 → 7일 점 줄 → 구분선 → 요약」 한 벌이었다. 시안이 둘을
+ * 갈랐다 — 요약은 이 카드에 남고, 하루하루는 **제 카드**로 나갔다(`WeekEmotionCard` ·
+ * 쌓이는 조약돌). 한 카드 안에 있는 동안에는 「그 주가 어땠나」와 「어느 날이 어땠나」가
+ * 같은 자리에서 겹쳤고, 구분선 하나가 그 둘을 갈라 보려 애쓰고 있었다.
  *
- * 전에는 점 줄 **아래**에 한 줄이 새로 섰고, 그만큼 구분선과 요약 문장이 밀려 내려갔다
- * (2026-09-11 · 사용자 요청 「선택했을 때 위치 안 변하게」). 홈의 「이번 주 감정」과 같은
- * 자리로 옮겼다 — **제목 줄은 원래 있던 높이(26)**이고 감정 줄은 18 이라, 글자가 들어와도
- * 카드가 흔들리지 않는다.
- *
- * 그래서 **고른 날은 카드가 든다**(`selected`) — 점 줄은 누른 것을 알릴 뿐이고, 그날
- * 감정을 어디에 적을지는 제목 줄을 가진 카드가 안다.
- *
- * ⚠ 좁은 기기(360dp)에서 **감정이 셋 이상인 날**은 이름이 두 줄로 접혀 제목 줄이 늘 수
- * 있다. 제목이 홈(13)보다 커서 오른쪽 자리가 좁기 때문이다 — 드문 날이라 그대로 둔다.
+ * 그래서 이 카드에는 이제 **문장만 있다** — 구분선도 함께 없앴다(가를 것이 없다).
+ * 감정 **비율**(도넛·%)은 여기에도 어디에도 없다(`DESIGN.md` 「리포트」).
  *
  * ## 문장을 지어내지 않는다
  *
@@ -33,83 +24,58 @@ import { WeekMoodReveal, WeekMoodRow } from "./WeekMoodRow";
  * 굵기로 세울 뿐이고(`splitMoodMessage`), 문장을 고치거나 보태지 않는다. 한 문장뿐인
  * 주(여러 감정이 최다를 나눠 가진 주 · 기록이 없는 주)는 그대로 한 줄이다.
  *
- * ## 「이번 주」는 이번 주에만 쓴다
+ * ## 제목도 카드도 없다 (2026-09-12)
  *
- * `W1.md` 는 문구를 기간에 매지 말라고 했지만(「한 주 요약」), 서버 멘트 자체가
- * 「**이번 주에는** …」으로 시작해서 제목만 기간에서 떼면 카드 안에서 말이 갈린다.
- * 그래서 시안(`Report · 리포트 주간`)을 따라 「이번 주의 마음」으로 두되, **지난 주를
- * 넘겨보는 동안에는 「이 주의 마음」**이다 — 기기에서 보니 「8월 17일 ~ 8월 23일」
- * 위에 「이번 주」가 서는 것이 대놓고 틀린 말이었다(2026-08-24 실기기 확인).
- * 기록: `docs/PRODUCT.md` 「상류와 차이」.
+ * 한때 「이번 주의 마음」 카드였고 시안을 따라 「이번 주 한눈에」였는데, 사용자 결정으로
+ * **제목 셋(한눈에 · 감정들 · 바람카드)을 모두 걷고, 이 문장만 카드에서도 꺼냈다.**
+ *
+ * 카드는 「그 안에서 무언가를 보는 판」이다 — 일곱 칸도 알약도 그 안에 산다. 그런데 이
+ * 문장은 **화면이 사용자에게 건네는 말**이라 판이 필요 없다. 날짜 줄 아래 그냥 놓이면
+ * 아래 카드 셋이 「보는 것」으로 한 묶음이 되고, 이 문장은 그 묶음을 여는 인사가 된다.
+ * ⚠ 「이번 주」라는 기간 표시는 **머리의 날짜 줄**이 이미 말한다.
+ *
+ * ## 문장을 지어내지 않는다 (서버 멘트 그대로)
  *
  * ⚠ **서버 멘트는 지난 주에도 「이번 주에는 …」이라고 말한다**(BE `WeeklyMood` 의
  * 고정 문장 아홉 벌). 그 문장은 서버 것이라 여기서 고치지 않는다 — BE 가 「그 주에는」
- * 으로 바꾸거나 주차별로 갈라 주어야 닫힌다.
+ * 으로 바꾸거나 주차별로 갈라 주어야 닫힌다. 제목이 사라지면서 **화면이 기간을 말하는
+ * 자리는 날짜 줄 하나**가 됐고, 어긋나는 것도 이 멘트 하나뿐이다.
+ * 기록: `docs/PRODUCT.md` 「상류와 차이」.
  */
-type Props = {
-  report: WeeklyReport;
-  thisWeek: boolean;
-  /** 일기가 있는 날 — 감정 없이 끝난 일기에 빈 조약돌을 세우는 데 쓴다(`WeekMoodRow`) */
-  writtenDates: ReadonlySet<string>;
-};
-
-export function WeekMoodCard({ report, thisWeek, writtenDates }: Props) {
+export function WeekMoodSummary({ report }: { report: WeeklyReport }) {
   const { lead, follow } = splitMoodMessage(report.moodMessage);
-  const [selected, setSelected] = useState<string | null>(null);
-  // 다른 주로 넘기면 고른 날이 그 주에 없다 — 찾지 못하면 아무것도 적지 않는다
-  const picked = report.days.find((d) => d.date === selected) ?? null;
+  if (lead.length === 0) return null;
 
   return (
-    <Card padding="loose" style={styles.card}>
-      <View style={styles.top}>
-        <View testID="week-mood-head" style={styles.head}>
-          <Text variant="headline1" color={labelColor.strong} style={styles.title}>
-            {thisWeek ? "이번 주의 마음" : "이 주의 마음"}
-          </Text>
-          {picked != null ? (
-            <WeekMoodReveal day={picked} written={writtenDates.has(picked.date)} />
-          ) : null}
-        </View>
-        <WeekMoodRow
-          days={report.days}
-          writtenDates={writtenDates}
-          selected={selected}
-          onSelect={setSelected}
-        />
-      </View>
-
-      {lead.length > 0 ? (
-        <View style={styles.copy}>
-          <Text variant="body1Reading" color={labelColor.normal}>
-            {lead}
-          </Text>
-          {follow.length > 0 ? (
-            <Text variant="body2Reading" color={labelColor.alternative}>
-              {follow}
-            </Text>
-          ) : null}
-        </View>
+    <View style={styles.copy}>
+      {/* 본문(16)보다 **한 단 큰** 읽기용 단이다(2026-09-12 · 사용자 요청) — 카드 밖에
+          홀로 서는 문장이라 본문 크기로는 아래 카드들에 묻혔다. 새 숫자를 만들지 않고
+          일기 상세가 쓰던 18/30 을 그대로 쓴다(`typography.ts`) */}
+      <Text variant="body1ReadingHandLg" color={labelColor.normal} style={styles.lead}>
+        {lead}
+      </Text>
+      {follow.length > 0 ? (
+        <Text variant="body2Reading" color={labelColor.alternative} style={styles.follow}>
+          {follow}
+        </Text>
       ) : null}
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { gap: space.xl },
-  top: { gap: space.lg },
-  // 제목과 누른 날의 감정 — 줄 높이는 제목(26)이 정한다. 감정은 가운데로 따로 선다
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: space.md,
-  },
-  title: { flexShrink: 0 },
-  // 구분선은 hairline 이다 — 카드 안에 또 하나의 카드를 만들지 않는다(`DESIGN.md` §5)
-  copy: {
-    gap: space.xs,
-    paddingTop: space.xl,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: line.alternative,
-  },
+  copy: { gap: space.xs },
+
+  /**
+   * 두 문장의 **왼쪽 자리가 다르다**(2026-09-12 · 사용자 확인).
+   *
+   * 관찰 문장은 **화면 맨 왼쪽**(섹션 라벨과 같은 4)에서 시작한다 — 카드 밖에 놓인 이
+   * 줄이 그 주를 여는 말이라, 아래 어느 것에도 딸리지 않은 자리에 선다.
+   *
+   * 권유 문장은 **12**로 한 단만 들어온다 — 앞 문장에 딸린 말이라 들여쓰기가 그 관계를
+   * 그대로 보여준다. 한때 카드 안쪽 글에 맞춰 22 까지 밀었는데 너무 깊었다(2026-09-12 ·
+   * 사용자 확인) — 여기서 재는 것은 카드의 시작선이 아니라 **앞 문장과의 거리**다.
+   */
+  lead: { paddingHorizontal: space.xs },
+  follow: { paddingLeft: space.md, paddingRight: space.xs },
 });

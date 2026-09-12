@@ -32,6 +32,14 @@ const raw = {
   scheduleCompletedCount: 9,
   actionCardCreatedCount: 5,
   actionCardCompletedCount: 3,
+  needs: [
+    { word: "휴식", count: 2 },
+    { word: "연결", count: 1 },
+  ],
+  practicedWishes: [
+    { action: "30분 산책하기", needs: ["휴식"] },
+    { action: null, needs: ["연결"] },
+  ],
   diaryCount: 5,
 };
 
@@ -53,6 +61,48 @@ describe("WeeklyReportResponse → WeeklyReport", () => {
     expect(report?.actionCardCreated).toBe(5);
     expect(report?.actionCardCompleted).toBe(3);
     expect(report?.diaryCount).toBe(5);
+  });
+
+  it("찾은 바람과 실천한 것을 그대로 옮긴다", () => {
+    const report = toWeeklyReport(raw);
+
+    expect(report?.needs).toEqual([
+      { word: "휴식", count: 2 },
+      { word: "연결", count: 1 },
+    ]);
+    expect(report?.practicedWishes).toEqual([
+      { action: "30분 산책하기", needs: ["휴식"] },
+      { action: null, needs: ["연결"] },
+    ]);
+  });
+
+  it("바람 자리가 없는 옛 응답도 리포트로 선다 — 그 카드만 빈다", () => {
+    // 서버에 필드가 없던 시절의 응답이다. 셈은 그대로 맞으므로 한 주를 통째로 버릴 이유가 없다
+    const { needs, practicedWishes, ...legacy } = raw;
+    const report = toWeeklyReport(legacy);
+
+    expect(report).not.toBeNull();
+    expect(report?.needs).toEqual([]);
+    expect(report?.practicedWishes).toEqual([]);
+    expect(report?.diaryCount).toBe(5);
+  });
+
+  it("모양이 어긋난 바람 한 알약만 버린다 — 나머지는 그대로 선다", () => {
+    const report = toWeeklyReport({
+      ...raw,
+      needs: [{ word: "휴식", count: 2 }, { word: "", count: 1 }, { word: "연결", count: -1 }, 7],
+    });
+
+    expect(report?.needs).toEqual([{ word: "휴식", count: 2 }]);
+  });
+
+  it("빈 바람 단어는 실천 줄에서도 버린다 — 빈 이름을 적지 않는다", () => {
+    const report = toWeeklyReport({
+      ...raw,
+      practicedWishes: [{ action: "  ", needs: ["휴식", " ", 3] }],
+    });
+
+    expect(report?.practicedWishes).toEqual([{ action: null, needs: ["휴식"] }]);
   });
 
   it("모르는 감정 키는 버린다 — 이름을 지어내지 않는다", () => {

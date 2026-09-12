@@ -244,8 +244,14 @@ src/components/my/{SettingRow, BasicInfoEditor}.tsx
 src/components/icons/LineIcons.tsx        ← 해·종·달·연필·체크 (이모지 금지)
 src/components/archive/{CalendarMonth, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionRow, ActionCardSection, DiaryBabaFace}.tsx ← C6-b·A3 공유
-src/components/report/{WeekMoodCard, WeekMoodRow, WeekCountList, WeekPickerSheet}.tsx
-                                          ← 이번 주의 마음(점 일곱 칸 + 요약) · 이번 주 한눈에.
+src/components/report/{WeekMoodSummary, WeekEmotionCard, WeekEmotionStack, WeekWishCard,
+                       WeekCountList, WeekPickerSheet}.tsx
+                                          ← 한 주 요약 한 문장(카드가 아니다 · 날짜 줄 아래) ·
+                                            감정 더미 일곱(하루의 감정을 쌓는다) ·
+                                            바람카드(찾은 바람 알약 + 실천한 것) ·
+                                            이번 주 기록(일정·일기 셈).
+                                            **제목은 감정 카드에만 둔다**(2026-09-12) —
+                                            나머지는 첫 줄이 곧 제 이름이다.
                                             비율(도넛·%)을 만들지 않는다 — 세는 값은 서버 것이다.
                                             WeekPickerSheet = 주를 고르는 **목록**
                                             (일기가 남은 주만 · 「2026년 8월 4주차」 + 날짜·일기 수)
