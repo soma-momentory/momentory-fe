@@ -28,6 +28,18 @@ export const space = {
   xl5: 48,
 } as const;
 
+/**
+ * 카드 안쪽 여백(`DESIGN.md` §8 의 16~22 대역 양 끝) — `Card` 가 쓰는 값이다.
+ *
+ * **밖에서도 쓴다**: 카드 밖에 놓인 글이 카드 안의 글과 왼쪽 줄을 맞추려면 같은 값을
+ * 봐야 한다(리포트의 한 주 요약 문장 · `WeekMoodSummary`). 22 는 스페이싱 10단에 없는
+ * 값이라 각자 적어 두면 한쪽만 바뀌어도 아무도 모른다.
+ */
+export const cardPadding = {
+  default: space.lg,
+  loose: 22,
+} as const;
+
 /** `DESIGN.md` §4 */
 export const radius = {
   small: 8, //   칩, 작은 버튼

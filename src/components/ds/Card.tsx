@@ -1,6 +1,6 @@
 import { StyleSheet, View, type ViewProps } from "react-native";
 
-import { background, fill, hairline, radius, space } from "@/design/ds";
+import { background, cardPadding, fill, hairline, radius, space } from "@/design/ds";
 
 /**
  * 카드 — `DESIGN.md` §8.
@@ -28,8 +28,8 @@ export function Card({ padding = "default", style, ...rest }: Props) {
 }
 
 const PADDING = {
-  default: { padding: space.lg },
-  loose: { padding: 22 },
+  default: { padding: cardPadding.default },
+  loose: { padding: cardPadding.loose },
   none: {},
 } as const;
 
