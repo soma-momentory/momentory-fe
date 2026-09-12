@@ -5,7 +5,17 @@ import { interaction, label as labelColor, space } from "@/design/ds";
 import type { WeeklyReport } from "@/features/report/model/weeklyReport";
 
 /**
- * `W1` · 「**이번 주 한눈에**」 — 일정 · 바람카드 · 일기를 한 줄씩 센다.
+ * `W1` · 「**이번 주 기록**」 — 일정과 일기를 한 줄씩 센다.
+ *
+ * ## 바람카드 줄이 빠졌다 · 이름도 바뀌었다 (2026-09-12)
+ *
+ * 「n개 중 m개 실천」 한 줄이 하던 말을 **바람카드 카드**(`WeekWishCard`)가 통째로,
+ * 그것도 **무엇을 실천했는지까지** 말한다 — 같은 것을 두 번 세면 어느 쪽이 정본인지
+ * 흐려진다. 그래서 이 카드에는 **바람카드가 말하지 않는 것**만 남았다.
+ *
+ * 이름도 바뀌었다: 시안이 이 카드에 붙였던 「이번 주 한눈에」는 화면에서 아예 사라졌고
+ * (카드 제목을 전부 걷었다 · `report.tsx` 머리말), 여기만 **「이번 주 기록」**이라는 섹션
+ * 라벨을 든다 — **여러 줄을 세는 카드**라 무엇을 세는지 한 번은 말해 주어야 한다.
  *
  * ## 분모를 함께 적는다 (2026-08-24)
  *
@@ -21,9 +31,8 @@ import type { WeeklyReport } from "@/features/report/model/weeklyReport";
  * 셀 것이 하나도 없는 줄은 「0개 중 0개 완료」로 적지 않는다 — **없던 일에 0 을 붙이면
  * 못 한 것처럼 읽힌다.** 그런 줄은 「없음」 한 마디로 닫는다.
  *
- * ⚠ **바람카드의 분모는 「그 주에 만든 카드」다**(BE `WeeklyReport`) — 지난주에 만든
- * 카드를 이번 주에 해봤다면 어느 쪽에도 잡히지 않는다. 그래서 두 값이 같은 분모를
- * 나눠 갖고, 「n개 중 m개」가 성립한다.
+ * ⚠ **일정의 분모는 「그 주에 잡힌 일정」이다**(BE `WeeklyReport`) — 두 값이 같은 분모를
+ * 나눠 갖기 때문에 「n개 중 m개」가 성립한다.
  *
  * 아이콘은 **숫자보다 약하게**(시안 「Interaction/Inactive」) — 줄의 주인공은 값이다.
  */
@@ -51,11 +60,6 @@ export const weekCounts = (report: WeeklyReport): WeekCount[] => [
     icon: "calendar",
     label: "일정",
     ...countOf(report.scheduleTotal, report.scheduleCompleted, "완료"),
-  },
-  {
-    icon: "heart",
-    label: "바람카드",
-    ...countOf(report.actionCardCreated, report.actionCardCompleted, "실천"),
   },
   { icon: "document", label: "일기", ...diaryCountOf(report.diaryCount) },
 ];

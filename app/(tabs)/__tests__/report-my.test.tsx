@@ -53,6 +53,18 @@ const weeklyReport = (over: Partial<WeeklyReport> = {}): WeeklyReport => ({
   scheduleCompleted: 9,
   actionCardCreated: 5,
   actionCardCompleted: 3,
+  // 바람은 많이 나온 순으로 온다 — 휴식만 두 카드에 나왔다
+  needs: [
+    { word: "휴식", count: 2 },
+    { word: "연결", count: 1 },
+    { word: "인정", count: 1 },
+  ],
+  // 실천 목록은 최신순이고 길이가 곧 actionCardCompleted 다
+  practicedWishes: [
+    { action: "30분 산책하기", needs: ["휴식"] },
+    { action: "먼저 안부 묻기", needs: ["연결"] },
+    { action: null, needs: ["인정"] },
+  ],
   diaryCount: 5,
   ...over,
 });
@@ -94,7 +106,9 @@ const openReport = async () => {
   const r = await render(<Report />);
   // 첫 조회의 응답이 **act 안에서** 닿게 한다 — 밖에서 닿으면 React 가 경고한다
   await act(async () => {});
-  expect(r.getByText("이번 주의 마음")).toBeTruthy();
+  // ⚠ 카드 제목이 없다(2026-09-12) — 화면이 준비됐는지는 **셈 카드의 섹션 라벨**로 확인한다
+  // (서버 멘트는 주마다 달라서 기준이 못 된다)
+  expect(r.getByText("이번 주 기록")).toBeTruthy();
   return r;
 };
 
@@ -161,7 +175,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     await act(async () => {
       await fireEvent.press(r.getByLabelText("수요일 기록 있음"));
     });
-    expect(within(r.getByTestId("week-mood-head")).getByText("기록 있음")).toBeTruthy();
+    expect(within(r.getByTestId("week-emotion-head")).getByText("기록 있음")).toBeTruthy();
   });
 
   it("칸을 누르면 그날 감정을 글자로 드러낸다 — 색만으로 안 보이던 하루를 확인한다", async () => {
@@ -175,11 +189,11 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     });
     expect(r.getByText("일요일 ·")).toBeTruthy();
     expect(r.getByText("피곤함")).toBeTruthy();
-    // ⚠ 드러난 글자는 **카드 제목 줄 안**에 선다 — 점 줄 아래에 새 줄을 세우면 요약 문장이
-    // 밀려 내려갔다(2026-09-11). 자리가 아래로 돌아가면 이 검사가 깨진다
-    expect(within(r.getByTestId("week-mood-head")).getByText("일요일 ·")).toBeTruthy();
+    // ⚠ 드러난 글자는 **감정들 카드 제목 줄 안**에 선다 — 더미 아래에 새 줄을 세우면 땅과
+    // 요일 글자가 밀려 내려갔다(2026-09-11). 자리가 아래로 돌아가면 이 검사가 깨진다
+    expect(within(r.getByTestId("week-emotion-head")).getByText("일요일 ·")).toBeTruthy();
 
-    // 하루에 감정이 여럿이면 **전부** 선다 — 점 하나는 대표 감정 색만 맡는다
+    // 하루에 감정이 여럿이면 **전부** 선다 — 더미에 쌓인 조약돌 전부가 그 하루다
     await act(async () => {
       await fireEvent.press(r.getByLabelText("월요일 평온함, 뿌듯함"));
     });
@@ -224,18 +238,88 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     expect(r.getByText("여러 마음이 번갈아 찾아온 한 주였어요.")).toBeTruthy();
   });
 
-  it("일정·바람카드는 「몇 개 중 몇 개」로 적는다", async () => {
+  it("일정은 「몇 개 중 몇 개」로 적는다", async () => {
     const r = await openReport();
 
-    expect(r.getByText("이번 주 한눈에")).toBeTruthy();
+    expect(r.getByText("이번 주 기록")).toBeTruthy();
 
     const schedule = within(r.getByText("일정").parent!.parent!);
     expect(schedule.getByText("12개 중")).toBeTruthy();
     expect(schedule.getByText("9개 완료")).toBeTruthy();
+  });
 
-    const cards = within(r.getByText("바람카드").parent!.parent!);
-    expect(cards.getByText("5개 중")).toBeTruthy();
-    expect(cards.getByText("3개 실천")).toBeTruthy();
+  it("바람카드를 셈 카드에서 또 세지 않는다 — 제 카드가 무엇을 실천했는지까지 말한다", async () => {
+    const r = await openReport();
+
+    // 같은 것을 두 번 세면 어느 쪽이 정본인지 흐려진다(`WeekCountList` 머리말).
+    // 「5개 중 3개 실천」이 서던 줄이다 — 일정의 「12개 중」은 그대로 있다
+    expect(r.queryByText("5개 중")).toBeNull();
+    expect(r.queryByText("3개 실천")).toBeNull();
+  });
+
+  it("바람카드는 찾은 바람을 알약으로 세우고 여러 번 나온 것에만 ×N 을 붙인다", async () => {
+    const r = await openReport();
+
+    expect(r.getByText("이번 주에 찾은 바람들")).toBeTruthy();
+    expect(r.getByText("휴식")).toBeTruthy();
+    expect(r.getByText("×2")).toBeTruthy();
+    // 한 번만 나온 바람에는 붙지 않는다 — 「×1」은 아무것도 말하지 않는다
+    expect(r.getByText("연결")).toBeTruthy();
+    expect(r.queryByText("×1")).toBeNull();
+    // 낭독기는 「곱하기 2」가 아니라 「2번」으로 읽는다
+    expect(r.getByLabelText("휴식, 2번")).toBeTruthy();
+  });
+
+  it("실천한 것은 무엇을 했는지까지 적는다 — 안 한 카드는 세우지 않는다", async () => {
+    const r = await openReport();
+
+    expect(r.getByText("이번 주에는 3개의 바람을 실천했어요.")).toBeTruthy();
+    // 한 줄이 「실천 내용 — 바람」 한 덩이라 부분으로 찾는다(글자 안에 글자를 중첩한다)
+    expect(r.getByText(/30분 산책하기 — 휴식/)).toBeTruthy();
+    expect(r.getByText(/먼저 안부 묻기 — 연결/)).toBeTruthy();
+    // 작은 행동을 안 정하고 해본 카드도 줄을 지킨다 — 일기 상세와 같은 말이다
+    expect(r.getByText(/아직 정하지 않음 — 인정/)).toBeTruthy();
+    // 실천율·못 한 개수를 적지 않는다
+    expect(r.queryByText(/실천율|%|남은/)).toBeNull();
+  });
+
+  it("바람카드가 없는 주는 「아직 없어요」 한 줄이다 — 0 을 붙이지 않는다", async () => {
+    reportApi.fetchWeeklyReport.mockResolvedValue({
+      ok: true,
+      data: weeklyReport({
+        actionCardCreated: 0,
+        actionCardCompleted: 0,
+        needs: [],
+        practicedWishes: [],
+      }),
+    });
+    const r = await openReport();
+
+    expect(r.getByText("이번 주에 찾은 바람이 아직 없어요")).toBeTruthy();
+    expect(r.queryByText(/0개의 바람/)).toBeNull();
+  });
+
+  it("찾기만 하고 실천하지 않은 주는 알약만 서고 실천 줄이 비었다고 말한다", async () => {
+    reportApi.fetchWeeklyReport.mockResolvedValue({
+      ok: true,
+      data: weeklyReport({ actionCardCompleted: 0, practicedWishes: [] }),
+    });
+    const r = await openReport();
+
+    expect(r.getByText("휴식")).toBeTruthy();
+    expect(r.getByText("이번 주에는 아직 실천한 바람이 없어요.")).toBeTruthy();
+  });
+
+  it("제목은 감정 카드에만 둔다 — 나머지는 첫 줄이 곧 제 이름이다", async () => {
+    const r = await openReport();
+
+    // 2026-09-12 · 사용자 결정. 요약 문장은 카드에서도 꺼내 날짜 줄 아래 그냥 놓인다
+    expect(r.queryByText("이번 주 한눈에")).toBeNull();
+    expect(r.queryByText("이번 주의 마음")).toBeNull();
+    expect(r.queryByText("바람카드")).toBeNull();
+    // 조약돌과 요일뿐인 카드라 무엇을 보는 판인지 말해 줄 글자가 여기뿐이다
+    expect(r.getByText("이번 주 감정들")).toBeTruthy();
+    expect(r.getByText("이번 주 기록")).toBeTruthy();
   });
 
   it("일기는 남긴 날 수로 적는다 — 분모가 될 「전체」가 없다", async () => {
@@ -258,7 +342,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     });
     const r = await openReport();
 
-    expect(r.getAllByText("없음")).toHaveLength(3);
+    expect(r.getAllByText("없음")).toHaveLength(2);
     expect(r.queryByText(/0개/)).toBeNull();
   });
 
@@ -409,7 +493,7 @@ describe("W1 · 주간 리포트 — 평가가 아니라 관찰이다", () => {
     const r = await openReport();
 
     expect(r.getByText("아직 이번 주에 기록된 마음이 없어요.")).toBeTruthy();
-    expect(r.getAllByText("없음")).toHaveLength(3);
+    expect(r.getAllByText("없음")).toHaveLength(2);
     expect(r.getByLabelText("월요일 기록 없음")).toBeTruthy();
     // 잠금 화면의 흔적이 남지 않는다
     expect(r.queryByText(/7편|잠김|잠겨|열리지 않/)).toBeNull();
@@ -687,7 +771,9 @@ describe("W1 · 주 고르기 — 고른 주마다 서버에 다시 묻는다", 
 
   it("지난 주를 볼 때는 「이번 주」라고 쓰지 않는다", async () => {
     const r = await openReport();
-    expect(r.getByText("이번 주 한눈에")).toBeTruthy();
+    expect(r.getByText("이번 주 감정들")).toBeTruthy();
+    expect(r.getByText("이번 주에 찾은 바람들")).toBeTruthy();
+    expect(r.getByText("이번 주 기록")).toBeTruthy();
     expect(r.getByText("이번 주 기록 보기")).toBeTruthy();
 
     reportApi.fetchWeeklyReport.mockResolvedValue(lastWeek);
@@ -695,11 +781,14 @@ describe("W1 · 주 고르기 — 고른 주마다 서버에 다시 묻는다", 
     await waitFor(() => expect(r.getByText("4개 중")).toBeTruthy());
 
     // 「7월 19일 ~ 7월 25일」 위에 「이번 주」가 서면 대놓고 틀린 말이 된다
-    expect(r.getByText("이 주의 마음")).toBeTruthy();
-    expect(r.getByText("이 주 한눈에")).toBeTruthy();
+    expect(r.getByText("이 주 감정들")).toBeTruthy();
+    expect(r.getByText("이 주에 찾은 바람들")).toBeTruthy();
+    expect(r.getByText("이 주에는 3개의 바람을 실천했어요.")).toBeTruthy();
+    expect(r.getByText("이 주 기록")).toBeTruthy();
     expect(r.getByText("이 주의 기록 보기")).toBeTruthy();
-    expect(r.queryByText("이번 주의 마음")).toBeNull();
-    expect(r.queryByText("이번 주 한눈에")).toBeNull();
+    expect(r.queryByText("이번 주 감정들")).toBeNull();
+    expect(r.queryByText("이번 주에 찾은 바람들")).toBeNull();
+    expect(r.queryByText("이번 주 기록")).toBeNull();
     expect(r.queryByText("이번 주 기록 보기")).toBeNull();
 
     // ⚠ **서버 멘트만은 지난 주에도 「이번 주에는 …」이다**(BE `WeeklyMood` 의 고정 문장).

@@ -75,6 +75,7 @@ export {
 
 export {
   bubbleRadius,
+  cardPadding,
   elevation,
   hairline,
   layout,

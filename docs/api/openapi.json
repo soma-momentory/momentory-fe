@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://dev.momentory.co.kr",
+      "url": "http://127.0.0.1:8080",
       "description": "Generated server url"
     }
   ],
@@ -4087,6 +4087,42 @@
           }
         }
       },
+      "NeedCountResponse": {
+        "type": "object",
+        "properties": {
+          "word": {
+            "type": "string",
+            "description": "바람 단어",
+            "example": "휴식"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "그 주에 이 바람이 나온 카드 수",
+            "example": 2
+          }
+        }
+      },
+      "PracticedWishResponse": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "실천한 작은 행동 — 정하지 않았으면 null",
+            "example": "회의가 끝난 뒤 느낀 점을 한 문장으로 전해보기"
+          },
+          "needs": {
+            "type": "array",
+            "description": "그 카드의 바람 단어",
+            "example": [
+              "휴식"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "WeeklyReportResponse": {
         "type": "object",
         "properties": {
@@ -4142,6 +4178,20 @@
             "format": "int64",
             "description": "그중 실천(해봤어요)한 행동 카드 수",
             "example": 3
+          },
+          "needs": {
+            "type": "array",
+            "description": "이번 주에 찾은 바람 — 같은 단어는 합치고 몇 번 나왔는지 센다(많이 나온 순)",
+            "items": {
+              "$ref": "#/components/schemas/NeedCountResponse"
+            }
+          },
+          "practicedWishes": {
+            "type": "array",
+            "description": "이번 주에 실천한 바람 — 최신순. 길이는 actionCardCompletedCount 와 같다",
+            "items": {
+              "$ref": "#/components/schemas/PracticedWishResponse"
+            }
           },
           "diaryCount": {
             "type": "integer",

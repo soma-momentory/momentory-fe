@@ -6,8 +6,10 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { Button, Card, Icon, Spinner, TabScreen, Text } from "@/components/ds";
 import { WeekCountList } from "@/components/report/WeekCountList";
-import { WeekMoodCard } from "@/components/report/WeekMoodCard";
+import { WeekEmotionCard } from "@/components/report/WeekEmotionCard";
+import { WeekMoodSummary } from "@/components/report/WeekMoodSummary";
 import { WeekPickerSheet } from "@/components/report/WeekPickerSheet";
+import { WeekWishCard } from "@/components/report/WeekWishCard";
 import { label as labelColor, layout, space } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { weekEnd } from "@/features/report/model/report";
@@ -32,18 +34,28 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 일정 셈을 서버가 하는 것이 특히 중요하다: 숨김·삭제 규칙을 화면이 다시 구현하면
  * 홈 목록과 리포트가 서로 다른 수를 말하게 된다.
  *
- * ## 화면은 세 덩이다
+ * ## 화면은 네 덩이다
  *
- * **주차 이동 → 이번 주의 마음 → 이번 주 한눈에 → 기록 보러가기.**
- * 각 조각의 규칙은 `src/components/report/` 에 있고 여기는 조립과 상태 분기만 한다.
+ * **주차 이동 → 한 주를 한 문장으로 → 감정 더미 일곱 → 바람카드 → 이번 주 기록 →
+ * 기록 보러가기.** 각 조각의 규칙은 `src/components/report/` 에 있고 여기는 조립과 상태
+ * 분기만 한다.
+ *
+ * **한 문장과 하루하루가 갈라졌다**(2026-09-12 · 사용자 시안) — 그 주를 한 문장으로
+ * 말하는 자리와 하루하루를 쌓아 보여주는 카드는 읽는 눈이 다르다(`WeekMoodSummary` 머리말).
+ *
+ * ⚠ **카드 제목은 꼭 필요한 곳에만 둔다**(2026-09-12 · 사용자 결정). 시안이 붙였던 제목
+ * 셋(「이번 주 한눈에 · 이번 주 감정들 · 바람카드」)을 걷고, 첫 문장은 **카드에서도 꺼내**
+ * 날짜 줄 바로 아래 놓았다. 그다음 **감정 카드만 제목을 되살렸다** — 그 카드는 조약돌과
+ * 요일뿐이라 무엇을 보는 판인지 말해 줄 글자가 없었다. 나머지는 첫 줄이 곧 제 이름을
+ * 말한다(「이번 주에 찾은 바람들」 · 셈 카드의 섹션 라벨 「이번 주 기록」).
  *
  * - **처음부터 열려 있다.** 예전에는 일기 7편이 모이기 전까지 예고 한 줄만 보여줬는데
  *   (`RULES.md` 「리포트」), 사용자 결정(2026-08-24)으로 문턱을 없앴다 — 기록이 없는 주도
  *   **비어 있는 한 주**로 성실히 보여주고, 하루하루 쌓이면 그 자리가 저절로 채워진다.
  *   빈 화면이 곧 「아직 없다」는 말이라 잠금이 따로 할 일이 없다
- * - **「이번 주」는 이번 주에만 쓴다** — 지난 주를 넘겨보는 동안에는 「이 주의 마음 ·
- *   이 주 한눈에 · 이 주의 기록 보기」다. 서버 멘트만은 그대로 둔다(BE 문장이라 여기서
- *   고치지 않는다 — `WeekMoodCard` 주석)
+ * - **「이번 주」는 이번 주에만 쓴다** — 지난 주를 넘겨보는 동안에는 「이 주 한눈에 ·
+ *   이 주 감정들 · 이 주 기록 · 이 주의 기록 보기」다. 서버 멘트만은 그대로 둔다(BE 문장이라 여기서
+ *   고치지 않는다 — `WeekMoodSummary` 주석)
  * - **주는 날짜를 눌러 목록에서 고른다**(`WeekPickerSheet`) — **일기가 남은 주만**
  *   선다. 예전에는 머리의 `‹ ›` 로 한 주씩 옮겼고 그다음엔 달력이었는데, 둘 다
  *   기록이 없는 주를 함께 보여줬다(사용자 요청 2026-08-24)
@@ -89,7 +101,7 @@ export default function Report() {
   const range = `${formatKoreanDateShort(start)} ~ ${formatKoreanDateShort(end)}`;
 
   // 일기가 있는 날 — 서버 칸은 「안 쓴 날」과 「썼는데 감정이 없는 날」을 똑같이 비워 주므로,
-  // 빈 조약돌을 세울 날은 로컬 일기가 가른다(`WeekMoodRow`)
+  // 빈 조약돌을 놓을 날은 로컬 일기가 가른다(`WeekEmotionStack`)
   const writtenDates = useMemo(() => new Set(diaries.map((d) => d.date)), [diaries]);
 
   const pick = (week: string) => {
@@ -169,11 +181,15 @@ export default function Report() {
           </Card>
         ) : (
           <>
-            <WeekMoodCard report={report} thisWeek={thisWeek} writtenDates={writtenDates} />
+            <WeekMoodSummary report={report} />
+
+            <WeekEmotionCard report={report} thisWeek={thisWeek} writtenDates={writtenDates} />
+
+            <WeekWishCard report={report} thisWeek={thisWeek} />
 
             <View style={styles.section}>
               <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>
-                {thisWeek ? "이번 주 한눈에" : "이 주 한눈에"}
+                {thisWeek ? "이번 주 기록" : "이 주 기록"}
               </Text>
               <WeekCountList report={report} />
             </View>

@@ -111,7 +111,7 @@ src/
     ds/                      # 공용 컴포넌트 30여 개 + icons/ — 화면은 여기서 조립한다
                              # (옛 primitives/ chat/ common/ icons/ 는 3세대 전환에서 사라졌다)
     onboarding/ my/          # OnboardingChat · QuickReplies · BasicInfoEditor …
-    archive/ diary/ report/  # 화면 조각 — DiaryPreviewCard · WishCardFields · WeekMoodCard 등
+    archive/ diary/ report/  # 화면 조각 — DiaryPreviewCard · WishCardFields · WeekEmotionStack 등
     rest/  rest/pond/        # 쉼터 카드 · 감각연못 장면 조각
   features/                  # 도메인별 — auth onboarding home retro diary archive report my
                              #            calendar rest emotion analytics

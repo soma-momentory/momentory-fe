@@ -274,8 +274,15 @@ src/components/archive/{DayScheduleList, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionCardSection, DiaryEmotionRow, WishCardFields}.tsx
                                           ← WishCardFields = 쉼터(R2)와 일기 상세(A3)가
                                             **같은 항목·같은 말**로 바람카드를 그린다
-src/components/report/{WeekMoodCard, WeekMoodRow, WeekCountList, WeekPickerSheet}.tsx
-                                          ← 이번 주의 마음(조약돌 일곱 칸 + 요약) · 이번 주 한눈에.
+src/components/report/{WeekMoodSummary, WeekEmotionCard, WeekEmotionStack, WeekGround,
+                       WeekWishCard, WeekCountList, WeekPickerSheet}.tsx
+                                          ← 한 주 요약 한 문장(카드가 아니다 · 날짜 줄 아래) ·
+                                            감정 더미 일곱(하루의 감정을 쌓는다 · WeekGround 가
+                                            그 아래 모래 언덕을 깐다) ·
+                                            바람카드(찾은 바람 알약 + 실천한 것) ·
+                                            이번 주 기록(일정·일기 셈).
+                                            **제목은 감정 카드에만 둔다**(2026-09-12) —
+                                            나머지는 첫 줄이 곧 제 이름이다.
                                             비율(도넛·%)을 만들지 않는다 — 세는 값은 서버 것이다
 src/components/rest/{RestActionCard, RestCardPressable, RestContentGrid}.tsx + pond/
                                           ← pond/ 는 감각연못 장면 조각(배경·수면·물결·

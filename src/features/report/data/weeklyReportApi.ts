@@ -24,6 +24,7 @@ import { authedRequest, type HttpError } from "@/lib/http";
  * | `emotion` 소문자 키(`calm`)       | 감정 id(1~9) — 모르는 키는 `null` 로 버린다 |
  * | `dailyMoods` 일곱 칸(일→토)       | 그대로. **일곱 칸이 아니면 어긋남**이다     |
  * | `*Count` int64                    | number                                     |
+ * | `needs`·`practicedWishes`         | 없거나 모양이 어긋나면 **빈 목록**         |
  *
  * `scheduleApi.ts` 와 같은 결로 **던지지 않는다** — 전송 실패도 계약 위반도
  * `{ ok: false, code }` 다.
@@ -56,6 +57,22 @@ const EMOTION_IDS: Record<string, EmotionId> = {
   depressed: 8,
   angry: 9,
   frustrated: 10,
+};
+
+/**
+ * 「이번 주에 찾은 바람」 한 알약 — 같은 단어가 여러 카드에 나오면 `count` 가 올라간다.
+ * 화면이 `count ≥ 2` 인 것에만 「×2」를 붙인다(`WeekWishCard`).
+ */
+export type WeeklyNeed = {
+  word: string;
+  count: number;
+};
+
+/** 「이번 주에 실천한 바람」 한 줄 — 작은 행동을 안 정하고 해본 카드는 `action` 이 `null` 이다 */
+export type PracticedWish = {
+  action: string | null;
+  /** 그 카드의 바람 단어 — 없을 수도 있다(감정 탐색을 하다 만 카드) */
+  needs: string[];
 };
 
 /** 「이번 주의 마음」 한 칸 — 기록이 없는 날은 `emotion` 이 `null` 이고 `emotions` 가 빈 목록이다 */
@@ -91,6 +108,10 @@ export type WeeklyReport = {
   scheduleCompleted: number;
   actionCardCreated: number;
   actionCardCompleted: number;
+  /** 그 주에 찾은 바람 — 많이 나온 순. 카드가 없으면 빈 목록이다 */
+  needs: WeeklyNeed[];
+  /** 그 주에 실천한 바람 — 최신순. 길이가 곧 `actionCardCompleted` 다 */
+  practicedWishes: PracticedWish[];
   /** 그 주에 일기를 남긴 날 수 — 일기는 하루 한 벌이라 곧 일기 수다 */
   diaryCount: number;
 };
@@ -140,6 +161,42 @@ const asCount = (v: unknown): number | null =>
 /** 모르는 감정 키는 **버린다** — 이름을 지어내지 않는다(`emotion.ts` 의 같은 규칙) */
 const toEmotion = (v: unknown): EmotionId | null =>
   typeof v === "string" ? (EMOTION_IDS[v] ?? null) : null;
+
+/**
+ * 「찾은 바람」 한 알약 — 단어가 비었거나 세는 값이 어긋나면 **그 알약만 버린다**.
+ *
+ * ⚠ 셈(`*Count`)과 달리 **여기서 어긋남을 선언하지 않는다.** 이 목록은 리포트의 곁가지라
+ * 한 알약이 이상하다고 한 주를 통째로 못 보게 할 이유가 없다 — 세는 값은 그대로 맞는다.
+ */
+const toNeed = (v: unknown): WeeklyNeed | null => {
+  if (!isObject(v)) return null;
+  const word = typeof v.word === "string" ? v.word.trim() : "";
+  const count = asCount(v.count);
+  if (word.length === 0 || count == null || count === 0) return null;
+  return { word, count };
+};
+
+/** 「실천한 바람」 한 줄 — 행동은 비어 있을 수 있다(안 정하고 해본 카드) */
+const toPracticedWish = (v: unknown): PracticedWish | null => {
+  if (!isObject(v)) return null;
+  const action =
+    typeof v.action === "string" && v.action.trim().length > 0 ? v.action.trim() : null;
+  const needs = Array.isArray(v.needs)
+    ? v.needs
+        .filter((n): n is string => typeof n === "string" && n.trim().length > 0)
+        .map((n) => n.trim())
+    : [];
+  return { action, needs };
+};
+
+/**
+ * 목록 하나를 옮긴다 — **서버가 안 주면 빈 목록**이다.
+ *
+ * 옛 서버(필드가 없던 응답)에서도 리포트 나머지는 그대로 서야 한다 — 바람카드 자리만 조용히
+ * 빈다. 새 필드를 셈과 같은 엄격함으로 다루면 배포 사이에 리포트 전체가 어긋남으로 닫힌다.
+ */
+const toList = <T>(v: unknown, map: (item: unknown) => T | null): T[] =>
+  Array.isArray(v) ? v.map(map).filter((item): item is T => item != null) : [];
 
 const toDay = (v: unknown): WeeklyMoodDay | null => {
   if (!isObject(v)) return null;
@@ -204,6 +261,8 @@ export const toWeeklyReport = (v: unknown): WeeklyReport | null => {
     scheduleCompleted,
     actionCardCreated,
     actionCardCompleted,
+    needs: toList(v.needs, toNeed),
+    practicedWishes: toList(v.practicedWishes, toPracticedWish),
     diaryCount,
   };
 };

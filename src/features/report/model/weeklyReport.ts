@@ -31,7 +31,12 @@ import { formatKoreanDateShort } from "@/lib/day";
  *
  * **던지지 않는다.** 실패는 `status: "failed"` 하나로 닫고 화면이 다시 시도한다.
  */
-export type { WeeklyReport, WeeklyMoodDay } from "@/features/report/data/weeklyReportApi";
+export type {
+  PracticedWish,
+  WeeklyMoodDay,
+  WeeklyNeed,
+  WeeklyReport,
+} from "@/features/report/data/weeklyReportApi";
 
 export type WeeklyReportStatus =
   /** 아직 부르지 않았다 */
