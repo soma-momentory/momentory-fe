@@ -6,19 +6,12 @@ ios/
 expo-env.d.ts
 package-lock.json
 
-# 생성물 — 포맷하면 sha256 검증(npm run check:theme)이 깨진다.
-# 이 파일의 서식은 상류 05_도구/export-theme.mjs 가 정한다.
-src/design/theme.ts
-
 # 상류 반입 스냅샷 — 포맷하면 본문 바이트가 바뀌어 SNAPSHOT.md 의 sha256 대조가 깨진다.
 docs/spec/
 
-# 새 디자인 반입 스냅샷 — 직접 수정 금지, 원본 바이트 유지 (docs/design/IMPORT.md)
-docs/design/prototype/
-docs/design/README.md
-docs/design/design-system.md
-docs/design/app-flow.md
-docs/design/data-model.md
+# (2026-09-12) 여기 있던 `src/design/theme.ts` 와 `docs/design/**` 항목은 지웠다 —
+# 3세대 이관에서 파일 자체가 사라졌다(PLAN.md A-16·A-18). 지금 디자인 정본인
+# `src/design/ds/` 와 `docs/DESIGN.md` 는 **포맷 대상**이다(손으로 쓰는 파일이라).
 
 # 서버에서 받은 API 계약 — 서식은 scripts/sync-api.mjs 가 정한다 (docs/api/README.md).
 docs/api/openapi.json

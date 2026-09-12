@@ -33,19 +33,24 @@
 
 ### 지금 쓰는 것
 
-| 영역            | 선택                                               | 이유                                                                                                                                                                            |
-| --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 런타임          | **Expo SDK 57** + Dev Client + CNG                 | 카카오/애플/구글 로그인·캘린더·알림·생체인증이 전부 config plugin으로 해결된다. `ios/` `android/` 는 커밋하지 않고 `expo prebuild` 로 생성(CNG) — 네이티브 수정은 plugin 으로만 |
-| 언어            | TypeScript 6 `strict` + `noUncheckedIndexedAccess` | 상류 스키마를 타입으로 고정                                                                                                                                                     |
-| 네비게이션      | **expo-router** (파일 기반)                        | `states.mvp.json` 의 machine → 라우트 그룹이 1:1. 회고 알림 → 딥링크가 공짜                                                                                                     |
-| 스타일          | **StyleSheet + `theme` 객체**                      | 다크모드 없음(RULES: 크림 배경 유지), 토큰이 고정 상수 — 런타임 테마 엔진이 필요 없다. NativeWind/Tamagui 는 12.5px·자간 .145em 같은 값을 우회하게 만들어 오히려 손해           |
-| 그라디언트      | **react-native-svg** `RadialGradient`              | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다                                                                                                                         |
-| 폰트            | expo-font + Pretendard 4 weight                    | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다)                                                                                                       |
-| 품질            | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions | CI 단계의 정본은 [`CONTRIBUTING.md` 「품질 게이트」](CONTRIBUTING.md)                                                                                                           |
-| 보안 저장       | expo-secure-store                                  | M2-0 개발 세션과 인증 hydration. 읽기가 비동기라 진입 라우팅을 규정한다(§3)                                                                                                     |
-| 클라이언트 상태 | Zustand (작게)                                     | 온보딩 초안 · 인증 판정 · 화면용 로컬 상태                                                                                                                                      |
-| OS 시간 선택    | @react-native-community/datetimepicker             | `08` 회고 시간. 네이티브 모듈이라 dev client 재빌드 필요                                                                                                                        |
-| OS 알림         | expo-notifications                                 | `08`·`M3` 의 로컬 알림(회고·낮·주간). 경계는 `lib/notifications.ts` 하나이고 무엇을 예약할지는 `features/my/model/reminders.ts` 가 정한다. 네이티브라 dev client 재빌드 필요    |
+| 영역            | 선택                                                    | 이유                                                                                                                                                                            |
+| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 런타임          | **Expo SDK 57** + Dev Client + CNG                      | 카카오/애플/구글 로그인·캘린더·알림·생체인증이 전부 config plugin으로 해결된다. `ios/` `android/` 는 커밋하지 않고 `expo prebuild` 로 생성(CNG) — 네이티브 수정은 plugin 으로만 |
+| 언어            | TypeScript 6 `strict` + `noUncheckedIndexedAccess`      | 상류 스키마를 타입으로 고정                                                                                                                                                     |
+| 네비게이션      | **expo-router** (파일 기반)                             | `states.mvp.json` 의 machine → 라우트 그룹이 1:1. 회고 알림 → 딥링크가 공짜                                                                                                     |
+| 스타일          | **StyleSheet + `theme` 객체**                           | 다크모드 없음(RULES: 크림 배경 유지), 토큰이 고정 상수 — 런타임 테마 엔진이 필요 없다. NativeWind/Tamagui 는 12.5px·자간 .145em 같은 값을 우회하게 만들어 오히려 손해           |
+| 그라디언트      | **react-native-svg** `RadialGradient`                   | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다                                                                                                                         |
+| 폰트            | expo-font + Pretendard 4 weight                         | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다)                                                                                                       |
+| 품질            | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions      | CI 단계의 정본은 [`CONTRIBUTING.md` 「품질 게이트」](CONTRIBUTING.md)                                                                                                           |
+| 보안 저장       | expo-secure-store                                       | M2-0 개발 세션과 인증 hydration. 읽기가 비동기라 진입 라우팅을 규정한다(§3)                                                                                                     |
+| 클라이언트 상태 | Zustand (작게)                                          | 온보딩 초안 · 인증 판정 · 화면용 로컬 상태                                                                                                                                      |
+| OS 시간 선택    | @react-native-community/datetimepicker                  | `08` 회고 시간. 네이티브 모듈이라 dev client 재빌드 필요                                                                                                                        |
+| OS 알림         | expo-notifications                                      | `08`·`M3` 의 로컬 알림(회고·낮·주간). 경계는 `lib/notifications.ts` 하나이고 무엇을 예약할지는 `features/my/model/reminders.ts` 가 정한다. 네이티브라 dev client 재빌드 필요    |
+| OS 캘린더       | expo-calendar                                           | `09` 기기 캘린더 — **읽기만** 하고 읽은 것을 서버로 화해한다(`POST /schedules/sync`). 경계는 `lib/calendar.ts` 하나                                                             |
+| 소셜 로그인     | kakao-login · expo-apple-authentication · google-signin | 셋 다 **실제 로그인**이다(카카오 08-07 · 애플 08-24 · 구글 08-25). SDK 경계는 `features/auth/data/*Sdk.ts` 각각 하나 — 화면은 플랫폼을 모른다                                   |
+| 이미지          | **expo-image**                                          | 카피바라·조약돌·감각연못 일러스트. 2026-09 자산이 늘면서 들어왔다                                                                                                               |
+| 앱 밖 문서      | expo-web-browser                                        | 약관·개인정보 처리방침·문의를 **앱 안 브라우저**로 연다(`lib/links.ts`) — 앱을 떠나면 로그인 흐름이 끊긴다                                                                      |
+| 계측            | **@amplitude/analytics-react-native**                   | 2026-09-05 파일럿. 경계는 `features/analytics/` 하나이고 사전은 [`ANALYTICS.md`](ANALYTICS.md). AsyncStorage 는 이것이 요구해서 들어왔고 **앱 코드가 직접 쓰지 않는다**         |
 
 ### 도입 예정 — 필요해지는 마일스톤에
 
@@ -55,15 +60,15 @@
 | 영역            | 선택                    | 언제 | 왜 그때인가                                                                                                                                                                                       |
 | --------------- | ----------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 애니메이션      | react-native-reanimated | M3   | 채팅 밀림 모션이 MVP 에 없음이 확인돼(`R-41`) 바텀시트·제스처가 필요한 시점으로 미뤘다 — [spec/OPEN-ISSUES-요약.md](spec/OPEN-ISSUES-요약.md)                                                     |
-| 서버 상태       | TanStack Query v5       | M3-3 | ~~첫 API 호출~~ → **API 21개가 이미 붙었는데 안 넣었다.** 어댑터가 `lib/http.ts` 로 직접 부르고 store 가 상태를 든다. 실제로 필요해지는 것은 **아웃박스(persisted mutation)** 라 M3-3 으로 옮긴다 |
+| 서버 상태       | TanStack Query v5       | M3-3 | ~~첫 API 호출~~ → **API 27개가 이미 붙었는데 안 넣었다.** 어댑터가 `lib/http.ts` 로 직접 부르고 store 가 상태를 든다. 실제로 필요해지는 것은 **아웃박스(persisted mutation)** 라 M3-3 으로 옮긴다 |
 | ~~목 서버~~ MSW | **넣지 않는다**         | —    | ~~BE 미확정 구간을 화면 개발이 기다리지 않게~~ → **서버가 계약을 먼저 냈다**(§4). 붙일 엔드포인트가 이미 있어 목 서버를 거칠 이유가 없다                                                          |
 | 로컬 저장       | react-native-mmkv       | M3   | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4)                                                                                                                                                     |
-| 계측            | 얇은 `track()` 파사드   | M3   | 이름 규칙은 확정(`R-05`) — 단 `reflection_*`→`retro_*` 통일(`R-38`)이 미결                                                                                                                        |
-| 이미지          | expo-image              | M2   | 바바 아바타가 처음 나오는 온보딩                                                                                                                                                                  |
+| ~~계측~~        | **들어왔다**            | —    | 2026-09-05 Amplitude 파일럿(`features/analytics/`). 상류 이름 규칙(`R-05`)이 아니라 **이 저장소의 허용 목록**(`events.ts`)이 정본이다                                                             |
+| ~~이미지~~      | **들어왔다**            | —    | 2026-09 일러스트가 늘면서 `expo-image` 설치                                                                                                                                                       |
 | E2E             | Maestro                 | M6   | 흐름이 다 연결된 뒤                                                                                                                                                                               |
 | 배포            | EAS Build / Update      | M6   |                                                                                                                                                                                                   |
 
-### 네이티브 기능 — dev client는 현재, 앱 기능은 M2 이후 도입 예정
+### 네이티브 기능 — **하나(앱 잠금)만 남았다** (2026-09-12)
 
 `expo-dev-client` 는 M1부터 공식 개발 환경으로 사용한다. 아래 앱 기능 패키지는 **✅ 표시가
 없으면 아직 설치하지 않았고**, 필요한 기능과 함께 추가한다. Expo Go 는 지원하지 않는다.
@@ -73,7 +78,7 @@
 | 카카오 로그인 ✅ | `@react-native-seoul/kakao-login`           | **설치·연결 완료(2026-08-07).** Expo config plugin 필요 (prebuild)                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 애플 로그인 ✅   | `expo-apple-authentication`                 | **설치·SDK·서버 교환 연결 완료(2026-08-24) · 실기기 검증 완료(로그인·재로그인·nonce 왕복)** — `POST /api/v1/auth/apple`([`DISCUSSION.md`](DISCUSSION.md) §1-10). iOS 전용이고, Android·옛 iOS 에서는 `isAvailableAsync()` 가 false 라 안내 한 줄로 닫는다. 이름 비공개해도 온보딩 `04`에서 호칭을 받으므로 빈 이름 없음. 앱 키가 없다 — 애플은 **번들 ID** 로 앱을 알아본다. ✅ `nonce` 검증 · 탈퇴 시 애플 `revoke` 포함(로그인 때 `authorizationCode` 를 교환해 보관). ⛔ `.p8` 발급 전이라 그때까지 탈퇴가 연결 해제 없이 지나간다 |
 | 구글 로그인 ✅   | `@react-native-google-signin/google-signin` | 2026-08-25 연결. ⚠ **nonce 를 넘길 자리가 없다** — 무료 모듈에는 없고 유료 Universal 모듈 전용이라, 서버가 `aud` + `azp` 로 대신 조인다(`googleSdk.ts`). Android 는 **웹 클라이언트 ID** 가 `serverClientId` 로 가서 그것이 ID token 의 `aud` 가 된다.                                                                                                                                                                                                                                                                                |
-| 캘린더           | `expo-calendar`                             | **읽기 전용**. 직접 추가한 일정은 캘린더에 쓰지 않는다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 캘린더 ✅        | `expo-calendar`                             | **설치·연결 완료(2026-08-20).** **읽기 전용** — 직접 추가한 일정은 캘린더에 쓰지 않는다. 읽은 것은 `POST /schedules/sync` 로 **서버와 화해**한다(`features/calendar/`)                                                                                                                                                                                                                                                                                                                                                                |
 | 알림 ✅          | `expo-notifications`                        | **설치·연결 완료(2026-08-11).** MVP는 전부 로컬 알림 — 회고 시각(매일) · 낮 리마인드 · 주간(일요일). 서버 푸시 없음이라 「새로운 소식」만 예약 대상이 아니다. 경계는 `lib/notifications.ts` 하나                                                                                                                                                                                                                                                                                                                                      |
 | 앱 잠금          | `expo-local-authentication`                 | **토글을 켰으면 실제로 잠근다** — 게이트는 MVP에 포함. 커스텀 잠금 화면(`M5`)만 다음 마일스톤 (§8)                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
@@ -84,51 +89,58 @@
 **`app/` 은 저장소 루트다** — `src/app/` 이 아니다. expo-router 가 루트 `app/` 을 라우트 트리로 잡고,
 `src/` 는 라우트가 아닌 코드만 담는다. 경계가 이름으로 드러난다.
 
-### 지금 있는 것 (2026-08-07 · 정적 40화면 완료)
+### 지금 있는 것 (2026-09-12 대조)
 
-화면 ID 와 라우트 파일의 1:1 매핑은 [`PRODUCT.md`](PRODUCT.md) 표가 정본이다. 구조만 본다:
+화면 ID 와 라우트 파일의 매핑은 [`PRODUCT.md`](PRODUCT.md) 표가 정본이다. 구조만 본다:
 
 ```
-app/                         # 라우트만 — 로직을 두지 않는다
+app/                         # 라우트만 — 로직을 두지 않는다 (라우트 31개)
   _layout.tsx                # Stack · StatusBar (Provider 는 여기가 아니다)
   index.tsx                  # S0 진입 분기
-  (auth)/login.tsx           # S1
-  (onboarding)/              # 03~10-b (9파일 + _layout)
-  (tabs)/                    # home archive report my + _layout (TabBar 4칸)
-  home/                      # schedule/[id] schedule/new moment/new — 투명 모달 시트
-  retro/                     # intro confirm emotion talk draft done + _layout — 회고 12장
-  diary/[id]/                # index (A3·A3-b·A3-c) · edit (A4)
-  my/                        # profile (M2) · notify (M3)
+  (auth)/login.tsx           # S1 — 소셜 셋
+  (onboarding)/              # 03~10-b (9파일 + _layout · age·gender 가 갈렸다)
+  (tabs)/                    # home rest archive report my + _layout — **탭 5칸**
+  home/                      # schedule/[id] schedule/new — 투명 모달 시트
+  retro/                     # confirm talk draft done + _layout — **채팅 v2**(intro·emotion 없음)
+  diary/[id]/                # index (A3·A3-c) — edit(A4)는 지웠다
+  rest/                      # cards/index (R2) · sense-pond — 쉼터
+  my/                        # profile(목록) + nickname age gender interests rest
 src/
-  design/
-    theme.ts                 # 생성물 — 직접 수정 금지 (§5)
-    tokens.mvp.ts            # 상류 반영 전까지의 이름 매핑 (§5)
+  design/ds/                 # 토큰 정본 — color typography metrics pond (여기만 hex)
   components/
-    primitives/              # ScreenBackground AppText AppButton Card InputRow ProgressDots BackChevron
-    chat/                    # ChatLayout BabaBubble AnswerBubble Avatar TypingDots ChipFlow DirectionChip ChatInput
-    common/                  # TabBar TabScreen EmotionPill EmotionGrid Sheet SegBar Toggle RetroNav
-                             # DirectionSheet SectionLabel ConfirmCard
-    onboarding/ my/ icons/   # OnboardingTopBar · SettingRow · LineIcons
-    archive/ diary/ report/  # 화면 조각 — CalendarMonth · ActionCardSection · WeeklyEmotionGrid 등
+    ds/                      # 공용 컴포넌트 30여 개 + icons/ — 화면은 여기서 조립한다
+                             # (옛 primitives/ chat/ common/ icons/ 는 3세대 전환에서 사라졌다)
+    onboarding/ my/          # OnboardingChat · QuickReplies · BasicInfoEditor …
+    archive/ diary/ report/  # 화면 조각 — DiaryPreviewCard · WishCardFields · WeekMoodCard 등
+    rest/  rest/pond/        # 쉼터 카드 · 감각연못 장면 조각
   features/                  # 도메인별 — auth onboarding home retro diary archive report my
+                             #            calendar rest emotion analytics
     <도메인>/model/          # 타입(types.ts)·store(Zustand)·selector
     <도메인>/data/           # 서버↔store 경계 — scheduleApi·diaryApi·retroApi·meApi 등
-    <도메인>/ui/             # 화면 조각 (home/ScheduleRow)
+    <도메인>/ui/             # 화면 조각 (home/ScheduleList · retro/RetroBaba)
   testing/fixtures.ts        # **테스트 전용** 고정값 — 앱 코드가 import 하면 린터가 막는다.
-                             # 옆 mocks/sample.ts 자리다(2026-08-21 삭제 — 화면 값은 서버에서만 온다)
+                             # 옛 mocks/sample.ts 자리다(2026-08-21 삭제 — 화면 값은 서버에서만 온다)
   lib/
     providers.tsx            # Provider 스택 — 늘릴 때 여기만 고친다
-    clock.ts                 # 시각의 단일 공급자 — 04:00 하루 경계 · SampleClock (§4)
-    day.ts  time.ts          # 날짜·시각 표기
+    http.ts                  # 인증 호출의 단일 통로 (§4)
+    config.ts                # 서버 주소·앱 키의 단일 공급자
+    clock.ts dayChange.ts    # 04:00 하루 경계 — ⚠ **서버도 같은 경계다**(BE DayBoundary)
+    day.ts time.ts           # 날짜·시각 표기
+    calendar.ts notifications.ts appState.ts toast.ts links.ts
+                             # OS·앱 밖으로 나가는 경계 — 각각 하나씩
 ```
 
 **Provider 를 `app/_layout.tsx` 에 두지 않는다.** 축 A·B 두 사람이 같은 줄에서
 부딪히기 때문이다(`TASKS.md` 「둘이 부딪히는 곳」). 삽입 순서와 그 이유는
-`src/lib/providers.tsx` 주석에 있다 — **`GestureHandlerRootView` 가 최상단**이어야
-하고(RNGH 요구), **`AuthGate` 가 최하단**이어야 한다(갱신에 Query 가 필요하고
-라우트를 막아야 하므로).
+`src/lib/providers.tsx` 주석에 있다.
 
 ### 목표 구조
+
+> ⚠ **아래는 2026-08-07 에 그린 목표 그림이고, 실제로 도달한 모양은 위 「지금 있는 것」이다.**
+> 갈라진 자리 넷: (1) `components/{primitives,chat,common}` 대신 **`components/ds/` 하나**,
+> (2) `features/*/api/` 는 만들지 않았다 — 어댑터가 `data/` 에서 `lib/http.ts` 를 직접 부른다,
+> (3) `lib/api/`·`lib/analytics/` 대신 `lib/http.ts` 와 `features/analytics/`,
+> (4) `mocks/` 는 **지웠다**(2026-08-21). 기록으로 남겨 두되 **여기를 보고 폴더를 만들지 않는다.**
 
 **빈 폴더를 미리 만들지 않는다.** 아래는 화면이 생길 때 도달할 모양이지 지금 만들 것이 아니다 —
 빈 껍데기가 먼저 있으면 어디에 뭐가 있는지가 아니라 어디가 비었는지를 먼저 읽게 된다.
@@ -367,62 +379,65 @@ src/
 
 ### 파생값
 
-`diaryCount` · `recordedDays` · `emotionRecords` · `monthTopEmotion` · `monthChange` · `reportUnlock` —
-**현재는 전부 FE 가 계산한다** (`features/{archive,report,my}/model/` 의 순수 함수 · 테스트로 고정).
-같은 값이 여러 화면에 쓰이고 기간마다 다른 값이라 이중 계산은 어긋나기 쉽다는 우려가 근거다.
-[`PRODUCT.md` 「상류와 차이」](PRODUCT.md) 3번 · [`DISCUSSION.md`](DISCUSSION.md) §1-3 · §1-8 에
-결정 대기로 있다.
+`diaryCount` · `recordedDays` · `emotionRecords` · `monthTopEmotion` — 보관함이 세는 것은
+**여전히 FE 의 순수 함수**다(`features/archive/model/` · 테스트로 고정). 같은 값이 여러
+화면에 쓰이고 기간마다 다르다는 것이 그때의 근거였다.
 
-> **2026-08-21 — 서버에 집계 엔드포인트가 하나도 없다**(BE 코드 대조). 일기·행동 카드는
-> **월별 목록**으로만 오고, 주간·전체 기간 집계도 리포트 잠금 판정도 계약에 없다.
-> 그래서 **재결정은 「계약 확정 시」가 아니라 「BE 가 `W1`·`M1` 을 낼 때」**다.
-> 지금 `reportUnlock`(일기 7편)이 FE 판정이라 **기기 간 어긋난다**는 것도 그대로다.
+> ✅ **2026-08-24 — 주간 리포트(`W1`)는 서버가 센다.** `GET /api/v1/reports/weekly` 한 번이
+> 마음 일곱 칸 · 요약 멘트 · 일정 수/완료 수 · 바람카드 수/완료 수 · 일기 수를 한 벌로 준다
+> (`WeeklyReportResponse`). **화면은 아무것도 세지 않는다.** 리포트가 쓰던 FE 집계 함수는
+> 그때 지웠고, `features/report/model/report.ts` 에 남은 것은 홈의 이번 주 감정 줄 계산뿐이다.
+>
+> ✅ **`reportUnlock`(일기 7편)은 없어졌다** — 리포트는 처음부터 열려 있다
+> (2026-08-24 사용자 결정 · [`PRODUCT.md`](PRODUCT.md) 차이 32). 「기기 간 어긋난다」던
+> 문제도 함께 사라졌다.
+>
+> ⛔ **남은 것은 마이(`M1`)의 전체 기간 집계 하나**다 — 계약에 그 엔드포인트가 없어
+> FE 가 센다([`DISCUSSION.md`](DISCUSSION.md) §1-8).
 
-**시각은 `src/lib/clock.ts` 를 지난다** — 하루 경계 **04:00**, 샘플 하루(2026-07-27)의
-`SampleClock` 이 기본값이고 BE·실제 날짜 전환 시 `SystemClock` 으로 바꾸는 곳이 이 한 파일이다.
-`day.ts` 는 날짜 **표기**만 담당한다.
+**시각은 `src/lib/clock.ts` 를 지난다** — 하루 경계 **04:00**. 기본은 `SystemClock` 이고
+테스트만 `fixedClock` 을 끼운다(샘플 하루를 돌리던 `SampleClock` 은 목 데이터와 함께
+2026-08-21 에 사라졌다). `day.ts` 는 날짜 **표기**만 담당한다.
 
-> ⚠ **서버의 하루는 04:00 이 아니라 KST 자정이다**(BE `TimeZonePolicy` · 2026-08-21 확인).
-> 월 조회 창과 회고 「하루 한 번」 가드가 그 경계를 쓴다. 그래서 이 저장소 안에 경계가
-> **둘** 있다 — `clock.ts` 의 04:00(앱-하루)과 `features/diary/data/diaryApi.ts` 의
-> `kstDate`(서버에 맞춘 것). **월 묶음은 어긋나지 않고, 갈리는 것은 회고 가드 하나다**
-> ([`DISCUSSION.md`](DISCUSSION.md) §1-9 · [`api/README.md`](api/README.md) 「경계가 갈리는 자리」).
-> 새 날짜 계산을 더할 때 **어느 경계를 쓰는지 먼저 정한다.**
+> ✅ **서버의 하루도 04:00 이다** (2026-09-12 대조 · BE `DayBoundary` · `#45`).
+> 예전에는 서버가 KST 자정이라 회고 「하루 한 번」 가드가 자정~04시에 갈렸는데,
+> BE 가 프론트 규칙 쪽으로 옮겨 오면서 닫혔다([`DISCUSSION.md`](DISCUSSION.md) §1-9).
+> ⚠ **달 조회 창은 그대로 KST 자정 기준**이다 — `diaryApi.ts` 의 `kstDate` 가 거기 맞춰져
+> 있다. 저장소 안에 경계가 두 종류라는 사실은 남으므로, **새 날짜 계산을 더할 때 어느
+> 경계를 쓰는지 먼저 정한다.**
 
 ---
 
 ## 5. 디자인 시스템 연동
 
-상류 `02_디자인시스템/theme.ts` 가 토큰 정본이고, FE 는 **복사본(`src/design/theme.ts`)을 커밋해서 쓴다**.
-~~재생성(`npm run sync:theme`)은 상류 로컬 폴더를 가진 담당자 전용이다 —
-절차와 검증은 [`docs/spec/SNAPSHOT.md`](spec/SNAPSHOT.md). `npm run check:theme` 는 상류 없이 돈다.~~
-→ **둘 다 삭제됐다**(2026-08-20 · `PLAN.md` A-16). 토큰 정본은 `src/design/ds/` 하나이고
-값·규칙의 SSOT 는 [`docs/DESIGN.md`](DESIGN.md) 다 — 상류 재반입은 전제하지 않는다.
+**토큰 정본은 `src/design/ds/` 하나이고, 값·규칙의 SSOT 는 [`docs/DESIGN.md`](DESIGN.md) 다**
+(2026-08-20 3세대 전환 · `PLAN.md` A). 상류에서 받아 쓰던 `theme.ts` 와 그 도구
+(`sync:theme`·`check:theme`)는 **전부 삭제됐다** — 상류 재반입은 더 이상 전제하지 않는다.
 
-색·크기·시간을 하드코딩하지 않는다. 어기면 ESLint 커스텀 룰(리터럴 hex 금지)이 잡는다.
-값을 찾는 순서는 [`PRODUCT.md`](PRODUCT.md) — 화면 스펙 → [`spec/momentory.css`](spec/momentory.css) → (담당자 경유) 상류 도구.
+색·크기·시간을 하드코딩하지 않는다. 어기면 ESLint 룰(리터럴 hex 금지)이 잡는다 —
+예외는 `src/design/` 과 `app.config.ts` 뿐이다. **값을 찾는 순서**는
+`spec/screens/<ID>.md`(문안) → `src/design/ds/`(코드가 쓰는 값) → `DESIGN.md`(없는 값·규칙) →
+`spec/COMPONENTS.md`(구조 참고) — 표의 정본은 [`PRODUCT.md`](PRODUCT.md) 다.
 
-### ⚠ 지금 있는 토큰 불일치 (상류 확인 필요)
+### ⚠ `ds/` 가 `DESIGN.md` 와 일부러 다른 자리
 
-MVP 리팩토링본 `momentory.css` 에는 있는데 `lib.mjs` → `theme.ts` 에는 **아직 없는** 값들:
+대비 검수에서 **시안 값 여섯이 WCAG AA 미달**이라 보정했다(`PLAN.md` A-5 표 ·
+`ds/color.ts` 머리말). 특히 **주 CTA 면은 `primary.heavy`** 다 — 시안의 `#7C9E86` + 흰 글자는
+2.91 이라 못 쓴다. 되돌리면 `ds/__tests__/contrast.test.ts` 가 깨진다.
 
-| 토큰                                                                                    | css 값                                      | theme.ts                                                                                                                                                              |
-| --------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--textStrong` `--textBody` `--textCaption` `--textLegal` `--textAccent` `--textOnDark` | 글자색 6종 체계                             | 다른 이름 체계(`textPrimary`/`textMuted`/`textSlogan`/`textLegalInk`)                                                                                                 |
-| `--primaryDeepPress`                                                                    | `#9E5626`                                   | 없음                                                                                                                                                                  |
-| ~~`--dangerInk`~~                                                                       | `#9B3B2F`                                   | ✅ **해결됨 (2026-08-05 · `R-40`)** — `lib.mjs` 등록 완료, `theme.ts` 에 `colors.dangerInk` 로 나온다. 오버라이드 불필요. **글자·테두리 전용이고 면을 채우지 않는다** |
-| `.scr` 배경                                                                             | `120% 90% at 50% 18%` (S0·S1 만 구 값 유지) | `gradients.screen` 은 구 값만                                                                                                                                         |
-
-**대응**: 상류 `lib.mjs` 에 위 값이 반영되는 것이 정공법이다(담당자가 상류에 요청 —
-[`PRODUCT.md` 「상류와 차이」](PRODUCT.md) #1). 그때까지 FE 는 `src/design/tokens.mvp.ts` 에
-오버라이드를 모아 두고, 반영되면 그 파일을 지운다. (오버라이드를 화면 코드에 흩지 않는다.)
+**옛 토큰 불일치 표(상류 `lib.mjs` ↔ `momentory.css`)는 여기서 지웠다** — 그 표가 가리키던
+파일 셋(`theme.ts`·`tokens.mvp.ts`·`paper.ts`)이 전부 사라졌고, 지금은 `ds/` 하나뿐이라
+비교 대상이 없다. 기록이 필요하면 [`PRODUCT.md` 「상류와 차이」](PRODUCT.md) #1 을 본다.
 
 ### 자산
 
 - **Pretendard 4 weight 는 `assets/fonts/` 에 커밋돼 있다** — 출처·해시·라이선스는
   [`assets/fonts/README.md`](../assets/fonts/README.md).
-- 바바 이미지는 상류 `04_자산/캐릭터/` 에서 필요한 것만 가져온다(담당자 경유) —
-  MVP 사용분: 얼굴 클로즈업 `01_기본표정`, 전체모습 `01_앉아서_인사`, 표정 `01_기쁨`. 투명 배경은 `.PNG`.
+- **캐릭터(바바·카피바라)와 일러스트는 `assets/` 에 커밋돼 있다** — 홈 카드의 카피바라 ·
+  회고 화면의 빈백 바바 · 감정 조약돌 열 장 · 감정 스티커 · 감각연못 배경. 3세대 전환에서
+  상류 캐릭터 자산은 전부 걷혔고(`PLAN.md` A-15), 지금 있는 것은 **그 뒤 사용자 시안으로
+  다시 들어온 것**이다(`DESIGN.md` 「홈」·「일기」·「쉼터」).
+  원본에서 배경을 빼는 도구는 `scripts/keyout-*.py` — **빌드에 끼지 않는다.**
 
 ---
 
@@ -443,6 +458,12 @@ track()은 SDK 초기화·전송을 기다리지 않으며 실패를 호출자�
 ---
 
 ## 7. 마일스톤
+
+> 📌 **2026-09-12 현재** — M0·M1·M4 ✅, M2·M3·M5 는 아래 표의 △ 사유가 대부분 닫혔다:
+> 소셜 셋·알림·캘린더 권한이 다 붙었고(M2), 보관함·리포트가 서버에서 오며(M5),
+> 회고는 **v2 로 갈아탔다**(M4 · `C1`·`C3` 삭제 · 행동카드 → 바람카드).
+> **남은 것은 M3-3 아웃박스**(멱등성 대기) · 앱 잠금 게이트 · **M6**(invariants 전수 · E2E · 배포)다.
+> 표의 옛 서술은 그때의 판단 기록으로 남긴다.
 
 | #         | 내용                                                                                             | 산출                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -493,10 +514,10 @@ M1 이 병목이자 지렛대다 — 여기서 만든 채팅 컴포넌트군이 
 
 ## 9. 지키는 규칙 (전 컴포넌트 · [`spec/COMPONENTS.md`](spec/COMPONENTS.md) §공통 규칙)
 
-1. 감정은 `theme.emotions` 9종만. 이모지 척도로 대체하지 않는다.
+1. 감정은 도메인 정본 **10종**(`features/emotion/model/emotion.ts`)만. 색은 `design/ds/color.ts` 가 붙인다 — 이모지 척도로 대체하지 않는다.
 2. 색·크기·시간을 하드코딩하지 않는다.
 3. 탭 대상 44pt+, 선택지·칩 행 52pt, 칩 간격 8pt.
-4. 모든 모션은 `theme.motion.spec.*`. Reduce Motion 시 opacity 120ms 만.
+4. 모든 모션은 `design/ds` 의 `motion` 값. Reduce Motion 시 opacity 120ms 만.
 5. 오류·거부·실패는 한 줄 안내로 흡수 — 모달·재시도 버튼·경고 아이콘 금지.
 6. 숫자로 압박하지 않는다 — 진행률·연속 일수·점수·배지 금지.
 7. **선택 상태를 색만으로 표시하지 않는다** — 테두리 색과 굵기(2px)를 동시에 바꾼다.
