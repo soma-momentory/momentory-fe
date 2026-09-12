@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   Animated,
   Easing,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -13,7 +14,9 @@ import {
 import {
   hairline,
   interaction,
+  iosVariant,
   label as labelColor,
+  layout,
   motion,
   overlay,
   primary,
@@ -21,6 +24,7 @@ import {
   size,
   space,
   status,
+  type TextToken,
 } from "@/design/ds";
 
 import { Text } from "./Text";
@@ -108,7 +112,26 @@ export function Button({
   ...rest
 }: Props) {
   const v = VARIANTS[variant];
-  const height = size.button[sizeName];
+  /**
+   * **Text 버튼은 CTA 높이를 쓰지 않는다** (2026-09-13 · 사용자 요청).
+   *
+   * ⚠ **iOS 한정이다** — 안드로이드는 예전 높이(48·40·32)를 그대로 쓴다.
+   *
+   * 면도 테두리도 없는 3순위 행동이라 48 을 채울 이유가 없다 — 주 버튼 아래에 붙는
+   * 짝에서 그 높이가 그대로 빈 공간으로 보였다(온보딩의 「알림 없이 쓸게요」·
+   * 「나중에 할게요」). 글자 칸에 맞는 32(`size.button.small`)로 둔다.
+   *
+   * ⚠ **탭 대상은 그대로 44 다.** 줄어든 만큼 `hitSlop` 으로 채운다 —
+   * `layout.minTouch` 주석의 「아이콘이 작으면 hitSlop 으로 채운다」와 같은 길이다.
+   * 보이는 면만 줄이고 손가락이 닿는 넓이는 건드리지 않는다.
+   */
+  const height =
+    variant === "text" && Platform.OS === "ios" ? size.button.small : size.button[sizeName];
+  /**
+   * 보이는 높이가 탭 최소보다 낮으면 그 차이를 위아래로 나눠 채운다.
+   * **iOS 에서만 얹는다** — 안드로이드는 이 세션 전의 히트 영역을 그대로 둔다.
+   */
+  const touchPadY = Platform.OS === "ios" ? Math.max((layout.minTouch - height) / 2, 0) : 0;
 
   const [down, setDown] = useState(false);
   // 저장소 관례(`ChatBubble`·`GrassButton`) — ref 는 렌더 중 읽지 않는다
@@ -129,6 +152,9 @@ export function Button({
 
   return (
     <AnimatedPressable
+      // 보이는 높이가 44 보다 낮은 버튼(Text · Small)의 탭 대상을 채운다. `rest` 앞에
+      // 둬서 호출자가 자기 값을 주면 그쪽이 이긴다
+      hitSlop={touchPadY > 0 ? { top: touchPadY, bottom: touchPadY } : undefined}
       {...rest}
       // 호출자가 준 `onPressIn`·`onPressOut` 도 그대로 부른다 — 우리가 덮어쓰지 않는다
       onPressIn={(e) => {
@@ -158,7 +184,7 @@ export function Button({
         <>
           {leading}
           <Text
-            variant={sizeName === "small" ? "label2" : "label1"}
+            variant={labelToken(variant, sizeName)}
             color={disabled ? labelColor.disabled : v.labelColor}
           >
             {label}
@@ -179,6 +205,29 @@ export function Button({
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type Variant = { container: ViewStyle; labelColor: string; scrim: string };
+
+/**
+ * 버튼 글자 단.
+ *
+ * **Text 버튼은 버튼 보정(`BUTTON_BOOST`)을 타지 않는다** (2026-09-13 · 사용자 요청).
+ * 3순위 행동이라(`DESIGN.md` §6 CTA 위계) 주 버튼과 같은 크기로 읽히면 위계가 무너진다 —
+ * 하단 독의 「채운 버튼 + 그 아래 보조 텍스트 버튼」 짝이 그 자리다(온보딩의
+ * 「알림 없이 쓸게요」·「나중에 할게요」, 회고의 「이어서 얘기하기」…).
+ *
+ * 그래서 채운·테두리·위험 버튼만 `buttonLabel` 이고 **iOS 의 Text 버튼은 크기와
+ * 상관없이 `label2`(13)** 다 — 안드로이드는 예전 그대로 `label1`·`label2` 다 — 12단에서 「작은 버튼」의 단이다. 처음엔 large·medium 을 `label1`(14)
+ * 로 뒀는데 주 버튼(19) 옆에서 여전히 컸다(2026-09-13 · 두 번째 요청). 한 단 더 내리려면
+ * `caption1`(12)인데, 거기는 헬퍼 문구와 같은 크기라 행동으로 안 읽힐 수 있다.
+ *
+ * **안드로이드에서는 보정이 1 이라** `buttonLabel` 이 `label1` 과 같은 값이고, Text 버튼만
+ * `label2` 로 한 단 작다.
+ */
+const labelToken = (variant: ButtonVariant, sizeName: ButtonSize): TextToken =>
+  variant === "text"
+    ? iosVariant("label2", sizeName === "small" ? "label2" : "label1")
+    : sizeName === "small"
+      ? "buttonLabelSmall"
+      : "buttonLabel";
 
 const VARIANTS: Record<ButtonVariant, Variant> = {
   solid: {

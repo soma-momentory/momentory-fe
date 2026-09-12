@@ -5,7 +5,15 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { BottomSheet, Button, Icon, Text, WheelPicker } from "@/components/ds";
 import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
-import { background, hairline, label as labelColor, layout, radius, space } from "@/design/ds";
+import {
+  background,
+  hairline,
+  iosVariant,
+  label as labelColor,
+  layout,
+  radius,
+  space,
+} from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { requestNotificationPermission } from "@/lib/notifications";
 import {
@@ -107,7 +115,16 @@ export default function RetroTime() {
           />
         }
       >
-        <Text variant="caption1" color={labelColor.alternative} style={styles.hint}>
+        {/*
+          CTA 위 안내 한 줄은 **`label2`** 다 (2026-09-13 · 사용자 요청 · **iOS 에서만** 16 · 안드로이드는 `caption1` 그대로).
+          헬퍼(`caption1` 12 → 14)로는 눈이 그냥 지나쳐서 한 번 `body2`(18)까지 올렸다가
+          주 버튼(19)과 맞먹어 되내렸다. 온보딩 마지막 화면의 같은 줄과 짝이다.
+        */}
+        <Text
+          variant={iosVariant("label2", "caption1")}
+          color={labelColor.alternative}
+          style={styles.hint}
+        >
           편한 시간은 나중에도 바꿀 수 있어요.
         </Text>
         <Button label="다음" fill disabled={!picked} onPress={() => void goNext(true)} />

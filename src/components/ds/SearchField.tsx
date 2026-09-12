@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     padding: 0,
     // 세로 정렬(받침 잘림 · 아래 쏠림)은 한 곳에서 푼다 — `singleLineInput` 머리말
-    ...singleLineInput(text.body2.fontSize),
+    ...singleLineInput(),
     // 입력값은 Regular 400 — 본문(500)과 다르다(`DESIGN.md` §2)
     fontFamily: fontFamily.regular,
     fontSize: text.body2.fontSize,

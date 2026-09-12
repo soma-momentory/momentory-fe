@@ -1,4 +1,4 @@
-import { Dimensions, type TextStyle } from "react-native";
+import { Dimensions, Platform, type TextStyle } from "react-native";
 
 /**
  * Momentory DS — 타이포. 정본은 `docs/DESIGN.md` §2.
@@ -100,19 +100,67 @@ const MAX_TYPE_SCALE = 1.12;
  * (2026-08-28). 그래서 기준 기기보다 넓은 만큼만 키우고, 좁은 기기는 **건드리지
  * 않는다**(하한 1) — SE·13 mini 는 이미 빠듯하다.
  *
- * 12단 전체가 함께 커진다. **손글씨(교보)도 같이 커진다** — 한쪽만 키우면 한 화면
- * 안에서 두 서체의 크기 관계가 기기마다 달라진다.
- *
  * ⚠ 세로 화면 전용 앱이라 모듈이 올라올 때 한 번 잰다(`supportsTablet: false` ·
  * 회전 없음). 회전을 열게 되면 이 값이 갱신되지 않는다는 것을 먼저 본다.
  */
-export const typeScale = Math.min(
+const widthScale = Math.min(
   Math.max(Dimensions.get("window").width / REFERENCE_WIDTH, 1),
   MAX_TYPE_SCALE,
 );
 
+/**
+ * **iOS 보정 — 같은 단을 한 뼘 크게 그린다** (2026-09-13 · 실기기 대조).
+ *
+ * 12단 값은 두 OS 가 나눠 쓴다. 그런데 **같은 숫자가 눈에 닿는 크기는 다르다** —
+ * 안드로이드 기기는 비슷한 물리 폭을 360dp 안팎으로 세는데 iPhone 은 393pt 로 세니
+ * 1pt 가 1dp 보다 물리적으로 작다. 여기에 교보손글씨의 얇은 획이 겹친다.
+ *
+ * **값은 실기기에서 골랐다.** 폭 비율만 보면 393/360 ≈ 1.09 인데, 기기 텍스트 크기를
+ * 기본으로 둔 아이폰(390pt)에서 나란히 보고 **1.2 가 낫다**고 정했다. 1.09~1.2 가
+ * 그때 검토한 폭이다.
+ *
+ * ⚠ **안드로이드는 1 이다** — 그쪽 크기는 이미 검수를 마쳤다(2026-09-13 · 사용자 결정).
+ * ⚠ 값은 여기 하나뿐이다. 「iOS 만 조금 더/덜」은 이 숫자를 고쳐서 한다 —
+ * 화면에서 `fontSize` 를 따로 올리기 시작하면 스케일이 무너진다.
+ * ⚠ **이 배율은 `maxFontScale` 이 나누지 않는다**(아래 주석). 나누면 시스템 텍스트
+ * 크기를 키워 둔 기기에서 확대가 통째로 상쇄돼 아무 일도 일어나지 않는다.
+ */
+const IOS_TYPE_BOOST = 1.2;
+
+/**
+ * 단 값에 곱하는 **최종 배율** — 기기 폭 보정 × 플랫폼 보정.
+ *
+ * 고정 높이 그릇(Button 48 · Chip 36 · 탭바 `minHeight` 56)은 함께 커지지 않지만,
+ * 가장 큰 조합(440 기기의 iOS · 1.12 × 1.2 = 1.34)에서도 라벨 단(14·13·12 → 19·17·16)은
+ * 그릇 안에 남는다 — 탭바는 `minHeight` 라 필요하면 스스로 늘어난다.
+ */
+export const typeScale = widthScale * (Platform.OS === "ios" ? IOS_TYPE_BOOST : 1);
+
 /** 보정한 단 — 반올림해 정수로 떨어뜨린다(픽셀 격자에 얹혀 또렷하게) */
 const scaled = (v: number) => Math.round(v * typeScale);
+
+/**
+ * 12단 **밖에서** 크기를 적어야 하는 자리가 같은 보정을 타게 하는 손잡이
+ * (시간 휠의 17/24 한 곳 — `components/ds/WheelPicker`). 새 자리를 여는 문이
+ * 아니다: 단으로 될 일이면 `text` 를 쓴다.
+ */
+export const scaleFont = scaled;
+
+/**
+ * **버튼 글자만 한 번 더 — iOS 한정** (2026-09-13 · 사용자 요청).
+ *
+ * 전역 `IOS_TYPE_BOOST` 위에 **버튼 라벨에만** 더 얹는다. 버튼은 손가락이 가는
+ * 자리라 같은 단이어도 한 눈에 읽혀야 하는데, 12단에서 버튼이 쓰는 `label1`(14)·
+ * `label2`(13)는 본문(16)보다 작아서 전역 보정만으로는 여전히 작게 읽혔다.
+ *
+ * ⚠ **안드로이드는 1 이다** — 전역 보정과 같은 규칙이다.
+ * ⚠ 그릇을 뚫지 않는지 함께 본다. 가장 큰 조합(440 기기 · 1.12 × 1.2 × 1.15 = 1.54)에서
+ *   `buttonLabel` 의 행간이 20 → 31 인데 Large 48 · Medium 40 안에 남는다.
+ *   Small 32 는 `buttonLabelSmall`(18 → 28)이라 역시 들어간다.
+ * ⚠ 로그인의 3사 버튼은 **여기 안 든다** — 카카오 16 · 구글 14 는 브랜드 규격이라
+ *   `SocialButton` 이 따로 그린다(`DESIGN.md` 로그인 절).
+ */
+const BUTTON_BOOST = Platform.OS === "ios" ? 1.15 : 1;
 
 const style = (family: FontWeightName, fontSize: number, lineHeight: number): Style => ({
   fontFamily: fontFamily[family],
@@ -181,10 +229,17 @@ export const text = {
   body2: style("medium", 15, 22),
   /** 15/24 400 — 설명 문단 */
   body2Reading: style("regular", 15, 24),
-  /** 14/20 600 — 버튼·입력 라벨, 섹션 제목 */
+  /** 14/20 600 — 입력 라벨, 섹션 제목. ⚠ **버튼은 `buttonLabel`** 이다 */
   label1: style("semibold", 14, 20),
-  /** 13/18 600 — 칩, 작은 버튼, 카드 라벨 */
+  /** 13/18 600 — 칩, 카드 라벨. ⚠ **작은 버튼은 `buttonLabelSmall`** 이다 */
   label2: style("semibold", 13, 18),
+  /**
+   * `label1` × 버튼 보정 — **Large·Medium 버튼 라벨**. iOS 에서만 `label1` 보다 크고
+   * 안드로이드에서는 `label1` 과 **같은 값**이다(`BUTTON_BOOST` 머리말).
+   */
+  buttonLabel: style("semibold", 14 * BUTTON_BOOST, 20 * BUTTON_BOOST),
+  /** `label2` × 버튼 보정 — **Small 버튼 라벨**. 안드로이드에서는 `label2` 와 같다 */
+  buttonLabelSmall: style("semibold", 13 * BUTTON_BOOST, 18 * BUTTON_BOOST),
   /** 12/16 500 — 메타, 헬퍼, 탭 라벨 */
   caption1: style("medium", 12, 16),
   /** 11/14 600 — 최소 캡션, 약관. **이보다 작게 쓰지 않는다** */
@@ -194,18 +249,40 @@ export const text = {
 export type TextToken = keyof typeof text;
 
 /**
- * 글꼴 배율 **천장**. 시스템 글꼴 크기(안드로이드 「글꼴/화면 크기」)를 그대로
- * 따라가면 배율이 1.5·2.0 까지 올라 고정 높이 그릇(Button 48 · Chip 36 · 탭바)을
- * 글자가 뚫는다 — 접근성을 죽이는 `allowFontScaling={false}` 대신의 절충값이다.
+ * **iOS 에서만 다른 단을 쓴다** (2026-09-13 · 사용자 결정).
+ *
+ * 이 세션의 크기 조정은 **전부 iOS 한정**이다 — 안드로이드는 이미 검수를 마쳤고,
+ * 같이 건드리면 두 번 검수해야 한다. 배율(`IOS_TYPE_BOOST`·`BUTTON_BOOST`)은 스스로
+ * 플랫폼을 보지만, **단 자체를 갈아끼우는 자리**는 이 손잡이를 지난다.
+ *
+ * `Platform.OS` 를 화면마다 적지 않게 한 곳에 모은 것이다 — 나중에 「안드로이드도
+ * 같이 간다」로 바뀌면 여기 하나만 고치면 된다.
+ */
+export const iosVariant = <T extends TextToken>(ios: T, android: T): T =>
+  Platform.OS === "ios" ? ios : android;
+
+/**
+ * 글꼴 배율 **천장**. 시스템 글꼴 크기(iOS 「텍스트 크기」 · 안드로이드 「글꼴/화면
+ * 크기」)를 그대로 따라가면 배율이 1.5·2.0 까지 올라 고정 높이 그릇(Button 48 ·
+ * Chip 36 · 탭바)을 글자가 뚫는다 — 접근성을 죽이는 `allowFontScaling={false}`
+ * 대신의 절충값이다.
  *
  * `components/ds/Text` 가 이 값을 `maxFontSizeMultiplier` 로 넘긴다. **글자 높이로
  * 여백을 계산하는 쪽도 같은 천장을 봐야 한다** — 화면이 1.3 을 따로 적으면
  * 천장이 둘이 되고, 한쪽만 고쳐졌을 때 배율 큰 기기에서만 어긋난다.
  *
- * ⚠ **기기 폭 보정(`typeScale`)만큼 나눈다.** 이 천장이 지키려는 것은 「시안 크기의
- * 1.3 배까지」이지 「지금 그리는 크기의 1.3 배까지」가 아니다 — 넓은 기기에서 이미
- * 1.12 배로 그리는데 거기에 또 1.3 을 곱하면 1.46 이 되어, 그 기기에서만 그릇이 뚫린다.
+ * ## ⚠ 나누는 것은 **`widthScale` 하나다** — `typeScale` 이 아니다 (2026-09-13)
+ *
+ * 기기 폭 보정은 「같은 크기로 **보이게**」 하는 것이라 천장도 같이 내려야 맞다.
+ * 시안의 1.3 배를 넓은 기기에서 1.12 × 1.3 = 1.46 배로 그리면 그 기기에서만
+ * 그릇이 뚫린다.
+ *
+ * **iOS 보정은 다르다.** 그건 「이만큼 크게 **하고 싶다**」는 결정이다. 여기까지
+ * 나누면 천장이 정확히 그만큼 내려가서 **확대가 통째로 상쇄된다** — 시스템 텍스트
+ * 크기를 키워 둔 기기는 보정 전에도 후에도 천장에 닿아 있어 글자 크기가 안 바뀐다
+ * (16 × 1.3 = 20.8 → 19 × 1.083 = 20.6). 천장이 지키는 것은 이제 **「그리는 크기의
+ * 1.3 배」**다.
  */
-export const maxFontScale = 1.3 / typeScale;
+export const maxFontScale = 1.3 / widthScale;
 
 export const typography = { fontFamily, text } as const;

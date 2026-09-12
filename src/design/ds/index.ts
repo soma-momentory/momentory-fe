@@ -53,7 +53,11 @@ export {
   // 로그인(`S1`) 하나만 쓰는 고딕 — 다른 화면에서 부르지 않는다
   gothic,
   gothicFamily,
+  // iOS 에서만 단을 갈아끼우는 손잡이 — 이 세션의 조정은 전부 iOS 한정이다
+  iosVariant,
   maxFontScale,
+  // 12단 밖에서 크기를 적는 한 자리(시간 휠)가 같은 보정을 타게 하는 손잡이
+  scaleFont,
   text,
   typography,
   type FontWeightName,

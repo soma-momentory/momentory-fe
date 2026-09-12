@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     padding: 0,
     // 값도 플레이스홀더도 알약 높이의 **가운데**에 서고 받침이 잘리지 않는다 —
     // 그 두 가지는 한 곳에서 푼다(`components/ds/singleLineInput.ts` 머리말)
-    ...singleLineInput(text.body1Reading.fontSize),
+    ...singleLineInput(),
   },
   clear: { width: size.icon.lg, height: size.icon.lg },
   add: { width: layout.minTouch, height: layout.minTouch, borderRadius: radius.full },
