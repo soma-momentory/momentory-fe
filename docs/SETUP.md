@@ -164,6 +164,23 @@ lsof -ti:8081 | xargs kill
 값을 바꾸는 일은 상류가 아니라 **이 저장소**에서 시작한다 — `docs/DESIGN.md` 가 SSOT 다.
 옛 문서·주석에 남은 이름은 출처 표시일 뿐이다.
 
+### `npm run typecheck` 이 새로 만든 라우트를 모른다고 한다
+
+```
+error TS2345: Argument of type '"/rest/sense-pond"' is not assignable to parameter of type
+  '"/" | "/home" | "/rest" | ... '
+```
+
+**코드가 아니라 생성물이 낡은 것이다.** expo-router 의 **타입 있는 라우트**는
+`.expo/types/router.d.ts` 에서 오고, 그 파일은 **개발 서버가 뜰 때 다시 만들어진다.**
+새 라우트 파일을 추가한 뒤 `npm start` 를 한 번도 돌리지 않으면 타입에 그 경로가 없다.
+
+```bash
+npm start   # 잠깐 띄웠다 끄면 .expo/types 가 갱신된다
+```
+
+`.expo/` 는 커밋하지 않으므로 **CI 는 매번 새로 만든다** — 이 오류는 로컬에서만 난다.
+
 ### `npm run sync:api` 가 실패
 
 주소를 못 찾았거나 서버가 꺼져 있다. `.env` 의 `EXPO_PUBLIC_API_BASE_URL` 을 채우거나
@@ -496,7 +513,7 @@ iOS ATS 문제도 함께 사라졌다 — 예고대로 **`.env` 한 줄**로 끝
 
 VS Code 기준 권장 확장:
 
-- **ESLint** · **Prettier** — 저장 시 포맷. `src/design/theme.ts` 는 `.prettierignore` 에 있으니 건드리지 않는다
+- **ESLint** · **Prettier** — 저장 시 포맷. `.prettierignore` 에 있는 것(`docs/spec/` · `docs/api/openapi.json`)은 **반입물이라 포맷하지 않는다** — 서식이 바뀌면 sha256 대조가 깨진다
 - **Expo Tools**
 
 ```jsonc
@@ -629,6 +646,16 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 개인 개발자 계정은 **비공개 테스트를 일정 인원(콘솔 표시) × 14일 연속** 돌린 뒤에야
 프로덕션 액세스를 신청할 수 있다. **내부 테스트는 이 요건에 들어가지 않는다.**
 14일은 출시일이 아니라 **인원이 다 옵트인한 시점부터** 센다.
+
+### iOS 업로드 — `buildNumber`
+
+Android 의 `versionCode` 와 같은 자리다. [`app.config.ts`](../app.config.ts) 의
+`ios.buildNumber` 를 **App Store Connect 에 올릴 때마다** 올린다(아카이브를 다시 만들
+때마다가 아니다). 같은 `version` 으로 다시 올리려면 반드시 커야 하고, 한 번 쓴 번호는
+그 버전에서 재사용할 수 없다. 적지 않으면 Expo 가 `1` 로 만든다.
+
+`MOMENTORY_BUILD_ENV=production` 으로 prebuild 해야 배포 설정이 들어간다 —
+그때 `.env` 의 네 값이 모두 있어야 하고 **API 주소는 HTTPS 여야 한다**(`.env.example`).
 
 ### 심사는 세 번이다
 

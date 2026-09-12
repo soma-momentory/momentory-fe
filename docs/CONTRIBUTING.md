@@ -7,8 +7,9 @@
 ## 저장소 구조
 
 **이 저장소 하나만 clone 하면 개발·실행·검증이 전부 된다.**
-화면 스펙·값·상태 기계는 [`docs/spec/`](spec/SNAPSHOT.md)에 반입돼 있고,
-토큰(`src/design/theme.ts`)과 폰트는 커밋돼 있다.
+화면 스펙·상태 기계는 [`docs/spec/`](spec/SNAPSHOT.md)에 반입돼 있고,
+**토큰([`src/design/ds/`](../src/design/ds/index.ts))과 폰트·자산은 커밋돼 있다.**
+디자인 값·규칙의 SSOT 는 [`docs/DESIGN.md`](DESIGN.md) 다(2026-08-20 3세대 전환).
 
 설계 상류(momentory — 리모트 없는 로컬 저장소)에 접근할 일은
 **재반입뿐**이고, 상류 접근 담당자의 몫이다
@@ -30,8 +31,8 @@
 | 무엇의 정본                      | 어디                                                                         |
 | -------------------------------- | ---------------------------------------------------------------------------- |
 | 화면이 무엇인가 (규칙·문안·상태) | [`docs/spec/`](spec/SNAPSHOT.md) — `RULES.md` + `screens/<ID>.md` + JSON 2개 |
-| 값 (색·크기·반경·여백)           | [`docs/spec/momentory.css`](spec/momentory.css)                              |
-| RN 토큰                          | `src/design/theme.ts`(생성물) + `tokens.mvp.ts`(상류 미반영분 임시)          |
+| 값 (색·크기·반경·여백) · 시각    | [`docs/DESIGN.md`](DESIGN.md) — **디자인 SSOT**(2026-08-20~)                 |
+| RN 토큰                          | [`src/design/ds/`](../src/design/ds/index.ts) — 코드가 쓰는 값, 여기만 hex   |
 
 ### 구현이 스펙과 다르게 가야 할 때
 
@@ -40,8 +41,10 @@ RN 제약이든 스펙의 모순 발견이든, **화면 코드에 조용히 반�
 1. [`docs/PRODUCT.md` 「상류와 차이」](PRODUCT.md)에 기록한다 — 차이·근거·임시 기록 자리·닫히는 조건.
 2. 상류 접근 담당자가 상류 `06_운영문서/OPEN-ISSUES.md` 에 R-항목으로 제기한다.
    선례: `R-40`·`R-41`·`R-42`·`R-43` — 전부 이 저장소가 제기해 상류가 닫았다.
-3. 상류가 반영하기 전까지의 임시 기록 자리는 둘뿐이다 —
-   **값**이면 `src/design/tokens.mvp.ts`, **동작·범위**면 `TASKS.md` 해당 절.
+3. 임시 기록 자리는 둘뿐이다 — **값**이면 `src/design/ds/`(이름을 먼저 만들고 쓴다),
+   **동작·범위**면 `TASKS.md` 해당 절.
+   ⚠ **2026-08-14 이후 상류 제기는 전제하지 않는다**(`PLAN.md` §0) — 2 번은 기록이고,
+   실제로는 이 저장소가 `DESIGN.md` 에 결정을 적어 닫는다.
 4. 상류가 닫으면 임시 기록을 지운다. 지우지 않으면 정본이 둘이 된다.
 
 상류가 개정판을 냈을 때의 재반입 체크리스트는 [spec/SNAPSHOT.md](spec/SNAPSHOT.md)에 있다 (담당자 전용).
@@ -195,14 +198,16 @@ Expo SDK 57 트리의 peer 충돌(expo 가 고정한 `react@19.2.3` vs `react-do
 
 직접 고치면 다음 생성 때 덮인다. **소스를 고치고 다시 만든다.**
 
-| 생성물·반입물     | 소스                            | 다시 만들기                                           |
-| ----------------- | ------------------------------- | ----------------------------------------------------- |
-| `docs/spec/**`    | 상류 `09_MVP/` 등               | 담당자: 재반입 절차 ([SNAPSHOT.md](spec/SNAPSHOT.md)) |
-| `ios/` `android/` | `app.config.ts` + config plugin | `npx expo prebuild --clean`                           |
+| 생성물·반입물           | 소스                            | 다시 만들기                                           |
+| ----------------------- | ------------------------------- | ----------------------------------------------------- |
+| `docs/spec/**`          | 상류 `09_MVP/` 등               | ⚠ 재반입은 폐기됐다 ([SNAPSHOT.md](spec/SNAPSHOT.md)) |
+| `docs/api/openapi.json` | 개발 서버 `/v3/api-docs`        | `npm run sync:api` ([api/README.md](api/README.md))   |
+| `ios/` `android/`       | `app.config.ts` + config plugin | `npx expo prebuild --clean`                           |
 
-`theme.ts` 는 헤더에 원본 커밋 SHA 와 본문 sha256 을 달고 있다.
-⚠ 옛 생성물 `theme.ts` 와 그 검사(`check:theme`)는 **3세대 이관이 끝나면서 사라졌다**(`PLAN.md` A-16). `docs/spec/**` 은 같은
-헤더 규약을 쓴다(검증은 수동 — SNAPSHOT.md).
+⚠ 옛 생성물 `theme.ts` 와 그 검사(`check:theme`)는 **3세대 이관이 끝나면서 사라졌다**
+(`PLAN.md` A-16) — 지금 토큰은 손으로 쓰는 `src/design/ds/` 하나다.
+`docs/spec/**` 은 헤더에 원본 커밋 SHA 와 본문 sha256 을 달고 있다(검증은 수동 — SNAPSHOT.md).
+**`docs/api/openapi.json` 도 생성물이다** — `npm run sync:api` 로만 갱신한다.
 
 **생성물을 커밋하는 이유**는 재현성이다 — 저장소 밖 파일에 의존하면
 CI 와 새 개발자가 같은 빌드를 만들 수 없다.
@@ -214,7 +219,7 @@ CI 와 새 개발자가 같은 빌드를 만들 수 없다.
 - **색을 리터럴로 쓰지 않는다.** `no-restricted-syntax` 가 hex 를 막는다.
   예외는 `src/design/` 과 `app.config.ts` 뿐이다.
 - 글자색은 semantic 6종만 — `text.strong` `text.body` `text.caption`
-  `text.legal` `text.accent` `text.onDark` (`src/design/tokens.mvp.ts`)
+  `text.legal` `text.accent` `text.onDark` (`src/design/ds/color.ts`)
 - 폰트는 `fontWeight` 가 아니라 **파일 이름**으로 지정한다
   (`fontFamily: "Pretendard-Bold"`). Android 에서 `fontWeight` 로는 OTF 굵기가 안 바뀐다.
 - **앱 코드는 고정값을 읽지 않는다** — 목 데이터는 2026-08-21 에 전부 지웠고
@@ -235,11 +240,16 @@ npm run lint           # eslint (경고 0)
 npm run test           # jest        (test:watch — 감시 모드)
 npm run format         # prettier 쓰기 (format:check — 검사만, CI 용)
 
-# 담당자 전용 (상류 로컬 폴더 필요)
+# 가끔 쓰는 것
+npm run sync:api       # 서버 OpenAPI 계약 재반입 (docs/api/README.md)
+scripts/screen-sweep.sh  # 화면 크기·글꼴 배율 다섯 벌 훑기 (판정하지 않는다 — 눈으로 대조)
 ```
+
+⚠ **상류 전용 명령(`sync:theme`·`check:theme`)은 없다** — 2026-08-20 에 삭제됐다.
 
 ## 변경 이력
 
 | 날짜       | 변경                                                                                                                                                                                                                                                 |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-12 | **문서 일괄 대조.** 토큰 정본을 `theme.ts`/`tokens.mvp.ts` 에서 `src/design/ds/` 로 고치고, 생성물 표에 `docs/api/openapi.json` 을 추가, 삭제된 상류 명령(`sync:theme`·`check:theme`) 흔적 제거                                                      |
 | 2026-08-07 | **자급형 전환.** 커밋 type 접두 필수화(과거 이력은 불변), 품질 게이트 표 신설(CI 서술 정본화), 상류 참조를 `docs/spec/` 스냅샷으로 교체, 반입 체크리스트를 SNAPSHOT.md 로 이관. "부모 저장소 관행을 따른다"는 상속 선언을 이 문서 자체 규정으로 대체 |

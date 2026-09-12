@@ -3,7 +3,7 @@
 > 정본은 `momentory-be/docs/retro-chat-v2-plan.md`(대화는 서버 주도). 이 문서는 FE 화면·상태 작업만 다룬다.
 > 브랜치: `feat/retro-chat-overhaul`.
 
-## 진행 상황 (2026-08-28)
+## 진행 상황 (2026-08-28 작성 · **2026-09-12 종료 확인**)
 
 **BE 는 tasks 1~5 완료**(엔진·영속화·읽기·Gemini). FE 착수:
 
@@ -39,12 +39,24 @@
 - **fixture 재매핑**: `src/testing/fixtures.ts` + `report-my.test` 주간 fixture의 감정 id 를 새 번호로(감정 정체 보존).
   화면 테스트(`home`·`archive`·`report-my`)는 이름/필터가 다시 맞아 통과.
 
+### ✅ 마무리 (2026-09-12 대조)
+
+- **BE 가 v2 를 머지했다** — `momentory-be` `#60`~`#62`(엔진 재설계) · `#53`(위기 안내 뒤 이어가기 ·
+  `phase="safety_hold"` 는 `done=false`). 마이그레이션 `V20`(바람카드 필드) · `V21`(일기 감정 태그) ·
+  `V22`(회고 토픽) · `V23`(`current_emotion` → `primary_emotion`).
+- ✅ **리치 바람카드 읽기측 — 끝났다.** `src/components/diary/WishCardFields.tsx` 를 만들어
+  쉼터(`R2`)와 일기 상세(`A3`)가 **같은 항목·같은 말**로 그린다(비운 항목은 「아직 정하지 않음」 ·
+  `sentiment` 에 따라 라벨 분기). 쉼터 카드만 높이 제약 때문에 `inline` 한 줄이다.
+- ✅ **감정 없이 끝난 일기**도 화면이 생겼다(2026-09-12 · 빈 얼굴·빈 조약돌) — `V21` 이
+  `primary_emotion` 을 nullable 로 푼 것과 짝이다.
+
 ### ⚠ 남은 것 (선택 · 후속)
 
-- **리치 바람카드 읽기측**: 쉼터(R2)·일기상세(A3) 의 `ActionCardSection` → 바람카드 필드(감정·바람·바랐던모습·성격) 표시.
-  BE `ActionCardResponse` 는 이미 필드를 내려주고 done 화면은 이미 표시 중 — 쉼터/A3 컴포넌트만 확장하면 됨.
-- **스케줄 감정 분리**(별도): BE `ScheduleEmotion` 은 아직 `ANGRY_FRUSTRATED` 합침 — 화남/답답함을 스케줄 태그에서도
-  나누려면 BE enum + 마이그레이션이 필요(retro v2 범위 밖).
+- **스케줄 감정 분리**: BE `ScheduleEmotion` 은 **아직 `ANGRY_FRUSTRATED` 합침**(2026-09-12 확인).
+  화남/답답함을 일정 태그에서도 나누려면 BE enum + 마이그레이션이 필요하다(retro v2 범위 밖).
+  그때까지 FE 는 9·10 을 같은 코드로 보내고 **되돌아올 때 화남(9)으로 정한다**(`scheduleApi.ts`).
+- **답답함(10) 색**은 아직 초안이다(`ds/color.ts` 의 `#B8917C`) — `DESIGN.md` 감정 팔레트에
+  확정 값을 받으면 바꾼다.
 
 ## 0. 무엇이 바뀌나
 
