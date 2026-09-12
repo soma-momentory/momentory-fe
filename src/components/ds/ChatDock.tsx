@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import {
   background,
@@ -93,8 +93,74 @@ export function ChatDock({
   );
 }
 
-/** 입력 칸(44) 안에서 body1(26) 을 가운데 두는 위아래 여백 */
-const INPUT_PADDING_Y = (layout.minTouch - text.body1.lineHeight) / 2;
+/**
+ * **교보손글씨의 자연 줄 높이 비율** — `hhea` 의 `880 − (−255) + lineGap 0` / 1000.
+ * 폰트 파일에서 직접 읽은 값이다(`assets/fonts/KyoboHandwriting2025lyb.ttf`).
+ */
+const HAND_LINE_RATIO = 1.135;
+
+/**
+ * **iOS 입력의 줄 간격 = 글꼴의 자연 줄 높이** (2026-09-13 · 사용자 지적 · iOS 한정).
+ *
+ * 커서 높이는 iOS 에서 따로 정할 수 없고 **줄 상자를 그대로 따라간다.** 단(`body1`)의
+ * 29 를 그대로 쓰면 줄 상자(29)가 글자 덩어리(19 × 1.135 = 21.6)보다 7.4 크고, 글자는
+ * 그 상자 **바닥**에 붙는다. 그래서 둘을 **동시에** 가운데 둘 수가 없었다 —
+ * 글자를 맞추면 커서가 3.7 뜨고, 커서를 맞추면 글자가 3.7 내려앉는다.
+ *
+ * **줄 상자를 글자 높이와 같게 만들어 푼다.** 둘이 같아지면 하나를 가운데 두는 것이
+ * 곧 둘 다 가운데 두는 것이고, 아래의 `IOS_LEADING_DROP` 도 저절로 0 이 된다
+ * (보정이 사라진다 — 계산이 스스로 맞아떨어지는 자리가 맞는 자리다).
+ *
+ * ⚠ **여러 줄 간격이 29 → 21.6 으로 좁아진다.** 글꼴이 원래 갖고 있는 간격이고
+ * 네이티브 입력이 쓰는 값이라 입력칸에서는 자연스럽지만, 말풍선(`body1Reading` 26)과는
+ * 다르다 — 읽는 글이 아니라 적는 글이라 여기서만 그렇다.
+ * ⚠ 커서가 21.6 으로 짧아진다. 「커서 줄이기」를 취소하셨지만 이건 취향이 아니라
+ * **정렬의 조건**이다 — 커서가 글자보다 길면 둘의 가운데가 어긋난다.
+ */
+const IOS_INPUT_LINE = text.body1.fontSize * HAND_LINE_RATIO;
+
+/** 이 입력이 실제로 차지하는 한 줄 높이 — 안드로이드는 단의 행간 그대로다 */
+const INPUT_LINE = Platform.OS === "ios" ? IOS_INPUT_LINE : text.body1.lineHeight;
+
+/**
+ * **iOS 에는 줄 간격을 주지 않는다** — 단에서 `lineHeight` 를 떼어 낸 나머지.
+ *
+ * 값을 21.57(자연 줄 높이)로 맞춰 줘도 어긋났다. RN 이 `lineHeight` 를 주면 iOS 는
+ * 문단 스타일의 min/max 줄 높이를 강제하고, 그 과정에서 첫 줄 기준선이 밀린다 —
+ * 계산은 맞는데 눈이 안 맞는 자리다(2026-09-13 · 세 번 시도).
+ *
+ * **안 주면 된다.** 그러면 줄 상자 = 글꼴의 자연 줄 높이 = 글자 덩어리라, 커서도
+ * 글자도 같은 상자를 쓴다. 위아래 여백만 똑같이 나눠 주면 둘 다 가운데에 선다.
+ * 같은 화면의 입력 pill(`TextField`)이 이 방식이고 가운데가 맞는다 — 확인된 길이다.
+ */
+const { lineHeight: _body1Leading, ...BODY1_WITHOUT_LEADING } = text.body1;
+
+/** 입력 칸(44) 안에서 한 줄을 가운데 두는 위아래 여백 */
+const INPUT_PADDING_Y = (layout.minTouch - INPUT_LINE) / 2;
+
+/**
+ * **iOS 가 글자를 아래로 떨어뜨리는 양** (2026-09-13 · 실기기 스크린샷 · iOS 한정).
+ *
+ * 줄 간격을 주면 iOS 는 글자를 줄 상자의 **바닥에 붙여** 그린다 — 남는 여백이 전부
+ * 글자 **위**로 간다. `body1` 은 19/29 인데 이 서체의 자연 줄 높이는 19 × 1.135 =
+ * 21.6 이라, 남는 **7.4 가 위에 얹혀** 글자·커서·플레이스홀더가 함께 내려앉는다.
+ * 칸(44) 안에서 위아래를 똑같이 나눠 줘도 상자만 가운데이고 글자는 아니었다.
+ *
+ * **남는 여백의 절반이다.** 글자 덩어리(21.6)가 줄 상자(29) 바닥에 붙으면 그 덩어리의
+ * **중심**은 상자 중심보다 `(29 − 21.6) / 2 = 3.7` 만큼 내려간다 — 남는 7.4 전체가
+ * 아니다. 2026-09-13 에 7.4 를 올렸다가 그만큼 위로 떠 버려 절반으로 고쳤다.
+ *
+ * **눈으로 재지 않고 계산한다.** 아래 여백에 이만큼 더 주고 위에서 같은 만큼 뺀다 —
+ * 합이 그대로라 칸 높이(44)는 흔들리지 않고, 글자만 그 차이만큼 올라온다. 글꼴
+ * 크기가 바뀌어도(iOS 타입 보정 등) 비율에서 다시 계산되므로 어긋나지 않는다.
+ *
+ * ⚠ 줄 간격을 **지우지 않는 이유**는 여러 줄일 때 줄 사이가 자연 줄 높이(21.6)까지
+ * 좁아져서다. 채팅 입력은 세 줄까지 자란다.
+ * ⚠ 안드로이드는 `textAlignVertical: "center"` 가 상자 안에서 글자를 가운데 놓아
+ * 쏠림이 없다 — 건드리지 않는다.
+ */
+const IOS_LEADING_DROP =
+  Platform.OS === "ios" ? (INPUT_LINE - text.body1.fontSize * HAND_LINE_RATIO) / 2 : 0;
 
 const styles = StyleSheet.create({
   dock: {
@@ -125,10 +191,13 @@ const styles = StyleSheet.create({
     minHeight: layout.minTouch,
     textAlignVertical: "center",
     // 세 줄까지 자라고 그 뒤로는 안에서 스크롤된다 (§7 `maxLines`)
-    maxHeight: text.body1.lineHeight * size.input.maxLines + INPUT_PADDING_Y * 2,
-    paddingVertical: INPUT_PADDING_Y,
+    maxHeight: INPUT_LINE * size.input.maxLines + INPUT_PADDING_Y * 2,
+    // 위에서 뺀 만큼 아래에 더한다 — 합은 그대로라 칸 높이(44)가 안 흔들린다
+    paddingTop: Math.max(INPUT_PADDING_Y - IOS_LEADING_DROP, 0),
+    paddingBottom: INPUT_PADDING_Y + IOS_LEADING_DROP,
     paddingHorizontal: 0,
-    ...text.body1,
+    // iOS 는 줄 간격을 빼고 준다 — `BODY1_WITHOUT_LEADING` 머리말
+    ...(Platform.OS === "ios" ? BODY1_WITHOUT_LEADING : text.body1),
     color: labelColor.normal,
   },
   send: {

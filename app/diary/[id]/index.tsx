@@ -7,7 +7,7 @@ import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { Card, IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
 import { ActionCardSection } from "@/components/diary/ActionCardSection";
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
-import { label as labelColor, space } from "@/design/ds";
+import { iosVariant, label as labelColor, space } from "@/design/ds";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 import { useDay, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
@@ -87,7 +87,17 @@ export default function DiaryDetail() {
         <View style={styles.head}>
           {/* 날짜 제목은 손글씨 — 일기 본문과 한 서체로 「손으로 쓴 결」을 만든다(회고 저장 화면과 같다) */}
           <View style={styles.titleRow}>
-            <Text variant="title1Hand" color={labelColor.strong} style={styles.title}>
+            {/*
+              iOS 에서만 한 단 내린다 (2026-09-13 · 사용자 요청) — 타입 보정(1.2)으로
+              `title1Hand` 가 38 이 되면서 상세 머리가 홈 날짜만큼 커졌다. 손글씨 단 안에서
+              바로 아래가 `title3Hand`(24 → 29)이고, 본문(`body1ReadingHand`)과 **짝으로
+              정해져 있던 조합**이다(회고 일기 확인·저장 화면이 같은 짝을 쓴다).
+            */}
+            <Text
+              variant={iosVariant("title3Hand", "title1Hand")}
+              color={labelColor.strong}
+              style={styles.title}
+            >
               {`${formatKoreanDateShort(diary.date)}의 일기`}
             </Text>
             {/* 회고 직후 일기 확인(`C6`)과 같은 줄을 쓴다 — 날짜 제목 오른쪽이라 오른쪽으로 접힌다 */}
@@ -106,7 +116,10 @@ export default function DiaryDetail() {
         {/* 「내가 남긴 오늘」 한 면만 둔다 — 「바바가 함께 본 오늘」은 상세에서 뺐다(2026-08-20) */}
         <Card padding="loose" style={styles.diaryCard}>
           {/* 본문도 손글씨 — 날짜 제목(title1Hand)과 짝을 이룬다. 읽기 전용이라 한 단 크게 읽는다 */}
-          <Text variant="body1ReadingHandLg" color={labelColor.normal}>
+          <Text
+            variant={iosVariant("body1ReadingHand", "body1ReadingHandLg")}
+            color={labelColor.normal}
+          >
             {diary.body}
           </Text>
         </Card>

@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,7 +9,7 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 
-import { fill, fontFamily, label as labelColor, radius, size, space } from "@/design/ds";
+import { fill, fontFamily, label as labelColor, radius, scaleFont, size, space } from "@/design/ds";
 
 import { Text } from "./Text";
 
@@ -133,7 +134,12 @@ const styles = StyleSheet.create({
   // 위아래로 빈 칸을 둬야 첫·마지막 항목도 가운데에 설 수 있다
   columnContent: { paddingVertical: PAD },
   row: { height: ROW, alignItems: "center", justifyContent: "center" },
-  // 17/24 — 시안 값. 타입 스케일의 headline1(18/26) 과 다른 한 칸이라 여기 둔다
-  item: { fontFamily: fontFamily.regular, fontSize: 17, lineHeight: 24 },
+  // 17/24 — 시안 값. 타입 스케일의 headline1(18/26) 과 다른 한 칸이라 여기 둔다.
+  // **iOS 에서만** `scaleFont` 를 지난다 — 단들과 같은 보정을 타야 한 화면 안에서 어긋나지
+  // 않는다. 안드로이드는 시안 값 그대로다(이 세션의 조정은 iOS 한정이다)
+  item:
+    Platform.OS === "ios"
+      ? { fontFamily: fontFamily.regular, fontSize: scaleFont(17), lineHeight: scaleFont(24) }
+      : { fontFamily: fontFamily.regular, fontSize: 17, lineHeight: 24 },
   itemOn: { fontFamily: fontFamily.semibold },
 });

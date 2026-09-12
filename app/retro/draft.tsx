@@ -1,11 +1,11 @@
 import { Redirect, router } from "expo-router";
 import { useRef, useState } from "react";
-import { ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
 import { Button, Card, Screen, Text, TopNavigation } from "@/components/ds";
-import { label as labelColor, layout, space, text } from "@/design/ds";
+import { iosVariant, label as labelColor, layout, space, text } from "@/design/ds";
 import { updateDiaryBody } from "@/features/diary/data/diaryApi";
 import { type EmotionId } from "@/features/emotion/model/emotion";
 import { useDiary } from "@/features/diary/model/diary";
@@ -120,8 +120,9 @@ export default function RetroDraft() {
         적어 두면 그게 그날의 기록으로 남는다.
       */}
       <View style={styles.head}>
-        {/* 날짜 제목은 일기 상세(A3)와 같은 크기로 — 저장 전후 같은 일기가 같은 서체·크기로 읽힌다 */}
-        <Text variant="title1Hand" color={labelColor.strong}>
+        {/* 날짜 제목은 일기 상세(A3)와 같은 크기로 — 저장 전후 같은 일기가 같은 서체·크기로 읽힌다.
+            iOS 에서 상세가 한 단 내려갔으므로(2026-09-13) 여기도 같이 내려간다 */}
+        <Text variant={iosVariant("title3Hand", "title1Hand")} color={labelColor.strong}>
           {`${formatKoreanDateShort(today)}의 일기`}
         </Text>
       </View>
@@ -151,7 +152,10 @@ export default function RetroDraft() {
               </Text>
             </>
           ) : (
-            <Text variant="body1ReadingHandLg" color={labelColor.normal}>
+            <Text
+              variant={iosVariant("body1ReadingHand", "body1ReadingHandLg")}
+              color={labelColor.normal}
+            >
               {body}
             </Text>
           )}
@@ -216,9 +220,14 @@ const styles = StyleSheet.create({
   },
 
   card: { gap: space.md },
-  // 읽기(`body1ReadingHandLg` 18/30)와 같은 손글씨·같은 크기로 — 고치기로 들어가도 본문 크기가
-  // 바뀌지 않는다(읽기와 편집을 큰 쪽으로 통일)
-  input: { ...text.body1ReadingHandLg, color: labelColor.normal, padding: 0 },
+  // 읽는 본문과 **같은 손글씨·같은 크기**로 — 고치기로 들어가도 본문 크기가 바뀌지 않는다.
+  // 안드로이드는 `body1ReadingHandLg`(18/30), iOS 는 한 단 내린 `body1ReadingHand`(16/26)다
+  input: {
+    // 읽기와 **같은 단**이어야 한다 — 위 주석. iOS 는 한 단 내린 `body1ReadingHand` 다
+    ...(Platform.OS === "ios" ? text.body1ReadingHand : text.body1ReadingHandLg),
+    color: labelColor.normal,
+    padding: 0,
+  },
   counter: { textAlign: "right", fontVariant: ["tabular-nums"] },
   // 「오늘 일정」 섹션 — 일기 상세(A3)의 「그날 일정」과 같은 값(제목 gap·왼쪽 들여쓰기)
   schedules: { gap: space.md },

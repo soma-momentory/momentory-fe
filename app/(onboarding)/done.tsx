@@ -5,7 +5,7 @@ import { StyleSheet, View } from "react-native";
 
 import { Button, Card, Text } from "@/components/ds";
 import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
-import { label as labelColor, line, space, status } from "@/design/ds";
+import { iosVariant, label as labelColor, line, space, status } from "@/design/ds";
 import { adoptProfile } from "@/features/my/model/settings";
 import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
@@ -127,7 +127,16 @@ export default function Done() {
         </Card>
       }
     >
-      <Text variant="caption1" color={labelColor.alternative} style={styles.centered}>
+      {/*
+        CTA 위 안내 한 줄은 **`label2`** 다 (2026-09-13 · 사용자 요청 · **iOS 에서만** 16 · 안드로이드는 `caption1` 그대로) —
+        회고 시각 화면의 「편한 시간은 나중에도 바꿀 수 있어요」와 같은 자리·같은 단이다.
+        둘 다 「지금 정한 것을 되돌릴 수 있다」는 약속이라, 읽히지 않으면 쓸모가 없다.
+      */}
+      <Text
+        variant={iosVariant("label2", "caption1")}
+        color={labelColor.alternative}
+        style={styles.centered}
+      >
         마이에서 언제든 바꿀 수 있어요.
       </Text>
 

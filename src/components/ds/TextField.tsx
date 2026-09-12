@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
    * 있으면 글자를 그 줄 상자의 **바닥에 붙여** 그린다 — 16/26 이라 10 만큼 내려앉아
    * 「맨 아래 붙은」 것으로 보였다.
    */
-  singleLine: singleLineInput(text.body1Reading.fontSize),
+  singleLine: singleLineInput(),
   // 여러 줄은 위에서부터 쌓인다 — 줄 간격은 여기서만 뜻을 갖는다
   multilineInput: { lineHeight: text.body1Reading.lineHeight },
   // 3줄 = lineHeight 26 × 3 + 상하 패딩. 여러 줄은 위에서부터 쌓인다

@@ -1,6 +1,13 @@
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { PixelRatio, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  PixelRatio,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -16,7 +23,16 @@ import {
   Toast,
   type MenuAction,
 } from "@/components/ds";
-import { label as labelColor, layout, maxFontScale, size, space, status, text } from "@/design/ds";
+import {
+  iosVariant,
+  label as labelColor,
+  layout,
+  maxFontScale,
+  size,
+  space,
+  status,
+  text,
+} from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import {
   MAX_VISIBLE_SCHEDULES,
@@ -334,7 +350,24 @@ export default function Home() {
               <Text variant="headline1" color={labelColor.normal}>
                 오늘 하루는 어땠어요?
               </Text>
-              <Text variant="body2Reading" color={labelColor.alternative}>
+              {/*
+                **한 줄로 붙든다** (2026-09-13 · 사용자 요청 · iOS 한정).
+                iOS 타입 보정(1.2)이 들어가면서 `body2Reading` 이 18 이 됐는데, 이 줄의
+                글자 칸은 188 뿐이다(390 기기 — 화면패딩 20×2 · 카드패딩 22×2 · 간격 8 ·
+                카피바라 118−8). 가장 긴 문안 「오전 11시엔 제가 먼저 말 걸어요」가 18 에서
+                198.6 이라 두 줄로 접혔다 — 폰트 파일에서 잰 값이다.
+                16(`label2`)이면 176.5 로 들어간다: **한 줄에 맞는 가장 큰 단**이다.
+                ⚠ SE·13 mini(375)는 칸이 173 이라 16 으로도 4 가 모자란다. 거기서 잘리지
+                않게 `adjustsFontSizeToFit` 을 함께 건다 — 좁은 기기에서만 한 뼘 줄어든다.
+                줄바꿈이 아니라 축소를 고르는 이유는 카드 높이가 흔들리지 않아서다.
+              */}
+              <Text
+                variant={iosVariant("label2", "body2Reading")}
+                color={labelColor.alternative}
+                {...(Platform.OS === "ios"
+                  ? { numberOfLines: 1, adjustsFontSizeToFit: true, minimumFontScale: 0.85 }
+                  : null)}
+              >
                 {/* 알림을 켜지 않은 사람에게 정하지 않은 시각을 말하지 않는다 (12.md) */}
                 {retroNotify.enabled && retroNotify.time != null
                   ? `${formatKoreanTime(retroNotify.time)}엔 제가 먼저 말 걸어요`
