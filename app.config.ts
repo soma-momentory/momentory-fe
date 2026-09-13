@@ -174,23 +174,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: "kr.momentory.app",
-    // 배경색은 **로고 자체의 면**이다(`assets/logo.jpeg` = #F2E4DC).
-    //
-    // 전경 PNG 는 그 면을 지운 **내용만**이라(투명 배경), 베이지를 그리는 것은
-    // 배경층 하나뿐이다 — 여기를 바꾸면 카피바라가 다른 색 위에 뜬 것처럼 된다.
-    //
-    // ⚠ 전경은 **워드마크를 뺀 카피바라만**이다(2026-08-24). 홈 화면의 아이콘은
-    // 손톱만 하고 그 옆에 앱 이름이 이미 적혀 있다 — 워드마크를 같이 넣으면
-    // 읽히지도 않으면서 카피바라만 작아진다. 온전한 로고는 스플래시가 맡는다.
-    //
-    // ⚠ 배율이 `icon.png`(67%)보다 작은 **44%** 인 것은 실수가 아니다. 런처는
-    // 108dp 중 안쪽 72dp(66%) 만 보여 주고 거기에 마스크를 씌우므로, 그 틀 안에서
-    // iOS 와 같아 보이려면 0.66 × 0.67 ≈ 44% 다. 67% 로 그리면 원이 카피바라를
-    // 자른다 — 바꿀 때는 원형으로 깎아 확인한다.
+    // 사용자가 제공한 새 아이콘을 기본·Android 런처에 함께 사용한다.
     adaptiveIcon: {
-      backgroundColor: "#F2E4DC",
-      foregroundImage: "./assets/android-icon-foreground.png",
-      monochromeImage: "./assets/android-icon-monochrome.png",
+      backgroundColor: "#F0E2C6",
+      foregroundImage: "./assets/icon.png",
     },
     predictiveBackGestureEnabled: false,
 
