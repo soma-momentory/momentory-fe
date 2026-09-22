@@ -51,7 +51,7 @@
 | 온보딩 | `05-c` `05-d`      | `app/(onboarding)/gender.tsx`                     | 성별 (선택) — 〃                                                                    |
 | 온보딩 | `06` `06-b` `06-c` | `app/(onboarding)/interests.tsx`                  | 한 파일이 세 상태                                                                   |
 | 온보딩 | `07`               | `app/(onboarding)/rest.tsx`                       | 쉬는 방법 (+ 「기타」 인라인 입력 · 차이 15)                                        |
-| 온보딩 | `08`               | `app/(onboarding)/retro-time.tsx`                 | OS 시간 피커                                                                        |
+| 온보딩 | `08`               | `app/(onboarding)/retro-time.tsx`                 | 시간 선택 — 자체 `WheelPicker` 3열                                                  |
 | 온보딩 | `09`               | `app/(onboarding)/calendar.tsx`                   |                                                                                     |
 | 온보딩 | `10` `10-b`        | `app/(onboarding)/done.tsx`                       | 한 파일이 두 상태                                                                   |
 | 홈     | `12` `12-b`        | `app/(tabs)/home.tsx`                             | 일정 있음/없음 — 별도 레이아웃 아님                                                 |
