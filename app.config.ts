@@ -200,6 +200,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // 덮이게 두지 않는다 — app.json 은 지웠고, 새 플러그인은 이 배열에 직접 추가한다.
   plugins: [
     "expo-router",
+    [
+      "expo-dev-client",
+      {
+        launchMode: "most-recent",
+      },
+    ],
     "expo-status-bar",
     // M2-0 인증 부트스트랩 — 세션 토큰 저장 (ARCHITECTURE §3)
     [
@@ -242,6 +248,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "expo-build-properties",
       {
+        ios: {
+          enableSceneSupport: true,
+        },
         android: {
           extraMavenRepos: ["https://devrepo.kakao.com/nexus/content/groups/public/"],
 
