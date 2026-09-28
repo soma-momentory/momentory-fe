@@ -1,6 +1,6 @@
 import { createAnalytics, type AnalyticsEnvelope } from "../client";
 import { startRetro, sendTurn } from "@/features/retro/data/retroApi";
-import { createSchedule } from "@/features/home/data/scheduleApi";
+import { createSchedule, putCompletion } from "@/features/home/data/scheduleApi";
 import { useAuth, SESSION_KEY, getAccessToken } from "@/features/auth/model/auth";
 import { deleteAccount } from "@/features/auth/data/withdrawApi";
 
@@ -89,6 +89,18 @@ it("복원된 서비스 ID로 일정 성공만 기록하며 제목/감정은 보
       name: "schedule_created",
       userId: "7",
       properties: { schedule_id: "12", source: "manual" },
+    }),
+  ]);
+});
+
+it("일정 완료에는 어디서 온 일정인지 싣는다 — 캘린더 일정이 실제로 쓰이는지 본다", async () => {
+  respond({ completed: true, emotion: null });
+  expect((await putCompletion("12", true, null, "calendar")).ok).toBe(true);
+  await settle();
+  expect(mockEvents).toEqual([
+    expect.objectContaining({
+      name: "schedule_completion_changed",
+      properties: { schedule_id: "12", completed: true, source: "calendar" },
     }),
   ]);
 });

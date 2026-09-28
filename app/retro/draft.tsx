@@ -6,6 +6,8 @@ import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
 import { Button, Card, Screen, Text, TopNavigation } from "@/components/ds";
 import { iosVariant, label as labelColor, layout, space, text } from "@/design/ds";
+import { track } from "@/features/analytics";
+import { useActiveClock } from "@/features/analytics/activeClock";
 import { updateDiaryBody } from "@/features/diary/data/diaryApi";
 import { type EmotionId } from "@/features/emotion/model/emotion";
 import { useDiary } from "@/features/diary/model/diary";
@@ -61,6 +63,30 @@ export default function RetroDraft() {
    */
   const saving = useRef(false);
 
+  /**
+   * 「직접 고치기」 계측(2026-09-28) — AI 가 쓴 일기를 얼마나 고치는가는 일기 품질의 간접 지표다.
+   * 고친 시간과 글자 수 변화만 보낸다. 본문은 보내지 않는다.
+   */
+  const clock = useActiveClock();
+  const editFrom = useRef<{ at: number; chars: number } | null>(null);
+  const startEdit = () => {
+    editFrom.current = { at: clock.now(), chars: body.length };
+    if (sessionId != null) track("diary_edit_started", { retrospect_id: String(sessionId) });
+    setEditing(true);
+  };
+  const finishEdit = () => {
+    const from = editFrom.current;
+    editFrom.current = null;
+    if (from != null && sessionId != null) {
+      track("diary_edit_finished", {
+        retrospect_id: String(sessionId),
+        duration_ms: clock.now() - from.at,
+        chars_delta: body.length - from.chars,
+      });
+    }
+    setEditing(false);
+  };
+
   // 완료 일기 없이 들어올 수 없다 — 대화가 끝나야 여기 온다
   if (diary == null) return <Redirect href="/retro/talk" />;
 
@@ -111,7 +137,7 @@ export default function RetroDraft() {
       {/* 고치는 중에는 뒤로가기가 읽기로 되돌린다(시안 ④-c 「뒤로가기로 나가고」) */}
       <TopNavigation
         leading={editing ? "arrow-left" : "close"}
-        onLeadingPress={() => (editing ? setEditing(false) : router.replace("/home"))}
+        onLeadingPress={() => (editing ? finishEdit() : router.replace("/home"))}
       />
 
       {/*
@@ -184,17 +210,12 @@ export default function RetroDraft() {
           고친 본문을 한 번 확인한 뒤 「일기 저장하기」로 넘어간다(수정 완료 → 저장).
         */}
         {editing ? (
-          <Button label="수정 완료" fill onPress={() => setEditing(false)} />
+          <Button label="수정 완료" fill onPress={finishEdit} />
         ) : (
           <>
             <Button label="일기 저장하기" fill onPress={save} />
             <View style={styles.secondary}>
-              <Button
-                label="직접 고치기"
-                variant="text"
-                size="small"
-                onPress={() => setEditing(true)}
-              />
+              <Button label="직접 고치기" variant="text" size="small" onPress={startEdit} />
             </View>
           </>
         )}

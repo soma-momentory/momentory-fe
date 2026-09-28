@@ -38,6 +38,17 @@ const notificationSource = choice("onboarding", "my");
 const retroPhase = choice("diary_chat", "await_branch", "emotion_exploration", "other");
 const reminderKey = choice("retro", "daily", "weekly");
 const inputKind = choice("text", "selection");
+const scheduleSource = choice("manual", "calendar");
+const onboardingFailure = choice(
+  "invalid",
+  "unauthorized",
+  "no_session",
+  "network",
+  "server",
+  "malformed",
+  "unconfigured",
+  "still_required",
+);
 const screen = choice(
   "login",
   "home",
@@ -80,14 +91,17 @@ export const events = {
   onboarding_step_left: { step, duration_ms: millis, exit: leaveKind },
   notify_permission_result: { source: notificationSource, granted: bool },
   onboarding_completed: {},
+  onboarding_options_selected: { step: choice("interests", "rest"), count },
+  onboarding_submit_failed: { code: onboardingFailure },
   calendar_permission_result: { granted: bool },
   calendar_link_chosen: { source: linkSource, choice: linkChoice },
   calendar_sync_succeeded: { created: count, updated: count, deleted: count },
+  calendar_sync_failed: { outcome: choice("unreadable", "failed") },
   schedule_created: { schedule_id: id, source: choice("manual", "calendar") },
   schedule_updated: { schedule_id: id },
   schedule_deleted: { schedule_id: id },
   schedule_visibility_changed: { schedule_id: id, hidden: bool },
-  schedule_completion_changed: { schedule_id: id, completed: bool },
+  schedule_completion_changed: { schedule_id: id, completed: bool, source: scheduleSource },
   retrospect_started: { retrospect_id: id },
   retrospect_turn_succeeded: { retrospect_id: id, input_kind: inputKind },
   retrospect_turn_timed: {
@@ -127,6 +141,8 @@ export const events = {
   diary_viewed: { diary_id: id },
   diary_deleted: { diary_id: id },
   diary_updated: { retrospect_id: id },
+  diary_edit_started: { retrospect_id: id },
+  diary_edit_finished: { retrospect_id: id, duration_ms: millis, chars_delta: integer },
   wish_card_open_clicked: { source: choice("rest") },
   wish_card_viewed: { wish_card_id: id, source: choice("cards") },
   wish_card_completion_changed: { wish_card_id: id, completed: bool },

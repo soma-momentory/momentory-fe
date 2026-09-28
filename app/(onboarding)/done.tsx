@@ -71,6 +71,8 @@ export default function Done() {
     // 서버가 아직 「온보딩 필요」라면 받은 것이 아니다 — 홈으로 보내면 다음
     // 실행에 온보딩이 다시 뜬다
     if (!result.ok || result.data.onboardingRequired) {
+      // 서버 오류로 온보딩이 막힌 사례를 가른다. 받았는데 아직 「필요」라면 still_required
+      record("onboarding_submit_failed", { code: result.ok ? "still_required" : result.code });
       setError(
         result.ok ? ONBOARDING_FAILURE_MESSAGES.server : ONBOARDING_FAILURE_MESSAGES[result.code],
       );

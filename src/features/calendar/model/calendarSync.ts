@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { track } from "@/features/analytics";
+
 import { syncCalendarSnapshot } from "@/features/calendar/data/calendarSyncApi";
 import { readSyncState, writeSyncState } from "@/features/calendar/data/syncStateStore";
 import { expandCalendarEventByDate } from "@/features/calendar/model/expand";
@@ -96,6 +98,19 @@ type CalendarSyncStore = {
   reset: () => void;
 };
 
+/**
+ * 동기화 실패를 계측한다(2026-09-28) — 캘린더를 연결했는데 일정이 들어오지 않은 원인을 가른다.
+ *
+ * `denied` 는 세지 않는다. 캘린더를 연결하지 않은 사람에게는 앱을 열 때마다 나오는 **정상**이다.
+ * 동기화는 앞으로 돌아올 때마다 돌아서 같은 실패가 되풀이되므로 **앱 실행당 종류별로 한 번**만 보낸다.
+ */
+const reportedSyncFailures = new Set<"unreadable" | "failed">();
+const reportSyncFailure = (outcome: "unreadable" | "failed") => {
+  if (reportedSyncFailures.has(outcome)) return;
+  reportedSyncFailures.add(outcome);
+  track("calendar_sync_failed", { outcome });
+};
+
 export const useCalendarSync = create<CalendarSyncStore>((set, get) => ({
   dirty: false,
   syncing: false,
@@ -110,6 +125,8 @@ export const useCalendarSync = create<CalendarSyncStore>((set, get) => ({
 
     const finish = (outcome: SyncOutcome): SyncOutcome => {
       set({ syncing: false, lastOutcome: outcome });
+      if (outcome.kind === "unreadable" || outcome.kind === "failed")
+        reportSyncFailure(outcome.kind);
       return outcome;
     };
 
@@ -151,5 +168,9 @@ export const useCalendarSync = create<CalendarSyncStore>((set, get) => ({
     }
   },
 
-  reset: () => set({ dirty: false, syncing: false, lastOutcome: null }),
+  reset: () => {
+    // 다른 계정의 실행은 다시 센다 — 로그아웃이 여기를 지난다
+    reportedSyncFailures.clear();
+    set({ dirty: false, syncing: false, lastOutcome: null });
+  },
 }));

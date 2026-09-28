@@ -96,6 +96,11 @@ export default function Interests() {
 
   const goNext = () => {
     if (etcOn) commitOther();
+    // 몇 개를 골랐는가 — 1초 만에 하나만 고르고 넘어가는지 본다(무엇을 골랐는지는 보내지 않는다)
+    track("onboarding_options_selected", {
+      step: "interests",
+      count: useDraft.getState().interests.length,
+    });
     track("onboarding_step_completed", { step: "interests" });
     router.push("/rest");
   };

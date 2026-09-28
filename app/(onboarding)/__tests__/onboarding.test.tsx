@@ -33,10 +33,11 @@ jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
  */
 jest.mock("@/lib/calendar", () => ({ requestCalendarAccess: jest.fn() }));
 
-jest.mock("@/features/analytics", () => ({
-  ...jest.requireActual("@/features/analytics"),
-  track: jest.fn(),
-}));
+// 계측은 전송만 가로챈다 — 응답 뒤에 남기는 것(captureAnalytics)도 같은 목으로 모은다
+jest.mock("@/features/analytics", () => {
+  const track = jest.fn();
+  return { ...jest.requireActual("@/features/analytics"), track, captureAnalytics: () => track };
+});
 
 /** 첫 적재. 화면이 **기다리지 않는다**는 것만 보므로 호출 여부로 충분하다 */
 const mockCalendarSync = jest.fn();
@@ -885,5 +886,39 @@ describe("10 · 완료 (+ 10-b 건너뜀)", () => {
     await waitFor(() => expect(queryByText(/저장할 수 없어요/)).toBeTruthy());
     expect(queryByText(/다시 시도하기|재시도/)).toBeNull();
     expect(getByText("모멘토리 시작하기")).toBeTruthy();
+  });
+});
+
+describe("계측 — 고른 개수와 막힌 이유", () => {
+  const sent = (name: string) => {
+    const { track } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
+    return track.mock.calls.filter(([n]) => n === name).map(([, props]) => props);
+  };
+
+  it("관심사는 몇 개를 골랐는지만 남긴다 — 무엇을 골랐는지는 보내지 않는다", async () => {
+    const r = await render(<Interests />);
+    await fireEvent.press(r.getByText("가족"));
+    await fireEvent.press(r.getByText("건강"));
+
+    await fireEvent.press(r.getByText("다음"));
+
+    expect(sent("onboarding_options_selected")).toEqual([{ step: "interests", count: 2 }]);
+  });
+
+  it("제출이 막히면 사유를 남긴다 — 받았는데 아직 필요하면 still_required", async () => {
+    submit.mockResolvedValueOnce({ ok: false, code: "network" });
+    const a = await render(<Done />);
+    await fireEvent.press(a.getByText("모멘토리 시작하기"));
+    await waitFor(() => expect(sent("onboarding_submit_failed")).toHaveLength(1));
+
+    submit.mockResolvedValueOnce({ ok: true, data: { onboardingRequired: true } });
+    const b = await render(<Done />);
+    await fireEvent.press(b.getByText("모멘토리 시작하기"));
+    await waitFor(() => expect(sent("onboarding_submit_failed")).toHaveLength(2));
+
+    expect(sent("onboarding_submit_failed")).toEqual([
+      { code: "network" },
+      { code: "still_required" },
+    ]);
   });
 });
