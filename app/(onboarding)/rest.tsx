@@ -89,6 +89,11 @@ export default function Rest() {
 
   const goNext = () => {
     if (etcOn) commitOther();
+    // 몇 개를 골랐는가 — 무엇을 골랐는지는 보내지 않는다
+    track("onboarding_options_selected", {
+      step: "rest",
+      count: useDraft.getState().restMethods.length,
+    });
     track("onboarding_step_completed", { step: "rest" });
     router.push("/retro-time");
   };

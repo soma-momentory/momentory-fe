@@ -6,6 +6,7 @@ import { readCalendarEvents, type CalendarEvent } from "@/lib/calendar";
 import { fixedClock, setClock, SampleClock } from "@/lib/clock";
 
 jest.mock("@/lib/calendar", () => ({ readCalendarEvents: jest.fn() }));
+jest.mock("@/features/analytics", () => ({ track: jest.fn() }));
 jest.mock("@/features/calendar/data/calendarSyncApi", () => ({ syncCalendarSnapshot: jest.fn() }));
 jest.mock("@/features/calendar/data/syncStateStore", () => ({
   readSyncState: jest.fn(),
@@ -248,5 +249,43 @@ describe("서버로 가는 것은 셋뿐이다", () => {
     ]);
     // 8/5·8/6 은 목록에 없다 → 서버가 그 범위에서 지운다
     expect(events.some((e) => e.date === "2026-08-05")).toBe(false);
+  });
+});
+
+describe("계측 — 동기화가 왜 안 됐는가", () => {
+  const failures = () =>
+    (jest.requireMock("@/features/analytics") as { track: jest.Mock }).track.mock.calls.filter(
+      ([name]) => name === "calendar_sync_failed",
+    );
+
+  it("권한이 없는 것은 세지 않는다 — 캘린더를 잇지 않은 사람에게는 정상이다", async () => {
+    read.mockResolvedValue({ ok: false, reason: "denied" });
+
+    await useCalendarSync.getState().sync(USER);
+
+    expect(failures()).toEqual([]);
+  });
+
+  it("같은 실패는 실행당 한 번만 센다 — 앞으로 돌아올 때마다 되풀이되기 때문이다", async () => {
+    read.mockResolvedValue({ ok: false, reason: "failed" });
+
+    await useCalendarSync.getState().sync(USER);
+    await useCalendarSync.getState().sync(USER);
+
+    expect(failures()).toEqual([["calendar_sync_failed", { outcome: "unreadable" }]]);
+  });
+
+  it("보내기 실패는 따로 센다 — 다른 계정으로 바뀌면 다시 센다", async () => {
+    read.mockResolvedValue({ ok: true, events: [] });
+    send.mockResolvedValue({ ok: false, code: "server" } as never);
+
+    await useCalendarSync.getState().sync(USER);
+    useCalendarSync.getState().reset();
+    await useCalendarSync.getState().sync(USER);
+
+    expect(failures()).toEqual([
+      ["calendar_sync_failed", { outcome: "failed" }],
+      ["calendar_sync_failed", { outcome: "failed" }],
+    ]);
   });
 });

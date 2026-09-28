@@ -297,6 +297,8 @@ export const putCompletion = async (
   id: string,
   completed: boolean,
   emotion: EmotionId | null,
+  // 계측에만 쓴다 — 캘린더에서 온 일정이 실제로 체크되는지 직접 넣은 일정과 비교한다
+  source: Schedule["source"],
 ): Promise<ScheduleResult<{ completed: boolean; emotions: EmotionId[] }>> => {
   const record = captureAnalytics();
   const result = await call(
@@ -309,6 +311,10 @@ export const putCompletion = async (
         : null,
   );
   if (result.ok)
-    record("schedule_completion_changed", { schedule_id: id, completed: result.data.completed });
+    record("schedule_completion_changed", {
+      schedule_id: id,
+      completed: result.data.completed,
+      source,
+    });
   return result;
 };

@@ -22,6 +22,11 @@ jest.mock("@/lib/http", () => ({
 }));
 const mockedRequest = authedRequest as jest.MockedFunction<typeof authedRequest>;
 
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  track: jest.fn(),
+}));
+
 /** 서버가 완료 응답에 담아 준 값 — store 가 draft 로 넘긴다 */
 const SEED_DIARY: ReplyDiary = {
   diaryId: "77",
@@ -315,5 +320,39 @@ describe("완료 — 허브로 만들지 않는다", () => {
     const { getByText } = await render(<RetroDone />);
     await fireEvent.press(getByText("쉼터에서 보기"));
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/rest/cards");
+  });
+});
+
+describe("계측 — 직접 고치기", () => {
+  let now = 0;
+  beforeEach(() => {
+    now = 1_000;
+    jest.spyOn(Date, "now").mockImplementation(() => now);
+    useRetro.setState({ sessionId: 5 });
+  });
+  afterEach(() => jest.mocked(Date.now).mockRestore());
+
+  it("고친 시간과 글자 수 변화만 남긴다 — 본문은 보내지 않는다", async () => {
+    const { track } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
+    const r = await render(<RetroDraft />);
+
+    await fireEvent.press(r.getByText("직접 고치기"));
+    now += 40_000;
+    await fireEvent.changeText(r.getByLabelText("일기 본문"), "짧게 고쳤다.");
+    await fireEvent.press(r.getByText("수정 완료"));
+
+    const edits = track.mock.calls.filter(([name]) => String(name).startsWith("diary_edit"));
+    expect(edits).toEqual([
+      ["diary_edit_started", { retrospect_id: "5" }],
+      [
+        "diary_edit_finished",
+        {
+          retrospect_id: "5",
+          duration_ms: 40_000,
+          chars_delta: "짧게 고쳤다.".length - SEED_DIARY.diary.length,
+        },
+      ],
+    ]);
+    expect(JSON.stringify(track.mock.calls)).not.toContain("짧게 고쳤다");
   });
 });

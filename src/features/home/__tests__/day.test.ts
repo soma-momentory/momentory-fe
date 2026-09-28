@@ -114,7 +114,7 @@ describe("먼저 화면을 바꾸고 서버에 보낸다", () => {
     useDay.getState().toggleDone("7");
 
     expect(useDay.getState().schedules[0]?.done).toBe(true);
-    expect(putCompletion).toHaveBeenCalledWith("7", true, null);
+    expect(putCompletion).toHaveBeenCalledWith("7", true, null, "manual");
   });
 
   it("마침에 감정을 실어 보내지 않는다 — 화면이 묻지 않으므로(N7)", () => {
@@ -124,7 +124,7 @@ describe("먼저 화면을 바꾸고 서버에 보낸다", () => {
 
     useDay.getState().toggleDone("7");
 
-    expect(putCompletion).toHaveBeenCalledWith("7", true, null);
+    expect(putCompletion).toHaveBeenCalledWith("7", true, null, "manual");
     expect(useDay.getState().schedules[0]?.emotions).toEqual([]);
   });
 
@@ -156,7 +156,7 @@ describe("감정 — 서버 계약이 좁힌 두 자리", () => {
     useDay.getState().selectEmotion("7", 9);
 
     expect(useDay.getState().schedules[0]?.emotions).toEqual([9]);
-    expect(putCompletion).toHaveBeenCalledWith("7", true, 9);
+    expect(putCompletion).toHaveBeenCalledWith("7", true, 9, "manual");
   });
 
   it("같은 것을 다시 누르면 해제되고 마침은 그대로다", () => {
@@ -174,7 +174,7 @@ describe("감정 — 서버 계약이 좁힌 두 자리", () => {
     useDay.getState().selectEmotion("7", 4);
 
     expect(useDay.getState().schedules[0]?.done).toBe(true);
-    expect(putCompletion).toHaveBeenCalledWith("7", true, 4);
+    expect(putCompletion).toHaveBeenCalledWith("7", true, 4, "manual");
   });
 
   it("마침을 끄면 감정도 사라진다 — 서버가 그렇게 지운다", () => {
@@ -183,7 +183,7 @@ describe("감정 — 서버 계약이 좁힌 두 자리", () => {
     useDay.getState().toggleDone("7");
 
     expect(useDay.getState().schedules[0]?.emotions).toEqual([]);
-    expect(putCompletion).toHaveBeenCalledWith("7", false, null);
+    expect(putCompletion).toHaveBeenCalledWith("7", false, null, "manual");
   });
 });
 

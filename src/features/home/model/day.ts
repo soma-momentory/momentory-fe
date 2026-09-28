@@ -159,7 +159,7 @@ export const useDay = create<DayStore>((set, get) => ({
 
     set((s) => ({ schedules: replace(s.schedules, id, { done, emotions, doneAt }) }));
 
-    void putCompletion(id, done, null).then((result) => {
+    void putCompletion(id, done, null, before.source).then((result) => {
       if (result.ok || !serverRefused(result.code)) return;
       set((s) => ({
         schedules: replace(s.schedules, id, {
@@ -182,7 +182,7 @@ export const useDay = create<DayStore>((set, get) => ({
 
     set((s) => ({ schedules: replace(s.schedules, id, { emotions: next, done, doneAt }) }));
 
-    void putCompletion(id, done, next[0] ?? null).then((result) => {
+    void putCompletion(id, done, next[0] ?? null, before.source).then((result) => {
       if (result.ok || !serverRefused(result.code)) return;
       set((s) => ({
         schedules: replace(s.schedules, id, {
