@@ -28,6 +28,8 @@ const step = choice(
 );
 const provider = choice("kakao", "apple", "google");
 const pondStep = choice("see", "hear", "feel");
+const leaveKind = choice("navigate", "background");
+const notificationSource = choice("onboarding", "my");
 const screen = choice(
   "login",
   "home",
@@ -52,8 +54,6 @@ const screen = choice(
   "profile_interests",
   "profile_rest",
 );
-const leaveKind = choice("navigate", "background");
-const notificationSource = choice("onboarding", "my");
 export type ScreenName = NonNullable<ReturnType<typeof screen>>;
 export type OnboardingStepName = NonNullable<ReturnType<typeof step>>;
 
