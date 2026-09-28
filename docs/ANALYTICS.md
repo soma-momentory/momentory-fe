@@ -10,7 +10,9 @@
 페이지 체류 시간과 알림 설정·예약 계측은 제외한다. 캘린더 접근 권한은 알림 권한과 별개다.
 
 2026-09-28 추가 승인: **감각연못은 단계별 소요 시간을 수집한다.** 앱이 전면에 있던 시간만 세고,
-사용자에게는 보이지 않는다. 일반 화면의 체류 시간은 여전히 수집하지 않는다.
+사용자에게는 보이지 않는다. 같은 날 범위를 넓혀 **모든 화면의 체류 시간**(screen_left ·
+onboarding_step_left)과 **알림 권한 허용 여부**(notify_permission_result)도 수집한다.
+알림 설정 시각·예약 성공은 여전히 수집하지 않는다.
 
 ## 활성화
 
@@ -39,11 +41,14 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | app_opened                   | 앱의 JS 실행 시작, 한 번                    | 없음                                      |
 | app_foregrounded             | 실제 background를 거친 active 복귀          | 없음                                      |
 | screen_viewed                | 허용된 라우트의 화면 진입                   | screen: 고정 화면명                       |
+| screen_left                  | 화면을 떠남 또는 백그라운드 전환            | screen, duration_ms, exit                 |
 | login_started                | 소셜 로그인 중복 실행 가드 통과             | provider: kakao/apple/google              |
 | login_succeeded              | 서버 세션을 기기에 저장하고 채택            | provider, onboarding_required             |
 | login_not_completed          | 로그인 취소 또는 실패                       | provider, outcome: cancelled/failed       |
 | onboarding_step_viewed       | 해당 온보딩 화면 진입                       | step: 고정 단계명                         |
 | onboarding_step_completed    | 다음 단계로 이동, 선택 항목 건너뛰기도 포함 | step                                      |
+| onboarding_step_left         | 온보딩 단계를 떠남 또는 백그라운드 전환     | step, duration_ms, exit                   |
+| notify_permission_result     | 온보딩 08·마이 M2 의 알림 권한 결과         | source: onboarding/my, granted            |
 | onboarding_completed         | 완료 API가 onboardingRequired=false로 응답  | 없음                                      |
 | calendar_permission_result   | 온보딩 캘린더 연결 요청 결과                | granted                                   |
 | calendar_sync_succeeded      | 캘린더 동기화 성공 응답                     | created, updated, deleted 개수            |
@@ -87,7 +92,15 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
 wish_cards, wish_card_trail, sense_pond, profile 및 고정 프로필 편집 화면명이다.
 온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다.
-retroTime 단계에서는 **진행 여부만** 알 수 있고 알림 허용/거부·설정 시각·예약 성공은 수집하지 않는다.
+retroTime 단계에서는 진행 여부와 알림 권한 허용 여부(notify_permission_result)를 알 수 있다.
+설정 시각·예약 성공은 수집하지 않는다. 마이 M2 에서는 꺼진 알림을 켤 때 묻는 결과만 남는다.
+
+**체류 시간**(screen_left · onboarding_step_left)은 앱이 전면에 있던 **구간마다** 한 번씩 보낸다.
+화면을 떠나면 exit=navigate, 백그라운드로 가면 그때까지를 exit=background 로 보내고 멈춘다. 돌아오면
+같은 화면을 처음부터 다시 잰다. 모아 두었다가 떠날 때 보내면 백그라운드에서 종료될 때 통째로 잃기
+때문이다. 그래서 한 방문이 여러 구간으로 갈릴 수 있으므로, 화면별 체류는 세션 안에서 합친 뒤 본다.
+iOS 의 inactive(알림 센터 등)는 끊지 않는다. 화면을 켜 둔 채 손을 뗀 시간은 가를 수 없으므로
+분석에서는 상한(예: 10분)을 두고 넘는 구간을 따로 센다. 온보딩은 화면명이 하나라 단계로 보낸다.
 
 감각연못의 step은 see, hear, feel이고, 시간은 모두 전면 시계로 잰다. sense_pond_step_completed는
 step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단계가 보인 때부터 목표를 채운
@@ -111,6 +124,7 @@ network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본
 | AI 대화를 얼마나 쓰는가?         | retrospect_turn_succeeded의 고유 사용자/턴 수, retrospect_id별 분포                   |
 | 회고 이후 카드로 이어지는가?     | retrospect_completed → wish_card_created → wish_card_viewed                           |
 | 어떤 기능이 많이 쓰이는가?       | screen_viewed를 screen별 고유 사용자/이벤트 수로 구분                                 |
+| 어느 화면에 오래 머무는가?       | screen_left를 세션 안에서 screen별로 합친 뒤 중앙값·p90                               |
 | 보관함에서 일기를 실제로 여는가? | diary_open_clicked → diary_viewed, source별 비교                                      |
 | 리포트를 다시 보는가?            | weekly_report_viewed의 고유 사용자와 주차별 조회                                      |
 | 재방문하는가?                    | 식별된 사용자의 app_opened/app_foregrounded로 일 단위 Retention                       |
@@ -128,10 +142,10 @@ network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본
 - 로그인 응답에는 신규 가입 여부가 없다. onboarding_required=true에는 미완료 재로그인도 포함되므로 signup_completed를 만들지 않았다. 발표에서는 “온보딩이 필요한 로그인/온보딩 완료”라고 표기한다.
 - 날짜 관련 이벤트는 **보관함 조회 날짜·월·기간 변경**이다. 현재 없는 일기 작성일 수정 기능은 추가하지 않았다.
 - 쉼 콘텐츠 중 화면이 있는 것은 감각연못뿐이라 감각연못만 계측한다. 나머지 셋은 화면을 만들 때 함께 계측을 추가한다.
-- 자동 수집/세션 리플레이를 쓰지 않는다. 이메일, 닉네임, SNS ID, 인증 토큰, 일기·일정·대화·바람 원문, 감정/욕구 코드·이름, 검색어, 알림 값은 속성 허용 목록에 없다.
+- 자동 수집/세션 리플레이를 쓰지 않는다. 이메일, 닉네임, SNS ID, 인증 토큰, 일기·일정·대화·바람 원문, 감정/욕구 코드·이름, 검색어, 알림 설정 시각은 속성 허용 목록에 없다. 알림은 권한 허용 여부만 보낸다.
 - 신원 복원 전 이벤트는 최대 50개, SDK 초기화 전 작업은 최대 200개만 메모리에 둔다. 넘치는 이벤트는 버리되 신원 변경은 보존한다. SDK 초기화가 실패하면 그 실행의 analytics만 비활성화한다.
 - SDK의 배치 전송/재시도를 사용한다. 서비스 DB에는 로그 테이블을 만들지 않는다. SDK는 기기에 전송 대기 이벤트와 임의 기기 ID를 저장할 수 있다.
-- 같은 화면의 재렌더는 중복 조회가 아니다. 다시 들어오거나 다른 카드를 보면 새 조회다. 앱 복귀는 별도 이벤트이며 화면 체류 시간은 계산하지 않는다.
+- 같은 화면의 재렌더는 중복 조회가 아니다. 다시 들어오거나 다른 카드를 보면 새 조회다. 앱 복귀는 별도 이벤트다. 화면 체류는 screen_left 가 전면 구간마다 따로 보낸다(위 「체류 시간」).
 - 일정 생성, 회고 시작/완료, 바람카드 생성, 온보딩 완료는 사용자·리소스 기반 insert_id와 제한된 메모리 집합으로 반복 관찰을 줄인다. 일반 클릭/조회는 새 UUID다.
 - Amplitude의 insert_id 중복 제거 기간/기기 범위를 넘어선 재전송이나 여러 기기 간 완전한 중복 제거는 보장하지 않는다. 집계는 고유 사용자/리소스 기준도 함께 확인한다.
 - 서버가 성공했어도 응답 유실·오프라인·앱 강제 종료로 FE 이벤트가 빠질 수 있다. 실패 응답/낙관적 UI 변경만으로 성공을 기록하지 않는다.
@@ -146,6 +160,6 @@ network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본
 4. 보관함 달력/목록/월/날짜, 일기 상세, 쉼터 카드와 수행 변경, 주간 리포트를 확인한다. 화면 재렌더와 카드 수행 변경이 조회 횟수를 늘리지 않는지 본다.
 5. 탈퇴 시트 취소, 로그아웃 후 다른 계정 로그인, 별도 테스트 계정 탈퇴를 확인한다. 앞 계정의 지연 응답이 뒤 계정으로 붙지 않아야 한다.
 6. 네트워크를 끊고 기능을 사용해 analytics 오류 때문에 앱이 멈추지 않는지 확인한다.
-7. 실제 전송 속성에 민감 원문·감정·알림 값이 없는지 확인하고, 테스트 계정을 발표 차트에서 제외한 뒤 릴리스 빌드를 배포한다.
+7. 실제 전송 속성에 민감 원문·감정·알림 설정 시각이 없는지 확인하고, 테스트 계정을 발표 차트에서 제외한 뒤 릴리스 빌드를 배포한다.
 
 SDK 설정 근거: [공식 React Native SDK 문서](https://amplitude.com/docs/sdks/analytics/react-native/react-native-sdk).
