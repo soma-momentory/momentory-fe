@@ -12,6 +12,10 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
 }));
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  track: jest.fn(),
+}));
 
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
@@ -50,6 +54,9 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     // 인사 화면(`C1`)이 사라져 **곧바로 일정 확인**으로 간다(`DESIGN.md` 「일기」 1)
     await fireEvent.press(getByRole("button", { name: "지금 하루 돌아보기" }));
     expect(router.push).toHaveBeenCalledWith("/retro/confirm");
+    // 홈에서 회고로 들어간 길을 남긴다 — 조회만으로는 어디서 왔는지 모른다
+    const { track } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
+    expect(track).toHaveBeenCalledWith("retro_cta_clicked", { source: "home" });
   });
 
   it("알림을 켠 사람에게만 정한 시각을 말한다", async () => {

@@ -1,6 +1,7 @@
 import {
   applyReminders,
   getNotificationPermission,
+  onReminderOpened,
   requestNotificationPermission,
   SUNDAY,
   type Reminder,
@@ -146,5 +147,73 @@ describe("예약 — 목록과 같은 상태로 만든다", () => {
     ).resolves.toBeUndefined();
 
     expect(native.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("알림을 눌러 앱을 열었다", () => {
+  const events = jest.requireMock("expo-notifications") as {
+    DEFAULT_ACTION_IDENTIFIER: string;
+    getLastNotificationResponseAsync: jest.Mock;
+    clearLastNotificationResponseAsync: jest.Mock;
+    addNotificationResponseReceivedListener: jest.Mock;
+  };
+  const response = (
+    data: Record<string, unknown>,
+    over: { action?: string; date?: number } = {},
+  ) => ({
+    actionIdentifier: over.action ?? events.DEFAULT_ACTION_IDENTIFIER,
+    notification: {
+      date: over.date ?? 100,
+      request: { identifier: "momentory.reminder.retro", content: { data } },
+    },
+  });
+  const settle = async () => {
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+  };
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it("꺼져 있다가 알림으로 켜졌으면 한 번 넘기고, 다음 실행에 다시 세지 않게 지운다", async () => {
+    events.getLastNotificationResponseAsync.mockResolvedValueOnce(response({ reminder: "retro" }));
+    const handler = jest.fn();
+
+    onReminderOpened(handler);
+    await settle();
+
+    expect(handler).toHaveBeenCalledWith("retro");
+    expect(events.clearLastNotificationResponseAsync).toHaveBeenCalled();
+  });
+
+  it("켜지는 순간 리스너와 마지막 응답이 같은 알림을 함께 줘도 한 번만 센다", async () => {
+    events.getLastNotificationResponseAsync.mockResolvedValueOnce(response({ reminder: "retro" }));
+    const handler = jest.fn();
+
+    onReminderOpened(handler);
+    const listener = events.addNotificationResponseReceivedListener.mock.calls[0]![0] as (
+      r: unknown,
+    ) => void;
+    listener(response({ reminder: "retro" }));
+    await settle();
+    // 다음 날 같은 시각 알림은 도착 시각이 달라 새로 센다
+    listener(response({ reminder: "retro" }, { date: 200 }));
+
+    expect(handler).toHaveBeenCalledTimes(2);
+  });
+
+  it("우리가 예약하지 않은 알림과 기본 동작이 아닌 응답은 세지 않는다", async () => {
+    const handler = jest.fn();
+    onReminderOpened(handler);
+    const listener = events.addNotificationResponseReceivedListener.mock.calls[0]![0] as (
+      r: unknown,
+    ) => void;
+
+    listener(response({}));
+    listener(response({ reminder: "unknown" }));
+    listener(
+      response({ reminder: "retro" }, { action: "expo.modules.notifications.actions.DISMISS" }),
+    );
+    await settle();
+
+    expect(handler).not.toHaveBeenCalled();
   });
 });

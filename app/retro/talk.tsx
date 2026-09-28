@@ -1,4 +1,4 @@
-import { track } from "@/features/analytics";
+import { captureAnalytics, track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
@@ -23,6 +23,7 @@ import {
   size,
   space,
 } from "@/design/ds";
+import { useActiveClock } from "@/features/analytics/activeClock";
 import { EMOTIONS } from "@/features/emotion/model/emotion";
 import { visibleSchedules, useDay } from "@/features/home/model/day";
 import { useProfile } from "@/features/my/model/settings";
@@ -84,6 +85,14 @@ const MAX_PICK = 2;
  */
 const OPTIONS_MAX_HEIGHT_RATIO = 0.4;
 
+/**
+ * 턴 계측에 싣는 회고 단계 — 그 밖의 단계는 버리지 않고 `other` 로 모은다.
+ * ⚠ 위기 안내(`safety_hold`)는 일부러 목록에 없다. 민감 정보라 이름으로 내보내지 않는다.
+ */
+const TIMED_PHASES = ["diary_chat", "await_branch", "emotion_exploration"] as const;
+const timedPhase = (phase: string | undefined) =>
+  TIMED_PHASES.find((p) => p === phase) ?? ("other" as const);
+
 export default function RetroTalk() {
   const nickname = useProfile((s) => s.nickname);
   const sessionId = useRetro((s) => s.sessionId);
@@ -106,6 +115,27 @@ export default function RetroTalk() {
   /** 위기 안내에서 「이어서 얘기하기」를 골랐나 */
   const [resuming, setResuming] = useState(false);
   const starting = useRef(false);
+
+  /**
+   * 턴 시간 계측(2026-09-28) — 「어느 질문에서 오래 걸렸는가」를 셋으로 가른다.
+   * 질문이 선 뒤 첫 입력까지(생각), 첫 입력부터 보내기까지(쓰기), 보낸 뒤 답이 오기까지(기다림).
+   * 생각이 길면 질문이 어렵고, 쓰기가 길면 할 말이 많다 — 합치면 둘을 가를 수 없다.
+   * 시간은 앱이 전면에 있던 동안만 센다. 사용자에게는 보이지 않는다.
+   */
+  const clock = useActiveClock();
+  const askedAt = useRef(0);
+  const firstInputAt = useRef<number | null>(null);
+  const turnNo = useRef(0);
+  useEffect(() => {
+    askedAt.current = clock.now();
+    firstInputAt.current = null;
+  }, [lastReply, clock]);
+  useEffect(() => {
+    turnNo.current = 0;
+  }, [sessionId]);
+  const markInput = () => {
+    firstInputAt.current ??= clock.now();
+  };
 
   useEffect(() => {
     if (sessionId != null || starting.current) return;
@@ -159,12 +189,30 @@ export default function RetroTalk() {
         track("retrospect_branch_selected", { branch: selected === "1" ? "explore" : "diary" });
       }
     }
+    const sentAt = clock.now();
+    const firstAt = firstInputAt.current ?? sentAt;
+    const answering = timedPhase(lastReply?.phase);
     setPending(true);
     setError(null);
+    const record = captureAnalytics();
     const result = await sendTurn(sessionId, input);
+    const waitMs = clock.now() - sentAt;
     setPending(false);
-    if (result.ok) applyServerReply(result.data);
-    else setError(FAILURE_MESSAGES[result.code]);
+    if (result.ok) {
+      turnNo.current += 1;
+      record("retrospect_turn_timed", {
+        retrospect_id: String(sessionId),
+        phase: answering,
+        turn_no: turnNo.current,
+        input_kind: input.content != null ? "text" : "selection",
+        think_ms: Math.max(0, firstAt - askedAt.current),
+        compose_ms: sentAt - firstAt,
+        wait_ms: waitMs,
+        // 내용은 보내지 않는다 — 길이만
+        input_chars: input.content?.length ?? 0,
+      });
+      applyServerReply(result.data);
+    } else setError(FAILURE_MESSAGES[result.code]);
   };
 
   const sendText = () => {
@@ -199,6 +247,7 @@ export default function RetroTalk() {
     !(lastReply?.options ?? []).some((o) => o.input === true);
 
   const toggle = (o: ReplyOption) => {
+    markInput();
     if (o.input) {
       setCustomOpen(true);
       setPickedIds([]);
@@ -270,7 +319,17 @@ export default function RetroTalk() {
   return (
     <ChatScaffold
       leading="close"
-      onLeadingPress={() => router.replace("/home")}
+      onLeadingPress={() => {
+        // 끝나기 전에 나간다 — 어느 단계, 몇 번째 턴에서 그만뒀는가
+        if (sessionId != null && !done) {
+          track("retrospect_exited", {
+            retrospect_id: String(sessionId),
+            phase: timedPhase(lastReply?.phase),
+            turn_no: turnNo.current,
+          });
+        }
+        router.replace("/home");
+      }}
       companion={<RetroBaba />}
       companionLift={RETRO_BABA_LIFT}
       companionLeft={RETRO_BABA_LEFT}
@@ -293,7 +352,10 @@ export default function RetroTalk() {
           canSendPicked={pickedIds.length > 0}
           onSendPicked={sendPicked}
           draftText={draftText}
-          onChangeDraft={setDraftText}
+          onChangeDraft={(text) => {
+            if (text.length > 0) markInput();
+            setDraftText(text);
+          }}
           onSendText={sendText}
           customOpen={customOpen}
         />

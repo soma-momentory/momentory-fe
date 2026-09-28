@@ -1,12 +1,17 @@
 import {
   AndroidImportance,
+  DEFAULT_ACTION_IDENTIFIER,
   SchedulableTriggerInputTypes,
+  addNotificationResponseReceivedListener,
   cancelScheduledNotificationAsync,
+  clearLastNotificationResponseAsync,
+  getLastNotificationResponseAsync,
   getPermissionsAsync,
   requestPermissionsAsync,
   scheduleNotificationAsync,
   setNotificationChannelAsync,
   setNotificationHandler,
+  type NotificationResponse,
 } from "expo-notifications";
 import { Platform } from "react-native";
 
@@ -208,4 +213,35 @@ export async function applyReminders(reminders: readonly Reminder[]): Promise<vo
       warnInDev(`예약 실패(${reminder.key})`, error);
     }
   }
+}
+
+/**
+ * 사용자가 **우리가 예약한 알림을 눌러** 앱을 열었다(2026-09-28).
+ *
+ * 앱이 떠 있을 때 누른 것은 리스너가, **꺼져 있다가 알림으로 켜진 것**은 마지막 응답이 받는다.
+ * 마지막 응답은 OS 가 들고 있다가 다음 실행에도 돌려주므로, 받으면 **지운다** — 지우지 않으면
+ * 알림과 상관없이 앱을 열 때마다 같은 열람이 다시 세진다. 켜지는 순간 둘이 같은 응답을 함께
+ * 줄 수 있어서 알림 하나(식별자 + 도착 시각)는 한 번만 넘긴다.
+ *
+ * 우리가 예약한 알림만 본다 — 예약할 때 `data.reminder` 에 키를 실어 두었다. 던지지 않는다.
+ */
+export function onReminderOpened(handler: (key: ReminderKey) => void): () => void {
+  const seen = new Set<string>();
+  const handle = (response: NotificationResponse | null) => {
+    if (response == null || response.actionIdentifier !== DEFAULT_ACTION_IDENTIFIER) return;
+    const { request, date } = response.notification;
+    const key = request.content.data?.reminder;
+    if (typeof key !== "string" || !(REMINDER_KEYS as readonly string[]).includes(key)) return;
+    const once = `${request.identifier}@${date}`;
+    if (seen.has(once)) return;
+    seen.add(once);
+    void clearLastNotificationResponseAsync().catch(() => {});
+    handler(key as ReminderKey);
+  };
+
+  void getLastNotificationResponseAsync()
+    .then(handle)
+    .catch((error: unknown) => warnInDev("마지막 알림 응답을 읽지 못했다", error));
+  const subscription = addNotificationResponseReceivedListener(handle);
+  return () => subscription.remove();
 }

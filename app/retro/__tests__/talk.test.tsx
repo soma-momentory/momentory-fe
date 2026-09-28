@@ -17,6 +17,15 @@ jest.mock("@/features/retro/data/retroApi", () => ({
   sendTurn: jest.fn(),
 }));
 
+// 계측은 전송만 가로챈다 — 응답 뒤에 남기는 것(captureAnalytics)도 같은 목으로 모은다
+jest.mock("@/features/analytics", () => {
+  const track = jest.fn();
+  return { ...jest.requireActual("@/features/analytics"), track, captureAnalytics: () => track };
+});
+const { track: mockTrack } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
+const sent = (name: string) =>
+  mockTrack.mock.calls.filter(([n]) => n === name).map(([, props]) => props);
+
 const mockStart = jest.mocked(startRetro);
 const mockTurn = jest.mocked(sendTurn);
 
@@ -260,5 +269,118 @@ describe("종료 — 일기 확인하러 가기", () => {
     await fireEvent.press(r.getByText("일기 확인하러 가기"));
 
     expect(jest.mocked(router.push)).toHaveBeenCalledWith("/retro/draft");
+  });
+});
+
+describe("계측 — 어느 질문에서 오래 걸렸는가", () => {
+  let now = 0;
+  beforeEach(() => {
+    now = 1_000;
+    jest.spyOn(Date, "now").mockImplementation(() => now);
+  });
+  afterEach(() => jest.mocked(Date.now).mockRestore());
+
+  it("생각한 시간 · 쓴 시간 · 기다린 시간을 갈라 보낸다 — 내용은 길이만 보낸다", async () => {
+    mockTurn.mockImplementation(async () => {
+      now += 2_000; // 서버가 답하는 동안
+      return { ok: true, data: reply({ text: "그랬군요." }) };
+    });
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+
+    now += 5_000; // 질문을 읽고 고민한다
+    await fireEvent.changeText(r.getByLabelText("답변"), "발표에서 말이 막혔어요.");
+    now += 3_000; // 쓴다
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("보내기"));
+    });
+
+    expect(sent("retrospect_turn_timed")).toEqual([
+      {
+        retrospect_id: "7",
+        phase: "diary_chat",
+        turn_no: 1,
+        input_kind: "text",
+        think_ms: 5_000,
+        compose_ms: 3_000,
+        wait_ms: 2_000,
+        input_chars: "발표에서 말이 막혔어요.".length,
+      },
+    ]);
+  });
+
+  it("선택지를 누른 순간이 첫 입력이다 — 고른 것은 보내지 않는다", async () => {
+    mockStart.mockResolvedValue({
+      ok: true,
+      data: {
+        sessionId: 7,
+        reply: reply({
+          phase: "await_branch",
+          options: [
+            option({ id: "1", label: "더 알아볼래요" }),
+            option({ id: "2", label: "일기 쓸래요" }),
+          ],
+        }),
+      },
+    });
+    mockTurn.mockResolvedValue({ ok: true, data: reply({ text: "좋아요." }) });
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(r.getByText("일기 쓸래요")).toBeTruthy());
+
+    now += 4_000;
+    await fireEvent.press(r.getByText("일기 쓸래요"));
+    now += 1_000;
+    await act(async () => {
+      await fireEvent.press(r.getByText("보내기"));
+    });
+
+    expect(sent("retrospect_turn_timed")[0]).toMatchObject({
+      phase: "await_branch",
+      input_kind: "selection",
+      think_ms: 4_000,
+      compose_ms: 1_000,
+      input_chars: 0,
+    });
+  });
+
+  it("끝나기 전에 닫으면 그 단계와 몇 번째 턴이었는지 남긴다", async () => {
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+
+    await fireEvent.press(r.getByLabelText("닫기"));
+
+    expect(sent("retrospect_exited")).toEqual([
+      { retrospect_id: "7", phase: "diary_chat", turn_no: 0 },
+    ]);
+  });
+
+  it("위기 안내 중이었다는 사실은 이름으로 보내지 않는다 — other 에 섞는다", async () => {
+    mockStart.mockResolvedValue({
+      ok: true,
+      data: { sessionId: 7, reply: reply({ phase: "safety_hold", safetyLevel: "high" }) },
+    });
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+
+    await fireEvent.press(r.getByLabelText("닫기"));
+
+    expect(sent("retrospect_exited")).toEqual([{ retrospect_id: "7", phase: "other", turn_no: 0 }]);
+    expect(JSON.stringify(mockTrack.mock.calls)).not.toContain("safety");
+  });
+
+  it("다 끝난 뒤 닫는 것은 이탈이 아니다", async () => {
+    mockStart.mockResolvedValue({
+      ok: true,
+      data: {
+        sessionId: 7,
+        reply: reply({ phase: "complete", done: true, text: "정리해뒀어요." }),
+      },
+    });
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(r.getByText("정리해뒀어요.")).toBeTruthy());
+
+    await fireEvent.press(r.getByLabelText("닫기"));
+
+    expect(sent("retrospect_exited")).toEqual([]);
   });
 });

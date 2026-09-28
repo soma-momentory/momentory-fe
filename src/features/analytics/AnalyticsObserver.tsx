@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 
 import { useAuth } from "@/features/auth/model/auth";
+import { onReminderOpened } from "@/lib/notifications";
 import { flushAnalytics, isAnalyticsEnabled, track } from "./index";
 import { createForegroundObserver, createScreenObserver } from "./observation";
 
@@ -32,7 +33,12 @@ function ActiveObserver() {
       observe.current.appState(state);
       if (state === "background") flushAnalytics();
     });
-    return () => subscription.remove();
+    // 회고 알림을 눌러 들어왔다 — 리마인더가 재방문으로 이어지는지 본다
+    const stopReminder = onReminderOpened((reminder) => track("reminder_opened", { reminder }));
+    return () => {
+      subscription.remove();
+      stopReminder();
+    };
   }, []);
 
   useEffect(() => {
