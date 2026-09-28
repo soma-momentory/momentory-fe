@@ -50,14 +50,17 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | onboarding_step_left         | 온보딩 단계를 떠남 또는 백그라운드 전환     | step, duration_ms, exit                   |
 | notify_permission_result     | 온보딩 08·마이 M2 의 알림 권한 결과         | source: onboarding/my, granted            |
 | onboarding_completed         | 완료 API가 onboardingRequired=false로 응답  | 없음                                      |
+| onboarding_options_selected  | 관심사·쉬는 방법 단계에서 다음으로 이동     | step: interests/rest, count               |
+| onboarding_submit_failed     | 완료 API 실패 또는 아직 온보딩 필요 응답    | code (아래)                               |
 | calendar_permission_result   | 온보딩 캘린더 연결 요청 결과                | granted                                   |
 | calendar_link_chosen         | 캘린더 연결 여부를 고름                     | source: onboarding/my, choice             |
 | calendar_sync_succeeded      | 캘린더 동기화 성공 응답                     | created, updated, deleted 개수            |
+| calendar_sync_failed         | 캘린더를 읽거나 보내지 못함 (아래)          | outcome: unreadable/failed                |
 | schedule_created             | 직접 일정 추가 성공                         | schedule_id, source                       |
 | schedule_updated             | 일정 제목 편집 성공                         | schedule_id                               |
 | schedule_deleted             | 일정 삭제 성공                              | schedule_id                               |
 | schedule_visibility_changed  | 캘린더 일정 숨김/표시 성공                  | schedule_id, hidden                       |
-| schedule_completion_changed  | 일정 완료 상태 저장 성공                    | schedule_id, completed                    |
+| schedule_completion_changed  | 일정 완료 상태 저장 성공                    | schedule_id, completed, source            |
 | retrospect_started           | 회고 시작 API 성공                          | retrospect_id                             |
 | retrospect_turn_succeeded    | 대화 턴 API 성공                            | retrospect_id, input_kind: text/selection |
 | retrospect_turn_timed        | 대화 턴 성공, 화면에서 잰 시간              | retrospect_id, phase, turn_no 외 (아래)   |
@@ -76,6 +79,8 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | diary_viewed                 | 일기 상세 데이터가 실제 표시됨              | diary_id                                  |
 | diary_deleted                | 일기 삭제 성공                              | diary_id                                  |
 | diary_updated                | 회고 완료 화면에서 일기 본문 편집 성공      | retrospect_id                             |
+| diary_edit_started           | 회고 완료 화면에서 직접 고치기 시작         | retrospect_id                             |
+| diary_edit_finished          | 직접 고치기를 마치고 읽기로 돌아감          | retrospect_id, duration_ms, chars_delta   |
 | wish_card_open_clicked       | 쉼터의 바람카드 보기 클릭                   | source: rest                              |
 | wish_card_viewed             | 선택 카드 데이터가 실제 표시됨              | wish_card_id, source: cards/trail         |
 | wish_card_completion_changed | 해봤어요/되돌리기 API 성공                  | wish_card_id, completed                   |
@@ -137,7 +142,21 @@ settings(마이에서 기기 설정 열기)다. 권한 결과는 뒤따르는 ca
 calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 권한을 보고 서버의 캘린더 연동
 값을 맞추므로, 이 경로의 최종 연결 여부는 DB(user_profiles.calendar_integration_enabled)로 본다.
 일정 완료 이벤트도 저장 성공 횟수이며 서버의 상태 변경 이력에 대한 보장은 아니다.
-바람카드의 느낀 점 저장은 완료 변경으로 세지 않는다.
+2026-09-28부터 일정 완료에 source(manual/calendar)를 싣는다. 캘린더에서 온 일정이 실제로 체크되는지를
+직접 넣은 일정과 비교한다.
+
+2026-09-28 계측 보강:
+
+- onboarding_options_selected 는 고른 **개수만** 보낸다. 무엇을 골랐는지는 보내지 않는다. 기타 입력도 한 개로 센다.
+- onboarding_submit_failed 의 code 는 invalid, unauthorized, no_session, network, server, malformed,
+  unconfigured 중 하나이고, 서버가 받았는데 아직 온보딩이 필요하다고 답하면 still_required 다.
+- calendar_sync_failed 는 기기 캘린더를 읽지 못했거나(unreadable) 서버로 보내지 못했을 때(failed)만 보낸다.
+  권한이 없는 것(denied)은 캘린더를 잇지 않은 사람에게는 앱을 열 때마다 나오는 정상이라 세지 않는다.
+  동기화는 앞으로 돌아올 때마다 돌아서 같은 실패가 되풀이되므로 앱 실행당 종류별로 한 번만 보내고,
+  로그아웃하면 다시 센다.
+- diary_edit_finished 의 duration_ms 는 전면 시계로 잰 고친 시간이고, chars_delta 는 고친 뒤 글자 수에서
+  고치기 전 글자 수를 뺀 값이다(줄이면 음수). 본문은 보내지 않는다. 뒤로가기로 읽기로 돌아가도 같다.
+  바람카드의 느낀 점 저장은 완료 변경으로 세지 않는다.
 
 ## 발표용 차트
 
