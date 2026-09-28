@@ -116,6 +116,9 @@ network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본
 calendar_link_chosen의 choice는 link(연결하기), later(온보딩 「나중에 할게요」 또는 마이 시트 닫기),
 settings(마이에서 기기 설정 열기)다. 권한 결과는 뒤따르는 calendar_permission_result로 보며,
 2026-09-28부터 마이 「캘린더 연동」에서도 기록한다. 진입점별 연결률은 source로 가른다.
+기기 설정에서 직접 켠 경우(choice=settings 뒤)는 iOS 가 설정 변경 때 앱을 종료시키므로
+calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 권한을 보고 서버의 캘린더 연동
+값을 맞추므로, 이 경로의 최종 연결 여부는 DB(user_profiles.calendar_integration_enabled)로 본다.
 일정 완료 이벤트도 저장 성공 횟수이며 서버의 상태 변경 이력에 대한 보장은 아니다.
 바람카드의 느낀 점 저장은 완료 변경으로 세지 않는다.
 
