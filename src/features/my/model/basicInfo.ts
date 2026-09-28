@@ -36,6 +36,20 @@ export type SaveResult = { ok: true } | { ok: false; message: string };
  * 간다 — 빼고 보내면 온보딩 `08`·`09` 에서 정한 답이 지워진다.
  */
 export async function saveBasicInfo(patch: Partial<BasicInfo>): Promise<SaveResult> {
+  return save(patch, useProfile.getState().calendarLinked);
+}
+
+/**
+ * 캘린더를 연결했다고 서버에 남긴다(`M1` 「캘린더 연동」 줄). 같은 엔드포인트라
+ * 나머지 값도 지금 값 그대로 함께 간다 — 위와 같은 이유다.
+ */
+export async function saveCalendarLinked(): Promise<SaveResult> {
+  const result = await save({}, true);
+  if (result.ok) useProfile.getState().set({ calendarLinked: true });
+  return result;
+}
+
+async function save(patch: Partial<BasicInfo>, calendarLinked: boolean): Promise<SaveResult> {
   const profile = useProfile.getState();
   const retro = useSettings.getState().notify.retro;
 
@@ -54,7 +68,7 @@ export async function saveBasicInfo(patch: Partial<BasicInfo>): Promise<SaveResu
     ...next,
     retroTime: retro.time ?? "",
     notifyRetro: retro.enabled,
-    calendarLinked: profile.calendarLinked,
+    calendarLinked,
   });
 
   if (!result.ok) return { ok: false, message: ONBOARDING_FAILURE_MESSAGES[result.code] };

@@ -33,6 +33,11 @@ jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
  */
 jest.mock("@/lib/calendar", () => ({ requestCalendarAccess: jest.fn() }));
 
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  track: jest.fn(),
+}));
+
 /** 첫 적재. 화면이 **기다리지 않는다**는 것만 보므로 호출 여부로 충분하다 */
 const mockCalendarSync = jest.fn();
 jest.mock("@/features/calendar/model/calendarSync", () => ({
@@ -706,6 +711,20 @@ describe("09 · 캘린더", () => {
     await fireEvent.press(b.getByText("캘린더 연결하기"));
     expect(useDraft.getState().calendarLinked).toBe(true);
     expect(router.push).toHaveBeenCalledWith("/done");
+  });
+
+  it("무엇을 골랐는지 남긴다 — 마이에서 다시 이은 사람과 진입점을 가른다", async () => {
+    const { track } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
+    const a = await render(<CalendarLink />);
+    await fireEvent.press(a.getByText("나중에 할게요"));
+    const b = await render(<CalendarLink />);
+    await fireEvent.press(b.getByText("캘린더 연결하기"));
+
+    const chosen = track.mock.calls.filter(([name]) => name === "calendar_link_chosen");
+    expect(chosen.map(([, props]) => props)).toEqual([
+      { source: "onboarding", choice: "later" },
+      { source: "onboarding", choice: "link" },
+    ]);
   });
 
   it("허용하지 않으면 연결됐다고 하지 않는다 — 안내와 처리가 같아야 한다", async () => {

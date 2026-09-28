@@ -54,6 +54,8 @@ const screen = choice(
   "profile_interests",
   "profile_rest",
 );
+const linkSource = choice("onboarding", "my");
+const linkChoice = choice("link", "later", "settings");
 export type ScreenName = NonNullable<ReturnType<typeof screen>>;
 export type OnboardingStepName = NonNullable<ReturnType<typeof step>>;
 
@@ -71,6 +73,7 @@ export const events = {
   notify_permission_result: { source: notificationSource, granted: bool },
   onboarding_completed: {},
   calendar_permission_result: { granted: bool },
+  calendar_link_chosen: { source: linkSource, choice: linkChoice },
   calendar_sync_succeeded: { created: count, updated: count, deleted: count },
   schedule_created: { schedule_id: id, source: choice("manual", "calendar") },
   schedule_updated: { schedule_id: id },

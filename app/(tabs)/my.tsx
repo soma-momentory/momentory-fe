@@ -1,6 +1,6 @@
-import { track } from "@/features/analytics";
+import { captureAnalytics, track } from "@/features/analytics";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import {
@@ -15,10 +15,14 @@ import {
   TextField,
   WheelPicker,
 } from "@/components/ds";
-import { label as labelColor, space, status } from "@/design/ds";
+import { label as labelColor, primary, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
+import { CALENDAR_NOTICE } from "@/features/calendar/model/notice";
 import { useDiary } from "@/features/diary/model/diary";
+import { linkCalendar } from "@/features/my/model/calendarLink";
 import { useProfile, useSettings } from "@/features/my/model/settings";
+import { onForeground } from "@/lib/appState";
+import { getCalendarAccess, openCalendarSettings, type CalendarAccess } from "@/lib/calendar";
 import { openExternalLink } from "@/lib/links";
 import {
   getNotificationPermission,
@@ -52,6 +56,9 @@ import {
  *   옛 화면의 알림 네 줄(회고·낮 기록·주간·새로운 소식) 중 시안이 남긴 것은 회고 시각뿐이다
  * - 「연결 관리」 줄이 없어졌다 — 시안의 목록에 없다. 캘린더 연결은 온보딩 `09` 에서
  *   정하고 지금은 그 값을 읽기로 보여 주기만 했다(누를 곳이 없는 줄이었다)
+ * - **「캘린더 연동」 줄이 돌아왔다**(2026-09-28). 온보딩에서 「나중에 할게요」를 고르면
+ *   앱 안에서 다시 이을 길이 없었다 — 연동 비율이 온보딩 화면 하나에서 정해지는 자리다.
+ *   연결되지 않았을 때만 눌리고, **해제는 두지 않는다**(연결됨이면 갈 곳이 없는 줄이다)
  *
  * ## 그대로인 규칙
  *
@@ -93,6 +100,15 @@ export default function My() {
   const [withdrawConfirmText, setWithdrawConfirmText] = useState("");
   /** `null` 은 아직 모르는 상태 — 모르는 채로 안내를 띄우지 않는다 */
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
+  const calendarLinked = useProfile((s) => s.calendarLinked);
+  /** 기기의 캘린더 권한. `null` 은 아직 모르는 상태 — 모르는 동안은 서버 값을 믿는다 */
+  const [calendarAccess, setCalendarAccess] = useState<CalendarAccess | null>(null);
+  /** 캘린더 연동 시트가 떠 있는가 */
+  const [linkingCalendar, setLinkingCalendar] = useState(false);
+  /** 권한은 받았는데 서버에 남기지 못했을 때의 한 줄(`RULES.md` 4) */
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+  /** 기기 설정으로 보냈다 — 돌아와서 권한이 켜져 있으면 거기서 연결을 마친다 */
+  const sentToSettings = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -104,6 +120,60 @@ export default function My() {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    // 묻기만 한다 — 알림과 같은 이유로 들어왔다고 다이얼로그를 띄우지 않는다
+    void getCalendarAccess().then((a) => {
+      if (alive) setCalendarAccess(a);
+    });
+    // 기기 설정에서 돌아온 순간 — 권한을 켜고 왔으면 한 번 더 누르게 하지 않고 여기서 잇는다
+    const stop = onForeground(() => {
+      void getCalendarAccess().then(async (access) => {
+        if (!alive) return;
+        setCalendarAccess(access);
+        if (!sentToSettings.current) return;
+        sentToSettings.current = false;
+        track("calendar_permission_result", { granted: access.granted });
+        if (!access.granted) return;
+        const result = await linkCalendar();
+        if (alive && result.kind === "failed") setCalendarError(result.message);
+      });
+    });
+    return () => {
+      alive = false;
+      stop();
+    };
+  }, []);
+
+  /**
+   * 「캘린더 연결하기」 — 권한을 묻고, 받으면 첫 적재를 시작한 뒤 서버에 남긴다
+   * (`features/my/model/calendarLink.ts`). 거부는 오류가 아니라 답이라 아무 말도 하지
+   * 않는다 — 다시 누르면 시트가 기기 설정으로 안내한다.
+   */
+  const connectCalendar = async () => {
+    track("calendar_link_chosen", { source: "my", choice: "link" });
+    setLinkingCalendar(false);
+    setCalendarError(null);
+    const record = captureAnalytics();
+    const result = await linkCalendar();
+    record("calendar_permission_result", { granted: result.granted });
+    setCalendarAccess(await getCalendarAccess());
+    if (result.kind === "failed") setCalendarError(result.message);
+  };
+
+  /** 다시 물을 수 없는 기기 — 기기 설정을 열고, 돌아오면 위의 구독이 연결을 마친다 */
+  const openCalendarSettingsFromSheet = () => {
+    track("calendar_link_chosen", { source: "my", choice: "settings" });
+    setLinkingCalendar(false);
+    sentToSettings.current = true;
+    void openCalendarSettings();
+  };
+
+  const dismissCalendar = () => {
+    track("calendar_link_chosen", { source: "my", choice: "later" });
+    setLinkingCalendar(false);
+  };
 
   // 연속 일수가 아니라 **기록이 남은 날 수**다 — 같은 날 두 편을 써도 하루다
   const recordedDays = new Set(diaries.map((d) => d.date)).size;
@@ -161,6 +231,11 @@ export default function My() {
 
   // 앱이 다시 물을 수 있는 동안에는 안내하지 않는다 — 시트의 `완료` 가 곧 그 물음이다
   const blocked = permission != null && !permission.granted && !permission.canAskAgain;
+  // 서버 값과 기기 권한이 **둘 다** 켜져야 연결됨이다 — 기기 설정에서 권한을 끄고 오면
+  // 동기화가 멈추므로 「연결됨」이라고 말할 수 없다. 권한을 아직 모르면 서버 값을 믿는다
+  const calendarOn = calendarLinked && calendarAccess?.granted !== false;
+  const calendarBlocked =
+    calendarAccess != null && !calendarAccess.granted && !calendarAccess.canAskAgain;
   const wheel = toWheelTime(editingTime ?? retro.time ?? "21:30");
   const setWheel = (next: Partial<WheelTime>) =>
     setEditingTime(fromWheelTime({ ...wheel, ...next }));
@@ -235,6 +310,38 @@ export default function My() {
               </View>
             ) : null}
           </BottomSheet>
+        ) : linkingCalendar ? (
+          /*
+            캘린더 연동 — 온보딩 `09` 와 **같은 약속**을 보이고 묻는다(`CALENDAR_NOTICE`).
+            이미 거부돼 다시 물을 수 없는 기기에는 물어도 아무 일이 없으므로, 약속 대신
+            기기 설정으로 가는 길 하나만 둔다.
+          */
+          <BottomSheet title="캘린더 연동" onDismiss={dismissCalendar}>
+            {calendarBlocked ? (
+              <>
+                <Text variant="body2Reading" color={labelColor.neutral}>
+                  기기 설정에서 모멘토리의 캘린더 접근을 허용해 주세요. 허용하고 돌아오면 바로
+                  연결돼요.
+                </Text>
+                <Button label="설정 열기" fill onPress={openCalendarSettingsFromSheet} />
+              </>
+            ) : (
+              <>
+                <Card style={styles.calendarNotice}>
+                  <View style={styles.calendarNoticeHead}>
+                    <Icon name="calendar" size={20} color={primary.heavy} />
+                    <Text variant="label1" color={labelColor.strong}>
+                      {CALENDAR_NOTICE.title}
+                    </Text>
+                  </View>
+                  <Text variant="body2Reading" color={labelColor.neutral}>
+                    {CALENDAR_NOTICE.body}
+                  </Text>
+                </Card>
+                <Button label="캘린더 연결하기" fill onPress={() => void connectCalendar()} />
+              </>
+            )}
+          </BottomSheet>
         ) : confirmingWithdraw ? (
           /*
             회원 탈퇴 확인 — **문구를 따라 써야** 실행된다(되돌릴 수 없는 동작의 마찰).
@@ -291,7 +398,10 @@ export default function My() {
         {/* 거부는 카드 밖 한 줄로 흡수한다 — 모달도 재시도 버튼도 경고 아이콘도 없다 */}
         <Group
           label="앱 설정"
-          note={blocked ? "기기 설정에서 알림을 켜면 이 시간에 찾아갈게요." : undefined}
+          note={
+            calendarError ??
+            (blocked ? "기기 설정에서 알림을 켜면 이 시간에 찾아갈게요." : undefined)
+          }
         >
           <ListCell
             title="알림 설정"
@@ -299,6 +409,15 @@ export default function My() {
             value={notifyValue}
             onPress={() => setEditingTime(retro.time ?? "21:30")}
             chevron
+          />
+          <ListDivider />
+          {/* 연결되지 않았을 때만 눌린다 — 해제는 두지 않는다(연결됨이면 갈 곳이 없다) */}
+          <ListCell
+            title="캘린더 연동"
+            leading={<Icon name="calendar" size={20} color={labelColor.alternative} />}
+            value={calendarOn ? "연결됨" : "연결 안 함"}
+            onPress={calendarOn ? undefined : () => setLinkingCalendar(true)}
+            chevron={!calendarOn}
           />
           <ListDivider />
           {/* 온보딩에서 답한 다섯 항목이 이 한 줄 뒤에 모여 있다 (`M3` 목록) */}
@@ -416,6 +535,9 @@ function Group({
 }
 
 const styles = StyleSheet.create({
+  // 온보딩 `09` 의 안내 카드와 같은 짜임이다 — 약속이 같으면 모양도 같다
+  calendarNotice: { gap: space.sm },
+  calendarNoticeHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
   // 좌우 20 은 `TabScreen` 이 잡는다 — 여기서 또 잡으면 두 겹이 된다
   body: {
     gap: space.xl2,

@@ -8,9 +8,15 @@ import { router } from "expo-router";
 import My from "../my";
 import Report from "../report";
 
+import { track } from "@/features/analytics";
 import { useAuth } from "@/features/auth/model/auth";
+import { CALENDAR_NOTICE } from "@/features/calendar/model/notice";
+import { syncDeviceCalendar } from "@/features/calendar/model/foregroundSync";
 import { useDiary } from "@/features/diary/model/diary";
-import { useSettings } from "@/features/my/model/settings";
+import { useProfile, useSettings } from "@/features/my/model/settings";
+import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
+import { ONBOARDING_FAILURE_MESSAGES } from "@/features/onboarding/model/submit";
+import { getCalendarAccess, openCalendarSettings, requestCalendarAccess } from "@/lib/calendar";
 import type { WeeklyReport } from "@/features/report/data/weeklyReportApi";
 import { useWeeklyReport } from "@/features/report/model/weeklyReport";
 import { seedDiaries, seedProfile } from "@/testing/fixtures";
@@ -77,6 +83,30 @@ const reportApi = jest.requireMock("@/features/report/data/weeklyReportApi") as 
   fetchWeeklyReport: jest.Mock;
 };
 
+/**
+ * `M1` 「캘린더 연동」 줄이 보는 기기 권한 — 기본은 **허용**이다. 연결을 보는 테스트만
+ * 각자 거부로 바꾼다(알림 권한과 같은 판단: 기본이 거부면 관계없는 테스트가 깨진다).
+ */
+jest.mock("@/lib/calendar", () => ({
+  ...jest.requireActual("@/lib/calendar"),
+  getCalendarAccess: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: false })),
+  requestCalendarAccess: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: false })),
+  openCalendarSettings: jest.fn(() => Promise.resolve()),
+}));
+jest.mock("@/features/calendar/model/foregroundSync", () => ({
+  syncDeviceCalendar: jest.fn(() => Promise.resolve(null)),
+}));
+jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
+  ...jest.requireActual("@/features/onboarding/data/completeOnboardingApi"),
+  completeOnboarding: jest.fn(() =>
+    Promise.resolve({ ok: true, data: { onboardingRequired: false } }),
+  ),
+}));
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  track: jest.fn(),
+}));
+
 // 앱 안 브라우저도 네이티브다 — 「지원」 세 줄이 무엇을 여는지만 본다
 jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn(() => Promise.resolve()) }));
 const browser = jest.requireMock("expo-web-browser") as { openBrowserAsync: jest.Mock };
@@ -97,6 +127,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
+  // 캘린더 권한도 기본은 허용이다 — 거부로 바꾼 테스트의 값이 다음 테스트로 새지 않게 되돌린다
+  jest.mocked(getCalendarAccess).mockResolvedValue({ granted: true, canAskAgain: false });
+  jest.mocked(requestCalendarAccess).mockResolvedValue({ granted: true, canAskAgain: false });
   // 기본은 「이번 주가 그대로 왔다」 — 실패·빈 주를 보는 테스트만 이 목을 갈아끼운다
   reportApi.fetchWeeklyReport.mockResolvedValue({ ok: true, data: weeklyReport() });
 });
@@ -632,6 +665,101 @@ describe("M1 · 마이 기본", () => {
     });
 
     expect(await r.findByText("꺼짐")).toBeTruthy();
+  });
+});
+
+describe("M1 · 캘린더 연동 — 온보딩에서 미룬 사람이 다시 잇는 길", () => {
+  const access = jest.mocked(getCalendarAccess);
+  const request = jest.mocked(requestCalendarAccess);
+  const denied = { granted: false, canAskAgain: false };
+
+  it("연결된 사람에게는 「연결됨」만 말하고 눌리지 않는다 — 해제는 두지 않는다", async () => {
+    const r = await render(<My />);
+    await act(async () => {});
+
+    expect(r.getByText("연결됨")).toBeTruthy();
+    const pressable = r
+      .queryAllByRole("button")
+      .some((b) => within(b).queryByText("캘린더 연동") != null);
+    expect(pressable).toBe(false);
+  });
+
+  it("기기 설정에서 권한을 끄면 서버 값이 켜져 있어도 「연결 안 함」이다", async () => {
+    access.mockResolvedValue(denied);
+    const r = await render(<My />);
+
+    expect(await r.findByText("연결 안 함")).toBeTruthy();
+  });
+
+  it("연결하지 않은 사람은 줄을 눌러 온보딩과 같은 약속을 보고 잇는다", async () => {
+    useProfile.getState().set({ calendarLinked: false });
+    access.mockResolvedValueOnce({ granted: false, canAskAgain: true });
+    const r = await render(<My />);
+    await act(async () => {});
+
+    await fireEvent.press(r.getByText("캘린더 연동"));
+    expect(r.getByText(CALENDAR_NOTICE.title)).toBeTruthy();
+    expect(r.getByText(CALENDAR_NOTICE.body)).toBeTruthy();
+
+    await fireEvent.press(r.getByText("캘린더 연결하기"));
+    // 권한 → 서버 저장 → 권한 다시 보기까지 비동기 세 단계를 다 흘려보낸다
+    await act(async () => {});
+
+    expect(r.getByText("연결됨")).toBeTruthy();
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(syncDeviceCalendar).toHaveBeenCalledTimes(1);
+    // 서버는 통째로 덮어쓴다 — 다른 답은 지금 값 그대로, 캘린더만 켜서 보낸다
+    expect(completeOnboarding).toHaveBeenCalledWith(
+      expect.objectContaining({ calendarLinked: true, nickname: "지현" }),
+    );
+    expect(track).toHaveBeenCalledWith("calendar_link_chosen", { source: "my", choice: "link" });
+  });
+
+  it("다시 물을 수 없는 기기는 약속 대신 기기 설정으로 안내한다", async () => {
+    useProfile.getState().set({ calendarLinked: false });
+    access.mockResolvedValue(denied);
+    const r = await render(<My />);
+    await act(async () => {});
+
+    await fireEvent.press(r.getByText("캘린더 연동"));
+    expect(r.getByText(/기기 설정에서 모멘토리의 캘린더 접근을 허용해 주세요/)).toBeTruthy();
+    expect(r.queryByText("캘린더 연결하기")).toBeNull();
+
+    await fireEvent.press(r.getByText("설정 열기"));
+
+    expect(openCalendarSettings).toHaveBeenCalledTimes(1);
+    expect(request).not.toHaveBeenCalled();
+    expect(track).toHaveBeenCalledWith("calendar_link_chosen", {
+      source: "my",
+      choice: "settings",
+    });
+  });
+
+  it("권한은 받았는데 서버에 남기지 못하면 한 줄로 알린다 — 모달도 재시도 버튼도 없다", async () => {
+    useProfile.getState().set({ calendarLinked: false });
+    jest.mocked(completeOnboarding).mockResolvedValueOnce({ ok: false, code: "server" });
+    const r = await render(<My />);
+    await act(async () => {});
+
+    await fireEvent.press(r.getByText("캘린더 연동"));
+    await fireEvent.press(r.getByText("캘린더 연결하기"));
+    await act(async () => {});
+
+    expect(r.getByText(ONBOARDING_FAILURE_MESSAGES.server)).toBeTruthy();
+    expect(useProfile.getState().calendarLinked).toBe(false);
+  });
+
+  it("시트를 그냥 닫으면 미룬 것으로 남긴다", async () => {
+    useProfile.getState().set({ calendarLinked: false });
+    access.mockResolvedValueOnce({ granted: false, canAskAgain: true });
+    const r = await render(<My />);
+    await act(async () => {});
+
+    await fireEvent.press(r.getByText("캘린더 연동"));
+    await fireEvent.press(r.getByLabelText("닫기"));
+
+    expect(r.queryByText("캘린더 연결하기")).toBeNull();
+    expect(track).toHaveBeenCalledWith("calendar_link_chosen", { source: "my", choice: "later" });
   });
 });
 

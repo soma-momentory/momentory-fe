@@ -51,6 +51,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | notify_permission_result     | 온보딩 08·마이 M2 의 알림 권한 결과         | source: onboarding/my, granted            |
 | onboarding_completed         | 완료 API가 onboardingRequired=false로 응답  | 없음                                      |
 | calendar_permission_result   | 온보딩 캘린더 연결 요청 결과                | granted                                   |
+| calendar_link_chosen         | 캘린더 연결 여부를 고름                     | source: onboarding/my, choice             |
 | calendar_sync_succeeded      | 캘린더 동기화 성공 응답                     | created, updated, deleted 개수            |
 | schedule_created             | 직접 일정 추가 성공                         | schedule_id, source                       |
 | schedule_updated             | 일정 제목 편집 성공                         | schedule_id                               |
@@ -112,6 +113,9 @@ step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단
 회고 실패 code는 invalid_request, already_today, session_not_found, unauthenticated,
 network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본문은 전송하지 않는다.
 캘린더 동기화는 자동으로도 실행된다. 해당 이벤트 수를 사용자의 클릭 수로 해석하지 않는다.
+calendar_link_chosen의 choice는 link(연결하기), later(온보딩 「나중에 할게요」 또는 마이 시트 닫기),
+settings(마이에서 기기 설정 열기)다. 권한 결과는 뒤따르는 calendar_permission_result로 보며,
+2026-09-28부터 마이 「캘린더 연동」에서도 기록한다. 진입점별 연결률은 source로 가른다.
 일정 완료 이벤트도 저장 성공 횟수이며 서버의 상태 변경 이력에 대한 보장은 아니다.
 바람카드의 느낀 점 저장은 완료 변경으로 세지 않는다.
 
