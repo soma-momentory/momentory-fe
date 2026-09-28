@@ -60,6 +60,10 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | schedule_completion_changed  | 일정 완료 상태 저장 성공                    | schedule_id, completed                    |
 | retrospect_started           | 회고 시작 API 성공                          | retrospect_id                             |
 | retrospect_turn_succeeded    | 대화 턴 API 성공                            | retrospect_id, input_kind: text/selection |
+| retrospect_turn_timed        | 대화 턴 성공, 화면에서 잰 시간              | retrospect_id, phase, turn_no 외 (아래)   |
+| retrospect_exited            | 회고가 끝나기 전에 닫음                     | retrospect_id, phase, turn_no             |
+| retro_cta_clicked            | 홈의 지금 하루 돌아보기 클릭                | source: home                              |
+| reminder_opened              | 예약한 알림을 눌러 앱을 엶                  | reminder: retro/daily/weekly              |
 | retrospect_branch_selected   | 고정 분기 선택 제출                         | branch: diary/explore                     |
 | retrospect_completed         | done=true이면서 phase=complete인 정상 응답  | retrospect_id                             |
 | retrospect_request_failed    | 시작/턴 API 실패 또는 응답 검증 실패        | operation: start/turn, 고정 code          |
@@ -103,6 +107,19 @@ retroTime 단계에서는 진행 여부와 알림 권한 허용 여부(notify_pe
 iOS 의 inactive(알림 센터 등)는 끊지 않는다. 화면을 켜 둔 채 손을 뗀 시간은 가를 수 없으므로
 분석에서는 상한(예: 10분)을 두고 넘는 구간을 따로 센다. 온보딩은 화면명이 하나라 단계로 보낸다.
 
+**회고 턴 시간**(retrospect_turn_timed, 2026-09-28)은 턴마다 한 번, 서버 답이 온 뒤에 보낸다.
+think_ms 는 질문이 화면에 선 때부터 첫 입력(첫 글자 또는 선택지 탭)까지, compose_ms 는 첫 입력부터
+보내기까지, wait_ms 는 보낸 뒤 답이 오기까지다. 모두 전면 시계로 잰다. 생각이 길면 질문이 어렵고
+쓰기가 길면 할 말이 많다 — 합치면 둘을 가를 수 없어 나눈다. input_chars 는 보낸 글자 수이고
+선택지는 0 이다. 내용은 보내지 않는다. phase 는 사용자가 답하던 단계(diary_chat, await_branch,
+emotion_exploration, other)이고, turn_no 는 그 회고에서 성공한 턴의 순번이다. retrospect_exited 의
+turn_no 는 나가기 전까지 성공한 턴 수다.
+⚠ 위기 안내 단계(safety_hold)는 **이름으로 보내지 않는다.** 정신 건강 상태를 추정할 수 있는 민감
+정보라 외부 분석 도구로 내보내지 않고 other 에 섞는다.
+
+**reminder_opened** 는 우리가 예약한 알림을 눌러 앱을 열었을 때 한 번 보낸다. 앱이 꺼져 있다가
+알림으로 켜진 경우도 센다. 알림을 받은 것만으로는 보내지 않는다(로컬 알림이라 도착을 알 수 없다).
+
 감각연못의 step은 see, hear, feel이고, 시간은 모두 전면 시계로 잰다. sense_pond_step_completed는
 step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단계가 보인 때부터 목표를 채운
 손짓까지, longest_gap_ms는 그 단계 안에서 단계 시작 또는 직전 손짓부터 다음 손짓까지 가장 길었던 간격이다.
@@ -129,6 +146,8 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 | 온보딩 어디서 이탈하는가?        | step별 viewed → completed의 고유 사용자 퍼널. 같은 전환 기간을 적용                   |
 | 첫 회고까지 도달하는가?          | onboarding_completed → 사용자의 최초 retrospect_started → retrospect_completed        |
 | AI 대화를 얼마나 쓰는가?         | retrospect_turn_succeeded의 고유 사용자/턴 수, retrospect_id별 분포                   |
+| 어느 질문에서 오래 걸리는가?     | retrospect_turn_timed의 think_ms 중앙값을 phase·turn_no별로                           |
+| 알림이 회고로 이어지는가?        | reminder_opened → 같은 날 retrospect_started 퍼널                                     |
 | 회고 이후 카드로 이어지는가?     | retrospect_completed → wish_card_created → wish_card_viewed                           |
 | 어떤 기능이 많이 쓰이는가?       | screen_viewed를 screen별 고유 사용자/이벤트 수로 구분                                 |
 | 어느 화면에 오래 머무는가?       | screen_left를 세션 안에서 screen별로 합친 뒤 중앙값·p90                               |
@@ -149,7 +168,7 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 - 로그인 응답에는 신규 가입 여부가 없다. onboarding_required=true에는 미완료 재로그인도 포함되므로 signup_completed를 만들지 않았다. 발표에서는 “온보딩이 필요한 로그인/온보딩 완료”라고 표기한다.
 - 날짜 관련 이벤트는 **보관함 조회 날짜·월·기간 변경**이다. 현재 없는 일기 작성일 수정 기능은 추가하지 않았다.
 - 쉼 콘텐츠 중 화면이 있는 것은 감각연못뿐이라 감각연못만 계측한다. 나머지 셋은 화면을 만들 때 함께 계측을 추가한다.
-- 자동 수집/세션 리플레이를 쓰지 않는다. 이메일, 닉네임, SNS ID, 인증 토큰, 일기·일정·대화·바람 원문, 감정/욕구 코드·이름, 검색어, 알림 설정 시각은 속성 허용 목록에 없다. 알림은 권한 허용 여부만 보낸다.
+- 자동 수집/세션 리플레이를 쓰지 않는다. 이메일, 닉네임, SNS ID, 인증 토큰, 일기·일정·대화·바람 원문, 감정/욕구 코드·이름, 검색어, 알림 설정 시각은 속성 허용 목록에 없다. 알림은 권한 허용 여부와, 예약한 알림을 눌러 연 사실(종류만)만 보낸다.
 - 신원 복원 전 이벤트는 최대 50개, SDK 초기화 전 작업은 최대 200개만 메모리에 둔다. 넘치는 이벤트는 버리되 신원 변경은 보존한다. SDK 초기화가 실패하면 그 실행의 analytics만 비활성화한다.
 - SDK의 배치 전송/재시도를 사용한다. 서비스 DB에는 로그 테이블을 만들지 않는다. SDK는 기기에 전송 대기 이벤트와 임의 기기 ID를 저장할 수 있다.
 - 같은 화면의 재렌더는 중복 조회가 아니다. 다시 들어오거나 다른 카드를 보면 새 조회다. 앱 복귀는 별도 이벤트다. 화면 체류는 screen_left 가 전면 구간마다 따로 보낸다(위 「체류 시간」).
