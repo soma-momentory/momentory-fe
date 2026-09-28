@@ -1,6 +1,6 @@
 import { captureAnalytics, track } from "@/features/analytics";
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import {
@@ -19,7 +19,7 @@ import { label as labelColor, primary, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { CALENDAR_NOTICE } from "@/features/calendar/model/notice";
 import { useDiary } from "@/features/diary/model/diary";
-import { linkCalendar } from "@/features/my/model/calendarLink";
+import { adoptGrantedCalendar, linkCalendar } from "@/features/my/model/calendarLink";
 import { useProfile, useSettings } from "@/features/my/model/settings";
 import { onForeground } from "@/lib/appState";
 import { getCalendarAccess, openCalendarSettings, type CalendarAccess } from "@/lib/calendar";
@@ -107,8 +107,6 @@ export default function My() {
   const [linkingCalendar, setLinkingCalendar] = useState(false);
   /** 권한은 받았는데 서버에 남기지 못했을 때의 한 줄(`RULES.md` 4) */
   const [calendarError, setCalendarError] = useState<string | null>(null);
-  /** 기기 설정으로 보냈다 — 돌아와서 권한이 켜져 있으면 거기서 연결을 마친다 */
-  const sentToSettings = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -123,23 +121,18 @@ export default function My() {
 
   useEffect(() => {
     let alive = true;
-    // 묻기만 한다 — 알림과 같은 이유로 들어왔다고 다이얼로그를 띄우지 않는다
-    void getCalendarAccess().then((a) => {
-      if (alive) setCalendarAccess(a);
-    });
-    // 기기 설정에서 돌아온 순간 — 권한을 켜고 왔으면 한 번 더 누르게 하지 않고 여기서 잇는다
-    const stop = onForeground(() => {
-      void getCalendarAccess().then(async (access) => {
+    // 묻기만 한다 — 알림과 같은 이유로 들어왔다고 다이얼로그를 띄우지 않는다.
+    // 권한이 허용인데 서버 값만 꺼져 있으면 맞춘다(`adoptGrantedCalendar`). iOS 는 설정에서
+    // 권한을 바꾸면 앱을 종료시키므로 「설정에서 돌아왔다」를 기억해서는 잡을 수 없다 —
+    // 들어올 때와 앞으로 돌아올 때마다 지금 상태를 본다
+    const check = () =>
+      void getCalendarAccess().then((access) => {
         if (!alive) return;
         setCalendarAccess(access);
-        if (!sentToSettings.current) return;
-        sentToSettings.current = false;
-        track("calendar_permission_result", { granted: access.granted });
-        if (!access.granted) return;
-        const result = await linkCalendar();
-        if (alive && result.kind === "failed") setCalendarError(result.message);
+        void adoptGrantedCalendar(access);
       });
-    });
+    check();
+    const stop = onForeground(check);
     return () => {
       alive = false;
       stop();
@@ -162,11 +155,13 @@ export default function My() {
     if (result.kind === "failed") setCalendarError(result.message);
   };
 
-  /** 다시 물을 수 없는 기기 — 기기 설정을 열고, 돌아오면 위의 구독이 연결을 마친다 */
+  /**
+   * 다시 물을 수 없는 기기 — 기기 설정을 연다. 거기서 켜면 iOS 가 앱을 종료시키고,
+   * 다시 열린 마이가 권한을 보고 서버 값을 맞춘다(위 `check`).
+   */
   const openCalendarSettingsFromSheet = () => {
     track("calendar_link_chosen", { source: "my", choice: "settings" });
     setLinkingCalendar(false);
-    sentToSettings.current = true;
     void openCalendarSettings();
   };
 

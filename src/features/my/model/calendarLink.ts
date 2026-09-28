@@ -1,7 +1,8 @@
 import { syncDeviceCalendar } from "@/features/calendar/model/foregroundSync";
-import { requestCalendarAccess } from "@/lib/calendar";
+import { requestCalendarAccess, type CalendarAccess } from "@/lib/calendar";
 
 import { saveCalendarLinked } from "./basicInfo";
+import { useProfile } from "./settings";
 
 /**
  * 마이에서 캘린더를 잇는 결과 — 화면은 이것만 보고 무엇을 말할지 정한다.
@@ -34,4 +35,28 @@ export async function linkCalendar(): Promise<CalendarLinkResult> {
   return saved.ok
     ? { kind: "linked", granted: true }
     : { kind: "failed", granted: true, message: saved.message };
+}
+
+let adopting: Promise<unknown> | null = null;
+
+/**
+ * 기기 권한은 허용인데 서버 값만 「연결 안 함」이면 **서버 값을 기기에 맞춘다**(2026-09-28).
+ *
+ * iOS 는 설정 앱에서 개인정보 권한을 바꾸면 **그 앱을 종료시킨다.** 그래서 「기기 설정으로
+ * 보냈다가 돌아오면 잇는다」를 앱 메모리에 기억해 두는 방식은 동작하지 않았다 — 다시 열린
+ * 앱은 보낸 적이 있다는 것을 모르고, 사용자는 이미 허용하고 온 것을 한 번 더 눌러야 했다
+ * (실기기에서 확인). 그 사이 동기화는 OS 권한만 보고 이미 일정을 가져오고 있어서, 마이는
+ * 「연결 안 함」인데 홈에는 캘린더 일정이 있는 어긋난 상태였다.
+ *
+ * 그래서 「어디서 왔는가」가 아니라 **지금 어떤가**를 본다. 모멘토리를 거치지 않고 iOS
+ * 설정에서 직접 켠 경우도 같이 맞춰진다. 권한 창을 띄우지 않고, 동기화도 새로 걸지 않는다
+ * (이미 돌고 있다). 실패는 조용하다 — 다음에 들어오거나 앞으로 돌아올 때 다시 맞춘다.
+ */
+export function adoptGrantedCalendar(access: CalendarAccess): Promise<unknown> {
+  if (!access.granted || useProfile.getState().calendarLinked) return Promise.resolve();
+  // 들어오기와 앞으로 돌아오기가 겹쳐도 한 번만 보낸다
+  adopting ??= saveCalendarLinked().finally(() => {
+    adopting = null;
+  });
+  return adopting;
 }

@@ -737,6 +737,8 @@ describe("M1 · 캘린더 연동 — 온보딩에서 미룬 사람이 다시 잇
 
   it("권한은 받았는데 서버에 남기지 못하면 한 줄로 알린다 — 모달도 재시도 버튼도 없다", async () => {
     useProfile.getState().set({ calendarLinked: false });
+    // 아직 허용 전이다 — 허용된 채로 들어오면 화면이 먼저 서버 값을 맞춘다(아래 테스트)
+    access.mockResolvedValueOnce({ granted: false, canAskAgain: true });
     jest.mocked(completeOnboarding).mockResolvedValueOnce({ ok: false, code: "server" });
     const r = await render(<My />);
     await act(async () => {});
@@ -747,6 +749,32 @@ describe("M1 · 캘린더 연동 — 온보딩에서 미룬 사람이 다시 잇
 
     expect(r.getByText(ONBOARDING_FAILURE_MESSAGES.server)).toBeTruthy();
     expect(useProfile.getState().calendarLinked).toBe(false);
+  });
+
+  it("기기에서 허용돼 있는데 서버 값만 꺼져 있으면 들어오자마자 맞춘다 — 다시 누르게 하지 않는다", async () => {
+    // iOS 는 설정에서 권한을 바꾸면 앱을 종료시킨다. 설정에서 켜고 돌아온 사람은
+    // 다시 열린 앱으로 들어온다 — 그때 이미 허용이고 서버 값만 꺼져 있다(2026-09-28 실기기)
+    useProfile.getState().set({ calendarLinked: false });
+    const r = await render(<My />);
+    await act(async () => {});
+
+    expect(r.getByText("연결됨")).toBeTruthy();
+    expect(completeOnboarding).toHaveBeenCalledWith(
+      expect.objectContaining({ calendarLinked: true }),
+    );
+    // 권한 창도 새 동기화도 없다 — 이미 허용이고 동기화는 이미 돌고 있다
+    expect(request).not.toHaveBeenCalled();
+    expect(syncDeviceCalendar).not.toHaveBeenCalled();
+  });
+
+  it("기기 권한이 없으면 서버 값을 건드리지 않는다", async () => {
+    useProfile.getState().set({ calendarLinked: false });
+    access.mockResolvedValue(denied);
+    const r = await render(<My />);
+    await act(async () => {});
+
+    expect(r.getByText("연결 안 함")).toBeTruthy();
+    expect(completeOnboarding).not.toHaveBeenCalled();
   });
 
   it("시트를 그냥 닫으면 미룬 것으로 남긴다", async () => {
