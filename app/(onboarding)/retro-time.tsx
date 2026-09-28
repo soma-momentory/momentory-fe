@@ -94,6 +94,7 @@ export default function RetroTime() {
     setAsking(true);
     // 권한이 곧 답이다 — 켜겠다고 했지만 OS 에서 거부하면 알림은 꺼진 것이다
     const { granted } = await requestNotificationPermission();
+    track("notify_permission_result", { source: "onboarding", granted });
     set("notifyRetro", granted);
     setAsking(false);
     track("onboarding_step_completed", { step: "retroTime" });

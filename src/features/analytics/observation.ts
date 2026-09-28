@@ -49,15 +49,55 @@ export function describeRoute(
   return screen ? { screen } : null;
 }
 
-export function createScreenObserver(track: Track) {
+/**
+ * 화면 진입과 **머문 시간**을 기록한다(2026-09-28).
+ *
+ * 체류는 앱이 **전면에 있던 구간마다** 한 번씩 보낸다. 백그라운드로 가면 그때까지를
+ * `exit: "background"` 로 보내고 멈췄다가, 돌아오면 같은 화면을 처음부터 다시 잰다.
+ * 한 번 모아 두었다가 떠날 때 보내면 앱이 백그라운드에서 종료될 때 통째로 잃는다 —
+ * 그래서 한 방문이 여러 구간으로 갈릴 수 있고, 분석에서 합친다.
+ *
+ * 온보딩 아홉 단계는 화면명이 모두 `onboarding` 이라 `screen_left` 로는 단계를 가를 수
+ * 없다. 온보딩에서는 대신 `onboarding_step_left` 를 보낸다.
+ *
+ * `inactive` 는 멈추지 않는다 — 알림 센터를 잠깐 내리는 것까지 끊으면 구간이 잘게 쪼개진다.
+ */
+export function createScreenObserver(track: Track, now: () => number = Date.now) {
   let previous: string | null = null;
-  return (route: string) => {
-    if (route === previous) return;
-    previous = route;
-    const description = describeRoute(route);
-    if (description == null) return;
-    track("screen_viewed", { screen: description.screen });
-    if (description.step) track("onboarding_step_viewed", { step: description.step });
+  let current: { screen: ScreenName; step?: OnboardingStepName } | null = null;
+  let enteredAt = 0;
+  let paused = false;
+
+  const leave = (exit: "navigate" | "background") => {
+    if (current == null || paused) return;
+    const duration_ms = now() - enteredAt;
+    if (current.step) track("onboarding_step_left", { step: current.step, duration_ms, exit });
+    else track("screen_left", { screen: current.screen, duration_ms, exit });
+  };
+
+  return {
+    /** 라우트가 바뀌었다. 모르는 라우트로 가도 떠난 화면의 시간은 닫는다 */
+    route(route: string) {
+      if (route === previous) return;
+      previous = route;
+      leave("navigate");
+      current = describeRoute(route);
+      enteredAt = now();
+      paused = false;
+      if (current == null) return;
+      track("screen_viewed", { screen: current.screen });
+      if (current.step) track("onboarding_step_viewed", { step: current.step });
+    },
+    /** 앱 상태가 바뀌었다. 백그라운드에서 구간을 닫고, 돌아오면 다시 잰다 */
+    appState(state: string) {
+      if (state === "background" && !paused) {
+        leave("background");
+        paused = true;
+      } else if (state === "active" && paused) {
+        paused = false;
+        enteredAt = now();
+      }
+    },
   };
 }
 
