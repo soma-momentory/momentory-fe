@@ -12,6 +12,9 @@ const integer: Field<number> = (v) =>
 const bool: Field<boolean> = (v) => (typeof v === "boolean" ? v : undefined);
 const week: Field<string> = (v) =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined;
+/** 밀리초 길이 — 음수·무한은 버리고 정수로 반올림한다 */
+const millis: Field<number> = (v) =>
+  typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : undefined;
 const step = choice(
   "welcome",
   "nickname",
@@ -24,6 +27,7 @@ const step = choice(
   "done",
 );
 const provider = choice("kakao", "apple", "google");
+const pondStep = choice("see", "hear", "feel");
 const screen = choice(
   "login",
   "home",
@@ -40,6 +44,7 @@ const screen = choice(
   "retro_done",
   "diary_detail",
   "wish_cards",
+  "sense_pond",
   "profile",
   "profile_nickname",
   "profile_age",
@@ -97,6 +102,14 @@ export const events = {
   wish_card_viewed: { wish_card_id: id, source: choice("cards") },
   wish_card_completion_changed: { wish_card_id: id, completed: bool },
   wish_card_deleted: { wish_card_id: id },
+  sense_pond_step_completed: {
+    step: pondStep,
+    duration_ms: millis,
+    longest_gap_ms: millis,
+    hold_cancels: count,
+  },
+  sense_pond_finished: { duration_ms: millis },
+  sense_pond_exited: { step: pondStep, found: count, hold_cancels: count, duration_ms: millis },
   report_week_selected: { week_start: week },
   weekly_report_viewed: { week_start: week },
   logout_clicked: {},

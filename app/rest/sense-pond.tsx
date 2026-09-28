@@ -4,6 +4,7 @@ import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button, Icon, Screen } from "@/components/ds";
+import { useSensePondAnalytics } from "@/features/analytics/useSensePondAnalytics";
 import { PondTopVeil, VeilGradient } from "@/components/rest/pond/PondTopVeil";
 import { SensePanel } from "@/components/rest/pond/SensePanel";
 import { PondScene } from "@/components/rest/pond/PondScene";
@@ -114,6 +115,8 @@ export default function SensePondScreen() {
   const step = SENSE_POND_STEPS[stepIndex]!;
   const done = isStepDone(step, found);
   const hasNext = stepIndex + 1 < SENSE_POND_STEPS.length;
+  // 단계별 소요 시간 계측 — 사용자에게는 보이지 않는다(`features/analytics/sensePond.ts`)
+  const pond = useSensePondAnalytics(step.id);
 
   // 소개는 한 호흡만 머문다 — 손짓이 먼저 오면 그 자리에서 끝난다(아래 `onFound`)
   useEffect(() => {
@@ -189,9 +192,13 @@ export default function SensePondScreen() {
             onFound={() => {
               // 손짓이 시작됐다 — 소개는 여기서 끝난다(타이머를 기다리지 않는다)
               setIntro(false);
+              pond.find(step.goal, !hasNext);
               setFound((n) => nextFound(step, n));
             }}
-            onHoldCancel={() => setNudge((n) => n + 1)}
+            onHoldCancel={() => {
+              pond.holdCancel();
+              setNudge((n) => n + 1);
+            }}
             finished={finished}
           />
           {/* 올라가며 드러나는 그림의 아래 끝을 바닥색으로 녹인다 — 완료에만 */}

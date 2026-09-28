@@ -3,6 +3,8 @@ import { router } from "expo-router";
 
 import SensePondScreen from "../sense-pond";
 
+import { track } from "@/features/analytics";
+
 import { pondMotion, surfaceRippleMs } from "@/design/ds";
 
 /**
@@ -23,6 +25,13 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
   Redirect: jest.fn(() => null),
+}));
+
+// 계측은 켜 두고 전송만 가로챈다 — 화면이 언제 무엇을 보내는지 본다
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  isAnalyticsEnabled: true,
+  track: jest.fn(),
 }));
 
 /** 연못 위의 그림은 낭독기에서 숨긴다 — 세려면 숨긴 것까지 봐야 한다 */
@@ -426,5 +435,77 @@ describe("감각연못 · 찾아 가기", () => {
     await layout(r);
 
     expect(surface(r).props.accessibilityActions).toBeUndefined();
+  });
+});
+
+describe("감각연못 · 계측", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  const sent = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
+
+  it("세 단계를 마치면 단계마다 한 번씩, 그리고 완료를 한 번 보낸다 — 떠날 때는 더 보내지 않는다", async () => {
+    const r = await render(<SensePondScreen />);
+    await layout(r);
+    await reachFeel(r);
+    await holdPond(r, WATER);
+    await wait(pondMotion.hold + 20);
+    await wait(pondMotion.doneHold + 100);
+
+    await act(async () => {
+      r.unmount();
+    });
+
+    expect(sent()).toEqual([
+      ["sense_pond_step_completed", expect.objectContaining({ step: "see", hold_cancels: 0 })],
+      ["sense_pond_step_completed", expect.objectContaining({ step: "hear", hold_cancels: 0 })],
+      ["sense_pond_step_completed", expect.objectContaining({ step: "feel", hold_cancels: 0 })],
+      ["sense_pond_finished", { duration_ms: expect.any(Number) }],
+    ]);
+  });
+
+  it("꾹 누르기를 일찍 떼면 감각 단계 완료에 그 횟수가 실린다", async () => {
+    const r = await render(<SensePondScreen />);
+    await layout(r);
+    await reachFeel(r);
+    await holdPond(r, WATER);
+    await wait(pondMotion.hold - 200);
+    await releasePond(r);
+    await holdPond(r, WATER);
+    await wait(pondMotion.hold + 20);
+
+    expect(sent()).toContainEqual([
+      "sense_pond_step_completed",
+      expect.objectContaining({ step: "feel", hold_cancels: 1 }),
+    ]);
+  });
+
+  it("중간에 떠나면 그 단계와 찾은 개수를 보낸다", async () => {
+    const r = await render(<SensePondScreen />);
+    await layout(r);
+    await tapPond(r, WATER);
+    await settle("see");
+
+    await act(async () => {
+      r.unmount();
+    });
+
+    expect(sent()).toEqual([
+      [
+        "sense_pond_exited",
+        { step: "see", found: 1, hold_cancels: 0, duration_ms: expect.any(Number) },
+      ],
+    ]);
+  });
+
+  it("물이 아닌 자리의 손짓은 화면처럼 계측에서도 세지 않는다", async () => {
+    const r = await render(<SensePondScreen />);
+    await layout(r);
+    await tapPond(r, { x: 0.5, y: 0.12 });
+    await tapPond(r, { x: 0.15, y: 0.7 });
+    await tapPond(r, { x: 0.5, y: 0.92 });
+
+    expect(waves(r)).toHaveLength(0);
+    expect(sent()).toEqual([]);
   });
 });

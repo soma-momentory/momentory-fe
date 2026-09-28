@@ -9,6 +9,9 @@
 2026-09-05 사용자 승인: **FE만 구현, 하나의 PR**. 기존 API와 화면 동작은 유지한다.
 페이지 체류 시간과 알림 설정·예약 계측은 제외한다. 캘린더 접근 권한은 알림 권한과 별개다.
 
+2026-09-28 추가 승인: **감각연못은 단계별 소요 시간을 수집한다.** 앱이 전면에 있던 시간만 세고,
+사용자에게는 보이지 않는다. 일반 화면의 체류 시간은 여전히 수집하지 않는다.
+
 ## 활성화
 
 1. Amplitude에 US 리전 프로젝트를 만들고 프로젝트의 **API Key**를 받는다. SDK 기본 수집 서버는 US다. EU 프로젝트를 사용한다면 먼저 SDK의 serverZone을 EU로 맞춰야 한다.
@@ -67,6 +70,9 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | wish_card_viewed             | 선택 카드 데이터가 실제 표시됨              | wish_card_id, source: cards/trail         |
 | wish_card_completion_changed | 해봤어요/되돌리기 API 성공                  | wish_card_id, completed                   |
 | wish_card_deleted            | 바람카드 삭제 성공                          | wish_card_id                              |
+| sense_pond_step_completed    | 감각연못 한 단계의 목표를 채움              | step, duration_ms 외 2개 (아래)           |
+| sense_pond_finished          | 감각연못 마지막 단계의 목표를 채움          | duration_ms                               |
+| sense_pond_exited            | 끝내지 않고 감각연못 화면을 떠남            | step, found, hold_cancels, duration_ms    |
 | report_week_selected         | 다른 주 선택                                | week_start                                |
 | weekly_report_viewed         | 선택 주와 일치하는 리포트가 ready로 표시됨  | week_start                                |
 | logout_clicked               | 마이 로그아웃 클릭                          | 없음                                      |
@@ -79,9 +85,16 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 
 화면명은 login, home, archive, rest, report, my, onboarding, schedule_new,
 schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
-wish_cards, wish_card_trail, profile 및 고정 프로필 편집 화면명이다.
+wish_cards, wish_card_trail, sense_pond, profile 및 고정 프로필 편집 화면명이다.
 온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다.
 retroTime 단계에서는 **진행 여부만** 알 수 있고 알림 허용/거부·설정 시각·예약 성공은 수집하지 않는다.
+
+감각연못의 step은 see, hear, feel이고, 시간은 모두 전면 시계로 잰다. sense_pond_step_completed는
+step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단계가 보인 때부터 목표를 채운
+손짓까지, longest_gap_ms는 그 단계 안에서 단계 시작 또는 직전 손짓부터 다음 손짓까지 가장 길었던 간격이다.
+간격이 고르면 천천히 둘러본 것이고, 한 번 길게 멈췄다가 몰아 누르면 어디를 눌러야 할지 몰랐던 것에
+가깝다. hold_cancels는 감각 단계에서 잠시 누르기를 다 채우기 전에 손을 뗀 횟수이며 톡 단계에서는 0이다.
+손짓마다 이벤트를 보내지 않는다. 물이 아닌 자리의 손짓과 목표를 넘긴 손짓은 화면처럼 세지 않는다.
 
 회고 실패 code는 invalid_request, already_today, session_not_found, unauthenticated,
 network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본문은 전송하지 않는다.
@@ -114,7 +127,7 @@ network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본
 
 - 로그인 응답에는 신규 가입 여부가 없다. onboarding_required=true에는 미완료 재로그인도 포함되므로 signup_completed를 만들지 않았다. 발표에서는 “온보딩이 필요한 로그인/온보딩 완료”라고 표기한다.
 - 날짜 관련 이벤트는 **보관함 조회 날짜·월·기간 변경**이다. 현재 없는 일기 작성일 수정 기능은 추가하지 않았다.
-- 쉼 콘텐츠 네 개는 현재 누를 수 없어 개별 콘텐츠 사용 이벤트도 없다.
+- 쉼 콘텐츠 중 화면이 있는 것은 감각연못뿐이라 감각연못만 계측한다. 나머지 셋은 화면을 만들 때 함께 계측을 추가한다.
 - 자동 수집/세션 리플레이를 쓰지 않는다. 이메일, 닉네임, SNS ID, 인증 토큰, 일기·일정·대화·바람 원문, 감정/욕구 코드·이름, 검색어, 알림 값은 속성 허용 목록에 없다.
 - 신원 복원 전 이벤트는 최대 50개, SDK 초기화 전 작업은 최대 200개만 메모리에 둔다. 넘치는 이벤트는 버리되 신원 변경은 보존한다. SDK 초기화가 실패하면 그 실행의 analytics만 비활성화한다.
 - SDK의 배치 전송/재시도를 사용한다. 서비스 DB에는 로그 테이블을 만들지 않는다. SDK는 기기에 전송 대기 이벤트와 임의 기기 ID를 저장할 수 있다.

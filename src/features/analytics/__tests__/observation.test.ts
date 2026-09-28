@@ -4,6 +4,7 @@ import { createAnalytics, type AnalyticsEnvelope } from "../client";
 it("온보딩 rest와 쉼터를 구분하며 동적 경로 원문을 화면명으로 보내지 않는다", () => {
   expect(describeRoute("(onboarding)/rest")).toEqual({ screen: "onboarding", step: "rest" });
   expect(describeRoute("(tabs)/rest")).toEqual({ screen: "rest" });
+  expect(describeRoute("rest/sense-pond")).toEqual({ screen: "sense_pond" });
   expect(describeRoute("diary/[id]/index")).toEqual({ screen: "diary_detail" });
   expect(describeRoute("private/임의 내용")).toBeNull();
 });
