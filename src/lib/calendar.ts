@@ -7,6 +7,7 @@ import {
   type ExpoCalendar,
   type ExpoCalendarEvent,
 } from "expo-calendar";
+import { Linking } from "react-native";
 
 /**
  * 기기 캘린더 경계 — **`expo-calendar` 를 부르는 곳은 여기 하나다.**
@@ -195,6 +196,20 @@ const isDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
  *
  * **여러 날에 걸친 일정은 여기서 여전히 하나다.**
  */
+/**
+ * 기기 설정의 이 앱 화면을 연다 — 거부돼 **다시 물을 수 없을 때** 남은 길은 여기뿐이다
+ * (iOS 는 한 번 거부한 권한 다이얼로그를 앱이 다시 띄울 수 없다).
+ *
+ * 던지지 않는다 — 이 파일의 다른 함수와 같은 규칙이다. 열지 못해도 화면은 그대로다.
+ */
+export async function openCalendarSettings(): Promise<void> {
+  try {
+    await Linking.openSettings();
+  } catch {
+    // 열 수 없는 기기에서도 버튼이 앱을 멈추게 하지 않는다
+  }
+}
+
 export async function readCalendarEvents(from: string, to: string): Promise<CalendarReadResult> {
   if (!isDate(from) || !isDate(to) || from > to) return { ok: false, reason: "failed" };
 

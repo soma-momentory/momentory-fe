@@ -7,6 +7,7 @@ import { Button, Card, Icon, Text } from "@/components/ds";
 import { OnboardingChat } from "@/components/onboarding/OnboardingChat";
 import { label as labelColor, layout, primary, space } from "@/design/ds";
 import { syncDeviceCalendar } from "@/features/calendar/model/foregroundSync";
+import { CALENDAR_NOTICE } from "@/features/calendar/model/notice";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { requestCalendarAccess } from "@/lib/calendar";
 
@@ -39,6 +40,7 @@ export default function CalendarLink() {
   const link = async () => {
     if (asking.current) return;
     asking.current = true;
+    track("calendar_link_chosen", { source: "onboarding", choice: "link" });
 
     const record = captureAnalytics();
     const access = await requestCalendarAccess();
@@ -57,6 +59,7 @@ export default function CalendarLink() {
   };
 
   const later = () => {
+    track("calendar_link_chosen", { source: "onboarding", choice: "later" });
     set("calendarLinked", false);
     track("onboarding_step_completed", { step: "calendar" });
     router.push("/done");
@@ -72,12 +75,11 @@ export default function CalendarLink() {
           <View style={styles.noticeHead}>
             <Icon name="calendar" size={20} color={primary.heavy} />
             <Text variant="label1" color={labelColor.strong}>
-              일정은 이렇게 사용해요
+              {CALENDAR_NOTICE.title}
             </Text>
           </View>
           <Text variant="body2Reading" color={labelColor.neutral}>
-            일정 제목을 모멘토리에 저장해 회고 질문을 만드는 데 사용해요. 캘린더 원본은 수정하지
-            않고, 다른 사람에게 공유하지 않아요.
+            {CALENDAR_NOTICE.body}
           </Text>
         </Card>
       }
