@@ -123,6 +123,7 @@ export default function My() {
     if (retro.enabled) return;
 
     const result = await requestNotificationPermission();
+    track("notify_permission_result", { source: "my", granted: result.granted });
     setPermission(result);
     if (result.granted) toggle("retro");
   };

@@ -28,6 +28,8 @@ function ActiveObserver() {
     foreground(AppState.currentState);
     const subscription = AppState.addEventListener("change", (state) => {
       foreground(state);
+      // 체류 구간을 먼저 닫는다 — 그래야 바로 아래 flush 가 그 이벤트까지 내보낸다
+      observe.current.appState(state);
       if (state === "background") flushAnalytics();
     });
     return () => subscription.remove();
@@ -37,7 +39,7 @@ function ActiveObserver() {
     // 가드가 보호 화면 대신 스플래시/로그인을 렌더하는 동안은 조회가 아니다.
     if (auth === "hydrating") return;
     if (auth === "anonymous" && route !== "(auth)/login") return;
-    observe.current(route);
+    observe.current.route(route);
   }, [route, auth]);
   return null;
 }

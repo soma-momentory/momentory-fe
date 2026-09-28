@@ -52,6 +52,8 @@ const screen = choice(
   "profile_interests",
   "profile_rest",
 );
+const leaveKind = choice("navigate", "background");
+const notificationSource = choice("onboarding", "my");
 export type ScreenName = NonNullable<ReturnType<typeof screen>>;
 export type OnboardingStepName = NonNullable<ReturnType<typeof step>>;
 
@@ -59,11 +61,14 @@ export const events = {
   app_opened: {},
   app_foregrounded: {},
   screen_viewed: { screen },
+  screen_left: { screen, duration_ms: millis, exit: leaveKind },
   login_started: { provider },
   login_succeeded: { provider, onboarding_required: bool },
   login_not_completed: { provider, outcome: choice("cancelled", "failed") },
   onboarding_step_viewed: { step },
   onboarding_step_completed: { step },
+  onboarding_step_left: { step, duration_ms: millis, exit: leaveKind },
+  notify_permission_result: { source: notificationSource, granted: bool },
   onboarding_completed: {},
   calendar_permission_result: { granted: bool },
   calendar_sync_succeeded: { created: count, updated: count, deleted: count },
