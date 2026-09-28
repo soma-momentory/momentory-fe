@@ -30,6 +30,14 @@ const provider = choice("kakao", "apple", "google");
 const pondStep = choice("see", "hear", "feel");
 const leaveKind = choice("navigate", "background");
 const notificationSource = choice("onboarding", "my");
+/**
+ * 사용자가 답하던 회고 단계. 그 밖의 단계는 other 로 모은다.
+ * ⚠ 위기 안내(safety_hold)는 **일부러 이름으로 보내지 않는다** — 정신 건강 상태를 추정할 수 있는
+ * 민감 정보라 외부 분석 도구로 내보내지 않는다(2026-09-28). 그 단계도 other 에 섞인다.
+ */
+const retroPhase = choice("diary_chat", "await_branch", "emotion_exploration", "other");
+const reminderKey = choice("retro", "daily", "weekly");
+const inputKind = choice("text", "selection");
 const screen = choice(
   "login",
   "home",
@@ -81,7 +89,20 @@ export const events = {
   schedule_visibility_changed: { schedule_id: id, hidden: bool },
   schedule_completion_changed: { schedule_id: id, completed: bool },
   retrospect_started: { retrospect_id: id },
-  retrospect_turn_succeeded: { retrospect_id: id, input_kind: choice("text", "selection") },
+  retrospect_turn_succeeded: { retrospect_id: id, input_kind: inputKind },
+  retrospect_turn_timed: {
+    retrospect_id: id,
+    phase: retroPhase,
+    turn_no: count,
+    input_kind: inputKind,
+    think_ms: millis,
+    compose_ms: millis,
+    wait_ms: millis,
+    input_chars: count,
+  },
+  retrospect_exited: { retrospect_id: id, phase: retroPhase, turn_no: count },
+  retro_cta_clicked: { source: choice("home") },
+  reminder_opened: { reminder: reminderKey },
   retrospect_branch_selected: { branch: choice("diary", "explore") },
   retrospect_completed: { retrospect_id: id },
   retrospect_request_failed: {

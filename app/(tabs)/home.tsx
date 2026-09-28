@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -380,7 +381,11 @@ export default function Home() {
              폭은 **글자 칸의 90%**이고 왼쪽 끝은 제목 「오」와 맞춘다 — 카피바라 자리는 이 칸 밖이라 겹치지 않는다 */}
             <GrassButton
               label="지금 하루 돌아보기"
-              onPress={() => router.push("/retro/confirm")}
+              onPress={() => {
+                // 홈에 온 사람 중 몇이 회고로 들어가는가 — 조회만으로는 들어간 길을 모른다
+                track("retro_cta_clicked", { source: "home" });
+                router.push("/retro/confirm");
+              }}
               style={styles.ctaButton}
             />
           </View>

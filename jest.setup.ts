@@ -34,6 +34,10 @@ jest.mock("expo-notifications", () => ({
   requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: true })),
   scheduleNotificationAsync: jest.fn(() => Promise.resolve("id")),
   cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+  DEFAULT_ACTION_IDENTIFIER: "expo.modules.notifications.actions.DEFAULT",
+  getLastNotificationResponseAsync: jest.fn(() => Promise.resolve(null)),
+  clearLastNotificationResponseAsync: jest.fn(() => Promise.resolve()),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
 // SecureStore(M2-0 세션)도 네이티브다. 인메모리 Map 으로 대신하고, 인증 테스트가
