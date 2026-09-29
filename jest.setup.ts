@@ -96,3 +96,17 @@ jest.mock("@react-native-google-signin/google-signin", () => {
     },
   };
 });
+
+// 음성 인식(회고 입력의 마이크)도 네이티브다. 기본은 「허용됨」이고 이벤트는 오지 않는다 —
+// 음성 흐름을 검사하는 테스트가 각자 이 목을 바꿔 쓴다.
+jest.mock("expo-speech-recognition", () => ({
+  __esModule: true,
+  ExpoSpeechRecognitionModule: {
+    getPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: true })),
+    requestPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: true })),
+    start: jest.fn(),
+    stop: jest.fn(),
+    abort: jest.fn(),
+  },
+  useSpeechRecognitionEvent: jest.fn(),
+}));

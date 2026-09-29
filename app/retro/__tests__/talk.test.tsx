@@ -2,6 +2,8 @@ import { render, fireEvent, act, waitFor, within } from "@testing-library/react-
 
 import RetroTalk from "../talk";
 
+import { SILENCE_MS } from "@/components/ds/voiceInput";
+
 import type { Reply, ReplyOption } from "@/features/retro/data/retroApi";
 import { startRetro, sendTurn } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
@@ -305,8 +307,98 @@ describe("계측 — 어느 질문에서 오래 걸렸는가", () => {
         compose_ms: 3_000,
         wait_ms: 2_000,
         input_chars: "발표에서 말이 막혔어요.".length,
+        voice_used: false,
       },
     ]);
+  });
+
+  it("말로 답하면 입력창에 채우기만 하고, 보낸 턴에 음성 사용을 남긴다", async () => {
+    const speech = jest.requireMock("expo-speech-recognition");
+    /** 가장 최근 렌더가 등록한 음성 이벤트 핸들러 */
+    const emit = (name: string, payload: unknown = null) =>
+      act(() => {
+        const calls = jest.mocked(speech.useSpeechRecognitionEvent).mock.calls;
+        const handler = calls.filter(([n]: [string]) => n === name).at(-1)![1];
+        handler(payload);
+      });
+    mockTurn.mockResolvedValue({ ok: true, data: reply({ text: "그랬군요." }) });
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+
+    await fireEvent.changeText(r.getByLabelText("답변"), "오늘은");
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("음성으로 입력"));
+    });
+    expect(speech.ExpoSpeechRecognitionModule.start).toHaveBeenCalledWith(
+      expect.objectContaining({ lang: "ko-KR" }),
+    );
+    await emit("start");
+    await emit("result", { isFinal: false, results: [{ transcript: "발표가" }] });
+    await emit("result", { isFinal: true, results: [{ transcript: "발표가 떨렸어요" }] });
+    // 연속 모드 — 확정된 구간 뒤에 다음 구간이 이어진다(iOS 18 은 앞에 공백을 붙여 보낸다)
+    await emit("result", { isFinal: false, results: [{ transcript: " 그래도 잘했어요" }] });
+
+    // 적어 둔 글 뒤에 이어 붙고, 보내지는 않는다
+    expect(r.getByLabelText("답변").props.value).toBe("오늘은 발표가 떨렸어요 그래도 잘했어요");
+    expect(mockTurn).not.toHaveBeenCalled();
+    expect(sent("voice_input_started")).toEqual([{ retrospect_id: "7" }]);
+
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("보내기"));
+    });
+    // 보내면 듣기를 끊는다 — 늦게 온 결과가 비운 입력창을 다시 채우지 않는다
+    expect(speech.ExpoSpeechRecognitionModule.abort).toHaveBeenCalled();
+    await emit("result", { isFinal: true, results: [{ transcript: "늦은 결과" }] });
+    expect(sent("retrospect_turn_timed")[0]).toMatchObject({ voice_used: true });
+  });
+
+  it("마지막으로 알아들은 뒤 조용한 시간이 차야 듣기를 멈춘다", async () => {
+    const speech = jest.requireMock("expo-speech-recognition");
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("음성으로 입력"));
+    });
+    const handler = (name: string) =>
+      jest
+        .mocked(speech.useSpeechRecognitionEvent)
+        .mock.calls.filter(([n]: [string]) => n === name)
+        .at(-1)![1];
+
+    // 침묵 타이머만 가로채 바로 불러 본다 — 5초를 실제로 기다리지 않는다
+    const timers = jest.spyOn(global, "setTimeout");
+    try {
+      await act(() => handler("result")({ isFinal: true, results: [{ transcript: "음" }] }));
+      const silence = timers.mock.calls.filter(([, ms]) => ms === SILENCE_MS);
+      expect(silence).toHaveLength(1);
+      expect(speech.ExpoSpeechRecognitionModule.stop).not.toHaveBeenCalled();
+      await act(() => (silence[0]![0] as () => void)());
+      expect(speech.ExpoSpeechRecognitionModule.stop).toHaveBeenCalledTimes(1);
+    } finally {
+      timers.mockRestore();
+    }
+  });
+
+  it("권한 팝업에서 거부하면 결과를 남기고 한 줄로 알린다", async () => {
+    const { ExpoSpeechRecognitionModule } = jest.requireMock("expo-speech-recognition");
+    ExpoSpeechRecognitionModule.getPermissionsAsync.mockResolvedValueOnce({
+      granted: false,
+      canAskAgain: true,
+    });
+    ExpoSpeechRecognitionModule.requestPermissionsAsync.mockResolvedValueOnce({
+      granted: false,
+      canAskAgain: false,
+    });
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("음성으로 입력"));
+    });
+
+    expect(sent("voice_permission_result")).toEqual([{ granted: false }]);
+    expect(r.getByText("마이크를 허용하면 말로 적을 수 있어요.")).toBeTruthy();
+    expect(ExpoSpeechRecognitionModule.start).not.toHaveBeenCalled();
   });
 
   it("선택지를 누른 순간이 첫 입력이다 — 고른 것은 보내지 않는다", async () => {

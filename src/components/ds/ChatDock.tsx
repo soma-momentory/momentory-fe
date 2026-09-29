@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Animated, Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import {
   background,
@@ -12,10 +12,13 @@ import {
   radius,
   size,
   space,
+  status,
   text,
+  withAlpha,
 } from "@/design/ds";
 
 import { Icon } from "./icons/Icon";
+import { useVoiceInput, type VoiceEvent } from "./voiceInput";
 
 /**
  * Momentory DS — 대화 입력 독 (`Diary.dc.html` ③ 「자유 입력」).
@@ -34,6 +37,16 @@ import { Icon } from "./icons/Icon";
  * 시안의 원 버튼은 40 인데 **44 로 올렸다** — `metrics.layout.minTouch` 가
  * 44 이고(`ds.test` 가 고정한다), 대화 중 가장 자주 눌리는 버튼을 최소 히트
  * 영역 아래로 내릴 이유가 없다. 알약 높이가 4 커지는 것이 대가다.
+ *
+ * ## 마이크는 보내기 왼쪽이다 (2026-09-29)
+ *
+ * 누르면 말을 글자로 바꿔 입력창에 채운다(`voiceInput.ts`). 보내지는 않는다.
+ * 한 번 더 누르면 멈춘다.
+ *
+ * **듣는 중은 빨간 파형이 뛴다**(2026-09-29 · 사용자 요청). 면만 채웠더니 켜진 건지
+ * 헷갈렸다 — 녹음은 빨강이 관례라 `status.negative` 를 빌린다. 마이크 자리에 파형이 서서
+ * 위아래로 뛰고, 버튼 둘레로 옅은 빨간 빛이 퍼진다. 모양·색·움직임 셋이 함께 바뀌므로
+ * 색만으로 말하지 않는다.
  */
 /**
  * 한 줄일 때 독의 높이 — 보내기(44) + 위아래 여백 + 테두리. 대화 화면이 그림을 **입력창 위에**
@@ -50,6 +63,8 @@ type Props = {
   accessibilityLabel?: string;
   /** 보낸 뒤 응답을 기다리는 동안 — 입력은 살리고 보내기만 잠근다 */
   disabled?: boolean;
+  /** 음성 입력의 상태 변화 — 화면이 계측에 쓴다 */
+  onVoice?: (event: VoiceEvent) => void;
 };
 
 export function ChatDock({
@@ -59,8 +74,10 @@ export function ChatDock({
   placeholder = "답을 적어 주세요",
   accessibilityLabel = "답변",
   disabled = false,
+  onVoice,
 }: Props) {
   const [focused, setFocused] = useState(false);
+  const voice = useVoiceInput({ value, onChangeText, onEvent: onVoice });
   const ready = value.trim().length > 0 && !disabled;
 
   return (
@@ -81,15 +98,73 @@ export function ChatDock({
 
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={voice.listening ? "음성 입력 멈추기" : "음성으로 입력"}
+        accessibilityState={{ selected: voice.listening }}
+        onPress={() => void voice.toggle()}
+        style={[styles.send, voice.listening ? styles.micListening : null]}
+      >
+        {voice.listening ? (
+          <ListeningPulse />
+        ) : (
+          <Icon name="mic" size={20} color={labelColor.neutral} />
+        )}
+      </Pressable>
+
+      <Pressable
+        accessibilityRole="button"
         accessibilityLabel="보내기"
         accessibilityState={{ disabled: !ready }}
         disabled={!ready}
-        onPress={onSend}
+        onPress={() => {
+          voice.cancel();
+          onSend();
+        }}
         style={[styles.send, ready ? styles.sendReady : styles.sendIdle]}
       >
         <Icon name="send" size={20} color={ready ? labelColor.onFill : labelColor.disabled} />
       </Pressable>
     </View>
+  );
+}
+
+/** 파형이 한 번 뛰고 빛이 한 번 퍼지는 시간 */
+const PULSE_MS = 900;
+
+/** 듣는 중 — 파형이 위아래로 뛰고 버튼 둘레로 빛이 퍼진다. 움직임은 장식이라 낭독기는 버튼 이름으로 안다 */
+function ListeningPulse() {
+  // 값은 한 번 만들어 계속 쓴다 (`TypingBubble` 과 같은 방식)
+  const [beat] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(beat, { toValue: 1, duration: PULSE_MS, useNativeDriver: true }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [beat]);
+
+  return (
+    <>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.glow,
+          {
+            opacity: beat.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] }),
+            transform: [{ scale: beat.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
+          },
+        ]}
+      />
+      <Animated.View
+        style={{
+          transform: [
+            { scaleY: beat.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.5, 1] }) },
+          ],
+        }}
+      >
+        <Icon name="pulse" size={20} color={status.negative} />
+      </Animated.View>
+    </>
   );
 }
 
@@ -208,5 +283,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sendReady: { backgroundColor: primary.heavy },
+  micListening: { backgroundColor: withAlpha(status.negative, 0.12) },
+  glow: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: radius.full,
+    backgroundColor: status.negative,
+  },
   sendIdle: { backgroundColor: interaction.disabled },
 });
