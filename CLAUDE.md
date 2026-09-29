@@ -195,7 +195,7 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 **화면은 전부 있고, 도메인도 전부 서버에서 온다** (2026-09-12 대조).
 라우트 31개 — 진입 2 · 온보딩 9 · 탭 5 · 홈 시트 2 · 회고 4 · 일기 1 · 쉼터 2 · 마이 6.
 화면 ID ↔ 라우트 매핑은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표가 정본이다.
-검증은 **76 스위트 / 1,127 테스트**가 통과하는 상태다(2026-09-12).
+검증은 **76 스위트 / 1,137 테스트**가 통과하는 상태다(2026-09-22).
 
 ⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 붙은 것과 남은 것:
 
@@ -395,21 +395,27 @@ src/lib/day.ts          ← 날짜 표기. 계산은 clock.ts 가 한다
 src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳은 전부 이걸 쓴다
 ```
 
-설치된 것(`package.json` 기준 · 2026-09-12): expo-router · expo-dev-client · expo-font ·
-expo-image · expo-splash-screen · expo-linking · react-native-svg · safe-area-context ·
-react-native-screens · **Zustand** · **expo-secure-store** ·
-**@react-native-community/datetimepicker**(08 OS 피커) ·
-**@react-native-seoul/kakao-login** + **expo-build-properties**(카카오 로그인) ·
-**expo-notifications**(회고 시간 알림 — 전부 로컬) ·
-**expo-calendar**(`09` 기기 캘린더 — **읽기만** 하고, 읽은 것을 서버로 화해한다) ·
-**expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`) ·
-**expo-apple-authentication** + **expo-crypto**(`S1` 애플 로그인 — **iOS 전용** ·
-서버 교환·nonce 까지 연결됨 2026-08-24) ·
-**@react-native-google-signin/google-signin**(`S1` 구글 로그인 — 두 플랫폼 ·
-서버 교환까지 연결됨 2026-08-25 · **nonce 는 무료 모듈에 없다**) ·
-**@amplitude/analytics-react-native** + **@react-native-async-storage/async-storage**
-(계측 · 2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔고 **앱 코드가 직접 쓰지 않는다**)
-— 네이티브 모듈이 섞여 있어 **dev client 재빌드 필요**.
+**설치 여부와 버전의 정본은 [`package.json`](package.json) 이다** — 여기 목록을
+전체 인벤토리로 두지 않는다(둘이 어긋나면 어느 쪽이 맞는지 알 수 없게 된다).
+아래는 **구조를 이해하는 데 필요한 것**만이다:
+
+- 런타임 골격 — expo-router(라우팅) · **Zustand**(클라이언트 상태) ·
+  react-native-svg(그라디언트) · expo-image(일러스트) · expo-font(Pretendard)
+- 소셜 로그인 — **@react-native-seoul/kakao-login**(카카오) ·
+  **expo-apple-authentication** + **expo-crypto**(`S1` 애플 로그인 — **iOS 전용** ·
+  서버 교환·nonce 까지 연결됨 2026-08-24) ·
+  **@react-native-google-signin/google-signin**(`S1` 구글 로그인 — 두 플랫폼 ·
+  서버 교환까지 연결됨 2026-08-25 · **nonce 는 무료 모듈에 없다**)
+- OS 경계 — **expo-secure-store**(모멘토리 토큰) ·
+  **expo-notifications**(회고 시간 알림 — 전부 로컬) ·
+  **expo-calendar**(`09` 기기 캘린더 — **읽기만** 하고, 읽은 것을 서버로 화해한다) ·
+  **expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`)
+- 계측 — **@amplitude/analytics-react-native** + **@react-native-async-storage/async-storage**
+  (2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔고 **앱 코드가 직접 쓰지 않는다**)
+
+네이티브 모듈이 섞여 있어 **dev client 재빌드 필요**.
+⚠ **`08` 회고 시간 선택은 외부 피커 모듈이 아니다** — `src/components/ds/WheelPicker.tsx`
+의 3열 자체 구현을 쓴다(`app/(onboarding)/retro-time.tsx` · `app/(tabs)/my.tsx`).
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
