@@ -66,6 +66,9 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | retrospect_turn_timed        | 대화 턴 성공, 화면에서 잰 시간              | retrospect_id, phase, turn_no 외 (아래)   |
 | retrospect_exited            | 회고가 끝나기 전에 닫음                     | retrospect_id, phase, turn_no             |
 | retro_cta_clicked            | 홈의 지금 하루 돌아보기 클릭                | source: home                              |
+| voice_input_started          | 회고 입력창의 마이크로 음성 인식이 시작됨   | retrospect_id                             |
+| voice_permission_result      | 마이크 권한 팝업의 응답                     | granted                                   |
+| voice_input_failed           | 음성 인식 실패 (아래)                       | code: no_speech/network/unavailable/other |
 | reminder_opened              | 예약한 알림을 눌러 앱을 엶                  | reminder: retro/daily/weekly              |
 | retrospect_branch_selected   | 고정 분기 선택 제출                         | branch: diary/explore                     |
 | retrospect_completed         | done=true이면서 phase=complete인 정상 응답  | retrospect_id                             |
@@ -118,9 +121,18 @@ think_ms 는 질문이 화면에 선 때부터 첫 입력(첫 글자 또는 선�
 쓰기가 길면 할 말이 많다 — 합치면 둘을 가를 수 없어 나눈다. input_chars 는 보낸 글자 수이고
 선택지는 0 이다. 내용은 보내지 않는다. phase 는 사용자가 답하던 단계(diary_chat, await_branch,
 emotion_exploration, other)이고, turn_no 는 그 회고에서 성공한 턴의 순번이다. retrospect_exited 의
-turn_no 는 나가기 전까지 성공한 턴 수다.
+turn_no 는 나가기 전까지 성공한 턴 수다. voice_used 는 그 턴에서 음성 입력을 한 번이라도 켰는지다
+(2026-09-29 · 선택지 턴은 늘 false).
 ⚠ 위기 안내 단계(safety_hold)는 **이름으로 보내지 않는다.** 정신 건강 상태를 추정할 수 있는 민감
 정보라 외부 분석 도구로 내보내지 않고 other 에 섞는다.
+
+**음성 입력**(2026-09-29)은 OS 음성 인식기를 쓰고, 인식한 글자는 입력창에 채울 뿐 보내지 않는다.
+voice_input_started 는 인식기가 실제로 듣기 시작했을 때 보낸다(버튼을 누른 것만으로는 아니다).
+voice_permission_result 는 팝업이 **실제로 떴을 때만** 보낸다. 이미 허용했거나 다시 물을 수 없는
+상태(이때는 설정을 연다)는 보내지 않는다. voice_input_failed 의 code 는 인식기 오류를 넷으로 묶은
+것이고(no_speech 는 말이 없었음 · unavailable 은 인식기나 한국어를 쓸 수 없음), 사용자가 멈춘 것은
+실패로 세지 않는다. 인식된 글과 오류 원문은 보내지 않는다. 말로 답한 턴의 비율은
+retrospect_turn_timed 의 voice_used 로 본다.
 
 **reminder_opened** 는 우리가 예약한 알림을 눌러 앱을 열었을 때 한 번 보낸다. 앱이 꺼져 있다가
 알림으로 켜진 경우도 센다. 알림을 받은 것만으로는 보내지 않는다(로컬 알림이라 도착을 알 수 없다).

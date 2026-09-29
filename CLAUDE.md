@@ -409,7 +409,9 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 - OS 경계 — **expo-secure-store**(모멘토리 토큰) ·
   **expo-notifications**(회고 시간 알림 — 전부 로컬) ·
   **expo-calendar**(`09` 기기 캘린더 — **읽기만** 하고, 읽은 것을 서버로 화해한다) ·
-  **expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`)
+  **expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`) ·
+  **expo-speech-recognition**(회고 입력의 음성 입력 — OS 인식기라 외부 STT 가 없다 ·
+  `src/components/ds/voiceInput.ts`)
 - 계측 — **@amplitude/analytics-react-native** + **@react-native-async-storage/async-storage**
   (2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔고 **앱 코드가 직접 쓰지 않는다**)
 
