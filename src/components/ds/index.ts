@@ -55,6 +55,7 @@ export { ChatScaffold } from "./ChatScaffold";
 export { ChoiceGrid, type Choice } from "./ChoiceGrid";
 export { ChatBubble, TypingBubble } from "./ChatBubble";
 export { CHAT_DOCK_HEIGHT, ChatDock } from "./ChatDock";
+export type { VoiceEvent } from "./voiceInput";
 export { Slider } from "./Slider";
 export { singleLineInput } from "./singleLineInput";
 export { Spinner } from "./Spinner";

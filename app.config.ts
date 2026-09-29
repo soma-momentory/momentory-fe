@@ -240,6 +240,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         remindersPermission: false,
       },
     ],
+    // 회고 음성 입력(2026-09-29) — OS 음성 인식기를 쓴다(외부 STT API 없음).
+    // 권한 팝업은 설치·실행 때가 아니라 입력창의 마이크 버튼을 처음 누를 때 뜬다.
+    // Android 는 RECORD_AUDIO 와 Google 음성 인식 서비스 조회(<queries>)가 추가된다.
+    [
+      "expo-speech-recognition",
+      {
+        microphonePermission: "회고를 말로 적을 수 있도록 마이크를 사용해요.",
+        speechRecognitionPermission:
+          "말한 내용을 글자로 바꿔 회고 입력창에 넣는 데 사용해요. 음성은 저장하지 않아요.",
+      },
+    ],
     // 카카오 SDK 는 Maven Central 에 없다 — 카카오 저장소를 Gradle 에 알린다.
     // (`@react-native-seoul/kakao-login` README 「EXPO」)
     //

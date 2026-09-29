@@ -11,6 +11,7 @@ import {
   Chip,
   Text,
   TypingBubble,
+  type VoiceEvent,
 } from "@/components/ds";
 import {
   background,
@@ -126,9 +127,12 @@ export default function RetroTalk() {
   const askedAt = useRef(0);
   const firstInputAt = useRef<number | null>(null);
   const turnNo = useRef(0);
+  /** 이번 턴에 음성 입력을 켰나 — 말로 답한 턴이 얼마나 되는지 본다 */
+  const voiceUsed = useRef(false);
   useEffect(() => {
     askedAt.current = clock.now();
     firstInputAt.current = null;
+    voiceUsed.current = false;
   }, [lastReply, clock]);
   useEffect(() => {
     turnNo.current = 0;
@@ -210,6 +214,7 @@ export default function RetroTalk() {
         wait_ms: waitMs,
         // 내용은 보내지 않는다 — 길이만
         input_chars: input.content?.length ?? 0,
+        voice_used: input.content != null && voiceUsed.current,
       });
       applyServerReply(result.data);
     } else setError(FAILURE_MESSAGES[result.code]);
@@ -231,6 +236,23 @@ export default function RetroTalk() {
       .filter((l): l is string => l != null);
     if (labels.length > 0) addMyTurn(labels.join(", "));
     void runTurn({ optionIds: pickedIds });
+  };
+
+  /** 음성 입력의 상태 변화 — 계측하고, 실패·거부는 독 위의 한 줄로 알린다 */
+  const onVoice = (event: VoiceEvent) => {
+    if (event.type === "started") {
+      if (sessionId != null) track("voice_input_started", { retrospect_id: String(sessionId) });
+      voiceUsed.current = true;
+      markInput();
+      setError(null);
+    } else if (event.type === "permission") {
+      track("voice_permission_result", { granted: event.granted });
+      if (!event.granted) setError("마이크를 허용하면 말로 적을 수 있어요.");
+    } else {
+      track("voice_input_failed", { code: event.code });
+      // 말이 없었던 것은 알릴 일이 아니다 — 버튼이 원래대로 돌아오는 것으로 충분하다
+      if (event.code !== "no_speech") setError("음성을 알아듣지 못했어요. 직접 적어 주세요.");
+    }
   };
 
   const retryStart = () => {
@@ -357,6 +379,7 @@ export default function RetroTalk() {
             setDraftText(text);
           }}
           onSendText={sendText}
+          onVoice={onVoice}
           customOpen={customOpen}
         />
       }
@@ -455,6 +478,7 @@ type DockProps = {
   draftText: string;
   onChangeDraft: (v: string) => void;
   onSendText: () => void;
+  onVoice: (event: VoiceEvent) => void;
   /** `직접 적기` 로 열린 입력창 */
   customOpen: boolean;
 };
@@ -531,6 +555,7 @@ function RetroDock(p: DockProps) {
           value={p.draftText}
           onChangeText={p.onChangeDraft}
           onSend={p.onSendText}
+          onVoice={p.onVoice}
           disabled={p.pending}
           accessibilityLabel={p.customOpen ? "직접 적기" : "답변"}
           placeholder={p.customOpen ? "직접 적어 주세요" : undefined}
