@@ -90,6 +90,7 @@ export {
   zIndex,
   motion,
   cardRipple,
+  babaBlink,
 } from "./metrics";
 
 /** 묶음 하나로 들고 다닐 때 — `import ds from "@/design/ds"` */
