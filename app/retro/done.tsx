@@ -1,10 +1,11 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
-import { Button, Card, Icon, Screen, Text } from "@/components/ds";
-import { label as labelColor, layout, primary, space, status, withAlpha } from "@/design/ds";
+import { Button, Card, Screen, Text } from "@/components/ds";
+import { label as labelColor, layout, space } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
 import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
+import { RetroOnsen } from "@/features/retro/ui/RetroOnsen";
 import { useTodayContext } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
 
@@ -17,13 +18,18 @@ const emotionNames = (keys: string[]): string =>
     .join(", ");
 
 /**
- * `C7` · 저장 완료 → 홈
+ * `C7` · 저장 완료 → 쉼터
  *
  * `DESIGN.md` 「일기」 5번: 「저장 완료: **바람카드가 없으면 안내만, 있으면 쉼터와
  * 동일한 카드를 함께 보여줘요**」
  *
- * - **다음 행동 제안을 늘리지 않는다** — 버튼은 `홈으로 돌아가기` 하나이고,
- *   카드가 있을 때만 보조로 `쉼터에서 보기` 가 붙는다(시안 ④-d2)
+ * - **다음 행동 제안을 늘리지 않는다** — 버튼은 `쉼터로 가기` 하나이고,
+ *   카드가 있을 때만 보조로 `바람카드 보기` 가 붙는다(시안 ④-d2)
+ * - ⚠ **주 버튼은 홈이 아니라 쉼터(R1)로 간다**(2026-10-03 · 사용자 요청). 일기를 막
+ *   마친 자리에서 하루 일정(홈)으로 돌려보내기보다 쉬어 가는 곳으로 잇는다. 보조 버튼은
+ *   원래 「쉼터에서 보기」였는데, 주 버튼과 같은 말이 되어 **가는 곳(바람카드 R2) 이름으로** 바꿨다
+ * - 맨 위의 초록 체크 원은 **온천 카피바라 그림으로 바뀌었다**(2026-10-03 · 사용자 요청 ·
+ *   `features/retro/ui/RetroOnsen`). 저장됐다는 확인은 문안이 하고, 그림은 곁에 있을 뿐이다
  * - ⚠ **카드가 없는 날은 아무 설명도 하지 않는다** — 시안 주석이 「「오늘은 카드가
  *   없어요」 금지」라고 못박았다. 없는 것을 굳이 알리면 없는 것이 결핍이 된다
  * - **점수·연속 일수·배지·축하 연출을 쓰지 않는다**
@@ -47,7 +53,7 @@ export default function RetroDone() {
   const needs = wishCard != null ? wishCard.needs.map((n) => n.word).join(", ") : "";
 
   /** 나가는 길은 둘 뿐이고 **둘 다 회고를 닫고** 나간다 */
-  const leave = (to: "/home" | "/rest/cards") => {
+  const leave = (to: "/(tabs)/rest" | "/rest/cards") => {
     resetRetro();
     router.replace(to);
   };
@@ -56,9 +62,9 @@ export default function RetroDone() {
     <Screen>
       <View style={styles.body}>
         <View style={styles.copy}>
-          {/* 체크 원 56 — 축하 연출이 아니라 확인 표시다 */}
-          <View style={styles.check}>
-            <Icon name="circle-check" size={24} color={status.positive} />
+          {/* 온천 카피바라 — 옛 체크 원 자리다. 축하 연출이 아니라 쉬고 있는 장면이다 */}
+          <View style={styles.onsen}>
+            <RetroOnsen />
           </View>
           <Text variant="title3" color={labelColor.strong} style={styles.centered}>
             오늘의 일기를 저장했어요.
@@ -137,15 +143,18 @@ export default function RetroDone() {
       </View>
 
       <View style={styles.dock}>
-        <Button label="홈으로 돌아가기" fill onPress={() => leave("/home")} />
+        {/*
+          `/rest` 가 아니라 `/(tabs)/rest` 다 — `/rest` 는 (tabs)·(onboarding) 두 그룹에 같은
+          경로가 있어 온보딩으로 샌다. 감각연못의 「쉼터로 돌아가기」와 같은 주소다.
+        */}
+        <Button label="쉼터로 가기" fill onPress={() => leave("/(tabs)/rest")} />
         {wishCard != null ? (
           <View style={styles.secondary}>
             {/*
-              쉼터 바람카드(R2)로 바로 간다. `/rest` 는 (tabs)·(onboarding) 두 그룹에
-              같은 경로가 있어 온보딩으로 새는 반면, `/rest/cards` 는 실제 경로라 안전하다.
+              쉼터 바람카드(R2)로 바로 간다. `/rest/cards` 는 그룹이 없는 실제 경로라 안전하다.
             */}
             <Button
-              label="쉼터에서 보기"
+              label="바람카드 보기"
               variant="text"
               size="small"
               onPress={() => leave("/rest/cards")}
@@ -160,16 +169,7 @@ export default function RetroDone() {
 const styles = StyleSheet.create({
   body: { flex: 1, justifyContent: "center", gap: 28 },
   copy: { alignItems: "center", gap: space.sm },
-  check: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    // 초록 18% 원 — 시안의 `rgba(124,158,134,0.18)` 자리다
-    backgroundColor: withAlpha(primary.normal, 0.18),
-    marginBottom: 2,
-  },
+  onsen: { marginBottom: space.xs },
   centered: { textAlign: "center" },
 
   card: { gap: 14 },

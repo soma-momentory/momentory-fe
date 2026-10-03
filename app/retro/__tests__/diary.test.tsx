@@ -273,16 +273,18 @@ describe("감정 탐색 없이 — 바람 카드도 없다", () => {
 });
 
 describe("완료 — 허브로 만들지 않는다", () => {
-  it("바람 카드가 있으면 체크 · 두 줄 · 카드 · 버튼 둘이다", async () => {
-    const { getByText } = await render(<RetroDone />);
+  it("바람 카드가 있으면 그림 · 두 줄 · 카드 · 버튼 둘이다", async () => {
+    const { getByText, getByTestId } = await render(<RetroDone />);
+
+    expect(getByTestId("retro-onsen", { includeHiddenElements: true })).toBeTruthy();
 
     expect(getByText("오늘의 일기를 저장했어요.")).toBeTruthy();
     expect(getByText("오늘 이야기에서 마음을 하나 챙겨봤어요.")).toBeTruthy();
     expect(getByText("7월 27일 카드")).toBeTruthy();
     expect(getByText(SEED_WISH.situation)).toBeTruthy();
     expect(getByText(SEED_WISH.smallAction as string)).toBeTruthy();
-    expect(getByText("홈으로 돌아가기")).toBeTruthy();
-    expect(getByText("쉼터에서 보기")).toBeTruthy();
+    expect(getByText("쉼터로 가기")).toBeTruthy();
+    expect(getByText("바람카드 보기")).toBeTruthy();
   });
 
   it("카드가 없으면 아무 설명도 하지 않는다 — 「오늘은 카드가 없어요」 금지", async () => {
@@ -292,7 +294,16 @@ describe("완료 — 허브로 만들지 않는다", () => {
     expect(getByText("오늘의 일기를 저장했어요.")).toBeTruthy();
     expect(queryByText(/카드가 없|카드는 없/)).toBeNull();
     expect(queryByText("오늘 이야기에서 마음을 하나 챙겨봤어요.")).toBeNull();
-    expect(queryByText("쉼터에서 보기")).toBeNull();
+    expect(queryByText("바람카드 보기")).toBeNull();
+  });
+
+  it("온천 카피바라 그림은 장식이다 — 눌리지 않고 낭독기에도 없다", async () => {
+    seedCompleted(SEED_DIARY, null);
+    const { getByTestId } = await render(<RetroDone />);
+
+    const face = getByTestId("retro-onsen", { includeHiddenElements: true });
+    expect(face.props.accessible).toBe(false);
+    expect(face.props.accessibilityElementsHidden).toBe(true);
   });
 
   it("점수·연속 일수·배지·축하 연출을 쓰지 않는다", async () => {
@@ -304,21 +315,29 @@ describe("완료 — 허브로 만들지 않는다", () => {
   it("나가면 회고 한 벌이 비워진다 — 다음 회고에 앞 대화가 섞이지 않게", async () => {
     const { getByText } = await render(<RetroDone />);
 
-    await fireEvent.press(getByText("홈으로 돌아가기"));
+    await fireEvent.press(getByText("쉼터로 가기"));
 
     expect(useRetro.getState().wishCard).toBeNull();
     expect(useRetro.getState().diary).toBeNull();
   });
 
-  it("홈으로 돌아간다", async () => {
-    const { getByText } = await render(<RetroDone />);
-    await fireEvent.press(getByText("홈으로 돌아가기"));
-    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
+  it("홈이 아니라 쉼터(R1)로 간다 — 온보딩 `/rest` 로 새지 않게 그룹까지 적는다", async () => {
+    const { getByText, queryByText } = await render(<RetroDone />);
+    expect(queryByText("홈으로 돌아가기")).toBeNull();
+    await fireEvent.press(getByText("쉼터로 가기"));
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest");
   });
 
-  it("[쉼터에서 보기] 는 쉼터 바람카드(R2)로 간다", async () => {
+  it("카드가 없어도 쉼터로 간다", async () => {
+    seedCompleted(SEED_DIARY, null);
     const { getByText } = await render(<RetroDone />);
-    await fireEvent.press(getByText("쉼터에서 보기"));
+    await fireEvent.press(getByText("쉼터로 가기"));
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest");
+  });
+
+  it("[바람카드 보기] 는 쉼터 바람카드(R2)로 간다", async () => {
+    const { getByText } = await render(<RetroDone />);
+    await fireEvent.press(getByText("바람카드 보기"));
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/rest/cards");
   });
 });
