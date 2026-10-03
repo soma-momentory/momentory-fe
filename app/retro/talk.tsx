@@ -42,6 +42,7 @@ import {
 } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
 import { RETRO_BABA_LEFT, RetroBaba } from "@/features/retro/ui/RetroBaba";
+import { RETRO_BABA_PEEK_LEFT, RetroBabaPeek } from "@/features/retro/ui/RetroBabaPeek";
 import { RETRO_BABA_LIFT } from "@/features/retro/ui/RetroRug";
 
 /**
@@ -59,6 +60,9 @@ import { RETRO_BABA_LIFT } from "@/features/retro/ui/RetroRug";
  * 대화는 바바의 **머리 위에서 끝난다** — 새 질문이 머리 위에 뜨고, 내 답은 지금처럼 그 질문 바로
  * 밑에 쌓인다. 바바는 입력창 위에 떠 앉는다. 선택지가 뜨면 독이 자라며 바바를 아래부터 덮는다. 입력창은
  * 키보드 위로 올라가고 바바는 제자리다.
+ *
+ * **키보드가 올라와 있는 동안은 바바가 입력창 위로 고개를 내민다**(2026-10-03 · 사용자 요청 ·
+ * `RetroBabaPeek`). 앉은 바바가 키보드에 덮여 안 보이던 자리다 — 키보드가 내려가면 다시 앉는다.
  *
  * ⚠ **러그(`RetroRug`)는 지금 깔지 않는다**(2026-09-11 · 사용자 요청으로 빼 보는 중). 컴포넌트는 남겨 뒀다 —
  * 되돌리려면 `ChatScaffold` 에 `backdrop={<RetroRug />}` 한 줄이면 된다. 바바를 띄우는 높이는 러그와 함께
@@ -355,6 +359,8 @@ export default function RetroTalk() {
       companion={<RetroBaba />}
       companionLift={RETRO_BABA_LIFT}
       companionLeft={RETRO_BABA_LEFT}
+      companionRaised={<RetroBabaPeek />}
+      companionRaisedLeft={RETRO_BABA_PEEK_LEFT}
       dock={
         <RetroDock
           optionList={optionList}

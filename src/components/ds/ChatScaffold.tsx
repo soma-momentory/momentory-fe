@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import { layout, space } from "@/design/ds";
 
@@ -57,6 +64,20 @@ type Props = {
    * 그림의 왼쪽 끝 — Screen 의 좌우 패딩(20) 안쪽이 0 이다. **음수면 패딩 밖으로** 나가 화면 끝에 가까워진다.
    */
   companionLeft?: number;
+  /**
+   * **키보드가 올라와 있는 동안** 앉은 그림 대신 보이는 그림 — 독의 **윗변 위에** 선다
+   * (2026-10-03 · 사용자 요청 · 회고의 고개 내민 바바). 키보드가 올라오면 앉은 그림은 키보드·독에
+   * 덮여 사라지므로, 그동안 입력창 위로 고개를 내밀게 한다. 키보드가 내려가면 다시 앉은 그림이다.
+   *
+   * 독 **안에서** 절대 위치로 서므로 독이 움직이면(키보드 · 여러 줄 입력) 따라 움직인다.
+   * 독 아래로 걸쳐야 하는 몫(앞발)은 그림이 음수 아래 여백으로 스스로 낸다 — 여기서 잰 높이는
+   * 독 위로 솟은 만큼이고, 대화가 그만큼 비켜서 머리 위에서 끝난다.
+   */
+  companionRaised?: ReactNode;
+  /**
+   * 고개 내민 그림의 왼쪽 끝 — 독의 왼쪽 끝이 0 이다. 주지 않으면 독 위 **가운데**에 선다.
+   */
+  companionRaisedLeft?: number;
   /** 화면 전체에 까는 장면 한 겹 — `Screen` 의 `backdrop` 으로 넘긴다(회고 대화의 러그) */
   backdrop?: ReactNode;
 };
@@ -70,6 +91,8 @@ export function ChatScaffold({
   companion,
   companionLift = 0,
   companionLeft = 0,
+  companionRaised,
+  companionRaisedLeft,
   backdrop,
 }: Props) {
   const scroll = useRef<ScrollView>(null);
@@ -89,9 +112,14 @@ export function ChatScaffold({
   const [layerHeight, setLayerHeight] = useState(0);
   const [dockTop, setDockTop] = useState(0);
   const [companionHeight, setCompanionHeight] = useState(0);
+  /** 키보드가 올라와 있나 — 앉은 그림과 고개 내민 그림(`companionRaised`)을 이걸로 바꿔 든다 */
+  const [keyboardShown, setKeyboardShown] = useState(false);
+  const [raisedHeight, setRaisedHeight] = useState(0);
+  const raised = companionRaised != null && dock != null && keyboardShown;
   const dockFromBottom = dock != null ? layerHeight - dockTop : 0;
-  const clearance =
-    companion != null && layerHeight > 0
+  const clearance = raised
+    ? raisedHeight
+    : companion != null && layerHeight > 0
       ? Math.max(0, companionLift + companionHeight - dockFromBottom)
       : 0;
 
@@ -126,8 +154,20 @@ export function ChatScaffold({
    * 두 번 불려도 안전하다 — 이미 바닥이면 두 번째는 아무 일도 하지 않는다.
    */
   useEffect(() => {
-    const shown = Keyboard.addListener("keyboardDidShow", toBottom);
-    return () => shown.remove();
+    const shown = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardShown(true);
+      toBottom();
+    });
+    // 내려갈 때는 iOS 가 미리 알려 준다 — 독이 내려가는 동안 고개 내민 그림이 허공에 남지 않게.
+    // 안드로이드에는 `Will` 이벤트가 없다
+    const hidden = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardShown(false),
+    );
+    return () => {
+      shown.remove();
+      hidden.remove();
+    };
     // 화면이 살아 있는 동안 한 번만 건다 — `toBottom` 은 ref 만 읽어서 다시 만들 이유가 없다
   }, []);
 
@@ -156,7 +196,12 @@ export function ChatScaffold({
           <View
             testID="ds-chat-companion"
             pointerEvents="none"
-            style={[styles.companion, { bottom: companionLift, left: companionLeft }]}
+            style={[
+              styles.companion,
+              { bottom: companionLift, left: companionLeft },
+              // 고개 내민 그림이 서 있는 동안은 숨긴다 — 독 둘레의 빈 곳으로 귀가 비쳐 둘이 함께 보이지 않게
+              raised ? styles.hidden : null,
+            ]}
             onLayout={(e) => setCompanionHeight(e.nativeEvent.layout.height)}
           >
             {companion}
@@ -168,7 +213,7 @@ export function ChatScaffold({
           // 슬라이더가 이 스크롤을 잠그는지 테스트가 여기로 확인한다(`__tests__/slider`)
           testID="ds-chat-scroll"
           style={styles.fill}
-          contentContainerStyle={styles.conversation}
+          contentContainerStyle={[styles.conversation, raised ? styles.conversationOnPeek : null]}
           showsVerticalScrollIndicator={false}
           // 키보드가 올라온 채로도 칩·버튼이 한 번에 눌린다 — 안 그러면 첫 탭이
           // 키보드를 내리는 데 쓰이고 사라진다
@@ -193,6 +238,21 @@ export function ChatScaffold({
             onLayout={(e) => setDockTop(e.nativeEvent.layout.y)}
           >
             {dock}
+            {raised ? (
+              <View
+                testID="ds-chat-companion-raised"
+                pointerEvents="none"
+                style={[
+                  styles.raised,
+                  companionRaisedLeft != null
+                    ? { left: companionRaisedLeft, alignItems: "flex-start" }
+                    : null,
+                ]}
+                onLayout={(e) => setRaisedHeight(e.nativeEvent.layout.height)}
+              >
+                {companionRaised}
+              </View>
+            ) : null}
           </View>
         ) : null}
       </KeyboardAvoidingView>
@@ -205,6 +265,9 @@ const styles = StyleSheet.create({
   // 회피 층의 바닥(= 키보드가 없을 때 독의 아랫변)에서 `companionLift` 만큼 띄우고, 패딩 안쪽 왼쪽 끝에서
   // `companionLeft` 만큼 옮겨 앉는다
   companion: { position: "absolute" },
+  hidden: { opacity: 0 },
+  // 독의 윗변에 아랫변을 대고 가운데 선다 — 독 뒤가 아니라 **앞에** 그려져 앞발이 입력창 위에 걸친다
+  raised: { position: "absolute", bottom: "100%", left: 0, right: 0, alignItems: "center" },
   // 대화는 아래 정렬 — 적을 때도 바닥에 붙어 있고 위가 빈다
   conversation: {
     flexGrow: 1,
@@ -212,5 +275,8 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: space.lg,
   },
+  // 고개 내민 그림이 서 있으면 대화가 **머리 바로 위에서** 끝난다(2026-10-03 · 사용자 요청) — 키보드가 올라와
+  // 대화 칸이 좁은 동안이라 머리와 말풍선 사이를 거의 비우지 않는다
+  conversationOnPeek: { paddingBottom: space.xs },
   dock: { gap: space.md },
 });

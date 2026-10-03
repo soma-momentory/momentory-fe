@@ -265,6 +265,25 @@ export const cardRipple = {
   fromScale: 0.08,
 } as const;
 
+/**
+ * 입력창 위로 고개 내민 바바가 **눈을 깜빡이는** 박자 (2026-10-03 · 사용자 요청 · `RetroBabaPeek`).
+ *
+ * 사람이 보기에 편한 깜빡임은 몇 초에 한 번 · 0.1초 남짓이다. 늘 같은 간격이면 기계처럼 보여서
+ * 간격을 `interval` 에서 `jitter` 만큼 흔들고, 가끔(`doubleChance`) 두 번 연달아 깜빡인다.
+ */
+export const babaBlink = {
+  /** 깜빡임 사이 — 평균 */
+  interval: 3200,
+  /** 간격을 ± 이만큼 흔든다 */
+  jitter: 1200,
+  /** 눈을 감고 있는 시간 */
+  closed: 110,
+  /** 두 번 연달아 깜빡일 때 사이에 뜨고 있는 시간 */
+  between: 140,
+  /** 두 번 연달아 깜빡일 확률 */
+  doubleChance: 0.25,
+} as const;
+
 export const metrics = {
   space,
   radius,

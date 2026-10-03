@@ -120,6 +120,54 @@ describe("ChatScaffold", () => {
       expect(r.queryByTestId("ds-chat-clearance")).toBeNull();
     });
 
+    /**
+     * 키보드가 올라와 있는 동안은 **고개 내민 그림**(`companionRaised`)이 독 위에 서고 앉은 그림은 숨는다.
+     * 대화는 고개 내민 그림의 머리 위에서 끝난다 — 키보드가 내려가면 다시 앉은 그림이다.
+     */
+    it("키보드가 올라오면 고개 내민 그림으로 바꾸고, 내려가면 다시 앉힌다", async () => {
+      const handlers: Record<string, () => void> = {};
+      const addListener = jest
+        .spyOn(Keyboard, "addListener")
+        .mockImplementation((event, handler) => {
+          handlers[event] = handler as () => void;
+          return { remove: () => {} } as ReturnType<typeof Keyboard.addListener>;
+        });
+      const raf = jest.spyOn(globalThis, "requestAnimationFrame").mockImplementation(() => 0);
+
+      const r = await render(
+        <ChatScaffold
+          dock={<Text variant="body2">독</Text>}
+          companion={<Text variant="body2">바바</Text>}
+          companionRaised={<Text variant="body2">고개</Text>}
+        >
+          <Text variant="body2">질문</Text>
+        </ChatScaffold>,
+      );
+
+      expect(r.queryByTestId("ds-chat-companion-raised")).toBeNull();
+
+      await act(async () => {
+        handlers.keyboardDidShow?.();
+      });
+      await fireEvent(r.getByTestId("ds-chat-layer"), "layout", layoutOf(700));
+      await fireEvent(r.getByTestId("ds-chat-dock"), "layout", layoutOf(52, 348));
+      await fireEvent(r.getByTestId("ds-chat-companion-raised"), "layout", layoutOf(92));
+
+      // 고개 내민 그림이 독 위로 솟은 만큼 대화가 비킨다 · 앉은 그림은 숨는다
+      expect(r.getByTestId("ds-chat-clearance")).toHaveStyle({ height: 92 });
+      expect(r.getByTestId("ds-chat-companion")).toHaveStyle({ opacity: 0 });
+
+      await act(async () => {
+        (handlers.keyboardWillHide ?? handlers.keyboardDidHide)?.();
+      });
+
+      expect(r.queryByTestId("ds-chat-companion-raised")).toBeNull();
+      expect(r.getByTestId("ds-chat-companion")).not.toHaveStyle({ opacity: 0 });
+
+      addListener.mockRestore();
+      raf.mockRestore();
+    });
+
     it("그림이 없으면 비울 것도 없다", async () => {
       const r = await render(
         <ChatScaffold dock={<Text variant="body2">독</Text>}>

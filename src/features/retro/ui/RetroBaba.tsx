@@ -32,6 +32,12 @@ export const RETRO_BABA_WIDTH = 260;
  */
 export const RETRO_BABA_LEFT = -12;
 
+/**
+ * 코 한가운데가 그림 폭의 어디인가(900 폭에서 473) — 고개 내민 바바(`RetroBabaPeek`)가 키보드가
+ * 올라왔을 때 **같은 가로 자리**에 서도록 이 값으로 맞춘다.
+ */
+export const RETRO_BABA_NOSE_X = 473 / 900;
+
 /** 가로 ÷ 세로 — 잘라 낸 그림에서 잰 값(900 × 818 · `scripts/keyout-retro-baba.py`) */
 const ASPECT = 900 / 818;
 
