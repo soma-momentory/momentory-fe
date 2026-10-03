@@ -193,7 +193,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 올렸다가 출시를 지웠는데, Play 는 **아티팩트가 라이브러리에 들어간 시점에**
     // 번호를 소비한다 — 출시를 지워도 그 번호는 돌아오지 않는다. 그래서 4 다.
     // (테스터에게 나가지는 않았다. 출시 전에 지웠다.)
-    versionCode: 4,
+    versionCode: 6,
   },
 
   // ⚠ 플러그인의 유일한 출처. `npx expo install` 이 app.json 을 만들어 여기 목록을
