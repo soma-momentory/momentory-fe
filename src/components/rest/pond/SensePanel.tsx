@@ -13,6 +13,7 @@ import {
 
 import { VeilGradient } from "./PondTopVeil";
 import { SensePointMark } from "./SensePointMark";
+import { SceneCard } from "../scene/SceneChrome";
 
 /**
  * 연못 바닥에 뜨는 **감각 칸 묶음**
@@ -100,27 +101,36 @@ export function SensePanel({ current, found, footer, bottomInset, onLayout }: Pr
         },
       ]}
     >
-      <PanelVeil />
-      {finished ? <DoneTitle /> : null}
-
-      <View style={styles.row}>
-        {/* 줄의 높이만 잡는 보이지 않는 칸 — 진짜 칸은 가운데를 기준으로 떠 있다 */}
-        <View
-          style={styles.sizer}
-          pointerEvents="none"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          <View style={styles.chipSpace} />
-          <Text variant="label1"> </Text>
-          <Text variant="body1"> </Text>
-        </View>
-        {shown.map((it, i) => (
-          <PanelCell key={it.id} step={it} found={found[it.id]} index={i} count={shown.length} />
-        ))}
-      </View>
-
-      {footer != null ? <View style={styles.footer}>{footer}</View> : null}
+      {finished ? (
+        <DoneCard found={found} footer={footer} />
+      ) : (
+        <>
+          <PanelVeil />
+          <View style={styles.row}>
+            {/* 줄의 높이만 잡는 보이지 않는 칸 — 진짜 칸은 가운데를 기준으로 떠 있다 */}
+            <View
+              style={styles.sizer}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <View style={styles.chipSpace} />
+              <Text variant="label1"> </Text>
+              <Text variant="body1"> </Text>
+            </View>
+            {shown.map((it, i) => (
+              <PanelCell
+                key={it.id}
+                step={it}
+                found={found[it.id]}
+                index={i}
+                count={shown.length}
+              />
+            ))}
+          </View>
+          {footer != null ? <View style={styles.footer}>{footer}</View> : null}
+        </>
+      )}
     </Animated.View>
   );
 }
@@ -201,6 +211,48 @@ function PanelVeil() {
 /** 위쪽 빛(`pond-top-veil`)과 이름이 겹치지 않게 — 그림 안에서만 쓰는 이름이다 */
 const VEIL_ID = "pond-panel-veil";
 
+/**
+ * 완료의 판 — **크림 카드 하나**에 「다 채웠어요」와 가득 찬 셋을 작게 담고, 그 아래 돌아가는
+ * 버튼 (2026-10-05 · 쉼 콘텐츠 공통 규칙).
+ *
+ * 진행 중의 판(빛 한 겹 위의 큰 칸)에 제목과 버튼을 쌓으면 판이 화면 아래 3분의 1 을 넘어
+ * 크림빛이 카피바라 몸 전체를 덮었다 — 예전에는 장면을 위로 비켜 올려 피했는데, 그게
+ * 화면이 딸려 오는 것처럼 보여 지웠다. 그래서 완료에는 판을 낮춘다: 셈은 이름 없이
+ * 표와 「3 / 3」만 한 줄로, 빛 한 겹 대신 카드로. 카피바라는 발끝만 카드 뒤로 들어간다.
+ */
+function DoneCard({
+  found,
+  footer,
+}: {
+  found: Record<SensePondStepId, number>;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <>
+      <SceneCard>
+        <DoneTitle />
+        <View style={styles.doneRow}>
+          {SENSE_POND_STEPS.map((s) => (
+            <View
+              key={s.id}
+              testID="pond-panel-cell"
+              accessible
+              accessibilityLabel={progressText(s, found[s.id])}
+              style={styles.doneItem}
+            >
+              <SensePointMark kind={s.point} level={1} />
+              <Text variant="headline1" color={labelColor.strong}>
+                {Math.min(found[s.id], s.goal)} / {s.goal}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </SceneCard>
+      {footer}
+    </>
+  );
+}
+
 /** 「다 채웠어요」 — 마지막 칸이 가득 찬 뒤 판 위에 뜬다 */
 function DoneTitle() {
   const [fade] = useState(() => new Animated.Value(0));
@@ -258,4 +310,6 @@ const styles = StyleSheet.create({
     gap: space.xs2,
   },
   footer: { paddingTop: space.xs, gap: space.sm, alignItems: "center" },
+  doneRow: { flexDirection: "row", justifyContent: "space-around" },
+  doneItem: { flexDirection: "row", alignItems: "center", gap: space.xs },
 });

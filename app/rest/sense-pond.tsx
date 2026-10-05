@@ -1,24 +1,20 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button, Icon, Screen } from "@/components/ds";
+import { Screen } from "@/components/ds";
 import { useSensePondAnalytics } from "@/features/analytics/useSensePondAnalytics";
-import { PondTopVeil, VeilGradient } from "@/components/rest/pond/PondTopVeil";
+import { PondTopVeil } from "@/components/rest/pond/PondTopVeil";
 import { SensePanel } from "@/components/rest/pond/SensePanel";
 import { PondScene } from "@/components/rest/pond/PondScene";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
 import {
-  background,
-  label as labelColor,
-  line,
-  pond,
-  pondLayout,
-  pondMotion,
-  pondPanelVeil,
-  space,
-} from "@/design/ds";
+  SCENE_BACK_SIZE,
+  SceneBackButton,
+  ScenePillButton,
+} from "@/components/rest/scene/SceneChrome";
+import { pond, pondMotion, space } from "@/design/ds";
 import {
   SENSE_POND_DONE,
   SENSE_POND_STEPS,
@@ -81,10 +77,11 @@ import {
  * 장면 아래에 쌓으면 판이 나타나는 순간 장면이 줄어 연못 그림과 카피바라가 손끝
  * 아래서 움직인다.
  *
- * 완료에는 판이 「다 채웠어요」와 버튼만큼 높아져 왼쪽 물가의 카피바라를 덮는다
- * (실기기에서 귀만 남았다 · 2026-09-11). 그래서 그때 **장면을 위로 비켜 올린다**
- * (`scenePan`) — 카피바라 발밑이 판 위에 오도록 필요한 만큼만. 줄이지 않고 옮기므로
- * 그림이 다시 잘리지 않고, 완료에는 손짓을 받지 않으니 물 자리가 어긋나도 괜찮다.
+ * 완료에는 판이 「다 채웠어요」와 버튼만큼 높아진다. 한때(2026-09-11) 그때 **장면을
+ * 위로 비켜 올려** 카피바라 발밑을 판 위로 꺼냈는데, 버튼이 올라올 때 화면 전체가
+ * 딸려 오는 것처럼 보여(2026-10-05 · 사용자 피드백) 지웠다 — **장면은 끝까지 그 자리다.**
+ * 판이 카피바라 발치를 조금 덮지만 판 뒤 빛(`pondPanelVeil`)에 녹아 경계가 없다.
+ * 돌아가기 버튼은 쉼터 안의 다른 버튼과 같은 빈티지 알약이다(`ScenePillButton`).
  * 돌아가기는 회고 완료와 같은 `router.replace` 다 — 딥링크로 들어와 뒤가 없어도
  * 쉼터 탭에 선다. ⚠ `/rest` 라고만 쓰면 `(onboarding)/rest`(쉬는 방법)에 먼저
  * 잡힌다 — 이름이 같은 라우트가 둘이라 **그룹을 명시한다**(에뮬레이터에서 실제로
@@ -107,11 +104,6 @@ export default function SensePondScreen() {
   const [intro, setIntro] = useState(true);
   // 잠시 누르기에서 일찍 손을 뗀 횟수 — 오를 때마다 「꾸욱」 알약이 다시 말한다
   const [nudge, setNudge] = useState(0);
-  // 장면과 판의 높이 — 완료에 판이 카피바라를 덮는 만큼 장면을 올리려고 잰다
-  const [sceneHeight, setSceneHeight] = useState(0);
-  const [panelHeight, setPanelHeight] = useState(0);
-  // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다(react-hooks/refs)
-  const [pan] = useState(() => new Animated.Value(0));
   const step = SENSE_POND_STEPS[stepIndex]!;
   const done = isStepDone(step, found);
   const hasNext = stepIndex + 1 < SENSE_POND_STEPS.length;
@@ -141,26 +133,6 @@ export default function SensePondScreen() {
     return () => clearTimeout(t);
   }, [done, hasNext]);
 
-  /**
-   * 완료에 장면을 올리는 거리 — 판의 윗변이 카피바라 발밑보다 높은 만큼(+ 숨 한 칸).
-   * 진행 중에는 판이 낮아 카피바라에 닿지 않으므로 움직이지 않는다.
-   */
-  const lift =
-    finished && sceneHeight > 0 && panelHeight > 0
-      ? Math.max(0, panelHeight - sceneHeight * pondLayout.capybaraBottom + space.lg)
-      : 0;
-
-  useEffect(() => {
-    const it = Animated.timing(pan, {
-      toValue: -lift,
-      duration: pondMotion.scenePan,
-      easing: Easing.inOut(Easing.cubic),
-      useNativeDriver: true,
-    });
-    it.start();
-    return () => it.stop();
-  }, [lift, pan]);
-
   /** 판이 보여 주는 셈 — 지난 단계는 다 채운 것으로, 아직 안 온 단계는 0 으로 */
   const counts = SENSE_POND_STEPS.reduce(
     (acc, s, i) => {
@@ -182,9 +154,8 @@ export default function SensePondScreen() {
 
   return (
     <Screen grid={false} padded={false} edges={[]}>
-      <View style={styles.scene} onLayout={(e) => setSceneHeight(e.nativeEvent.layout.height)}>
-        {/* 완료에만 위로 비켜 올라간다 — 크기는 그대로라 그림이 다시 잘리지 않는다 */}
-        <Animated.View style={[styles.pan, { transform: [{ translateY: pan }] }]}>
+      <View style={styles.scene}>
+        <View style={styles.pan}>
           <PondScene
             step={step.id}
             point={step.point}
@@ -201,31 +172,21 @@ export default function SensePondScreen() {
             }}
             finished={finished}
           />
-          {/* 올라가며 드러나는 그림의 아래 끝을 바닥색으로 녹인다 — 완료에만 */}
-          {finished ? (
-            <View pointerEvents="none" style={styles.edge}>
-              <VeilGradient id="pond-scene-edge" stops={EDGE_STOPS} />
-            </View>
-          ) : null}
-        </Animated.View>
+        </View>
 
         {/* 장면 위에 뜬 것들 — `box-none` 이라 빈 곳의 손짓은 아래 연못이 받는다 */}
         <View
           pointerEvents="box-none"
           // 글은 뒤로가기 원 **아래에서** 시작한다 — 같은 줄에 두면 한 줄 문구가
           // 원 뒤로 숨는다(레퍼런스도 원이 위, 제목이 아래다)
-          style={[styles.overlay, { paddingTop: insets.top + space.sm + BACK + space.xs }]}
+          style={[
+            styles.overlay,
+            { paddingTop: insets.top + space.sm + SCENE_BACK_SIZE + space.xs },
+          ]}
         >
           {/* 글보다 먼저 깔린다 — 카드가 아니라 위쪽에서 사라지는 빛 한 겹이다 */}
           <PondTopVeil />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={[styles.back, { top: insets.top + space.sm }]}
-          >
-            <Icon name="arrow-left" size={20} color={labelColor.normal} />
-          </Pressable>
+          <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
 
           {/* 글은 장면 폭을 다 쓰지 않는다 — 끝까지 늘리면 한 글자만 다음 줄로 넘어간다 */}
           <View style={styles.words}>
@@ -249,12 +210,10 @@ export default function SensePondScreen() {
           found={counts}
           // 버튼이 제스처 바·내비 바 위에 선다
           bottomInset={insets.bottom}
-          onLayout={(e) => setPanelHeight(e.nativeEvent.layout.height)}
           footer={
             finished ? (
-              <Button
+              <ScenePillButton
                 label={SENSE_POND_DONE.cta}
-                fill
                 onPress={() => router.replace("/(tabs)/rest")}
               />
             ) : undefined
@@ -265,22 +224,10 @@ export default function SensePondScreen() {
   );
 }
 
-/** 뒤로가기 원의 지름 — 글이 그 아래에서 시작하도록 여백 계산에도 쓴다 */
-const BACK = 40;
-
-/** 그림 아래 끝이 바닥색(`pond.veil`)으로 완전히 녹는다 */
-const EDGE_STOPS = [
-  { offset: 0, opacity: 0 },
-  { offset: 1, opacity: 1 },
-] as const;
-
 const styles = StyleSheet.create({
   // 장면이 화면을 전부 가진다 — 판은 그 위 바닥에 겹치므로 판이 떠도 장면이 줄지 않는다
-  // 바닥은 판 뒤 빛(`pond.veil`)과 같은 색 — 완료에 장면이 위로 비켜 올라가며 드러나도
-  // 빛의 가장 짙은 끝과 이어져 띠로 보이지 않는다
   scene: { flex: 1, minHeight: 0, backgroundColor: pond.veil },
   pan: { flex: 1 },
-  edge: { position: "absolute", left: 0, right: 0, bottom: 0, height: pondPanelVeil.edge },
   overlay: {
     position: "absolute",
     left: 0,
@@ -290,18 +237,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: space.xl,
     gap: space.xs,
-  },
-  back: {
-    position: "absolute",
-    left: space.lg,
-    width: BACK,
-    height: BACK,
-    borderRadius: BACK / 2,
-    backgroundColor: background.elevated,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: line.normal,
-    alignItems: "center",
-    justifyContent: "center",
   },
   // 「가운데」는 부모(overlay)가 정하는데 stretch 가 그걸 덮는다 — maxWidth 320 과 만나면
   // 320dp 보다 넓은 화면(폴드·태블릿)에서 교차축 시작점, 즉 왼쪽에 붙어 그려진다.

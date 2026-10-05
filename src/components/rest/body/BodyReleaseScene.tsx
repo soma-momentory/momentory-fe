@@ -12,6 +12,8 @@ import {
   bodyReleaseSize,
 } from "@/design/ds";
 
+import { RisingMotes } from "../scene/RisingMotes";
+
 /**
  * 몸에 힘 빼기의 **장면** — 노을 지는 언덕 위의 카피바라와 그 뒤의 해 (2026-10-05).
  *
@@ -262,7 +264,17 @@ export function BodyReleaseScene({ breath, progress, pose, sway, finished }: Pro
         </Svg>
       </Animated.View>
 
-      {finished ? <Motes center={center} /> : null}
+      {finished ? (
+        <RisingMotes
+          testID="body-release-motes"
+          left="50%"
+          bottom={center}
+          motes={bodyReleaseFinish.motes}
+          duration={bodyReleaseFinish.mote.duration}
+          stagger={bodyReleaseFinish.mote.stagger}
+          color={bodyRelease.mote}
+        />
+      ) : null}
 
       {/* 꼭대기에 앉는다 — 발은 풀에 조금 묻힌다. 흔들림 → 숨 → 작은 숨, 셋 다 발밑이 축 */}
       <Animated.View
@@ -332,70 +344,6 @@ export function BodyReleaseScene({ breath, progress, pose, sway, finished }: Pro
   );
 }
 
-/**
- * 끝났을 때 카피바라 둘레에서 **한 번** 떠오르는 빛 알갱이 열(`bodyReleaseFinish.motes`).
- * 차례로 떠올라 옆으로 조금 흘러가며 사라진다 — 고리로 돌지 않는다.
- */
-function Motes({ center }: { center: number }) {
-  const spec = bodyReleaseFinish;
-  const [lift] = useState(() => spec.motes.map(() => new Animated.Value(0)));
-
-  useEffect(() => {
-    const it = Animated.stagger(
-      spec.mote.stagger,
-      lift.map((v) =>
-        Animated.timing(v, {
-          toValue: 1,
-          duration: spec.mote.duration,
-          easing: Easing.out(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ),
-    );
-    it.start();
-    return () => it.stop();
-  }, [lift, spec]);
-
-  return (
-    <View testID="body-release-motes" style={[styles.motes, { bottom: center }]}>
-      {spec.motes.map((m, i) => (
-        <Animated.View
-          key={i}
-          style={[
-            styles.mote,
-            {
-              left: m.x - m.size / 2,
-              top: m.y - m.size / 2,
-              width: m.size,
-              height: m.size,
-              borderRadius: m.size / 2,
-              opacity: lift[i]!.interpolate({
-                inputRange: [0, 0.2, 0.7, 1],
-                outputRange: [0, 1, 0.8, 0],
-              }),
-              transform: [
-                {
-                  translateY: lift[i]!.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, -m.rise],
-                  }),
-                },
-                {
-                  translateX: lift[i]!.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, m.drift],
-                  }),
-                },
-                { scale: lift[i]!.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) },
-              ],
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   sun: { position: "absolute", left: "50%", width: SUN, height: SUN, marginLeft: -SUN / 2 },
   hill: { position: "absolute" },
@@ -415,15 +363,4 @@ const styles = StyleSheet.create({
     transformOrigin: "bottom",
   },
   fill: { width: "100%", height: "100%", transformOrigin: "bottom" },
-  // 빛 알갱이의 기준점 — 카피바라 몸 한가운데(폭 0 짜리 점)
-  motes: { position: "absolute", left: "50%", width: 0, height: 0 },
-  // 노을빛에 번지는 알갱이 — iOS 는 같은 색 그림자로 살짝 빛난다
-  mote: {
-    position: "absolute",
-    backgroundColor: bodyRelease.mote,
-    shadowColor: bodyRelease.mote,
-    shadowOpacity: 0.9,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 0 },
-  },
 });
