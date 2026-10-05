@@ -50,6 +50,7 @@ export {
   selectedTint,
   social,
   status,
+  treasureBox,
   withAlpha,
   worryBox,
 } from "./color";
@@ -86,6 +87,13 @@ export {
 export { restSceneSize } from "./restScene";
 
 export { worryBoxFinish, worryBoxLayout, worryBoxMotion, worryBoxSize } from "./worryBox";
+
+export {
+  treasureBoxFinish,
+  treasureBoxLayout,
+  treasureBoxMotion,
+  treasureBoxSize,
+} from "./treasureBox";
 
 export {
   bodyReleaseFinish,

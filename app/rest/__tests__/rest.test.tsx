@@ -79,12 +79,13 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
   it("화면이 있는 콘텐츠만 눌린다 — 갈 곳이 없는 줄을 누르게 두지 않는다", async () => {
     const { getAllByRole } = await render(<Rest />);
 
-    // 누를 수 있는 것은 바람카드 진입점과 감각연못 · 걱정상자 · 몸에 힘 빼기다 — 보물함은 화면이 아직 없다
+    // 쉼 콘텐츠 넷 모두 화면이 생겼다(보물함 2026-10-05) — 바람카드 진입점과 함께 다섯이 눌린다
     const labels = getAllByRole("button").map((b) => b.props.accessibilityLabel);
     expect(labels).toEqual([
       "바람카드 보기",
       "감각연못 열기",
       "걱정상자 열기",
+      "오늘의 보물함 열기",
       "몸에 힘 빼기 열기",
     ]);
   });

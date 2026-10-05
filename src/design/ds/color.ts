@@ -401,6 +401,27 @@ export const worryBox = {
   inputAccent: "#5E4430",
 } as const;
 
+/**
+ * 오늘의 보물함 (2026-10-05) — 보물 카드 · 보물함에서 번지는 빛 · 닫힐 때의 반짝임.
+ * 그림은 생성 이미지(`assets/treasure-box/`), 여기는 코드가 그리는 것의 색이다.
+ */
+export const treasureBox = {
+  /** 보물 카드 종이 — 걱정 쪽지보다 한 톤 밝은 꿀빛 크림 */
+  paper: "#FFF7E6",
+  paperEdge: "#E9D3AC",
+  /** 열린 보물함 안에서 번지는 빛 · 떠오르는 알갱이 */
+  glow: "#FFE6A3",
+  mote: "#FFF1D2",
+  /** 닫힐 때의 네 갈래 반짝임 */
+  sparkle: "#FFE9A8",
+  /** 발밑 · 보물함 밑 그림자 — 흙빛 짙은 갈색(걱정상자와 같다) */
+  shadow: "#3A2614",
+  /** 카드 표식 셋 — 별 · 하트 · 새싹 */
+  star: "#E8B04A",
+  heart: "#E3878A",
+  sprout: "#77A866",
+} as const;
+
 export const restScene = {
   surface: "#FFF7EE",
   /**

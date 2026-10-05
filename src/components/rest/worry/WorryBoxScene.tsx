@@ -17,6 +17,7 @@ import {
 } from "@/design/ds";
 import type { WorryBoxStage } from "@/features/rest/model/worryBox";
 
+import { GroundShadow as SceneGroundShadow } from "../scene/GroundShadow";
 import { RisingMotes } from "../scene/RisingMotes";
 
 /**
@@ -589,21 +590,17 @@ function ThoughtBubble({ left, bottom }: { left: number; bottom: number }) {
   );
 }
 
-/** 땅에 깔리는 옅은 그림자 — 가운데가 짙고 가장자리로 사라지는 납작한 타원 */
+/** 땅 그림자 — 공통 부품에 걱정상자의 색 · 크기를 채운다 */
 function GroundShadow({ id, width, style }: { id: string; width: number; style: object }) {
-  const h = SHADOW.height;
   return (
-    <View pointerEvents="none" style={[{ position: "absolute", width, height: h }, style]}>
-      <Svg width={width} height={h}>
-        <Defs>
-          <RadialGradient id={id} cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor={worryBox.shadow} stopOpacity={SHADOW.opacity} />
-            <Stop offset="1" stopColor={worryBox.shadow} stopOpacity={0} />
-          </RadialGradient>
-        </Defs>
-        <Ellipse cx={width / 2} cy={h / 2} rx={width / 2} ry={h / 2} fill={`url(#${id})`} />
-      </Svg>
-    </View>
+    <SceneGroundShadow
+      id={id}
+      width={width}
+      height={SHADOW.height}
+      color={worryBox.shadow}
+      opacity={SHADOW.opacity}
+      style={style}
+    />
   );
 }
 

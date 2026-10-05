@@ -19,6 +19,8 @@ const routes: Record<string, ScreenName> = {
   "rest/sense-pond": "sense_pond",
   "rest/body-release": "body_release",
   "rest/worry-box": "worry_box",
+  "rest/treasure-box": "treasure_box",
+  "rest/treasures": "treasure_list",
   "my/profile": "profile",
   "my/nickname": "profile_nickname",
   "my/age": "profile_age",
