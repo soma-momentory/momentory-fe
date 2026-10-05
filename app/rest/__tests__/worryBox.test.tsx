@@ -3,6 +3,8 @@ import { router } from "expo-router";
 
 import WorryBoxScreen from "../worry-box";
 
+import { track } from "@/features/analytics";
+
 import { worryBoxFinish as F, worryBoxMotion as M } from "@/design/ds";
 
 /**
@@ -16,6 +18,13 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
   Redirect: jest.fn(() => null),
+}));
+
+// 계측은 켜 두고 전송만 가로챈다 — 화면이 언제 무엇을 보내는지 본다
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  isAnalyticsEnabled: true,
+  track: jest.fn(),
 }));
 
 /** 장면은 낭독기에서 숨긴다 — 카드 · 쪽지 · 포즈를 보려면 숨긴 것까지 봐야 한다 */
@@ -154,5 +163,53 @@ describe("걱정상자", () => {
     expect(r.queryByText("쉼터로 돌아가기")).toBeNull();
     await pass(F.message.delay + F.message.duration);
     expect(r.getByText("쉼터로 돌아가기")).toBeTruthy();
+  });
+
+  describe("계측", () => {
+    const sent = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
+
+    it("맡기고 고르면 글자 수 · 고른 끝 · 끝까지를 보내고, 쓴 걱정은 어디에도 싣지 않는다", async () => {
+      const r = await render(<WorryBoxScreen />);
+      await handOver(r);
+      await pass(HANDING + 100);
+      await fireEvent.press(r.getByRole("button", { name: /흘려보낼게요/ }));
+      await act(async () => {
+        r.unmount();
+      });
+
+      expect(sent()).toEqual([
+        ["rest_content_opened", { content: "worry_box", entry: "direct", diary_today: false }],
+        ["worry_box_handed", { chars: WORRY.length }],
+        ["worry_box_choice_selected", { choice: "release" }],
+        ["rest_content_completed", { content: "worry_box", duration_ms: expect.any(Number) }],
+      ]);
+      expect(JSON.stringify(sent())).not.toContain("발표");
+    });
+
+    it("고르기 전에 떠나면 나간 자리를 보낸다", async () => {
+      const r = await render(<WorryBoxScreen />);
+      await handOver(r);
+      await pass(HANDING + 100);
+      await act(async () => {
+        r.unmount();
+      });
+
+      expect(sent()).toContainEqual([
+        "rest_content_exited",
+        { content: "worry_box", stage: "boxed", duration_ms: expect.any(Number) },
+      ]);
+    });
+
+    it("쓰다가 떠나면 write 에서 나간 것이다", async () => {
+      const r = await render(<WorryBoxScreen />);
+      await act(async () => {
+        r.unmount();
+      });
+
+      expect(sent()).toContainEqual([
+        "rest_content_exited",
+        { content: "worry_box", stage: "write", duration_ms: expect.any(Number) },
+      ]);
+    });
   });
 });

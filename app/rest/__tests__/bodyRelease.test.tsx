@@ -3,6 +3,8 @@ import { router } from "expo-router";
 
 import BodyReleaseScreen from "../body-release";
 
+import { track } from "@/features/analytics";
+
 import { bodyReleaseMotion } from "@/design/ds";
 
 /**
@@ -16,6 +18,13 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
   Redirect: jest.fn(() => null),
+}));
+
+// 계측은 켜 두고 전송만 가로챈다 — 화면이 언제 무엇을 보내는지 본다
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  isAnalyticsEnabled: true,
+  track: jest.fn(),
 }));
 
 beforeEach(() => {
@@ -101,5 +110,51 @@ describe("몸에 힘 빼기", () => {
 
     await fireEvent.press(r.getByText("마치기"));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
+  });
+
+  describe("계측", () => {
+    const sent = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
+
+    it("시작하지 않고 떠나면 intro 에서 나간 것이다", async () => {
+      const r = await render(<BodyReleaseScreen />);
+      await act(async () => {
+        r.unmount();
+      });
+
+      expect(sent()).toEqual([
+        ["rest_content_opened", { content: "body_release", entry: "direct", diary_today: false }],
+        [
+          "rest_content_exited",
+          { content: "body_release", stage: "intro", duration_ms: expect.any(Number) },
+        ],
+      ]);
+    });
+
+    it("하다가 떠나면 그때의 부위에서 나간 것이다", async () => {
+      const r = await render(<BodyReleaseScreen />);
+      await fireEvent.press(r.getByText("따라 해보기"));
+      await pass(16_000);
+      await act(async () => {
+        r.unmount();
+      });
+
+      expect(sent()).toContainEqual([
+        "rest_content_exited",
+        { content: "body_release", stage: "shoulders", duration_ms: expect.any(Number) },
+      ]);
+    });
+
+    it("네 부위를 다 하면 끝까지 간 것이고, 떠나도 이탈은 없다", async () => {
+      const r = await render(<BodyReleaseScreen />);
+      await fireEvent.press(r.getByText("따라 해보기"));
+      await pass(60_400);
+      await act(async () => {
+        r.unmount();
+      });
+
+      const names = sent().map(([name]) => name);
+      expect(names).toContain("rest_content_completed");
+      expect(names).not.toContain("rest_content_exited");
+    });
   });
 });

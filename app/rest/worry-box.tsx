@@ -14,6 +14,11 @@ import {
 import { RisingMotes } from "@/components/rest/scene/RisingMotes";
 import { VintagePressable } from "@/components/rest/scene/VintagePressable";
 import { WorryBoxScene } from "@/components/rest/worry/WorryBoxScene";
+import { track } from "@/features/analytics";
+import { useRestContentAnalytics } from "@/features/analytics/useRestContentAnalytics";
+import { hasDiaryOn } from "@/features/diary/model/selectors";
+import { useDiary } from "@/features/diary/model/diary";
+import { useTodayContext } from "@/features/home/model/day";
 import {
   label as labelColor,
   radius,
@@ -61,10 +66,27 @@ export default function WorryBoxScreen() {
   // (버튼이 쪽지보다 먼저 뜨니 어색했다 · 2026-10-05 · 피드백)
   const [noteLanded, setNoteLanded] = useState(false);
 
+  // 쉼 콘텐츠 공통 계측 — 나간 자리는 쓰기 · 건네는 중 · 고르기 전. 고르면 끝까지 간 것이다
+  const { date: today } = useTodayContext();
+  const diaryToday = useDiary((s) => hasDiaryOn(s.diaries, today));
+  const rest = useRestContentAnalytics(
+    "worry_box",
+    stage === "write" || stage === "handing" || stage === "boxed" ? stage : null,
+    diaryToday,
+  );
+
   const handOver = () => {
     if (!canHandOver(worry)) return;
     Keyboard.dismiss();
+    // 쓴 걱정은 보내지 않는다 — 길이만(`docs/ANALYTICS.md`)
+    track("worry_box_handed", { chars: worry.trim().length });
     setStage("handing");
+  };
+
+  const choose = (choice: "keep" | "release") => {
+    track("worry_box_choice_selected", { choice });
+    rest.complete();
+    setStage(choice);
   };
 
   const heading =
@@ -155,7 +177,7 @@ export default function WorryBoxScreen() {
                 <VintagePressable
                   key={c.id}
                   accessibilityLabel={`${c.title} — ${c.description}`}
-                  onPress={() => setStage(c.id)}
+                  onPress={() => choose(c.id)}
                   radius={radius.xlarge}
                   faceStyle={styles.choice}
                 >

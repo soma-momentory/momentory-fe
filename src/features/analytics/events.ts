@@ -28,6 +28,28 @@ const step = choice(
 );
 const provider = choice("kakao", "apple", "google");
 const pondStep = choice("see", "hear", "feel");
+/** 쉼 콘텐츠 — 화면이 있는 것만(2026-10-05) */
+const restContent = choice("sense_pond", "body_release", "worry_box");
+/**
+ * 쉼 콘텐츠를 **어디까지** 했는가 — 끝내지 않고 나간 자리. 콘텐츠마다 단계가 달라 한 목록에 모은다.
+ * 감각연못 see/hear/feel · 몸에 힘 빼기 intro(시작 전)/hands/shoulders/face/legs · 걱정상자
+ * write/handing(건네는 연출 중)/boxed(둘 중 하나를 고르기 전)
+ */
+const restStage = choice(
+  "see",
+  "hear",
+  "feel",
+  "intro",
+  "hands",
+  "shoulders",
+  "face",
+  "legs",
+  "write",
+  "handing",
+  "boxed",
+);
+/** 쉼터에 어떻게 들어왔나 — 회고(일기)를 마친 화면에서 곧장 / 그 밖에서 따로 */
+const restEntry = choice("after_diary", "direct");
 const leaveKind = choice("navigate", "background");
 const notificationSource = choice("onboarding", "my");
 /**
@@ -66,6 +88,8 @@ const screen = choice(
   "diary_detail",
   "wish_cards",
   "sense_pond",
+  "body_release",
+  "worry_box",
   "profile",
   "profile_nickname",
   "profile_age",
@@ -77,6 +101,9 @@ const linkSource = choice("onboarding", "my");
 const linkChoice = choice("link", "later", "settings");
 export type ScreenName = NonNullable<ReturnType<typeof screen>>;
 export type OnboardingStepName = NonNullable<ReturnType<typeof step>>;
+export type RestContentName = NonNullable<ReturnType<typeof restContent>>;
+export type RestStageName = NonNullable<ReturnType<typeof restStage>>;
+export type RestEntryName = NonNullable<ReturnType<typeof restEntry>>;
 
 export const events = {
   app_opened: {},
@@ -159,6 +186,11 @@ export const events = {
   },
   sense_pond_finished: { duration_ms: millis },
   sense_pond_exited: { step: pondStep, found: count, hold_cancels: count, duration_ms: millis },
+  rest_content_opened: { content: restContent, entry: restEntry, diary_today: bool },
+  rest_content_completed: { content: restContent, duration_ms: millis },
+  rest_content_exited: { content: restContent, stage: restStage, duration_ms: millis },
+  worry_box_handed: { chars: count },
+  worry_box_choice_selected: { choice: choice("keep", "release") },
   report_week_selected: { week_start: week },
   weekly_report_viewed: { week_start: week },
   logout_clicked: {},
