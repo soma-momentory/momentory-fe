@@ -47,16 +47,24 @@ export default function Splash() {
   const status = useAuth((s) => s.status);
   const completed = useOnboardingCompletion((s) => s.completed);
   const [minDone, setMinDone] = useState(false);
+  // `hydrate` 가 **끝났다** — `status` 만 보면 안 된다: `hydrate` 는 「인증됨」으로 먼저
+  // 바꾼 뒤에 서버에 온보딩 완료 여부를 묻는다(`syncMe`). 그 답이 0.8초 하한보다 늦으면
+  // 아직 모르는 완료 여부(기본값 false)로 판정해 온보딩을 마친 사람을 온보딩으로
+  // 보냈다(개발 서버 1초 남짓 · 2026-10-05 실기기)
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    void useAuth.getState().hydrate();
+    void useAuth
+      .getState()
+      .hydrate()
+      .then(() => setHydrated(true));
     const t = setTimeout(() => setMinDone(true), MIN_SPLASH_MS);
     return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
     // 0.8초 하한과 hydration 둘 다 끝나야 넘어간다 — 먼저 끝난 쪽이 기다린다
-    if (!minDone || status === "hydrating") return;
+    if (!minDone || !hydrated) return;
     if (status !== "authenticated") {
       router.replace("/login");
       return;
@@ -64,7 +72,7 @@ export default function Splash() {
     // 온보딩을 마친 사람은 홈으로 — 매번 온보딩을 다시 보게 하지 않는다.
     // 이 값은 `hydrate` 가 서버에 물어 적어둔 것이다(위 주석)
     router.replace(completed ? "/home" : "/welcome");
-  }, [minDone, status, completed]);
+  }, [minDone, hydrated, status, completed]);
 
   return (
     <Screen>
