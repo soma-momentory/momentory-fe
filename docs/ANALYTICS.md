@@ -91,6 +91,11 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | sense_pond_step_completed    | 감각연못 한 단계의 목표를 채움              | step, duration_ms 외 2개 (아래)           |
 | sense_pond_finished          | 감각연못 마지막 단계의 목표를 채움          | duration_ms                               |
 | sense_pond_exited            | 끝내지 않고 감각연못 화면을 떠남            | step, found, hold_cancels, duration_ms    |
+| rest_content_opened          | 쉼 콘텐츠 화면을 엶                         | content, entry, diary_today (아래)        |
+| rest_content_completed       | 쉼 콘텐츠를 끝까지 함                       | content, duration_ms                      |
+| rest_content_exited          | 끝내지 않고 쉼 콘텐츠 화면을 떠남           | content, stage, duration_ms               |
+| worry_box_handed             | 걱정상자에 걱정을 맡김                      | chars (글자 수만)                         |
+| worry_box_choice_selected    | 걱정상자의 맡겨두기/흘려보내기 선택         | choice: keep/release                      |
 | report_week_selected         | 다른 주 선택                                | week_start                                |
 | weekly_report_viewed         | 선택 주와 일치하는 리포트가 ready로 표시됨  | week_start                                |
 | logout_clicked               | 마이 로그아웃 클릭                          | 없음                                      |
@@ -103,7 +108,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 
 화면명은 login, home, archive, rest, report, my, onboarding, schedule_new,
 schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
-wish_cards, wish_card_trail, sense_pond, profile 및 고정 프로필 편집 화면명이다.
+wish_cards, wish_card_trail, sense_pond, body_release, worry_box, profile 및 고정 프로필 편집 화면명이다.
 온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다.
 retroTime 단계에서는 진행 여부와 알림 권한 허용 여부(notify_permission_result)를 알 수 있다.
 설정 시각·예약 성공은 수집하지 않는다. 마이 M2 에서는 꺼진 알림을 켤 때 묻는 결과만 남는다.
@@ -143,6 +148,26 @@ step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단
 간격이 고르면 천천히 둘러본 것이고, 한 번 길게 멈췄다가 몰아 누르면 어디를 눌러야 할지 몰랐던 것에
 가깝다. hold_cancels는 감각 단계에서 잠시 누르기를 다 채우기 전에 손을 뗀 횟수이며 톡 단계에서는 0이다.
 손짓마다 이벤트를 보내지 않는다. 물이 아닌 자리의 손짓과 목표를 넘긴 손짓은 화면처럼 세지 않는다.
+
+**쉼 콘텐츠 공통 계측**(2026-10-05 · `rest_content_*`)은 모든 쉼 콘텐츠가 같이 쓴다 — 얼마나 들어오고,
+얼마나 끝까지 가고, 못 끝내면 어디서 나가는지를 같은 이벤트로 보고 content(sense_pond, body_release,
+worry_box)로 가른다. 시간은 모두 전면 시계로 잰다.
+
+- rest_content_opened 의 entry 는 쉼터에 **어떻게 들어왔나**다. 회고 완료 화면(retro_done)에서 쉼터
+  묶음(쉼터 탭 · 바람카드 · 쉼 콘텐츠)으로 들어온 방문은 after_diary 이고, 그 묶음 안에서 옮겨 다니는
+  동안 이어진다. 묶음 밖으로 나갔다 다시 들어오면 direct 다. diary_today 는 그 날(04:00 경계) 쓴 일기가
+  이미 있는지다 — 일기를 쓰고 곧장 온 것(after_diary)과, 일기를 쓴 날 나중에 따로 온 것(direct · true)과,
+  쉼터만 쓴 날(direct · false)을 가른다. 둘 다 화면에 들어온 순간의 값이다.
+- rest_content_completed 는 끝까지 한 때 한 번이다 — 감각연못은 마지막 감각을 찾은 순간(sense_pond_finished
+  와 같은 때), 몸에 힘 빼기는 네 부위를 다 한 순간, 걱정상자는 맡겨두기/흘려보내기를 고른 순간이다.
+  끝까지 간 판은 떠나도 rest_content_exited 를 보내지 않는다.
+- rest_content_exited 의 stage 는 **나간 자리**다. 감각연못 see/hear/feel, 몸에 힘 빼기 intro(시작 전)/
+  hands/shoulders/face/legs(하던 부위), 걱정상자 write(쓰다가)/handing(건네는 연출 중)/boxed(고르기 전).
+  화면이 닫힐 때 보내므로, 쉼 콘텐츠 화면에서 앱을 강제 종료하면 빠질 수 있다 — 그때는 screen_left
+  (exit=background)의 마지막 화면으로 본다.
+- 걱정상자는 쓴 걱정을 **보내지 않는다.** worry_box_handed 는 글자 수(chars)만 싣는다. 걱정 원문은
+  속성 허용 목록에 없다.
+- 감각연못의 `sense_pond_*` 는 그대로 함께 보낸다(단계 시간 · 멈춘 간격 · 꾹 누르기).
 
 회고 실패 code는 invalid_request, already_today, session_not_found, unauthenticated,
 network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본문은 전송하지 않는다.
@@ -198,7 +223,7 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 
 - 로그인 응답에는 신규 가입 여부가 없다. onboarding_required=true에는 미완료 재로그인도 포함되므로 signup_completed를 만들지 않았다. 발표에서는 “온보딩이 필요한 로그인/온보딩 완료”라고 표기한다.
 - 날짜 관련 이벤트는 **보관함 조회 날짜·월·기간 변경**이다. 현재 없는 일기 작성일 수정 기능은 추가하지 않았다.
-- 쉼 콘텐츠 중 화면이 있는 것은 감각연못뿐이라 감각연못만 계측한다. 나머지 셋은 화면을 만들 때 함께 계측을 추가한다.
+- 쉼 콘텐츠는 화면이 있는 셋(감각연못 · 몸에 힘 빼기 · 걱정상자)을 `rest_content_*` 로 계측한다. 새 쉼 콘텐츠는 화면을 만들 때 `useRestContentAnalytics` 를 붙이고 content · stage 값을 더한다.
 - 자동 수집/세션 리플레이를 쓰지 않는다. 이메일, 닉네임, SNS ID, 인증 토큰, 일기·일정·대화·바람 원문, 감정/욕구 코드·이름, 검색어, 알림 설정 시각은 속성 허용 목록에 없다. 알림은 권한 허용 여부와, 예약한 알림을 눌러 연 사실(종류만)만 보낸다.
 - 신원 복원 전 이벤트는 최대 50개, SDK 초기화 전 작업은 최대 200개만 메모리에 둔다. 넘치는 이벤트는 버리되 신원 변경은 보존한다. SDK 초기화가 실패하면 그 실행의 analytics만 비활성화한다.
 - SDK의 배치 전송/재시도를 사용한다. 서비스 DB에는 로그 테이블을 만들지 않는다. SDK는 기기에 전송 대기 이벤트와 임의 기기 ID를 저장할 수 있다.

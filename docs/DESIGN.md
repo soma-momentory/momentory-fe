@@ -670,7 +670,8 @@ R2 수행 전 `◷ 아직 하지 않았어요` + `했어요` → 직후 느낀 �
 3. 값은 `ds/<쉼터>.ts`(+ `color.ts` 의 `<쉼터>` 묶음), 문안과 규칙은 `features/rest/model/<쉼터>.ts`, 화면은 `app/rest/<쉼터>.tsx`, 장면은 `components/rest/<쉼터>/`
 4. 공통 부품을 써요 — `SceneBackButton` · `ScenePillButton` · `SceneCard` · `VintagePressable` · `RisingMotes` · `StepHeading`
 5. `features/rest/model/contents.ts` 에 `route` 를 달고, 이 문서에 그 쉼터의 절을 더해요
-6. 실기기에서 봐요 — 이 절의 규칙 대부분이 실기기에서 나왔어요
+6. 계측을 붙여요 — `useRestContentAnalytics(content, 지금 단계, 오늘 일기 여부)` 로 열기 · 끝까지 · 나간 자리가 남아요. `events.ts` 의 `restContent` · `restStage` 에 값을 더하고 `observation.ts` 에 화면명을 더해요(`docs/ANALYTICS.md` 「쉼 콘텐츠 공통 계측」). 사용자가 쓴 글은 보내지 않아요
+7. 실기기에서 봐요 — 이 절의 규칙 대부분이 실기기에서 나왔어요
 
 ### 감각연못 (2026-09-03 도입 · 2026-09-04 최종 에셋 반영 · 2026-09-05 손짓 구조 개편 · 2026-09-06 상단 문안 분리 · 수면 터치 · 움직이는 배경 · 표시와 결과물 걷어내기)
 
