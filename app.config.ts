@@ -11,12 +11,34 @@ const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
 const buildEnvironment = process.env.MOMENTORY_BUILD_ENV ?? "development";
 
 /**
- * Xcode 배포용 prebuild는 `MOMENTORY_BUILD_ENV=production`을 명시한다.
- * 개발 환경은 빈 설정으로도 UI를 열 수 있지만, 배포 바이너리는 로그인이나 API가
- * 조용히 빠진 채 만들어지면 안 된다. 네이티브 프로젝트를 만들기 전에 여기서 막는다.
+ * 출시 바이너리가 붙는 **유일한** API 호스트. 개발 서버(`dev.momentory.co.kr`)도 https 라
+ * 「https 인가」만 보면 그대로 통과한다 — 2026-10 에 App Store iOS 1.1.0 이 dev 주소를 품고
+ * 나가 그 기간 iOS 신규 가입이 전부 개발 DB 로 갔다. 그래서 호스트까지 못박는다.
+ */
+const PRODUCTION_API_HOST = "api.momentory.co.kr";
+
+/**
+ * 출시 빌드인가 — 셋 중 하나면 아래 검사가 켜진다.
+ *
+ * - `MOMENTORY_BUILD_ENV=production` — 배포용 prebuild 에서 명시한다(`docs/SETUP.md`)
+ * - `CONFIGURATION=Release` — **Xcode 가 Release 로 빌드 · 아카이브할 때** 앱 설정을 만드는
+ *   스크립트(expo-constants)에 넘기는 값이다. prebuild 때 명시를 잊어도 아카이브에서 걸린다
+ * - `MOMENTORY_RELEASE_BUILD=1` — Android 릴리스 작업(`bundleRelease` 등)이 잡히면 Gradle 이
+ *   같은 스크립트에 넘긴다(`plugins/withReleaseSigning.ts`)
+ *
+ * `.env` 의 `MOMENTORY_BUILD_ENV=development` 는 늘 들어 있으므로 그 값만으로는 가르지 않는다.
+ */
+const isReleaseBuild =
+  buildEnvironment === "production" ||
+  process.env.CONFIGURATION === "Release" ||
+  process.env.MOMENTORY_RELEASE_BUILD === "1";
+
+/**
+ * 배포 바이너리는 로그인이나 API가 조용히 빠지거나 **엉뚱한 서버를 가리킨 채** 만들어지면
+ * 안 된다. 개발 환경은 빈 설정으로도 UI를 열 수 있지만, 출시 빌드는 여기서 막는다.
  */
 const validateProductionEnvironment = () => {
-  if (buildEnvironment !== "production") return;
+  if (!isReleaseBuild) return;
 
   const required = {
     EXPO_PUBLIC_API_BASE_URL: apiBaseUrl,
@@ -40,6 +62,11 @@ const validateProductionEnvironment = () => {
   }
   if (apiUrl.protocol !== "https:") {
     throw new Error("[production config] EXPO_PUBLIC_API_BASE_URL은 https:// 주소여야 합니다.");
+  }
+  if (apiUrl.hostname !== PRODUCTION_API_HOST) {
+    throw new Error(
+      `[production config] 출시 빌드의 EXPO_PUBLIC_API_BASE_URL은 https://${PRODUCTION_API_HOST} 여야 합니다(지금 ${apiUrl.hostname}). .env 를 운영 주소로 바꿔 주세요.`,
+    );
   }
 };
 

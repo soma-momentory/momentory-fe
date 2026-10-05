@@ -1,4 +1,4 @@
-import { withSigningApplied } from "../withReleaseSigning";
+import { withReleaseApiCheckApplied, withSigningApplied } from "../withReleaseSigning";
 
 /**
  * 이 테스트가 지키는 것은 **출시본이 debug 키로 서명되지 않는 것**이다.
@@ -87,5 +87,19 @@ describe("템플릿이 달라지면 조용히 넘어가지 않는다", () => {
       "            minifyEnabled",
     );
     expect(() => withSigningApplied(noLine)).toThrow();
+  });
+});
+
+describe("릴리스 빌드의 출시 검사", () => {
+  const out = withReleaseApiCheckApplied(TEMPLATE);
+
+  it("릴리스 작업이 잡히면 앱 설정 작업에 출시 표시를 넘긴다", () => {
+    expect(out).toContain("(bundle|assemble)\\w*Release");
+    expect(out).toContain("createExpoConfig");
+    expect(out).toContain("environment('MOMENTORY_RELEASE_BUILD', '1')");
+  });
+
+  it("두 번 실행돼도 한 번만 붙는다", () => {
+    expect(withReleaseApiCheckApplied(out)).toBe(out);
   });
 });
