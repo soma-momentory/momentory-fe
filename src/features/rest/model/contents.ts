@@ -33,7 +33,7 @@ export type RestContent = {
    */
   note?: string;
   /** 여는 화면. **없으면 아직 화면이 없다** — 카드가 눌리지 않는다 */
-  route?: "/rest/sense-pond";
+  route?: "/rest/sense-pond" | "/rest/body-release";
 };
 
 export const REST_CONTENTS: readonly RestContent[] = [
@@ -61,9 +61,9 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "bodyRelease",
     title: "몸에 힘 빼기",
-    note: "(개발 중이에요)",
     description: "몸에 힘을 줬다가\n천천히 풀어봐요",
     icon: "capybara-rest",
+    route: "/rest/body-release",
   },
 ];
 
