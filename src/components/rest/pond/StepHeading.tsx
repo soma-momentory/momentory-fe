@@ -56,7 +56,7 @@ type Props = {
    * 소개(`intro`)의 제목은 **손글씨로 크게** 선다 — 콘텐츠의 이름이라 브랜드의 결로
    * 읽혀야 한다. 진행·완료(`step`)의 제목은 지금 할 일이라 본문 위계의 굵은 한 줄이다.
    */
-  tone?: "intro" | "step" | "close";
+  tone?: "intro" | "lead" | "step" | "close";
   /** 잠시 누르기 단계의 「꾸욱」 안내 — 없으면 알약을 세우지 않는다 */
   hint?: SensePondStep["hint"];
 };
@@ -175,9 +175,21 @@ export function StepHeading({
 /**
  * 결마다의 글자 크기. `close` 는 콘텐츠를 **마치는 한마디**라 진행(`step`)보다 한 단씩
  * 크다 — 몸에 힘 빼기의 마지막 화면에서 22 · 16 은 작았다(실기기 · 2026-10-05).
+ * `lead` 는 소개(`intro`)와 같은 손글씨 제목에 **설명만 18** 이다 — 걱정상자의 숲 그림
+ * 위에서 15 짜리 소개 한 줄이 묻혔다(2026-10-05 · 사용자 피드백).
  */
-const TITLE = { intro: "title1Hand", step: "heading1", close: "title3" } as const;
-const DESCRIPTION = { intro: "body2", step: "body1", close: "headline1" } as const;
+const TITLE = {
+  intro: "title1Hand",
+  lead: "title1Hand",
+  step: "heading1",
+  close: "title3",
+} as const;
+const DESCRIPTION = {
+  intro: "body2",
+  lead: "headline1",
+  step: "body1",
+  close: "headline1",
+} as const;
 
 const styles = StyleSheet.create({
   head: { paddingTop: space.sm, gap: space.xs },

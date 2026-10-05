@@ -40,6 +40,7 @@ export {
   pond,
   primary,
   restRipple,
+  restScene,
   retroRug,
   scheduleDot,
   secondary,
@@ -47,6 +48,7 @@ export {
   social,
   status,
   withAlpha,
+  worryBox,
 } from "./color";
 
 export {
@@ -77,6 +79,10 @@ export {
   type PondPointKind,
   type PondSpot,
 } from "./pond";
+
+export { restSceneSize } from "./restScene";
+
+export { worryBoxFinish, worryBoxLayout, worryBoxMotion, worryBoxSize } from "./worryBox";
 
 export {
   bodyReleaseFinish,

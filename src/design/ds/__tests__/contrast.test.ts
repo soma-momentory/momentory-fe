@@ -7,6 +7,7 @@ import {
   retroRug,
   status,
   withAlpha,
+  restScene,
 } from "@/design/ds";
 import { EMOTIONS } from "@/features/emotion/model/emotion";
 
@@ -146,5 +147,14 @@ describe("회고 러그 위의 글자", () => {
 describe("withAlpha", () => {
   it("hex 를 rgba 로 옮긴다 — 화면이 문자열을 잇지 않게", () => {
     expect(withAlpha("#7C9E86", 0.18)).toBe("rgba(124,158,134,0.18)");
+  });
+});
+
+describe("쉼터 안의 빈티지 버튼 — 잉크 글자", () => {
+  it.each([
+    ["크림 면", restScene.surface],
+    ["꿀빛 주 행동 면", restScene.accent],
+  ])("%s 위에서 4.5 를 넘는다", (_, face) => {
+    expect(contrast(restScene.ink, face)).toBeGreaterThanOrEqual(4.5);
   });
 });

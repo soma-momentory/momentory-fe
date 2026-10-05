@@ -26,6 +26,14 @@
 **발밑을 상자 바닥에, 머리 가운데를 상자 가운데에** 맞춘다 — 포즈를 갈아 끼울 때 몸이
 옆으로 튀거나 떠오르지 않는다. 다리를 뻗은 포즈가 가장 넓어서 상자 폭은 그걸 담는다.
 
+## 오른발을 고쳐 쓴다 (2026-10-05 · 사용자 피드백)
+
+포즈 시트 A 의 넷(기본 · 주먹 · 어깨 · 얼굴)은 왼발만 동그란 발바닥이 보이는 정면이고
+오른발은 옆모습 발끝처럼 삐죽 튀어나와 있었다(시트 B 셋은 두 발 다 동그랗다). 몸의 가운데
+선(발 위 몸통의 좌우 끝 한가운데)을 축으로 왼발을 뒤집어 오른발 자리에 **발 모양(타원)대로만**
+덮고, 그래도 남는 옛 발끝은 그 아래만 덮는다(`mirror_right_foot`). 걱정상자의 처음 자세도 같은
+그림이라 같은 방식으로 고친다(`keyout-worry-box.py`).
+
 다시 만들 때: `python3 scripts/keyout-body-release.py` (Pillow · numpy 필요).
 빌드에 끼지 않는다.
 """
@@ -85,6 +93,31 @@ def keyout(name: str) -> np.ndarray:
     return out
 
 
+# 오른발이 삐죽한 포즈 — 시트 A 의 넷
+POINTY_FOOT = {"neutral", "hands", "shoulders", "face"}
+
+
+def mirror_right_foot(box: np.ndarray) -> np.ndarray:
+    """왼발을 몸의 가운데 선으로 뒤집어 오른발 자리에 덮는다"""
+    h, w = box.shape[:2]
+    img = box.astype(np.float32)
+    alpha = box[..., 3] > 128
+    bottom = np.where(alpha.any(axis=1))[0].max()
+    # 발 위 몸통의 좌우 끝 한가운데 — 발끝이 삐죽해도 흔들리지 않는다
+    row = np.where(alpha[bottom - 110])[0]
+    axis = (row.min() + row.max()) / 2
+    src = np.clip(np.round(2 * axis - np.arange(w)).astype(int), 0, w - 1)
+    mirrored = img[:, src]
+    yy, xx = np.mgrid[0:h, 0:w]
+    # 왼발(가운데 선에서 왼쪽 141 · 바닥에서 61 · 반지름 63 × 67)을 뒤집은 자리
+    cx, cy, rx, ry = axis + 141, bottom - 61, 63, 67
+    d = np.sqrt(((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2)
+    foot = np.clip((1.0 - d) / 0.05 + 1, 0, 1)
+    tip = np.clip((xx - (cx + 34)) / 4, 0, 1) * np.clip((yy - (cy - 27)) / 4, 0, 1)
+    weight = np.maximum(foot, tip)[..., None]
+    return np.clip(img * (1 - weight) + mirrored * weight, 0, 255).astype(np.uint8)
+
+
 def bbox(alpha: np.ndarray):
     ys = np.where((alpha > 128).any(axis=1))[0]
     xs = np.where((alpha > 128).any(axis=0))[0]
@@ -114,6 +147,8 @@ def main() -> None:
         ty, tx = ys + dy, xs + dx
         ok = (ty >= 0) & (ty < BOX_H) & (tx >= 0) & (tx < BOX_W)
         box[ty[ok], tx[ok]] = q[ys[ok], xs[ok]]
+        if pose in POINTY_FOOT:
+            box = mirror_right_foot(box)
         Image.fromarray(box).save(ROOT / f"capybara-{pose}.webp", quality=90)
         print(pose, "bottom", bottom, "head-center", cx, "clipped", int((~ok).sum()))
 

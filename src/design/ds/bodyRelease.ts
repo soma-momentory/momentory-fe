@@ -48,13 +48,6 @@ export const bodyReleaseRing = {
   stroke: 5,
   /** 바탕 줄의 짙기 — 차오르는 호(1)와 구분만 될 만큼 */
   trackOpacity: 0.35,
-  /** 장면 위 버튼 면의 짙기(`bodyRelease.pill`) */
-  pillOpacity: 0.88,
-  /**
-   * 아래 정보 카드 면의 짙기(`bodyRelease.pill`) — 풀밭의 잔결에 글이 흐려졌다
-   * (실기기 · 2026-10-05). 빛 한 겹으로는 모자라 면을 둔다. 풀이 살짝 비칠 만큼만
-   */
-  cardOpacity: 0.8,
 } as const;
 
 export const bodyReleaseMotion = {

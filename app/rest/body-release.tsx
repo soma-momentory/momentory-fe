@@ -1,25 +1,27 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button, Icon, Screen, Text } from "@/components/ds";
+import { Screen, Text } from "@/components/ds";
 import { BodyReleaseScene, type BodyReleasePose } from "@/components/rest/body/BodyReleaseScene";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
 import {
-  background,
-  bodyRelease,
+  SCENE_BACK_SIZE,
+  SceneBackButton,
+  SceneCard,
+  ScenePillButton,
+} from "@/components/rest/scene/SceneChrome";
+import {
   bodyReleaseFinish,
   bodyReleaseMotion,
-  bodyReleaseRing,
   bodyReleaseSize,
   elevation,
   fill,
   label as labelColor,
-  line,
   radius,
+  restScene,
   space,
-  withAlpha,
 } from "@/design/ds";
 import {
   BODY_RELEASE_BREATH,
@@ -176,23 +178,19 @@ export default function BodyReleaseScreen() {
 
         <View
           pointerEvents="box-none"
-          style={[styles.overlay, { paddingTop: insets.top + space.sm + BACK + space.xs }]}
+          style={[
+            styles.overlay,
+            { paddingTop: insets.top + space.sm + SCENE_BACK_SIZE + space.xs },
+          ]}
         >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="뒤로"
-            onPress={() => router.back()}
-            style={[styles.back, { top: insets.top + space.sm }]}
-          >
-            <Icon name="arrow-left" size={20} color={labelColor.normal} />
-          </Pressable>
+          <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
           <View style={styles.words}>
             <StepHeading
               center
               tone={heading.tone}
               title={heading.title}
               description={heading.description}
-              halo={bodyRelease.pill}
+              halo={restScene.surface}
             />
           </View>
         </View>
@@ -204,17 +202,14 @@ export default function BodyReleaseScreen() {
             // 끝의 한마디는 위에서 제목 아래 크게 말한다 — 아래에는 버튼 하나만(실기기 ·
             // 2026-10-05 · 카드와 버튼 두 상자가 나뉘어 어색했다)
             settled ? (
-              <Button
+              <ScenePillButton
                 label={BODY_RELEASE_DONE.cta}
-                variant="outlined"
-                fill
-                style={styles.pill}
                 onPress={() => router.replace("/(tabs)/rest")}
               />
             ) : null
           ) : (
             <>
-              <View style={styles.card}>
+              <SceneCard>
                 {/* 순서와 부위를 두 줄로 — 크기가 다른 글자를 한 줄에 섞으면 기준선이 어긋났다
                     (실기기 · 2026-10-05). 부위 이름이 먼저 읽히게 크다 */}
                 <View style={styles.part}>
@@ -260,15 +255,9 @@ export default function BodyReleaseScreen() {
                     {BODY_RELEASE_INTRO.preview}
                   </Text>
                 )}
-              </View>
+              </SceneCard>
               {running == null ? (
-                <Button
-                  label={BODY_RELEASE_INTRO.cta}
-                  variant="outlined"
-                  fill
-                  style={styles.pill}
-                  onPress={start}
-                />
+                <ScenePillButton label={BODY_RELEASE_INTRO.cta} onPress={start} />
               ) : null}
             </>
           )}
@@ -281,9 +270,6 @@ export default function BodyReleaseScreen() {
 /** 부위 순서(`BODY_RELEASE_PARTS`)대로 — 손과 팔 · 어깨와 목 · 얼굴 · 다리와 발 */
 const TENSE_POSES: readonly BodyReleasePose[] = ["hands", "shoulders", "face", "legs"];
 
-/** 뒤로가기 원의 지름 — 감각연못과 같다 */
-const BACK = 40;
-
 const styles = StyleSheet.create({
   scene: { flex: 1, minHeight: 0 },
   overlay: {
@@ -294,32 +280,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: space.xl,
   },
-  back: {
-    position: "absolute",
-    left: space.lg,
-    width: BACK,
-    height: BACK,
-    borderRadius: BACK / 2,
-    backgroundColor: background.elevated,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: line.normal,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   words: { alignSelf: "center", maxWidth: 320, alignItems: "center" },
-  card: {
-    backgroundColor: withAlpha(bodyRelease.pill, bodyReleaseRing.cardOpacity),
-    borderRadius: radius.xlarge,
-    paddingVertical: space.lg,
-    paddingHorizontal: space.xl,
-    gap: space.md,
-  },
-  // 노을 위에 단색 CTA 를 얹지 않는다 — 장면에 녹는 반투명 크림 알약(실기기 · 2026-10-05)
-  pill: {
-    backgroundColor: withAlpha(bodyRelease.pill, bodyReleaseRing.pillOpacity),
-    borderWidth: 0,
-    borderRadius: radius.full,
-  },
   panel: {
     position: "absolute",
     left: 0,
@@ -347,7 +308,7 @@ const styles = StyleSheet.create({
   },
   // 지금 박자 — 불투명 크림 면이 홈 위로 살짝 떠 있다
   beatOn: {
-    backgroundColor: bodyRelease.pill,
+    backgroundColor: restScene.surface,
     ...elevation.floating,
   },
   // 다른 박자 — 면도 테두리도 없이 홈에 가라앉는다
