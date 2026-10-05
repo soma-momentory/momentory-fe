@@ -56,7 +56,7 @@ type Props = {
    * 소개(`intro`)의 제목은 **손글씨로 크게** 선다 — 콘텐츠의 이름이라 브랜드의 결로
    * 읽혀야 한다. 진행·완료(`step`)의 제목은 지금 할 일이라 본문 위계의 굵은 한 줄이다.
    */
-  tone?: "intro" | "step";
+  tone?: "intro" | "step" | "close";
   /** 잠시 누르기 단계의 「꾸욱」 안내 — 없으면 알약을 세우지 않는다 */
   hint?: SensePondStep["hint"];
 };
@@ -68,6 +68,12 @@ type ViewProps = Props & {
   center?: boolean;
   /** 잠시 누르기에서 일찍 손을 뗀 횟수 — 알약이 「조금 더 오래」로 한 번 튄다 */
   nudge?: number;
+  /**
+   * 결이 잔 그림(하늘 · 풀밭) 위에 앉을 때 글자 둘레에 두르는 빛의 색 — 주면 설명도
+   * 한 단 진하게(`label.normal`) 선다. 몸에 힘 빼기의 노을 하늘 위에서 설명이 흐렸다
+   * (실기기 · 2026-10-05). 감각연못은 위쪽 빛 한 겹(`PondTopVeil`)이 그 일을 해서 쓰지 않는다.
+   */
+  halo?: string;
 };
 
 export function StepHeading({
@@ -77,7 +83,9 @@ export function StepHeading({
   hint,
   center = false,
   nudge = 0,
+  halo,
 }: ViewProps) {
+  const glow = halo == null ? null : { textShadowColor: halo, textShadowRadius: 8 };
   // 지금 **보이고 있는** 문구. 새 문구는 옅어진 뒤에야 여기로 온다
   const [shown, setShown] = useState<Shown>({ title, description, tone, hint });
   // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다(react-hooks/refs)
@@ -144,16 +152,16 @@ export function StepHeading({
       ]}
     >
       <Text
-        variant={shown.tone === "intro" ? "title1Hand" : "heading1"}
+        variant={TITLE[shown.tone]}
         color={labelColor.strong}
-        style={center ? styles.mid : undefined}
+        style={[center ? styles.mid : null, glow]}
       >
         {shown.title}
       </Text>
       <Text
-        variant={shown.tone === "intro" ? "body2" : "body1"}
-        color={labelColor.neutral}
-        style={center ? styles.mid : undefined}
+        variant={DESCRIPTION[shown.tone]}
+        color={halo == null ? labelColor.neutral : labelColor.normal}
+        style={[center ? styles.mid : null, glow]}
       >
         {shown.description}
       </Text>
@@ -163,6 +171,13 @@ export function StepHeading({
     </Animated.View>
   );
 }
+
+/**
+ * 결마다의 글자 크기. `close` 는 콘텐츠를 **마치는 한마디**라 진행(`step`)보다 한 단씩
+ * 크다 — 몸에 힘 빼기의 마지막 화면에서 22 · 16 은 작았다(실기기 · 2026-10-05).
+ */
+const TITLE = { intro: "title1Hand", step: "heading1", close: "title3" } as const;
+const DESCRIPTION = { intro: "body2", step: "body1", close: "headline1" } as const;
 
 const styles = StyleSheet.create({
   head: { paddingTop: space.sm, gap: space.xs },
