@@ -17,6 +17,8 @@ const routes: Record<string, ScreenName> = {
   "diary/[id]": "diary_detail",
   "rest/cards": "wish_cards",
   "rest/sense-pond": "sense_pond",
+  "rest/body-release": "body_release",
+  "rest/worry-box": "worry_box",
   "my/profile": "profile",
   "my/nickname": "profile_nickname",
   "my/age": "profile_age",
@@ -62,7 +64,12 @@ export function describeRoute(
  *
  * `inactive` 는 멈추지 않는다 — 알림 센터를 잠깐 내리는 것까지 끊으면 구간이 잘게 쪼개진다.
  */
-export function createScreenObserver(track: Track, now: () => number = Date.now) {
+export function createScreenObserver(
+  track: Track,
+  now: () => number = Date.now,
+  /** 화면이 옮겨 갔다 — 쉼터 방문이 어디서 왔는지(`restVisit`) 같은 것이 듣는다 */
+  onMove?: (from: ScreenName | null, to: ScreenName | null) => void,
+) {
   let previous: string | null = null;
   let current: { screen: ScreenName; step?: OnboardingStepName } | null = null;
   let enteredAt = 0;
@@ -81,7 +88,9 @@ export function createScreenObserver(track: Track, now: () => number = Date.now)
       if (route === previous) return;
       previous = route;
       leave("navigate");
+      const from = current?.screen ?? null;
       current = describeRoute(route);
+      onMove?.(from, current?.screen ?? null);
       enteredAt = now();
       paused = false;
       if (current == null) return;

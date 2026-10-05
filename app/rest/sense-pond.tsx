@@ -4,7 +4,11 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Screen } from "@/components/ds";
+import { useRestContentAnalytics } from "@/features/analytics/useRestContentAnalytics";
 import { useSensePondAnalytics } from "@/features/analytics/useSensePondAnalytics";
+import { hasDiaryOn } from "@/features/diary/model/selectors";
+import { useDiary } from "@/features/diary/model/diary";
+import { useTodayContext } from "@/features/home/model/day";
 import { PondTopVeil } from "@/components/rest/pond/PondTopVeil";
 import { SensePanel } from "@/components/rest/pond/SensePanel";
 import { PondScene } from "@/components/rest/pond/PondScene";
@@ -109,6 +113,15 @@ export default function SensePondScreen() {
   const hasNext = stepIndex + 1 < SENSE_POND_STEPS.length;
   // 단계별 소요 시간 계측 — 사용자에게는 보이지 않는다(`features/analytics/sensePond.ts`)
   const pond = useSensePondAnalytics(step.id);
+  // 쉼 콘텐츠 공통 계측 — 열기 · 끝까지 · 어디서 나갔나(`features/analytics/restContent.ts`)
+  const { date: today } = useTodayContext();
+  const diaryToday = useDiary((s) => hasDiaryOn(s.diaries, today));
+  const rest = useRestContentAnalytics("sense_pond", step.id, diaryToday);
+
+  // 마지막 감각을 찾은 순간이 끝이다 — `sense_pond_finished` 와 같은 때
+  useEffect(() => {
+    if (done && !hasNext) rest.complete();
+  }, [done, hasNext, rest]);
 
   // 소개는 한 호흡만 머문다 — 손짓이 먼저 오면 그 자리에서 끝난다(아래 `onFound`)
   useEffect(() => {

@@ -5,6 +5,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Screen, Text } from "@/components/ds";
 import { BodyReleaseScene, type BodyReleasePose } from "@/components/rest/body/BodyReleaseScene";
+import type { RestStageName } from "@/features/analytics/events";
+import { useRestContentAnalytics } from "@/features/analytics/useRestContentAnalytics";
+import { hasDiaryOn } from "@/features/diary/model/selectors";
+import { useDiary } from "@/features/diary/model/diary";
+import { useTodayContext } from "@/features/home/model/day";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
 import {
   SCENE_BACK_SIZE,
@@ -66,6 +71,18 @@ export default function BodyReleaseScreen() {
   const beat = startedAt == null ? null : beatAt(now - startedAt);
   const done = beat?.done === true;
   const running = beat != null && !beat.done ? beat : null;
+
+  // 쉼 콘텐츠 공통 계측 — 나간 자리는 시작 전(intro) 또는 그때의 부위다
+  const { date: today } = useTodayContext();
+  const diaryToday = useDiary((s) => hasDiaryOn(s.diaries, today));
+  const rest = useRestContentAnalytics(
+    "body_release",
+    startedAt == null ? "intro" : running != null ? PART_STAGES[running.part]! : null,
+    diaryToday,
+  );
+  useEffect(() => {
+    if (done) rest.complete();
+  }, [done, rest]);
 
   // 시계 — 진행 중에만 돈다
   useEffect(() => {
@@ -266,6 +283,9 @@ export default function BodyReleaseScreen() {
     </Screen>
   );
 }
+
+/** 계측의 나간 자리 — 부위 순서(`BODY_RELEASE_PARTS`)대로 */
+const PART_STAGES: readonly RestStageName[] = ["hands", "shoulders", "face", "legs"];
 
 /** 부위 순서(`BODY_RELEASE_PARTS`)대로 — 손과 팔 · 어깨와 목 · 얼굴 · 다리와 발 */
 const TENSE_POSES: readonly BodyReleasePose[] = ["hands", "shoulders", "face", "legs"];

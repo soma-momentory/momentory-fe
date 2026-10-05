@@ -6,6 +6,7 @@ import { useAuth } from "@/features/auth/model/auth";
 import { onReminderOpened } from "@/lib/notifications";
 import { flushAnalytics, isAnalyticsEnabled, track } from "./index";
 import { createForegroundObserver, createScreenObserver } from "./observation";
+import { restVisit } from "./restContent";
 
 let opened = false;
 
@@ -17,7 +18,7 @@ export function AnalyticsObserver() {
 function ActiveObserver() {
   const segments = useSegments();
   const auth = useAuth((s) => s.status);
-  const observe = useRef(createScreenObserver(track));
+  const observe = useRef(createScreenObserver(track, Date.now, restVisit.move));
   const route = segments.join("/");
 
   useEffect(() => {

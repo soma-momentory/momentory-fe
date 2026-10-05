@@ -442,7 +442,10 @@ describe("감각연못 · 계측", () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  const sent = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
+  const calls = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
+  /** 감각연못 전용 이벤트만 — 쉼 콘텐츠 공통 이벤트(`rest_content_*`)는 아래에서 따로 본다 */
+  const sent = () => calls().filter(([name]) => String(name).startsWith("sense_pond"));
+  const restSent = () => calls().filter(([name]) => String(name).startsWith("rest_content"));
 
   it("세 단계를 마치면 단계마다 한 번씩, 그리고 완료를 한 번 보낸다 — 떠날 때는 더 보내지 않는다", async () => {
     const r = await render(<SensePondScreen />);
@@ -507,5 +510,36 @@ describe("감각연못 · 계측", () => {
 
     expect(waves(r)).toHaveLength(0);
     expect(sent()).toEqual([]);
+  });
+
+  it("쉼 콘텐츠 공통 — 열면 들어온 길을, 마지막 감각을 찾으면 끝을 보낸다(떠나도 이탈은 없다)", async () => {
+    const r = await render(<SensePondScreen />);
+    await layout(r);
+    await reachFeel(r);
+    await holdPond(r, WATER);
+    await wait(pondMotion.hold + 20);
+    await act(async () => {
+      r.unmount();
+    });
+
+    expect(restSent()).toEqual([
+      ["rest_content_opened", { content: "sense_pond", entry: "direct", diary_today: false }],
+      ["rest_content_completed", { content: "sense_pond", duration_ms: expect.any(Number) }],
+    ]);
+  });
+
+  it("쉼 콘텐츠 공통 — 중간에 떠나면 나간 자리(단계)를 보낸다", async () => {
+    const r = await render(<SensePondScreen />);
+    await layout(r);
+    await tapPond(r, WATER);
+    await settle("see");
+    await act(async () => {
+      r.unmount();
+    });
+
+    expect(restSent()).toContainEqual([
+      "rest_content_exited",
+      { content: "sense_pond", stage: "see", duration_ms: expect.any(Number) },
+    ]);
   });
 });
