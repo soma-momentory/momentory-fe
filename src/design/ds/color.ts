@@ -332,6 +332,27 @@ export const pond = {
   veil: "#FBF7EE",
 } as const;
 
+/**
+ * 몸에 힘 빼기 — 노을 지는 언덕 뒤의 **해** (2026-10-05 · `components/rest/body/`).
+ *
+ * 하늘·언덕·카피바라는 그림(`assets/body-release/`)이라 색이 여기 없다. 해만 코드다 —
+ * 들숨에 커지고 날숨에 작아지는 호흡 원이라서. 장식 전용이라 글자를 얹지 않는다.
+ */
+export const bodyRelease = {
+  /** 해의 한가운데 → 바깥 번짐 */
+  sunCore: "#F9B46F",
+  sunGlow: "#FBD9B0",
+  /** 카피바라를 감싸는 시간 링 — 바탕 줄은 옅게, 차오르는 호는 또렷하게(`bodyReleaseRing`) */
+  ring: "#FFFFFF",
+  /**
+   * 장면 위의 버튼 면 — 노을 위에 단색 CTA 가 얹히면 앱 화면의 버튼으로 읽혀서
+   * (실기기 · 2026-10-05) **반투명 크림 알약**으로 둔다. 글자는 `label.normal`
+   */
+  pill: "#FFF7EE",
+  /** 끝났을 때 카피바라 둘레에서 떠오르는 빛 알갱이 — 노을 속 반딧불 결(`bodyReleaseFinish`) */
+  mote: "#FFF1D2",
+} as const;
+
 export const color = {
   background,
   label,

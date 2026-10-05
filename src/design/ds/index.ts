@@ -26,6 +26,7 @@ import { typography } from "./typography";
 
 export {
   background,
+  bodyRelease,
   cardFrame,
   color,
   emotion,
@@ -76,6 +77,14 @@ export {
   type PondPointKind,
   type PondSpot,
 } from "./pond";
+
+export {
+  bodyReleaseFinish,
+  bodyReleaseLayout,
+  bodyReleaseMotion,
+  bodyReleaseRing,
+  bodyReleaseSize,
+} from "./bodyRelease";
 
 export {
   bubbleRadius,

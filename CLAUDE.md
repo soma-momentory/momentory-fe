@@ -240,9 +240,9 @@ app/retro/{_layout, confirm, talk, draft, done}.tsx
                     감정 탐색)을 다 그린다 — 무엇을 그릴지는 서버의 `phase` 가 정한다
 app/diary/{_layout, [id]/index}.tsx = A3 · A3-c
                   ← `[id]/edit`(A4)은 2026-08-20 에 지웠다(DESIGN.md N2 · PRODUCT.md #24·26)
-app/rest/{_layout, cards/index, sense-pond}.tsx
-                  = R2(날짜별 바람카드) · 감각연못
-                  ← 쉼 콘텐츠 넷 중 **화면이 있는 것은 감각연못 하나**다
+app/rest/{_layout, cards/index, sense-pond, body-release}.tsx
+                  = R2(날짜별 바람카드) · 감각연못 · 몸에 힘 빼기
+                  ← 쉼 콘텐츠 넷 중 **화면이 있는 것은 감각연못 · 몸에 힘 빼기 둘**이다
                     (`features/rest/model/contents.ts` 의 `route` 가 없으면 눌리지 않는다)
 app/my/{_layout, profile, nickname, age, gender, interests, rest}.tsx
                   = 기본 정보 목록 + 항목별 수정 다섯
