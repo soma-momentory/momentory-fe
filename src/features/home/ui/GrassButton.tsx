@@ -11,7 +11,15 @@ import {
 } from "react-native";
 
 import { Text } from "@/components/ds";
-import { label as labelColor, motion, overlay, size, space } from "@/design/ds";
+import {
+  label as labelColor,
+  motion,
+  overlay,
+  raised,
+  raisedShadow,
+  size,
+  space,
+} from "@/design/ds";
 
 /**
  * 홈 「지금 하루 돌아보기」 버튼 — **위가 잔디처럼 봉긋한 Solid Primary**
@@ -53,15 +61,18 @@ import { label as labelColor, motion, overlay, size, space } from "@/design/ds";
  *
  * 스크림 하나로는 반응이 약했다 — 잔디는 면이 넓고 색이 짙어서, 그 위에 12% 를 얹어
  * 봐야 눈에 거의 안 들어온다. 그래서 둘을 함께 쓴다: **스크림을 한 단 올리고
- * (`pressStrong`) 버튼을 살짝 줄인다**(`PRESS_SCALE`).
+ * (`pressStrong`) 면이 그림자 위로 내려앉는다**.
  *
- * 크기가 줄어드는 것은 DS 에 없는 표현이지만, **§6 의 「면 색을 바꾸지 않는다」는
- * 지킨다** — 면은 그대로고 상자가 잠깐 작아질 뿐이다. 줄이는 값은 **잰 폭이 아니라
- * 비율**이라(`transform`) 자리 계산에 영향이 없다 — `onLayout` 이 재는 것은 변형
- * 전의 상자다.
+ * ### 그림자 위로 내려앉는다 (2026-10-05 · 사용자 요청)
+ *
+ * 잔디 밑에 **같은 그림을 짙은 초록으로 칠한 그림자**(`raisedShadow.grass`)가 `raised.depth`
+ * 만큼 아래에 깔리고, 누르면 면이 그만큼 내려앉아 그림자를 덮는다 — 쉼터 안 빈티지 버튼의
+ * 손맛이다. 사각형 그림자를 깔면 잔디 밖까지 그늘이 지므로 그림 자체를 그림자로 쓴다.
+ * 2026-09-10 에는 3% 줄이기(`scale 0.97`)였는데, 그림자가 생기면서 내려앉기로 바꿨다 —
+ * 둘을 겹치면 출렁인다. 그림자는 상자 밖(아래)에 깔려 **자리 계산에 영향이 없다.**
  *
  * **둘 다 부드럽게 오간다**(2026-09-10 · 사용자 요청). 값 하나(`press` · 0→1)가
- * 크기와 스크림 짙기를 함께 끌고, 시간은 토큰(`motion.duration` · 120ms)을 쓴다 —
+ * 내려앉기와 스크림 짙기를 함께 끌고, 시간은 토큰(`motion.duration` · 120ms)을 쓴다 —
  * 이 화면에서 다른 것들이 움직이는 속도와 같다. 손을 떼면 같은 시간에 되돌아온다.
  *
  * ⚠ 스크림은 **늘 붙어 있고 짙기만 0 에서 오른다.** 누를 때 붙이면 그 순간 그림을
@@ -86,12 +97,6 @@ const HEIGHT = size.button.large;
  * 이번엔 바닥에 붙어 보여서, **그 절반쯤**에서 멈춘다.
  */
 const LABEL_DROP = 8;
-
-/**
- * 누르는 동안 줄어드는 비율. 3% 는 **눈으로 보이지만 덜컹거리지는 않는** 폭이다 —
- * 더 줄이면 넓은 면이 통째로 튀어 보인다.
- */
-const PRESS_SCALE = 0.97;
 
 const ART = require("../../../../assets/home/cta-grass.png");
 
@@ -134,7 +139,7 @@ export function GrassButton({ label, onPress, style }: Props) {
     return () => run.stop();
   }, [down, press]);
 
-  const scale = press.interpolate({ inputRange: [0, 1], outputRange: [1, PRESS_SCALE] });
+  const translateY = press.interpolate({ inputRange: [0, 1], outputRange: [0, raised.depth] });
 
   return (
     <Pressable
@@ -145,8 +150,17 @@ export function GrassButton({ label, onPress, style }: Props) {
       onLayout={onLayout}
       style={[styles.base, style]}
     >
-      {/* 줄어드는 것은 **안쪽 판**이다 — 바깥 상자가 그대로여야 자리가 안 밀린다 */}
-      <Animated.View style={[styles.face, { transform: [{ scale }] }]}>
+      {/* 단단한 그림자 — 같은 그림을 짙은 초록으로 칠해 깊이만큼 아래에 깐다(상자 밖) */}
+      {box.width > 0 && box.height > 0 ? (
+        <Image
+          source={ART}
+          style={[face, { top: raised.depth }]}
+          resizeMode="stretch"
+          tintColor={raisedShadow.grass}
+        />
+      ) : null}
+      {/* 내려앉는 것은 **안쪽 판**이다 — 바깥 상자가 그대로여야 자리가 안 밀린다 */}
+      <Animated.View style={[styles.face, { transform: [{ translateY }] }]}>
         {box.width > 0 && box.height > 0 ? (
           <>
             <Image source={ART} style={face} resizeMode="stretch" />
@@ -179,11 +193,11 @@ const styles = StyleSheet.create({
    * ⚠ `alignSelf` 를 적지 않는다 — 세로 칸(`ctaBody`)의 기본이 stretch 라 가만두면
    * 칸을 다 쓴다. 카피바라 자리는 그 칸 **밖**이라 침범하지 않는다.
    *
-   * ⚠ 여백과 정렬은 **안쪽 판**(`face`)이 든다 — 눌릴 때 줄어드는 것이 그쪽이라
+   * ⚠ 여백과 정렬은 **안쪽 판**(`face`)이 든다 — 눌릴 때 내려앉는 것이 그쪽이라
    * 바깥 상자는 자리를 지키는 일만 한다.
    */
   base: { height: HEIGHT },
-  // 눌리는 판 — 상자를 꽉 채우고 이 안에서 그림과 글자가 함께 줄어든다
+  // 눌리는 판 — 상자를 꽉 채우고 이 안에서 그림과 글자가 함께 내려앉는다
   face: {
     flex: 1,
     alignSelf: "stretch",

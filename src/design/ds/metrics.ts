@@ -1,6 +1,6 @@
 import { StyleSheet, type ViewStyle } from "react-native";
 
-import { line } from "./color";
+import { line, raisedShadow } from "./color";
 
 /**
  * Momentory DS — 크기. 정본은 `docs/DESIGN.md` §3~5, §6~11.
@@ -162,7 +162,7 @@ export const hairline = {
 } as const satisfies Record<string, ViewStyle>;
 
 /**
- * 그림자 두 단(`DESIGN.md` §5). **카드에는 그림자가 없다** — hairline 만 쓴다.
+ * 그림자 두 단(`DESIGN.md` §5). **카드에는 그림자가 없다** — hairline 만 쓴다(홈 · 쉼터 첫 화면만 예외 · 아래 `raised`).
  *
  * CSS blur 를 RN 으로 옮길 때 `shadowRadius ≈ blur / 2` 로 잡는다(관례적 근사).
  * Android 는 `elevation` 근사라 색·offset 이 무시된다.
@@ -184,6 +184,21 @@ export const elevation = {
     shadowOpacity: 0.16,
     elevation: 8,
   },
+} as const;
+
+/**
+ * **번지지 않는 아래쪽 그림자** (2026-10-05 · 사용자 요청) — 쉼터 안 빈티지 버튼
+ * (`restSceneSize.vintage`)의 손맛을 홈 · 쉼터 첫 화면에 옅게 옮긴다. 색은 `raisedShadow`.
+ *
+ * 누르는 것은 면이 `depth` 만큼 꾹 내려앉아 그림자를 덮는다(`RestCardPressable` ·
+ * `GrassButton` · 일정 체크박스). 누르지 않는 카드는 `card` 스타일만 얹는다.
+ * 빈티지(4)보다 얕다 — 앱 화면은 장면이 아니라서 한 단 조용해야 한다.
+ */
+export const raised = {
+  depth: 3,
+  /** 체크박스(20)는 작아서 한 단 얕다 */
+  checkDepth: 2,
+  card: { boxShadow: `0px 3px 0px ${raisedShadow.card}` },
 } as const;
 
 /**
@@ -291,6 +306,7 @@ export const metrics = {
   layout,
   hairline,
   elevation,
+  raised,
   size,
   zIndex,
   motion,

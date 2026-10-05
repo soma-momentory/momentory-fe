@@ -403,6 +403,20 @@ export const restScene = {
   mutedInk: "#A8998A",
 } as const;
 
+/**
+ * 앱 화면의 **번지지 않는 아래쪽 그림자** (2026-10-05 · 사용자 요청).
+ *
+ * 쉼터 안 빈티지 버튼(`restScene.shadow`)의 결을 앱 화면에 맞게 **옅게** 옮겼다 — 잉크
+ * 외곽선 없이 hairline 은 그대로 두고, 그 아래에 같은 따뜻한 회갈색(`WARM`)을 한 겹
+ * 깐다. 홈 · 쉼터 첫 화면(R1)의 카드 · 버튼 · 일정 체크박스가 쓴다(`metrics.ts` `raised`).
+ */
+export const raisedShadow = {
+  /** 크림 카드 · 체크박스 밑 — hairline(`line.neutral` 0.24)과 같은 결이라 튀지 않는다 */
+  card: `rgba(${WARM},0.22)`,
+  /** 잔디 CTA 밑 — 면(`primary.heavy`)에서 한 톤 짙은 초록 */
+  grass: "#3E5546",
+} as const;
+
 export const color = {
   background,
   label,

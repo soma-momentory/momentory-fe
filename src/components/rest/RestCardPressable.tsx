@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { cardRipple, motion, radius, restRipple } from "@/design/ds";
+import { cardRipple, motion, radius, raised, raisedShadow, restRipple } from "@/design/ds";
 
 /**
  * 쉼터에서 **카드를 누르는 느낌** — 바람카드 · 쉼 콘텐츠 2×2 가 함께 쓴다(2026-09-11 · 사용자 요청).
@@ -45,10 +45,12 @@ import { cardRipple, motion, radius, restRipple } from "@/design/ds";
  * 글자 상자 기준 좌표가 와서 물결이 엉뚱한 자리에서 시작한다. 카드 전체가 하나의 진입점이라
  * 덮개가 안쪽 손짓을 가로챌 일이 없다.
  *
- * ## 그리고 아래로 눌린다
+ * ## 그리고 그림자 위로 내려앉는다 (2026-10-05 · 사용자 요청)
  *
- * 카드는 손가락 밑에서 `PRESS_DEPTH` 만큼 내려갔다가 떼면 돌아온다 — 물결 이전부터 있던
- * 반응이고 그대로 둔다. 크기는 바뀌지 않는다.
+ * 카드 밑에 **번지지 않는 옅은 그림자**(`raised` · 3dp)가 깔리고, 손가락 밑에서 카드가 그
+ * 깊이만큼 내려앉아 그림자를 덮었다가 떼면 돌아온다 — 쉼터 안 빈티지 버튼(`VintagePressable`)의
+ * 손맛을 앱 화면에 맞게 옅게 옮겼다. 크기는 바뀌지 않는다. 그림자는 제자리에 있고 움직이는
+ * 것은 카드 면(`face`)이라, 물결도 그 면 안에서 함께 내려간다.
  *
  * 두 가지를 먼저 시도했다가 사용자 요청으로 물렸다:
  *
@@ -56,8 +58,8 @@ import { cardRipple, motion, radius, restRipple } from "@/design/ds";
  * - **초록 물들이기 + 초록 테두리** — 「눌렀다」보다 「골라 놓았다」로 읽혔다. 물결은 초록이 아니고
  *   번지며 곧 사라지며 테두리를 두르지 않아 그렇게 읽히지 않는다
  *
- * ⚠ **그림자는 쓰지 않는다.** 눌린 종이라면 그림자가 함께 엷어져야 맞지만 `DESIGN.md` §5 에서
- * **카드에는 그림자가 없다**(hairline 만) — 없는 것을 이 자리에서 만들지 않는다.
+ * ⚠ 2026-09-11 에는 **그림자를 쓰지 않았다** — 그때 `DESIGN.md` §5 가 「카드에는 그림자가
+ * 없다」였다. 2026-10-05 에 홈 · 쉼터 첫 화면만 예외로 열었다(§5 「단단한 그림자」).
  */
 type Props = {
   accessibilityLabel: string;
@@ -65,9 +67,6 @@ type Props = {
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
 };
-
-/** 눌린 동안 내려가는 깊이(dp) — 더 깊으면 카드가 떨어지는 것처럼 보이고, 1 은 눈에 안 띈다 */
-const PRESS_DEPTH = 2;
 
 type Wave = { id: number; x: number; y: number; size: number; fading: boolean };
 type Size = { width: number; height: number };
@@ -157,10 +156,10 @@ export function RestCardPressable({ accessibilityLabel, onPress, style, children
     }, untilFull(wave));
   };
 
-  const translateY = press.interpolate({ inputRange: [0, 1], outputRange: [0, PRESS_DEPTH] });
+  const translateY = press.interpolate({ inputRange: [0, 1], outputRange: [0, raised.depth] });
 
   return (
-    <AnimatedPressable
+    <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={go}
@@ -170,24 +169,28 @@ export function RestCardPressable({ accessibilityLabel, onPress, style, children
         if (leavingId.current == null) spread(e);
       }}
       onPressOut={release}
-      style={[style, { transform: [{ translateY }] }]}
+      style={[styles.outer, style]}
     >
-      {children}
-      {/* 손짓을 받는 보이지 않는 덮개 — 물결은 이 안에서 카드 모서리대로 잘린다 */}
-      <View
-        testID="rest-card-surface"
-        onLayout={(e) => setSize(e.nativeEvent.layout)}
-        style={styles.surface}
-      >
-        {waves.map((w) => (
-          <CardRipple
-            key={w.id}
-            wave={w}
-            onDone={() => setWaves((ws) => ws.filter((it) => it.id !== w.id))}
-          />
-        ))}
-      </View>
-    </AnimatedPressable>
+      {/* 단단한 그림자 — 카드와 같은 모양이 깊이만큼 아래에 깔린다. 제자리에 있다 */}
+      <View style={styles.shadow} />
+      <Animated.View style={[styles.face, { transform: [{ translateY }] }]}>
+        {children}
+        {/* 손짓을 받는 보이지 않는 덮개 — 물결은 이 안에서 카드 모서리대로 잘린다 */}
+        <View
+          testID="rest-card-surface"
+          onLayout={(e) => setSize(e.nativeEvent.layout)}
+          style={styles.surface}
+        >
+          {waves.map((w) => (
+            <CardRipple
+              key={w.id}
+              wave={w}
+              onDone={() => setWaves((ws) => ws.filter((it) => it.id !== w.id))}
+            />
+          ))}
+        </View>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -267,9 +270,20 @@ function CardRipple({ wave, onDone }: { wave: Wave; onDone: () => void }) {
   );
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 const styles = StyleSheet.create({
+  // 그림자 깊이만큼 아래 자리를 비워 둔다 — 내려앉은 카드가 아래 것과 겹치지 않게
+  outer: { paddingBottom: raised.depth },
+  shadow: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: raised.depth,
+    bottom: 0,
+    borderRadius: radius.large,
+    backgroundColor: raisedShadow.card,
+  },
+  // 움직이는 면 — 격자 칸에서는 옆 칸 높이까지 늘어난다(카드가 `flexGrow` 로 따라온다)
+  face: { flexGrow: 1 },
   // 카드와 같은 크기·반경 — 물결이 모서리 밖으로 새지 않는다
   surface: {
     position: "absolute",
