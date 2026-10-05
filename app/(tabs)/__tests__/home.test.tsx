@@ -207,6 +207,18 @@ describe("일정 행 — 체크박스와 ⋮", () => {
     expect(useDay.getState().schedules[3]?.doneAt).toBeNull();
   });
 
+  it("손으로 마친 순간에만 작은 끝맺음이 핀다 — 처음부터 마친 줄 · 체크를 풀 때는 피지 않는다", async () => {
+    const { getByLabelText, queryAllByTestId } = await render(<Home />);
+    const bursts = () => queryAllByTestId("check-burst", { includeHiddenElements: true });
+    expect(bursts()).toHaveLength(0); // 「팀 회의」는 처음부터 마친 줄이다
+
+    await fireEvent.press(getByLabelText("팀 회의 마침")); // 풀기
+    expect(bursts()).toHaveLength(0);
+
+    await fireEvent.press(getByLabelText("운동 가기 마침")); // 마치기
+    expect(bursts()).toHaveLength(1);
+  });
+
   it("체크박스는 20 이지만 히트 영역은 44 다", async () => {
     // 작은 글리프는 시각 크기를 키우지 말고 hitSlop 으로 44 를 확보한다 (RULES.md)
     const { getByLabelText } = await render(<Home />);

@@ -29,6 +29,7 @@ import {
   label as labelColor,
   layout,
   maxFontScale,
+  raised,
   size,
   space,
   status,
@@ -308,6 +309,7 @@ export default function Home() {
       }
     >
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         // 줄을 끄는 동안에는 스크롤을 멈춘다 — 손가락 하나가 두 일을 하지 않게
@@ -463,8 +465,15 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  // 좌우 20 은 `TabScreen` 이 잡는다 — 여기서 또 잡으면 두 겹이 된다
+  /**
+   * 스크롤 칸은 **화면 폭 전체**다 — `TabScreen` 이 잡은 좌우 20 을 바깥으로 되돌리고 안쪽에서
+   * 다시 잡는다. iOS 의 ScrollView 는 제 경계 밖을 늘 잘라서, 칸이 여백 안쪽에 서 있으면
+   * 일정 체크의 끝맺음(`CheckBurst` · 체크박스 왼쪽으로 20 남짓 퍼진다)의 왼쪽이 잘렸다
+   * (2026-10-05 · 실기기). 내용의 자리는 그대로다
+   */
+  scroll: { marginHorizontal: -layout.screenPadding },
   content: {
+    paddingHorizontal: layout.screenPadding,
     // 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 (`DESIGN.md` §3)
     paddingBottom: layout.scrollClearance,
   },
@@ -490,7 +499,8 @@ const styles = StyleSheet.create({
    * 왼쪽에 서고 카피바라가 오른쪽 아래에 앉는다. 바닥을 맞추는 이유는 카피바라가
    * **앉아 있는 그림**이라서다: 가운데 정렬하면 공중에 뜬다.
    */
-  cta: { flexDirection: "row", alignItems: "flex-end", gap: space.sm },
+  // 카드 밑에 번지지 않는 옅은 그림자(`raised` · 2026-10-05 · 사용자 요청) — 쉼터 첫 화면과 같은 결
+  cta: { flexDirection: "row", alignItems: "flex-end", gap: space.sm, ...raised.card },
   ctaBody: { flex: 1, gap: 22 },
   // 폭은 그대로 두고 왼쪽으로만 조금 — 오른쪽에서 같은 값을 되돌려 준다
   // 제목과 같은 시작선 · 조금 작은 크기 — 세로 칸의 기본(stretch)을 끄고 폭을 직접 준다

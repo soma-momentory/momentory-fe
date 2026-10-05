@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { Card, Icon, Text } from "@/components/ds";
-import { label as labelColor, primary, space } from "@/design/ds";
+import { label as labelColor, primary, raised, space } from "@/design/ds";
 import type { RestContent } from "@/features/rest/model/contents";
 
 import { RestCardPressable } from "./RestCardPressable";
@@ -33,6 +33,10 @@ import { RestCardPressable } from "./RestCardPressable";
  * 눌리는 칸(`route` 를 든 것)은 손을 대면 **살짝 아래로 내려갔다** 떼면 돌아온다
  * (`RestCardPressable` · 2026-09-11 · 사용자 요청). **크기·색은 변하지 않는다** — 격자에서 한 칸만
  * 줄거나 물들면 옆 칸과 어긋나 보인다.
+ *
+ * 칸 밑에는 **번지지 않는 옅은 그림자**가 깔린다(`raised` · 2026-10-05 · 사용자 요청). 눌리는 칸은
+ * 그 그림자 위로 내려앉고, 아직 눌리지 않는 칸도 같은 그림자와 같은 아래 여백을 가져 행 안의
+ * 두 칸 높이가 맞는다.
  *
  * ## 아직 화면이 없는 칸은 그렇다고 적는다
  *
@@ -70,7 +74,7 @@ export function RestContentGrid({ items, onOpen }: Props) {
         <View key={r} style={styles.row}>
           {row.map((item) => {
             const tile = (
-              <Card padding="none" style={styles.tile}>
+              <Card padding="none" style={[styles.tile, item.route == null && raised.card]}>
                 <View style={styles.head}>
                   <Text
                     variant="headline1"
@@ -104,7 +108,7 @@ export function RestContentGrid({ items, onOpen }: Props) {
                 {tile}
               </RestCardPressable>
             ) : (
-              <View key={item.id} style={styles.cell}>
+              <View key={item.id} style={[styles.cell, styles.still]}>
                 {tile}
               </View>
             );
@@ -125,6 +129,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: space.md },
   // 행 안의 두 칸 — 누르는 면과 카드가 같은 높이로 늘어난다
   cell: { flex: 1 },
+  // 눌리지 않는 칸 — 눌리는 칸(`RestCardPressable`)과 같은 아래 여백 · 같은 그림자. 그림자는 카드가 든다
+  still: { paddingBottom: raised.depth },
   // ⚠ `flex: 1` 이 아니다 — 칸(세로 컨테이너) 안에서는 높이의 basis 가 0 이 돼
   // 카드가 접힌다(글자가 사라진 채 아이콘만 남았다 · 2026-09-03 에뮬레이터).
   // `flexGrow` 는 내용 높이에서 출발해 옆 칸 높이까지만 늘어난다
