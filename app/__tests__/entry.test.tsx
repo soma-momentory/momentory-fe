@@ -3,11 +3,17 @@ import { router } from "expo-router";
 
 import Splash from "../index";
 
+import { fetchMe } from "@/features/auth/data/meApi";
 import { SESSION_KEY, useAuth } from "@/features/auth/model/auth";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+}));
+
+// 서버에 못 물어본 것이 기본이다 — 묻는 데 걸리는 시간을 조절하는 경우만 따로 준다
+jest.mock("@/features/auth/data/meApi", () => ({
+  fetchMe: jest.fn(async () => ({ ok: false, code: "network" })),
 }));
 
 type SecureMock = { __store: Map<string, string> };
@@ -68,6 +74,36 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     await settle();
 
     await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
+  });
+
+  it("서버가 0.8초보다 늦게 답해도 그 답을 기다렸다가 판정한다", async () => {
+    // 개발 서버는 1초 넘게 걸렸다(2026-10-05 실기기) — 하한이 먼저 끝났다고 아직 모르는
+    // 완료 여부(기본값 false)로 판정하면, 온보딩을 마친 사람이 온보딩으로 간다
+    seedSession();
+    jest.mocked(fetchMe).mockImplementationOnce(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                data: { userId: 1, onboardingRequired: false, profile: null },
+              }),
+            1500,
+          ),
+        ),
+    );
+    await render(<Splash />);
+    await settle();
+
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(700);
+    });
+
+    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/welcome");
   });
 
   it("0.8초 하한 전에는 아무 데도 보내지 않는다", async () => {
