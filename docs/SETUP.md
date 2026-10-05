@@ -469,7 +469,16 @@ EXPO_PUBLIC_API_BASE_URL=https://api.momentory.co.kr
 
 Xcode로 App Store 배포용 iOS 프로젝트를 만들 때는 운영 검증을 명시적으로 켠다.
 이 값이 `production`이면 API 주소·카카오 키·Google iOS/Web 클라이언트 ID가 모두
-있는지, API 주소가 HTTPS인지 `app.config.ts`가 prebuild 전에 검사한다.
+있는지, API 주소가 **`https://api.momentory.co.kr` 인지** `app.config.ts`가 prebuild 전에 검사한다.
+
+> ⚠ **출시 빌드는 운영 주소가 아니면 실패한다** (2026-10-05). App Store iOS 1.1.0 이
+> `.env` 의 `dev.momentory.co.kr` 를 품고 나가, 그 기간 iOS 신규 가입이 전부 **개발 DB** 로
+> 갔다(그 전 검사는 https 인지만 봤다). 이제 검사가 셋 중 하나에서 켜진다 —
+> `MOMENTORY_BUILD_ENV=production` · Xcode 의 **Release 빌드 · 아카이브**(`CONFIGURATION=Release`) ·
+> Android 의 **`bundleRelease` · `assembleRelease`**(`plugins/withReleaseSigning.ts` 가 Gradle 에
+> 심는다). prebuild 때 켜는 것을 잊어도 아카이브 · AAB 단계에서 걸린다.
+> **출시 빌드 전에 `.env` 를 `EXPO_PUBLIC_API_BASE_URL=https://api.momentory.co.kr` 로 바꾸고,
+> 끝나면 개발 주소로 되돌린다.**
 
 ```bash
 MOMENTORY_BUILD_ENV=production npx expo prebuild --platform ios --clean

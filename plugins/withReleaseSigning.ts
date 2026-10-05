@@ -118,14 +118,42 @@ export const withSigningApplied = (gradle: string, prefix = DEFAULT_PREFIX): str
   return out.slice(0, relStart) + rewritten + out.slice(relEnd);
 };
 
+/** 아래 덧붙임이 이미 들어갔는지 알아보는 표식 — 두 번 실행돼도 한 번만 붙는다 */
+const RELEASE_CHECK_MARK = "MOMENTORY_RELEASE_BUILD";
+
+/**
+ * 릴리스 작업(`bundleRelease` · `assembleRelease` …)이 잡히면 앱 설정을 만드는 작업
+ * (expo-constants 의 `createExpoConfig`)에 `MOMENTORY_RELEASE_BUILD=1` 을 넘긴다. 그러면
+ * `app.config.ts` 가 출시 검사를 켜서, API 주소가 운영(`api.momentory.co.kr`)이 아니면 **AAB 가
+ * 만들어지기 전에 빌드가 실패한다**. iOS 는 Xcode 가 `CONFIGURATION=Release` 를 넘겨 같은 검사가
+ * 켜진다 — Android 의 그 작업은 빌드 종류를 몰라서 여기서 알려 준다.
+ *
+ * dev 주소로 빌드한 AAB 를 테스트 트랙에 올린 일(2026-09-06 · versionCode 3)과 iOS 1.1.0 이
+ * dev 주소로 출시된 일(2026-10)이 있었다 — 사람이 `.env` 를 바꿔 주기를 기대하지 않는다.
+ */
+const releaseApiCheck = `
+// 생성물 — plugins/withReleaseSigning.ts 가 쓴다. 직접 고치지 않는다.
+// 릴리스 빌드에서는 app.config.ts 의 출시 검사(운영 API 주소)를 켠다.
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name ==~ /(bundle|assemble)\\w*Release/ }) {
+        graph.allTasks.findAll { it.name == 'createExpoConfig' }.each {
+            it.environment('${RELEASE_CHECK_MARK}', '1')
+        }
+    }
+}
+`;
+
+/** `app/build.gradle` 끝에 출시 검사 덧붙임을 붙인다(이미 있으면 그대로) */
+export const withReleaseApiCheckApplied = (gradle: string): string =>
+  gradle.includes(RELEASE_CHECK_MARK) ? gradle : `${gradle.trimEnd()}\n${releaseApiCheck}`;
+
 const withReleaseSigning: ConfigPlugin<ReleaseSigningProps | void> = (config, props) =>
   withAppBuildGradle(config, (cfg) => {
     if (cfg.modResults.language !== "groovy") {
       throw new Error("withReleaseSigning 은 Groovy build.gradle 만 다룬다");
     }
-    cfg.modResults.contents = withSigningApplied(
-      cfg.modResults.contents,
-      props?.prefix ?? DEFAULT_PREFIX,
+    cfg.modResults.contents = withReleaseApiCheckApplied(
+      withSigningApplied(cfg.modResults.contents, props?.prefix ?? DEFAULT_PREFIX),
     );
     return cfg;
   });
