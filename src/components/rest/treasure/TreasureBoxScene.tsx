@@ -63,12 +63,11 @@ type Step = "hop" | "open" | "put" | "close";
 type Pose = "sit" | "hold" | "put" | "rest";
 
 /**
- * 그림 표 — **그림이 바뀔 때 고치는 곳은 여기다.**
- * ⚠ 보물함 그림이 오기 전까지 배경 · 상자는 걱정상자 것을 빌린다(`treasureBoxLayout` 머리말).
- * 카피바라 포즈는 걱정상자 것을 그대로 쓴다(쪽지가 곧 보물 카드다).
+ * 그림 표 — **그림이 바뀔 때 고치는 곳은 여기다.** 배경 · 보물함은 `scripts/keyout-treasure-box.py`
+ * 가 만든다. 카피바라 포즈는 걱정상자 것을 그대로 쓴다(쪽지가 곧 보물 카드다).
  */
 const ART = {
-  background: require("../../../../assets/worry-box/forest.webp"),
+  background: require("../../../../assets/treasure-box/meadow.webp"),
   poses: {
     sit: require("../../../../assets/worry-box/capybara-sit.webp"),
     hold: require("../../../../assets/worry-box/capybara-hold.webp"),
@@ -76,9 +75,9 @@ const ART = {
     rest: require("../../../../assets/worry-box/capybara-rest.webp"),
   } satisfies Record<Pose, number>,
   chest: {
-    back: require("../../../../assets/worry-box/box-back.webp"),
-    front: require("../../../../assets/worry-box/box-front.webp"),
-    closed: require("../../../../assets/worry-box/box-closed.webp"),
+    back: require("../../../../assets/treasure-box/chest-back.webp"),
+    front: require("../../../../assets/treasure-box/chest-front.webp"),
+    closed: require("../../../../assets/treasure-box/chest-closed.webp"),
   },
 };
 
@@ -203,7 +202,8 @@ export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
   const open = tucking && (step === "open" || step === "put");
   const showCard = tucking && step == null;
   const showNote = tucking && step === "put";
-  const chestTop = ground + CHEST_H;
+  // 닫힌 보물함 뚜껑 꼭대기 — 반짝임과 알갱이가 여기서 핀다
+  const chestTop = ground + CHEST_H * S.closedTop;
 
   return (
     <View
@@ -489,11 +489,11 @@ const styles = StyleSheet.create({
   fill: { width: "100%", height: "100%" },
   chestShadow: { left: (CHEST_W - CHEST_W * SHADOW.chest) / 2, bottom: -SHADOW.height / 2 },
   capyShadow: { left: (CAPY_W - CAPY_W * SHADOW.width) / 2, bottom: S.sink - SHADOW.height / 2 },
-  // 빛의 가운데가 보물함 윗변 가운데에 온다
+  // 빛의 가운데가 열린 입구(앞판 윗변) 가운데에 온다
   glow: {
     position: "absolute",
     left: CHEST_W / 2 - F.glow.size / 2,
-    top: -F.glow.size / 2,
+    bottom: CHEST_H * S.frontTop - F.glow.size / 2,
     width: F.glow.size,
     height: F.glow.size,
   },

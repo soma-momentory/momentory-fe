@@ -2,18 +2,19 @@
  * Momentory DS — 오늘의 보물함 장면의 자리 · 크기 · 시간 (2026-10-05).
  * 색은 `color.ts` 의 `treasureBox`. 쓰는 곳은 `components/rest/treasure/` 와 `app/rest/treasure-box.tsx`.
  *
- * ⚠ **그림이 오기 전의 임시 값이다.** 카피바라 포즈는 걱정상자 것을 그대로 쓰므로 손 자리
- * (`holdNote` · `putPaw`)와 비율은 걱정상자에서 잰 값이고, 보물함 · 배경은 아직 걱정상자의
- * 상자 · 숲을 빌려 깐다. 보물함 그림이 오면 `chestAspect` · `frontTop` · `ground` 를 다시 잰다.
+ * 배경(노을빛 풀밭)과 보물함 세 장은 생성 그림이다(`scripts/keyout-treasure-box.py`). 자리는
+ * 390×844 로 합성해 쟀다 — 땅 0.36 에서 카피바라와 보물함이 풀밭 빈터에 앉고 카피바라 몸 한가운데가
+ * 화면 54% 에 온다(`DESIGN.md` 「쉼 콘텐츠 공통 규칙」 1). 카피바라 포즈는 걱정상자 것을 그대로 쓰므로
+ * 손 자리(`holdNote` · `putPaw`)와 비율은 걱정상자에서 잰 값이다.
  */
 export const treasureBoxLayout = {
   /** 땅(카피바라 발밑 · 보물함 바닥)의 높이 — 화면 아래에서의 비율 */
-  ground: 0.4,
+  ground: 0.36,
   /** 카피바라가 처음 앉은 자리 → 통통 뛰어 옮겨 앉는 자리(가로 비율) */
   capybaraX: 0.26,
   hopX: 0.4,
   /** 다 넣은 뒤 보물함 곁으로 한 걸음 더 — 쉬는 포즈의 손이 보물함에 닿는다 */
-  nestleX: 0.46,
+  nestleX: 0.44,
   chestX: 0.7,
   /** 입력하던 카드가 떠나는 높이(화면 아래에서의 비율) */
   cardFrom: 0.26,
@@ -25,10 +26,15 @@ export const treasureBoxLayout = {
 
 export const treasureBoxSize = {
   capybara: 160,
-  chest: 100,
-  /** 보물함 그림의 높이 ÷ 폭 · 앞판 윗변의 높이 비율 — 보물함 그림이 오면 다시 잰다 */
-  chestAspect: 410 / 420,
-  frontTop: 155 / 410,
+  /** 보물함 폭 — 카피바라 몸통(그림 폭의 72%)과 비슷하다 */
+  chest: 120,
+  /**
+   * 보물함 그림에서 잰 비율(상자 460×480 · 바닥 기준) — 상자 높이 ÷ 폭 · 앞판 윗변(=열린 입구)의
+   * 높이 · 닫힌 보물함 뚜껑 꼭대기의 높이. 빛은 입구에서, 반짝임은 닫힌 뚜껑 위에서 핀다
+   */
+  chestAspect: 480 / 460,
+  frontTop: 195 / 480,
+  closedTop: 353 / 480,
   /** 입력에서 변하는 보물 카드 · 카피바라가 넣는 작은 카드 */
   card: { width: 250, radius: 14 },
   note: 30,

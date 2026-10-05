@@ -24,7 +24,7 @@ import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
  * (`DESIGN.md` 「오늘의 보물함」). 보물함 장면의 그림을 옅게 깔아 같은 공간으로 읽히게 한다.
  * 못 받아 오면 비어 있다는 말만 한다 — 오류 안내를 따로 두지 않는다(`RULES.md` 4).
  */
-const BACKGROUND = require("../../assets/worry-box/forest.webp");
+const BACKGROUND = require("../../assets/treasure-box/meadow.webp");
 
 export default function TreasuresScreen() {
   const insets = useSafeAreaInsets();
