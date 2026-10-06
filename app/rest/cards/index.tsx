@@ -14,7 +14,7 @@ import {
   type CalendarMark,
 } from "@/components/ds";
 import { RestActionCard } from "@/components/rest/RestActionCard";
-import { label as labelColor, primary, space, status } from "@/design/ds";
+import { label as labelColor, layout, primary, space, status } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { cardDaysIn, cardOn, datedCards, latestCardDay } from "@/features/rest/model/cards";
@@ -264,9 +264,13 @@ const styles = StyleSheet.create({
   /**
    * 달력이 앉는 자리 — **시스템 바 바로 위, 다만 딱 붙지는 않게.**
    *
-   * `Screen` 의 아래 여백은 이제 `max(인셋, 하한)` 하나다 — 안드로이드에서 인셋 위에 얹던 한 뼘
-   * (`androidNavGap`)은 2026-09-11 에 사라졌다(`metrics.ts` `minBottomInset` 머리말). 달력은 그 여백
-   * 그대로 **시스템 바 윗변 바로 위**에 앉는다 — 되가져올 숨이 없어 보정도 없다.
+   * `Screen` 의 아래 여백은 `max(인셋, 하한) + androidNavGap` 인데, 뒤의 한 뼘은 「하단 독이
+   * 시스템 바에 **딱 맞닿지** 않게」 두는 숨이다(`Screen` 머리말). 달력은 독이 아니라 격자라서
+   * 그 숨을 통째로 두면 화면 끝에서 떠 보인다 — 그래서 되가져오되 **`space.xs2` 만 남긴다.**
+   * 6줄인 달은 마지막 줄이 실제로 이 끝까지 내려오므로, 0 으로 두면 날짜가 시스템 바에 닿는다.
+   *
+   * `Math.max(…, 0)` 이 **iOS 를 지킨다** — 거기서는 `androidNavGap` 이 0 이라 빼면 음수가 되어
+   * 달력이 되레 위로 밀린다. 홈 인디케이터 인셋이 이미 그 자리를 맡는다(2026-09-06 결정).
    *
    * 위쪽 `paddingTop` 은 **달 표기 위로 차지하는 자리**다. 카드 자리와 달력 사이에는
    * 선이 없어서, 스크롤로 잘린 카드의 아랫변과 달 표기가 바짝 붙으면 한 덩어리로
@@ -277,5 +281,8 @@ const styles = StyleSheet.create({
    * `root: { gap: space.md }` — 달 표기와 격자 사이). 그래서 달 표기는 위아래로
    * 같은 여백을 두고 서고, 새 숫자를 만들지 않는다.
    */
-  calendarSeat: { paddingTop: space.md },
+  calendarSeat: {
+    paddingTop: space.md,
+    marginBottom: -Math.max(layout.androidNavGap - space.xs2, 0),
+  },
 });

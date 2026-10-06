@@ -26,11 +26,11 @@ import { GridBackground } from "./GridBackground";
  * 저절로 여백 노릇을 해서 보이지 않던 문제다. 그래서 인셋과
  * `layout.minBottomInset` 중 **큰 쪽**을 쓴다(라이브러리에 하한 옵션이 없다).
  *
- * ## 안드로이드는 내비게이션 바 윗변이 화면 끝이다 (2026-09-11 · 사용자 결정)
+ * ## 안드로이드는 그 위에 한 뼘 더 얹는다 (2026-10-06 · 사용자 결정)
  *
- * 예전에는 인셋 위에 한 뼘(`layout.androidNavGap` 16)을 **더 얹어** 하단 독이 시스템 바에 딱
- * 맞닿지 않게 했다. 그 숨을 지웠다 — 인셋이 이미 시스템 바 자리를 비워 두므로 **그 윗변까지가
- * 화면**이고 독은 거기 붙는다. iOS 는 홈 인디케이터 인셋(≈34)이 그대로 아래 여백이다.
+ * 인셋은 시스템 바 자리를 비울 뿐이라, 하단 독(「다음」·「이야기 시작하기」·채팅 입력)이
+ * 내비 바 윗변에 **딱 맞닿는다**. `layout.androidNavGap`(16)을 인셋에 **더해** 숨을 만든다 —
+ * iOS 는 홈 인디케이터 인셋(≈34)이 이미 그 일을 해서 0 이다. 2026-09-11 에 지웠다가 되살렸다.
  */
 type Props = {
   children: ReactNode;
@@ -55,7 +55,7 @@ type Props = {
  */
 export function useScreenBottomInset() {
   const insets = useSafeAreaInsets();
-  return Math.max(insets.bottom, layout.minBottomInset);
+  return Math.max(insets.bottom, layout.minBottomInset) + layout.androidNavGap;
 }
 
 export function Screen({
