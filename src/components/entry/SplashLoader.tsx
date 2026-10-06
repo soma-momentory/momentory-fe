@@ -4,13 +4,13 @@ import Svg, { Line } from "react-native-svg";
 
 import { splashLoader, splashLoaderMotion } from "@/design/ds";
 
-/** 전체 지름 */
-const SIZE = 36;
+/** 전체 지름 — 36 에서 줄였다(2026-10-06 · 사용자 요청 「크기 자체도 좀 줄여」) */
+const SIZE = 26;
 /** 빗살 수 — iOS 기본 기다림 표시와 같다 */
 const SPOKES = 8;
-const SPOKE_INNER = 8;
-const SPOKE_OUTER = 16;
-const SPOKE_WIDTH = 3.5;
+const SPOKE_INNER = 5.5;
+const SPOKE_OUTER = 11.5;
+const SPOKE_WIDTH = 2.5;
 /** 꼬리 끝 빗살의 투명도 — 맨 앞(1)에서 여기까지 고르게 옅어진다 */
 const TAIL_OPACITY = 0.18;
 
