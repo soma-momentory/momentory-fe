@@ -3,7 +3,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { Animated, Image, StyleSheet, View } from "react-native";
 
-import { Spinner } from "@/components/ds";
+import { SplashLoader } from "@/components/entry/SplashLoader";
 import { background, motion, space } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
@@ -23,7 +23,7 @@ import { useOnboardingCompletion } from "@/features/onboarding/model/completion"
  * 이 화면에는 원 제한이 없어 워드마크를 얼굴 아래에 크게 둘 수 있다 — 한 장으로 합쳤던 것
  * (같은 날)을 이 때문에 다시 나눴다(`docs/PRODUCT.md` 「상류와 차이」 #43).
  *
- * - **아무것도 묻지 않는다** — 얼굴 · 워드마크 · 기다림 표시(`Spinner`)뿐이다. 진행률·퍼센트를
+ * - **아무것도 묻지 않는다** — 얼굴 · 워드마크 · 기다림 표시(`SplashLoader`)뿐이다. 진행률·퍼센트를
  *   두지 않는다 — 얼마나 걸리는지 모르는 일에 숫자를 붙이면 그 숫자가 틀렸을 때 신뢰가 깎인다
  * - **최소 0.8초**를 보장하고 준비되면 즉시 넘어간다 — 워드마크가 번쩍 지나가지 않게
  * - **`max(0.8s, 준비완료)`** — 그 사이 SecureStore 세션을 비동기로 복원한다
@@ -127,7 +127,7 @@ export default function Splash() {
           fadeDuration={0}
         />
         <View testID="splash-waiting">
-          <Spinner />
+          <SplashLoader />
         </View>
       </Animated.View>
     </View>

@@ -299,6 +299,12 @@ export const babaBlink = {
   doubleChance: 0.25,
 } as const;
 
+/**
+ * `S0` 의 기다림 표시(`components/entry/SplashLoader`) — iOS 기본 기다림 표시처럼 빗살 여덟이
+ * **한 칸씩 끊어** 돈다. 한 바퀴(여덟 칸)의 시간이다.
+ */
+export const splashLoaderMotion = { turn: 960 } as const;
+
 export const metrics = {
   space,
   radius,

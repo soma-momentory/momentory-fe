@@ -202,6 +202,12 @@ export const retroRug = {
  */
 export const restRipple = "#1F1E1D";
 
+/**
+ * `S0` 의 기다림 표시(`components/entry/SplashLoader`) 빗살 색 — 워드마크와 같은 결의 따뜻한 회갈색.
+ * 빗살마다 투명도만 달리해 꼬리를 만든다. 장식 전용 — 글자를 얹지 않는다.
+ */
+export const splashLoader = { spoke: label.neutral } as const;
+
 /** 배경 격자 — 32px 정격자. 기기 프레임에 고정되고 스크롤과 무관하다 */
 export const grid = { stroke: `rgba(${WARM},0.07)`, size: 32 } as const;
 
