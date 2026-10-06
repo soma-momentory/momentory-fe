@@ -150,15 +150,16 @@ export default function BodyReleaseScreen() {
     setNow(t);
   };
 
+  // 진행 · 마침도 소개의 「몸에 힘 빼기」와 같은 크기로 선다(2026-10-06 · 사용자 요청)
   const heading = done
     ? {
-        tone: "close" as const,
+        tone: "closeLead" as const,
         title: BODY_RELEASE_DONE.title,
         description: BODY_RELEASE_DONE.description,
       }
     : running != null
       ? {
-          tone: "step" as const,
+          tone: "stepLead" as const,
           title:
             running.phase === "tense"
               ? BODY_RELEASE_PARTS[running.part]!.tense
@@ -245,8 +246,11 @@ export default function BodyReleaseScreen() {
                     {(["tense", "release"] as const).map((p) => {
                       const on = p === running.phase;
                       return (
+                        // 박자가 바뀌면 칸을 **새로 만든다**(key 에 on). 안드로이드는 투명 면으로
+                        // 태어난 칸에 나중에 면 색을 주면 둥근 모서리가 그 면에 다시 입혀지지
+                        // 않아 네모가 됐다(2026-10-06 · 실기기). 처음부터 떠 있는 칸은 멀쩡했다
                         <View
-                          key={p}
+                          key={`${p}-${on ? "on" : "off"}`}
                           accessibilityState={{ selected: on }}
                           style={[styles.beat, on ? styles.beatOn : styles.beatOff]}
                         >

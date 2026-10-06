@@ -42,6 +42,7 @@ export const WORRY_BOX_INTRO = {
 export const WORRY_BOX_GUIDE = "걱정을 적어 건네주세요\n카피바라가 상자에 고이 담아줄 거예요";
 
 export const WORRY_BOX_INPUT = {
+  /** 입력칸의 낭독기 이름 — 화면에는 띄우지 않는다(2026-10-06 · 판을 줄이며 뺐다) */
   label: "지금 가장 마음에 걸리는 걱정",
   placeholder: "내일 발표가 잘 안될까 봐 걱정돼요",
   cta: "상자에 맡기기",

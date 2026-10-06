@@ -387,6 +387,11 @@ export const worryBox = {
   /** 선택지 두 칸의 아이콘 원 — 맡겨두기는 따뜻한 나무빛, 흘려보내기는 저녁 하늘빛 */
   keepTint: "#F2D6B3",
   releaseTint: "#DCDDF2",
+  /**
+   * 걱정 쓰는 칸의 포커스 테두리 · 커서 — 앱의 초록이 숲 그림 위에서 혼자 튀었다
+   * (2026-10-06 · 사용자 요청). 빈티지 버튼 그림자(`restScene.shadow`)와 같은 갈색이다
+   */
+  inputAccent: "#5E4430",
 } as const;
 
 export const restScene = {

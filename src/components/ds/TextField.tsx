@@ -55,6 +55,11 @@ type Props = Omit<TextInputProps, "style"> & {
   onClear?: () => void;
   /** 지우기의 낭독기 이름 — 「기타 지우기」처럼 **무엇을** 지우는지 밝힌다 */
   clearLabel?: string;
+  /**
+   * 포커스 테두리 · 커서 · 선택 빛깔. 기본은 `primary.normal`(초록). 그림 위의 장면처럼
+   * 앱 바탕이 아닌 자리가 제 빛깔을 줄 때만 쓴다(걱정상자 · 2026-10-06)
+   */
+  accentColor?: string;
 };
 
 export function TextField({
@@ -65,6 +70,7 @@ export function TextField({
   suffix,
   onClear,
   clearLabel = "지우기",
+  accentColor = primary.normal,
   multiline = false,
   ...rest
 }: Props) {
@@ -86,14 +92,15 @@ export function TextField({
           styles.field,
           VARIANT[variant],
           multiline ? styles.multiline : null,
-          focused ? styles.focused : null,
+          focused ? [styles.focused, { borderColor: accentColor }] : null,
         ]}
       >
         <TextInput
           {...rest}
           multiline={multiline}
           placeholderTextColor={labelColor.assistive}
-          selectionColor={primary.normal}
+          selectionColor={accentColor}
+          cursorColor={accentColor}
           onFocus={(e) => {
             setFocused(true);
             rest.onFocus?.(e);
@@ -190,7 +197,7 @@ const styles = StyleSheet.create({
     maxHeight: text.body1Reading.lineHeight * size.input.maxLines + space.xl2,
   },
   // 포커스는 테두리 색·두께로만 말한다 — 링을 겹쳐 그리지 않는다
-  focused: { borderWidth: 1, borderColor: primary.normal },
+  focused: { borderWidth: 1 },
   // 히트 44 는 유지하되 칸 높이를 밀지 않게 음수 여백으로 당긴다
   clear: { width: 24, height: 24, marginRight: -4 },
   foot: { flexDirection: "row", alignItems: "center", gap: space.sm },

@@ -41,17 +41,21 @@ export const SCENE_BACK_SIZE = BACK + V.depth;
  *
  * `accent` 는 크림 카드 **바로 아래** 서는 주 행동이다 — 카드와 같은 크림이면 둘이 한
  * 덩어리로 읽혀서(걱정상자) 꿀빛 면으로 둔다(`restScene.accent`).
+ *
+ * `compact` 는 낮은 알약이다 — 아래 판이 장면의 주인공을 가리지 않아야 할 때(걱정상자 쓰기).
  */
 export function ScenePillButton({
   label,
   onPress,
   disabled,
   tone = "plain",
+  compact = false,
 }: {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   tone?: "plain" | "accent";
+  compact?: boolean;
 }) {
   return (
     <VintagePressable
@@ -62,7 +66,7 @@ export function ScenePillButton({
       radius={radius.full}
       // 부모가 가운데 정렬이어도 폭을 다 쓴다 — 글자 폭으로 줄면 글자가 버튼 밖으로 넘쳤다
       style={styles.pillOuter}
-      faceStyle={styles.pill}
+      faceStyle={[styles.pill, compact ? styles.pillCompact : null]}
     >
       <Text variant="headline1" color={disabled ? restScene.mutedInk : restScene.ink}>
         {label}
@@ -87,6 +91,7 @@ const styles = StyleSheet.create({
   backFace: { height: BACK, alignItems: "center", justifyContent: "center" },
   pillOuter: { alignSelf: "stretch" },
   pill: { height: V.pill, alignItems: "center", justifyContent: "center" },
+  pillCompact: { height: V.pillCompact },
   card: {
     backgroundColor: withAlpha(restScene.surface, restSceneSize.cardOpacity),
     borderRadius: radius.xlarge,
