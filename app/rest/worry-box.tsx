@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Animated, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { Animated, Keyboard, KeyboardAvoidingView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName, Screen, Text, TextField } from "@/components/ds";
@@ -21,6 +21,7 @@ import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import {
   label as labelColor,
+  layout,
   radius,
   restScene,
   restSceneSize,
@@ -137,9 +138,13 @@ export default function WorryBoxScreen() {
           </View>
         </View>
 
-        {/* 키보드가 올라오면 아래 판이 그 위로 비켜 선다 — 쓰는 줄이 가려지지 않게 */}
+        {/* 키보드가 올라오면 아래 판이 그 위로 비켜 선다 — 쓰는 줄이 가려지지 않게.
+            **안드로이드도 피한다** — edge-to-edge 에서는 창이 `adjustResize` 로 줄지 않고
+            키보드가 판을 덮었다(2026-10-06 · 실기기). 여백은 `ScheduleEditBar` 와 같은
+            셈이다: 열린 동안의 바닥 숨은 안쪽 여백(`bottomPad`)이 아니라 `keyboardGap` */}
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior="padding"
+          keyboardVerticalOffset={layout.keyboardGap - bottomPad}
           style={styles.panelWrap}
           pointerEvents="box-none"
         >
