@@ -353,6 +353,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 개발자 메뉴 때문에 넣는 권한이라 출시본에는 쓸 일이 없는데 사용자에게는 보인다.
     // debug 는 그대로 둔다(release 소스셋에만 쓴다).
     "./plugins/withoutDevOverlayPermission",
+    // 3버튼 내비게이션 바 뒤의 흰 대비 막을 걷어 앱 바탕이 바 밑까지 이어지게 한다
+    // (`plugins/withTransparentNavBar.ts` 머리말)
+    "./plugins/withTransparentNavBar",
     // 스플래시는 **런처 아이콘(카피바라 얼굴)만**이다 — `assets/icon.png` 를 캔버스 가운데에
     // 앉혔다(2026-10-06). **아이콘을 바꾸면 이 파일도 같이 바꾼다**(옛 로고로 남아 앱을 켤 때마다
     // 옛 그림이 먼저 떴다).
