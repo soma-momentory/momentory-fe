@@ -47,6 +47,11 @@ export const background = {
   normal: "#F7F4ED",
   alternative: "#F7F1E7",
   elevated: "#FFFDF8",
+  /**
+   * 스플래시 면 — 앱 아이콘(`assets/icon.png`) 바탕과 같은 베이지(2026-10-06 · 사용자 요청).
+   * 네이티브 스플래시(`app.config.ts`)와 `S0` 가 이 한 색을 써야 둘이 한 장으로 이어진다.
+   */
+  splash: "#EFE0C6",
 } as const;
 
 /**
