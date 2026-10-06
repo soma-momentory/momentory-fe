@@ -145,14 +145,14 @@ const styles = StyleSheet.create({
   mark: { width: SPLASH_IMAGE_SIZE, height: SPLASH_IMAGE_SIZE },
   // 얼굴 아랫변 바로 아래 — 얼굴을 밀어 올리지 않게 흐름 밖(절대 배치)에 앉힌다.
   // 워드마크와 기다림 표시 사이는 로고와 한 덩어리로 읽히지 않게 넉넉히 띄운다
-  // (20 → 48 · 2026-10-06 사용자 요청 「더 내려」)
+  // (20 → 48 → 96 · 2026-10-06 사용자 요청 「더 내려」 두 번)
   underFace: {
     position: "absolute",
     top: "50%",
     left: 0,
     right: 0,
     alignItems: "center",
-    gap: space.xl5,
+    gap: space.xl5 * 2,
     marginTop: FACE_SIZE / 2 + space.lg,
   },
   wordmark: { width: WORDMARK_WIDTH, height: WORDMARK_HEIGHT },
