@@ -1,9 +1,10 @@
 import { router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
-import { Animated, Image, StyleSheet, View } from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 
 import { SplashLoader } from "@/components/entry/SplashLoader";
+import { SPLASH_LOGO_HALF_HEIGHT, SplashLogo } from "@/components/entry/SplashLogo";
 import { background, motion, space } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
@@ -15,10 +16,10 @@ import { useOnboardingCompletion } from "@/features/onboarding/model/completion"
  *
  * 네이티브 스플래시는 **얼굴만** 그린다 — 안드로이드 12+ 는 스플래시 그림을 원으로 깎아서, 얼굴
  * 아래에 `Momentory` 를 크게 두면 양끝이 잘린다. 그래서 S0 가 네이티브 스플래시와 **같은 색
- * (`background.splash`) · 같은 그림(`splash-icon.png`) · 같은 자리**에 얼굴을 그려 이어받고(그림이
- * 그려지는 순간 네이티브 스플래시를 내린다 — `providers.tsx` 는 `/` 에서 내리지 않는다), 그
- * 아래에 워드마크(`splash-wordmark.png`)와 기다림 표시를 서서히 띄운다. 얼굴은 움직이지 않고
- * 그 아래만 더해진다.
+ * (`background.splash`) · 같은 그림 · 같은 자리**에 얼굴을 그려 이어받고(그림이 그려지는 순간
+ * 네이티브 스플래시를 내린다 — `providers.tsx` 는 `/` 에서 내리지 않는다), 그 아래에 워드마크를
+ * 서서히 띄운다 — 얼굴 + 워드마크 묶음이 화면 한가운데에 선다(`components/entry/SplashLogo`).
+ * 얼굴은 움직이지 않고 그 아래만 더해진다. 기다림 표시는 묶음 아래에 따로 선다.
  *
  * 이 화면에는 원 제한이 없어 워드마크를 얼굴 아래에 크게 둘 수 있다 — 한 장으로 합쳤던 것
  * (같은 날)을 이 때문에 다시 나눴다(`docs/PRODUCT.md` 「상류와 차이」 #43).
@@ -43,19 +44,9 @@ import { useOnboardingCompletion } from "@/features/onboarding/model/completion"
  */
 const MIN_SPLASH_MS = 800;
 
-/**
- * 네이티브 스플래시가 그림을 그리는 크기 — `app.config.ts` `expo-splash-screen` 의 `imageWidth`.
- * 두 곳이 어긋나면 S0 로 넘어가는 순간 얼굴이 커지거나 줄어든다.
- */
-const SPLASH_IMAGE_SIZE = 288;
-/** 그림 안에서 얼굴이 차지하는 몫 — 캔버스 1024 중 532(`splash-icon.png` 을 만들 때 정했다) */
-const FACE_SIZE = (SPLASH_IMAGE_SIZE * 532) / 1024;
-/**
- * 워드마크 폭 — 한 장이던 때(얼굴 아래 캔버스 410/1024 · 약 115)의 **두 배**(2026-10-06 · 사용자 요청).
- * 높이는 그림 비율(540 × 76)을 따른다.
- */
-const WORDMARK_WIDTH = 230;
-const WORDMARK_HEIGHT = (WORDMARK_WIDTH * 76) / 540;
+/** 로고 묶음 아래 끝과 기다림 표시 사이 — 로고와 한 덩어리로 읽히지 않게 넉넉히 띄운다
+ * (20 → 48 → 96 · 2026-10-06 사용자 요청 「더 내려」 두 번) */
+const LOADER_GAP = space.xl5 * 2;
 
 export default function Splash() {
   const status = useAuth((s) => s.status);
@@ -66,7 +57,7 @@ export default function Splash() {
   // 아직 모르는 완료 여부(기본값 false)로 판정해 온보딩을 마친 사람을 온보딩으로
   // 보냈다(개발 서버 1초 남짓 · 2026-10-05 실기기)
   const [hydrated, setHydrated] = useState(false);
-  const [wordmarkOpacity] = useState(() => new Animated.Value(0));
+  const [loaderOpacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     void useAuth
@@ -89,11 +80,11 @@ export default function Splash() {
     router.replace(completed ? "/home" : "/welcome");
   }, [minDone, hydrated, status, completed]);
 
-  // 얼굴이 그려진 뒤에 네이티브 스플래시를 내리고 워드마크·기다림 표시를 띄운다 — 얼굴은 같은 그림이라
-  // 바뀌는 순간이 보이지 않는다. 그림을 못 읽어도 붙잡아 두지 않는다
+  // 얼굴이 그려진 뒤에 네이티브 스플래시를 내리고 기다림 표시를 띄운다 — 얼굴은 같은 그림이라
+  // 바뀌는 순간이 보이지 않는다(워드마크는 `SplashLogo` 가 함께 띄운다)
   const reveal = () => {
     void SplashScreen.hideAsync();
-    Animated.timing(wordmarkOpacity, {
+    Animated.timing(loaderOpacity, {
       toValue: 1,
       duration: motion.duration,
       useNativeDriver: true,
@@ -107,53 +98,27 @@ export default function Splash() {
       accessibilityLabel="모멘토리 · 준비 중"
       accessibilityRole="progressbar"
     >
-      <Image
-        source={require("../assets/splash-icon.png")}
-        style={styles.mark}
-        testID="splash-mark"
-        resizeMode="contain"
-        // 안드로이드는 그림을 0.3초에 걸쳐 서서히 띄운다 — 네이티브 스플래시와 같은 그림이
-        // 옅어졌다 짙어지며 한 번 깜빡여 보였다
-        fadeDuration={0}
-        onLoad={reveal}
-        onError={reveal}
-      />
-      <Animated.View style={[styles.underFace, { opacity: wordmarkOpacity }]} pointerEvents="none">
-        <Image
-          source={require("../assets/splash-wordmark.png")}
-          style={styles.wordmark}
-          testID="splash-wordmark"
-          resizeMode="contain"
-          fadeDuration={0}
-        />
-        <View testID="splash-waiting">
-          <SplashLoader />
-        </View>
+      <SplashLogo onFaceShown={reveal} />
+      <Animated.View
+        style={[styles.loaderSeat, { opacity: loaderOpacity }]}
+        pointerEvents="none"
+        testID="splash-waiting"
+      >
+        <SplashLoader />
       </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // 화면 전체(상태바·내비 바 밑까지)의 한가운데 — 네이티브 스플래시가 그림을 앉히는 기준과 같다
-  root: {
-    ...StyleSheet.absoluteFill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: background.splash,
-  },
-  mark: { width: SPLASH_IMAGE_SIZE, height: SPLASH_IMAGE_SIZE },
-  // 얼굴 아랫변 바로 아래 — 얼굴을 밀어 올리지 않게 흐름 밖(절대 배치)에 앉힌다.
-  // 워드마크와 기다림 표시 사이는 로고와 한 덩어리로 읽히지 않게 넉넉히 띄운다
-  // (20 → 48 → 96 · 2026-10-06 사용자 요청 「더 내려」 두 번)
-  underFace: {
+  root: { ...StyleSheet.absoluteFill, backgroundColor: background.splash },
+  // 로고 묶음(화면 한가운데) 아래 — 묶음을 밀지 않게 흐름 밖에 앉힌다
+  loaderSeat: {
     position: "absolute",
     top: "50%",
     left: 0,
     right: 0,
     alignItems: "center",
-    gap: space.xl5 * 2,
-    marginTop: FACE_SIZE / 2 + space.lg,
+    marginTop: SPLASH_LOGO_HALF_HEIGHT + LOADER_GAP,
   },
-  wordmark: { width: WORDMARK_WIDTH, height: WORDMARK_HEIGHT },
 });
