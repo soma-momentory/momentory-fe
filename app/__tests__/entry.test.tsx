@@ -119,13 +119,15 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
   });
 
-  it("얼굴과 워드마크 그림만 그린다 — 글자·버튼·스피너가 없다", async () => {
-    // 얼굴은 네이티브 스플래시를 이어받고, 워드마크는 그 아래에 더해진다(`index.tsx` 머리말)
+  it("얼굴 · 워드마크 · 기다림 표시만 그린다 — 글자·버튼·퍼센트가 없다", async () => {
+    // 얼굴은 네이티브 스플래시를 이어받고, 워드마크와 기다림 표시는 그 아래에 더해진다(`index.tsx` 머리말)
     const { getByLabelText, getByTestId, queryByText } = await render(<Splash />);
 
     expect(getByLabelText("모멘토리 · 준비 중")).toBeTruthy();
     expect(getByTestId("splash-mark")).toBeTruthy();
     expect(getByTestId("splash-wordmark")).toBeTruthy();
+    expect(getByTestId("splash-waiting")).toBeTruthy();
+    expect(queryByText(/로딩|불러오는/)).toBeNull();
     expect(queryByText("모멘토리")).toBeNull();
     expect(queryByText(/%/)).toBeNull();
     expect(queryByText(/카카오 로그인|Google 계정으로 로그인|Apple로 로그인/)).toBeNull();
