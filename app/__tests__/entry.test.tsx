@@ -44,10 +44,10 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-/** hydration 을 흘려보낸다 */
+/** 0.8초 하한과 hydration 을 함께 흘려보낸다 */
 const settle = async () => {
   await act(async () => {
-    jest.advanceTimersByTime(100);
+    jest.advanceTimersByTime(900);
   });
 };
 
@@ -77,7 +77,7 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
   });
 
-  it("서버가 늦게 답해도 그 답을 기다렸다가 판정한다", async () => {
+  it("서버가 0.8초보다 늦게 답해도 그 답을 기다렸다가 판정한다", async () => {
     // 개발 서버는 1초 넘게 걸렸다(2026-10-05 실기기) — 하한이 먼저 끝났다고 아직 모르는
     // 완료 여부(기본값 false)로 판정하면, 온보딩을 마친 사람이 온보딩으로 간다
     seedSession();
@@ -100,18 +100,32 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
 
     await act(async () => {
-      jest.advanceTimersByTime(1500);
+      jest.advanceTimersByTime(700);
     });
 
     await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
     expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/welcome");
   });
 
-  it("네이티브 스플래시와 같은 그림 하나만 그린다 — 글자·버튼·스피너가 없다", async () => {
-    // 로딩 화면이 두 장으로 보이지 않게 네이티브 스플래시를 그대로 이어받는다(`index.tsx` 머리말)
-    const { getByLabelText, queryByText } = await render(<Splash />);
+  it("0.8초 하한 전에는 아무 데도 보내지 않는다", async () => {
+    // 진행 바 대신 최소 시간을 보장한다 (S0.md) — 워드마크가 번쩍 지나가지 않게
+    seedSession();
+    await render(<Splash />);
+
+    await act(async () => {
+      jest.advanceTimersByTime(400);
+    });
+
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
+  });
+
+  it("얼굴과 워드마크 그림만 그린다 — 글자·버튼·스피너가 없다", async () => {
+    // 얼굴은 네이티브 스플래시를 이어받고, 워드마크는 그 아래에 더해진다(`index.tsx` 머리말)
+    const { getByLabelText, getByTestId, queryByText } = await render(<Splash />);
 
     expect(getByLabelText("모멘토리 · 준비 중")).toBeTruthy();
+    expect(getByTestId("splash-mark")).toBeTruthy();
+    expect(getByTestId("splash-wordmark")).toBeTruthy();
     expect(queryByText("모멘토리")).toBeNull();
     expect(queryByText(/%/)).toBeNull();
     expect(queryByText(/카카오 로그인|Google 계정으로 로그인|Apple로 로그인/)).toBeNull();

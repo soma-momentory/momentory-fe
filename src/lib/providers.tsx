@@ -47,8 +47,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const fontsReady = useAppFonts();
   const pathname = usePathname();
 
-  // 폰트가 준비되면 스플래시를 내린다 — **단 `S0`(`/`)는 예외다.** S0 는 네이티브 스플래시와
-  // 같은 그림을 그려 이어받으므로, 그 그림이 그려진 뒤 S0 가 직접 내린다(`app/index.tsx`).
+  // 폰트가 준비되면 스플래시를 내린다 — **단 `S0`(`/`)는 예외다.** S0 는 네이티브 스플래시의
+  // 얼굴을 같은 자리에 그려 이어받으므로, 그 그림이 그려진 뒤 S0 가 직접 내린다(`app/index.tsx`).
   // 여기서 먼저 내리면 그림이 디코딩되기 전 한 프레임이 빈 면으로 깜빡인다. 딥링크로 다른
   // 라우트에서 시작하거나 S0 를 떠나면 여기서 내린다 — `hideAsync` 는 여러 번 불러도 된다.
   useEffect(() => {
