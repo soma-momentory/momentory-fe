@@ -1,4 +1,4 @@
-import { StyleSheet, type ViewStyle } from "react-native";
+import { Platform, StyleSheet, type ViewStyle } from "react-native";
 
 import { line, raisedShadow } from "./color";
 
@@ -70,6 +70,12 @@ export const bubbleRadius = {
 } as const;
 
 /**
+ * **안드로이드에서만** 시스템 바 인셋 위에 더 얹는 숨 — `layout.androidNavGap` 의 실제 값.
+ * iOS 는 홈 인디케이터 인셋(≈34)이 이미 그 숨을 만들어 0 이다.
+ */
+const androidNavGap = Platform.OS === "android" ? space.lg : 0;
+
+/**
  * 화면 틀(`DESIGN.md` §3·§10).
  *
  * `statusBar`·`safeArea` 는 시안의 고정값이다 — **구현에서는
@@ -104,12 +110,20 @@ export const layout = {
    * 인셋(≈34)이 이 값보다 커서 영향받지 않는다. 하단에 붙는 것은 전부 이 하한을
    * 지난다 — Screen · TabScreen · ScheduleEditBar · ToastHost.
    *
-   * ⚠⚠ **안드로이드는 내비게이션 바 윗변이 화면 끝이다** (2026-09-11 · 사용자 결정). 예전에는 인셋 위에
-   * 16(`androidNavGap`)을 **더 얹어** 숨을 뒀다 — 하단 독이 시스템 바에 딱 맞닿아 보이던 것을 띄우려고.
-   * 그 숨을 지웠다: 인셋(3버튼 내비 48 · 제스처 바 24)이 이미 시스템 바 자리를 비워 두므로 **그 윗변까지가
-   * 화면**이고 독은 거기 붙는다. iOS 는 바뀐 것이 없다 — 홈 인디케이터 인셋(≈34)이 그대로 아래 여백이다.
+   * 안드로이드는 이 값 위에 `androidNavGap` 을 더 얹는다(아래).
    */
   minBottomInset: 24,
+  /**
+   * **안드로이드에서만** 시스템 바 인셋 위에 더 얹는 숨 — 16.
+   *
+   * 인셋(3버튼 내비 48 · 제스처 바 24)은 시스템 바 자리를 비울 뿐이라, 그대로 두면 하단 독
+   * (「다음」·「이야기 시작하기」·채팅 입력·일정 입력)이 내비 바 윗변에 **딱 맞닿는다**.
+   * 2026-09-11 에 한 번 지웠다가 실기기에서 붙어 보여 되살렸다(2026-10-06 · 사용자 결정).
+   *
+   * 인셋과 **더한다**(하한이 아니다). 지나는 곳: `Screen`(`useScreenBottomInset`) ·
+   * `ScheduleEditBar`. 탭 화면 아래는 탭바가 면으로 이어져 있어 해당 없다. iOS 는 0 이다.
+   */
+  androidNavGap,
   /**
    * **키보드 윗변과 하단 독 사이의 숨.**
    *
