@@ -89,6 +89,9 @@ export default function WorryBoxScreen() {
     setStage(choice);
   };
 
+  // 판 아래 숨 — 쓰기는 판을 낮춰 장면을 가리지 않게 한 단 줄인다
+  const bottomPad = insets.bottom + (stage === "write" ? space.md : space.lg);
+
   const heading =
     stage === "release" && ended
       ? // 걷는 동안 「걱정이 멀어지고 있어요」 → 사라진 뒤 「이제 걱정에서 잠시 멀어졌어요」
@@ -140,21 +143,33 @@ export default function WorryBoxScreen() {
           style={styles.panelWrap}
           pointerEvents="box-none"
         >
-          <View style={[styles.panel, { paddingBottom: insets.bottom + space.lg }]}>
+          <View
+            style={[
+              styles.panel,
+              stage === "write" ? styles.writePanel : null,
+              { paddingBottom: bottomPad },
+            ]}
+          >
             {stage === "write" ? (
               <>
-                <SceneCard>
+                {/* 판이 카피바라 발밑을 가렸다 — 여백 · 입력칸 · 버튼을 한 단씩 낮춘다
+                    (2026-10-06 · 실기기 피드백) */}
+                <SceneCard style={styles.writeCard}>
                   {/* 무엇이 일어날지 — 절차가 아니라 건네는 말로(매번) */}
-                  <Text variant="body1" color={labelColor.normal} style={styles.mid}>
+                  {/* 판에서 가장 먼저 읽혀야 할 말이라 한 단 크게(2026-10-06 · 사용자 요청) */}
+                  <Text variant="headline1" color={labelColor.normal} style={styles.mid}>
                     {WORRY_BOX_GUIDE}
                   </Text>
                   {/* 100자까지라 여러 줄로 쓴다 — 줄바꿈 대신 「완료」가 맡기기다 */}
+                  {/* 칸 위 라벨은 두지 않는다 — 안내 두 줄이 이미 묻고, 판이 장면을 덜 가리게
+                      (2026-10-06 · 사용자 요청). 낭독기에는 그 말을 이름으로 준다 */}
                   <TextField
-                    fieldLabel={WORRY_BOX_INPUT.label}
+                    accessibilityLabel={WORRY_BOX_INPUT.label}
                     placeholder={WORRY_BOX_INPUT.placeholder}
                     value={worry}
                     onChangeText={setWorry}
                     maxLength={WORRY_MAX_LENGTH}
+                    variant="medium"
                     showCounter
                     multiline
                     returnKeyType="done"
@@ -164,6 +179,7 @@ export default function WorryBoxScreen() {
                 </SceneCard>
                 <ScenePillButton
                   tone="accent"
+                  compact
                   label={WORRY_BOX_INPUT.cta}
                   disabled={!canHandOver(worry)}
                   onPress={handOver}
@@ -304,6 +320,8 @@ const styles = StyleSheet.create({
   words: { alignSelf: "center", maxWidth: 320, alignItems: "center" },
   panelWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
   panel: { paddingHorizontal: space.xl, gap: space.md },
+  writePanel: { gap: space.sm },
+  writeCard: { paddingVertical: space.sm, paddingHorizontal: space.lg, gap: space.xs },
   mid: { textAlign: "center" },
   choice: {
     flexDirection: "row",
