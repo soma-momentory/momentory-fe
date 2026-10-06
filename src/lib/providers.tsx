@@ -1,4 +1,5 @@
 import { useFonts } from "expo-font";
+import { usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
@@ -44,6 +45,15 @@ void SplashScreen.preventAutoHideAsync();
  */
 export function AppProviders({ children }: { children: ReactNode }) {
   const fontsReady = useAppFonts();
+  const pathname = usePathname();
+
+  // 폰트가 준비되면 스플래시를 내린다 — **단 `S0`(`/`)는 예외다.** S0 는 네이티브 스플래시의
+  // 얼굴을 같은 자리에 그려 이어받으므로, 그 그림이 그려진 뒤 S0 가 직접 내린다(`app/index.tsx`).
+  // 여기서 먼저 내리면 그림이 디코딩되기 전 한 프레임이 빈 면으로 깜빡인다. 딥링크로 다른
+  // 라우트에서 시작하거나 S0 를 떠나면 여기서 내린다 — `hideAsync` 는 여러 번 불러도 된다.
+  useEffect(() => {
+    if (fontsReady && pathname !== "/") void SplashScreen.hideAsync();
+  }, [fontsReady, pathname]);
 
   // 알림 설정 ↔ OS 예약을 맞추는 구독. **화면이 아니라 여기 하나에 건다** —
   // 값이 바뀌는 자리가 넷이라, 화면마다 걸면 하나를 빠뜨린다
@@ -106,10 +116,6 @@ function useAppFonts() {
     "Roboto-Medium": require("../../assets/fonts/Roboto-Medium.ttf"),
   });
 
-  useEffect(() => {
-    // 폰트 로딩이 실패해도 앱을 붙잡아두지 않는다 — 시스템 서체로라도 뜬다.
-    if (loaded || error) void SplashScreen.hideAsync();
-  }, [loaded, error]);
-
+  // 폰트 로딩이 실패해도 앱을 붙잡아두지 않는다 — 시스템 서체로라도 뜬다.
   return loaded || error != null;
 }

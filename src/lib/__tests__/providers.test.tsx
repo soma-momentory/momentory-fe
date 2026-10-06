@@ -6,6 +6,9 @@ import { render } from "@testing-library/react-native";
 import { AppProviders } from "../providers";
 
 jest.mock("expo-font", () => ({ useFonts: jest.fn() }));
+// 지금 보이는 라우트 — 기본은 S0 가 아닌 곳(딥링크로 바로 열린 화면과 같다)
+let mockPathname = "/home";
+jest.mock("expo-router", () => ({ usePathname: () => mockPathname }));
 jest.mock("expo-splash-screen", () => ({
   preventAutoHideAsync: jest.fn(() => Promise.resolve()),
   hideAsync: jest.fn(() => Promise.resolve()),
@@ -16,7 +19,10 @@ const mockFonts = (loaded: boolean, error: Error | null = null) => {
 };
 
 describe("AppProviders", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPathname = "/home";
+  });
 
   it("폰트가 준비되면 자식을 그린다", async () => {
     mockFonts(true);
@@ -63,5 +69,18 @@ describe("AppProviders", () => {
     );
 
     expect(SplashScreen.hideAsync).toHaveBeenCalled();
+  });
+
+  it("S0 에서는 내리지 않는다 — 같은 그림을 그린 S0 가 직접 내린다", async () => {
+    // 여기서 먼저 내리면 S0 의 그림이 디코딩되기 전 한 프레임이 빈 면으로 깜빡인다(`app/index.tsx`)
+    mockFonts(true);
+    mockPathname = "/";
+    await render(
+      <AppProviders>
+        <Text>모멘토리</Text>
+      </AppProviders>,
+    );
+
+    expect(SplashScreen.hideAsync).not.toHaveBeenCalled();
   });
 });

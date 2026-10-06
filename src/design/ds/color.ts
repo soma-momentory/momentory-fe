@@ -47,6 +47,11 @@ export const background = {
   normal: "#F7F4ED",
   alternative: "#F7F1E7",
   elevated: "#FFFDF8",
+  /**
+   * 스플래시 면 — 앱 아이콘(`assets/icon.png`) 바탕과 같은 베이지(2026-10-06 · 사용자 요청).
+   * 네이티브 스플래시(`app.config.ts`)와 `S0` 가 이 한 색을 써야 얼굴이 그대로 이어진다.
+   */
+  splash: "#EFE0C6",
 } as const;
 
 /**
@@ -196,6 +201,12 @@ export const retroRug = {
  * (`label.strong` 13.7).
  */
 export const restRipple = "#1F1E1D";
+
+/**
+ * `S0` 의 기다림 표시(`components/entry/SplashLoader`) 빗살 색 — 워드마크와 같은 결의 따뜻한 회갈색.
+ * 빗살마다 투명도만 달리해 꼬리를 만든다. 장식 전용 — 글자를 얹지 않는다.
+ */
+export const splashLoader = { spoke: label.neutral } as const;
 
 /** 배경 격자 — 32px 정격자. 기기 프레임에 고정되고 스크롤과 무관하다 */
 export const grid = { stroke: `rgba(${WARM},0.07)`, size: 32 } as const;

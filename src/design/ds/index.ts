@@ -44,6 +44,7 @@ export {
   restScene,
   retroRug,
   scheduleDot,
+  splashLoader,
   secondary,
   selectedTint,
   social,
@@ -108,6 +109,7 @@ export {
   motion,
   cardRipple,
   babaBlink,
+  splashLoaderMotion,
 } from "./metrics";
 
 /** 묶음 하나로 들고 다닐 때 — `import ds from "@/design/ds"` */

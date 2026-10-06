@@ -353,23 +353,32 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 개발자 메뉴 때문에 넣는 권한이라 출시본에는 쓸 일이 없는데 사용자에게는 보인다.
     // debug 는 그대로 둔다(release 소스셋에만 쓴다).
     "./plugins/withoutDevOverlayPermission",
-    // 스플래시도 **같은 로고 하나**다 — 런처 아이콘과 마찬가지로
-    // `assets/logo.jpeg` 에서 배경을 지워 뽑았다.
+    // 3버튼 내비게이션 바 뒤의 흰 대비 막을 걷어 앱 바탕이 바 밑까지 이어지게 한다
+    // (`plugins/withTransparentNavBar.ts` 머리말)
+    "./plugins/withTransparentNavBar",
+    // 스플래시는 **런처 아이콘(카피바라 얼굴)만**이다 — `assets/icon.png` 를 캔버스 가운데에
+    // 앉혔다(2026-10-06). **아이콘을 바꾸면 이 파일도 같이 바꾼다**(옛 로고로 남아 앱을 켤 때마다
+    // 옛 그림이 먼저 떴다).
     //
-    // 배경은 앱의 첫 화면과 같은 크림(`ds/color.ts` `background.normal`)이다 —
-    // 스플래시가 다른 색이면 `S0` 로 넘어가는 순간 바탕이 한 번 튄다. 옛 값
-    // `#F2E9DA`(2세대 palette.bgMid)는 어느 화면의 색도 아니었다.
+    // `Momentory` 워드마크는 여기 없다 — 안드로이드 12+ 는 스플래시 그림을 **안쪽 66% 원**으로
+    // 깎아서, 얼굴 아래에 크게 두면 양끝이 잘린다. 워드마크는 `S0`(`app/index.tsx`)가 같은 얼굴을
+    // 같은 자리에 이어 그린 뒤 그 아래에 더한다 — 여기 그림·크기·색을 바꾸면 S0 도 같이 바꾼다.
     //
-    // ⚠ 이미지 안의 내용은 정사각 캔버스의 **안쪽 66%** 에만 있다 — 안드로이드 12+
-    // 는 스플래시 아이콘을 원으로 깎으므로, 가장자리까지 채우면 워드마크가 잘린다.
-    // 그래서 `imageWidth` 는 화면에 보이길 바라는 폭이 아니라 그 1.5배다.
+    // 배경은 아이콘 바탕과 같은 베이지(`ds/color.ts` `background.splash`)라 아이콘 테두리가
+    // 보이지 않고 얼굴만 떠 있다. 캔버스 바탕도 이 베이지로 **채워 둔다** — 투명으로 두면 기기가
+    // 줄일 때 아이콘 가장자리가 반투명해져 희미한 네모 선이 보였다(2026-10-06 실기기).
+    //
+    // ⚠ 얼굴은 캔버스 폭 41%(420)이고 가운데보다 86 **위**에 있다 — S0 에서 얼굴 + 워드마크 묶음의
+    // 가운데가 화면 가운데에 오게 미리 올려 둔 것이다(`components/entry/SplashLogo` 의 `FACE_LIFT`).
+    // 올린 채로 원에 드는 가장 큰 크기라, 얼굴 크기·위치를 바꾸면 SplashLogo 의 상수도 같이 바꾼다.
+    // `imageWidth` 는 화면에 보이길 바라는 폭이 아니라 그 1.5배다.
     [
       "expo-splash-screen",
       {
         image: "./assets/splash-icon.png",
         imageWidth: 288,
         resizeMode: "contain",
-        backgroundColor: "#F7F4ED", // ds/color.ts background.normal
+        backgroundColor: "#EFE0C6", // ds/color.ts background.splash — S0 와 같은 색
       },
     ],
     [
