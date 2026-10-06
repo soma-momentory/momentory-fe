@@ -203,10 +203,11 @@ export default function SensePondScreen() {
 
           {/* 글은 장면 폭을 다 쓰지 않는다 — 끝까지 늘리면 한 글자만 다음 줄로 넘어간다 */}
           <View style={styles.words}>
-            {/* 소개 → 단계 → 완료가 **한 자리에서** 갈린다. 셋을 함께 쌓지 않는다 */}
+            {/* 소개 → 단계 → 완료가 **한 자리에서** 갈린다. 셋을 함께 쌓지 않는다.
+                단계 · 완료 제목도 소개 「감각연못」과 같은 크기다(2026-10-06 · 사용자 요청) */}
             <StepHeading
               center
-              tone={intro ? "intro" : "step"}
+              tone={intro ? "intro" : "stepLead"}
               title={heading.title}
               description={heading.description}
               hint={"hint" in heading ? heading.hint : undefined}

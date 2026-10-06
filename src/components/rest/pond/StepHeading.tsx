@@ -56,7 +56,7 @@ type Props = {
    * 소개(`intro`)의 제목은 **손글씨로 크게** 선다 — 콘텐츠의 이름이라 브랜드의 결로
    * 읽혀야 한다. 진행·완료(`step`)의 제목은 지금 할 일이라 본문 위계의 굵은 한 줄이다.
    */
-  tone?: "intro" | "lead" | "step" | "close";
+  tone?: "intro" | "lead" | "step" | "close" | "stepLead" | "closeLead";
   /** 잠시 누르기 단계의 「꾸욱」 안내 — 없으면 알약을 세우지 않는다 */
   hint?: SensePondStep["hint"];
 };
@@ -177,18 +177,29 @@ export function StepHeading({
  * 크다 — 몸에 힘 빼기의 마지막 화면에서 22 · 16 은 작았다(실기기 · 2026-10-05).
  * `lead` 는 소개(`intro`)와 같은 손글씨 제목에 **설명만 18** 이다 — 걱정상자의 숲 그림
  * 위에서 15 짜리 소개 한 줄이 묻혔다(2026-10-05 · 사용자 피드백).
+ * `stepLead` · `closeLead` 는 진행 · 마침을 **소개 제목과 같은 크기**로 세운다 — 몸에 힘
+ * 빼기 · 감각연못에서 첫 화면의 큰 제목 뒤에 작아지는 글이 약했다(2026-10-06 · 사용자 요청).
  */
 const TITLE = {
   intro: "title1Hand",
   lead: "title1Hand",
   step: "heading1",
   close: "title3",
+  stepLead: "title1Hand",
+  closeLead: "title1Hand",
 } as const;
+/**
+ * 설명은 **결과 상관없이 18 하나**다 — 쉼터 셋(감각연못 · 걱정상자 · 몸에 힘 빼기)의 제목
+ * 아래 글을 몸에 힘 빼기 진행 화면의 크기로 맞췄다(2026-10-06 · 사용자 요청). 소개 15 ·
+ * 진행 16 은 그림 위에서 작았다.
+ */
 const DESCRIPTION = {
-  intro: "body2",
+  intro: "headline1",
   lead: "headline1",
-  step: "body1",
+  step: "headline1",
   close: "headline1",
+  stepLead: "headline1",
+  closeLead: "headline1",
 } as const;
 
 const styles = StyleSheet.create({

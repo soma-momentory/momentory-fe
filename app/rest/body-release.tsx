@@ -150,15 +150,16 @@ export default function BodyReleaseScreen() {
     setNow(t);
   };
 
+  // 진행 · 마침도 소개의 「몸에 힘 빼기」와 같은 크기로 선다(2026-10-06 · 사용자 요청)
   const heading = done
     ? {
-        tone: "close" as const,
+        tone: "closeLead" as const,
         title: BODY_RELEASE_DONE.title,
         description: BODY_RELEASE_DONE.description,
       }
     : running != null
       ? {
-          tone: "step" as const,
+          tone: "stepLead" as const,
           title:
             running.phase === "tense"
               ? BODY_RELEASE_PARTS[running.part]!.tense

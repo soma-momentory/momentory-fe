@@ -93,14 +93,15 @@ export default function WorryBoxScreen() {
   // 판 아래 숨 — 쓰기는 판을 낮춰 장면을 가리지 않게 한 단 줄인다
   const bottomPad = insets.bottom + (stage === "write" ? space.md : space.lg);
 
+  // 소개 뒤의 제목도 「걱정상자」와 같은 크기다(`stepLead` · `closeLead` · 2026-10-06 · 사용자 요청)
   const heading =
     stage === "release" && ended
       ? // 걷는 동안 「걱정이 멀어지고 있어요」 → 사라진 뒤 「이제 걱정에서 잠시 멀어졌어요」
-        { tone: "close" as const, ...WORRY_BOX_RELEASE_DONE }
+        { tone: "closeLead" as const, ...WORRY_BOX_RELEASE_DONE }
       : stage === "keep" || stage === "release"
-        ? { tone: "close" as const, ...WORRY_BOX_ENDINGS[stage] }
+        ? { tone: "closeLead" as const, ...WORRY_BOX_ENDINGS[stage] }
         : stage === "boxed"
-          ? { tone: "step" as const, ...WORRY_BOX_BOXED }
+          ? { tone: "stepLead" as const, ...WORRY_BOX_BOXED }
           : // 소개 한 줄이 숲 그림 위에서 묻혀 한 단 크게(`lead` · 2026-10-05 · 사용자 피드백)
             { tone: "lead" as const, ...WORRY_BOX_INTRO };
 
