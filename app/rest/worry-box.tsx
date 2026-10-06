@@ -175,6 +175,7 @@ export default function WorryBoxScreen() {
                     onChangeText={setWorry}
                     maxLength={WORRY_MAX_LENGTH}
                     variant="medium"
+                    accentColor={worryBox.inputAccent}
                     showCounter
                     multiline
                     returnKeyType="done"
