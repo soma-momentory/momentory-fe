@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 import { Icon, Text } from "@/components/ds";
-import { label as labelColor, space, status } from "@/design/ds";
+import { label as labelColor, space, status, text, type TextToken } from "@/design/ds";
 import type { Schedule } from "@/features/home/model/types";
 
 /**
@@ -39,6 +39,11 @@ type Props = {
    * 「오늘 일정」이 이 얼굴이다). 완료를 **대조**로 보여야 하는 보관함만 켠다.
    */
   showStatusDot?: boolean;
+  /**
+   * 줄 글자의 단 — 기본 `body2`. 일기 확인(`C6`)의 일정 메모는 일기와 같은 **손글씨**로 쓴다.
+   * 완료 점은 이 단의 첫 줄 가운데에 선다.
+   */
+  itemVariant?: TextToken;
 };
 
 export function DayScheduleList({
@@ -48,8 +53,12 @@ export function DayScheduleList({
   titleColor = labelColor.strong,
   inset = 0,
   showStatusDot = false,
+  itemVariant = "body2",
 }: Props) {
   if (schedules.length === 0) return null;
+
+  // 점을 줄의 첫 줄 세로 가운데에 — body2(22) 면 7 이다
+  const dotTop = (text[itemVariant].lineHeight - DOT) / 2;
 
   return (
     <View style={[styles.root, inset > 0 ? { paddingLeft: inset } : null]}>
@@ -64,7 +73,7 @@ export function DayScheduleList({
         // 점은 **SVG 원**이다 — View+borderRadius 는 안드로이드 New Arch 에서 크기 확정 전 반지름이
         // 0 으로 깎여 first-paint 에 네모로 굳는다(`ds/Calendar.tsx` 의 `Dot` 과 같은 이유).
         const marker = showStatusDot ? (
-          <View style={styles.dotSlot}>
+          <View style={{ marginTop: dotTop }}>
             <Svg width={DOT} height={DOT}>
               <Circle
                 cx={DOT / 2}
@@ -84,7 +93,7 @@ export function DayScheduleList({
           <View key={s.id} style={[styles.row, marker == null ? styles.rowOpen : null]}>
             {marker}
             <Text
-              variant="body2"
+              variant={itemVariant}
               color={s.done ? labelColor.neutral : labelColor.strong}
               style={s.done ? styles.done : null}
             >
@@ -99,7 +108,10 @@ export function DayScheduleList({
 
 // 체크(16) + 사이 여백(6) 만큼 — 완료한 줄과 글자 왼끝이 맞는다
 const INDENT = 22;
-/** 완료/미완료 점 지름. `body2`(15/22) 첫 줄 가운데에 서게 위 여백을 준다 */
+/**
+ * 완료/미완료 점 지름. 줄 단의 첫 줄 가운데에 서게 위 여백을 준다(`dotTop`) — 원은
+ * `Svg`+`Circle` 이 그리고 감싼 View 는 위치만 잡는다(네모 버그 원천 차단)
+ */
 const DOT = 8;
 /** 빈 점(미완료)의 획 굵기 — 가운데가 뚫려 보이는 최소값 */
 const DOT_BORDER = 1.5;
@@ -109,8 +121,4 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
   rowOpen: { paddingLeft: INDENT },
   done: { textDecorationLine: "line-through" },
-
-  // (22 - 8) / 2 = 7 — 8px 점(SVG 원)을 22 line-height 첫 줄 세로 가운데에 세운다.
-  // 원은 `Svg`+`Circle` 이 그리고 여기는 위치만 잡는다(네모 버그 원천 차단)
-  dotSlot: { marginTop: 7 },
 });

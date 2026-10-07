@@ -21,10 +21,16 @@ export function DiaryEmotionRow({
   emotions,
   align = "flex-start",
   marker = "dot",
+  hand = false,
 }: {
   emotions: readonly EmotionId[];
   align?: "flex-start" | "flex-end";
   marker?: "dot" | "pebble";
+  /**
+   * 이름을 **손글씨로 종이에 적듯** 쓴다 — 일기 확인(`C6`)의 메모지 오른쪽 위(2026-10-07).
+   * 칩 모양 없이 조약돌과 이름만 둔다. 손글씨는 14 아래로 내리지 않는다(`label1Hand`)
+   */
+  hand?: boolean;
 }) {
   if (emotions.length === 0) return null;
 
@@ -33,7 +39,10 @@ export function DiaryEmotionRow({
       {emotions.map((e, i) => (
         <View key={`${e}-${i}`} style={styles.item}>
           {marker === "pebble" ? <EmotionPebble id={e} size={12} /> : <EmotionDot id={e} />}
-          <Text variant="caption1" color={labelColor.alternative}>
+          <Text
+            variant={hand ? "label1Hand" : "caption1"}
+            color={hand ? labelColor.neutral : labelColor.alternative}
+          >
             {emotionName(e)}
           </Text>
         </View>
