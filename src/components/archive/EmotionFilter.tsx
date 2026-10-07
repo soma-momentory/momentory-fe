@@ -61,7 +61,8 @@ export function EmotionFilter({ selected, onToggle, edgePadding = 0 }: Props) {
           key={e.id}
           label={e.name}
           selected={selected.includes(e.id)}
-          selectedStyle="soft"
+          // 필터는 테두리 굵기(1→2)로 고른 칩을 표시한다 — 색만으로 선택을 말하지 않는다(CLAUDE.md 규칙 3).
+          // 채팅 선택지의 은은한 면(soft)은 여기 쓰지 않는다
           // 같은 칩을 다시 누르면 그 하나만 해제다
           onPress={() => onToggle(e.id)}
         />
