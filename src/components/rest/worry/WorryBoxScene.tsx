@@ -55,7 +55,7 @@ import { RisingMotes } from "../scene/RisingMotes";
  * 오지 않는다(`SurfaceRipple` 과 같은 판단).
  *
  * 그림은 ChatGPT 로 생성해 `scripts/keyout-worry-box.py` 로 다듬은 것이다(숲 · 앉은 포즈 ·
- * 상자를 인 뒷모습 둘 · 상자 셋 — 처음 자세만 몸에 힘 빼기 것을 빌린다). 그림이 바뀌면
+ * 상자를 인 뒷모습 둘 · 상자 셋 — 처음 자세만 따로 받은 흰 바탕 그림이다). 그림이 바뀌면
  * `ART` 표만 갈아 끼운다.
  *
  * 장식이라 낭독기에 읽히지 않는다 — 할 일은 위 안내와 아래 판이 말한다.
@@ -682,7 +682,8 @@ const styles = StyleSheet.create({
     width: TH.dot,
     height: TH.dot,
     borderRadius: TH.dot / 2,
-    backgroundColor: labelColor.alternative,
+    // 장식이라 읽히는 글자의 대비가 필요 없다 — `alternative` 는 말풍선 안에서 무거웠다(2026-10-07)
+    backgroundColor: labelColor.assistive,
   },
   card: {
     position: "absolute",

@@ -1,7 +1,7 @@
-"""걱정상자의 생성 그림 네 장을 앱 자산으로 만든다 (2026-10-05).
+"""걱정상자의 그림 다섯 장을 앱 자산으로 만든다 (2026-10-05).
 
-`assets/worry-box/source/`(이력에 담지 않는다)의 네 장을 읽는다 — 전부 ChatGPT 로
-생성했고, 배경을 뺀 셋은 순수 초록(#00FF00) 위에 그렸다. 걷어 내는 법은 몸에 힘 빼기와
+`assets/worry-box/source/`(이력에 담지 않는다)의 다섯 장을 읽는다 — `sit.webp` 말고는
+ChatGPT 로 생성했고, 배경을 뺀 셋은 순수 초록(#00FF00) 위에 그렸다. 걷어 내는 법은 몸에 힘 빼기와
 같다(`keyout-body-release.py` 머리말 — 초록 세기로 알파를 내고, 섞인 가장자리는 배경색을
 빼서 되살리고, 남은 초록은 누른다).
 
@@ -11,17 +11,14 @@
 | `poses.webp`  | 2×2 — (받기) · 쪽지 들기 · 넣기 · 곁에서 쉬기 | `capybara-{hold,put,rest}.webp` — 받기는 쓰지 않는다 |
 | `walk.webp`   | 상자를 인 뒷모습 두 걸음                 | `capybara-walk{1,2}.webp`                   |
 | `box.webp`    | 열린 상자 뒤판 · 앞판 · 닫힌 상자        | `box-{back,front,closed}.webp`              |
-| (몸에 힘 빼기) `poses-a.webp` 왼쪽 위 | 두 손을 배에 얹은 기본 앉은 자세 | `capybara-sit.webp`             |
+| `sit.webp`    | 두 손을 배에 얹은 기본 앉은 자세(흰 바탕) | `capybara-sit.webp`                         |
 
-⚠ **처음 자세는 몸에 힘 빼기의 기본 포즈를 빌린다** (2026-10-05 · 실기기 피드백). 생성한
-「받기」(두 손을 내민) 포즈가 어색했다. 같은 캐릭터라 이어지지만 머리 폭이 4.5% 작게
-그려져 있어서(374 : 391) 그만큼 키워 맞춘다(`SIT_SCALE`). 원본은
-`assets/body-release/source/` 에 있다.
-
-⚠ **그 자세의 오른발은 고쳐 쓴다** (2026-10-05 · 사용자 피드백). 원본은 왼발만 동그란
-발바닥이 보이는 정면이고 오른발은 옆모습 발끝처럼 삐죽 튀어나와 있었다. 왼발을 좌우로
-뒤집어 오른발 자리에 **발 모양(타원)대로만** 덮고, 그래도 남는 옛 발끝은 그 아래만 덮는다
-(`mirror_right_foot`). 사각형으로 섞으면 발 윗선이 잘리거나 팔 선이 겹쳐 흐려졌다.
+⚠ **처음 자세는 따로 받은 그림이다** (2026-10-07 · 사용자 제공). 처음에는 몸에 힘 빼기의
+기본 포즈를 빌려 오른발을 왼발을 뒤집어 덮어 썼는데, 두 발이 다 정면인 그림으로 바꿨다.
+이 그림만 **흰 바탕**이라 초록 대신 흰색을 걷어 낸다(`keyout_white`). 같은 캐릭터라
+이어지고, 머리 폭이 다른 포즈(390)의 두 배로 그려져 있어서 절반으로 줄인다(`SIT_SCALE`).
+그 그림은 생성 그림보다 옅은 주황이라, 다음 포즈로 넘어갈 때 색이 바뀌지 않게 **부위마다
+생성 그림의 색으로 옮긴다**(`recolor` · `SIT_TO_POSES`).
 
 ## 같은 상자에 맞춘다
 
@@ -38,7 +35,7 @@
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent / "assets" / "worry-box"
 SRC = ROOT / "source"
@@ -50,10 +47,23 @@ KEEP, DROP = 60, 200
 SIT_BOX = (560, 600)
 WALK_BOX = (560, 830)
 CHEST_BOX = (420, 410)
-# 몸에 힘 빼기 기본 포즈를 걱정상자 포즈 크기로 맞추는 배율 — 머리 폭 391 ÷ 374
-SIT_SCALE = 391 / 374
+# 처음 자세 그림을 다른 포즈 크기로 맞추는 배율 — 머리 폭 390 ÷ 780
+SIT_SCALE = 390 / 780
+# 흰 바탕 걷어 내기 — 이보다 밝으면 바탕 후보, 외곽선(진한 갈색)에 닿는 띠의 폭(px)
+WHITE_MIN, EDGE_BAND = 240, 7
 # 발의 가운데를 잴 때 보는 아래쪽 줄 수
 FEET_ROWS = 80
+# 처음 자세를 다른 포즈의 색에 맞춘다 — 부위마다 (처음 자세의 색, 생성 그림의 색).
+# 둘 다 그림에서 잰 부위의 평균이다(2026-10-07)
+SIT_TO_POSES = [
+    ((232, 165, 104), (241, 156, 90)),  # 몸
+    ((204, 135, 93), (215, 131, 84)),  # 배 · 발바닥
+    ((232, 142, 103), (237, 134, 86)),  # 볼
+    ((146, 88, 64), (162, 89, 61)),  # 귀 · 주둥이 · 손발
+    ((73, 26, 6), (81, 30, 10)),  # 외곽선
+]
+# 부위 색 사이를 얼마나 부드럽게 잇는지 — 가장자리 · 명암이 끊기지 않게
+RECOLOR_SIGMA = 18
 
 
 def keyout(name: str, src: Path = SRC) -> np.ndarray:
@@ -87,20 +97,36 @@ def place(piece: np.ndarray, size: tuple[int, int], center_on_feet: bool) -> np.
     return box
 
 
-def mirror_right_foot(box: np.ndarray) -> np.ndarray:
-    """왼발을 뒤집어 오른발 자리에 덮는다 — 상자는 두 발의 가운데가 가운데라 그대로 뒤집으면 된다"""
-    h, w = box.shape[:2]
-    img = box.astype(np.float32)
-    mirrored = img[:, ::-1]
-    yy, xx = np.mgrid[0:h, 0:w]
-    # 왼발(그림에서 잰 가운데 132, 535)을 뒤집은 자리 — 외곽선까지 덮도록 조금 넉넉하다
-    cx, cy, rx, ry = (w - 1) - 132, 535, 66, 70
-    d = np.sqrt(((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2)
-    foot = np.clip((1.0 - d) / 0.05 + 1, 0, 1)
-    # 타원 밖으로 남는 옛 발끝 — 오른쪽 아래만
-    tip = np.clip((xx - 470) / 4, 0, 1) * np.clip((yy - 508) / 4, 0, 1)
-    weight = np.maximum(foot, tip)[..., None]
-    return np.clip(img * (1 - weight) + mirrored * weight, 0, 255).astype(np.uint8)
+def keyout_white(name: str) -> np.ndarray:
+    """흰 바탕을 걷어 낸다 — 가장자리에서 이어진 밝은 곳만 바탕이다(몸 안의 밝은 곳은 남는다).
+    바탕에 닿는 띠는 외곽선과 흰색이 섞인 것이라, 흰색을 빼서 외곽선 색과 알파를 되살린다"""
+    img = Image.open(SRC / f"{name}.webp").convert("RGB")
+    rgb = np.asarray(img).astype(np.float32)
+    light = Image.fromarray(np.where(rgb.min(axis=2) >= WHITE_MIN, 255, 0).astype(np.uint8)).copy()
+    w, h = light.size
+    for corner in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
+        if light.getpixel(corner) == 255:
+            ImageDraw.floodfill(light, corner, 128)
+    bg = np.asarray(light) == 128
+    band = np.asarray(Image.fromarray(bg.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(EDGE_BAND))) > 0
+    band &= ~bg
+    # 띠 안: 밝을수록 투명하다 — 외곽선의 밝기(그림에서 잰 평균 37)까지가 0 → 1
+    a = np.where(bg, 0.0, 1.0)
+    a[band] = np.clip((255 - rgb[band].mean(axis=1)) / (255 - 37), 0, 1)
+    safe = np.maximum(a, 0.05)[..., None]
+    fg = np.where(band[..., None], (rgb - (1 - a)[..., None] * 255) / safe, rgb)
+    return np.dstack([np.clip(fg, 0, 255), a * 255]).astype(np.uint8)
+
+
+def recolor(arr: np.ndarray, pairs: list) -> np.ndarray:
+    """부위 색마다 옮길 만큼을 가까운 정도로 섞어 더한다 — 알파는 그대로"""
+    rgb = arr[..., :3].astype(np.float32)
+    src = np.array([s for s, _ in pairs], np.float32)
+    shift = np.array([t for _, t in pairs], np.float32) - src
+    d2 = ((rgb[..., None, :] - src) ** 2).sum(-1)
+    w = np.exp(-(d2 - d2.min(-1, keepdims=True)) / (2 * RECOLOR_SIGMA**2))
+    out = rgb + (w[..., None] * shift).sum(-2) / w.sum(-1, keepdims=True)
+    return np.dstack([np.clip(out, 0, 255).round(), arr[..., 3]]).astype(np.uint8)
 
 
 def save(arr: np.ndarray, name: str) -> None:
@@ -118,12 +144,10 @@ def main() -> None:
     }.items():
         save(place(poses[y0:y1, x0:x1], SIT_BOX, center_on_feet=True), f"capybara-{name}")
 
-    sit = keyout("poses-a", ROOT.parent / "body-release" / "source")[0:768, 0:512]
-    h, w = sit.shape[:2]
-    sit = np.asarray(
-        Image.fromarray(sit).resize((round(w * SIT_SCALE), round(h * SIT_SCALE)), Image.LANCZOS)
-    )
-    save(mirror_right_foot(place(sit, SIT_BOX, center_on_feet=True)), "capybara-sit")
+    sit = Image.fromarray(keyout_white("sit")).convert("RGBa")
+    sit = sit.resize((round(sit.width * SIT_SCALE), round(sit.height * SIT_SCALE)), Image.LANCZOS)
+    sit = place(np.asarray(sit.convert("RGBA")), SIT_BOX, center_on_feet=True)
+    save(recolor(sit, SIT_TO_POSES), "capybara-sit")
 
     walk = keyout("walk")
     save(place(walk[:, :768], WALK_BOX, center_on_feet=True), "capybara-walk1")
