@@ -1,11 +1,12 @@
 import { render, fireEvent } from "@testing-library/react-native";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 
 import RetroConfirm from "../confirm";
 
+import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import { useRetro } from "@/features/retro/model/retro";
-import { testSchedules } from "@/testing/fixtures";
+import { testDiaryData, testSchedules } from "@/testing/fixtures";
 
 /**
  * `C2`(오늘 일정 확인)의 규칙을 고정한다.
@@ -15,6 +16,7 @@ import { testSchedules } from "@/testing/fixtures";
  */
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  Redirect: jest.fn(() => null),
 }));
 
 const flatten = (style: unknown) =>
@@ -23,7 +25,19 @@ const flatten = (style: unknown) =>
 beforeEach(() => {
   useDay.setState({ schedules: testSchedules() });
   useRetro.getState().reset();
+  useDiary.setState({ diaries: [] });
   jest.clearAllMocks();
+});
+
+describe("C2 · 오늘 일기를 이미 썼으면", () => {
+  it("일정을 보여 주지 않고 대화(「이미 마쳤어요」)로 바로 넘긴다", async () => {
+    const [diary] = testDiaryData().diaries;
+    useDiary.setState({ diaries: [{ ...diary!, date: "2026-07-27" }] });
+    const { queryByText } = await render(<RetroConfirm />);
+
+    expect(queryByText("오늘 있었던 일을 잠깐 떠올려봐요.")).toBeNull();
+    expect(jest.mocked(Redirect).mock.calls[0]?.[0]).toEqual({ href: "/retro/talk" });
+  });
 });
 
 describe("C2 · 오늘 일정 확인 — 읽기 전용이다", () => {

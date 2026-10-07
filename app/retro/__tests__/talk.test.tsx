@@ -6,6 +6,8 @@ import { SILENCE_MS } from "@/components/ds/voiceInput";
 
 import type { Reply, ReplyOption } from "@/features/retro/data/retroApi";
 import { startRetro, sendTurn } from "@/features/retro/data/retroApi";
+import { useDiary } from "@/features/diary/model/diary";
+import { testDiaryData } from "@/testing/fixtures";
 import { useRetro } from "@/features/retro/model/retro";
 
 jest.mock("expo-router", () => ({
@@ -101,6 +103,20 @@ describe("시작 — 감정 없이 마운트하면 서버가 첫 질문을 준�
     await waitFor(() => expect(r.getByText("홈으로 돌아가기")).toBeTruthy());
     expect(r.queryByText("다시 시도")).toBeNull();
     expect(r.getByText(/이미 회고를 마쳤어요/)).toBeTruthy();
+  });
+
+  it("오늘 일기를 이미 썼으면 서버에 묻지 않고 처음부터 [홈으로 돌아가기] 를 둔다", async () => {
+    const [diary] = testDiaryData().diaries;
+    useDiary.setState({ diaries: [{ ...diary!, date: "2026-07-27" }] });
+    try {
+      const r = await render(<RetroTalk />);
+
+      expect(r.getByText(/이미 회고를 마쳤어요/)).toBeTruthy();
+      expect(r.getByText("홈으로 돌아가기")).toBeTruthy();
+      expect(mockStart).not.toHaveBeenCalled();
+    } finally {
+      useDiary.setState({ diaries: [] });
+    }
   });
 
   it("세션이 서기 전에는 채팅 입력창을 띄우지 않는다 — 시작 중엔 잠근 버튼만", async () => {

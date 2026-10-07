@@ -36,6 +36,7 @@ import {
   text,
 } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
+import { hasDiaryOn } from "@/features/diary/model/selectors";
 import {
   MAX_VISIBLE_SCHEDULES,
   remainingLabel,
@@ -386,7 +387,8 @@ export default function Home() {
               onPress={() => {
                 // 홈에 온 사람 중 몇이 회고로 들어가는가 — 조회만으로는 들어간 길을 모른다
                 track("retro_cta_clicked", { source: "home" });
-                router.push("/retro/confirm");
+                // 오늘 일기를 이미 썼으면 일정 확인을 건너뛰고 「이미 마쳤어요」로 바로 간다
+                router.push(hasDiaryOn(diaries, today) ? "/retro/talk" : "/retro/confirm");
               }}
               style={styles.ctaButton}
             />

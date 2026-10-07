@@ -48,6 +48,10 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
   });
 
   it("하루 돌아보기는 화면의 유일한 주 버튼이다", async () => {
+    // 오늘 일기가 없는 날 — 샘플에는 오늘 일기가 있어 걷어 낸다
+    useDiary.setState({
+      diaries: useDiary.getState().diaries.filter((d) => d.date !== "2026-07-27"),
+    });
     const { getByText, getByRole } = await render(<Home />);
 
     expect(getByText("오늘 하루는 어땠어요?")).toBeTruthy();
@@ -57,6 +61,15 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     // 홈에서 회고로 들어간 길을 남긴다 — 조회만으로는 어디서 왔는지 모른다
     const { track } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
     expect(track).toHaveBeenCalledWith("retro_cta_clicked", { source: "home" });
+  });
+
+  it("오늘 일기를 이미 썼으면 일정 확인을 건너뛰고 대화(「이미 마쳤어요」)로 바로 간다", async () => {
+    const [sample] = useDiary.getState().diaries;
+    useDiary.setState({ diaries: [{ ...sample!, date: "2026-07-27" }] });
+    const { getByRole } = await render(<Home />);
+
+    await fireEvent.press(getByRole("button", { name: "지금 하루 돌아보기" }));
+    expect(router.push).toHaveBeenCalledWith("/retro/talk");
   });
 
   it("알림을 켠 사람에게만 정한 시각을 말한다", async () => {
