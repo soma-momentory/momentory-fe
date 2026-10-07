@@ -682,7 +682,8 @@ const styles = StyleSheet.create({
     width: TH.dot,
     height: TH.dot,
     borderRadius: TH.dot / 2,
-    backgroundColor: labelColor.alternative,
+    // 장식이라 읽히는 글자의 대비가 필요 없다 — `alternative` 는 말풍선 안에서 무거웠다(2026-10-07)
+    backgroundColor: labelColor.assistive,
   },
   card: {
     position: "absolute",
