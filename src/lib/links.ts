@@ -34,6 +34,7 @@ import { Linking } from "react-native";
  */
 export const EXTERNAL_LINKS = {
   weather: "https://api.met.no/",
+  weatherLicense: "https://creativecommons.org/licenses/by/4.0/",
   /** 개인정보 처리방침 — 로그인 약관 줄 · 마이 「지원」 */
   privacy: "https://momentory.co.kr/privacy",
   /** 이용약관 — 로그인 약관 줄 · 마이 「지원」 */
