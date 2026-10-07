@@ -61,6 +61,7 @@ export function EmotionFilter({ selected, onToggle, edgePadding = 0 }: Props) {
           key={e.id}
           label={e.name}
           selected={selected.includes(e.id)}
+          selectedStyle="soft"
           // 같은 칩을 다시 누르면 그 하나만 해제다
           onPress={() => onToggle(e.id)}
         />

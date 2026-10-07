@@ -15,12 +15,12 @@ import {
 } from "@/components/ds";
 import {
   background,
+  chatChoiceSelected,
   label as labelColor,
   layout,
   line,
-  primary,
   radius,
-  selectedTint,
+  raised,
   size,
   space,
 } from "@/design/ds";
@@ -108,7 +108,6 @@ export default function RetroTalk() {
   const addMyTurn = useRetro((s) => s.addMyTurn);
   const schedules = useDay((s) => s.schedules);
   const { height: windowHeight } = useWindowDimensions();
-
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [startErrorCode, setStartErrorCode] = useState<RetroFailureCode | null>(null);
@@ -315,6 +314,7 @@ export default function RetroTalk() {
                 label={o.label}
                 selected={pickedIds.includes(o.id)}
                 onPress={() => toggle(o)}
+                selectedStyle="soft"
                 style={EMOTION_NAMES.has(o.label) ? styles.emotionChip : undefined}
               />
             </Underlay>
@@ -335,7 +335,12 @@ export default function RetroTalk() {
         <View style={styles.chips}>
           {options.map((o) => (
             <Underlay key={o.id} shape="chip">
-              <Chip label={o.label} selected={pickedIds.includes(o.id)} onPress={() => toggle(o)} />
+              <Chip
+                label={o.label}
+                selected={pickedIds.includes(o.id)}
+                onPress={() => toggle(o)}
+                selectedStyle="soft"
+              />
             </Underlay>
           ))}
         </View>
@@ -417,9 +422,8 @@ const isEmotionChoice = (options: readonly ReplyOption[]) =>
   options.some((o) => EMOTION_NAMES.has(o.label));
 
 /**
- * 선택지 뒤에 까는 **불투명한 바탕.** 선택 면이 초록 18% 틴트(`selectedTint`)라 반투명한데, 독 뒤로 바바의
- * 러그가 깔려 있어 고른 칩에 러그가 비쳐 색이 달라졌다(2026-09-11 실기기). 바탕을 칩과 같은 모양으로 한 겹
- * 깔면 뒤에 무엇이 있든(바바 · 러그) 같은 색으로 보인다.
+ * 선택지 뒤에 까는 **불투명한 바탕.** 선택지가 1px 들리거나 눌리는 동안 뒤의 바바가
+ * 틈으로 비치지 않도록 칩과 같은 모양의 면을 한 겹 둔다.
  */
 function Underlay({ shape, children }: { shape: "chip" | "row"; children: ReactNode }) {
   return (
@@ -442,18 +446,25 @@ function OptionRow({
         accessibilityRole="button"
         accessibilityState={{ selected }}
         onPress={onPress}
-        style={[styles.row, selected ? styles.rowOn : styles.rowOff]}
+        style={({ pressed }) => [
+          styles.row,
+          selected ? styles.rowOn : styles.rowOff,
+          pressed && styles.rowPressed,
+        ]}
       >
         {option.hint != null ? (
-          <Text variant="label2" color={labelColor.alternative}>
+          <Text
+            variant="label2"
+            color={selected ? chatChoiceSelected.label : labelColor.alternative}
+          >
             {option.hint}
           </Text>
         ) : null}
-        <Text variant="body1" color={labelColor.strong}>
+        <Text variant="body1" color={selected ? chatChoiceSelected.label : labelColor.strong}>
           {option.label}
         </Text>
         {option.description != null ? (
-          <Text variant="caption1" color={labelColor.neutral}>
+          <Text variant="caption1" color={selected ? chatChoiceSelected.label : labelColor.neutral}>
             {option.description}
           </Text>
         ) : null}
@@ -505,14 +516,14 @@ function RetroDock(p: DockProps) {
             </Text>
           </View>
           {p.startTerminal ? (
-            <Button label="홈으로 돌아가기" fill onPress={p.onGoHome} />
+            <Button label="홈으로 돌아가기" fill raised onPress={p.onGoHome} />
           ) : (
-            <Button label="다시 시도" fill onPress={p.onRetry} disabled={p.pending} />
+            <Button label="다시 시도" fill raised onPress={p.onRetry} disabled={p.pending} />
           )}
         </>
       );
     }
-    return <Button label="시작하는 중" fill disabled />;
+    return <Button label="시작하는 중" fill raised disabled />;
   }
 
   return (
@@ -536,23 +547,29 @@ function RetroDock(p: DockProps) {
       ) : null}
 
       {p.ended ? (
-        <Button label="홈으로 돌아가기" fill onPress={() => router.replace("/home")} />
+        <Button label="홈으로 돌아가기" fill raised onPress={() => router.replace("/home")} />
       ) : p.safetyHold && !p.resuming ? (
         /* 위기 안내의 두 갈래는 **일기 저장 화면(`draft`)과 같은 배치**다(2026-09-11 · 사용자 요청):
            주 행동은 채운 버튼, 보조는 그 아래 **작은 텍스트 버튼이 가운데**. 같은 모양의 갈림길이
            화면마다 다르게 서 있으면 어느 쪽이 주 행동인지 매번 다시 읽어야 한다 */
         <View style={styles.holdActions}>
-          <Button label="홈으로 돌아가기" fill onPress={() => router.replace("/home")} />
+          <Button label="홈으로 돌아가기" fill raised onPress={() => router.replace("/home")} />
           <View style={styles.holdSecondary}>
             <Button label="이어서 얘기하기" variant="text" size="small" onPress={p.onContinue} />
           </View>
         </View>
       ) : p.done ? (
-        <Button label="일기 확인하러 가기" fill onPress={() => router.push("/retro/draft")} />
+        <Button
+          label="일기 확인하러 가기"
+          fill
+          raised
+          onPress={() => router.push("/retro/draft")}
+        />
       ) : p.showOptions ? (
         <Button
           label="보내기"
           fill
+          raised
           disabled={!p.canSendPicked || p.pending}
           onPress={p.onSendPicked}
         />
@@ -607,5 +624,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.medium,
   },
   rowOff: { backgroundColor: background.elevated, borderWidth: 1, borderColor: line.neutral },
-  rowOn: { backgroundColor: selectedTint, borderWidth: 2, borderColor: primary.normal },
+  rowOn: {
+    backgroundColor: chatChoiceSelected.surface,
+    borderWidth: 1,
+    borderColor: "transparent",
+    transform: [{ translateY: -1 }],
+    boxShadow: `0px ${raised.depth}px ${space.sm}px ${chatChoiceSelected.shadow}`,
+  },
+  rowPressed: { transform: [{ scale: 0.99 }] },
 });

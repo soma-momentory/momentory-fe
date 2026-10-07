@@ -21,6 +21,8 @@ import {
   overlay,
   primary,
   radius,
+  raised,
+  raisedShadow,
   size,
   space,
   status,
@@ -91,6 +93,8 @@ type Props = Omit<PressableProps, "style" | "children"> & {
   /** 좌우로 꽉 채운다. 기본은 hug (`DESIGN.md` §6 「Hug 또는 Fill」) */
   fill?: boolean;
   disabled?: boolean;
+  /** 홈 잔디 CTA처럼 면 바로 아래에 단단한 초록 명암을 둔다. */
+  raised?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -106,6 +110,7 @@ export function Button({
   leading,
   fill = false,
   disabled = false,
+  raised: hasDepth = false,
   accessibilityRole = "button",
   accessibilityState,
   style,
@@ -175,6 +180,7 @@ export function Button({
         v.container,
         fill ? styles.fill : null,
         disabled ? styles.disabled : null,
+        hasDepth && variant === "solid" && !disabled ? styles.raised : null,
         // 비활성은 줄어들지 않는다 — 값이 1 에 묶인다
         disabled ? null : { transform: [{ scale }] },
         style,
@@ -267,4 +273,5 @@ const styles = StyleSheet.create({
   // 비활성은 면·라벨 색으로만 말한다 — 경고 아이콘·문구를 붙이지 않는다(RULES 4)
   disabled: { backgroundColor: interaction.disabled, borderWidth: 0 },
   scrim: { borderRadius: radius.medium },
+  raised: { boxShadow: `0px ${raised.depth}px 0px ${raisedShadow.grass}` },
 });

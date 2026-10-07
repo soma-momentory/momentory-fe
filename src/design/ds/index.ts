@@ -28,6 +28,7 @@ export {
   background,
   bodyRelease,
   cardFrame,
+  chatChoiceSelected,
   color,
   emotion,
   emotionTint,
