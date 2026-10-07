@@ -17,6 +17,8 @@ ChatGPT 로 생성했고, 배경을 뺀 셋은 순수 초록(#00FF00) 위에 그
 기본 포즈를 빌려 오른발을 왼발을 뒤집어 덮어 썼는데, 두 발이 다 정면인 그림으로 바꿨다.
 이 그림만 **흰 바탕**이라 초록 대신 흰색을 걷어 낸다(`keyout_white`). 같은 캐릭터라
 이어지고, 머리 폭이 다른 포즈(390)의 두 배로 그려져 있어서 절반으로 줄인다(`SIT_SCALE`).
+그 그림은 생성 그림보다 옅은 주황이라, 다음 포즈로 넘어갈 때 색이 바뀌지 않게 **부위마다
+생성 그림의 색으로 옮긴다**(`recolor` · `SIT_TO_POSES`).
 
 ## 같은 상자에 맞춘다
 
@@ -51,6 +53,17 @@ SIT_SCALE = 390 / 780
 WHITE_MIN, EDGE_BAND = 240, 7
 # 발의 가운데를 잴 때 보는 아래쪽 줄 수
 FEET_ROWS = 80
+# 처음 자세를 다른 포즈의 색에 맞춘다 — 부위마다 (처음 자세의 색, 생성 그림의 색).
+# 둘 다 그림에서 잰 부위의 평균이다(2026-10-07)
+SIT_TO_POSES = [
+    ((232, 165, 104), (241, 156, 90)),  # 몸
+    ((204, 135, 93), (215, 131, 84)),  # 배 · 발바닥
+    ((232, 142, 103), (237, 134, 86)),  # 볼
+    ((146, 88, 64), (162, 89, 61)),  # 귀 · 주둥이 · 손발
+    ((73, 26, 6), (81, 30, 10)),  # 외곽선
+]
+# 부위 색 사이를 얼마나 부드럽게 잇는지 — 가장자리 · 명암이 끊기지 않게
+RECOLOR_SIGMA = 18
 
 
 def keyout(name: str, src: Path = SRC) -> np.ndarray:
@@ -105,6 +118,17 @@ def keyout_white(name: str) -> np.ndarray:
     return np.dstack([np.clip(fg, 0, 255), a * 255]).astype(np.uint8)
 
 
+def recolor(arr: np.ndarray, pairs: list) -> np.ndarray:
+    """부위 색마다 옮길 만큼을 가까운 정도로 섞어 더한다 — 알파는 그대로"""
+    rgb = arr[..., :3].astype(np.float32)
+    src = np.array([s for s, _ in pairs], np.float32)
+    shift = np.array([t for _, t in pairs], np.float32) - src
+    d2 = ((rgb[..., None, :] - src) ** 2).sum(-1)
+    w = np.exp(-(d2 - d2.min(-1, keepdims=True)) / (2 * RECOLOR_SIGMA**2))
+    out = rgb + (w[..., None] * shift).sum(-2) / w.sum(-1, keepdims=True)
+    return np.dstack([np.clip(out, 0, 255).round(), arr[..., 3]]).astype(np.uint8)
+
+
 def save(arr: np.ndarray, name: str) -> None:
     Image.fromarray(arr).save(ROOT / f"{name}.webp", quality=90)
 
@@ -122,7 +146,8 @@ def main() -> None:
 
     sit = Image.fromarray(keyout_white("sit")).convert("RGBa")
     sit = sit.resize((round(sit.width * SIT_SCALE), round(sit.height * SIT_SCALE)), Image.LANCZOS)
-    save(place(np.asarray(sit.convert("RGBA")), SIT_BOX, center_on_feet=True), "capybara-sit")
+    sit = place(np.asarray(sit.convert("RGBA")), SIT_BOX, center_on_feet=True)
+    save(recolor(sit, SIT_TO_POSES), "capybara-sit")
 
     walk = keyout("walk")
     save(place(walk[:, :768], WALK_BOX, center_on_feet=True), "capybara-walk1")
