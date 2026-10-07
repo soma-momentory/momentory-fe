@@ -2,12 +2,14 @@ import { Redirect, router } from "expo-router";
 import { useRef, useState } from "react";
 import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
 
+import { WeatherCredit } from "@/components/diary/WeatherCredit";
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
 import { Button, Card, Screen, Text, TopNavigation } from "@/components/ds";
 import { iosVariant, label as labelColor, layout, space, text } from "@/design/ds";
 import { track } from "@/features/analytics";
 import { useActiveClock } from "@/features/analytics/activeClock";
+import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
 import { updateDiaryBody } from "@/features/diary/data/diaryApi";
 import { type EmotionId } from "@/features/emotion/model/emotion";
 import { useDiary } from "@/features/diary/model/diary";
@@ -53,6 +55,8 @@ export default function RetroDraft() {
   const schedules = useDay((s) => s.schedules);
   // 홈·일정 확인과 같은 「오늘」 — 일기의 날짜가 여기서 온다
   const { date: today } = useTodayContext();
+
+  const { weather, status: weatherStatus } = useDiaryWeather(diary?.diaryId, today);
 
   const [body, setBody] = useState<string>(diary?.diary ?? "");
   const [editing, setEditing] = useState(false);
@@ -110,7 +114,7 @@ export default function RetroDraft() {
       emotions,
       storyEmotion: null,
       startEmotion: null,
-      weather: null,
+      weather,
       situation: wishCard?.situation ?? null,
       targetAction: wishCard?.smallAction ?? null,
       // 바람 카드 리치 필드 — 완료 직후 쉼터/상세에서도 바로 채워 보이게 함께 싣는다.
@@ -161,6 +165,13 @@ export default function RetroDraft() {
         <Card padding="loose" style={styles.card}>
           {/* 일기 상세(`A3`)와 같은 줄을 쓴다 — 값을 각자 들면 또 갈린다 */}
           <DiaryEmotionRow emotions={emotions} />
+          {weather || weatherStatus ? (
+            <Text variant="caption1" color={labelColor.alternative}>
+              {weather ?? weatherStatus}
+            </Text>
+          ) : null}
+
+          {weather ? <WeatherCredit /> : null}
 
           {editing ? (
             <>

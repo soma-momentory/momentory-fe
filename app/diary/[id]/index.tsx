@@ -3,11 +3,13 @@ import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
+import { WeatherCredit } from "@/components/diary/WeatherCredit";
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { Card, IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
 import { ActionCardSection } from "@/components/diary/ActionCardSection";
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
 import { iosVariant, label as labelColor, space } from "@/design/ds";
+import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 import { useDay, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
@@ -52,14 +54,19 @@ export default function DiaryDetail() {
    */
   const schedules = useDay((s) => s.schedules);
 
+  const { weather, status: weatherStatus } = useDiaryWeather(
+    diary?.id,
+    diary?.date,
+    diary?.weather,
+  );
+
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // 지워진 일기를 열고 있었다면 보관함으로 — 오류 화면을 만들지 않는다
   if (diary == null) return <Redirect href="/archive" />;
 
   const daySchedules = visibleSchedules(schedules).filter((s) => s.date === diary.date);
-  // 「맑음 · 27℃」의 앞머리만 머리 줄에 쓴다 — 온도까지 넣으면 줄이 밀린다
-  const weatherLabel = diary.weather?.split(" · ")[0] ?? null;
+  const weatherLabel = weather ?? weatherStatus;
 
   return (
     <Screen>
@@ -123,6 +130,8 @@ export default function DiaryDetail() {
             {diary.body}
           </Text>
         </Card>
+
+        {weather ? <WeatherCredit /> : null}
 
         {card != null ? (
           // 일기 상세는 **읽는 곳**이라 행동 카드를 읽기 전용으로 둔다 — 해봤어요·되돌리기·

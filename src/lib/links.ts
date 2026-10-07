@@ -33,6 +33,7 @@ import { Linking } from "react-native";
  * `momentory-landing.vercel.app` 은 스토어에 적을 주소로 쓰지 않는다.
  */
 export const EXTERNAL_LINKS = {
+  weather: "https://api.met.no/",
   /** 개인정보 처리방침 — 로그인 약관 줄 · 마이 「지원」 */
   privacy: "https://momentory.co.kr/privacy",
   /** 이용약관 — 로그인 약관 줄 · 마이 「지원」 */

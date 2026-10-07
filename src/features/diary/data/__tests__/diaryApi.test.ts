@@ -83,6 +83,12 @@ describe("DiaryResponse → Diary", () => {
     expect(d?.startEmotion).toBeNull();
   });
 
+  it("서버에 저장된 날씨를 보관함에 복원한다", () => {
+    expect(toDiary({ ...raw, weather: "맑음 · 22℃" })?.weather).toBe("맑음 · 22℃");
+    expect(toDiary({ ...raw, weather: 22 })?.weather).toBeNull();
+    expect(toDiary({ ...raw, weather: "  " })?.weather).toBeNull();
+  });
+
   it("서버에 없는 필드는 기본값 — authoredBy·editedAt·weather", () => {
     const d = toDiary(raw);
     expect(d?.authoredBy).toBe("baba");

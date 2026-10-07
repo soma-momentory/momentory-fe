@@ -226,6 +226,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // ⚠ 플러그인의 유일한 출처. `npx expo install` 이 app.json 을 만들어 여기 목록을
   // 덮이게 두지 않는다 — app.json 은 지웠고, 새 플러그인은 이 배열에 직접 추가한다.
   plugins: [
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission: "현재 위치의 날씨를 일기에 기록하기 위해 위치를 사용합니다.",
+        isIosBackgroundLocationEnabled: false,
+        isAndroidBackgroundLocationEnabled: false,
+        isAndroidForegroundServiceEnabled: false,
+      },
+    ],
     "expo-router",
     [
       "expo-dev-client",
