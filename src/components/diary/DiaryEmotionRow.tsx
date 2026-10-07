@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
 
-import { EmotionDot, Text } from "@/components/ds";
+import { EmotionDot, EmotionPebble, Text } from "@/components/ds";
 import { label as labelColor, space } from "@/design/ds";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 
@@ -20,9 +20,11 @@ import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 export function DiaryEmotionRow({
   emotions,
   align = "flex-start",
+  marker = "dot",
 }: {
   emotions: readonly EmotionId[];
   align?: "flex-start" | "flex-end";
+  marker?: "dot" | "pebble";
 }) {
   if (emotions.length === 0) return null;
 
@@ -30,7 +32,7 @@ export function DiaryEmotionRow({
     <View style={[styles.row, { justifyContent: align }]}>
       {emotions.map((e, i) => (
         <View key={`${e}-${i}`} style={styles.item}>
-          <EmotionDot id={e} />
+          {marker === "pebble" ? <EmotionPebble id={e} size={12} /> : <EmotionDot id={e} />}
           <Text variant="caption1" color={labelColor.alternative}>
             {emotionName(e)}
           </Text>
