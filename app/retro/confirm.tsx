@@ -1,9 +1,11 @@
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { StyleSheet } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { Button, Card, ChatBubble, ChatScaffold, Text } from "@/components/ds";
 import { label as labelColor, space } from "@/design/ds";
+import { useDiary } from "@/features/diary/model/diary";
+import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDate } from "@/lib/day";
 
@@ -32,14 +34,19 @@ import { formatKoreanDate } from "@/lib/day";
 export default function RetroConfirm() {
   const schedules = useDay((s) => s.schedules);
   const { date: today } = useTodayContext();
+  const wroteToday = useDiary((s) => hasDiaryOn(s.diaries, today));
 
   const shown = visibleSchedules(schedules);
+
+  // 오늘 일기를 이미 썼으면 일정을 보여 주지 않고 「이미 마쳤어요」로 바로 넘긴다(2026-10-07).
+  // 홈 버튼이 이미 건너뛰지만, 다른 길(알림·딥링크)로 들어와도 같게 한다
+  if (wroteToday) return <Redirect href="/retro/talk" />;
 
   return (
     <ChatScaffold
       leading="close"
       onLeadingPress={() => router.replace("/home")}
-      dock={<Button label="다음" fill onPress={() => router.push("/retro/talk")} />}
+      dock={<Button label="다음" fill raised onPress={() => router.push("/retro/talk")} />}
     >
       <ChatBubble>오늘 있었던 일을 잠깐 떠올려봐요.</ChatBubble>
 

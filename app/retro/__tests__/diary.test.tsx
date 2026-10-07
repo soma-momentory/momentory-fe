@@ -74,6 +74,26 @@ describe("일기 확인 — 기본은 읽기다", () => {
     expect(getByText("팀 회의")).toBeTruthy();
   });
 
+  it("일정이 없어도 일정 메모를 숨기지 않고 한 줄을 적는다", async () => {
+    useDay.setState({ schedules: [] });
+    const { getByText } = await render(<RetroDraft />);
+
+    expect(getByText("오늘 일정")).toBeTruthy();
+    expect(getByText("오늘은 따로 적어둔 일정이 없어요")).toBeTruthy();
+  });
+
+  it("본문은 문단을 나누지 않고 한 덩어리로 읽는다 — 고치기로 들어가면 원문 그대로다", async () => {
+    seedCompleted({ ...SEED_DIARY, diary: "회의가 길었다.\n\n저녁엔 라면을 먹었다." }, SEED_WISH);
+    const r = await render(<RetroDraft />);
+
+    expect(r.getByText("회의가 길었다. 저녁엔 라면을 먹었다.")).toBeTruthy();
+
+    await fireEvent.press(r.getByText("직접 고치기"));
+    expect(r.getByLabelText("일기 본문").props.value).toBe(
+      "회의가 길었다.\n\n저녁엔 라면을 먹었다.",
+    );
+  });
+
   it("대화 원문을 다시 보여주지 않는다 — 대화는 과정, 일기는 결과", async () => {
     useRetro.getState().addMyTurn("대화에서 내가 한 말");
     const { queryByText } = await render(<RetroDraft />);

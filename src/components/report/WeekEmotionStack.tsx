@@ -213,7 +213,7 @@ export function WeekMoodReveal({ day, written }: { day: WeeklyMoodDay; written: 
         {`${koreanWeekday(day.date)}요일 ·`}
       </Text>
       {day.emotions.length > 0 ? (
-        <DiaryEmotionRow emotions={day.emotions} align="flex-end" />
+        <DiaryEmotionRow emotions={day.emotions} align="flex-end" marker="pebble" />
       ) : (
         <Text variant="label2" color={labelColor.assistive}>
           {namesOf(day.emotions, written)}

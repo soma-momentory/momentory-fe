@@ -60,7 +60,10 @@ export function ActionCardSection({
         이 일기의 바람 카드
       </Text>
 
-      <Card padding="loose" style={styles.card}>
+      <Card
+        padding={readOnly ? "default" : "loose"}
+        style={[styles.card, readOnly && styles.cardReadOnly]}
+      >
         <WishCardFields
           situation={card.situation}
           emotions={card.emotions}
@@ -68,6 +71,7 @@ export function ActionCardSection({
           desiredState={card.desiredState}
           smallAction={card.targetAction}
           positive={card.sentiment === "positive"}
+          compact={readOnly}
         />
 
         {card.done ? (
@@ -146,6 +150,7 @@ const styles = StyleSheet.create({
   section: { gap: space.md },
   sectionLabel: { paddingLeft: space.xs },
   card: { gap: space.lg },
+  cardReadOnly: { gap: space.md },
   // 목표 행동 아래 구분선 — 카드 안에 또 하나의 카드를 만들지 않는다(`DESIGN.md` §5)
   record: {
     gap: space.xs,

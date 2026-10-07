@@ -2,11 +2,13 @@ import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
 import {
   background,
+  chatChoiceSelected,
   label as labelColor,
   line,
   overlay,
   primary,
   radius,
+  raised,
   selectedTint,
   size,
   space,
@@ -40,9 +42,20 @@ type Props = {
   onPress?: () => void;
   disabled?: boolean;
   style?: ViewStyle;
+  /** 채팅 선택지는 테두리 변화 없이 은은한 면과 들림으로 선택을 표시한다. */
+  selectedStyle?: "outlined" | "soft";
 };
 
-export function Chip({ label, selected = false, onPress, disabled = false, style }: Props) {
+export function Chip({
+  label,
+  selected = false,
+  onPress,
+  disabled = false,
+  style,
+  selectedStyle = "outlined",
+}: Props) {
+  const soft = selected && selectedStyle === "soft";
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -50,13 +63,19 @@ export function Chip({ label, selected = false, onPress, disabled = false, style
       accessibilityState={{ selected, disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={[styles.base, selected ? styles.selected : styles.unselected, style]}
+      style={[
+        styles.base,
+        selected ? (soft ? styles.selectedSoft : styles.selected) : styles.unselected,
+        style,
+      ]}
     >
       {({ pressed }) => (
         <>
           <Text
             variant="label2"
-            color={selected ? labelColor.strong : labelColor.neutral}
+            color={
+              soft ? chatChoiceSelected.label : selected ? labelColor.strong : labelColor.neutral
+            }
             numberOfLines={1}
           >
             {label}
@@ -89,9 +108,16 @@ const styles = StyleSheet.create({
     borderColor: line.neutral,
   },
   selected: {
-    backgroundColor: selectedTint,
+    backgroundColor: chatChoiceSelected.surface,
     borderWidth: size.chip.selectedBorderWidth,
     borderColor: primary.normal,
+  },
+  selectedSoft: {
+    backgroundColor: selectedTint,
+    borderWidth: 1,
+    borderColor: "transparent",
+    transform: [{ translateY: -1 }],
+    boxShadow: `0px ${raised.depth}px ${space.sm}px ${chatChoiceSelected.shadow}`,
   },
   scrim: { backgroundColor: overlay.pressLight, borderRadius: radius.full },
 });

@@ -93,7 +93,7 @@ export function WeekEmotionStrip({ days, today }: Props) {
               {day.emotions.length > 0 ? (
                 /* 감정은 **전부** 세운다 — 조약돌 하나가 첫 감정만 맡으므로, 하루에 감정이
                    둘 이상이면 여기서만 나머지가 보인다. 일기 화면들과 같은 줄을 쓴다 */
-                <DiaryEmotionRow emotions={day.emotions} align="flex-end" />
+                <DiaryEmotionRow emotions={day.emotions} align="flex-end" marker="pebble" />
               ) : (
                 <Text variant="caption1" color={labelColor.alternative}>
                   {namesOf(day.emotions, day.written)}

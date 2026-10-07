@@ -281,6 +281,13 @@ export const emotionTint = (id: EmotionId) => withAlpha(emotion[id], 0.55);
 /** 선택 칩 배경 — 브랜드 초록 18% (`DESIGN.md` §9) */
 export const selectedTint = withAlpha(primary.normal, 0.18);
 
+/** 회고 채팅 선택지 — 비교 시안 1번 「은은한 면」에서 확정한 선택 상태. */
+export const chatChoiceSelected = {
+  surface: "#E4ECE6",
+  label: primary.heavy,
+  shadow: withAlpha(primary.heavy, 0.16),
+} as const;
+
 /**
  * 감각연못 — **쉼 콘텐츠 안쪽의 작은 세계**(2026-09-03 · 2026-09-04 정리).
  *

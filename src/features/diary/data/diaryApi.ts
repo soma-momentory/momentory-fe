@@ -157,7 +157,7 @@ export const toDiary = (v: unknown): Diary | null => {
     retrospectId,
     storyEmotion: null,
     startEmotion: start,
-    weather: null,
+    weather: asString(v.weather)?.trim() || null,
   };
 };
 

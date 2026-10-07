@@ -147,7 +147,7 @@ export default function RetroDone() {
           `/rest` 가 아니라 `/(tabs)/rest` 다 — `/rest` 는 (tabs)·(onboarding) 두 그룹에 같은
           경로가 있어 온보딩으로 샌다. 감각연못의 「쉼터로 돌아가기」와 같은 주소다.
         */}
-        <Button label="쉼터로 가기" fill onPress={() => leave("/(tabs)/rest")} />
+        <Button label="쉼터로 가기" fill raised onPress={() => leave("/(tabs)/rest")} />
         {wishCard != null ? (
           <View style={styles.secondary}>
             {/*
