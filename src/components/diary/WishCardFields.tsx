@@ -38,6 +38,8 @@ type Props = {
    * 위 머리말 「배치가 둘이다」.
    */
   inline?: boolean;
+  /** 일기 상세처럼 카드 전체 높이를 줄여야 할 때 항목 사이 여백만 한 단계 줄인다. */
+  compact?: boolean;
 };
 
 const UNSET = "아직 정하지 않음";
@@ -65,6 +67,7 @@ export function WishCardFields({
   smallAction,
   positive,
   inline = false,
+  compact = false,
 }: Props) {
   const emotionText = emotions.map(emotionName).filter(Boolean).join(", ");
   const needsText = needs.join(", ");
@@ -72,7 +75,7 @@ export function WishCardFields({
   const shapeLabel = positive ? "좋았던 모습" : "바랐던 모습";
 
   return (
-    <View style={inline ? styles.fieldsInline : styles.fields}>
+    <View style={inline ? styles.fieldsInline : compact ? styles.fieldsCompact : styles.fields}>
       <Field label="상황" value={situation} inline={inline} />
       <Field label="감정" value={emotionText || UNSET} inline={inline} />
       <Field label={wishLabel} value={needsText || UNSET} inline={inline} />
@@ -138,6 +141,7 @@ function Field({
 
 const styles = StyleSheet.create({
   fields: { gap: space.lg },
+  fieldsCompact: { gap: space.md },
   field: { gap: space.xs },
   /**
    * 한 줄 배치의 항목 간격. 두 줄(`space.lg` 16)보다 훨씬 좁다 — 항목이 한 줄이라

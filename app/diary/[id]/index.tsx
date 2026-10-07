@@ -3,44 +3,18 @@ import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { WeatherCredit } from "@/components/diary/WeatherCredit";
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
-import { Card, IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
+import { WeatherCredit } from "@/components/diary/WeatherCredit";
+import { IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
 import { ActionCardSection } from "@/components/diary/ActionCardSection";
-import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
+import { DiaryNotebookHeader, NotebookBackground } from "@/components/diary/DiaryNotebook";
 import { iosVariant, label as labelColor, space } from "@/design/ds";
 import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 import { useDay, visibleSchedules } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
 
-/**
- * `A3` 내가 남긴 오늘 + 행동 카드 (읽기 레이아웃)
- *
- * ⚠ **「바바가 함께 본 오늘」(`A3-b`) 면을 상세에서 뺐다**(2026-08-20 결정) — 상세는
- * **내가 쓴 문장 한 면만** 보여준다. 그래서 면 전환 칩과 바바 면 컴포넌트를 지웠다.
- * (서버 조회분은 `babaView` 가 `null` 이고, 이제 로컬 저장분의 바바 문장도 상세에서
- * 그리지 않는다.)
- *
- * ⚠ **행동 카드는 읽기 전용이다**(2026-08-20 결정) — 「해봤어요」·되돌리기·느낀 점 편집은
- * **쉼터(`R2`)에서** 한다(`docs/PRODUCT.md` 「상류와 차이」). 상세는 그날의 기록을 읽는
- * 곳이라, 읽는 화면에서 "지울까요?" 같은 조작 확인이 뜨는 어색함을 없앴다.
- *
- * 이 파일은 **조합만** 한다 — 행동 카드는 `ActionCardSection` 을 `readOnly` 로 그린다.
- *
- * ## 새 디자인 (`PLAN.md` A Phase 4 · `docs/DESIGN.md` 「보관함」 A3)
- *
- * 뒤로 + ⋮ 상단 내비 → 날짜 제목 → 감정·날씨 한 줄 → 일기 카드 → 행동 카드 →
- * 그날 일정. **읽기 레이아웃**이고 `DESIGN.md` 「보관함」이 정한 「A3 상세는 읽기
- * 레이아웃 + **⋮ 수정·삭제**」를 따른다.
- *
- * ⚠ **`[수정하기]` 가 바닥 알약에서 ⋮ 메뉴로 옮겨갔다.** 갈 곳은 그대로 `A4` 다
- * (`A3.md` 「`[수정하기]` 는 실제 화면으로 이어진다」) — 자리만 바뀌었다.
- * ⋮ 에 **삭제**가 함께 붙는 것도 시안이 정한 것이다. 일기를 지우면 **그 일기의
- * 행동 카드도 함께** 지워지므로(1:1), 카드가 있는 날은 확인 모달이 그 사실을 먼저
- * 알린다. (반대로 쉼터(`R2`)의 카드 삭제는 카드만 지운다 — 일기는 남는다.)
- */
-
+/** 모눈종이 위에 남긴 일기. 바람 카드와 일정은 읽기 전용으로 이어진다. */
 export default function DiaryDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const diary = useDiary((s) => s.diaries.find((d) => d.id === id));
@@ -66,23 +40,26 @@ export default function DiaryDetail() {
   if (diary == null) return <Redirect href="/archive" />;
 
   const daySchedules = visibleSchedules(schedules).filter((s) => s.date === diary.date);
-  const weatherLabel = weather ?? weatherStatus;
 
   return (
-    <Screen>
+    <Screen grid={false} backdrop={<NotebookBackground />}>
       <AnalyticsResource kind="diary" id={diary.id} />
       <TopNavigation
         leading="arrow-left"
         onLeadingPress={() => router.back()}
         trailing={
-          // ⋮ 메뉴(삭제 한 줄)를 없앴다 — 상세에서 할 일이 삭제뿐이라 쓰레기통 아이콘
-          // 하나로 줄이고, 누르면 곧바로 삭제 확인 모달을 연다.
-          <IconButton
-            name="trash"
-            size={20}
-            accessibilityLabel="일기 삭제"
-            onPress={() => setConfirmDelete(true)}
-          />
+          <View style={styles.topActions}>
+            {weather ? <WeatherCredit style={styles.weatherInfoButton} /> : null}
+            {/* ⋮ 메뉴(삭제 한 줄)를 없앴다 — 상세에서 할 일이 삭제뿐이라 쓰레기통 아이콘
+                하나로 줄이고, 누르면 곧바로 삭제 확인 모달을 연다. */}
+            <IconButton
+              name="trash"
+              size={20}
+              accessibilityLabel="일기 삭제"
+              onPress={() => setConfirmDelete(true)}
+              style={styles.deleteButton}
+            />
+          </View>
         }
       />
 
@@ -91,47 +68,21 @@ export default function DiaryDetail() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.head}>
-          {/* 날짜 제목은 손글씨 — 일기 본문과 한 서체로 「손으로 쓴 결」을 만든다(회고 저장 화면과 같다) */}
-          <View style={styles.titleRow}>
-            {/*
-              iOS 에서만 한 단 내린다 (2026-09-13 · 사용자 요청) — 타입 보정(1.2)으로
-              `title1Hand` 가 38 이 되면서 상세 머리가 홈 날짜만큼 커졌다. 손글씨 단 안에서
-              바로 아래가 `title3Hand`(24 → 29)이고, 본문(`body1ReadingHand`)과 **짝으로
-              정해져 있던 조합**이다(회고 일기 확인·저장 화면이 같은 짝을 쓴다).
-            */}
-            <Text
-              variant={iosVariant("title3Hand", "title1Hand")}
-              color={labelColor.strong}
-              style={styles.title}
-            >
-              {`${formatKoreanDateShort(diary.date)}의 일기`}
-            </Text>
-            {/* 회고 직후 일기 확인(`C6`)과 같은 줄을 쓴다 — 날짜 제목 오른쪽이라 오른쪽으로 접힌다 */}
-            <DiaryEmotionRow emotions={diary.emotions} align="flex-end" />
-          </View>
-          {/* 날씨는 있을 때만 한 줄로 */}
-          {weatherLabel != null ? (
-            <View style={styles.meta}>
-              <Text variant="caption1" color={labelColor.alternative}>
-                {weatherLabel}
-              </Text>
-            </View>
-          ) : null}
-        </View>
+        <DiaryNotebookHeader
+          date={formatKoreanDateShort(diary.date)}
+          weather={weather}
+          weatherStatus={weatherStatus}
+          emotions={diary.emotions}
+        />
 
-        {/* 「내가 남긴 오늘」 한 면만 둔다 — 「바바가 함께 본 오늘」은 상세에서 뺐다(2026-08-20) */}
-        <Card padding="loose" style={styles.diaryCard}>
-          {/* 본문도 손글씨 — 날짜 제목(title1Hand)과 짝을 이룬다. 읽기 전용이라 한 단 크게 읽는다 */}
+        <View style={styles.diaryBody}>
           <Text
             variant={iosVariant("body1ReadingHand", "body1ReadingHandLg")}
             color={labelColor.normal}
           >
             {diary.body}
           </Text>
-        </Card>
-
-        {weather ? <WeatherCredit /> : null}
+        </View>
 
         {card != null ? (
           // 일기 상세는 **읽는 곳**이라 행동 카드를 읽기 전용으로 둔다 — 해봤어요·되돌리기·
@@ -184,22 +135,19 @@ export default function DiaryDetail() {
 }
 
 const styles = StyleSheet.create({
+  topActions: { flexDirection: "row", alignItems: "center" },
+  weatherInfoButton: { width: 44, height: 44 },
+  deleteButton: { marginLeft: -8 },
   // 남은 높이를 다 쓰고 그 안에서만 스크롤한다 — 안 잡으면 내용 높이만큼 자라 넘친다
   scroll: { flex: 1, minHeight: 0 },
   content: { gap: space.lg, paddingBottom: space.xl2 },
 
-  head: { gap: space.xs },
-  // 날짜 제목(왼쪽) + 감정(오른쪽) 한 줄. 감정이 여러 개여도 제목이 먼저 자리를 갖는다
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: space.sm,
+  diaryBody: {
+    minHeight: 300,
+    paddingHorizontal: space.sm,
+    paddingTop: space.lg,
+    paddingBottom: space.xl2,
   },
-  title: { flexShrink: 1 },
-  meta: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm },
-
-  diaryCard: { gap: space.md },
   // 「그날 일정」 섹션 — `ActionCardSection` 과 같은 값(제목 gap · 왼쪽 들여쓰기)
   section: { gap: space.md },
   sectionLabel: { paddingLeft: space.xs },
