@@ -7,9 +7,8 @@ import TreasuresScreen from "../treasures";
 import { track } from "@/features/analytics";
 import { addTreasure, fetchTreasures, type Treasure } from "@/features/rest/data/treasureApi";
 
-import { treasureBoxFinish as F, treasureBoxMotion as M } from "@/design/ds";
+import { treasureBoxFinish as F, treasureBoxMotion as M, restMoodMotion } from "@/design/ds";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
-import { restMoodMotion } from "@/design/ds";
 
 /**
  * 오늘의 보물함 — 오늘의 소중한 순간 한 줄을 보물 카드로 만들어 카피바라가 보물함에 넣는다.
@@ -128,7 +127,8 @@ describe("오늘의 보물함", () => {
     await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
     // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
     await pass(restMoodMotion.stamp + restMoodMotion.hold);
-    expect(addRestRecord).toHaveBeenCalledWith("treasure_box", { completed: true, mood: "better" });
+    // 고를 때마다 보내지 않는다 — 떠날 때 마지막 답 하나만 간다
+    expect(addRestRecord).not.toHaveBeenCalled();
 
     expect(r.getByText("작은 순간도 소중한 보물이 될 수 있어요")).toBeTruthy();
     expect(r.getByText("오늘의 보물")).toBeTruthy();

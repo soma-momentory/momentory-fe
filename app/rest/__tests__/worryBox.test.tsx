@@ -5,9 +5,8 @@ import WorryBoxScreen from "../worry-box";
 
 import { track } from "@/features/analytics";
 
-import { worryBoxFinish as F, worryBoxMotion as M } from "@/design/ds";
+import { worryBoxFinish as F, worryBoxMotion as M, restMoodMotion } from "@/design/ds";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
-import { restMoodMotion } from "@/design/ds";
 
 /**
  * 걱정상자 — 걱정 한 줄을 적어 카피바라에게 건네고, 상자에 넣고, 맡겨두거나 흘려보낸다.
@@ -143,7 +142,8 @@ describe("걱정상자", () => {
     await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
     // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
     await pass(restMoodMotion.stamp + restMoodMotion.hold);
-    expect(addRestRecord).toHaveBeenCalledWith("worry_box", { completed: true, mood: "better" });
+    // 고를 때마다 보내지 않는다 — 떠날 때 마지막 답 하나만 간다
+    expect(addRestRecord).not.toHaveBeenCalled();
     await fireEvent.press(r.getByText("쉼터로 돌아가기"));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
   });

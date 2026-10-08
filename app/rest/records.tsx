@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Screen, Text } from "@/components/ds";
+import { MoodMark } from "@/components/rest/scene/MoodMark";
 import { SCENE_BACK_SIZE, SceneBackButton, SceneCard } from "@/components/rest/scene/SceneChrome";
 import { fetchRestRecords, type RestRecord } from "@/features/rest/data/restRecordApi";
 import {
@@ -16,7 +17,14 @@ import {
   isRestRecordContent,
   restMoodLabel,
 } from "@/features/rest/model/restRecord";
-import { label as labelColor, layout, restScene, space, withAlpha } from "@/design/ds";
+import {
+  label as labelColor,
+  layout,
+  restMoodSize,
+  restScene,
+  space,
+  withAlpha,
+} from "@/design/ds";
 import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
 import { toHHMM } from "@/lib/time";
 
@@ -87,7 +95,13 @@ export default function RestRecordsScreen() {
             </Text>
             {day.records.map((r) => (
               <View key={r.id} style={styles.row}>
-                <Text variant="body1" color={labelColor.strong} style={styles.mood}>
+                {/* 쪽지에서 고른 그 표식 그대로 — 글만 남으면 밋밋했다(2026-10-08 · 사용자 피드백) */}
+                <MoodMark mood={r.mood} size={restMoodSize.rowMark} />
+                <Text
+                  variant="body1"
+                  color={r.mood == null ? labelColor.alternative : labelColor.strong}
+                  style={styles.mood}
+                >
                   {r.mood == null ? REST_RECORD_INCOMPLETE : restMoodLabel(r.mood)}
                 </Text>
                 <Text variant="caption1" color={labelColor.alternative}>

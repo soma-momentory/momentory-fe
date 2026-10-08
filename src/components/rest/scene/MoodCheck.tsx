@@ -22,12 +22,14 @@ import { RisingMotes } from "./RisingMotes";
  *
  * 걱정상자의 카피바라 쪽지와 같은 결이다 — 종이색 면 · 잉크 선 · 단단한 그림자 · 손글씨 ·
  * 「-카피바라-」, 살짝 비스듬히 흔들리며 내려앉는다. 따로 창을 띄우지 않는다(장면이 끊긴다 ·
- * 모달은 되돌릴 수 없는 행동의 확인에만 쓴다). 답 셋은 쪽지 안에 표식(해 · 구름 · 깃털)과
+ * 모달은 되돌릴 수 없는 행동의 확인에만 쓴다). 답 셋은 쪽지 안에 표식(해 · 얼굴 · 구름)과
  * 함께 가로로 놓인다 — 알약을 쌓으면 설문지처럼 보였다(2026-10-08 · 사용자 피드백).
  *
  * **건너뛰기가 없다.** 고르면 그 칸에 인주빛 도장이 꾹 찍히고 빛 알갱이가 떠오르며 나머지는
  * 옅어진다. 「골랐다」를 볼 시간(`restMoodMotion.hold`)이 지난 뒤 `onPick` 이 불린다 —
  * 끝은 시계가 말한다(네이티브 드라이버의 완료 콜백은 테스트에 오지 않는다).
+ * **다시 고를 수 있다** — 다른 칸을 누르면 도장이 그 칸으로 옮겨 찍히고 `onPick` 이 다시
+ * 불린다(2026-10-08 · 사용자 피드백). 서버로는 화면을 떠날 때 마지막 답 하나만 간다.
  */
 export function MoodCheck({ onPick }: { onPick: (mood: RestMood) => void }) {
   const [land] = useState(() => new Animated.Value(0));
@@ -47,6 +49,7 @@ export function MoodCheck({ onPick }: { onPick: (mood: RestMood) => void }) {
 
   useEffect(() => {
     if (picked == null) return;
+    stamp.setValue(0);
     const it = Animated.timing(stamp, {
       toValue: 1,
       duration: restMoodMotion.stamp,
@@ -71,7 +74,8 @@ export function MoodCheck({ onPick }: { onPick: (mood: RestMood) => void }) {
       style={[
         styles.wrap,
         {
-          opacity: land,
+          // 짙어지기는 내려앉는 시간의 앞 절반에 끝난다 — 늦게 짙어지면 느리게 읽혔다
+          opacity: land.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] }),
           transform: [
             { translateY: land.interpolate({ inputRange: [0, 1], outputRange: [-space.xl, 0] }) },
             {
@@ -98,10 +102,10 @@ export function MoodCheck({ onPick }: { onPick: (mood: RestMood) => void }) {
                 key={m.id}
                 accessibilityRole="button"
                 accessibilityLabel={m.label}
-                accessibilityState={{ selected: on, disabled: picked != null }}
-                disabled={picked != null}
+                accessibilityState={{ selected: on }}
                 onPress={() => setPicked(m.id)}
-                style={({ pressed }) => [styles.cell, { opacity: dim ? 0.35 : pressed ? 0.6 : 1 }]}
+                // 고르지 않은 칸도 다시 누를 수 있게 너무 흐리지 않는다
+                style={({ pressed }) => [styles.cell, { opacity: pressed ? 0.6 : dim ? 0.45 : 1 }]}
               >
                 <View style={styles.markSlot}>
                   {on ? (

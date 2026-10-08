@@ -1,10 +1,14 @@
 import { act, fireEvent, render } from "@testing-library/react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
+import { Text } from "react-native";
+
 import BodyReleaseScreen from "../body-release";
 import RestRecordsScreen from "../records";
 
+import { MoodCheck } from "@/components/rest/scene/MoodCheck";
 import { addRestRecord, fetchRestRecords } from "@/features/rest/data/restRecordApi";
+import { useRestRecord } from "@/features/rest/model/useRestRecord";
 
 /**
  * 쉼터 이용 기록 — 시작한 판을 기분 없이 떠나면 「중간에 나감」이 한 번 남고, 시작 전에 떠나면
@@ -41,6 +45,33 @@ describe("이용 기록 남기기", () => {
     await flush();
     expect(addRestRecord).toHaveBeenCalledTimes(1);
     expect(addRestRecord).toHaveBeenCalledWith("body_release", { completed: false });
+  });
+
+  it("기분은 다시 고를 수 있고, 떠날 때 마지막 답 하나만 남는다", async () => {
+    const r = await render(<MoodCheck onPick={() => {}} />);
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    await fireEvent.press(r.getByRole("button", { name: "잘 모르겠어요" }));
+    expect(r.getByRole("button", { name: "잘 모르겠어요" }).props.accessibilityState.selected).toBe(
+      true,
+    );
+
+    const Probe = () => {
+      const record = useRestRecord("worry_box", true);
+      return (
+        <>
+          <Text onPress={() => record.pick("better")}>a</Text>
+          <Text onPress={() => record.pick("same")}>b</Text>
+        </>
+      );
+    };
+    const p = await render(<Probe />);
+    await fireEvent.press(p.getByText("a"));
+    await fireEvent.press(p.getByText("b"));
+    expect(addRestRecord).not.toHaveBeenCalled();
+    await p.unmount();
+    await flush();
+    expect(addRestRecord).toHaveBeenCalledTimes(1);
+    expect(addRestRecord).toHaveBeenCalledWith("worry_box", { completed: true, mood: "same" });
   });
 
   it("오른쪽 위 원이 그 쉼터의 기록으로 간다", async () => {

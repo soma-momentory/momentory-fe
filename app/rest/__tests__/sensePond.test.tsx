@@ -5,9 +5,8 @@ import SensePondScreen from "../sense-pond";
 
 import { track } from "@/features/analytics";
 
-import { pondMotion, surfaceRippleMs } from "@/design/ds";
+import { pondMotion, surfaceRippleMs, restMoodMotion } from "@/design/ds";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
-import { restMoodMotion } from "@/design/ds";
 
 /**
  * 감각연못 — **표시를 찾아 누르는 미니게임이 아니라, 연못을 건드리면 조용히
@@ -416,7 +415,8 @@ describe("감각연못 · 찾아 가기", () => {
     await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
     // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
     await wait(restMoodMotion.stamp + restMoodMotion.hold);
-    expect(addRestRecord).toHaveBeenCalledWith("sense_pond", { completed: true, mood: "better" });
+    // 고를 때마다 보내지 않는다 — 떠날 때 마지막 답 하나만 간다
+    expect(addRestRecord).not.toHaveBeenCalled();
     expect(r.getByText("쉼터로 돌아가기")).toBeTruthy();
 
     // 완료된 연못은 손짓을 받지 않는다 — 보는 시간이다
