@@ -129,7 +129,6 @@ export default function TreasureBoxScreen() {
         <TreasureBoxScene
           stage={stage}
           text={text.trim()}
-          mark={markAt(today.length)}
           onTucked={() => {
             rest.complete();
             setStage("done");

@@ -14,11 +14,11 @@ import {
   treasureBoxMotion,
   treasureBoxSize,
 } from "@/design/ds";
-import type { TreasureBoxStage, TreasureMarkName } from "@/features/rest/model/treasureBox";
+import type { TreasureBoxStage } from "@/features/rest/model/treasureBox";
 
 import { GroundShadow } from "../scene/GroundShadow";
 import { RisingMotes } from "../scene/RisingMotes";
-import { TreasureMark } from "./TreasureMark";
+import { VeilGradient } from "../pond/PondTopVeil";
 
 /**
  * 오늘의 보물함의 **장면** — 풀밭의 카피바라와 보물함 (2026-10-05).
@@ -35,30 +35,35 @@ import { TreasureMark } from "./TreasureMark";
  *
  * ## 담기 (`tucking`) — 천천히
  *
- * 입력한 문장이 작은 보물 카드(표식 + 문장)가 되어 카피바라 손으로 날아간다(`fly`) →
- * 카피바라가 들고 **통통 세 번 뛰어** 보물함 앞으로 간다(`hop`) → 뚜껑이 열리고 안에서
- * 은은한 빛이 번진다(`open`) → 카드가 손끝에서 둥실 떠올라 한 바퀴 돌며 안으로(`put`) →
- * 뚜껑이 닫히며 톡 튀고 네 갈래 반짝임이 차례로 핀다(`close`) → 잠시 뒤 `onTucked`.
+ * 입력한 문장이 작은 보물 카드가 되어 카피바라 손으로 날아간다(`fly`) → 카피바라가 받아 들고
+ * 잠시 읽는다(`hold`) → 뚜껑이 열리고 안에서 은은한 빛이 번진다(`open`) → 카드가 손끝에서
+ * 둥실 떠올라 한 바퀴 돌며 안으로(`put`) → 뚜껑이 닫히며 톡 튀고 네 갈래 반짝임이 차례로
+ * 핀다(`close`) → 잠시 뒤 `onTucked`. 카드에는 표식을 붙이지 않는다 — 표식은 기록을 볼 때만
+ * 보인다(2026-10-08 · 사용자 피드백).
+ *
+ * ⚠ 카피바라는 **처음부터 보물함 곁에 앉아** 있고 자리를 옮기지 않는다. 앉은 채 통통 세 번
+ * 뛰어 옮겨 가던 것이 튀어 보였다(2026-10-08 · 실기기 피드백) — 걱정상자와 같은 결이다.
  *
  * ## 끝 (`done`)
  *
- * 카피바라가 보물함 곁으로 한 걸음 더 다가가 손을 얹고 쉬고, 보물함 둘레에서 빛 알갱이가
- * 떠오른다 — 조용히, 한 번.
+ * 카피바라가 보물함에 손을 얹고 쉬고, 보물함 둘레에서 빛 알갱이가 떠오른다 — 조용히, 한 번.
+ *
+ * 위쪽에는 크림빛 한 겹(`topVeil`)이 깔린다 — 노란 잎과 밝은 노을 하늘 위에서 머리글이
+ * 묻혔다(2026-10-08 · 실기기 피드백).
  *
  * 끝은 시계가 말한다 — 네이티브 드라이버의 완료 콜백은 jest 에 오지 않는다.
  * 그림이 바뀌면 `ART` 표만 갈아 끼운다. 장식이라 낭독기에 읽히지 않는다.
  */
 type Props = {
   stage: TreasureBoxStage;
-  /** 보물 카드에 적힐 문장 · 표식 — 담는 동안만 보인다 */
+  /** 보물 카드에 적힐 문장 — 담는 동안만 보인다 */
   text: string;
-  mark: TreasureMarkName;
   /** 보물함이 닫히고 잠시 뒤 — 끝맺음 판을 보일 때다 */
   onTucked: () => void;
 };
 
 /** 담기 안의 순간. 시작 직후(`null`)가 카드가 날아가는 때다 */
-type Step = "hop" | "open" | "put" | "close";
+type Step = "hold" | "open" | "put" | "close";
 
 type Pose = "sit" | "hold" | "put" | "rest";
 
@@ -100,25 +105,19 @@ const timing = (v: Animated.Value, toValue: number, duration: number) =>
     useNativeDriver: true,
   });
 
-/** 통통 — 0 → 1 동안 `hops` 번 뛰었다 내려앉는다(오르내림 표) */
-const HOP_T = Array.from({ length: M.hops * 2 + 1 }, (_, i) => i / (M.hops * 2));
-const HOP_Y = HOP_T.map((_, i) => (i % 2 === 1 ? -M.hopHeight : 0));
-
-export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
+export function TreasureBoxScene({ stage, text, onTucked }: Props) {
   const { width, height } = useWindowDimensions();
   const ground = height * L.ground;
 
   const [step, setStep] = useState<Step | null>(null);
   // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다(react-hooks/refs)
   const [card] = useState(() => new Animated.Value(0));
-  const [hop] = useState(() => new Animated.Value(0));
   const [glow] = useState(() => new Animated.Value(0));
   const [note] = useState(() => new Animated.Value(0));
   const [closed] = useState(() => new Animated.Value(0));
   const [bump] = useState(() => new Animated.Value(0));
-  const [nestle] = useState(() => new Animated.Value(0));
 
-  // 담기 — 카드가 날아가고, 들고 뛰고, 열고, 넣고, 닫는다
+  // 담기 — 카드가 날아가고, 받아 들고 읽고, 열고, 넣고, 닫는다
   useEffect(() => {
     if (stage !== "tucking") return;
     const anims: Animated.CompositeAnimation[] = [];
@@ -129,21 +128,11 @@ export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
     run(timing(card, 1, M.fly));
     const at = (ms: number, fn: () => void) => setTimeout(fn, ms);
     const t1 = M.fly;
-    const t2 = t1 + M.hop;
+    const t2 = t1 + M.hold;
     const t3 = t2 + M.open;
     const t4 = t3 + M.put;
     const timers = [
-      at(t1, () => {
-        setStep("hop");
-        run(
-          Animated.timing(hop, {
-            toValue: 1,
-            duration: M.hop,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-        );
-      }),
+      at(t1, () => setStep("hold")),
       at(t2, () => {
         setStep("open");
         run(timing(glow, 1, M.open));
@@ -170,15 +159,7 @@ export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
     };
     // onTucked 는 화면이 매 렌더 새로 준다 — 연출은 단계가 바뀔 때 한 번만 돈다
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, card, hop, glow, note, closed, bump]);
-
-  // 끝 — 곁으로 한 걸음
-  useEffect(() => {
-    if (stage !== "done") return;
-    const it = timing(nestle, 1, M.nestle);
-    it.start();
-    return () => it.stop();
-  }, [stage, nestle]);
+  }, [stage, card, glow, note, closed, bump]);
 
   const tucking = stage === "tucking";
   const pose: Pose =
@@ -190,14 +171,13 @@ export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
           ? "hold"
           : "sit";
 
-  const startX = width * L.capybaraX;
-  const hopX = width * L.hopX;
+  const capyX = width * L.capybaraX;
   const chestX = width * L.chestX;
   const feet = ground - S.sink;
-  // 카드를 받아 든 자리(첫 자리 기준) · 보물함 쪽으로 뻗은 손끝(뛰어 옮긴 자리 기준)
-  const holdX = startX + CAPY_W * L.holdNote.x;
+  // 카드를 받아 든 자리(가슴 앞) · 보물함 쪽으로 뻗은 손끝 — 포즈 그림에서 잰 자리
+  const holdX = capyX + CAPY_W * L.holdNote.x;
   const holdY = feet + CAPY_H * L.holdNote.y;
-  const pawX = hopX + CAPY_W * L.putPaw.x;
+  const pawX = capyX + CAPY_W * L.putPaw.x;
   const pawY = feet + CAPY_H * L.putPaw.y;
   const open = tucking && (step === "open" || step === "put");
   const showCard = tucking && step == null;
@@ -219,6 +199,13 @@ export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
         transition={0}
         style={StyleSheet.absoluteFill}
       />
+      {/* 머리글 뒤의 크림빛 한 겹 — 위에서 짙고 아래로 사라진다(카피바라에는 닿지 않는다) */}
+      <View
+        style={[styles.topVeil, { height: `${L.topVeil.heightRatio * 100}%` }]}
+        pointerEvents="none"
+      >
+        <VeilGradient id="treasure-top-veil" stops={L.topVeil.stops} />
+      </View>
 
       {/* 보물함 — 닫힐 때의 톡(`bump`). 빛은 뒤판보다 뒤, 카드는 뒤판과 앞판 사이 */}
       <Animated.View
@@ -313,9 +300,7 @@ export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
                 ],
               },
             ]}
-          >
-            <TreasureMark name={mark} size={NOTE * 0.5} />
-          </Animated.View>
+          ></Animated.View>
         ) : null}
         {open ? (
           <Image source={ART.chest.front} contentFit="fill" transition={0} style={styles.layer} />
@@ -327,36 +312,8 @@ export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
         </Animated.View>
       </Animated.View>
 
-      {/* 카피바라 — 통통 뛰어 옮겨 앉고(`hop`), 끝에 한 걸음 더(`nestle`) */}
-      <Animated.View
-        style={[
-          styles.capybara,
-          {
-            left: startX - CAPY_W / 2,
-            bottom: feet,
-            transform: [
-              {
-                translateX: Animated.add(
-                  hop.interpolate({ inputRange: [0, 1], outputRange: [0, hopX - startX] }),
-                  nestle.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, width * (L.nestleX - L.hopX)],
-                  }),
-                ),
-              },
-              {
-                translateY: Animated.add(
-                  hop.interpolate({ inputRange: HOP_T, outputRange: HOP_Y }),
-                  nestle.interpolate({
-                    inputRange: [0, 0.5, 1],
-                    outputRange: [0, -M.hopHeight / 2, 0],
-                  }),
-                ),
-              },
-            ],
-          },
-        ]}
-      >
+      {/* 카피바라 — 처음부터 보물함 곁에 앉아 있고 자리를 옮기지 않는다 */}
+      <Animated.View style={[styles.capybara, { left: capyX - CAPY_W / 2, bottom: feet }]}>
         <GroundShadow
           id="treasure-capybara-shadow"
           width={CAPY_W * SHADOW.width}
@@ -430,7 +387,6 @@ export function TreasureBoxScene({ stage, text, mark, onTucked }: Props) {
             },
           ]}
         >
-          <TreasureMark name={mark} size={S.mark + 4} />
           <Text variant="body1" color={labelColor.strong} numberOfLines={3} style={styles.cardText}>
             {text}
           </Text>
@@ -511,6 +467,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.small / 2,
   },
   capybara: { position: "absolute", width: CAPY_W, height: CAPY_H },
+  topVeil: { position: "absolute", left: 0, right: 0, top: 0 },
   origin: { position: "absolute", width: 0, height: 0 },
   card: {
     position: "absolute",

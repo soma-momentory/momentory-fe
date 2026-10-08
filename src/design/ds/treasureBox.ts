@@ -10,11 +10,12 @@
 export const treasureBoxLayout = {
   /** 땅(카피바라 발밑 · 보물함 바닥)의 높이 — 화면 아래에서의 비율 */
   ground: 0.36,
-  /** 카피바라가 처음 앉은 자리 → 통통 뛰어 옮겨 앉는 자리(가로 비율) */
-  capybaraX: 0.26,
-  hopX: 0.4,
-  /** 다 넣은 뒤 보물함 곁으로 한 걸음 더 — 쉬는 포즈의 손이 보물함에 닿는다 */
-  nestleX: 0.44,
+  /**
+   * 카피바라가 앉은 자리(가로 비율) — **처음부터 보물함 곁이고 옮기지 않는다**. 앉은 채 통통
+   * 뛰어 옮겨 가던 것이 튀어 보였다(2026-10-08 · 실기기 피드백). 넣는 손끝이 보물함 입구에
+   * 들어가고, 쉬는 포즈의 손이 보물함 왼쪽에 얹히는 자리다(390×844 합성)
+   */
+  capybaraX: 0.42,
   chestX: 0.7,
   /** 입력하던 카드가 떠나는 높이(화면 아래에서의 비율) */
   cardFrom: 0.26,
@@ -22,6 +23,19 @@ export const treasureBoxLayout = {
   holdNote: { x: 0, y: 0.36 },
   putPaw: { x: 0.4, y: 0.28 },
   capybaraAspect: 560 / 600,
+  /**
+   * 머리글 뒤의 크림빛 한 겹 — 노란 잎과 밝은 노을 하늘 위에서 머리글이 묻혔다(2026-10-08 ·
+   * 실기기 피드백). 감각연못의 `pondVeil` 과 같은 방식이고 더 짙다. 높이는 마침 문구 두 줄까지
+   * 덮되 카피바라 머리(화면 위에서 44%)에는 닿지 않는다
+   */
+  topVeil: {
+    heightRatio: 0.4,
+    stops: [
+      { offset: 0, opacity: 0.82 },
+      { offset: 0.6, opacity: 0.5 },
+      { offset: 1, opacity: 0 },
+    ],
+  },
 } as const;
 
 export const treasureBoxSize = {
@@ -48,10 +62,8 @@ export const treasureBoxSize = {
 export const treasureBoxMotion = {
   /** 입력 자리의 카드가 카피바라 손으로 */
   fly: 1500,
-  /** 들고 통통 세 번 뛰어 보물함 앞으로 · 한 번 뛰는 높이 */
-  hop: 1800,
-  hops: 3,
-  hopHeight: 14,
+  /** 받아 들고 잠시 읽는다(걱정상자의 읽기와 같은 결) */
+  hold: 1600,
   /** 뚜껑이 열리고 빛이 번진다 */
   open: 900,
   /** 카드가 손끝에서 둥실 떠올라 한 바퀴 돌며 보물함 안으로 */
@@ -62,8 +74,6 @@ export const treasureBoxMotion = {
   close: 600,
   bump: 1.06,
   settle: 1200,
-  /** 곁으로 한 걸음 */
-  nestle: 700,
   poseSwap: 500,
 } as const;
 

@@ -35,7 +35,7 @@ jest.mock("@/features/rest/data/treasureApi", () => ({
 
 const HIDDEN = { includeHiddenElements: true } as const;
 const TEXT = "친구에게 먼저 연락했어요.";
-const TUCKING = M.fly + M.hop + M.open + M.put + M.close + M.settle;
+const TUCKING = M.fly + M.hold + M.open + M.put + M.close + M.settle;
 
 const treasure = (id: string, content: string, date = "2026-07-27"): Treasure => ({
   id,
@@ -106,7 +106,7 @@ describe("오늘의 보물함", () => {
     await write(r, TEXT);
     await fireEvent.press(cta(r));
 
-    await pass(M.fly + M.hop + 100);
+    await pass(M.fly + M.hold + 100);
     expect(r.getByTestId("treasure-box-glow", HIDDEN)).toBeTruthy();
     await pass(M.open + M.put);
     expect(r.getByTestId("treasure-box-sparkles", HIDDEN)).toBeTruthy();
@@ -168,6 +168,9 @@ describe("지난 보물", () => {
     expect(at.every((i) => i >= 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
     expect(r.queryByText(/개/)).toBeNull();
+    // 담은 시각은 24시간 숫자다 — 「낮 3:00」이 아니라 「15:00」
+    expect(r.getAllByText(/^\d{2}:\d{2}$/).length).toBe(2);
+    expect(r.queryByText(/^(새벽|아침|낮|밤) /)).toBeNull();
   });
 
   it("못 받아 오거나 비었으면 비어 있다고만 말한다", async () => {
