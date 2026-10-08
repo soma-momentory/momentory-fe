@@ -1,5 +1,6 @@
+import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
-import Svg, { Defs, FeColorMatrix, Filter, Image, Path, Pattern, Rect } from "react-native-svg";
+import Svg, { Defs, Path, Pattern, Rect } from "react-native-svg";
 
 import { Text } from "@/components/ds";
 import { label, space } from "@/design/ds";
@@ -33,29 +34,21 @@ export function NotebookBackground() {
   );
 }
 
-/** 원본을 다시 그리지 않고 왼쪽 그림 영역만 보여준다.
- * 밝은 종이/격자만 투명하게 표시해 앱의 종이색과 모눈을 그대로 비춘다.
+/**
+ * 원본 노트의 왼쪽 그림(카피바라 · 「오늘의 일기」) — 투명 바탕 잉크 그림이라 앱의 종이색과
+ * 모눈이 그대로 비친다. 원본 위에 SVG `feColorMatrix` 를 걸던 것을 미리 구웠다 — iOS 의
+ * Core Image 필터가 알파를 자르지 않아 선이 하얗게 날아갔다(2026-10-08 ·
+ * `scripts/make-diary-notebook-ink.py`).
  */
 function OriginalDiaryDrawing() {
   return (
-    <Svg width="100%" height={132} viewBox="30 20 490 365" accessible={false}>
-      <Defs>
-        <Filter id="diary-original-ink" x="0%" y="0%" width="100%" height="100%">
-          <FeColorMatrix
-            type="matrix"
-            values="0 0 0 0 0.24  0 0 0 0 0.22  0 0 0 0 0.19  -2 -2 -2 0 5.1"
-          />
-        </Filter>
-      </Defs>
-      <Image
-        href={require("../../../assets/diary/notebook-reference.png")}
-        x={0}
-        y={0}
-        width={1055}
-        height={1491}
-        filter="url(#diary-original-ink)"
-      />
-    </Svg>
+    <Image
+      source={require("../../../assets/diary/notebook-capybara.png")}
+      contentFit="contain"
+      transition={0}
+      style={styles.drawing}
+      accessible={false}
+    />
   );
 }
 
@@ -115,43 +108,23 @@ export function DiaryNotebookHeader({
   );
 }
 
-// 첨부 원본에서 각 밑줄이 그려진 영역만 표시한다. 선을 재생성하지 않는다.
-const underlineRegions = {
-  date: "725 114 216 16",
-  weather: "767 204 212 17",
-  mood: "725 291 263 23",
+// 원본 노트에 그려진 밑줄 셋 — 선을 다시 그리지 않고 원본에서 잘라 구운 그림이다(그림과 같은 스크립트)
+const underlines = {
+  date: require("../../../assets/diary/notebook-line-date.png"),
+  weather: require("../../../assets/diary/notebook-line-weather.png"),
+  mood: require("../../../assets/diary/notebook-line-mood.png"),
 } as const;
 
-function OriginalUnderline({ variant }: { variant: keyof typeof underlineRegions }) {
-  const filterId = `diary-original-line-${variant}`;
+function OriginalUnderline({ variant }: { variant: keyof typeof underlines }) {
   return (
-    <Svg
+    <Image
+      source={underlines[variant]}
+      contentFit="fill"
+      transition={0}
       style={styles.underline}
-      width="100%"
-      height={4.5}
-      viewBox={underlineRegions[variant]}
-      opacity={0.8}
-      preserveAspectRatio="none"
       pointerEvents="none"
       accessible={false}
-    >
-      <Defs>
-        <Filter id={filterId} x="0%" y="0%" width="100%" height="100%">
-          <FeColorMatrix
-            type="matrix"
-            values="0 0 0 0 0.24  0 0 0 0 0.22  0 0 0 0 0.19  -2 -2 -2 0 5.1"
-          />
-        </Filter>
-      </Defs>
-      <Image
-        href={require("../../../assets/diary/notebook-reference.png")}
-        x={0}
-        y={0}
-        width={1055}
-        height={1491}
-        filter={`url(#${filterId})`}
-      />
-    </Svg>
+    />
   );
 }
 
@@ -196,7 +169,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     columnGap: space.sm,
   },
-  underline: { position: "absolute", left: 0, bottom: 0 },
+  drawing: { width: "100%", height: 132 },
+  underline: { position: "absolute", left: 0, bottom: 0, width: "100%", height: 4.5, opacity: 0.8 },
   value: {
     flex: 1,
     minWidth: 0,
