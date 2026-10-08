@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Animated, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { Animated, Keyboard, KeyboardAvoidingView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, Screen, Text, TextField } from "@/components/ds";
@@ -35,6 +35,7 @@ import {
 } from "@/features/rest/model/treasureBox";
 import {
   label as labelColor,
+  layout,
   restScene,
   space,
   treasureBoxFinish,
@@ -105,11 +106,15 @@ export default function TreasureBoxScreen() {
     );
   };
 
+  // 판 아래 숨 — 쓰기는 판을 낮춰 장면을 가리지 않게 한 단 줄인다(걱정상자와 같다)
+  const bottomPad = insets.bottom + (stage === "write" ? space.md : space.lg);
+
+  // 진행 · 마침의 제목도 소개 제목과 같은 크기다(`stepLead` · `closeLead` · 쉼터 셋과 같은 결)
   const heading =
     stage === "done"
-      ? { tone: "close" as const, ...TREASURE_BOX_DONE }
+      ? { tone: "closeLead" as const, ...TREASURE_BOX_DONE }
       : stage === "tucking"
-        ? { tone: "step" as const, ...TREASURE_BOX_TUCKING }
+        ? { tone: "stepLead" as const, ...TREASURE_BOX_TUCKING }
         : { tone: "lead" as const, ...TREASURE_BOX_INTRO };
 
   const fresh = saved.status === "ok" ? saved.treasure : null;
@@ -161,21 +166,39 @@ export default function TreasureBoxScreen() {
           </View>
         </View>
 
+        {/* 키보드가 올라오면 아래 판이 그 위로 비켜 선다 — 안드로이드도(edge-to-edge 에서는 창이
+            줄지 않는다 · 걱정상자와 같은 셈 · 열린 동안의 바닥 숨은 `keyboardGap`) */}
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior="padding"
+          keyboardVerticalOffset={layout.keyboardGap - bottomPad}
           style={styles.panelWrap}
           pointerEvents="box-none"
         >
-          <View style={[styles.panel, { paddingBottom: insets.bottom + space.lg }]}>
+          <View
+            style={[
+              styles.panel,
+              stage === "write" ? styles.writePanel : null,
+              { paddingBottom: bottomPad },
+            ]}
+          >
             {stage === "write" ? (
               <>
-                <SceneCard>
+                {/* 판이 카피바라 발밑을 가리지 않게 여백 · 입력칸 · 버튼을 낮춘다(걱정상자와 같다) */}
+                <SceneCard style={styles.writeCard}>
+                  {/* 묻는 말은 칸 위 라벨이 아니라 판의 큰 한 줄이다 — 가장 먼저 읽혀야 한다.
+                      낭독기에는 같은 말을 칸의 이름으로 준다 */}
+                  <Text variant="headline1" color={labelColor.normal} style={styles.mid}>
+                    {TREASURE_BOX_INPUT.label}
+                  </Text>
                   <TextField
-                    fieldLabel={TREASURE_BOX_INPUT.label}
+                    accessibilityLabel={TREASURE_BOX_INPUT.label}
                     placeholder={TREASURE_BOX_INPUT.placeholder}
                     value={text}
                     onChangeText={setText}
                     maxLength={TREASURE_MAX_LENGTH}
+                    variant="medium"
+                    // 포커스 테두리 · 커서는 빈티지 그림자와 같은 갈색 — 초록은 장면과 따로 놀았다
+                    accentColor={restScene.shadow}
                     showCounter
                     multiline
                     returnKeyType="done"
@@ -185,6 +208,7 @@ export default function TreasureBoxScreen() {
                 </SceneCard>
                 <ScenePillButton
                   tone="accent"
+                  compact
                   label={TREASURE_BOX_INPUT.cta}
                   disabled={!canTuck(text)}
                   onPress={tuck}
@@ -273,4 +297,7 @@ const styles = StyleSheet.create({
   words: { alignSelf: "center", maxWidth: 320, alignItems: "center" },
   panelWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
   panel: { paddingHorizontal: space.xl, gap: space.md },
+  writePanel: { gap: space.sm },
+  writeCard: { paddingVertical: space.sm, paddingHorizontal: space.lg, gap: space.xs },
+  mid: { textAlign: "center" },
 });
