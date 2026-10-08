@@ -9,7 +9,7 @@ import { useSensePondAnalytics } from "@/features/analytics/useSensePondAnalytic
 import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
-import { PondTopVeil } from "@/components/rest/pond/PondTopVeil";
+import { SceneTopVeil } from "@/components/rest/scene/SceneVeil";
 import { SensePanel } from "@/components/rest/pond/SensePanel";
 import { PondScene } from "@/components/rest/pond/PondScene";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
@@ -18,7 +18,7 @@ import {
   SceneBackButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
-import { pond, pondMotion, space } from "@/design/ds";
+import { pond, pondMotion, pondVeil, space } from "@/design/ds";
 import {
   SENSE_POND_DONE,
   SENSE_POND_STEPS,
@@ -43,7 +43,7 @@ import {
  * 지금 말할 것 한 묶음, 그리고 아래에서 살짝 올라온 크림 판.
  * 「연못 그림을 보고 있다」가 아니라 「연못 안에 있다」가 되어야 해서다.
  * 흰 카드도 제목 상자도 두지 않는다 — 글자는 장면 위에 그대로 앉고, 읽히지 않는
- * 곳에는 위쪽에만 **아주 옅은 빛 한 겹**(`PondTopVeil`)을 깐다.
+ * 곳에는 위쪽에만 **아주 옅은 빛 한 겹**(`SceneTopVeil` · `pondVeil`)을 깐다.
  *
  * ## 위에서는 한 번에 한 가지만 말한다 (2026-09-06)
  *
@@ -198,7 +198,7 @@ export default function SensePondScreen() {
           ]}
         >
           {/* 글보다 먼저 깔린다 — 카드가 아니라 위쪽에서 사라지는 빛 한 겹이다 */}
-          <PondTopVeil />
+          <SceneTopVeil veil={pondVeil} testID="pond-top-veil" />
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
 
           {/* 글은 장면 폭을 다 쓰지 않는다 — 끝까지 늘리면 한 글자만 다음 줄로 넘어간다 */}

@@ -33,7 +33,7 @@ export type RestContent = {
    */
   note?: string;
   /** 여는 화면. **없으면 아직 화면이 없다** — 카드가 눌리지 않는다 */
-  route?: "/rest/sense-pond" | "/rest/body-release" | "/rest/worry-box";
+  route?: "/rest/sense-pond" | "/rest/body-release" | "/rest/worry-box" | "/rest/treasure-box";
 };
 
 export const REST_CONTENTS: readonly RestContent[] = [
@@ -54,9 +54,9 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "treasureBox",
     title: "오늘의 보물함",
-    note: "(개발 중이에요)",
     description: "오늘 잘한 일이나\n소중한 순간을 담아봐요",
     icon: "treasure",
+    route: "/rest/treasure-box",
   },
   {
     id: "bodyRelease",

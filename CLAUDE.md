@@ -240,10 +240,10 @@ app/retro/{_layout, confirm, talk, draft, done}.tsx
                     감정 탐색)을 다 그린다 — 무엇을 그릴지는 서버의 `phase` 가 정한다
 app/diary/{_layout, [id]/index}.tsx = A3 · A3-c
                   ← `[id]/edit`(A4)은 2026-08-20 에 지웠다(DESIGN.md N2 · PRODUCT.md #24·26)
-app/rest/{_layout, cards/index, sense-pond, worry-box, body-release}.tsx
-                  = R2(날짜별 바람카드) · 감각연못 · 걱정상자 · 몸에 힘 빼기
-                  ← 쉼 콘텐츠 넷 중 **화면이 없는 것은 오늘의 보물함 하나**다
-                    (`features/rest/model/contents.ts` 의 `route` 가 없으면 눌리지 않는다)
+app/rest/{_layout, cards/index, sense-pond, worry-box, treasure-box, treasures, body-release}.tsx
+                  = R2(날짜별 바람카드) · 감각연못 · 걱정상자 · 오늘의 보물함(+ 지난 보물) · 몸에 힘 빼기
+                  ← 쉼 콘텐츠 넷이 모두 화면을 가졌다(2026-10-05). 보물함만 쓴 글을 서버에 남긴다
+                    (`features/rest/data/treasureApi.ts` · `/api/v1/treasures`)
 app/my/{_layout, profile, nickname, age, gender, interests, rest}.tsx
                   = 기본 정보 목록 + 항목별 수정 다섯
                   ← ⚠ **코드 주석의 `M3`~`M8` 은 스펙 번호가 아니다.** 스펙(`spec/screens/`)은

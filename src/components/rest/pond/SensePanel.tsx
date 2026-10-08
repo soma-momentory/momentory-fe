@@ -11,9 +11,9 @@ import {
   type SensePondStepId,
 } from "@/features/rest/model/sensePond";
 
-import { VeilGradient } from "./PondTopVeil";
 import { SensePointMark } from "./SensePointMark";
 import { SceneCard } from "../scene/SceneChrome";
+import { SceneVeil } from "../scene/SceneVeil";
 
 /**
  * 연못 바닥에 뜨는 **감각 칸 묶음**
@@ -195,21 +195,8 @@ function PanelCell({
 
 /** 판 뒤의 빛 한 겹 — 판 윗변 위에서 0 으로 시작해 아래로 짙어진다(경계선이 없다) */
 function PanelVeil() {
-  return (
-    <View
-      testID="pond-panel-veil"
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={styles.veil}
-    >
-      <VeilGradient id={VEIL_ID} stops={pondPanelVeil.stops} />
-    </View>
-  );
+  return <SceneVeil testID="pond-panel-veil" stops={pondPanelVeil.stops} style={styles.veil} />;
 }
-
-/** 위쪽 빛(`pond-top-veil`)과 이름이 겹치지 않게 — 그림 안에서만 쓰는 이름이다 */
-const VEIL_ID = "pond-panel-veil";
 
 /**
  * 완료의 판 — **크림 카드 하나**에 「다 채웠어요」와 가득 찬 셋을 작게 담고, 그 아래 돌아가는

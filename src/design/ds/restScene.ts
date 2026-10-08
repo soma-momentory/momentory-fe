@@ -21,4 +21,18 @@ export const restSceneSize = {
    * 빛 한 겹으로는 모자라 면을 둔다. 그림이 살짝 비칠 만큼만
    */
   cardOpacity: 0.8,
+  /**
+   * 머리글 뒤의 **크림빛 한 겹** (2026-10-08 · 실기기 피드백) — 밝은 노을 하늘 · 잎 위에서 위
+   * 안내가 묻혔다(보물함 · 걱정상자). 화면 위 40% 를 위에서 짙고 아래로 사라지게 덮는다 —
+   * 경계가 없어 판으로 읽히지 않고, 땅 위의 카피바라에는 닿지 않는다(`SceneTopVeil` 의 기본값 ·
+   * 장면마다 다르면 그 장면의 값을 넘긴다 — 감각연못 `pondVeil`)
+   */
+  topVeil: {
+    heightRatio: 0.4,
+    stops: [
+      { offset: 0, opacity: 0.82 },
+      { offset: 0.6, opacity: 0.5 },
+      { offset: 1, opacity: 0 },
+    ],
+  },
 } as const;

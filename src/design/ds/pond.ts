@@ -134,8 +134,8 @@ export const pondMotion = {
 } as const;
 
 /**
- * 장면 위쪽에 까는 **빛 한 겹**의 규격 — 색은 `color.ts` 의 `pond.veil`
- * (2026-09-06 · `PondTopVeil`).
+ * 장면 위쪽에 까는 **빛 한 겹**(`SceneTopVeil`)의 감각연못 규격 — 색은 `color.ts` 의 `pond.veil`
+ * (2026-09-06 · `SceneTopVeil`).
  *
  * 카드가 아니라 그라디언트다. 아래로 갈수록 완전히 사라져서 **경계선이 없고**,
  * 물이 시작되는 곳(세로 0.42)에 닿기 전에 이미 0 이라 수면을 흐리지 않는다.
