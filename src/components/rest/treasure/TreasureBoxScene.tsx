@@ -18,7 +18,7 @@ import type { TreasureBoxStage } from "@/features/rest/model/treasureBox";
 
 import { GroundShadow } from "../scene/GroundShadow";
 import { RisingMotes } from "../scene/RisingMotes";
-import { SceneTopVeil } from "../scene/SceneChrome";
+import { SceneTopVeil } from "../scene/SceneVeil";
 
 /**
  * 오늘의 보물함의 **장면** — 풀밭의 카피바라와 보물함 (2026-10-05).
@@ -201,7 +201,7 @@ export function TreasureBoxScene({ stage, text, onTucked }: Props) {
         style={StyleSheet.absoluteFill}
       />
       {/* 머리글 뒤의 크림빛 한 겹 — 위에서 짙고 아래로 사라진다(카피바라에는 닿지 않는다) */}
-      <SceneTopVeil id="treasure-top-veil" />
+      <SceneTopVeil />
 
       {/* 보물함 — 닫힐 때의 톡(`bump`). 빛은 뒤판보다 뒤, 카드는 뒤판과 앞판 사이 */}
       <Animated.View

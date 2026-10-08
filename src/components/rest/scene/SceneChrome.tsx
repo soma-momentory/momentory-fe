@@ -4,7 +4,6 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { Icon, Text } from "@/components/ds";
 import { radius, restScene, restSceneSize, space, withAlpha } from "@/design/ds";
 
-import { VeilGradient } from "../pond/PondTopVeil";
 import { VintagePressable } from "./VintagePressable";
 
 /**
@@ -76,21 +75,6 @@ export function ScenePillButton({
   );
 }
 
-/**
- * 머리글 뒤의 크림빛 한 겹 — 장면 그림 바로 위 층에 깐다(`restSceneSize.topVeil`). 밝은 하늘 ·
- * 잎 위에서 위 안내가 묻히지 않게 한다. `id` 는 화면 안에서 겹치지 않는 그라디언트 이름이다
- */
-export function SceneTopVeil({ id }: { id: string }) {
-  return (
-    <View
-      pointerEvents="none"
-      style={[styles.topVeil, { height: `${restSceneSize.topVeil.heightRatio * 100}%` }]}
-    >
-      <VeilGradient id={id} stops={restSceneSize.topVeil.stops} />
-    </View>
-  );
-}
-
 /** 장면 위의 정보 카드 — 결이 잔 그림 위에서도 글이 흐려지지 않게 반투명 크림 면을 둔다 */
 export function SceneCard({
   children,
@@ -108,7 +92,6 @@ const styles = StyleSheet.create({
   pillOuter: { alignSelf: "stretch" },
   pill: { height: V.pill, alignItems: "center", justifyContent: "center" },
   pillCompact: { height: V.pillCompact },
-  topVeil: { position: "absolute", left: 0, right: 0, top: 0 },
   card: {
     backgroundColor: withAlpha(restScene.surface, restSceneSize.cardOpacity),
     borderRadius: radius.xlarge,
