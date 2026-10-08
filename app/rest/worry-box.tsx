@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName, Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
-import { MoodCheck } from "@/components/rest/scene/MoodCheck";
+import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
@@ -81,6 +81,8 @@ export default function WorryBoxScreen() {
   );
   // 이용 기록 — 걱정을 건넨 판부터 남긴다(걱정 원문은 남기지 않는다). 기분을 골라야 돌아가는 길이 붙는다
   const record = useRestRecord("worry_box", stage !== "write");
+  // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
+  const [asking, setAsking] = useState(false);
 
   const handOver = () => {
     if (!canHandOver(worry)) return;
@@ -230,20 +232,18 @@ export default function WorryBoxScreen() {
                 </VintagePressable>
               ))
             ) : !ended || (stage === "release" && !noteLanded) ? null : (
-              // 쪽지는 고른 뒤에도 남고, 돌아가는 길은 그 아래에 붙는다
-              <>
-                <MoodCheck onPick={record.pick} />
-                {record.mood != null ? (
-                  <ScenePillButton
-                    label={WORRY_BOX_DONE_CTA}
-                    onPress={() => router.replace("/(tabs)/rest")}
-                  />
-                ) : null}
-              </>
+              <ScenePillButton label={WORRY_BOX_DONE_CTA} onPress={() => setAsking(true)} />
             )}
           </View>
         </KeyboardAvoidingView>
       </View>
+      {asking ? (
+        <MoodExit
+          leaveLabel={WORRY_BOX_DONE_CTA}
+          onPick={record.pick}
+          onLeave={() => router.replace("/(tabs)/rest")}
+        />
+      ) : null}
     </Screen>
   );
 }

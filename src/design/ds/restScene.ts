@@ -44,6 +44,8 @@ export const restSceneSize = {
 export const restMoodSize = {
   /** 표식(해 · 얼굴 · 구름)의 크기 */
   mark: 34,
+  /** 쪽지 뒤 장면을 덮는 크림빛의 짙기 — 장면이 비쳐 보일 만큼만 */
+  veilOpacity: 0.62,
   /** 기록 화면 한 줄의 표식 크기 */
   rowMark: 24,
   /** 고른 표식을 두르는 도장의 지름 */
@@ -69,7 +71,7 @@ export const restMoodMotion = {
   land: 800,
   /** 도장이 찍히는 시간 — 크게 떴다가 꾹 눌린다 */
   stamp: 600,
-  /** 도장이 찍힌 뒤 끝맺음이 이어지기까지 — 「골랐다」를 눈으로 볼 시간 */
-  hold: 900,
+  /** 장면 위에 크림빛이 깔리는 시간 */
+  veil: 400,
   mote: { duration: 2400, stagger: 120 },
 } as const;

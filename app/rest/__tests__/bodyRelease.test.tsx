@@ -5,7 +5,7 @@ import BodyReleaseScreen from "../body-release";
 
 import { track } from "@/features/analytics";
 
-import { bodyReleaseMotion, restMoodMotion } from "@/design/ds";
+import { bodyReleaseMotion } from "@/design/ds";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
 
 /**
@@ -113,16 +113,18 @@ describe("몸에 힘 빼기", () => {
     expect(r.getByTestId("body-release-motes", HIDDEN)).toBeTruthy();
 
     await pass(bodyReleaseMotion.doneHold);
-    expect(r.queryByText("마치기")).toBeNull();
-    // 기분을 골라야 끝맺음이 이어진다 — 건너뛰기가 없다
-    expect(r.getByText("기분이 나아졌나요?")).toBeTruthy();
-    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
-    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
-    await pass(restMoodMotion.stamp + restMoodMotion.hold);
-    // 고를 때마다 보내지 않는다 — 떠날 때 마지막 답 하나만 간다
-    expect(addRestRecord).not.toHaveBeenCalled();
 
+    // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
     await fireEvent.press(r.getByText("마치기"));
+    expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
+    // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
+    expect(r.queryAllByRole("button", { name: "마치기" })).toHaveLength(0);
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
+    expect(addRestRecord).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
+    await fireEvent.press(r.getByRole("button", { name: "마치기" }));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
   });
 

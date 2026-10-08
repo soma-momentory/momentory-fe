@@ -6,7 +6,7 @@ import { Text } from "react-native";
 import BodyReleaseScreen from "../body-release";
 import RestRecordsScreen from "../records";
 
-import { MoodCheck } from "@/components/rest/scene/MoodCheck";
+import { MoodExit } from "@/components/rest/scene/MoodExit";
 import { addRestRecord, fetchRestRecords } from "@/features/rest/data/restRecordApi";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
 
@@ -48,7 +48,9 @@ describe("이용 기록 남기기", () => {
   });
 
   it("기분은 다시 고를 수 있고, 떠날 때 마지막 답 하나만 남는다", async () => {
-    const r = await render(<MoodCheck onPick={() => {}} />);
+    const r = await render(
+      <MoodExit leaveLabel="쉼터로 돌아가기" onPick={() => {}} onLeave={() => {}} />,
+    );
     await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
     await fireEvent.press(r.getByRole("button", { name: "잘 모르겠어요" }));
     expect(r.getByRole("button", { name: "잘 모르겠어요" }).props.accessibilityState.selected).toBe(

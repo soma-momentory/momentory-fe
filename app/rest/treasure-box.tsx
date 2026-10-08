@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
-import { MoodCheck } from "@/components/rest/scene/MoodCheck";
+import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
@@ -73,9 +73,9 @@ export default function TreasureBoxScreen() {
     diaryToday,
   );
   // 이용 기록 — 보물을 담은 판부터 「했다 + 기분」만 남긴다(보물은 따로 남는다).
-  // 기분을 고른 **뒤에** 「오늘의 보물」 판이 선다
   const record = useRestRecord("treasure_box", stage !== "write");
-  const answered = record.mood != null;
+  // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
+  const [asking, setAsking] = useState(false);
 
   // 오늘 이미 담은 보물 — 못 받아 와도 화면은 그대로다(빈 목록)
   useEffect(() => {
@@ -89,10 +89,10 @@ export default function TreasureBoxScreen() {
   }, [todayDate]);
 
   useEffect(() => {
-    if (stage !== "done" || !answered) return;
+    if (stage !== "done") return;
     const t = setTimeout(() => setCtaReady(true), treasureBoxFinish.cta);
     return () => clearTimeout(t);
-  }, [stage, answered]);
+  }, [stage]);
 
   const tuck = () => {
     if (!canTuck(text)) return;
@@ -221,8 +221,6 @@ export default function TreasureBoxScreen() {
                   onPress={tuck}
                 />
               </>
-            ) : stage === "done" && !answered ? (
-              <MoodCheck onPick={record.pick} />
             ) : stage === "done" ? (
               <>
                 <SceneCard>
@@ -245,16 +243,20 @@ export default function TreasureBoxScreen() {
                   ) : null}
                 </SceneCard>
                 {ctaReady ? (
-                  <ScenePillButton
-                    label={TREASURE_DONE_CTA}
-                    onPress={() => router.replace("/(tabs)/rest")}
-                  />
+                  <ScenePillButton label={TREASURE_DONE_CTA} onPress={() => setAsking(true)} />
                 ) : null}
               </>
             ) : null}
           </View>
         </KeyboardAvoidingView>
       </View>
+      {asking ? (
+        <MoodExit
+          leaveLabel={TREASURE_DONE_CTA}
+          onPick={record.pick}
+          onLeave={() => router.replace("/(tabs)/rest")}
+        />
+      ) : null}
     </Screen>
   );
 }

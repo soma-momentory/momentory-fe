@@ -13,7 +13,7 @@ import { SceneTopVeil } from "@/components/rest/scene/SceneVeil";
 import { SensePanel } from "@/components/rest/pond/SensePanel";
 import { PondScene } from "@/components/rest/pond/PondScene";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
-import { MoodCheck } from "@/components/rest/scene/MoodCheck";
+import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
@@ -123,6 +123,8 @@ export default function SensePondScreen() {
   const rest = useRestContentAnalytics("sense_pond", step.id, diaryToday);
   // 이용 기록 — 첫 감각을 찾은 판부터 남긴다. 기분을 골라야 돌아가는 길이 붙는다
   const record = useRestRecord("sense_pond", stepIndex > 0 || found > 0 || finished);
+  // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
+  const [asking, setAsking] = useState(false);
 
   // 마지막 감각을 찾은 순간이 끝이다 — `sense_pond_finished` 와 같은 때
   useEffect(() => {
@@ -238,18 +240,16 @@ export default function SensePondScreen() {
           bottomInset={insets.bottom}
           footer={
             !finished ? undefined : (
-              // 쪽지는 고른 뒤에도 남고, 돌아가는 길은 그 아래에 붙는다
-              <>
-                <MoodCheck onPick={record.pick} />
-                {record.mood != null ? (
-                  <ScenePillButton
-                    label={SENSE_POND_DONE.cta}
-                    onPress={() => router.replace("/(tabs)/rest")}
-                  />
-                ) : null}
-              </>
+              <ScenePillButton label={SENSE_POND_DONE.cta} onPress={() => setAsking(true)} />
             )
           }
+        />
+      ) : null}
+      {asking ? (
+        <MoodExit
+          leaveLabel={SENSE_POND_DONE.cta}
+          onPick={record.pick}
+          onLeave={() => router.replace("/(tabs)/rest")}
         />
       ) : null}
     </Screen>

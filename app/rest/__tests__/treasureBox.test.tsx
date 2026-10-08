@@ -7,7 +7,7 @@ import TreasuresScreen from "../treasures";
 import { track } from "@/features/analytics";
 import { addTreasure, fetchTreasures, type Treasure } from "@/features/rest/data/treasureApi";
 
-import { treasureBoxFinish as F, treasureBoxMotion as M, restMoodMotion } from "@/design/ds";
+import { treasureBoxFinish as F, treasureBoxMotion as M } from "@/design/ds";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
 
 /**
@@ -120,15 +120,6 @@ describe("오늘의 보물함", () => {
 
     await pass(M.close + M.settle + 400);
     expect(r.getByText(/오늘의 작은 순간 하나를/)).toBeTruthy();
-    // 기분을 고른 뒤에야 「오늘의 보물」 판이 선다
-    expect(r.queryByText("오늘의 보물")).toBeNull();
-    // 기분을 골라야 끝맺음이 이어진다 — 건너뛰기가 없다
-    expect(r.getByText("기분이 나아졌나요?")).toBeTruthy();
-    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
-    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
-    await pass(restMoodMotion.stamp + restMoodMotion.hold);
-    // 고를 때마다 보내지 않는다 — 떠날 때 마지막 답 하나만 간다
-    expect(addRestRecord).not.toHaveBeenCalled();
 
     expect(r.getByText("작은 순간도 소중한 보물이 될 수 있어요")).toBeTruthy();
     expect(r.getByText("오늘의 보물")).toBeTruthy();
@@ -140,6 +131,16 @@ describe("오늘의 보물함", () => {
     // 돌아가는 길은 새 줄이 떠오른 뒤에 붙는다
     expect(r.queryByRole("button", { name: "쉼터로 돌아가기" })).toBeNull();
     await pass(F.cta);
+    // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
+    await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
+    expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
+    // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
+    expect(r.queryAllByRole("button", { name: "쉼터로 돌아가기" })).toHaveLength(0);
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
+    expect(addRestRecord).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
     await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
   });
@@ -150,9 +151,6 @@ describe("오늘의 보물함", () => {
     await write(r, TEXT);
     await fireEvent.press(cta(r));
     await pass(TUCKING);
-    await fireEvent.press(r.getByRole("button", { name: "잘 모르겠어요" }));
-    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
-    await pass(restMoodMotion.stamp + restMoodMotion.hold);
 
     expect(r.getByText("보물을 담지 못했어요. 잠시 뒤에 다시 담아주세요.")).toBeTruthy();
     expect(r.queryByTestId("treasure-fresh-row")).toBeNull();
