@@ -36,3 +36,35 @@ export const restSceneSize = {
     ],
   },
 } as const;
+
+/**
+ * 쉼터 공통 끝맺음의 **기분 쪽지** (2026-10-08) — 크기. 색은 `color.ts` 의 `restMood`.
+ * 쪽지는 걱정상자의 카피바라 쪽지와 같은 결(잉크 선 · 단단한 그림자 · 살짝 비스듬히)이다.
+ */
+export const restMoodSize = {
+  /** 표식(해 · 구름 · 깃털)의 크기 */
+  mark: 34,
+  /** 고른 표식을 두르는 도장의 지름 */
+  stamp: 52,
+  /** 쪽지가 놓이는 기울기(도) — 내려앉으며 세 배에서 이만큼으로 바로 선다 */
+  tilt: -2,
+  /** 고른 칸 위로 떠오르는 빛 알갱이 — 고른 표식 가운데 기준(dp · y 는 아래가 +) */
+  motes: [
+    { x: -22, y: -6, rise: 70, drift: -6, size: 5 },
+    { x: 18, y: -10, rise: 90, drift: 6, size: 6 },
+    { x: -4, y: -18, rise: 110, drift: -4, size: 5 },
+    { x: 26, y: 4, rise: 60, drift: 8, size: 4 },
+    { x: -26, y: 8, rise: 80, drift: -8, size: 4 },
+  ],
+} as const;
+
+/** 기분 쪽지의 움직임(ms) — 쉼터 공통 규칙 6 「느리게」 */
+export const restMoodMotion = {
+  /** 쪽지가 흔들리며 내려앉는 시간 */
+  land: 1400,
+  /** 도장이 찍히는 시간 — 크게 떴다가 꾹 눌린다 */
+  stamp: 600,
+  /** 도장이 찍힌 뒤 끝맺음이 이어지기까지 — 「골랐다」를 눈으로 볼 시간 */
+  hold: 900,
+  mote: { duration: 2400, stagger: 120 },
+} as const;

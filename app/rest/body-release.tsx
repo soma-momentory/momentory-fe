@@ -11,12 +11,16 @@ import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
+import { MoodCheck } from "@/components/rest/scene/MoodCheck";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
   SceneCard,
+  SceneCornerButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
+import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
+import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import {
   bodyReleaseFinish,
   bodyReleaseMotion,
@@ -83,6 +87,8 @@ export default function BodyReleaseScreen() {
   useEffect(() => {
     if (done) rest.complete();
   }, [done, rest]);
+  // 이용 기록 — 「따라 해보기」를 누른 판부터 남긴다. 기분을 골라야 「마치기」가 붙는다
+  const record = useRestRecord("body_release", startedAt != null);
 
   // 시계 — 진행 중에만 돈다
   useEffect(() => {
@@ -202,6 +208,12 @@ export default function BodyReleaseScreen() {
           ]}
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneCornerButton
+            top={insets.top + space.sm}
+            label={REST_RECORDS_LINK}
+            icon="clock"
+            onPress={() => router.push("/rest/records?content=body_release")}
+          />
           <View style={styles.words}>
             <StepHeading
               center
@@ -219,12 +231,18 @@ export default function BodyReleaseScreen() {
           {done ? (
             // 끝의 한마디는 위에서 제목 아래 크게 말한다 — 아래에는 버튼 하나만(실기기 ·
             // 2026-10-05 · 카드와 버튼 두 상자가 나뉘어 어색했다)
-            settled ? (
-              <ScenePillButton
-                label={BODY_RELEASE_DONE.cta}
-                onPress={() => router.replace("/(tabs)/rest")}
-              />
-            ) : null
+            !settled ? null : (
+              // 쪽지는 고른 뒤에도 남고, 돌아가는 길은 그 아래에 붙는다
+              <>
+                <MoodCheck onPick={record.pick} />
+                {record.mood != null ? (
+                  <ScenePillButton
+                    label={BODY_RELEASE_DONE.cta}
+                    onPress={() => router.replace("/(tabs)/rest")}
+                  />
+                ) : null}
+              </>
+            )
           ) : (
             <>
               <SceneCard>

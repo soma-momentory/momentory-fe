@@ -13,11 +13,15 @@ import { SceneTopVeil } from "@/components/rest/scene/SceneVeil";
 import { SensePanel } from "@/components/rest/pond/SensePanel";
 import { PondScene } from "@/components/rest/pond/PondScene";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
+import { MoodCheck } from "@/components/rest/scene/MoodCheck";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
+  SceneCornerButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
+import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
+import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import { pond, pondMotion, pondVeil, space } from "@/design/ds";
 import {
   SENSE_POND_DONE,
@@ -117,6 +121,8 @@ export default function SensePondScreen() {
   const { date: today } = useTodayContext();
   const diaryToday = useDiary((s) => hasDiaryOn(s.diaries, today));
   const rest = useRestContentAnalytics("sense_pond", step.id, diaryToday);
+  // 이용 기록 — 첫 감각을 찾은 판부터 남긴다. 기분을 골라야 돌아가는 길이 붙는다
+  const record = useRestRecord("sense_pond", stepIndex > 0 || found > 0 || finished);
 
   // 마지막 감각을 찾은 순간이 끝이다 — `sense_pond_finished` 와 같은 때
   useEffect(() => {
@@ -200,6 +206,12 @@ export default function SensePondScreen() {
           {/* 글보다 먼저 깔린다 — 카드가 아니라 위쪽에서 사라지는 빛 한 겹이다 */}
           <SceneTopVeil veil={pondVeil} testID="pond-top-veil" />
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneCornerButton
+            top={insets.top + space.sm}
+            label={REST_RECORDS_LINK}
+            icon="clock"
+            onPress={() => router.push("/rest/records?content=sense_pond")}
+          />
 
           {/* 글은 장면 폭을 다 쓰지 않는다 — 끝까지 늘리면 한 글자만 다음 줄로 넘어간다 */}
           <View style={styles.words}>
@@ -225,12 +237,18 @@ export default function SensePondScreen() {
           // 버튼이 제스처 바·내비 바 위에 선다
           bottomInset={insets.bottom}
           footer={
-            finished ? (
-              <ScenePillButton
-                label={SENSE_POND_DONE.cta}
-                onPress={() => router.replace("/(tabs)/rest")}
-              />
-            ) : undefined
+            !finished ? undefined : (
+              // 쪽지는 고른 뒤에도 남고, 돌아가는 길은 그 아래에 붙는다
+              <>
+                <MoodCheck onPick={record.pick} />
+                {record.mood != null ? (
+                  <ScenePillButton
+                    label={SENSE_POND_DONE.cta}
+                    onPress={() => router.replace("/(tabs)/rest")}
+                  />
+                ) : null}
+              </>
+            )
           }
         />
       ) : null}

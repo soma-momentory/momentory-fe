@@ -6,6 +6,8 @@ import WorryBoxScreen from "../worry-box";
 import { track } from "@/features/analytics";
 
 import { worryBoxFinish as F, worryBoxMotion as M } from "@/design/ds";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
+import { restMoodMotion } from "@/design/ds";
 
 /**
  * 걱정상자 — 걱정 한 줄을 적어 카피바라에게 건네고, 상자에 넣고, 맡겨두거나 흘려보낸다.
@@ -14,6 +16,11 @@ import { worryBoxFinish as F, worryBoxMotion as M } from "@/design/ds";
  * 맡기면 쓴 걱정이 종이 카드가 되어 건네지고 상자가 닫힌 뒤에야 선택지가 온다 ·
  * 두 끝 다 연출이 끝난 뒤에야 「쉼터로 돌아가기」가 붙는다.
  */
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
@@ -130,6 +137,13 @@ describe("걱정상자", () => {
     expect(r.queryByText("쉼터로 돌아가기")).toBeNull();
 
     await pass(F.glow.duration);
+    expect(r.queryByText("쉼터로 돌아가기")).toBeNull();
+    // 기분을 골라야 끝맺음이 이어진다 — 건너뛰기가 없다
+    expect(r.getByText("기분이 나아졌나요?")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
+    await pass(restMoodMotion.stamp + restMoodMotion.hold);
+    expect(addRestRecord).toHaveBeenCalledWith("worry_box", { completed: true, mood: "better" });
     await fireEvent.press(r.getByText("쉼터로 돌아가기"));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
   });
@@ -162,6 +176,12 @@ describe("걱정상자", () => {
     // 돌아가는 길은 쪽지가 다 내려앉은 **뒤**에 붙는다
     expect(r.queryByText("쉼터로 돌아가기")).toBeNull();
     await pass(F.message.delay + F.message.duration);
+    expect(r.getByText("기분이 나아졌나요?")).toBeTruthy();
+    // 걱정 원문은 기록에도 가지 않는다
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
+    await pass(restMoodMotion.stamp + restMoodMotion.hold);
+    expect(JSON.stringify(jest.mocked(addRestRecord).mock.calls)).not.toContain("걱정");
     expect(r.getByText("쉼터로 돌아가기")).toBeTruthy();
   });
 

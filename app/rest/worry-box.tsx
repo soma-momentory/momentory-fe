@@ -5,12 +5,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName, Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
+import { MoodCheck } from "@/components/rest/scene/MoodCheck";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
   SceneCard,
+  SceneCornerButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
+import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
+import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import { RisingMotes } from "@/components/rest/scene/RisingMotes";
 import { VintagePressable } from "@/components/rest/scene/VintagePressable";
 import { WorryBoxScene } from "@/components/rest/worry/WorryBoxScene";
@@ -75,6 +79,8 @@ export default function WorryBoxScreen() {
     stage === "write" || stage === "handing" || stage === "boxed" ? stage : null,
     diaryToday,
   );
+  // 이용 기록 — 걱정을 건넨 판부터 남긴다(걱정 원문은 남기지 않는다). 기분을 골라야 돌아가는 길이 붙는다
+  const record = useRestRecord("worry_box", stage !== "write");
 
   const handOver = () => {
     if (!canHandOver(worry)) return;
@@ -128,6 +134,12 @@ export default function WorryBoxScreen() {
           ]}
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneCornerButton
+            top={insets.top + space.sm}
+            label={REST_RECORDS_LINK}
+            icon="clock"
+            onPress={() => router.push("/rest/records?content=worry_box")}
+          />
           <View style={styles.words}>
             <StepHeading
               center
@@ -217,12 +229,18 @@ export default function WorryBoxScreen() {
                   </View>
                 </VintagePressable>
               ))
-            ) : ended && (stage !== "release" || noteLanded) ? (
-              <ScenePillButton
-                label={WORRY_BOX_DONE_CTA}
-                onPress={() => router.replace("/(tabs)/rest")}
-              />
-            ) : null}
+            ) : !ended || (stage === "release" && !noteLanded) ? null : (
+              // 쪽지는 고른 뒤에도 남고, 돌아가는 길은 그 아래에 붙는다
+              <>
+                <MoodCheck onPick={record.pick} />
+                {record.mood != null ? (
+                  <ScenePillButton
+                    label={WORRY_BOX_DONE_CTA}
+                    onPress={() => router.replace("/(tabs)/rest")}
+                  />
+                ) : null}
+              </>
+            )}
           </View>
         </KeyboardAvoidingView>
       </View>

@@ -8,6 +8,8 @@ import { track } from "@/features/analytics";
 import { addTreasure, fetchTreasures, type Treasure } from "@/features/rest/data/treasureApi";
 
 import { treasureBoxFinish as F, treasureBoxMotion as M } from "@/design/ds";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
+import { restMoodMotion } from "@/design/ds";
 
 /**
  * 오늘의 보물함 — 오늘의 소중한 순간 한 줄을 보물 카드로 만들어 카피바라가 보물함에 넣는다.
@@ -16,6 +18,11 @@ import { treasureBoxFinish as F, treasureBoxMotion as M } from "@/design/ds";
  * 길이만 간다 · 연출이 끝나야 끝맺음 판이 서고 「오늘의 보물」에 방금 것이 떠오른다 · 저장이
  * 실패하면 한 줄로 알린다 · 지난 보물은 하루씩 묶여 세지 않고 다시 보여 준다.
  */
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
@@ -114,6 +121,15 @@ describe("오늘의 보물함", () => {
 
     await pass(M.close + M.settle + 400);
     expect(r.getByText(/오늘의 작은 순간 하나를/)).toBeTruthy();
+    // 기분을 고른 뒤에야 「오늘의 보물」 판이 선다
+    expect(r.queryByText("오늘의 보물")).toBeNull();
+    // 기분을 골라야 끝맺음이 이어진다 — 건너뛰기가 없다
+    expect(r.getByText("기분이 나아졌나요?")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
+    await pass(restMoodMotion.stamp + restMoodMotion.hold);
+    expect(addRestRecord).toHaveBeenCalledWith("treasure_box", { completed: true, mood: "better" });
+
     expect(r.getByText("작은 순간도 소중한 보물이 될 수 있어요")).toBeTruthy();
     expect(r.getByText("오늘의 보물")).toBeTruthy();
     expect(r.getByText("산책을 다녀왔어요")).toBeTruthy();
@@ -134,6 +150,9 @@ describe("오늘의 보물함", () => {
     await write(r, TEXT);
     await fireEvent.press(cta(r));
     await pass(TUCKING);
+    await fireEvent.press(r.getByRole("button", { name: "잘 모르겠어요" }));
+    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
+    await pass(restMoodMotion.stamp + restMoodMotion.hold);
 
     expect(r.getByText("보물을 담지 못했어요. 잠시 뒤에 다시 담아주세요.")).toBeTruthy();
     expect(r.queryByTestId("treasure-fresh-row")).toBeNull();

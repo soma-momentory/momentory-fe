@@ -6,6 +6,8 @@ import SensePondScreen from "../sense-pond";
 import { track } from "@/features/analytics";
 
 import { pondMotion, surfaceRippleMs } from "@/design/ds";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
+import { restMoodMotion } from "@/design/ds";
 
 /**
  * 감각연못 — **표시를 찾아 누르는 미니게임이 아니라, 연못을 건드리면 조용히
@@ -21,6 +23,11 @@ import { pondMotion, surfaceRippleMs } from "@/design/ds";
  * 때마다 그 단계의 칸이 가운데에 뜨고 차오른다(2026-09-11) · 다 채우면 「다 채웠어요」 ·
  * 감각 단계는 「꾸욱」을 두 번 말한다.
  */
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
@@ -149,7 +156,7 @@ describe("감각연못 · 들어온 직후", () => {
     expect(r.queryAllByTestId("pond-point-hand", HIDDEN)).toHaveLength(0);
   });
 
-  it("눌리는 것은 뒤로와 수면뿐이다 — 숨은그림찾기를 시키지 않는다", async () => {
+  it("눌리는 것은 뒤로 · 지난 기록 · 수면뿐이다 — 숨은그림찾기를 시키지 않는다", async () => {
     const r = await render(<SensePondScreen />);
     await layout(r);
 
@@ -157,7 +164,7 @@ describe("감각연못 · 들어온 직후", () => {
       .getAllByRole("button")
       .map((b) => b.props.accessibilityLabel)
       .sort();
-    expect(labels).toEqual(["뒤로", "보이는 것 하나 찾기"].sort());
+    expect(labels).toEqual(["뒤로", "지난 기록 보기", "보이는 것 하나 찾기"].sort());
   });
 
   it("들어온 직후에는 아래 판이 없다 — 빈 칸도 동그라미도 없다", async () => {
@@ -403,6 +410,13 @@ describe("감각연못 · 찾아 가기", () => {
     expect(r.getByText("3 / 3")).toBeTruthy();
     expect(r.getByText("2 / 2")).toBeTruthy();
     expect(r.getByText("1 / 1")).toBeTruthy();
+    expect(r.queryByText("쉼터로 돌아가기")).toBeNull();
+    // 기분을 골라야 끝맺음이 이어진다 — 건너뛰기가 없다
+    expect(r.getByText("기분이 나아졌나요?")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
+    await wait(restMoodMotion.stamp + restMoodMotion.hold);
+    expect(addRestRecord).toHaveBeenCalledWith("sense_pond", { completed: true, mood: "better" });
     expect(r.getByText("쉼터로 돌아가기")).toBeTruthy();
 
     // 완료된 연못은 손짓을 받지 않는다 — 보는 시간이다

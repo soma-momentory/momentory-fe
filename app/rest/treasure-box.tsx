@@ -3,15 +3,16 @@ import { useEffect, useState } from "react";
 import { Animated, Keyboard, KeyboardAvoidingView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Icon, Screen, Text, TextField } from "@/components/ds";
+import { Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
+import { MoodCheck } from "@/components/rest/scene/MoodCheck";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
   SceneCard,
+  SceneCornerButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
-import { VintagePressable } from "@/components/rest/scene/VintagePressable";
 import { TreasureBoxScene } from "@/components/rest/treasure/TreasureBoxScene";
 import { TreasureRow } from "@/components/rest/treasure/TreasureRow";
 import { track } from "@/features/analytics";
@@ -20,6 +21,7 @@ import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { addTreasure, fetchTreasures, type Treasure } from "@/features/rest/data/treasureApi";
+import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import {
   TREASURE_BOX_DONE,
   TREASURE_BOX_INPUT,
@@ -33,14 +35,7 @@ import {
   markAt,
   type TreasureBoxStage,
 } from "@/features/rest/model/treasureBox";
-import {
-  label as labelColor,
-  layout,
-  restScene,
-  space,
-  treasureBoxFinish,
-  treasureBoxSize,
-} from "@/design/ds";
+import { label as labelColor, layout, restScene, space, treasureBoxFinish } from "@/design/ds";
 
 /**
  * 오늘의 보물함 — 오늘의 소중한 순간 한 줄을 보물 카드로 만들어 카피바라가 보물함에 넣는다
@@ -76,6 +71,10 @@ export default function TreasureBoxScreen() {
     stage === "write" || stage === "tucking" ? stage : null,
     diaryToday,
   );
+  // 이용 기록 — 보물을 담은 판부터 「했다 + 기분」만 남긴다(보물은 따로 남는다).
+  // 기분을 고른 **뒤에** 「오늘의 보물」 판이 선다
+  const record = useRestRecord("treasure_box", stage !== "write");
+  const answered = record.mood != null;
 
   // 오늘 이미 담은 보물 — 못 받아 와도 화면은 그대로다(빈 목록)
   useEffect(() => {
@@ -89,10 +88,10 @@ export default function TreasureBoxScreen() {
   }, [todayDate]);
 
   useEffect(() => {
-    if (stage !== "done") return;
+    if (stage !== "done" || !answered) return;
     const t = setTimeout(() => setCtaReady(true), treasureBoxFinish.cta);
     return () => clearTimeout(t);
-  }, [stage]);
+  }, [stage, answered]);
 
   const tuck = () => {
     if (!canTuck(text)) return;
@@ -144,15 +143,12 @@ export default function TreasureBoxScreen() {
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
           {stage !== "tucking" ? (
-            <VintagePressable
-              accessibilityLabel="지난 보물 모두 보기"
+            <SceneCornerButton
+              top={insets.top + space.sm}
+              label="지난 보물 모두 보기"
+              icon="list"
               onPress={() => router.push("/rest/treasures")}
-              radius={treasureBoxSize.corner / 2}
-              style={[styles.corner, { top: insets.top + space.sm }]}
-              faceStyle={styles.cornerFace}
-            >
-              <Icon name="list" size={20} color={restScene.ink} />
-            </VintagePressable>
+            />
           ) : null}
           <View style={styles.words}>
             <StepHeading
@@ -213,6 +209,8 @@ export default function TreasureBoxScreen() {
                   onPress={tuck}
                 />
               </>
+            ) : stage === "done" && !answered ? (
+              <MoodCheck onPick={record.pick} />
             ) : stage === "done" ? (
               <>
                 <SceneCard>
@@ -285,13 +283,6 @@ const styles = StyleSheet.create({
     top: 0,
     alignItems: "center",
     paddingHorizontal: space.xl,
-  },
-  // 오른쪽 위 「지난 보물」 원 — 왼쪽 위 뒤로가기 원과 마주 선다
-  corner: { position: "absolute", right: space.lg, width: treasureBoxSize.corner },
-  cornerFace: {
-    height: treasureBoxSize.corner,
-    alignItems: "center",
-    justifyContent: "center",
   },
   words: { alignSelf: "center", maxWidth: 320, alignItems: "center" },
   panelWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },

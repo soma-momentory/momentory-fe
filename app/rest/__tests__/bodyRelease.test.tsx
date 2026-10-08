@@ -6,6 +6,8 @@ import BodyReleaseScreen from "../body-release";
 import { track } from "@/features/analytics";
 
 import { bodyReleaseMotion } from "@/design/ds";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
+import { restMoodMotion } from "@/design/ds";
 
 /**
  * 몸에 힘 빼기 — 시작 버튼 하나를 누르면 나머지는 시간이 끌고 간다.
@@ -14,6 +16,11 @@ import { bodyReleaseMotion } from "@/design/ds";
  * 풀기 10초 · 네 부위를 차례로 · 카피바라가 박자를 따라 포즈를 바꾼다 · 끝나면 정적
  * 뒤에야 「마치기」 · 마치면 쉼터 탭으로.
  */
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
@@ -107,6 +114,13 @@ describe("몸에 힘 빼기", () => {
     expect(r.getByTestId("body-release-motes", HIDDEN)).toBeTruthy();
 
     await pass(bodyReleaseMotion.doneHold);
+    expect(r.queryByText("마치기")).toBeNull();
+    // 기분을 골라야 끝맺음이 이어진다 — 건너뛰기가 없다
+    expect(r.getByText("기분이 나아졌나요?")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 도장이 찍히고 「골랐다」를 볼 시간이 지나야 끝맺음이 이어진다
+    await pass(restMoodMotion.stamp + restMoodMotion.hold);
+    expect(addRestRecord).toHaveBeenCalledWith("body_release", { completed: true, mood: "better" });
 
     await fireEvent.press(r.getByText("마치기"));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");

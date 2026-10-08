@@ -422,6 +422,21 @@ export const treasureBox = {
   sprout: "#77A866",
 } as const;
 
+/**
+ * 쉼터 공통 끝맺음의 **기분 쪽지** (2026-10-08) — 카피바라가 건네는 「기분이 나아졌나요?」.
+ * 종이는 걱정상자 쪽지와 같은 종이색이고, 표식 셋(해 · 구름 · 깃털)과 고른 칸에 찍히는
+ * 도장(인주빛 동그라미)만 여기 색이다. 글자는 `restScene.ink` · `label.*`
+ */
+export const restMood = {
+  paper: worryBox.paper,
+  sun: "#E8B04A",
+  cloud: "#9DB4C8",
+  feather: "#B7A4D3",
+  /** 고른 칸에 찍히는 도장 — 붉은 인주빛. 장식이라 글자가 얹히지 않는다 */
+  stamp: "#B8553E",
+  mote: worryBox.mote,
+} as const;
+
 export const restScene = {
   surface: "#FFF7EE",
   /**

@@ -41,6 +41,7 @@ export {
   pond,
   primary,
   raisedShadow,
+  restMood,
   restRipple,
   restScene,
   retroRug,
@@ -84,7 +85,7 @@ export {
   type PondSpot,
 } from "./pond";
 
-export { restSceneSize } from "./restScene";
+export { restMoodMotion, restMoodSize, restSceneSize } from "./restScene";
 
 export { worryBoxFinish, worryBoxLayout, worryBoxMotion, worryBoxSize } from "./worryBox";
 

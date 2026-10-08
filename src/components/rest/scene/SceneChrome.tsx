@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { Icon, Text } from "@/components/ds";
+import { Icon, type IconName, Text } from "@/components/ds";
 import { radius, restScene, restSceneSize, space, withAlpha } from "@/design/ds";
 
 import { VintagePressable } from "./VintagePressable";
@@ -27,6 +27,34 @@ export function SceneBackButton({ top, onPress }: { top: number; onPress: () => 
       faceStyle={styles.backFace}
     >
       <Icon name="arrow-left" size={20} color={restScene.ink} />
+    </VintagePressable>
+  );
+}
+
+/**
+ * 오른쪽 위 원 — 뒤로가기 원과 마주 서서 그 쉼터의 지난 기록으로 간다(보물함의 「지난 보물」 ·
+ * 쉼터마다의 이용 기록 · 2026-10-08).
+ */
+export function SceneCornerButton({
+  top,
+  onPress,
+  label,
+  icon,
+}: {
+  top: number;
+  onPress: () => void;
+  label: string;
+  icon: IconName;
+}) {
+  return (
+    <VintagePressable
+      accessibilityLabel={label}
+      onPress={onPress}
+      radius={BACK / 2}
+      style={[styles.back, styles.corner, { top }]}
+      faceStyle={styles.backFace}
+    >
+      <Icon name={icon} size={20} color={restScene.ink} />
     </VintagePressable>
   );
 }
@@ -88,6 +116,7 @@ export function SceneCard({
 
 const styles = StyleSheet.create({
   back: { position: "absolute", left: space.lg, width: BACK },
+  corner: { left: undefined, right: space.lg },
   backFace: { height: BACK, alignItems: "center", justifyContent: "center" },
   pillOuter: { alignSelf: "stretch" },
   pill: { height: V.pill, alignItems: "center", justifyContent: "center" },
