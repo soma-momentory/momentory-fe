@@ -42,8 +42,6 @@ export const treasureBoxSize = {
   mark: 18,
   shadow: { width: 0.62, chest: 0.92, height: 14, opacity: 0.28 },
   sink: 6,
-  /** 오른쪽 위 「지난 보물」 원 — 뒤로가기 원과 같은 지름(`restSceneSize.back`) */
-  corner: 40,
 } as const;
 
 export const treasureBoxMotion = {

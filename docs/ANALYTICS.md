@@ -109,7 +109,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 
 화면명은 login, home, archive, rest, report, my, onboarding, schedule_new,
 schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
-wish_cards, wish_card_trail, sense_pond, body_release, worry_box, treasure_box, treasure_list, profile 및 고정 프로필 편집 화면명이다.
+wish_cards, wish_card_trail, sense_pond, body_release, worry_box, treasure_box, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다.
 온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다.
 retroTime 단계에서는 진행 여부와 알림 권한 허용 여부(notify_permission_result)를 알 수 있다.
 설정 시각·예약 성공은 수집하지 않는다. 마이 M2 에서는 꺼진 알림을 켤 때 묻는 결과만 남는다.

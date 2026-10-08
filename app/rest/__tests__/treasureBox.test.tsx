@@ -8,6 +8,7 @@ import { track } from "@/features/analytics";
 import { addTreasure, fetchTreasures, type Treasure } from "@/features/rest/data/treasureApi";
 
 import { treasureBoxFinish as F, treasureBoxMotion as M } from "@/design/ds";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
 
 /**
  * 오늘의 보물함 — 오늘의 소중한 순간 한 줄을 보물 카드로 만들어 카피바라가 보물함에 넣는다.
@@ -16,6 +17,11 @@ import { treasureBoxFinish as F, treasureBoxMotion as M } from "@/design/ds";
  * 길이만 간다 · 연출이 끝나야 끝맺음 판이 서고 「오늘의 보물」에 방금 것이 떠오른다 · 저장이
  * 실패하면 한 줄로 알린다 · 지난 보물은 하루씩 묶여 세지 않고 다시 보여 준다.
  */
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
@@ -114,6 +120,7 @@ describe("오늘의 보물함", () => {
 
     await pass(M.close + M.settle + 400);
     expect(r.getByText(/오늘의 작은 순간 하나를/)).toBeTruthy();
+
     expect(r.getByText("작은 순간도 소중한 보물이 될 수 있어요")).toBeTruthy();
     expect(r.getByText("오늘의 보물")).toBeTruthy();
     expect(r.getByText("산책을 다녀왔어요")).toBeTruthy();
@@ -124,6 +131,16 @@ describe("오늘의 보물함", () => {
     // 돌아가는 길은 새 줄이 떠오른 뒤에 붙는다
     expect(r.queryByRole("button", { name: "쉼터로 돌아가기" })).toBeNull();
     await pass(F.cta);
+    // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
+    await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
+    expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
+    // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
+    expect(r.queryAllByRole("button", { name: "쉼터로 돌아가기" })).toHaveLength(0);
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
+    expect(addRestRecord).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
     await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
   });
@@ -139,10 +156,12 @@ describe("오늘의 보물함", () => {
     expect(r.queryByTestId("treasure-fresh-row")).toBeNull();
   });
 
-  it("오른쪽 위 원이 지난 보물로 간다", async () => {
+  it("오른쪽 위 원 둘이 지난 보물과 보물함 이용 기록으로 따로 간다", async () => {
     const r = await render(<TreasureBoxScreen />);
     await fireEvent.press(r.getByRole("button", { name: "지난 보물 모두 보기" }));
     expect(router.push).toHaveBeenCalledWith("/rest/treasures");
+    await fireEvent.press(r.getByRole("button", { name: "지난 기록 보기" }));
+    expect(router.push).toHaveBeenCalledWith("/rest/records?content=treasure_box");
   });
 });
 

@@ -93,6 +93,7 @@ const screen = choice(
   "worry_box",
   "treasure_box",
   "treasure_list",
+  "rest_records",
   "profile",
   "profile_nickname",
   "profile_age",

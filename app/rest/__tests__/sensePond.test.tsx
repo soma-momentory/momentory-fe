@@ -6,6 +6,7 @@ import SensePondScreen from "../sense-pond";
 import { track } from "@/features/analytics";
 
 import { pondMotion, surfaceRippleMs } from "@/design/ds";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
 
 /**
  * 감각연못 — **표시를 찾아 누르는 미니게임이 아니라, 연못을 건드리면 조용히
@@ -21,6 +22,11 @@ import { pondMotion, surfaceRippleMs } from "@/design/ds";
  * 때마다 그 단계의 칸이 가운데에 뜨고 차오른다(2026-09-11) · 다 채우면 「다 채웠어요」 ·
  * 감각 단계는 「꾸욱」을 두 번 말한다.
  */
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
@@ -149,7 +155,7 @@ describe("감각연못 · 들어온 직후", () => {
     expect(r.queryAllByTestId("pond-point-hand", HIDDEN)).toHaveLength(0);
   });
 
-  it("눌리는 것은 뒤로와 수면뿐이다 — 숨은그림찾기를 시키지 않는다", async () => {
+  it("눌리는 것은 뒤로 · 지난 기록 · 수면뿐이다 — 숨은그림찾기를 시키지 않는다", async () => {
     const r = await render(<SensePondScreen />);
     await layout(r);
 
@@ -157,7 +163,7 @@ describe("감각연못 · 들어온 직후", () => {
       .getAllByRole("button")
       .map((b) => b.props.accessibilityLabel)
       .sort();
-    expect(labels).toEqual(["뒤로", "보이는 것 하나 찾기"].sort());
+    expect(labels).toEqual(["뒤로", "지난 기록 보기", "보이는 것 하나 찾기"].sort());
   });
 
   it("들어온 직후에는 아래 판이 없다 — 빈 칸도 동그라미도 없다", async () => {
@@ -410,7 +416,17 @@ describe("감각연못 · 찾아 가기", () => {
     expect(decor(r)).toHaveLength(1);
 
     // 돌아가기 — 회고 완료와 같은 replace 로 쉼터 탭에 선다
+    // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
     await fireEvent.press(r.getByText("쉼터로 돌아가기"));
+    expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
+    // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
+    expect(r.queryAllByRole("button", { name: "쉼터로 돌아가기" })).toHaveLength(0);
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
+    expect(addRestRecord).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
+    await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest");
   });
 

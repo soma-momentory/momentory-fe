@@ -21,6 +21,7 @@ const routes: Record<string, ScreenName> = {
   "rest/worry-box": "worry_box",
   "rest/treasure-box": "treasure_box",
   "rest/treasures": "treasure_list",
+  "rest/records": "rest_records",
   "my/profile": "profile",
   "my/nickname": "profile_nickname",
   "my/age": "profile_age",

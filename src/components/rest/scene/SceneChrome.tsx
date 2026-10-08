@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { Icon, Text } from "@/components/ds";
+import { Icon, type IconName, Text } from "@/components/ds";
 import { radius, restScene, restSceneSize, space, withAlpha } from "@/design/ds";
 
 import { VintagePressable } from "./VintagePressable";
@@ -27,6 +27,37 @@ export function SceneBackButton({ top, onPress }: { top: number; onPress: () => 
       faceStyle={styles.backFace}
     >
       <Icon name="arrow-left" size={20} color={restScene.ink} />
+    </VintagePressable>
+  );
+}
+
+/**
+ * 오른쪽 위 원 — 뒤로가기 원과 마주 서서 그 쉼터의 지난 기록으로 간다(보물함의 「지난 보물」 ·
+ * 쉼터마다의 이용 기록 · 2026-10-08).
+ */
+export function SceneCornerButton({
+  top,
+  onPress,
+  label,
+  icon,
+  slot = 0,
+}: {
+  top: number;
+  onPress: () => void;
+  label: string;
+  icon: IconName;
+  /** 오른쪽 끝에서 몇 번째 원인가 — 둘이 나란히 설 때(보물함: 이용 기록 · 지난 보물) */
+  slot?: number;
+}) {
+  return (
+    <VintagePressable
+      accessibilityLabel={label}
+      onPress={onPress}
+      radius={BACK / 2}
+      style={[styles.back, { left: undefined, right: space.lg + slot * (BACK + space.sm), top }]}
+      faceStyle={styles.backFace}
+    >
+      <Icon name={icon} size={20} color={restScene.ink} />
     </VintagePressable>
   );
 }

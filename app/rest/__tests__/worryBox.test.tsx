@@ -6,6 +6,7 @@ import WorryBoxScreen from "../worry-box";
 import { track } from "@/features/analytics";
 
 import { worryBoxFinish as F, worryBoxMotion as M } from "@/design/ds";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
 
 /**
  * 걱정상자 — 걱정 한 줄을 적어 카피바라에게 건네고, 상자에 넣고, 맡겨두거나 흘려보낸다.
@@ -14,6 +15,11 @@ import { worryBoxFinish as F, worryBoxMotion as M } from "@/design/ds";
  * 맡기면 쓴 걱정이 종이 카드가 되어 건네지고 상자가 닫힌 뒤에야 선택지가 온다 ·
  * 두 끝 다 연출이 끝난 뒤에야 「쉼터로 돌아가기」가 붙는다.
  */
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
@@ -130,7 +136,17 @@ describe("걱정상자", () => {
     expect(r.queryByText("쉼터로 돌아가기")).toBeNull();
 
     await pass(F.glow.duration);
+    // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
     await fireEvent.press(r.getByText("쉼터로 돌아가기"));
+    expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
+    // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
+    expect(r.queryAllByRole("button", { name: "쉼터로 돌아가기" })).toHaveLength(0);
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
+    expect(addRestRecord).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
+    await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
   });
 

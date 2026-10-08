@@ -5,12 +5,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName, Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
+import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
   SceneCard,
+  SceneCornerButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
+import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
+import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import { RisingMotes } from "@/components/rest/scene/RisingMotes";
 import { VintagePressable } from "@/components/rest/scene/VintagePressable";
 import { WorryBoxScene } from "@/components/rest/worry/WorryBoxScene";
@@ -75,6 +79,10 @@ export default function WorryBoxScreen() {
     stage === "write" || stage === "handing" || stage === "boxed" ? stage : null,
     diaryToday,
   );
+  // 이용 기록 — 걱정을 건넨 판부터 남긴다(걱정 원문은 남기지 않는다). 기분을 골라야 돌아가는 길이 붙는다
+  const record = useRestRecord("worry_box", stage !== "write");
+  // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
+  const [asking, setAsking] = useState(false);
 
   const handOver = () => {
     if (!canHandOver(worry)) return;
@@ -128,6 +136,12 @@ export default function WorryBoxScreen() {
           ]}
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneCornerButton
+            top={insets.top + space.sm}
+            label={REST_RECORDS_LINK}
+            icon="clock"
+            onPress={() => router.push("/rest/records?content=worry_box")}
+          />
           <View style={styles.words}>
             <StepHeading
               center
@@ -217,15 +231,19 @@ export default function WorryBoxScreen() {
                   </View>
                 </VintagePressable>
               ))
-            ) : ended && (stage !== "release" || noteLanded) ? (
-              <ScenePillButton
-                label={WORRY_BOX_DONE_CTA}
-                onPress={() => router.replace("/(tabs)/rest")}
-              />
-            ) : null}
+            ) : !ended || (stage === "release" && !noteLanded) ? null : (
+              <ScenePillButton label={WORRY_BOX_DONE_CTA} onPress={() => setAsking(true)} />
+            )}
           </View>
         </KeyboardAvoidingView>
       </View>
+      {asking ? (
+        <MoodExit
+          leaveLabel={WORRY_BOX_DONE_CTA}
+          onPick={record.pick}
+          onLeave={() => router.replace("/(tabs)/rest")}
+        />
+      ) : null}
     </Screen>
   );
 }

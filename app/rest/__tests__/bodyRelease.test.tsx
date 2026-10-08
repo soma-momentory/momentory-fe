@@ -6,6 +6,7 @@ import BodyReleaseScreen from "../body-release";
 import { track } from "@/features/analytics";
 
 import { bodyReleaseMotion } from "@/design/ds";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
 
 /**
  * 몸에 힘 빼기 — 시작 버튼 하나를 누르면 나머지는 시간이 끌고 간다.
@@ -14,6 +15,11 @@ import { bodyReleaseMotion } from "@/design/ds";
  * 풀기 10초 · 네 부위를 차례로 · 카피바라가 박자를 따라 포즈를 바꾼다 · 끝나면 정적
  * 뒤에야 「마치기」 · 마치면 쉼터 탭으로.
  */
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
@@ -108,7 +114,17 @@ describe("몸에 힘 빼기", () => {
 
     await pass(bodyReleaseMotion.doneHold);
 
+    // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
     await fireEvent.press(r.getByText("마치기"));
+    expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
+    // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
+    expect(r.queryAllByRole("button", { name: "마치기" })).toHaveLength(0);
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+    // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
+    expect(addRestRecord).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
+    await fireEvent.press(r.getByRole("button", { name: "마치기" }));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
   });
 
