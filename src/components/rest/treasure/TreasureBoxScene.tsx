@@ -18,7 +18,7 @@ import type { TreasureBoxStage } from "@/features/rest/model/treasureBox";
 
 import { GroundShadow } from "../scene/GroundShadow";
 import { RisingMotes } from "../scene/RisingMotes";
-import { VeilGradient } from "../pond/PondTopVeil";
+import { SceneTopVeil } from "../scene/SceneChrome";
 
 /**
  * 오늘의 보물함의 **장면** — 풀밭의 카피바라와 보물함 (2026-10-05).
@@ -37,7 +37,8 @@ import { VeilGradient } from "../pond/PondTopVeil";
  *
  * 입력한 문장이 작은 보물 카드가 되어 카피바라 손으로 날아간다(`fly`) → 카피바라가 받아 들고
  * 잠시 읽는다(`hold`) → 뚜껑이 열리고 안에서 은은한 빛이 번진다(`open`) → 카드가 손끝에서
- * 둥실 떠올라 한 바퀴 돌며 안으로(`put`) → 뚜껑이 닫히며 톡 튀고 네 갈래 반짝임이 차례로
+ * 입구 위로 **살짝만** 들렸다가 안으로 쏙 들어간다(`put` · 2026-10-08 · 하늘로 솟구치며 한 바퀴
+ * 돌던 것이 날아가는 것처럼 어색했다) → 뚜껑이 닫히며 톡 튀고 네 갈래 반짝임이 차례로
  * 핀다(`close`) → 잠시 뒤 `onTucked`. 카드에는 표식을 붙이지 않는다 — 표식은 기록을 볼 때만
  * 보인다(2026-10-08 · 사용자 피드백).
  *
@@ -48,7 +49,7 @@ import { VeilGradient } from "../pond/PondTopVeil";
  *
  * 카피바라가 보물함에 손을 얹고 쉬고, 보물함 둘레에서 빛 알갱이가 떠오른다 — 조용히, 한 번.
  *
- * 위쪽에는 크림빛 한 겹(`topVeil`)이 깔린다 — 노란 잎과 밝은 노을 하늘 위에서 머리글이
+ * 위쪽에는 크림빛 한 겹(`SceneTopVeil`)이 깔린다 — 노란 잎과 밝은 노을 하늘 위에서 머리글이
  * 묻혔다(2026-10-08 · 실기기 피드백).
  *
  * 끝은 시계가 말한다 — 네이티브 드라이버의 완료 콜백은 jest 에 오지 않는다.
@@ -200,12 +201,7 @@ export function TreasureBoxScene({ stage, text, onTucked }: Props) {
         style={StyleSheet.absoluteFill}
       />
       {/* 머리글 뒤의 크림빛 한 겹 — 위에서 짙고 아래로 사라진다(카피바라에는 닿지 않는다) */}
-      <View
-        style={[styles.topVeil, { height: `${L.topVeil.heightRatio * 100}%` }]}
-        pointerEvents="none"
-      >
-        <VeilGradient id="treasure-top-veil" stops={L.topVeil.stops} />
-      </View>
+      <SceneTopVeil id="treasure-top-veil" />
 
       {/* 보물함 — 닫힐 때의 톡(`bump`). 빛은 뒤판보다 뒤, 카드는 뒤판과 앞판 사이 */}
       <Animated.View
@@ -270,31 +266,28 @@ export function TreasureBoxScene({ stage, text, onTucked }: Props) {
               {
                 transform: [
                   {
+                    // 손끝에서 보물함 입구 위로 옮겨 간 뒤 그 자리에서 곧게 내려간다
                     translateX: note.interpolate({
-                      inputRange: [0, 0.55, 1],
-                      outputRange: [pawX - chestX, (pawX - chestX) * 0.15, 0],
+                      inputRange: [0, 0.6, 1],
+                      outputRange: [pawX - chestX, 0, 0],
                     }),
                   },
                   {
+                    // 입구(앞판 윗변)보다 **살짝만** 들렸다가 앞판 뒤로 쏙 — 하늘로 솟지 않는다
                     translateY: note.interpolate({
-                      inputRange: [0, 0.55, 1],
+                      inputRange: [0, 0.6, 1],
                       outputRange: [
                         -(pawY - ground),
-                        -CHEST_H * M.arc,
+                        -(CHEST_H * S.frontTop + M.lift),
                         -CHEST_H * S.frontTop * 0.3,
                       ],
                     }),
                   },
                   {
+                    // 손에서 떠날 때 살짝 기울었다가 들어가며 바로 선다 — 돌지 않는다
                     rotate: note.interpolate({
-                      inputRange: [0, 0.7, 1],
-                      outputRange: ["0deg", `${360 * M.spin}deg`, `${360 * M.spin}deg`],
-                    }),
-                  },
-                  {
-                    scale: note.interpolate({
-                      inputRange: [0, 0.45, 1],
-                      outputRange: [1, 1.35, 0.9],
+                      inputRange: [0, 0.6, 1],
+                      outputRange: [`${-M.tilt}deg`, "0deg", "0deg"],
                     }),
                   },
                 ],
@@ -467,7 +460,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.small / 2,
   },
   capybara: { position: "absolute", width: CAPY_W, height: CAPY_H },
-  topVeil: { position: "absolute", left: 0, right: 0, top: 0 },
   origin: { position: "absolute", width: 0, height: 0 },
   card: {
     position: "absolute",

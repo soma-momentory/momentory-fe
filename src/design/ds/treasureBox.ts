@@ -23,19 +23,6 @@ export const treasureBoxLayout = {
   holdNote: { x: 0, y: 0.36 },
   putPaw: { x: 0.4, y: 0.28 },
   capybaraAspect: 560 / 600,
-  /**
-   * 머리글 뒤의 크림빛 한 겹 — 노란 잎과 밝은 노을 하늘 위에서 머리글이 묻혔다(2026-10-08 ·
-   * 실기기 피드백). 감각연못의 `pondVeil` 과 같은 방식이고 더 짙다. 높이는 마침 문구 두 줄까지
-   * 덮되 카피바라 머리(화면 위에서 44%)에는 닿지 않는다
-   */
-  topVeil: {
-    heightRatio: 0.4,
-    stops: [
-      { offset: 0, opacity: 0.82 },
-      { offset: 0.6, opacity: 0.5 },
-      { offset: 1, opacity: 0 },
-    ],
-  },
 } as const;
 
 export const treasureBoxSize = {
@@ -67,9 +54,10 @@ export const treasureBoxMotion = {
   /** 뚜껑이 열리고 빛이 번진다 */
   open: 900,
   /** 카드가 손끝에서 둥실 떠올라 한 바퀴 돌며 보물함 안으로 */
-  put: 1600,
-  spin: 1,
-  arc: 1.8,
+  put: 1300,
+  /** 입구(앞판 윗변) 위로 들리는 높이(dp) · 손에서 떠날 때 기우는 각도 — 날아가지 않고 넣는다 */
+  lift: 22,
+  tilt: 8,
   /** 뚜껑이 닫히며 톡 · 반짝임이 핀다 · 잠시 쉼 */
   close: 600,
   bump: 1.06,

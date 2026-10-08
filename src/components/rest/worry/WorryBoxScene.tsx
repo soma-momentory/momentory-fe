@@ -19,6 +19,7 @@ import type { WorryBoxStage } from "@/features/rest/model/worryBox";
 
 import { GroundShadow as SceneGroundShadow } from "../scene/GroundShadow";
 import { RisingMotes } from "../scene/RisingMotes";
+import { SceneTopVeil } from "../scene/SceneChrome";
 
 /**
  * 걱정상자의 **장면** — 숲속 오솔길의 카피바라와 나무 상자 (2026-10-05).
@@ -282,6 +283,8 @@ export function WorryBoxScene({ stage, worry, onBoxed, onEnded }: Props) {
         transition={0}
         style={StyleSheet.absoluteFill}
       />
+      {/* 머리글 뒤의 크림빛 한 겹 — 노을 하늘 위에서 위 안내가 묻히지 않게(2026-10-08 · 보물함과 같다) */}
+      <SceneTopVeil id="worry-top-veil" />
 
       {/* 「맡겨둘게요」의 끝 — 곁에 옮겨 앉은 상자 뒤에서 따뜻한 빛이 번진다 */}
       {stage === "keep" && finished ? (
