@@ -40,18 +40,21 @@ export function SceneCornerButton({
   onPress,
   label,
   icon,
+  slot = 0,
 }: {
   top: number;
   onPress: () => void;
   label: string;
   icon: IconName;
+  /** 오른쪽 끝에서 몇 번째 원인가 — 둘이 나란히 설 때(보물함: 이용 기록 · 지난 보물) */
+  slot?: number;
 }) {
   return (
     <VintagePressable
       accessibilityLabel={label}
       onPress={onPress}
       radius={BACK / 2}
-      style={[styles.back, styles.corner, { top }]}
+      style={[styles.back, { left: undefined, right: space.lg + slot * (BACK + space.sm), top }]}
       faceStyle={styles.backFace}
     >
       <Icon name={icon} size={20} color={restScene.ink} />
@@ -116,7 +119,6 @@ export function SceneCard({
 
 const styles = StyleSheet.create({
   back: { position: "absolute", left: space.lg, width: BACK },
-  corner: { left: undefined, right: space.lg },
   backFace: { height: BACK, alignItems: "center", justifyContent: "center" },
   pillOuter: { alignSelf: "stretch" },
   pill: { height: V.pill, alignItems: "center", justifyContent: "center" },

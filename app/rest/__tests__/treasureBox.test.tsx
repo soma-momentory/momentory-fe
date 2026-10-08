@@ -158,10 +158,12 @@ describe("오늘의 보물함", () => {
     expect(r.queryByTestId("treasure-fresh-row")).toBeNull();
   });
 
-  it("오른쪽 위 원이 지난 보물로 간다", async () => {
+  it("오른쪽 위 원 둘이 지난 보물과 보물함 이용 기록으로 따로 간다", async () => {
     const r = await render(<TreasureBoxScreen />);
     await fireEvent.press(r.getByRole("button", { name: "지난 보물 모두 보기" }));
     expect(router.push).toHaveBeenCalledWith("/rest/treasures");
+    await fireEvent.press(r.getByRole("button", { name: "지난 기록 보기" }));
+    expect(router.push).toHaveBeenCalledWith("/rest/records?content=treasure_box");
   });
 });
 

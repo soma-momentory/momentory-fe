@@ -21,6 +21,7 @@ import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { addTreasure, fetchTreasures, type Treasure } from "@/features/rest/data/treasureApi";
+import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import {
   TREASURE_BOX_DONE,
@@ -142,13 +143,24 @@ export default function TreasureBoxScreen() {
           ]}
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          {/* 오른쪽 위 원 둘 — 쓴 보물(지난 보물)과 쉼터를 한 기록(이용 기록 · 다른 쉼터와 같은 시계 원)은
+              서로 다른 것이라 나눠 둔다(2026-10-08 · 사용자 요청) */}
           {stage !== "tucking" ? (
-            <SceneCornerButton
-              top={insets.top + space.sm}
-              label="지난 보물 모두 보기"
-              icon="list"
-              onPress={() => router.push("/rest/treasures")}
-            />
+            <>
+              <SceneCornerButton
+                top={insets.top + space.sm}
+                label="지난 보물 모두 보기"
+                icon="list"
+                onPress={() => router.push("/rest/treasures")}
+              />
+              <SceneCornerButton
+                top={insets.top + space.sm}
+                slot={1}
+                label={REST_RECORDS_LINK}
+                icon="clock"
+                onPress={() => router.push("/rest/records?content=treasure_box")}
+              />
+            </>
           ) : null}
           <View style={styles.words}>
             <StepHeading
