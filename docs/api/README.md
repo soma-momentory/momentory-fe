@@ -71,6 +71,7 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 | `src/features/calendar/data/calendarSyncApi.ts`         | `POST /api/v1/schedules/sync`                                                                                                                                              |
 | `src/features/diary/data/diaryApi.ts`                   | `GET /api/v1/diaries` · `DELETE …/{id}` · `PUT …/by-retrospect/{retrospectId}` · `GET /api/v1/action-cards` · `PUT …/{id}/completion` · `DELETE /api/v1/action-cards/{id}` |
 | `src/features/report/data/weeklyReportApi.ts`           | `GET /api/v1/reports/weekly`                                                                                                                                               |
+| `src/features/rest/data/treasureApi.ts`                 | `POST /api/v1/treasures` · `GET /api/v1/treasures` (`?date=` 그날 · 없으면 전부)                                                                                           |
 
 > ✅ **`DELETE /api/v1/action-cards/{id}` 는 붙었다** (2026-08-24 계약 반입 → 연결).
 > 이것이 [`PRODUCT.md` 「상류와 차이」](../PRODUCT.md) #25 를 닫았다 — 지운 카드 id 를
