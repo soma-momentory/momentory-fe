@@ -161,7 +161,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "모멘토리",
   slug: "momentory",
-  version: "1.2.0",
+  version: "1.3.0",
   orientation: "portrait",
   scheme: "momentory", // 회고 알림 → 딥링크
   icon: "./assets/icon.png",
@@ -197,7 +197,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * ⚠ **다음 업로드 전에 반드시 올린다.** 아카이브를 다시 만들 때마다가 아니라,
      * App Store Connect 에 **올릴 때마다**다.
      */
-    buildNumber: "4",
+    buildNumber: "7",
+    infoPlist: {
+      NSPhotoLibraryUsageDescription:
+        "모멘토리에서 사용자가 선택한 사진을 첨부하거나 저장할 수 있도록 사진 보관함 접근 권한을 사용합니다.",
+    },
   },
   android: {
     package: "kr.momentory.app",
