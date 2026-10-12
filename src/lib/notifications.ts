@@ -33,19 +33,21 @@ import { parseHHMM } from "@/lib/time";
  */
 
 /** 시각이 있는 알림만 예약할 수 있다 — 「새로운 소식」은 서버 푸시라 여기 없다 */
-export type ReminderKey = "retro" | "daily" | "weekly";
+export type ReminderKey = "retro" | "daily";
 
-export const REMINDER_KEYS: readonly ReminderKey[] = ["retro", "daily", "weekly"];
+export const REMINDER_KEYS: readonly ReminderKey[] = ["retro", "daily"];
 
-/** 주간 알림의 요일. OS 는 1 을 일요일로 센다 */
-export const SUNDAY = 1;
+/**
+ * 더는 예약하지 않지만 **화해할 때마다 함께 지우는** 것 — 옛 버전이 기기에 남긴 예약이다.
+ * 빼면 업데이트한 기기에서 영영 울린다. 주간 알림(일 21:00)은 끌 곳이 없어 뺐다(2026-10-12).
+ */
+const RETIRED_KEYS = ["weekly"] as const;
 
+/** 매일 그 시각에 울린다 */
 export type Reminder = {
   key: ReminderKey;
   /** `"HH:mm"` — 설정 store 가 드는 형태 그대로 받는다 */
   time: string;
-  /** 있으면 그 요일에만(1 = 일요일), 없으면 매일 */
-  weekday?: number;
   title: string;
   body: string;
 };
@@ -74,7 +76,7 @@ const CHANNEL_NAME = "기록 알림";
  * 예약 식별자. **접두사로 우리 것을 가른다** — `cancelAllScheduledNotificationsAsync`
  * 는 다른 곳이 예약한 것까지 지우므로 쓰지 않는다.
  */
-const identifierOf = (key: ReminderKey) => `momentory.reminder.${key}`;
+const identifierOf = (key: string) => `momentory.reminder.${key}`;
 
 /**
  * **개발 빌드에서만** 사유를 남긴다. 사용자에게는 아무것도 보이지 않는다 —
@@ -168,7 +170,7 @@ export async function applyReminders(reminders: readonly Reminder[]): Promise<vo
 
   // **먼저 전부 지운다.** 같은 식별자로 다시 예약하는 것이 교체라는 보장이 없어,
   // 시각을 고칠 때마다 옛 예약이 하나씩 쌓일 수 있다.
-  for (const key of REMINDER_KEYS) {
+  for (const key of [...REMINDER_KEYS, ...RETIRED_KEYS]) {
     try {
       await cancelScheduledNotificationAsync(identifierOf(key));
     } catch (error) {
@@ -193,21 +195,12 @@ export async function applyReminders(reminders: readonly Reminder[]): Promise<vo
           // 우리가 예약한 것임을 표시해 둔다 — 알림을 눌러 들어오는 경로가 생길 때 쓴다
           data: { reminder: reminder.key },
         },
-        trigger:
-          reminder.weekday == null
-            ? {
-                type: SchedulableTriggerInputTypes.DAILY,
-                channelId: CHANNEL_ID,
-                hour,
-                minute,
-              }
-            : {
-                type: SchedulableTriggerInputTypes.WEEKLY,
-                channelId: CHANNEL_ID,
-                weekday: reminder.weekday,
-                hour,
-                minute,
-              },
+        trigger: {
+          type: SchedulableTriggerInputTypes.DAILY,
+          channelId: CHANNEL_ID,
+          hour,
+          minute,
+        },
       });
     } catch (error) {
       warnInDev(`예약 실패(${reminder.key})`, error);

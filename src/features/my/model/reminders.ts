@@ -4,7 +4,6 @@ import {
   applyReminders,
   getNotificationPermission,
   REMINDER_KEYS,
-  SUNDAY,
   type Reminder,
   type ReminderKey,
 } from "@/lib/notifications";
@@ -45,7 +44,6 @@ import {
 const CONTENT: Record<ReminderKey, { title: string; body: string }> = {
   retro: { title: "돌아보는 시간이에요", body: "오늘 하루, 저와 잠깐 이야기해요." },
   daily: { title: "지금 이 순간", body: "떠오른 게 있다면 한 줄만 남겨두세요." },
-  weekly: { title: "이번 주 돌아보기", body: "지난 한 주의 기록을 함께 살펴봐요." },
 };
 
 /** 지금 설정대로라면 예약돼 있어야 하는 것 — 순수 계산이라 테스트가 이걸 본다 */
@@ -59,15 +57,7 @@ export function plannedReminders(): Reminder[] {
     // 시각이 없는 줄은 예약할 것이 없다 — 스위치가 켜져 있어도 마찬가지다
     if (!setting.enabled || setting.time == null) return [];
 
-    return [
-      {
-        key,
-        time: setting.time,
-        // 주간만 요일에 매인다 — 나머지는 매일이다 (M3.md 「일요일 밤 9:00」)
-        ...(key === "weekly" ? { weekday: SUNDAY } : {}),
-        ...CONTENT[key],
-      },
-    ];
+    return [{ key, time: setting.time, ...CONTENT[key] }];
   });
 }
 
