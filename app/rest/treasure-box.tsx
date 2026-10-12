@@ -5,12 +5,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
+import { GuideNote } from "@/components/rest/scene/GuideNote";
 import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
   SceneCard,
   SceneCornerButton,
+  SceneGuideButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
 import { TreasureBoxScene } from "@/components/rest/treasure/TreasureBoxScene";
@@ -22,6 +24,7 @@ import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { addTreasure, fetchTreasures, type Treasure } from "@/features/rest/data/treasureApi";
 import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
+import { useRestGuide } from "@/features/rest/model/useRestGuide";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import {
   TREASURE_BOX_DONE,
@@ -76,6 +79,8 @@ export default function TreasureBoxScreen() {
   const record = useRestRecord("treasure_box", stage !== "write");
   // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
   const [asking, setAsking] = useState(false);
+  // 처음 들어오면 설명 쪽지가 뜬다 — 「?」 원이 다시 연다
+  const guide = useRestGuide("treasure_box");
 
   // 오늘 이미 담은 보물 — 못 받아 와도 화면은 그대로다(빈 목록)
   useEffect(() => {
@@ -143,6 +148,7 @@ export default function TreasureBoxScreen() {
           ]}
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneGuideButton top={insets.top + space.sm} onPress={guide.show} />
           {/* 오른쪽 위 원 둘 — 쓴 보물(지난 보물)과 쉼터를 한 기록(이용 기록 · 다른 쉼터와 같은 시계 원)은
               서로 다른 것이라 나눠 둔다(2026-10-08 · 사용자 요청) */}
           {stage !== "tucking" ? (
@@ -257,6 +263,7 @@ export default function TreasureBoxScreen() {
           onLeave={() => router.replace("/(tabs)/rest")}
         />
       ) : null}
+      {guide.open ? <GuideNote content="treasure_box" onClose={guide.close} /> : null}
     </Screen>
   );
 }

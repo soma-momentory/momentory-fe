@@ -32,6 +32,26 @@ export function SceneBackButton({ top, onPress }: { top: number; onPress: () => 
 }
 
 /**
+ * 뒤로가기 원 **바로 오른쪽**의 「?」 원 — 그 쉼터의 설명 쪽지를 다시 연다(`GuideNote` · 2026-10-12).
+ * Wanted 세트에 물음표 글리프가 없어 글자로 쓴다(없는 글리프를 만들지 않는다).
+ */
+export function SceneGuideButton({ top, onPress }: { top: number; onPress: () => void }) {
+  return (
+    <VintagePressable
+      accessibilityLabel="설명 보기"
+      onPress={onPress}
+      radius={BACK / 2}
+      style={[styles.back, { left: space.lg + BACK + space.sm, top }]}
+      faceStyle={styles.backFace}
+    >
+      <Text variant="headline1" color={restScene.ink}>
+        ?
+      </Text>
+    </VintagePressable>
+  );
+}
+
+/**
  * 오른쪽 위 원 — 뒤로가기 원과 마주 서서 그 쉼터의 지난 기록으로 간다(보물함의 「지난 보물」 ·
  * 쉼터마다의 이용 기록 · 2026-10-08).
  */

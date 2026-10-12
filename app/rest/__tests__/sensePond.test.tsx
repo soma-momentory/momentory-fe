@@ -5,8 +5,10 @@ import SensePondScreen from "../sense-pond";
 
 import { track } from "@/features/analytics";
 
-import { pondMotion, surfaceRippleMs } from "@/design/ds";
+import { pondMotion, restMoodMotion, surfaceRippleMs } from "@/design/ds";
+import { markGuideSeen, readGuideSeen } from "@/features/rest/data/guideMemory";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
+import { REST_GUIDES } from "@/features/rest/model/restGuide";
 
 /**
  * 감각연못 — **표시를 찾아 누르는 미니게임이 아니라, 연못을 건드리면 조용히
@@ -25,6 +27,12 @@ import { addRestRecord } from "@/features/rest/data/restRecordApi";
 jest.mock("@/features/rest/data/restRecordApi", () => ({
   addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
   fetchRestRecords: jest.fn(),
+}));
+
+// 처음 들어온 쉼터의 설명 쪽지는 감각연못 테스트 「설명 쪽지」에서 본다 — 여기서는 이미 본 쉼터로 둔다
+jest.mock("@/features/rest/data/guideMemory", () => ({
+  readGuideSeen: jest.fn(() => Promise.resolve(true)),
+  markGuideSeen: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock("expo-router", () => ({
@@ -155,7 +163,7 @@ describe("감각연못 · 들어온 직후", () => {
     expect(r.queryAllByTestId("pond-point-hand", HIDDEN)).toHaveLength(0);
   });
 
-  it("눌리는 것은 뒤로 · 지난 기록 · 수면뿐이다 — 숨은그림찾기를 시키지 않는다", async () => {
+  it("눌리는 것은 뒤로 · 설명 · 지난 기록 · 수면뿐이다 — 숨은그림찾기를 시키지 않는다", async () => {
     const r = await render(<SensePondScreen />);
     await layout(r);
 
@@ -163,7 +171,7 @@ describe("감각연못 · 들어온 직후", () => {
       .getAllByRole("button")
       .map((b) => b.props.accessibilityLabel)
       .sort();
-    expect(labels).toEqual(["뒤로", "지난 기록 보기", "보이는 것 하나 찾기"].sort());
+    expect(labels).toEqual(["뒤로", "설명 보기", "지난 기록 보기", "보이는 것 하나 찾기"].sort());
   });
 
   it("들어온 직후에는 아래 판이 없다 — 빈 칸도 동그라미도 없다", async () => {
@@ -557,5 +565,68 @@ describe("감각연못 · 계측", () => {
       "rest_content_exited",
       { content: "sense_pond", stage: "see", duration_ms: expect.any(Number) },
     ]);
+  });
+});
+
+/**
+ * 처음 들어간 쉼터의 **설명 쪽지** (2026-10-12) — 네 쉼터가 같은 `useRestGuide` · `GuideNote` 를 쓴다.
+ * 감각연못에서 보는 것은 소개 한 호흡이 저절로 지나가는 쉼터라서다 — 쪽지가 닫힌 뒤에야 시계가 돈다.
+ */
+describe("감각연못 · 설명 쪽지", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  const firstVisit = () => jest.mocked(readGuideSeen).mockResolvedValueOnce(false);
+  const note = (r: Q) => r.queryByTestId("rest-guide-note");
+  const INTRO = "연못처럼 잔잔하게, 지금 이 순간을 찾아봐요";
+  /** 닫는 알약은 쪽지가 다 내려앉은 뒤에 붙는다 */
+  const closeNote = async (r: Q) => {
+    await wait(restMoodMotion.land + 20);
+    await fireEvent.press(r.getByLabelText("알겠어요"));
+  };
+
+  it("처음 들어오면 쪽지가 저절로 뜨고 「봤음」을 남긴다 — 저절로 뜬 것은 계측하지 않는다", async () => {
+    firstVisit();
+    const r = await render(<SensePondScreen />);
+
+    expect(note(r)).toBeTruthy();
+    expect(r.getByText(REST_GUIDES.sense_pond.why)).toBeTruthy();
+    expect(r.getByText(REST_GUIDES.sense_pond.how)).toBeTruthy();
+    expect(jest.mocked(markGuideSeen)).toHaveBeenCalledWith("sense_pond");
+    // 닫는 알약은 다 내려앉은 뒤에 붙는다
+    expect(r.queryByLabelText("알겠어요")).toBeNull();
+
+    await closeNote(r);
+    expect(note(r)).toBeNull();
+    expect(jest.mocked(track).mock.calls.map(([name]) => name)).not.toContain("rest_guide_opened");
+  });
+
+  it("소개의 한 호흡은 쪽지가 닫힌 뒤에 잰다 — 읽는 동안 소개가 지나가 버리지 않는다", async () => {
+    firstVisit();
+    const r = await render(<SensePondScreen />);
+
+    await wait(pondMotion.introHold + 20);
+    await swap();
+    // 쪽지가 떠 있는 동안 뒤 장면은 낭독기에서 물러나 있다 — 숨은 것까지 본다
+    expect(r.getByText(INTRO, HIDDEN)).toBeTruthy();
+
+    await closeNote(r);
+    await wait(pondMotion.introHold + 20);
+    await swap();
+    expect(r.queryByText(INTRO)).toBeNull();
+    expect(r.getByText("보이는 것 3개")).toBeTruthy();
+  });
+
+  it("이미 본 쉼터에서는 뜨지 않고, 「?」 원이 같은 쪽지를 다시 연다 — 그 누름 하나만 보낸다", async () => {
+    const r = await render(<SensePondScreen />);
+    expect(note(r)).toBeNull();
+    expect(jest.mocked(markGuideSeen)).not.toHaveBeenCalled();
+
+    await fireEvent.press(r.getByLabelText("설명 보기"));
+    expect(note(r)).toBeTruthy();
+    expect(jest.mocked(track)).toHaveBeenCalledWith("rest_guide_opened", { content: "sense_pond" });
+
+    await closeNote(r);
+    expect(note(r)).toBeNull();
   });
 });
