@@ -22,7 +22,7 @@ jest.mock("@/features/rest/data/restRecordApi", () => ({
   fetchRestRecords: jest.fn(),
 }));
 
-// 처음 들어온 쉼터의 설명 쪽지는 감각연못 테스트 「설명 쪽지」에서 본다 — 여기서는 이미 본 쉼터로 둔다
+// 처음 들어온 쉼터의 설명 카드는 감각연못 테스트 「설명 카드」에서 본다 — 여기서는 이미 본 쉼터로 둔다
 jest.mock("@/features/rest/data/guideMemory", () => ({
   readGuideSeen: jest.fn(() => Promise.resolve(true)),
   markGuideSeen: jest.fn(() => Promise.resolve()),

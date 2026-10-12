@@ -85,7 +85,7 @@ export {
   type PondSpot,
 } from "./pond";
 
-export { restMoodMotion, restMoodSize, restSceneSize } from "./restScene";
+export { restGuideTape, restMoodMotion, restMoodSize, restSceneSize } from "./restScene";
 
 export { worryBoxFinish, worryBoxLayout, worryBoxMotion, worryBoxSize } from "./worryBox";
 

@@ -1,10 +1,10 @@
 import { clearGuideMemory, markGuideSeen, readGuideSeen } from "../data/guideMemory";
 
 /**
- * 쉼터 설명 쪽지의 기기 기억 (2026-10-12) — 쉼터마다 「봤음」을 따로 남기고, 로그아웃 때 지운다.
- * 화면 쪽(저절로 뜨기 · 「?」 원 · 감각연못 소개 시계)은 `app/rest/__tests__/sensePond.test.tsx` 「설명 쪽지」.
+ * 쉼터 설명 카드의 기기 기억 (2026-10-12) — 쉼터마다 「봤음」을 따로 남기고, 로그아웃 때 지운다.
+ * 화면 쪽(저절로 뜨기 · 「?」 원 · 감각연못 소개 시계)은 `app/rest/__tests__/sensePond.test.tsx` 「설명 카드」.
  */
-describe("쉼터 설명 쪽지의 기억", () => {
+describe("쉼터 설명 카드의 기억", () => {
   it("쉼터마다 따로 남고, 지우면 처음으로 돌아간다", async () => {
     await clearGuideMemory();
     await expect(readGuideSeen("worry_box")).resolves.toBe(false);

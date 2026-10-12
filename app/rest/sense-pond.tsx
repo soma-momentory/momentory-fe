@@ -13,7 +13,7 @@ import { SceneTopVeil } from "@/components/rest/scene/SceneVeil";
 import { SensePanel } from "@/components/rest/pond/SensePanel";
 import { PondScene } from "@/components/rest/pond/PondScene";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
-import { GuideNote } from "@/components/rest/scene/GuideNote";
+import { GuideCard } from "@/components/rest/scene/GuideCard";
 import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
@@ -61,8 +61,8 @@ import {
  * - `intro` — 들어온 직후. 「감각연못」과 태도 한 줄뿐이다. `pondMotion.introHold` 가
  *   지나거나 **첫 포인트를 찾으면**(둘 중 먼저) 물러나고 다시 오지 않는다. 그동안에도
  *   아래 판이 「보이는 것 0 / 3」과 안내 한 줄을 들고 있어 할 일이 비지 않는다.
- *   처음 들어와 설명 쪽지가 떠 있으면 **쪽지가 닫힌 뒤에** 한 호흡을 잰다(`useRestGuide` · 2026-10-12) —
- *   쪽지를 읽는 사이 소개가 지나가 버리지 않게.
+ *   처음 들어와 설명 카드가 떠 있으면 **카드가 닫힌 뒤에** 한 호흡을 잰다(`useRestGuide` · 2026-10-12) —
+ *   카드를 읽는 사이 소개가 지나가 버리지 않게.
  * - 진행 — 그 단계의 제목 한 줄과 설명 한두 줄.
  * - `finished` — 「잘 찾았어요」와 한 줄. 단계 설명은 하나도 남지 않는다.
  *
@@ -130,7 +130,7 @@ export default function SensePondScreen() {
   const record = useRestRecord("sense_pond", stepIndex > 0 || found > 0 || finished);
   // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
   const [asking, setAsking] = useState(false);
-  // 처음 들어오면 설명 쪽지가 뜬다 — 「?」 원이 다시 연다
+  // 처음 들어오면 설명 카드가 뜬다 — 「?」 원이 다시 연다
   const guide = useRestGuide("sense_pond");
 
   // 마지막 감각을 찾은 순간이 끝이다 — `sense_pond_finished` 와 같은 때
@@ -139,7 +139,7 @@ export default function SensePondScreen() {
   }, [done, hasNext, rest]);
 
   // 소개는 한 호흡만 머문다 — 손짓이 먼저 오면 그 자리에서 끝난다(아래 `onFound`).
-  // 시계는 설명 쪽지가 닫힌 뒤에 돈다 — 쪽지를 읽는 동안 소개가 지나가 버리지 않게
+  // 시계는 설명 카드가 닫힌 뒤에 돈다 — 카드를 읽는 동안 소개가 지나가 버리지 않게
   useEffect(() => {
     if (!intro || !guide.settled) return;
     const t = setTimeout(() => setIntro(false), pondMotion.introHold);
@@ -261,7 +261,9 @@ export default function SensePondScreen() {
           onLeave={() => router.replace("/(tabs)/rest")}
         />
       ) : null}
-      {guide.open ? <GuideNote content="sense_pond" onClose={guide.close} /> : null}
+      {guide.open ? (
+        <GuideCard content="sense_pond" first={guide.first} onClose={guide.close} />
+      ) : null}
     </Screen>
   );
 }

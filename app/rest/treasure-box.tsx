@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
-import { GuideNote } from "@/components/rest/scene/GuideNote";
+import { GuideCard } from "@/components/rest/scene/GuideCard";
 import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
@@ -79,7 +79,7 @@ export default function TreasureBoxScreen() {
   const record = useRestRecord("treasure_box", stage !== "write");
   // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
   const [asking, setAsking] = useState(false);
-  // 처음 들어오면 설명 쪽지가 뜬다 — 「?」 원이 다시 연다
+  // 처음 들어오면 설명 카드가 뜬다 — 「?」 원이 다시 연다
   const guide = useRestGuide("treasure_box");
 
   // 오늘 이미 담은 보물 — 못 받아 와도 화면은 그대로다(빈 목록)
@@ -263,7 +263,9 @@ export default function TreasureBoxScreen() {
           onLeave={() => router.replace("/(tabs)/rest")}
         />
       ) : null}
-      {guide.open ? <GuideNote content="treasure_box" onClose={guide.close} /> : null}
+      {guide.open ? (
+        <GuideCard content="treasure_box" first={guide.first} onClose={guide.close} />
+      ) : null}
     </Screen>
   );
 }

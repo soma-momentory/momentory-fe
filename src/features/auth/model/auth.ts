@@ -380,7 +380,7 @@ const clearUserScopedStores = (userId?: number) => {
   if (userId != null) void clearSyncState(userId);
   // 쉼 추천의 기기 기억(오늘 매듭지었나 · 연달아 닫은 횟수)도 그 사람의 것이다 (2026-10-12)
   void clearRecommendationMemory();
-  // 설명 쪽지를 본 쉼터도 그 사람의 것이다 — 다음 사람도 처음 들어간 쉼터에서 쪽지를 본다
+  // 설명 카드를 본 쉼터도 그 사람의 것이다 — 다음 사람도 처음 들어간 쉼터에서 카드를 본다
   void clearGuideMemory();
 };
 

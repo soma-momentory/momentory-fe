@@ -2,9 +2,9 @@ import type { RestRecordContent } from "../model/restRecord";
 import { storage } from "./deviceStorage";
 
 /**
- * 쉼터 설명 쪽지를 **이미 본 쉼터**를 기기에 기억한다 (2026-10-12) — 쉼터 이름의 목록 하나뿐이다.
+ * 쉼터 설명 카드를 **이미 본 쉼터**를 기기에 기억한다 (2026-10-12) — 쉼터 이름의 목록 하나뿐이다.
  *
- * 처음 들어간 쉼터에서만 쪽지가 저절로 뜨고, 그 뒤로는 「?」 원을 눌러야 다시 뜬다(`useRestGuide`).
+ * 처음 들어간 쉼터에서만 카드가 저절로 뜨고, 그 뒤로는 「?」 원을 눌러야 다시 뜬다(`useRestGuide`).
  * 서버에 두지 않는 것은 「한 번 보여 줬나」가 기기 쪽 사정일 뿐이라서다 — 앱을 다시 깔면 한 번 더
  * 보는 정도는 괜찮다. **던지지 않는다.**
  */
@@ -36,11 +36,11 @@ export async function markGuideSeen(content: RestRecordContent): Promise<void> {
   }
 }
 
-/** 로그아웃 · 탈퇴 때 지운다 — 다음 사람도 처음 들어간 쉼터에서 쪽지를 보게(`auth.ts`) */
+/** 로그아웃 · 탈퇴 때 지운다 — 다음 사람도 처음 들어간 쉼터에서 카드를 보게(`auth.ts`) */
 export async function clearGuideMemory(): Promise<void> {
   try {
     await storage().removeItem(KEY);
   } catch {
-    // 못 지워도 담긴 것은 쉼터 이름뿐이다 — 다음 사람에게 쪽지가 저절로 뜨지 않는 정도다
+    // 못 지워도 담긴 것은 쉼터 이름뿐이다 — 다음 사람에게 카드가 저절로 뜨지 않는 정도다
   }
 }

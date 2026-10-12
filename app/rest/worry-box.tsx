@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName, Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
-import { GuideNote } from "@/components/rest/scene/GuideNote";
+import { GuideCard } from "@/components/rest/scene/GuideCard";
 import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
@@ -86,7 +86,7 @@ export default function WorryBoxScreen() {
   const record = useRestRecord("worry_box", stage !== "write");
   // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
   const [asking, setAsking] = useState(false);
-  // 처음 들어오면 설명 쪽지가 뜬다 — 「?」 원이 다시 연다
+  // 처음 들어오면 설명 카드가 뜬다 — 「?」 원이 다시 연다
   const guide = useRestGuide("worry_box");
 
   const handOver = () => {
@@ -250,7 +250,9 @@ export default function WorryBoxScreen() {
           onLeave={() => router.replace("/(tabs)/rest")}
         />
       ) : null}
-      {guide.open ? <GuideNote content="worry_box" onClose={guide.close} /> : null}
+      {guide.open ? (
+        <GuideCard content="worry_box" first={guide.first} onClose={guide.close} />
+      ) : null}
     </Screen>
   );
 }

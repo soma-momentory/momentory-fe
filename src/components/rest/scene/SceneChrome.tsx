@@ -32,7 +32,7 @@ export function SceneBackButton({ top, onPress }: { top: number; onPress: () => 
 }
 
 /**
- * 뒤로가기 원 **바로 오른쪽**의 「?」 원 — 그 쉼터의 설명 쪽지를 다시 연다(`GuideNote` · 2026-10-12).
+ * 뒤로가기 원 **바로 오른쪽**의 「?」 원 — 그 쉼터의 설명 카드를 다시 연다(`GuideCard` · 2026-10-12).
  * Wanted 세트에 물음표 글리프가 없어 글자로 쓴다(없는 글리프를 만들지 않는다).
  */
 export function SceneGuideButton({ top, onPress }: { top: number; onPress: () => void }) {
