@@ -1,5 +1,7 @@
 import { useAuth } from "@/features/auth/model/auth";
+import { useDiary } from "@/features/diary/model/diary";
 import { useSettings } from "@/features/my/model/settings";
+import { clock } from "@/lib/clock";
 import {
   applyReminders,
   getNotificationPermission,
@@ -59,6 +61,22 @@ export function plannedReminders(): Reminder[] {
 
     return [{ key, time: setting.time, ...CONTENT[key] }];
   });
+}
+
+/**
+ * 알림을 눌러 들어온 사람이 갈 곳(2026-10-12 · 예전에는 늘 홈이었다). 회고 알림은 오늘
+ * 일기가 있으면 그 일기, 없으면 회고의 첫 장(`C2`)이다. 낮 기록은 켤 길이 없어 홈에 둔다.
+ *
+ * 알림으로 켜진 직후에는 일기를 아직 못 받았을 수 있어 **받기를 기다린 뒤** 고른다.
+ * 못 받으면 회고로 간다 — 이미 쓴 날이면 회고가 「이미 마쳤어요」로 받는다.
+ */
+export async function reminderHref(
+  key: ReminderKey,
+): Promise<`/diary/${string}` | "/retro/confirm" | null> {
+  if (key !== "retro") return null;
+  await useDiary.getState().load();
+  const today = useDiary.getState().diaries.find((d) => d.date === clock.today());
+  return today != null ? `/diary/${today.id}` : "/retro/confirm";
 }
 
 /**

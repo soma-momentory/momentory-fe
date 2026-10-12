@@ -11,6 +11,7 @@ import { ToastHost } from "@/components/ds";
 import { startCalendarForegroundSync } from "@/features/calendar/model/foregroundSync";
 import { startDayRollover } from "@/features/home/model/dayRollover";
 import { startReminderSync } from "@/features/my/model/reminders";
+import { ReminderRoute } from "@/features/my/ui/ReminderRoute";
 
 // 폰트가 준비되기 전에 화면을 보이지 않는다 — 서체가 바뀌며 깜빡이지 않게.
 void SplashScreen.preventAutoHideAsync();
@@ -83,6 +84,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
           함께 사라진다(`lib/toast.ts`). 자리만 차지하지 않게 `box-none` 이다 */}
       <View style={styles.root}>
         <AnalyticsObserver />
+        <ReminderRoute />
         {children}
         <ToastHost />
       </View>
