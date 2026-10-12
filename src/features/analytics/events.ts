@@ -51,6 +51,13 @@ const restStage = choice(
 );
 /** 쉼터에 어떻게 들어왔나 — 회고(일기)를 마친 화면에서 곧장 / 그 밖에서 따로 */
 const restEntry = choice("after_diary", "direct");
+/**
+ * 일기를 쓴 날의 쉼 추천(2026-10-12) — 무엇으로 골랐나(오늘 감정 · 쉬는 방법 · 무작위)와
+ * 어디서 권했나(시트 · 세 번 연달아 닫은 뒤 격자 칸의 「오늘 추천」).
+ * ⚠ 추천 쉼터(`content`)는 **감정에서 나온 값**이다 — 알고 싣기로 했다(2026-10-12 · 사용자 결정).
+ */
+const restRecommendBasis = choice("emotion", "preference", "random");
+const restRecommendForm = choice("sheet", "hint");
 const leaveKind = choice("navigate", "background");
 const notificationSource = choice("onboarding", "my");
 /**
@@ -190,6 +197,12 @@ export const events = {
   },
   sense_pond_finished: { duration_ms: millis },
   sense_pond_exited: { step: pondStep, found: count, hold_cancels: count, duration_ms: millis },
+  rest_recommendation_shown: { content: restContent, basis: restRecommendBasis },
+  rest_recommendation_accepted: {
+    content: restContent,
+    basis: restRecommendBasis,
+    form: restRecommendForm,
+  },
   rest_content_opened: { content: restContent, entry: restEntry, diary_today: bool },
   rest_content_completed: { content: restContent, duration_ms: millis },
   rest_content_exited: { content: restContent, stage: restStage, duration_ms: millis },

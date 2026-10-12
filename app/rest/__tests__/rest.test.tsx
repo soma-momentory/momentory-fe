@@ -1,10 +1,18 @@
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import Rest from "../../(tabs)/rest";
 import RestCards from "../cards/index";
 
+import { restRecommendMotion } from "@/design/ds";
+import { track } from "@/features/analytics";
 import { useDiary } from "@/features/diary/model/diary";
+import { useProfile } from "@/features/my/model/settings";
+import {
+  readRecommendationMemory,
+  writeRecommendationMemory,
+} from "@/features/rest/data/recommendMemory";
 import { datedCards } from "@/features/rest/model/cards";
 import { useToast } from "@/lib/toast";
 import { seedDiaries } from "@/testing/fixtures";
@@ -18,7 +26,7 @@ import { seedDiaries } from "@/testing/fixtures";
  * 그보다 더 옛 구조는 탭이 곧 카드 화면이었다 — 그 시절 단언(카드 탭 가로채기 ·
  * 상세 이동)은 화면이 갈리면서 자리가 바뀌었고, **규칙 단언**으로 옮겨 적었다.
  */
-let mockParams: { date: string } = { date: "2026-07-27" };
+let mockParams: Record<string, string> = { date: "2026-07-27" };
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -27,8 +35,14 @@ jest.mock("expo-router", () => ({
   Redirect: jest.fn(() => null),
 }));
 
-beforeEach(() => {
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  track: jest.fn(),
+}));
+
+beforeEach(async () => {
   mockParams = { date: "2026-07-27" };
+  await AsyncStorage.clear();
   seedDiaries();
   useToast.setState({ current: null });
   jest.clearAllMocks();
@@ -131,6 +145,141 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     expect(getByText("회고를 마치면 그날의 바람카드가 여기 남아요")).toBeTruthy();
     await fireEvent.press(getByLabelText("바람카드 보기"));
     await waitFor(() => expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards"));
+  });
+});
+
+/**
+ * 일기를 쓴 날의 쉼 추천 (2026-10-12) — 시드의 오늘(7월 27일) 일기는 불안함 · 우울함이라
+ * 첫 감정 불안함의 맨 앞 후보 「몸에 힘 빼기」를 권한다(쉬는 방법은 비어 있다).
+ */
+describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    useProfile.setState({ restMethods: [] });
+  });
+  afterEach(() => jest.useRealTimers());
+
+  /** 기기 기억을 읽고(비동기) 시트가 올라오기까지의 잠깐(`restRecommendMotion.delay`)을 보낸다 */
+  const waitForSheet = async () => {
+    await act(async () => {});
+    await act(async () => {
+      jest.advanceTimersByTime(restRecommendMotion.delay);
+    });
+  };
+  const sent = (name: string) =>
+    jest
+      .mocked(track)
+      .mock.calls.filter(([n]) => n === name)
+      .map(([, props]) => props);
+
+  it("들어오고 잠깐 뒤에 시트가 올라온다 — 고른 이유 · 장면 · 하자는 말 · 효용 · 알약 셋", async () => {
+    const r = await render(<Rest />);
+    await act(async () => {});
+    // 쉼터를 먼저 보게 한다
+    expect(r.queryByText("몸에 힘을 천천히 빼볼까요?")).toBeNull();
+
+    await waitForSheet();
+
+    expect(r.getByText("오늘 일기의 「불안함」을 보고 골랐어요")).toBeTruthy();
+    expect(r.getByTestId("rest-recommend-art", { includeHiddenElements: true })).toBeTruthy();
+    expect(r.getByText("몸에 힘을 천천히 빼볼까요?")).toBeTruthy();
+    expect(r.getByText("힘을 줬다 풀면 몸의 긴장도 함께 풀려요")).toBeTruthy();
+    // 알약 셋 — 쉼터 이름(격자 칸 제목과 같은 글자) · 하는 일 · 걸리는 시간
+    expect(r.getAllByText("몸에 힘 빼기")).toHaveLength(2);
+    expect(r.getByText("따라 하기")).toBeTruthy();
+    expect(r.getByText("약 1분")).toBeTruthy();
+    expect(r.getByText("지금 해 볼게요")).toBeTruthy();
+    // 저장 알림은 두지 않는다 — 쉼터로 넘어온 것이 곧 저장이 끝났다는 뜻이다(사용자 요청)
+    expect(r.queryByText(/저장했어요/)).toBeNull();
+    expect(sent("rest_recommendation_shown")).toEqual([
+      { content: "body_release", basis: "emotion" },
+    ]);
+  });
+
+  it("「다른 쉼터 둘러보기」는 닫기다 — 쉼터에 남고 닫은 횟수가 쌓인다", async () => {
+    const r = await render(<Rest />);
+    await waitForSheet();
+
+    await fireEvent.press(r.getByText("다른 쉼터 둘러보기"));
+
+    expect(r.queryByText("몸에 힘을 천천히 빼볼까요?")).toBeNull();
+    expect(jest.mocked(router.push)).not.toHaveBeenCalled();
+    await act(async () => {});
+    expect(await readRecommendationMemory()).toEqual({ day: "2026-07-27", dismissStreak: 1 });
+  });
+
+  it("「지금 해 볼게요」를 누르면 그 쉼으로 가고, 그날은 다시 묻지 않는다", async () => {
+    const r = await render(<Rest />);
+    await waitForSheet();
+
+    await fireEvent.press(r.getByText("지금 해 볼게요"));
+
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/body-release");
+    expect(sent("rest_recommendation_accepted")).toEqual([
+      { content: "body_release", basis: "emotion", form: "sheet" },
+    ]);
+    expect(r.queryByText("몸에 힘을 천천히 빼볼까요?")).toBeNull();
+
+    await r.unmount();
+    const again = await render(<Rest />);
+    await waitForSheet();
+    expect(again.queryByText("몸에 힘을 천천히 빼볼까요?")).toBeNull();
+  });
+
+  it("✕ 로 닫으면 그날은 다시 묻지 않고, 닫은 횟수가 하나 쌓인다", async () => {
+    const r = await render(<Rest />);
+    await waitForSheet();
+
+    // 바깥(딤)과 ✕ 둘 다 「닫기」다 — 같은 닫기를 부른다
+    const closes = r.getAllByLabelText("닫기");
+    await fireEvent.press(closes[closes.length - 1]!);
+
+    expect(r.queryByText("몸에 힘을 천천히 빼볼까요?")).toBeNull();
+    await act(async () => {});
+    expect(await readRecommendationMemory()).toEqual({ day: "2026-07-27", dismissStreak: 1 });
+
+    await r.unmount();
+    const again = await render(<Rest />);
+    await waitForSheet();
+    expect(again.queryByText("몸에 힘을 천천히 빼볼까요?")).toBeNull();
+  });
+
+  it("세 번 연달아 닫은 사람에게는 시트 대신 그 칸에 「오늘 추천」만 붙인다", async () => {
+    await writeRecommendationMemory({ day: "2026-07-26", dismissStreak: 3 });
+    const r = await render(<Rest />);
+    await waitForSheet();
+
+    expect(r.queryByText("몸에 힘을 천천히 빼볼까요?")).toBeNull();
+    expect(r.getByText("오늘 추천")).toBeTruthy();
+    expect(sent("rest_recommendation_shown")).toEqual([]);
+
+    // 그 칸에서 한 번 해 보면 다음 날부터 다시 시트로 권한다
+    await fireEvent.press(r.getByLabelText("몸에 힘 빼기 열기"));
+    await act(async () => {
+      jest.advanceTimersByTime(1_000);
+    });
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/body-release");
+    expect(sent("rest_recommendation_accepted")).toEqual([
+      { content: "body_release", basis: "emotion", form: "hint" },
+    ]);
+    expect(await readRecommendationMemory()).toEqual({ day: "2026-07-27", dismissStreak: 0 });
+  });
+
+  it("오늘 쓴 일기가 없으면 권하지 않는다", async () => {
+    useDiary.setState({ diaries: [], actionCards: [] });
+    const r = await render(<Rest />);
+    await waitForSheet();
+
+    expect(r.queryByText(/볼까요\?/)).toBeNull();
+    expect(r.queryByText("오늘 추천")).toBeNull();
+  });
+
+  it("이미 매듭지은 날(위기 안내가 나온 날 포함)은 권하지 않는다", async () => {
+    await writeRecommendationMemory({ day: "2026-07-27", dismissStreak: 0 });
+    const r = await render(<Rest />);
+    await waitForSheet();
+
+    expect(r.queryByText(/볼까요\?/)).toBeNull();
   });
 });
 

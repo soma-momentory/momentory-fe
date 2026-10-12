@@ -110,3 +110,11 @@ jest.mock("expo-speech-recognition", () => ({
   },
   useSpeechRecognitionEvent: jest.fn(),
 }));
+
+// AsyncStorage 도 네이티브다(쉼 추천의 기기 기억 · 2026-10-12 · `features/rest/data/recommendMemory`).
+// 라이브러리가 주는 인메모리 목을 쓴다 — 패키지 바깥 경로가 아니라 공개된 `jest/` 진입점이라
+// 버전이 올라도 빗나가지 않는다. 기억을 검사하는 테스트가 `setItem` 으로 미리 심고 `clear` 로 비운다.
+jest.mock("@react-native-async-storage/async-storage", () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
+);

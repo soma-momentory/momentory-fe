@@ -1,5 +1,5 @@
 import { render, fireEvent, act } from "@testing-library/react-native";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 
 import RetroDone from "../done";
 import RetroDraft from "../draft";
@@ -279,6 +279,20 @@ describe("감정 탐색 없이 — 바람 카드도 없다", () => {
     expect(r.getByText("오늘 있었던 일을 짧게 남겼다.")).toBeTruthy();
     expect(r.getByText("직접 고치기")).toBeTruthy();
     expect(r.getByText("일기 저장하기")).toBeTruthy();
+  });
+
+  it("저장하면 회고 완료를 거치지 않고 곧장 쉼터로 가고, 회고 한 벌을 비운다", async () => {
+    const r = await render(<RetroDraft />);
+    await act(async () => {
+      await fireEvent.press(r.getByText("일기 저장하기"));
+    });
+
+    // 온보딩 `/rest` 로 새지 않게 그룹까지 적는다 — 거기서 쉼 추천 시트가 올라온다
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest");
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/retro/done");
+    expect(useRetro.getState().diary).toBeNull();
+    // 비운 뒤 다시 그려져도 대화로 되돌리지 않는다
+    expect(jest.mocked(Redirect)).not.toHaveBeenCalled();
   });
 
   it("일기만 남기고 바람 카드는 만들지 않는다", async () => {

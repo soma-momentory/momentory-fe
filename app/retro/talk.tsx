@@ -42,6 +42,7 @@ import {
   type StartScheduleItem,
   type TurnInput,
 } from "@/features/retro/data/retroApi";
+import { settleRecommendation } from "@/features/rest/data/recommendMemory";
 import { useRetro } from "@/features/retro/model/retro";
 import { RETRO_BABA_LEFT, RetroBaba } from "@/features/retro/ui/RetroBaba";
 import { RETRO_BABA_PEEK_LEFT, RetroBabaPeek } from "@/features/retro/ui/RetroBabaPeek";
@@ -306,6 +307,11 @@ export default function RetroTalk() {
   const done = lastReply?.done === true;
   const ended = done && phase === PHASE_ENDED;
   const safetyHold = phase === PHASE_SAFETY_HOLD;
+  // 위기 안내가 나온 날은 쉼터가 쉼 추천을 띄우지 않는다 — 그날을 여기서 미리 매듭짓는다
+  // (`useRestRecommendation`). 저장을 누르지 않고 나가도 막히게 안내가 뜨는 순간에 적는다
+  useEffect(() => {
+    if (safetyHold) void settleRecommendation(today, "skipped");
+  }, [safetyHold, today]);
   const options = lastReply?.options ?? null;
   const noSession = sessionId == null;
   const startTerminal = startErrorCode === "already_today";
