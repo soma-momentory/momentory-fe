@@ -38,6 +38,7 @@ SecureStore            A(세션 토큰) · MMKV 암호화 키                 �
 MMKV "momentory.enc"   B · C                                        ← 암호화. 키는 위에서 온다
 MMKV "momentory.cache" D                                            ← 평문. 지워져도 잃는 것이 없다
 AsyncStorage           쉼 추천의 기억(날짜 · 연달아 닫은 횟수)          ← 평문. 등급 밖 — 본문·감정이 없다
+                       설명 카드를 본 쉼터(쉼터 이름 목록)              ← 위와 같다
 메모리(Zustand)         전부 — 위는 그 스냅샷이다
 ```
 
@@ -124,6 +125,7 @@ AsyncStorage           쉼 추천의 기억(날짜 · 연달아 닫은 횟수)  
 | 아웃박스 큐(M3-3)  | ✅       | ✅   | 남기면 **다음 사용자의 세션으로 이전 사용자의 쓰기가 재생**된다    |
 | 예약된 알림        | ✅       | ✅   | `features/my/model/reminders.ts` 가 인증 상태를 보고 취소한다      |
 | 쉼 추천의 기억     | ✅       | ✅   | `clearRecommendationMemory` (`features/rest/data/recommendMemory`) |
+| 설명 카드의 기억   | ✅       | ✅   | `clearGuideMemory` (`features/rest/data/guideMemory`)              |
 
 **키만 지우고 파일을 남기지 않는다.** 「복호할 수 없으니 없는 것과 같다」는
 맞지만, 남은 파일은 **용량으로 남고 포렌식 대상으로 남는다.** 둘 다 한다 —

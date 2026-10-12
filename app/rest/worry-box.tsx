@@ -5,15 +5,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon, type IconName, Screen, Text, TextField } from "@/components/ds";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
+import { GuideCard } from "@/components/rest/scene/GuideCard";
 import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
   SceneCard,
   SceneCornerButton,
+  SceneGuideButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
 import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
+import { useRestGuide } from "@/features/rest/model/useRestGuide";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import { RisingMotes } from "@/components/rest/scene/RisingMotes";
 import { VintagePressable } from "@/components/rest/scene/VintagePressable";
@@ -83,6 +86,8 @@ export default function WorryBoxScreen() {
   const record = useRestRecord("worry_box", stage !== "write");
   // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
   const [asking, setAsking] = useState(false);
+  // 처음 들어오면 설명 카드가 뜬다 — 「?」 원이 다시 연다
+  const guide = useRestGuide("worry_box");
 
   const handOver = () => {
     if (!canHandOver(worry)) return;
@@ -136,6 +141,7 @@ export default function WorryBoxScreen() {
           ]}
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneGuideButton top={insets.top + space.sm} onPress={guide.show} />
           <SceneCornerButton
             top={insets.top + space.sm}
             label={REST_RECORDS_LINK}
@@ -243,6 +249,9 @@ export default function WorryBoxScreen() {
           onPick={record.pick}
           onLeave={() => router.replace("/(tabs)/rest")}
         />
+      ) : null}
+      {guide.open ? (
+        <GuideCard content="worry_box" first={guide.first} onClose={guide.close} />
       ) : null}
     </Screen>
   );

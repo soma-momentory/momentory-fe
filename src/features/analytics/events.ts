@@ -206,6 +206,8 @@ export const events = {
   rest_content_opened: { content: restContent, entry: restEntry, diary_today: bool },
   rest_content_completed: { content: restContent, duration_ms: millis },
   rest_content_exited: { content: restContent, stage: restStage, duration_ms: millis },
+  /** 쉼터의 「?」 원을 눌러 설명 카드를 다시 열었다 — 처음 저절로 뜬 것은 보내지 않는다 */
+  rest_guide_opened: { content: restContent },
   worry_box_handed: { chars: count },
   worry_box_choice_selected: { choice: choice("keep", "release") },
   /** 보물을 담았다 — 쓴 글은 보내지 않고 길이만 */

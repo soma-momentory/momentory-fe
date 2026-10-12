@@ -11,15 +11,18 @@ import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { StepHeading } from "@/components/rest/pond/StepHeading";
+import { GuideCard } from "@/components/rest/scene/GuideCard";
 import { MoodExit } from "@/components/rest/scene/MoodExit";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
   SceneCard,
   SceneCornerButton,
+  SceneGuideButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
 import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
+import { useRestGuide } from "@/features/rest/model/useRestGuide";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import {
   bodyReleaseFinish,
@@ -91,6 +94,8 @@ export default function BodyReleaseScreen() {
   const record = useRestRecord("body_release", startedAt != null);
   // 「돌아가기」를 눌렀다 — 장면 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
   const [asking, setAsking] = useState(false);
+  // 처음 들어오면 설명 카드가 뜬다 — 「?」 원이 다시 연다
+  const guide = useRestGuide("body_release");
 
   // 시계 — 진행 중에만 돈다
   useEffect(() => {
@@ -210,6 +215,7 @@ export default function BodyReleaseScreen() {
           ]}
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneGuideButton top={insets.top + space.sm} onPress={guide.show} />
           <SceneCornerButton
             top={insets.top + space.sm}
             label={REST_RECORDS_LINK}
@@ -301,6 +307,9 @@ export default function BodyReleaseScreen() {
           onPick={record.pick}
           onLeave={() => router.replace("/(tabs)/rest")}
         />
+      ) : null}
+      {guide.open ? (
+        <GuideCard content="body_release" first={guide.first} onClose={guide.close} />
       ) : null}
     </Screen>
   );

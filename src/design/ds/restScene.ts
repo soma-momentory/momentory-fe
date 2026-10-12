@@ -1,3 +1,6 @@
+import { withAlpha } from "./color";
+import { diaryMemo } from "./diaryMemo";
+
 /**
  * Momentory DS — 쉼터 **장면 위 부품**의 크기와 짙기 (2026-10-05).
  * 색은 `color.ts` 의 `restScene`. 쓰는 곳은 `components/rest/scene/` 하나다.
@@ -74,4 +77,25 @@ export const restMoodMotion = {
   /** 장면 위에 크림빛이 깔리는 시간 */
   veil: 400,
   mote: { duration: 2400, stagger: 120 },
+} as const;
+
+/**
+ * 쉼터 설명 카드 소제목(「이럴 때 좋아요」 · 「이렇게 해요」) 뒤의 **줄무늬 테이프** (2026-10-12 · 사용자
+ * 레퍼런스). 글자 아래쪽 절반쯤에 연두 띠가 깔리고 그 위로 흰 빗금이 옅게 지나간다 — 소제목이 본문과
+ * 같은 크기로 묻혀 굵게 했더니, 사용자가 손으로 붙인 테이프처럼 귀엽게 하자고 했다.
+ *
+ * 띠는 일기 확인의 「오늘 일정」 테이프와 같은 연두다(`diaryMemo.schedule.tape`). 기울이지 않는다 —
+ * 카드가 반듯해서(같은 날 · 비스듬한 쪽지를 걷어냈다).
+ */
+export const restGuideTape = {
+  color: diaryMemo.schedule.tape,
+  /** 흰 빗금 — 테이프 광택과 같은 흰빛을 옅게 */
+  stripe: withAlpha(diaryMemo.tapeSheen, 0.45),
+  /** 빗금 한 칸의 너비(dp)와 그 안의 흰 줄 굵기 — 45° 로 눕는다 */
+  stripeGap: 7,
+  stripeWidth: 2.5,
+  /** 글자 양옆으로 삐져나오는 만큼(dp) */
+  bleed: 6,
+  /** 글자 위쪽에서 비워 두는 비율 — 아래 절반 남짓만 덮는다 */
+  top: 0.38,
 } as const;

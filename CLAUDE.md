@@ -417,7 +417,8 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
   `src/components/ds/voiceInput.ts`)
 - 계측 — **@amplitude/analytics-react-native** + **@react-native-async-storage/async-storage**
   (2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔다. 앱 코드가 직접 쓰는 곳은
-  **쉼 추천의 기기 기억 하나**다 — `features/rest/data/recommendMemory.ts` · 2026-10-12)
+  **쉼터의 기기 기억 둘**이다 — 쉼 추천 `recommendMemory.ts` · 설명 카드를 본 쉼터 `guideMemory.ts`
+  (둘 다 `features/rest/data/` · `deviceStorage.ts` 를 지난다 · 2026-10-12))
 
 네이티브 모듈이 섞여 있어 **dev client 재빌드 필요**.
 ⚠ **`08` 회고 시간 선택은 외부 피커 모듈이 아니다** — `src/components/ds/WheelPicker.tsx`
