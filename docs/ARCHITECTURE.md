@@ -52,7 +52,7 @@
 | 소셜 로그인     | `@react-native-seoul/kakao-login` · expo-apple-authentication · `@react-native-google-signin/google-signin` | 셋 다 **실제 로그인**이다(카카오 08-07 · 애플 08-24 · 구글 08-25). SDK 경계는 `features/auth/data/*Sdk.ts` 각각 하나 — 화면은 플랫폼을 모른다                                                                                                      |
 | 이미지          | **expo-image**                                                                                              | 카피바라·조약돌·감각연못 일러스트. 2026-09 자산이 늘면서 들어왔다                                                                                                                                                                                  |
 | 앱 밖 문서      | expo-web-browser                                                                                            | 약관·개인정보 처리방침·문의를 **앱 안 브라우저**로 연다(`lib/links.ts`) — 앱을 떠나면 로그인 흐름이 끊긴다                                                                                                                                         |
-| 계측            | **@amplitude/analytics-react-native**                                                                       | 2026-09-05 파일럿. 경계는 `features/analytics/` 하나이고 사전은 [`ANALYTICS.md`](ANALYTICS.md). AsyncStorage 는 이것이 요구해서 들어왔고, 앱 코드는 **쉼 추천의 기기 기억 하나**만 직접 쓴다(`features/rest/data/recommendMemory.ts` · 2026-10-12) |
+| 계측            | **@amplitude/analytics-react-native**                                                                       | 2026-09-05 파일럿. 경계는 `features/analytics/` 하나이고 사전은 [`ANALYTICS.md`](ANALYTICS.md). AsyncStorage 는 이것이 요구해서 들어왔고, 앱 코드는 **쉼터의 기기 기억 둘**만 직접 쓴다(`features/rest/data/` 의 쉼 추천 · 설명 쪽지 · 2026-10-12) |
 
 ### 도입 예정 — 필요해지는 마일스톤에
 

@@ -96,6 +96,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | rest_content_opened          | 쉼 콘텐츠 화면을 엶                                | content, entry, diary_today (아래)        |
 | rest_content_completed       | 쉼 콘텐츠를 끝까지 함                              | content, duration_ms                      |
 | rest_content_exited          | 끝내지 않고 쉼 콘텐츠 화면을 떠남                  | content, stage, duration_ms               |
+| rest_guide_opened            | 쉼터의 「?」 원을 눌러 설명 쪽지를 다시 엶         | content                                   |
 | worry_box_handed             | 걱정상자에 걱정을 맡김                             | chars (글자 수만)                         |
 | worry_box_choice_selected    | 걱정상자의 맡겨두기/흘려보내기 선택                | choice: keep/release                      |
 | treasure_box_tucked          | 오늘의 보물함에 보물을 담음                        | chars (글자 수만)                         |
@@ -190,6 +191,14 @@ worry_box, treasure_box)로 가른다. 시간은 모두 전면 시계로 잰다.
   잇는다. 기분 답(「나아졌어요」)은 서버 이용 기록(`rest_records`)에만 있어 여기서는 완료율까지 본다.
 - ⚠ **content 는 감정에서 나온 값이다** — 추천 쉼터로 그날의 첫 감정을 거슬러 짐작할 수 있다(감각연못 ←
   우울함 · 무기력). 알고 싣기로 했다(2026-10-12 · 사용자 결정). 감정 코드 · 이름 자체는 여전히 싣지 않는다.
+
+**설명 쪽지**(2026-10-12 · `rest_guide_opened`)는 쉼터에 처음 들어가면 저절로 뜨고, 그 뒤로는 뒤로가기 원 옆
+「?」 원으로 다시 여는 쪽지다(`features/rest/model/useRestGuide.ts` · `DESIGN.md` 「쉼 콘텐츠 공통 규칙」 7-2).
+묻는 것은 「한 번 읽고도 다시 찾아보는 쉼터가 있나」다 — 많이 열리는 쉼터는 쪽지나 화면 안내가 모자라다는 뜻이다.
+
+- **「?」를 누른 것만 보낸다.** 처음 저절로 뜬 것은 보내지 않는다 — 쉼터마다 rest_content_opened 의 그 사람 첫
+  번째와 같아서 따로 셀 것이 없다(기기를 바꾸거나 다시 깔면 한 번 더 뜬다).
+- 쪽지가 떠 있는 동안도 rest_content_* 의 시계는 그대로 간다 — 쪽지를 읽은 시간이 duration_ms 에 들어간다.
 
 회고 실패 code는 invalid_request, already_today, session_not_found, unauthenticated,
 network, server, malformed, unconfigured 중 하나다. 오류 원문/응답 본문은 전송하지 않는다.
