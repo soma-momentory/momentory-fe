@@ -2,7 +2,7 @@ import type { Option } from "@/features/onboarding/data/optionsApi";
 import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
 import { ONBOARDING_FAILURE_MESSAGES } from "@/features/onboarding/model/submit";
 
-import { useProfile, useSettings } from "./settings";
+import { useProfile, useSettings, type NotifySetting } from "./settings";
 
 /**
  * 기본 정보 수정(`M3`~`M8`)의 공통 부분 — **한 항목만 고치고 저장한다.**
@@ -49,9 +49,23 @@ export async function saveCalendarLinked(): Promise<SaveResult> {
   return result;
 }
 
-async function save(patch: Partial<BasicInfo>, calendarLinked: boolean): Promise<SaveResult> {
+/**
+ * 마이 알림 시트(`M2`)의 회고 시각 · 켜짐을 서버에 남긴다(2026-10-12). 기기에만 두면
+ * 다음 실행의 `syncMe` 가 서버 값(온보딩 때 고른 것)으로 덮어 「껐는데 또 온다」가 된다.
+ * 서버가 받은 뒤에 store 를 바꾼다 — OS 예약은 그 store 를 따라간다(`reminders.ts`).
+ */
+export async function saveRetroReminder(retro: NotifySetting): Promise<SaveResult> {
+  const result = await save({}, useProfile.getState().calendarLinked, retro);
+  if (result.ok) useSettings.setState((s) => ({ notify: { ...s.notify, retro } }));
+  return result;
+}
+
+async function save(
+  patch: Partial<BasicInfo>,
+  calendarLinked: boolean,
+  retro: NotifySetting = useSettings.getState().notify.retro,
+): Promise<SaveResult> {
   const profile = useProfile.getState();
-  const retro = useSettings.getState().notify.retro;
 
   const next: BasicInfo = {
     nickname: profile.nickname,

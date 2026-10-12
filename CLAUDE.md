@@ -326,10 +326,11 @@ src/features/report/{model/{report,weeklyReport}.ts, data/weeklyReportApi.ts}
 src/features/rest/model/{cards,contents,sensePond}.ts
                                           ← 쉼터가 보는 것(바람카드) · 쉼 콘텐츠 넷 ·
                                             감각연못 진행(3-2-1)
-src/features/my/model/{settings,reminders,basicInfo}.ts
+src/features/my/{model/{settings,reminders,basicInfo}.ts, ui/ReminderRoute.tsx}
                                           ← 알림/프로필 설정 · **설정 ↔ OS 예약 화해** ·
                                             기본 정보(한 항목만 고쳐도 **통째로 보낸다** —
-                                            서버가 덮어쓰는 PUT 이라)
+                                            서버가 덮어쓰는 PUT 이라 · 알림 시트도 같은 길) ·
+                                            알림을 누르면 부른 화면으로 옮긴다
 src/features/onboarding/{model/{draft,completion,options,conversation,submit}.ts,
                          data/{optionsApi,completeOnboardingApi}.ts}
                                           ← 답안 초안 · 완료 플래그(진입 분기 · **정본은 서버**) ·

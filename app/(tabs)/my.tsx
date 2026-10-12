@@ -19,8 +19,9 @@ import { label as labelColor, primary, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { CALENDAR_NOTICE } from "@/features/calendar/model/notice";
 import { useDiary } from "@/features/diary/model/diary";
+import { saveRetroReminder } from "@/features/my/model/basicInfo";
 import { adoptGrantedCalendar, linkCalendar } from "@/features/my/model/calendarLink";
-import { useProfile, useSettings } from "@/features/my/model/settings";
+import { useProfile, useSettings, type NotifySetting } from "@/features/my/model/settings";
 import { onForeground } from "@/lib/appState";
 import { getCalendarAccess, openCalendarSettings, type CalendarAccess } from "@/lib/calendar";
 import { openExternalLink } from "@/lib/links";
@@ -84,8 +85,6 @@ export default function My() {
   const diaries = useDiary((s) => s.diaries);
   const nickname = useProfile((s) => s.nickname);
   const retro = useSettings((s) => s.notify.retro);
-  const setTime = useSettings((s) => s.setTime);
-  const toggle = useSettings((s) => s.toggle);
   const signOut = useAuth((s) => s.signOut);
   const withdraw = useAuth((s) => s.withdraw);
   const withdrawing = useAuth((s) => s.withdrawing);
@@ -107,6 +106,8 @@ export default function My() {
   const [linkingCalendar, setLinkingCalendar] = useState(false);
   /** 권한은 받았는데 서버에 남기지 못했을 때의 한 줄(`RULES.md` 4) */
   const [calendarError, setCalendarError] = useState<string | null>(null);
+  /** 알림 시각 · 끄기를 서버에 남기지 못했을 때의 한 줄 — 그때는 설정도 그대로다 */
+  const [notifyError, setNotifyError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -175,6 +176,18 @@ export default function My() {
   const notifyValue = retro.enabled ? `매일 ${formatKoreanTime(retro.time ?? "21:30")}` : "꺼짐";
 
   /**
+   * 시각 · 켜짐을 **서버에 남긴 뒤에** 바꾼다(`saveRetroReminder`). 기기에만 두면 앱을
+   * 다시 켤 때 서버 값으로 되돌아가 「껐는데 또 온다」가 된다. 실패하면 그대로 두고 한 줄로
+   * 알린다(`RULES.md` 4). 바뀐 것이 없으면 보내지 않는다.
+   */
+  const saveRetro = async (next: NotifySetting) => {
+    setNotifyError(null);
+    if (next.time === retro.time && next.enabled === retro.enabled) return;
+    const result = await saveRetroReminder(next);
+    if (!result.ok) setNotifyError(result.message);
+  };
+
+  /**
    * `완료` — 고른 시각을 남기고, 알림이 꺼져 있었다면 **그때 OS 권한을 묻는다.**
    * 권한을 받지 못하면 켜지 않는다 — 켜진 채 아무 알림도 오지 않으면 사용자는
    * 확인할 방법이 없다(`ARCHITECTURE §8` 의 앱 잠금과 같은 이유).
@@ -184,13 +197,14 @@ export default function My() {
     setEditingTime(null);
     if (picked == null) return;
 
-    setTime("retro", picked);
-    if (retro.enabled) return;
-
-    const result = await requestNotificationPermission();
-    track("notify_permission_result", { source: "my", granted: result.granted });
-    setPermission(result);
-    if (result.granted) toggle("retro");
+    let enabled = retro.enabled;
+    if (!enabled) {
+      const result = await requestNotificationPermission();
+      track("notify_permission_result", { source: "my", granted: result.granted });
+      setPermission(result);
+      enabled = result.granted;
+    }
+    await saveRetro({ time: picked, enabled });
   };
 
   /** 확인 시트를 연다 — 지난 실패 한 줄과 입력값을 지우고 연다 */
@@ -298,8 +312,8 @@ export default function My() {
                   variant="text"
                   onPress={() => {
                     // 시각은 그대로 둔다 — 다시 켜면 그 시각이다
-                    toggle("retro");
                     setEditingTime(null);
+                    void saveRetro({ ...retro, enabled: false });
                   }}
                 />
               </View>
@@ -394,6 +408,7 @@ export default function My() {
         <Group
           label="앱 설정"
           note={
+            notifyError ??
             calendarError ??
             (blocked ? "기기 설정에서 알림을 켜면 이 시간에 찾아갈게요." : undefined)
           }

@@ -34,7 +34,9 @@ const EMPTY: Record<NotifyKey, NotifySetting> = {
   // `21:30`(`momentory.schema.mvp.json` · `onboarding/model/draft.ts` 와 같은 값)
   retro: { enabled: true, time: "21:30" },
   daily: { enabled: false, time: "14:00" },
-  weekly: { enabled: true, time: "21:00" },
+  // 주간 알림은 예약하지 않는다(2026-10-12 · `lib/notifications.ts` 의 `RETIRED_KEYS`).
+  // 스키마 `User.notifyWeekly` 라 줄은 남기고, 울리지 않으니 꺼짐으로 둔다
+  weekly: { enabled: false, time: "21:00" },
   // 시각이 없는 알림 — 누를 곳이 없는 표식(`›`)을 만들지 않는다
   news: { enabled: false, time: null },
 };

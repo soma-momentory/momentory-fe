@@ -1,10 +1,11 @@
 import { useAuth } from "@/features/auth/model/auth";
+import { useDiary } from "@/features/diary/model/diary";
 import { useSettings } from "@/features/my/model/settings";
+import { clock } from "@/lib/clock";
 import {
   applyReminders,
   getNotificationPermission,
   REMINDER_KEYS,
-  SUNDAY,
   type Reminder,
   type ReminderKey,
 } from "@/lib/notifications";
@@ -45,7 +46,6 @@ import {
 const CONTENT: Record<ReminderKey, { title: string; body: string }> = {
   retro: { title: "돌아보는 시간이에요", body: "오늘 하루, 저와 잠깐 이야기해요." },
   daily: { title: "지금 이 순간", body: "떠오른 게 있다면 한 줄만 남겨두세요." },
-  weekly: { title: "이번 주 돌아보기", body: "지난 한 주의 기록을 함께 살펴봐요." },
 };
 
 /** 지금 설정대로라면 예약돼 있어야 하는 것 — 순수 계산이라 테스트가 이걸 본다 */
@@ -59,16 +59,24 @@ export function plannedReminders(): Reminder[] {
     // 시각이 없는 줄은 예약할 것이 없다 — 스위치가 켜져 있어도 마찬가지다
     if (!setting.enabled || setting.time == null) return [];
 
-    return [
-      {
-        key,
-        time: setting.time,
-        // 주간만 요일에 매인다 — 나머지는 매일이다 (M3.md 「일요일 밤 9:00」)
-        ...(key === "weekly" ? { weekday: SUNDAY } : {}),
-        ...CONTENT[key],
-      },
-    ];
+    return [{ key, time: setting.time, ...CONTENT[key] }];
   });
+}
+
+/**
+ * 알림을 눌러 들어온 사람이 갈 곳(2026-10-12 · 예전에는 늘 홈이었다). 회고 알림은 오늘
+ * 일기가 있으면 그 일기, 없으면 회고의 첫 장(`C2`)이다. 낮 기록은 켤 길이 없어 홈에 둔다.
+ *
+ * 알림으로 켜진 직후에는 일기를 아직 못 받았을 수 있어 **받기를 기다린 뒤** 고른다.
+ * 못 받으면 회고로 간다 — 이미 쓴 날이면 회고가 「이미 마쳤어요」로 받는다.
+ */
+export async function reminderHref(
+  key: ReminderKey,
+): Promise<`/diary/${string}` | "/retro/confirm" | null> {
+  if (key !== "retro") return null;
+  await useDiary.getState().load();
+  const today = useDiary.getState().diaries.find((d) => d.date === clock.today());
+  return today != null ? `/diary/${today.id}` : "/retro/confirm";
 }
 
 /**

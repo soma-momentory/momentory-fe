@@ -3,7 +3,6 @@ import {
   getNotificationPermission,
   onReminderOpened,
   requestNotificationPermission,
-  SUNDAY,
   type Reminder,
 } from "@/lib/notifications";
 
@@ -89,6 +88,7 @@ describe("권한 — 묻는 것과 띄우는 것을 가른다", () => {
 
 describe("예약 — 목록과 같은 상태로 만든다", () => {
   it("예약하기 전에 우리 것을 전부 지운다 — 시각을 고칠 때마다 쌓이지 않게", async () => {
+    // 더는 만들지 않는 주간 알림도 지운다 — 옛 버전이 남긴 예약이 업데이트 뒤에도 울리지 않게
     await applyReminders([reminder({ time: "22:00" })]);
 
     expect(native.cancelScheduledNotificationAsync.mock.calls.map(([id]) => id)).toEqual([
@@ -106,23 +106,13 @@ describe("예약 — 목록과 같은 상태로 만든다", () => {
     expect(native.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
-  it("요일이 없으면 매일이다", async () => {
+  it("매일 그 시각에 울린다", async () => {
     await applyReminders([reminder({ time: "21:30" })]);
 
     expect(native.scheduleNotificationAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         identifier: "momentory.reminder.retro",
         trigger: expect.objectContaining({ type: "daily", hour: 21, minute: 30 }),
-      }),
-    );
-  });
-
-  it("요일이 있으면 그 요일에만 — 주간은 일요일이다", async () => {
-    await applyReminders([reminder({ key: "weekly", time: "21:00", weekday: SUNDAY })]);
-
-    expect(native.scheduleNotificationAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        trigger: expect.objectContaining({ type: "weekly", weekday: 1, hour: 21, minute: 0 }),
       }),
     );
   });

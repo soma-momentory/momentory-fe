@@ -868,10 +868,47 @@ describe("M2 · 알림 설정 시트 — 하나의 결정만 담는다", () => {
 
     await fireEvent.press(r.getByText("알림 받지 않기"));
 
-    expect(useSettings.getState().notify.retro).toMatchObject({
-      enabled: false,
-      time: "21:30",
-    });
+    await waitFor(() =>
+      expect(useSettings.getState().notify.retro).toMatchObject({
+        enabled: false,
+        time: "21:30",
+      }),
+    );
+  });
+
+  it("고른 시각 · 끄기를 서버에 남긴다 — 다시 켜도 서버 값이 되돌리지 않는다", async () => {
+    // 기기에만 두면 다음 실행의 `syncMe` 가 온보딩 때 값으로 덮어 「껐는데 또 온다」가 된다
+    const r = await render(<My />);
+    await fireEvent.press(row(r));
+
+    await fireEvent.press(r.getByText("알림 받지 않기"));
+
+    await waitFor(() =>
+      expect(completeOnboarding).toHaveBeenCalledWith(
+        expect.objectContaining({ notifyRetro: false, retroTime: "21:30", nickname: "지현" }),
+      ),
+    );
+  });
+
+  it("서버에 남기지 못하면 설정을 바꾸지 않고 한 줄로 알린다", async () => {
+    jest.mocked(completeOnboarding).mockResolvedValueOnce({ ok: false, code: "network" });
+    const r = await render(<My />);
+    await fireEvent.press(row(r));
+
+    await fireEvent.press(r.getByText("알림 받지 않기"));
+
+    expect(await r.findByText(ONBOARDING_FAILURE_MESSAGES.network)).toBeTruthy();
+    expect(useSettings.getState().notify.retro.enabled).toBe(true);
+  });
+
+  it("바뀐 것이 없으면 서버에 보내지 않는다", async () => {
+    const r = await render(<My />);
+    await fireEvent.press(row(r));
+
+    await fireEvent.press(r.getByText("완료"));
+
+    await waitFor(() => expect(r.queryByText("알림 시간")).toBeNull());
+    expect(completeOnboarding).not.toHaveBeenCalled();
   });
 
   it("꺼져 있을 때는 끄는 줄을 두지 않는다", async () => {

@@ -145,6 +145,9 @@ retrospect_turn_timed 의 voice_used 로 본다.
 
 **reminder_opened** 는 우리가 예약한 알림을 눌러 앱을 열었을 때 한 번 보낸다. 앱이 꺼져 있다가
 알림으로 켜진 경우도 센다. 알림을 받은 것만으로는 보내지 않는다(로컬 알림이라 도착을 알 수 없다).
+2026-10-12 부터는 누른 뒤 그 알림이 부른 화면으로 간다 — 회고 알림은 오늘 일기가 있으면 그 일기,
+없으면 회고(`/retro/confirm`)다. 그래서 바로 뒤의 screen_viewed 가 홈이 아닐 수 있다. 보내는 곳도
+`features/my/ui/ReminderRoute` 로 옮겼다. weekly 는 같은 날 없앤 주간 알림이라 그 전 기록에만 있다.
 
 감각연못의 step은 see, hear, feel이고, 시간은 모두 전면 시계로 잰다. sense_pond_step_completed는
 step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단계가 보인 때부터 목표를 채운

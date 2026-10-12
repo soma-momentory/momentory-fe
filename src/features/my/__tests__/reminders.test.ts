@@ -32,15 +32,16 @@ afterEach(() => {
 
 describe("무엇이 예약돼야 하는가", () => {
   it("켜진 줄만, 그 시각으로", async () => {
-    // 샘플 시작값 — 회고(켜짐 21:30) · 낮(꺼짐) · 주간(켜짐 21:00) · 소식(꺼짐)
-    expect(plannedReminders()).toEqual([
-      expect.objectContaining({ key: "retro", time: "21:30" }),
-      expect.objectContaining({ key: "weekly", time: "21:00", weekday: 1 }),
-    ]);
+    // 시작값 — 회고(켜짐 21:30) · 낮(꺼짐) · 소식(꺼짐)
+    expect(plannedReminders()).toEqual([expect.objectContaining({ key: "retro", time: "21:30" })]);
   });
 
-  it("주간만 요일에 매인다 — 나머지는 매일이다", async () => {
-    expect(plannedReminders().find((r) => r.key === "retro")?.weekday).toBeUndefined();
+  it("주간 알림은 예약하지 않는다 — 켜 두어도 마찬가지다(2026-10-12 · 끌 곳이 없었다)", async () => {
+    useSettings.setState((s) => ({
+      notify: { ...s.notify, weekly: { enabled: true, time: "21:00" } },
+    }));
+
+    expect(plannedReminders().map((r) => r.key)).toEqual(["retro"]);
   });
 
   it("「새로운 소식」은 예약하지 않는다 — 서버 푸시가 필요한 설정이다", async () => {
@@ -54,7 +55,7 @@ describe("무엇이 예약돼야 하는가", () => {
   it("끄면 목록에서 빠진다 — 시각은 남아 있어도", async () => {
     useSettings.getState().toggle("retro");
 
-    expect(plannedReminders().map((r) => r.key)).toEqual(["weekly"]);
+    expect(plannedReminders()).toEqual([]);
     // 껐다는 이유로 값을 지우지 않는다 (M3.md)
     expect(useSettings.getState().notify.retro.time).toBe("21:30");
   });
@@ -72,7 +73,7 @@ describe("화해 — OS 예약을 설정과 같게 만든다", () => {
   it("권한이 있으면 켜진 것만 예약한다", async () => {
     await syncReminders();
 
-    expect(scheduledKeys()).toEqual(["momentory.reminder.retro", "momentory.reminder.weekly"]);
+    expect(scheduledKeys()).toEqual(["momentory.reminder.retro"]);
   });
 
   it("권한이 없으면 아무것도 예약하지 않고 남은 것을 지운다", async () => {
@@ -95,13 +96,16 @@ describe("화해 — OS 예약을 설정과 같게 만든다", () => {
 
   it("잇따라 불러도 마지막 설정이 남는다 — 취소와 예약이 섞이지 않는다", async () => {
     const first = syncReminders();
-    useSettings.getState().toggle("weekly");
+    useSettings.getState().toggle("daily");
     const second = syncReminders();
 
     await Promise.all([first, second]);
 
-    // 마지막 화해가 끝난 뒤 예약된 것은 회고 하나뿐이다
-    expect(scheduledKeys().slice(-1)).toEqual(["momentory.reminder.retro"]);
+    // 마지막 화해가 끝난 뒤 예약된 것은 회고와 낮 기록이다
+    expect(scheduledKeys().slice(-2)).toEqual([
+      "momentory.reminder.retro",
+      "momentory.reminder.daily",
+    ]);
   });
 });
 
@@ -116,7 +120,9 @@ describe("구독 — 설정이 바뀌면 스스로 맞춘다", () => {
     await syncReminders();
 
     expect(scheduledKeys()).not.toContain("momentory.reminder.retro");
-    expect(scheduledKeys()).toContain("momentory.reminder.weekly");
+    expect(native.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
+      "momentory.reminder.retro",
+    );
     stop();
   });
 
