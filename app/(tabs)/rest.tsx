@@ -6,11 +6,13 @@ import { StyleSheet, View } from "react-native";
 import { Card, Icon, TabScreen, Text } from "@/components/ds";
 import { RestCardPressable } from "@/components/rest/RestCardPressable";
 import { RestContentGrid } from "@/components/rest/RestContentGrid";
-import { label as labelColor, primary, space } from "@/design/ds";
+import { RestRecommendSheet } from "@/components/rest/RestRecommendSheet";
+import { label as labelColor, primary, restRecommendMotion, space } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { useTodayContext } from "@/features/home/model/day";
 import { cardOn, datedCards, latestCardDay } from "@/features/rest/model/cards";
 import { REST_CONTENTS, REST_CONTENTS_PROMPT } from "@/features/rest/model/contents";
+import { useRestRecommendation } from "@/features/rest/model/useRestRecommendation";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -37,6 +39,12 @@ import { formatKoreanDateShort } from "@/lib/day";
  * 바람카드는 그대로 첫 항목이고 진입점이다. 콘텐츠는 **화면이 생긴 것만 눌린다** —
  * 감각연못이 첫 번째다(2026-09-03 · `/rest/sense-pond`). 나머지 셋은 아직
  * 눌리지 않는다(`RestContentGrid`).
+ *
+ * ## 일기를 쓴 날에는 쉼 하나를 권한다 (2026-10-12)
+ *
+ * 오늘 쓴 일기가 있고 오늘 아직 매듭짓지 않았으면, 들어오고 0.6초 뒤에 **추천 시트**가 올라온다
+ * (`useRestRecommendation` · `RestRecommendSheet`). 일기를 막 마치고 왔든 나중에 왔든 같다.
+ * 세 번 연달아 닫은 사람에게는 시트 대신 그 칸에 「오늘 추천」 한 줄만 붙인다(`note` 자리).
  */
 export default function Rest() {
   const cards = useDiary((s) => s.actionCards);
@@ -45,6 +53,14 @@ export default function Rest() {
   const latest = latestCardDay(all);
   const { date: today } = useTodayContext();
   const hasToday = cardOn(all, today) != null;
+  const recommend = useRestRecommendation(today, restRecommendMotion.delay);
+  const recommended =
+    recommend.sheet != null ? REST_CONTENTS.find((c) => c.id === recommend.sheet?.content) : null;
+  const hinted = recommend.hint?.content;
+  const contents =
+    hinted == null
+      ? REST_CONTENTS
+      : REST_CONTENTS.map((c) => (c.id === hinted ? { ...c, note: REST_RECOMMEND_HINT } : c));
 
   const summary =
     latest == null
@@ -60,7 +76,22 @@ export default function Rest() {
   };
 
   return (
-    <TabScreen active="쉼터">
+    <TabScreen
+      active="쉼터"
+      overlay={
+        recommended != null && recommend.sheet != null ? (
+          <RestRecommendSheet
+            content={recommended}
+            reason={recommend.sheet.reason}
+            onAccept={() => {
+              recommend.accept("sheet");
+              if (recommended.route != null) router.push(recommended.route);
+            }}
+            onDismiss={recommend.dismiss}
+          />
+        ) : null
+      }
+    >
       {/* 탭 루트라 상단 내비 제목을 두지 않는다 — 본문의 Title 3(손글씨)가 제목이다(`DESIGN.md` §10) */}
       <View style={styles.header}>
         <Text variant="title3Hand" color={labelColor.strong}>
@@ -96,8 +127,9 @@ export default function Rest() {
           {REST_CONTENTS_PROMPT}
         </Text>
         <RestContentGrid
-          items={REST_CONTENTS}
+          items={contents}
           onOpen={(item) => {
+            if (item.id === hinted) recommend.accept("hint");
             if (item.route != null) router.push(item.route);
           }}
         />
@@ -105,6 +137,9 @@ export default function Rest() {
     </TabScreen>
   );
 }
+
+/** 세 번 연달아 닫은 뒤 시트 대신 그 칸에 붙이는 한 줄 — 재촉하지 않고 자리만 알린다 */
+const REST_RECOMMEND_HINT = "오늘 추천";
 
 const styles = StyleSheet.create({
   header: { paddingTop: space.sm, paddingBottom: space.xl },

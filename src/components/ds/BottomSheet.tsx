@@ -1,5 +1,14 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Dimensions, Keyboard, Platform, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Animated,
+  Dimensions,
+  Easing,
+  Keyboard,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -8,12 +17,16 @@ import {
   label as labelColor,
   layout,
   line,
+  fill,
   overlay,
+  primary,
   radius,
+  sheetMotion,
   space,
   zIndex,
 } from "@/design/ds";
 
+import { IconButton } from "./IconButton";
 import { Text } from "./Text";
 
 /**
@@ -36,8 +49,15 @@ import { Text } from "./Text";
  * 올려보낸다 — 시트가 라우트로 열려 있으면 `router.back()` 이 닫기이고, 그래야
  * 기기 뒤로가기·스와이프백이 그대로 닫기가 된다. **닫는 길을 두 벌 만들지 않는다.**
  *
- * 그랩 핸들은 **잡아끌라는 표시가 아니다** — 제스처를 붙이지 않았다. 시트의 성격을
- * 알리는 표식이고, 닫는 길은 딤과 각 시트의 버튼이다.
+ * **손잡이를 쓸어내려도 닫힌다**(2026-10-12 · 쉼 추천 시트에서 정함). 끌 수 있는 자리는
+ * **손잡이와 제목 줄뿐이다** — 시트 전체에 붙이면 안의 휠 · 목록 스크롤과 손짓을 다툰다.
+ * 덜 내리면 제자리로 돌아가고, 충분히 내리면 `onDismiss` 다. 딤 · ✕ ·
+ * 쓸어내리기 셋이 **같은 `onDismiss`** 를 부른다 — 닫는 길이 늘어도 닫기는 하나다.
+ *
+ * ## 아래에서 올라온다
+ *
+ * 열리면 화면 아래에서 올라오고 딤이 같은 시간에 짙어진다(`sheetMotion.rise`). 화면 사이의
+ * 전환(fade 하나)과는 다른 것이다 — 시트는 화면이 아니라 화면 위에 뜨는 것이다.
  *
  * ## 키보드를 시트가 직접 피한다
  *
@@ -62,6 +82,10 @@ type Props = {
   children: ReactNode;
   /** Heading 1. 없으면 제목 줄을 두지 않는다 */
   title?: string;
+  /** 제목 위의 작은 한 줄 — 왜 이 시트가 떴는지 짧게 말한다(쉼 추천의 「바바가 하나 골라 봤어요」) */
+  eyebrow?: string;
+  /** 제목 줄 오른쪽에 ✕ 를 둔다 — 누르면 딤과 같은 `onDismiss` 다 */
+  closable?: boolean;
   onDismiss: () => void;
 };
 
@@ -109,7 +133,7 @@ const useKeyboardInset = (): number => {
   return inset;
 };
 
-export function BottomSheet({ children, title, onDismiss }: Props) {
+export function BottomSheet({ children, title, eyebrow, closable = false, onDismiss }: Props) {
   // 시트는 화면 아래에 붙으므로 **실제 하단 inset** 을 자기가 맡는다
   // (`Screen` 안에 들어가지 않는다). `layout.safeArea`(34)는 iOS 시안 값이라
   // 그대로 쓰면 Android·제스처 내비에서 여백이 뜨거나 시스템 UI 와 겹친다
@@ -123,8 +147,34 @@ export function BottomSheet({ children, title, onDismiss }: Props) {
   const bottomPad =
     keyboard > 0 ? keyboard + layout.keyboardGap : Math.max(insets.bottom, space.xl);
 
+  // 0 → 1 로 올라온다 · 끄는 동안은 손가락만큼 내려간다
+  const [rise] = useState(() => new Animated.Value(0));
+  const [drag] = useState(() => new Animated.Value(0));
+  const [lift] = useState(() =>
+    Animated.add(
+      rise.interpolate({ inputRange: [0, 1], outputRange: [Dimensions.get("window").height, 0] }),
+      drag,
+    ),
+  );
+  useEffect(() => {
+    const it = Animated.timing(rise, {
+      toValue: 1,
+      duration: sheetMotion.rise,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    it.start();
+    return () => it.stop();
+  }, [rise]);
+
+  // 끌기는 `PanResponder` 가 아니라 **RN 의 responder 속성**이다 — 이벤트가 날 때 그 순간의
+  // `onDismiss` 를 읽어 끄는 도중에도 낡은 콜백을 부르지 않는다(`features/home/ui/ScheduleList` 와 같다)
+  const grabFrom = useRef(0);
+  const settle = () => Animated.spring(drag, { toValue: 0, useNativeDriver: true }).start();
+
   return (
     <View testID="ds-bottom-sheet-overlay" style={styles.root}>
+      <Animated.View pointerEvents="none" style={[styles.dim, { opacity: rise }]} />
       <Pressable
         style={StyleSheet.absoluteFill}
         accessibilityRole="button"
@@ -133,18 +183,63 @@ export function BottomSheet({ children, title, onDismiss }: Props) {
       />
       {/* inset 이 0 인 기기(버튼 내비 Android 등)에서도 내용이 바닥에 붙지 않게
           최소 여백을 둔다 — 시안의 34 는 iOS 홈 인디케이터 높이 그 자체다 */}
-      <View testID="ds-bottom-sheet" style={[styles.sheet, { paddingBottom: bottomPad }]}>
-        <View style={styles.handle} />
-        {title != null ? (
-          <Text variant="heading1" color={labelColor.strong}>
-            {title}
-          </Text>
-        ) : null}
+      <Animated.View
+        testID="ds-bottom-sheet"
+        style={[styles.sheet, { paddingBottom: bottomPad, transform: [{ translateY: lift }] }]}
+      >
+        {/* 끌 수 있는 자리 — 손잡이와 제목 줄. 시트 위 여백까지 잡히게 위로 넓힌다 */}
+        <View
+          testID="ds-bottom-sheet-grab"
+          style={styles.grab}
+          onStartShouldSetResponder={() => true}
+          onResponderGrant={(e) => {
+            grabFrom.current = e.nativeEvent.pageY;
+          }}
+          onResponderMove={(e) =>
+            drag.setValue(Math.max(0, e.nativeEvent.pageY - grabFrom.current))
+          }
+          onResponderRelease={(e) => {
+            if (e.nativeEvent.pageY - grabFrom.current > sheetMotion.dismissDrag) onDismiss();
+            else settle();
+          }}
+          onResponderTerminate={settle}
+        >
+          <View style={styles.handle} />
+          {title != null || eyebrow != null || closable ? (
+            <View style={styles.titleRow}>
+              <View style={styles.titleText}>
+                {eyebrow != null ? (
+                  <Text variant="label1" color={primary.heavy}>
+                    {eyebrow}
+                  </Text>
+                ) : null}
+                {title != null ? (
+                  <Text variant="heading1" color={labelColor.strong}>
+                    {title}
+                  </Text>
+                ) : null}
+              </View>
+              {closable ? (
+                <IconButton
+                  name="close"
+                  size={20}
+                  accessibilityLabel="닫기"
+                  onPress={onDismiss}
+                  hitSlop={(layout.minTouch - CLOSE_SIZE) / 2}
+                  style={styles.close}
+                />
+              ) : null}
+            </View>
+          ) : null}
+        </View>
         {children}
-      </View>
+      </Animated.View>
     </View>
   );
 }
+
+/** ✕ 원의 지름 — 손끝이 닿는 자리는 `hitSlop` 이 44 까지 넓힌다 */
+const CLOSE_SIZE = 36;
 
 const styles = StyleSheet.create({
   // **스스로 화면 전체를 덮는다.** `flex: 1` 만 두면 일반 화면 트리 안에서
@@ -160,6 +255,14 @@ const styles = StyleSheet.create({
     left: 0,
     zIndex: zIndex.overlay,
     justifyContent: "flex-end",
+  },
+  // 딤은 따로 깐다 — 시트가 올라오는 동안 함께 짙어지게
+  dim: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: overlay.dimmer,
   },
   sheet: {
@@ -172,6 +275,13 @@ const styles = StyleSheet.create({
     gap: space.lg,
     ...elevation.overlay,
   },
+  // 시트 위 여백(`paddingTop`)까지 끌 자리로 쓴다 — 자리는 그대로, 잡히는 면만 넓어진다.
+  // 손잡이와 제목 사이는 시트의 다른 줄 사이와 같다(`sheet.gap`)
+  grab: { marginTop: -space.md, paddingTop: space.md, gap: space.lg },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: space.md },
+  titleText: { flex: 1, gap: space.xs },
+  // ✕ 는 옅은 원 안에 선다 — 눌리는 자리(44)는 그대로, 보이는 원만 작게
+  close: { width: CLOSE_SIZE, height: CLOSE_SIZE, backgroundColor: fill.normal },
   handle: {
     width: 38,
     height: 4,

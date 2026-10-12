@@ -49,7 +49,8 @@ import { formatKoreanDateShort } from "@/lib/day";
  *
  * - **감정 `[+]` 더하기를 두지 않는다** — 감정은 `C3` 시작 감정에서만 온다
  * - 본문은 **상한**이 있고 **최소 글자 수를 요구하지 않는다**
- * - 저장하면 `Diary` 한 장(+ 행동 카드가 있으면 한 장)이 남고 `C7` 로 간다
+ * - 저장하면 `Diary` 한 장(+ 행동 카드가 있으면 한 장)이 남는다. 바람카드가 있으면 `C7` 로,
+ *   없으면 `C7` 을 거치지 않고 **곧장 쉼터(`R1`)로** 간다(2026-10-12 · 거기서 쉼 추천 시트가 올라온다)
  * - **한 문장 요약·점수·배지를 만들지 않는다**
  *
  * 옛 세그먼트(「내가 남긴 오늘 / 바바가 함께 본 오늘」)는 뺐다 — 이 화면은 본문 한 면만
@@ -63,6 +64,7 @@ export default function RetroDraft() {
   // 서버 회고 세션 id — 저장하는 일기에 실어 두면 나중에 서버 저장분을 되불러온다
   const sessionId = useRetro((s) => s.sessionId);
   const saveDiary = useDiary((s) => s.save);
+  const resetRetro = useRetro((s) => s.reset);
   const schedules = useDay((s) => s.schedules);
   // 홈·일정 확인과 같은 「오늘」 — 일기의 날짜가 여기서 온다
   const { date: today } = useTodayContext();
@@ -96,6 +98,8 @@ export default function RetroDraft() {
    * 막아야 하기 때문이다(state 는 다음 렌더에야 반영된다).
    */
   const saving = useRef(false);
+  /** 바람카드 없이 저장해 회고를 비우고 쉼터로 떠나는 중 — 아래 「완료 일기 없음」 되돌리기를 막는다 */
+  const [leaving, setLeaving] = useState(false);
 
   /**
    * 「직접 고치기」 계측(2026-09-28) — AI 가 쓴 일기를 얼마나 고치는가는 일기 품질의 간접 지표다.
@@ -121,8 +125,9 @@ export default function RetroDraft() {
     setEditing(false);
   };
 
-  // 완료 일기 없이 들어올 수 없다 — 대화가 끝나야 여기 온다
-  if (diary == null) return <Redirect href="/retro/talk" />;
+  // 완료 일기 없이 들어올 수 없다 — 대화가 끝나야 여기 온다. 단 바람카드 없이 저장하면 이 화면이
+  // 회고를 비우고 쉼터로 떠나는 중이라, 그 사이 다시 그려져도 대화로 되돌리지 않는다
+  if (diary == null) return leaving ? null : <Redirect href="/retro/talk" />;
 
   // 일기 감정 태그 — 완료 응답이 준 '일기에서 드러난 감정 전체'(감정 탐색을 안 거쳐도 추출 감정이 온다).
   // 키를 id 로 되돌린다. 낙관적 일기가 저장 직후에도 이 감정을 바로 보여준다.
@@ -161,9 +166,17 @@ export default function RetroDraft() {
     // 서버는 완료 때 이미 LLM 원본을 저장했다 — 사용자가 고쳤으면 그 회고의 일기 본문을
     // 갱신한다(fail-quiet · 못 닿으면 다음 load 에 서버 값이 다시 비친다). 안 고쳤으면 보내지 않는다.
     if (edited && sessionId != null) void updateDiaryBody(String(sessionId), body);
-    // 회고 한 벌은 여기까지가 수명이다 — 다음 회고에 앞 대화가 섞이지 않게…
-    // 단, `C7` 이 행동 카드를 보여주므로 **그 화면이 읽고 나서** 비운다
-    router.replace("/retro/done");
+    if (wishCard != null) {
+      // 바람카드는 저장 완료(`C7`)가 보여 준다 — 회고 한 벌은 **그 화면이 읽고 나서** 비운다
+      router.replace("/retro/done");
+      return;
+    }
+    // 바람카드가 없으면 `C7` 을 거치지 않는다(2026-10-12) — 쉼터로 넘어온 것이 곧 저장이 끝났다는 뜻이다.
+    // `/rest` 가 아니라 `/(tabs)/rest` 다 — 온보딩 그룹의 같은 경로로 새지 않게(`C7` 과 같은 주소).
+    // 회고 한 벌은 여기까지가 수명이다 — 다음 회고에 앞 대화가 섞이지 않게
+    setLeaving(true);
+    router.replace("/(tabs)/rest");
+    resetRetro();
   };
 
   return (

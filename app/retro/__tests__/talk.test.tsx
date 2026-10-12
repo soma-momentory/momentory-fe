@@ -9,6 +9,8 @@ import { startRetro, sendTurn } from "@/features/retro/data/retroApi";
 import { useDiary } from "@/features/diary/model/diary";
 import { testDiaryData } from "@/testing/fixtures";
 import { useRetro } from "@/features/retro/model/retro";
+import { readRecommendationMemory } from "@/features/rest/data/recommendMemory";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
@@ -474,6 +476,20 @@ describe("계측 — 어느 질문에서 오래 걸렸는가", () => {
 
     expect(sent("retrospect_exited")).toEqual([{ retrospect_id: "7", phase: "other", turn_no: 0 }]);
     expect(JSON.stringify(mockTrack.mock.calls)).not.toContain("safety");
+  });
+
+  it("위기 안내가 나온 날은 쉼터가 쉼 추천을 띄우지 않게 그날을 미리 매듭짓는다", async () => {
+    await AsyncStorage.clear();
+    mockStart.mockResolvedValue({
+      ok: true,
+      data: { sessionId: 7, reply: reply({ phase: "safety_hold", safetyLevel: "high" }) },
+    });
+    await render(<RetroTalk />);
+
+    // 닫은 날과 같은 모양이다 — 저장된 값으로는 위기 안내가 있었는지 알 수 없다
+    await waitFor(async () =>
+      expect(await readRecommendationMemory()).toEqual({ day: "2026-07-27", dismissStreak: 0 }),
+    );
   });
 
   it("다 끝난 뒤 닫는 것은 이탈이 아니다", async () => {

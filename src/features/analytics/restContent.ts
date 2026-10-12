@@ -60,7 +60,9 @@ const REST_FAMILY: ReadonlySet<ScreenName> = new Set([
  * 이번 쉼터 방문이 **회고(일기)를 마친 화면에서 곧장** 이어졌는가.
  *
  * 회고 완료(`retro_done`)에서 쉼터 묶음으로 들어오면 그 방문은 `after_diary` 이고, 쉼터 묶음
- * 안에서 옮겨 다니는 동안(쉼터 탭 → 콘텐츠 → 뒤로 → 다른 콘텐츠) 그대로 이어진다. 쉼터 묶음
+ * 안에서 옮겨 다니는 동안(쉼터 탭 → 콘텐츠 → 뒤로 → 다른 콘텐츠) 그대로 이어진다. 바람카드가 없는
+ * 회고는 회고 완료를 거치지 않고 일기 확인(`retro_draft`)에서 곧장 쉼터로 가므로 그쪽도 같다
+ * (2026-10-12) — 일기 확인에서 쉼터로 가는 길은 저장 하나뿐이다(닫기는 홈으로 간다). 쉼터 묶음
  * 밖으로 나가면 끝난다 — 그 뒤 탭으로 다시 들어오면 `direct` 다. 같은 날 일기를 썼는지는
  * 따로 `diary_today` 로 본다(일기를 쓰고 나중에 따로 들어온 것과 가르려고).
  */
@@ -70,7 +72,7 @@ export function createRestVisit() {
     /** 화면이 바뀌었다 — 화면 관찰(`createScreenObserver`)이 알려 준다 */
     move(from: ScreenName | null, to: ScreenName | null) {
       if (to == null || !REST_FAMILY.has(to)) afterDiary = false;
-      else if (from === "retro_done") afterDiary = true;
+      else if (from === "retro_done" || from === "retro_draft") afterDiary = true;
     },
     entry: (): RestEntryName => (afterDiary ? "after_diary" : "direct"),
   };

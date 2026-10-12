@@ -32,6 +32,21 @@ export type RestContent = {
    * 제목과 아이콘 사이를 넘겨 제목이 글자 단위로 접힌다.
    */
   note?: string;
+  /**
+   * 걸리는 시간 — 일기를 쓴 날의 추천 시트가 부담을 낮추려고 보여 준다(2026-10-12).
+   * 몸에 힘 빼기는 네 부위 × 15초라 정해져 있고, 나머지 셋은 하는 사람의 속도에 따라 달라
+   * **어림값**이다 — Amplitude `rest_content_completed.duration_ms` 중앙값(팀 계정 제외)이
+   * 나오면 그 값으로 고친다.
+   */
+  duration: string;
+  /**
+   * 추천 시트(`RestRecommendSheet`)가 쓰는 세 줄 (2026-10-12 · 사용자 요청) — 무엇을 하자는지(`invite` ·
+   * 시트 제목) · 하고 나면 무엇이 달라지는지(`benefit` · 한 줄) · 무엇을 하는지(`activity` · 알약 한 칸).
+   * 평가 · 칭찬을 하지 않고, 하고 난 뒤의 몸과 마음만 말한다(`DESIGN.md` 「쉼 콘텐츠 공통 규칙」 8).
+   */
+  invite: string;
+  benefit: string;
+  activity: string;
   /** 여는 화면. **없으면 아직 화면이 없다** — 카드가 눌리지 않는다 */
   route?: "/rest/sense-pond" | "/rest/body-release" | "/rest/worry-box" | "/rest/treasure-box";
 };
@@ -40,6 +55,10 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "sensePond",
     title: "감각연못",
+    duration: "1~2분",
+    invite: "감각을 하나씩 찾아볼까요?",
+    benefit: "보고 듣는 데 머물면 생각이 잠시 조용해져요",
+    activity: "보고 듣기",
     description: "보이는 것과 들리는 소리를\n하나씩 찾아봐요",
     icon: "wave",
     route: "/rest/sense-pond",
@@ -47,6 +66,10 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "worryBox",
     title: "걱정상자",
+    duration: "1~2분",
+    invite: "걱정을 상자에 잠시 맡겨볼까요?",
+    benefit: "적어서 맡기면 머릿속이 한결 가벼워져요",
+    activity: "글 한 줄",
     description: "걱정을 적고\n잠시 상자에 맡겨봐요",
     icon: "box",
     route: "/rest/worry-box",
@@ -54,6 +77,10 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "treasureBox",
     title: "오늘의 보물함",
+    duration: "1~2분",
+    invite: "오늘의 보물을 하나 담아볼까요?",
+    benefit: "좋았던 순간을 담아 두면 하루가 따뜻하게 남아요",
+    activity: "글 한 줄",
     description: "오늘 잘한 일이나\n소중한 순간을 담아봐요",
     icon: "treasure",
     route: "/rest/treasure-box",
@@ -61,6 +88,10 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "bodyRelease",
     title: "몸에 힘 빼기",
+    duration: "약 1분",
+    invite: "몸에 힘을 천천히 빼볼까요?",
+    benefit: "힘을 줬다 풀면 몸의 긴장도 함께 풀려요",
+    activity: "따라 하기",
     description: "몸에 힘을 줬다가\n천천히 풀어봐요",
     icon: "capybara-rest",
     route: "/rest/body-release",

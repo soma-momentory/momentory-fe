@@ -31,6 +31,7 @@ import { useDay } from "@/features/home/model/day";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
+import { clearRecommendationMemory } from "@/features/rest/data/recommendMemory";
 import { useRetro } from "@/features/retro/model/retro";
 
 /**
@@ -376,6 +377,8 @@ const clearUserScopedStores = (userId?: number) => {
   // 기다리지 않는다 — 로그아웃은 실패할 수 없는 동작이고(아래 `signOut` 주석),
   // 지우지 못해도 키에 `userId` 가 박혀 있어 다른 계정이 그것을 보지는 않는다.
   if (userId != null) void clearSyncState(userId);
+  // 쉼 추천의 기기 기억(오늘 매듭지었나 · 연달아 닫은 횟수)도 그 사람의 것이다 (2026-10-12)
+  void clearRecommendationMemory();
 };
 
 /**

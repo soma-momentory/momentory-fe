@@ -416,7 +416,8 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
   **expo-speech-recognition**(회고 입력의 음성 입력 — OS 인식기라 외부 STT 가 없다 ·
   `src/components/ds/voiceInput.ts`)
 - 계측 — **@amplitude/analytics-react-native** + **@react-native-async-storage/async-storage**
-  (2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔고 **앱 코드가 직접 쓰지 않는다**)
+  (2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔다. 앱 코드가 직접 쓰는 곳은
+  **쉼 추천의 기기 기억 하나**다 — `features/rest/data/recommendMemory.ts` · 2026-10-12)
 
 네이티브 모듈이 섞여 있어 **dev client 재빌드 필요**.
 ⚠ **`08` 회고 시간 선택은 외부 피커 모듈이 아니다** — `src/components/ds/WheelPicker.tsx`
