@@ -273,6 +273,21 @@ export const size = {
 export const motion = { duration: 120 } as const;
 
 /**
+ * 바텀 시트가 **아래에서 올라오고 · 손잡이를 쓸어내려 닫히는** 움직임 (2026-10-12 · 쉼 추천 시트에서
+ * 정함 · `components/ds/BottomSheet`). 화면 사이는 여전히 fade 하나다(위 `motion`) — 이것은 화면이
+ * 아니라 화면 위에 뜨는 시트의 것이다.
+ */
+export const sheetMotion = {
+  /** 올라오는 시간 — 딤도 같은 시간에 짙어진다 */
+  rise: 280,
+  /** 이만큼(dp) 끌어내리면 닫힌다 — 덜 내리면 제자리로 돌아간다 */
+  dismissDrag: 80,
+} as const;
+
+/** 일기를 쓴 날 쉼터(`R1`)에 들어온 뒤 추천 시트가 올라오기까지(ms) — 쉼터를 먼저 보게 한다 */
+export const restRecommendMotion = { delay: 600 } as const;
+
+/**
  * 쉼터 카드를 **누른 자리에서 번지는 물결** (2026-09-11 · 사용자 요청 · `RestCardPressable`).
  *
  * 색은 **짙은 회색을 옅게**(`restRipple` · 8%) 얹는다 — 옅은 초록 → 짙은 아이보리를 거쳐,

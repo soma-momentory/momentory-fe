@@ -654,6 +654,55 @@ describe("BottomSheet", () => {
   });
 });
 
+describe("BottomSheet · 닫는 길", () => {
+  /** 손잡이 · 제목 줄을 `from` 에서 `to` 까지 끌었다 놓는다 */
+  const pull = async (grab: Parameters<typeof fireEvent>[0], from: number, to: number) => {
+    await fireEvent(grab, "responderGrant", { nativeEvent: { pageY: from } });
+    await fireEvent(grab, "responderMove", { nativeEvent: { pageY: to } });
+    await fireEvent(grab, "responderRelease", { nativeEvent: { pageY: to } });
+  };
+
+  it("손잡이를 충분히 쓸어내리면 닫히고, 덜 내리면 그대로다", async () => {
+    const onDismiss = jest.fn();
+    const { getByTestId } = await render(
+      <BottomSheet title="알림 설정" onDismiss={onDismiss}>
+        <Text>내용</Text>
+      </BottomSheet>,
+    );
+    const grab = getByTestId("ds-bottom-sheet-grab");
+
+    await pull(grab, 100, 150);
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    await pull(grab, 100, 200);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("✕ 는 고른 시트에만 서고, 딤과 같은 닫기를 부른다", async () => {
+    const onDismiss = jest.fn();
+    const plain = await render(
+      <BottomSheet title="알림 설정" onDismiss={() => {}}>
+        <Text>내용</Text>
+      </BottomSheet>,
+    );
+    // 딤 하나뿐이다
+    expect(plain.getAllByLabelText("닫기")).toHaveLength(1);
+    await plain.unmount();
+
+    const closable = await render(
+      <BottomSheet eyebrow="바바가 하나 골라 봤어요" closable onDismiss={onDismiss}>
+        <Text>내용</Text>
+      </BottomSheet>,
+    );
+    // 제목 없이 작은 한 줄과 ✕ 만으로도 머리 줄이 선다(쉼 추천 시트)
+    expect(closable.getByText("바바가 하나 골라 봤어요")).toBeTruthy();
+    const closes = closable.getAllByLabelText("닫기");
+    expect(closes).toHaveLength(2);
+    for (const close of closes) await fireEvent.press(close);
+    expect(onDismiss).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("Modal", () => {
   it("삭제 확인은 확인 버튼만 위험색이고 취소는 아니다", async () => {
     const { getAllByRole } = await render(

@@ -117,6 +117,8 @@ export {
   space,
   zIndex,
   motion,
+  sheetMotion,
+  restRecommendMotion,
   cardRipple,
   babaBlink,
   splashLoaderMotion,
