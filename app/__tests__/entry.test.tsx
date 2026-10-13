@@ -31,6 +31,13 @@ const seedSession = () =>
     }),
   );
 
+/** 서버가 이번 한 번 답한다 — `onboardingRequired` 를 그대로 받는다 */
+const answerMe = (onboardingRequired: boolean) =>
+  jest.mocked(fetchMe).mockResolvedValueOnce({
+    ok: true,
+    data: { userId: 1, onboardingRequired, profile: null },
+  });
+
 beforeEach(() => {
   jest.useFakeTimers();
   secure.__store.clear();
@@ -61,6 +68,7 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
 
   it("세션이 있고 온보딩 전이면 온보딩으로", async () => {
     seedSession();
+    answerMe(true);
     await render(<Splash />);
     await settle();
 
@@ -70,11 +78,32 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
   it("세션이 있고 온보딩을 마쳤으면 홈으로", async () => {
     // 매번 온보딩을 되풀이하지 않는다 — 홈은 이미 있다
     seedSession();
-    useOnboardingCompletion.getState().complete();
+    answerMe(false);
     await render(<Splash />);
     await settle();
 
     await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
+  });
+
+  it("서버에 못 물어보면 온보딩으로 보내지 않고 기다렸다가, 답이 오면 넘어간다", async () => {
+    // 오프라인으로 켜면 온보딩을 마친 사람에게 온보딩이 다시 떴다(2026-10-13) —
+    // 「모른다」를 「안 마쳤다」로 읽었기 때문이다
+    seedSession();
+    const { findByText, getByLabelText } = await render(<Splash />);
+    await settle();
+
+    expect(await findByText("인터넷 연결을 기다리고 있어요")).toBeTruthy();
+    expect(getByLabelText("모멘토리 · 인터넷 연결을 기다리고 있어요")).toBeTruthy();
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
+
+    // 연결이 돌아왔다 — 누르지 않아도 다음 재시도가 답을 받아 넘어간다
+    answerMe(false);
+    await act(async () => {
+      jest.advanceTimersByTime(3_000);
+    });
+
+    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/welcome");
   });
 
   it("서버가 0.8초보다 늦게 답해도 그 답을 기다렸다가 판정한다", async () => {
@@ -151,7 +180,7 @@ describe("온보딩 완료 플래그 — 인증 이후에만 읽는다", () => {
 
     await useAuth.getState().signOut();
 
-    expect(useOnboardingCompletion.getState().completed).toBe(false);
+    expect(useOnboardingCompletion.getState().completed).toBeNull();
   });
 
   it("완료 플래그가 있어도 세션이 없으면 로그인으로 간다", async () => {
