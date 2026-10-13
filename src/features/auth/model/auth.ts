@@ -418,9 +418,7 @@ const adoptSession = async (
 
   // 온보딩 완료 여부는 **서버가 정본**이다. 이 기기에 남아 있던 로컬
   // 플래그(앞 사용자·앞 세션의 것)를 서버 답에 맞춰 덮는다.
-  const completion = useOnboardingCompletion.getState();
-  if (session.onboardingRequired) completion.reset();
-  else completion.complete();
+  useOnboardingCompletion.setState({ completed: !session.onboardingRequired });
 
   identifyAnalytics(session.userId);
   track("login_succeeded", { provider, onboarding_required: session.onboardingRequired });
@@ -663,15 +661,14 @@ export const useAuth = create<AuthStore>((set, get) => ({
    * **실패는 조용하다.** `no_session`(갱신이 네트워크로 실패한 경우가 여기 섞인다) ·
    * `network` · `server` · `malformed` 는 **아무것도 덮지 않는다** — 서버에게
    * 못 물어본 것을 「온보딩을 안 했다」로 읽으면 오프라인일 때마다 온보딩이 뜬다.
+   * 콜드 스타트에서 실패하면 완료 여부가 `null`(모름)로 남고, `S0` 가 이걸 다시 부른다.
    */
   syncMe: async () => {
     const result = await fetchMe();
 
     if (result.ok) {
       // 온보딩 완료 여부의 정본은 서버다 — 기기에 남아 있던 판정을 덮는다
-      const completion = useOnboardingCompletion.getState();
-      if (result.data.onboardingRequired) completion.reset();
-      else completion.complete();
+      useOnboardingCompletion.setState({ completed: !result.data.onboardingRequired });
 
       // 온보딩 전에는 프로필이 없다. 없는 것으로 지금 값을 지우지 않는다
       if (result.data.profile != null) adoptProfile(result.data.profile);
