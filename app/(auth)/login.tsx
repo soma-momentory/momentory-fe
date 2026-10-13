@@ -135,46 +135,37 @@ export default function Login() {
       {/*
         순서는 카카오 → Google → Apple이며, Apple은 iOS에서만 표시한다.
 
-        ⚠ **세 문구는 우리가 지어낸 말이 아니다 — 각 사가 내놓은 목록에서 꺼냈다**
-        (2026-08-24). 셋 다 「로그인」으로 맞춘 것은 말투를 통일하려던 것이 아니라,
-        **각자의 목록에 로그인 변형이 있어서** 고를 수 있었던 것이다:
-
-        - 카카오: 완성형 「카카오 로그인」 / 축약형 「로그인」 둘이 기본 레이블이다
-          (디자인 가이드 「문구」의 국문 칸). 전체 폭 버튼이라 완성형을 쓴다
-        - Google: 「로그인 / 가입 / 계속」 셋을 권장한다. 이 화면은 가입과 로그인을
-          가르지 않으니 셋 중 어느 것도 되는데, 나머지 두 줄과 같은 「로그인」을 쓴다
-        - Apple: 공식 버튼 `type=sign-in` 의 `ko_KR` 문구가 그대로 이것이다
-          (`appleid.cdn-apple.com/appleid/button?...&locale=ko_KR`). **한 글자도 바뀌지
-          않았다.** `type=continue` 를 고르면 「Apple로 계속하기」가 된다
-
-        **한글이라서 규격을 벗어나는 것이 아니다.** 카카오는 가이드 표에 국문 칸이
-        따로 있고, 애플은 위 주소가 내려준 한국어 렌더 그대로이며, 구글은 원문이
-        현지화를 「permitted and encouraged」로 적는다.
-
-        ⚠ 문구를 손볼 일이 생기면 **각 사 목록 안에서만** 고른다 — 「…로 계속하기」
-        같은 우리 말투로 다시 쓰지 않는다.
+        **둥근 네모 안에 로고만 둔다**(2026-10-13 · `SocialButton` 머리말) — 세 회사의 글자 규칙이
+        서로 부딪혀 서체 · 크기를 맞출 수 없었다. 그래서 `label` 은 화면에 쓰지 않고
+        낭독기가 읽는 이름이다. 문구는 그전과 같이 **각 사 목록에서 꺼낸 것**이다
+        (카카오 「카카오 로그인」 · 구글 「로그인」 변형 · 애플 `sign-in` 의 `ko_KR`).
       */}
-      <View style={styles.actions}>
-        <SocialButton
-          provider="kakao"
-          label="카카오 로그인"
-          disabled={signingIn}
-          onPress={signInKakao}
-        />
-        <SocialButton
-          provider="google"
-          label="Google 계정으로 로그인"
-          disabled={signingIn}
-          onPress={signInGoogle}
-        />
-        {Platform.OS === "ios" ? (
+      <View style={styles.sns}>
+        <Text variant="body2" color={labelColor.neutral} style={gothic.medium}>
+          SNS 로그인
+        </Text>
+        <View style={styles.snsRow}>
           <SocialButton
-            provider="apple"
-            label="Apple로 로그인"
+            provider="kakao"
+            label="카카오 로그인"
             disabled={signingIn}
-            onPress={signInApple}
+            onPress={signInKakao}
           />
-        ) : null}
+          <SocialButton
+            provider="google"
+            label="Google 계정으로 로그인"
+            disabled={signingIn}
+            onPress={signInGoogle}
+          />
+          {Platform.OS === "ios" ? (
+            <SocialButton
+              provider="apple"
+              label="Apple로 로그인"
+              disabled={signingIn}
+              onPress={signInApple}
+            />
+          ) : null}
+        </View>
       </View>
 
       {/*
@@ -249,11 +240,13 @@ const styles = StyleSheet.create({
     // 광학 중앙 — 이 화면에서만 쓰는 값이라 스케일에 올리지 않는다
     paddingBottom: 96,
   },
-  // `DESIGN.md` 「로그인」이 소셜 3종 간격을 10 으로 못박는다 (스케일 밖 · 이 화면 전용)
-  actions: { gap: 10 },
+  // 「SNS 로그인」 한 줄 아래에 둥근 네모 셋이 가로로 선다(`DESIGN.md` 「로그인」)
+  sns: { alignItems: "center", gap: space.lg },
+  snsRow: { flexDirection: "row", gap: space.xl },
   centered: { textAlign: "center" },
   // 약관은 버튼보다 좁게 — 좌우 20(Screen) + 12 = 32 (`Login.dc.html`)
-  legal: { paddingTop: space.xl, paddingHorizontal: space.md },
+  // 위 48 — 버튼 줄이 약관에 붙어 화면 아래로 몰려 보였다(2026-10-13 사용자 요청 「조금 올려」)
+  legal: { paddingTop: space.xl5, paddingHorizontal: space.md },
   // 누를 수 있다는 신호를 색 하나에 맡기지 않는다
   legalLink: { textDecorationLine: "underline" },
 });

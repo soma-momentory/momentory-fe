@@ -403,8 +403,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           "./assets/fonts/Pretendard-SemiBold.otf",
           "./assets/fonts/Pretendard-Bold.otf",
           "./assets/fonts/KyoboHandwriting2025lyb.ttf",
-          // 구글 로그인 버튼 한 줄 전용 — `components/ds/SocialButton.tsx`
-          "./assets/fonts/Roboto-Medium.ttf",
         ],
       },
     ],

@@ -17,12 +17,21 @@ import {
   Modal,
   SectionHeader,
   SocialButton,
+  SOCIAL_BUTTON_SIZE,
   Text,
   TextField,
   Toast,
 } from "@/components/ds";
 import { ICON_PATHS, type IconName } from "@/components/ds/icons/paths";
 import { interaction, label, primary, social, status, zIndex } from "@/design/ds";
+
+// 애플 줄은 시스템 버튼이다 — 눌리는 판 하나로 갈아끼운다(받은 이름 · 상태를 그대로 단다)
+jest.mock("expo-apple-authentication", () => ({
+  AppleAuthenticationButtonType: { SIGN_IN: 0 },
+  AppleAuthenticationButtonStyle: { BLACK: 2 },
+  AppleAuthenticationButton: (props: object) =>
+    jest.requireActual("react").createElement(jest.requireActual("react-native").Pressable, props),
+}));
 
 /**
  * DS 컴포넌트가 **규칙을 지키는지** 본다 — 모양을 픽셀로 고정하지 않는다.
@@ -207,32 +216,55 @@ describe("Chip — 선택을 색만으로 표시하지 않는다", () => {
   });
 });
 
-describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => {
+describe("SocialButton — 같은 둥근 네모 안에 로고만 · 브랜드 색은 손대지 않는다", () => {
   it.each([
     ["kakao", social.kakao.background],
     ["google", social.google.background],
-    ["apple", social.apple.background],
-  ] as const)("%s 면이 공식 색 그대로다", async (provider, expected) => {
+  ] as const)("%s 칸이 공식 색 그대로다", async (provider, expected) => {
     const { getByRole } = await render(
       <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
     );
     expect(flatten(getByRole("button").props.style).backgroundColor).toBe(expected);
   });
 
-  it("높이 48 · 카카오 radius 12", async () => {
+  // 애플은 「다른 로그인 버튼보다 작으면 안 된다」 — 셋의 지름이 같아야 한다
+  it.each(["kakao", "google"] as const)(
+    "%s 는 한 변 64 · 반경 12 의 둥근 네모다",
+    async (provider) => {
+      const { getByRole } = await render(
+        <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
+      );
+      expect(flatten(getByRole("button").props.style)).toMatchObject({
+        width: SOCIAL_BUTTON_SIZE,
+        height: SOCIAL_BUTTON_SIZE,
+        borderRadius: 12,
+      });
+    },
+  );
+
+  it("애플은 시스템 버튼을 같은 크기 · 같은 반경으로 둔다 — 로고를 직접 그리지 않는다", async () => {
+    expect("logo-apple" in ICON_PATHS).toBe(false);
     const { getByRole } = await render(
-      <SocialButton provider="kakao" label="계속하기" onPress={() => {}} />,
+      <SocialButton provider="apple" label="Apple로 로그인" onPress={() => {}} />,
     );
-    const style = flatten(getByRole("button").props.style);
-    expect(style.height).toBe(48);
-    expect(style.borderRadius).toBe(12);
+    const button = getByRole("button");
+
+    expect(button.props.accessibilityLabel).toBe("Apple로 로그인");
+    // 칸보다 크게 그려 잘라 내면 HIG 「기본 여백을 줄이지 말라」에 걸린다 — 칸 크기 그대로다
+    expect(button.props.cornerRadius).toBe(12);
+    expect(flatten(button.parent?.props.style)).toMatchObject({
+      width: SOCIAL_BUTTON_SIZE,
+      height: SOCIAL_BUTTON_SIZE,
+    });
+    expect(flatten(button.parent?.props.style).overflow).toBeUndefined();
   });
 
-  it("Google은 공식 Rectangular 형상의 radius 4다", async () => {
-    const { getByRole } = await render(
-      <SocialButton provider="google" label="Google 계정으로 로그인" onPress={() => {}} />,
+  it("글자를 그리지 않는다 — label 은 낭독기가 읽는 이름이다", async () => {
+    const { getByRole, queryByText } = await render(
+      <SocialButton provider="kakao" label="카카오 로그인" onPress={() => {}} />,
     );
-    expect(flatten(getByRole("button").props.style).borderRadius).toBe(4);
+    expect(queryByText("카카오 로그인")).toBeNull();
+    expect(getByRole("button").props.accessibilityLabel).toBe("카카오 로그인");
   });
 
   it("비활성이어도 브랜드 색과 opacity를 바꾸지 않는다", async () => {
@@ -244,119 +276,31 @@ describe("SocialButton — 브랜드 색·마크는 손대지 않는다", () => 
     expect(style.opacity).toBeUndefined();
   });
 
-  it("비활성이면 눌리지 않는다", async () => {
+  it.each(["kakao", "apple"] as const)("%s 비활성이면 눌리지 않는다", async (provider) => {
     const onPress = jest.fn();
     const { getByRole } = await render(
-      <SocialButton provider="apple" label="계속하기" disabled onPress={onPress} />,
+      <SocialButton provider={provider} label="계속하기" disabled onPress={onPress} />,
     );
     await fireEvent.press(getByRole("button"));
     expect(onPress).not.toHaveBeenCalled();
   });
 
-  /**
-   * 2026-08-24 — 3사 공식 규격을 실제로 읽고 맞춘 값들이다(`SocialButton.tsx` 머리말).
-   * 「보기 좋게」 통일하려는 다음 사람을 여기서 멈춘다.
-   */
-  it("카카오 심볼은 100% 검정이다 — 레이블 85% 와 다른 값을 가이드가 못박는다", async () => {
+  it("카카오 심볼은 100% 검정이다", async () => {
     const { toJSON } = await render(
       <SocialButton provider="kakao" label="카카오 로그인" onPress={() => {}} />,
     );
 
-    // 말풍선은 `Icon` 이 그린다 — 여기서 보는 것은 그 채움색 하나다
-    // `react-native-svg` 가 색을 `{ type, payload }` 로 싸서 넘긴다 — 알맹이만 본다
+    // 말풍선은 `Icon` 이 그린다 — `react-native-svg` 가 색을 `{ type, payload }` 로 싸서 넘긴다
     const symbol = findByType(toJSON(), "RNSVGPath");
     expect(symbol?.props.fill).toMatchObject({ payload: processColor(social.kakao.symbol) });
-    expect(social.kakao.symbol).not.toBe(social.kakao.label);
   });
 
-  /**
-   * 글자 크기는 **줄마다 다르다 — 통일할 수가 없다.** 애플은 「높이의 43%」를
-   * 요구하고(HIG · need to) 카카오는 「레이블 세로 길이 ≤ 높이의 1/3」로 막는데,
-   * Pretendard 한글 ink/em 이 0.88 이라 20.64 는 카카오 상한 16 을 넘는다.
-   * 둘 다 높이 대비 비율이라 버튼을 키워도 해소되지 않는다.
-   */
-  it.each([
-    ["kakao", 16], //    48 ÷ 3 — 「레이블 세로 길이 ≤ 높이의 1/3」
-    ["google", 14], //   「Roboto Medium | 14/20」
-  ] as const)("%s 라벨 크기가 규격대로다", async (provider, expected) => {
-    const { getByText } = await render(
+  // 셋 중 하나만 테두리가 있으면 어색했다(2026-10-13) — 흰 칸이 크림 바탕에서 떨어져 보인다
+  it.each(["kakao", "google"] as const)("%s 칸에는 테두리가 없다", async (provider) => {
+    const { getByRole } = await render(
       <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
     );
-    expect(flatten(getByText("계속하기").props.style).fontSize).toBeCloseTo(expected, 2);
-  });
-
-  /** Apple 생성기가 내려준 완성형 PNG를 로고와 텍스트로 다시 조립하지 않는다. */
-  it("Apple 버튼은 공식 생성기의 완성형 @3x 아트워크를 그대로 쓴다", async () => {
-    expect("logo-apple" in ICON_PATHS).toBe(false);
-
-    const { getByRole, getByTestId, queryByText } = await render(
-      <SocialButton provider="apple" label="Apple로 로그인" onPress={() => {}} />,
-    );
-    const artwork = getByTestId("apple-official-button-artwork");
-    expect(flatten(artwork.props.style)).toMatchObject({ width: "100%", height: "100%" });
-    expect(flatten(getByRole("button").props.style).paddingHorizontal).toBe(0);
-    expect(queryByText("Apple로 로그인")).toBeNull();
-    expect(getByRole("button").props.accessibilityLabel).toBe("Apple로 로그인");
-  });
-
-  /**
-   * 굵기는 **500 이다.** 애플 공식 렌더의 획/높이가 0.1090 인데 Pretendard Medium 이
-   * 정확히 0.1090 이고 SemiBold 는 0.1282(+18%)다 — 600 으로 올리면 공식 버튼보다
-   * 두꺼워진다(`SocialButton.tsx` 「굵기는 500 이다」). 구글이 규격으로 못박는
-   * Roboto **Medium** 과도 같은 단이다.
-   */
-  it.each(["kakao", "google"] as const)("%s 라벨 굵기는 500 이다", async (provider) => {
-    const { getByText } = await render(
-      <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
-    );
-    const style = flatten(getByText("계속하기").props.style);
-    // Roboto는 정적 Medium 파일이고 스타일에도 500을 명시한다.
-    expect(style.fontWeight).toBe("500");
-  });
-
-  /**
-   * 서체 **종류**도 셋 다 각 사가 지정한 것이다 — 카카오 「OS 별 기본 시스템 서체」 ·
-   * 애플 「Prefer the system font」 · 구글 「Roboto Medium」. 앞의 둘은 `fontFamily` 를
-   * **비워 두는 것**이 곧 규격이라, Pretendard 를 도로 끼워 넣으면 규격을 벗어난다.
-   */
-  it.each([
-    ["kakao", undefined],
-    ["google", "Roboto-Medium"],
-  ] as const)("%s 라벨 서체가 규격대로다", async (provider, expected) => {
-    const { getByText } = await render(
-      <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
-    );
-    expect(flatten(getByText("계속하기").props.style).fontFamily).toBe(expected);
-  });
-
-  // 서체를 이름으로 지정하는 곳은 구글뿐이다 — 나머지 둘은 우리 서체로 둔다
-  it("Google 라벨만 Roboto Medium 이다", async () => {
-    const family = async (provider: "kakao" | "google" | "apple") => {
-      const { getByText } = await render(
-        <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
-      );
-      return flatten(getByText("계속하기").props.style).fontFamily;
-    };
-
-    expect(await family("google")).toBe("Roboto-Medium");
-    expect(await family("kakao")).not.toBe("Roboto-Medium");
-  });
-
-  // 공식 Light 테마의 흰 판은 테두리가 있어야 배경에서 떨어진다 (inside 1px)
-  it("Google 판에만 1px 테두리가 있다", async () => {
-    const border = async (provider: "kakao" | "google" | "apple") => {
-      const { getByRole } = await render(
-        <SocialButton provider={provider} label="계속하기" onPress={() => {}} />,
-      );
-      return flatten(getByRole("button").props.style);
-    };
-
-    expect(await border("google")).toMatchObject({
-      borderWidth: 1,
-      borderColor: social.google.border,
-    });
-    expect((await border("kakao")).borderWidth).toBeUndefined();
-    expect((await border("apple")).borderWidth).toBeUndefined();
+    expect(flatten(getByRole("button").props.style).borderWidth).toBeUndefined();
   });
 });
 

@@ -20,11 +20,16 @@ jest.mock("expo-router", () => ({
 // 애플 로그인도 네이티브다. 화면 테스트는 store 의 갈래를 목으로 갈아끼우므로
 // 여기까지 내려가지 않지만, import 사슬이 네이티브 모듈에 닿는다
 // (갈래 자체는 `features/auth/__tests__/appleSignIn.test.ts`)
+// 애플 줄은 시스템 버튼이다 — 눌리는 판 하나로 갈아끼운다(받은 이름 · 상태를 그대로 단다)
 jest.mock("expo-apple-authentication", () => ({
   __esModule: true,
   isAvailableAsync: jest.fn(async () => false),
   signInAsync: jest.fn(),
   AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
+  AppleAuthenticationButtonType: { SIGN_IN: 0 },
+  AppleAuthenticationButtonStyle: { BLACK: 2 },
+  AppleAuthenticationButton: (props: object) =>
+    jest.requireActual("react").createElement(jest.requireActual("react-native").Pressable, props),
 }));
 
 // 앱 안 브라우저는 네이티브다 — 약관 줄이 무엇을 여는지만 본다
@@ -47,9 +52,9 @@ beforeEach(() => {
 describe("카카오 버튼 — 실제 로그인에 연결돼 있다", () => {
   it("온보딩이 필요하면 온보딩으로 보낸다", async () => {
     const signIn = mockSignIn({ kind: "signed-in", onboardingRequired: true });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오 로그인"));
+    await fireEvent.press(getByLabelText("카카오 로그인"));
 
     await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
     expect(replace).toHaveBeenCalledWith("/welcome");
@@ -57,18 +62,18 @@ describe("카카오 버튼 — 실제 로그인에 연결돼 있다", () => {
 
   it("온보딩을 마친 사용자는 홈으로 보낸다", async () => {
     mockSignIn({ kind: "signed-in", onboardingRequired: false });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오 로그인"));
+    await fireEvent.press(getByLabelText("카카오 로그인"));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
   });
 
   it("취소하면 화면을 옮기지도, 아무 말도 하지 않는다", async () => {
     const signIn = mockSignIn({ kind: "cancelled" });
-    const { getByText, queryByText } = await render(<Login />);
+    const { queryByText, getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오 로그인"));
+    await fireEvent.press(getByLabelText("카카오 로그인"));
 
     await waitFor(() => expect(signIn).toHaveBeenCalled());
     expect(replace).not.toHaveBeenCalled();
@@ -172,9 +177,9 @@ describe("실패 안내 — 한 줄로 흡수한다", () => {
       return { kind: "failed", message };
     });
     useAuth.setState({ signInWithKakao: signIn });
-    const { getByText, queryByText } = await render(<Login />);
+    const { getByText, queryByText, getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오 로그인"));
+    await fireEvent.press(getByLabelText("카카오 로그인"));
 
     await waitFor(() => expect(getByText(message)).toBeTruthy());
     expect(replace).not.toHaveBeenCalled();
@@ -205,9 +210,9 @@ describe("Google 버튼 — 실제 로그인에 연결돼 있다", () => {
     const signIn = mockGoogle({ kind: "signed-in", onboardingRequired: true });
     const dev = jest.fn(async () => {});
     useAuth.setState({ signInDev: dev });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Google 계정으로 로그인"));
+    await fireEvent.press(getByLabelText("Google 계정으로 로그인"));
 
     await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
     expect(dev).not.toHaveBeenCalled();
@@ -216,18 +221,18 @@ describe("Google 버튼 — 실제 로그인에 연결돼 있다", () => {
 
   it("온보딩을 마친 사용자는 홈으로 보낸다", async () => {
     mockGoogle({ kind: "signed-in", onboardingRequired: false });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Google 계정으로 로그인"));
+    await fireEvent.press(getByLabelText("Google 계정으로 로그인"));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
   });
 
   it("취소하면 화면을 옮기지 않는다", async () => {
     mockGoogle({ kind: "cancelled" });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("Google 계정으로 로그인"));
+    await fireEvent.press(getByLabelText("Google 계정으로 로그인"));
 
     await waitFor(() => expect(replace).not.toHaveBeenCalled());
   });
@@ -293,6 +298,16 @@ describe("Momentory DS 이관 — 구조가 바뀌었다", () => {
     ]);
   });
 
+  it("「SNS 로그인」 한 줄 아래에 로고만 두고, 버튼에는 글자를 쓰지 않는다", async () => {
+    // 글자를 두면 세 회사의 글자 규칙이 부딪혀 서체 · 크기가 갈렸다(`SocialButton` 머리말)
+    const { getByText, queryByText } = await render(<Login />);
+
+    expect(getByText("SNS 로그인")).toBeTruthy();
+    expect(queryByText("카카오 로그인")).toBeNull();
+    expect(queryByText("Google 계정으로 로그인")).toBeNull();
+    expect(queryByText("Apple로 로그인")).toBeNull();
+  });
+
   it("Android에서는 Apple 버튼을 표시하지 않는다", async () => {
     const platform = jest.replaceProperty(Platform, "OS", "android");
 
@@ -354,9 +369,9 @@ describe("중복 클릭", () => {
   it("진행 중이면 버튼이 잠긴다 — 두 번째 누름이 로그인을 다시 부르지 않는다", async () => {
     const signIn = mockSignIn({ kind: "signed-in", onboardingRequired: true });
     useAuth.setState({ signingIn: true });
-    const { getByText } = await render(<Login />);
+    const { getByLabelText } = await render(<Login />);
 
-    await fireEvent.press(getByText("카카오 로그인"));
+    await fireEvent.press(getByLabelText("카카오 로그인"));
 
     expect(signIn).not.toHaveBeenCalled();
   });

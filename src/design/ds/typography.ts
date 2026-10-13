@@ -30,7 +30,7 @@ const HAND = "KyoboHandwriting2025lyb";
  * 로그인은 앱을 처음 만나는 자리이고 약관·오류 같은 **읽고 판단하는 글**이 모여
  * 있어서, 여기만 Pretendard 로 남긴다. 네 파일 다 `assets/fonts/` 에 있고
  * `src/lib/providers.tsx` 가 계속 로드한다 — 다른 화면이 집어 쓰지 않도록
- * `fontFamily` 토큰에는 올리지 않았다(구글 버튼의 Roboto 와 같은 취급이다).
+ * `fontFamily` 토큰에는 올리지 않았다.
  */
 export const gothicFamily = {
   regular: "Pretendard-Regular",
@@ -157,8 +157,8 @@ export const scaleFont = scaled;
  * ⚠ 그릇을 뚫지 않는지 함께 본다. 가장 큰 조합(440 기기 · 1.12 × 1.2 × 1.15 = 1.54)에서
  *   `buttonLabel` 의 행간이 20 → 31 인데 Large 48 · Medium 40 안에 남는다.
  *   Small 32 는 `buttonLabelSmall`(18 → 28)이라 역시 들어간다.
- * ⚠ 로그인의 3사 버튼은 **여기 안 든다** — 카카오 16 · 구글 14 는 브랜드 규격이라
- *   `SocialButton` 이 따로 그린다(`DESIGN.md` 로그인 절).
+ * ⚠ 로그인의 소셜 버튼은 **여기 안 든다** — 글자 없이 둥근 네모 안에 로고만 둔다
+ *   (`SocialButton` · `DESIGN.md` 로그인 절).
  */
 const BUTTON_BOOST = Platform.OS === "ios" ? 1.15 : 1;
 
