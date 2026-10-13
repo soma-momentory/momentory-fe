@@ -15,6 +15,7 @@ import {
   SceneGuideButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
+import { keepWorry } from "@/features/rest/data/worryApi";
 import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
 import { useRestGuide } from "@/features/rest/model/useRestGuide";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
@@ -48,6 +49,8 @@ import {
   WORRY_BOX_RELEASE_DONE,
   WORRY_BOX_RELEASED_SIGN,
   WORRY_BOX_GUIDE,
+  WORRY_KEEP_FAILED,
+  WORRY_KEPT_TITLE,
   WORRY_MAX_LENGTH,
   type WorryBoxStage,
   canHandOver,
@@ -61,8 +64,8 @@ import {
  * 채우고** 그 위에 위 안내 · 아래 판이 뜬다(`WorryBoxScene`). 단계는 한 화면 안에서
  * 넘어간다: 쓰기 → 건네기(연출) → 상자에 들어감(둘 중 하나 고르기) → 맡겨두기 | 흘려보내기.
  *
- * 쓴 걱정은 이 화면의 상태에만 있다 — 저장하지 않고 어디로도 보내지 않는다
- * (`features/rest/model/worryBox.ts`).
+ * 「잠시 맡겨둘게요」를 고른 걱정만 서버에 남고, 흘려보낸 걱정은 이 화면의 상태에만 있다
+ * (`features/rest/model/worryBox.ts`). 맡겨둔 걱정은 오른쪽 위 원에서 다시 본다.
  */
 export default function WorryBoxScreen() {
   const insets = useSafeAreaInsets();
@@ -73,6 +76,8 @@ export default function WorryBoxScreen() {
   // 「흘려보낼게요」 — 카피바라의 쪽지가 다 내려앉았다. 돌아가는 길은 그 **뒤**다
   // (버튼이 쪽지보다 먼저 뜨니 어색했다 · 2026-10-05 · 피드백)
   const [noteLanded, setNoteLanded] = useState(false);
+  // 맡겨두기 저장이 실패했다 — 연출은 그대로 흐르고 끝에서 한 줄로 알린다(보물함과 같다)
+  const [keepFailed, setKeepFailed] = useState(false);
 
   // 쉼 콘텐츠 공통 계측 — 나간 자리는 쓰기 · 건네는 중 · 고르기 전. 고르면 끝까지 간 것이다
   const { date: today } = useTodayContext();
@@ -101,6 +106,12 @@ export default function WorryBoxScreen() {
     track("worry_box_choice_selected", { choice });
     rest.complete();
     setStage(choice);
+    // 맡겨둔 걱정만 남긴다 — 흘려보낸 걱정은 어디로도 보내지 않는다
+    if (choice === "keep") {
+      void keepWorry(worry.trim()).then((r) => {
+        if (!r.ok) setKeepFailed(true);
+      });
+    }
   };
 
   // 판 아래 숨 — 쓰기는 판을 낮춰 장면을 가리지 않게 한 단 줄인다
@@ -142,8 +153,17 @@ export default function WorryBoxScreen() {
         >
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
           <SceneGuideButton top={insets.top + space.sm} onPress={guide.show} />
+          {/* 오른쪽 위 원 둘 — 맡겨둔 걱정(쓴 글)과 이용 기록(쉼터를 한 기록)은 서로 다른
+              것이라 나눠 둔다(보물함과 같은 자리 · 2026-10-13) */}
           <SceneCornerButton
             top={insets.top + space.sm}
+            label={WORRY_KEPT_TITLE}
+            icon="list"
+            onPress={() => router.push("/rest/worries")}
+          />
+          <SceneCornerButton
+            top={insets.top + space.sm}
+            slot={1}
             label={REST_RECORDS_LINK}
             icon="clock"
             onPress={() => router.push("/rest/records?content=worry_box")}
@@ -238,7 +258,17 @@ export default function WorryBoxScreen() {
                 </VintagePressable>
               ))
             ) : !ended || (stage === "release" && !noteLanded) ? null : (
-              <ScenePillButton label={WORRY_BOX_DONE_CTA} onPress={() => setAsking(true)} />
+              <>
+                {/* 숲 그림 위에서는 글자가 묻혀 크림 카드에 앉힌다 */}
+                {keepFailed ? (
+                  <SceneCard>
+                    <Text variant="body2" color={labelColor.neutral} style={styles.mid}>
+                      {WORRY_KEEP_FAILED}
+                    </Text>
+                  </SceneCard>
+                ) : null}
+                <ScenePillButton label={WORRY_BOX_DONE_CTA} onPress={() => setAsking(true)} />
+              </>
             )}
           </View>
         </KeyboardAvoidingView>

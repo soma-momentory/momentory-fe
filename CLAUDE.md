@@ -240,11 +240,12 @@ app/retro/{_layout, confirm, talk, draft, done}.tsx
                     감정 탐색)을 다 그린다 — 무엇을 그릴지는 서버의 `phase` 가 정한다
 app/diary/{_layout, [id]/index}.tsx = A3 · A3-c
                   ← `[id]/edit`(A4)은 2026-08-20 에 지웠다(DESIGN.md N2 · PRODUCT.md #24·26)
-app/rest/{_layout, cards/index, sense-pond, worry-box, treasure-box, treasures, body-release, records}.tsx
-                  = R2(날짜별 바람카드) · 감각연못 · 걱정상자 · 오늘의 보물함(+ 지난 보물) · 몸에 힘 빼기
+app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, treasures, body-release, records}.tsx
+                  = R2(날짜별 바람카드) · 감각연못 · 걱정상자(+ 맡겨둔 걱정) · 오늘의 보물함(+ 지난 보물) · 몸에 힘 빼기
                     · 쉼터별 이용 기록(`?content=`)
-                  ← 쉼 콘텐츠 넷이 모두 화면을 가졌다(2026-10-05). 보물함만 쓴 글을 서버에 남긴다
-                    (`features/rest/data/treasureApi.ts` · `/api/v1/treasures`).
+                  ← 쉼 콘텐츠 넷이 모두 화면을 가졌다(2026-10-05). 쓴 글을 서버에 남기는 것은 보물함
+                    (`features/rest/data/treasureApi.ts` · `/api/v1/treasures`)과 걱정상자에서
+                    **맡겨둔** 걱정(`worryApi.ts` · `/api/v1/worries` · 2026-10-13) 둘이다.
                     나갈 때 기분 쪽지 · 이용 기록은 넷 공통이다(2026-10-08 · `MoodExit` ·
                     `useRestRecord` · `/api/v1/rest-records` · DESIGN.md 「쉼 콘텐츠 공통 규칙」 7-1)
 app/my/{_layout, profile, nickname, age, gender, interests, rest, inquiry}.tsx

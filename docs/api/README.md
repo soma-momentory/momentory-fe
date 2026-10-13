@@ -72,6 +72,7 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 | `src/features/diary/data/diaryApi.ts`                   | `GET /api/v1/diaries` · `DELETE …/{id}` · `PUT …/by-retrospect/{retrospectId}` · `GET /api/v1/action-cards` · `PUT …/{id}/completion` · `DELETE /api/v1/action-cards/{id}` |
 | `src/features/report/data/weeklyReportApi.ts`           | `GET /api/v1/reports/weekly`                                                                                                                                               |
 | `src/features/rest/data/treasureApi.ts`                 | `POST /api/v1/treasures` · `GET /api/v1/treasures` (`?date=` 그날 · 없으면 전부)                                                                                           |
+| `src/features/rest/data/worryApi.ts`                    | `POST /api/v1/worries` · `GET /api/v1/worries` (맡겨둔 걱정 전부 · 최신순)                                                                                                 |
 | `src/features/rest/data/restRecordApi.ts`               | `POST /api/v1/rest-records` · `GET /api/v1/rest-records?content=` (쉼터별 · 최신순)                                                                                        |
 
 > ✅ **`DELETE /api/v1/action-cards/{id}` 는 붙었다** (2026-08-24 계약 반입 → 연결).

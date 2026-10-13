@@ -25,7 +25,7 @@ describe("오늘의 보물함 — 규칙", () => {
       t("2", "2026-10-05", "2026-10-05T09:00:00Z"),
       t("1", "2026-10-03", "2026-10-03T09:00:00Z"),
     ];
-    expect(groupByDay(all).map((d) => [d.date, d.treasures.map((x) => x.id)])).toEqual([
+    expect(groupByDay(all).map((d) => [d.date, d.items.map((x) => x.id)])).toEqual([
       ["2026-10-05", ["2", "3"]],
       ["2026-10-03", ["1"]],
     ]);

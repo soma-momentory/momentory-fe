@@ -59,15 +59,15 @@ export const markAt = (index: number): TreasureMarkName =>
 
 /**
  * 모든 보물(최신순) → 하루 묶음(최신 날 먼저). 묶음 안은 **담은 순서**라 표식이 오늘의
- * 보물함과 같다.
+ * 보물함과 같다. 맡겨둔 걱정(`app/rest/worries.tsx`)도 같은 모양이라 함께 쓴다.
  */
-export const groupByDay = (all: readonly Treasure[]) => {
-  const days = new Map<string, Treasure[]>();
+export const groupByDay = <T extends Pick<Treasure, "date" | "createdAt">>(all: readonly T[]) => {
+  const days = new Map<string, T[]>();
   for (const t of all) days.set(t.date, [...(days.get(t.date) ?? []), t]);
   return [...days.entries()]
     .sort(([a], [b]) => (a < b ? 1 : -1))
     .map(([date, list]) => ({
       date,
-      treasures: [...list].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1)),
+      items: [...list].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1)),
     }));
 };
