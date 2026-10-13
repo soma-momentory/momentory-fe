@@ -226,24 +226,21 @@ export const social = {
   /**
    * 카카오 — [디자인 가이드](https://developers.kakao.com/docs/ko/kakaologin/design-guide) 「색상」.
    *
-   * ⚠ **심볼과 레이블이 다른 검정이다.** 가이드 표가 심볼 `#000000` · 레이블
-   * `#000000 85%` 로 **두 줄로 나눠** 적는다. 2026-08-24 이전에는 둘 다 85% 로
-   * 그렸는데, 말풍선이 규정보다 흐렸다는 뜻이다.
+   * 심볼은 `#000000` 100% 다 — 가이드 표의 레이블 85% 와 다르다. 로그인 버튼은 칸 안에
+   * 심볼만 두므로(2026-10-13) 레이블 색은 쓰지 않는다.
    */
-  kakao: { background: "#FEE500", symbol: "#000000", label: "rgba(0,0,0,0.85)" },
+  kakao: { background: "#FEE500", symbol: "#000000" },
   /**
-   * 흰 판 + `#747775` 1px 테두리 + `#1F1F1F` 글자 — 공식 Light 테마
+   * 흰 판 — G 는 흰 바탕 위 원래 색이어야 한다
    * ([브랜딩 가이드라인](https://developers.google.com/identity/branding-guidelines?hl=ko)).
-   *
-   * 테두리는 **inside 1px** 이다 — 바깥으로 그리면 버튼이 48 보다 커진다.
+   * 로그인 원에는 테두리를 두지 않는다(2026-10-13 · `SocialButton`).
    *
    * 4색 「G」 hex 는 **여기서 지웠다**(2026-08-24). 공식 마크가 2025 년에
    * 그라디언트로 바뀌어 색 넷으로 그릴 수 없게 됐다 — 이제 구글이 배포하는
    * PNG 원본을 그대로 쓴다(`icons/GoogleMark.tsx`).
    */
-  google: { background: "#FFFFFF", label: "#1F1F1F", border: "#747775" },
-  /** 라이트에서 검정 판 + 흰 글자 (공식 규정) */
-  apple: { background: "#000000", label: "#FFFFFF" },
+  google: { background: "#FFFFFF" },
+  // 애플은 색을 두지 않는다 — 시스템 버튼(`buttonStyle` BLACK)이 그린다(`SocialButton`)
 } as const;
 
 /**

@@ -109,13 +109,6 @@ function useAppFonts() {
     "Pretendard-Bold": require("../../assets/fonts/Pretendard-Bold.otf"),
     // **앱 전체의 서체** — `ds/typography.ts` 의 `fontFamily` 다섯 이름이 모두 이 파일이다
     KyoboHandwriting2025lyb: require("../../assets/fonts/KyoboHandwriting2025lyb.ttf"),
-    /**
-     * ⚠ **우리 서체가 아니다.** 구글 로그인 버튼 **한 줄**만 쓴다 —
-     * 한국어 브랜딩 가이드라인이 라벨 서체를 「Roboto Medium」으로 지정한다
-     * (`components/ds/SocialButton.tsx`). 그래서 `ds/typography.ts` 의
-     * `fontFamily` 토큰에는 올리지 않았다 — 다른 화면이 집어 쓰면 안 된다.
-     */
-    "Roboto-Medium": require("../../assets/fonts/Roboto-Medium.ttf"),
   });
 
   // 폰트 로딩이 실패해도 앱을 붙잡아두지 않는다 — 시스템 서체로라도 뜬다.
