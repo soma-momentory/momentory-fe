@@ -100,6 +100,8 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | worry_box_handed             | 걱정상자에 걱정을 맡김                             | chars (글자 수만)                         |
 | worry_box_choice_selected    | 걱정상자의 맡겨두기/흘려보내기 선택                | choice: keep/release                      |
 | treasure_box_tucked          | 오늘의 보물함에 보물을 담음                        | chars (글자 수만)                         |
+| store_review_requested       | 쉼터를 「나아졌어요」로 마치고 나와 별점 창을 요청 | 없음 (창이 떴는지는 알 수 없음)           |
+| inquiry_submitted            | 마이 「문의하기」에서 문의를 보냄                  | category: bug/suggestion/account/etc      |
 | report_week_selected         | 다른 주 선택                                       | week_start                                |
 | weekly_report_viewed         | 선택 주와 일치하는 리포트가 ready로 표시됨         | week_start                                |
 | logout_clicked               | 마이 로그아웃 클릭                                 | 없음                                      |

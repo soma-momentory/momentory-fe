@@ -212,6 +212,10 @@ export const events = {
   worry_box_choice_selected: { choice: choice("keep", "release") },
   /** 보물을 담았다 — 쓴 글은 보내지 않고 길이만 */
   treasure_box_tucked: { chars: count },
+  /** 별점 창을 요청했다 — 떴는지 · 남겼는지는 스토어가 알려 주지 않는다(`storeReview.ts`) */
+  store_review_requested: {},
+  /** 문의를 보냈다 — 내용은 보내지 않는다 */
+  inquiry_submitted: { category: choice("bug", "suggestion", "account", "etc") },
   report_week_selected: { week_start: week },
   weekly_report_viewed: { week_start: week },
   logout_clicked: {},

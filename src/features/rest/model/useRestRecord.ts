@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { addRestRecord } from "../data/restRecordApi";
+import { maybeRequestStoreReview } from "../data/storeReview";
 import type { RestMood, RestRecordContent } from "./restRecord";
 
 /**
@@ -33,6 +34,8 @@ export function useRestRecord(content: RestRecordContent, started: boolean) {
         if (!s.left) return;
         if (s.picked != null) void addRestRecord(content, { completed: true, mood: s.picked });
         else if (s.started) void addRestRecord(content, { completed: false });
+        // 「나아졌어요」로 마치고 나온 때가 별점을 물을 자리다(`storeReview.ts`)
+        if (s.picked === "better") void maybeRequestStoreReview();
       });
     };
   }, [content]);

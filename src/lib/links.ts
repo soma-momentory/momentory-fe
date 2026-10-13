@@ -24,7 +24,7 @@ import { Linking } from "react-native";
  */
 
 /**
- * 랜딩 페이지의 법적 고지와 문의 폼.
+ * 랜딩 페이지의 법적 고지. 문의는 2026-10-13 부터 앱 안 화면이다(`app/my/inquiry.tsx`).
  *
  * ⚠ **앱 안에 문안을 두지 않는다** — 약관은 법률 검토를 거쳐 웹에서 갱신되고,
  * 앱을 다시 배포해야 바뀌는 자리에 복사해 두면 두 벌이 어긋난다.
@@ -39,8 +39,6 @@ export const EXTERNAL_LINKS = {
   privacy: "https://momentory.co.kr/privacy",
   /** 이용약관 — 로그인 약관 줄 · 마이 「지원」 */
   terms: "https://momentory.co.kr/terms",
-  /** 문의하기 — Notion 폼. 별도의 문의 화면을 만들지 않는다 */
-  support: "https://thirsty-meadowlark-63f.notion.site/3c12fa8ed7a180d9a36bd8cab3bf1f2d?pvs=105",
   /**
    * 계정 삭제 안내 — **지금 앱 화면에서는 쓰지 않는다.** 탈퇴는 마이 안에 있고
    * (`DELETE /api/v1/users/me`), 이 주소는 **스토어 콘솔에 적는 값**이다: Play 는
