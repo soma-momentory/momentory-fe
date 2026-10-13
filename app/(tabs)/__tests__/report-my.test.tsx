@@ -585,13 +585,21 @@ describe("M1 · 마이 기본", () => {
     }
   });
 
-  it("지원 세 줄이 각자의 웹 문서를 앱 안에서 연다", async () => {
+  it("문의하기는 앱 안 문의 화면으로 간다 — 웹 폼을 열지 않는다", async () => {
+    const r = await render(<My />);
+
+    await fireEvent.press(r.getByText("문의하기"));
+
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/my/inquiry");
+    expect(browser.openBrowserAsync).not.toHaveBeenCalled();
+  });
+
+  it("약관 두 줄이 각자의 웹 문서를 앱 안에서 연다", async () => {
     // **주소를 화면이 알지 않는다** — 무엇을 여는지만 여기서 고정하고,
     // 주소가 바뀌면 고칠 곳은 `src/lib/links.ts` 하나다
     const r = await render(<My />);
 
     for (const [label, path] of [
-      ["문의하기", "notion.site"],
       ["이용약관", "/terms"],
       ["개인정보 처리방침", "/privacy"],
     ] as const) {

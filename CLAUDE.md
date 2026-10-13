@@ -247,8 +247,9 @@ app/rest/{_layout, cards/index, sense-pond, worry-box, treasure-box, treasures, 
                     (`features/rest/data/treasureApi.ts` · `/api/v1/treasures`).
                     나갈 때 기분 쪽지 · 이용 기록은 넷 공통이다(2026-10-08 · `MoodExit` ·
                     `useRestRecord` · `/api/v1/rest-records` · DESIGN.md 「쉼 콘텐츠 공통 규칙」 7-1)
-app/my/{_layout, profile, nickname, age, gender, interests, rest}.tsx
-                  = 기본 정보 목록 + 항목별 수정 다섯
+app/my/{_layout, profile, nickname, age, gender, interests, rest, inquiry}.tsx
+                  = 기본 정보 목록 + 항목별 수정 다섯 + 문의하기(2026-10-13 · 그 전엔 Notion 폼 ·
+                    `POST /api/v1/inquiries` · 답변은 메일로 · 관리 화면 없이 개발자가 DB 에서 읽는다)
                   ← ⚠ **코드 주석의 `M3`~`M8` 은 스펙 번호가 아니다.** 스펙(`spec/screens/`)은
                     M1·M2(회고 프로필)·M3(알림 설정) 셋뿐이고, 목록+다섯 라우트는 구현이
                     나눈 것이다(2026-08-20 · PLAN.md A-10). 알림 설정은 화면이 아니라
@@ -381,7 +382,7 @@ src/lib/toast.ts        ← 토스트의 단일 통로 — 「끝난 일을 알�
                           그린다. **문안을 모른다**(삭제 문안은
                           `features/diary/model/deleteToast.ts`) · 큐를 두지 않는다
 src/lib/links.ts        ← 앱 밖 웹 문서의 단일 통로 — **주소를 아는 곳은 여기 하나다**
-                          (약관 · 개인정보 처리방침 · 문의). `openBrowserAsync` 로
+                          (약관 · 개인정보 처리방침). `openBrowserAsync` 로
                           **앱 안에서** 연다(앱을 떠나면 로그인 흐름이 끊긴다) ·
                           던지지 않는다. 화면은 `"terms"` 같은 이름만 안다
 src/lib/appState.ts     ← 앱이 **앞으로 돌아온 순간**의 단일 통로 — `onForeground`.
@@ -413,7 +414,9 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 - OS 경계 — **expo-secure-store**(모멘토리 토큰) ·
   **expo-notifications**(회고 시간 알림 — 전부 로컬) ·
   **expo-calendar**(`09` 기기 캘린더 — **읽기만** 하고, 읽은 것을 서버로 화해한다) ·
-  **expo-web-browser**(약관·개인정보 처리방침·문의를 **앱 안에서** 연다 — `src/lib/links.ts`) ·
+  **expo-web-browser**(약관·개인정보 처리방침을 **앱 안에서** 연다 — `src/lib/links.ts`) ·
+  **expo-store-review**(스토어 별점 창 — 쉼터를 「나아졌어요」로 마치고 나올 때 · 120일 간격 ·
+  `features/rest/data/storeReview.ts` · 2026-10-13) ·
   **expo-speech-recognition**(회고 입력의 음성 입력 — OS 인식기라 외부 STT 가 없다 ·
   `src/components/ds/voiceInput.ts`)
 - 계측 — **@amplitude/analytics-react-native** + **@react-native-async-storage/async-storage**

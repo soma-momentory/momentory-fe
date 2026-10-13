@@ -65,8 +65,8 @@ import {
  *
  * - **연속 일수·점수·배지를 쓰지 않는다** (`RULES.md`)
  * - **갈 곳이 없는 줄은 눌리지 않게 둔다.** 「지원」 세 줄은 2026-08-21 에 갈 곳이
- *   생겼고(랜딩 페이지의 약관·개인정보 처리방침과 Notion 문의 폼을 **앱 안 브라우저**로
- *   연다 · `src/lib/links.ts`), **회원 탈퇴는 2026-08-23 에 붙었다**(BE #42)
+ *   생겼고(랜딩 페이지의 약관·개인정보 처리방침을 **앱 안 브라우저**로 연다 · `src/lib/links.ts` ·
+ *   문의는 2026-10-13 부터 앱 안 화면 `app/my/inquiry.tsx`), **회원 탈퇴는 2026-08-23 에 붙었다**(BE #42)
  * - **회원 탈퇴는 목록 밖**의 낮춘 위험색 글자다 — 로그아웃과 같은 무게로 보이지 않게.
  *   되돌릴 수 없어 **확인 모달**을 거치고(`DESIGN.md` N2), 서버(`DELETE /users/me`)가
  *   카카오 연결을 끊고 계정을 지운 **뒤에만** 기기를 비운다(`features/auth/model/auth.ts`
@@ -440,7 +440,8 @@ export default function My() {
         </Group>
 
         {/*
-            세 줄 다 **앱 안 브라우저**로 랜딩 페이지를 연다(2026-08-21 · `src/lib/links.ts`).
+            「문의하기」는 앱 안 문의 화면으로 간다(2026-10-13 · `app/my/inquiry.tsx` — 그 전엔 Notion 폼).
+            약관 두 줄은 **앱 안 브라우저**로 랜딩 페이지를 연다(2026-08-21 · `src/lib/links.ts`).
             앱 안에 문안을 두지 않는 이유는 약관이 웹에서 갱신되기 때문이다 — 복사해
             두면 배포 주기가 다른 두 벌이 생긴다.
 
@@ -453,7 +454,7 @@ export default function My() {
           <ListCell
             title="문의하기"
             leading={<Icon name="send" size={20} color={labelColor.alternative} />}
-            onPress={() => void openExternalLink("support")}
+            onPress={() => router.push("/my/inquiry")}
             chevron
           />
           <ListDivider />
