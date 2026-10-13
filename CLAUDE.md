@@ -264,7 +264,7 @@ src/components/ds/                        ← **공용 컴포넌트.** 새 화�
   BottomSheet Modal Menu Toast ToastHost Spinner Slider WheelPicker Calendar
   ViewSwitcher SelectLift EmotionDot EmotionPebble EmotionSticker WeekEmptyDot
   ChatBubble ChatDock ChatScaffold
-  icons/{Icon.tsx, paths.ts, GoogleMark.tsx, AppleMark.tsx}
+  icons/{Icon.tsx, paths.ts, GoogleMark.tsx}
                                           ← 아이콘은 Wanted 세트를 그대로 옮긴 것 —
                                             **없는 글리프를 만들지 않는다**(person 없음 → nav-my-page).
                                             채팅 3종(ChatBubble·ChatDock·ChatScaffold)이

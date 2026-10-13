@@ -34,73 +34,11 @@
 
 전문: <https://developers.google.com/identity/branding-guidelines?hl=ko>
 
-## `Roboto-Medium.ttf`
-
-구글 로그인 버튼 레이블의 공식 서체. 요청한 한국어 Google 브랜딩 가이드가 지정한
-**Roboto Medium 14/20**을 적용했다.
-
-|           |                                                                    |
-| --------- | ------------------------------------------------------------------ |
-| 받은 곳   | 브랜딩 가이드의 글꼴 링크 → Google Fonts 다운로드 ZIP              |
-| 받은 날   | 2026-08-25                                                         |
-| ZIP       | `Google_Sans,Roboto.zip` → `Roboto/static/Roboto-Medium.ttf`       |
-| 내부 이름 | family `Roboto` / typographic subfamily `Medium`                   |
-| sha256    | `79343dc641a2e8d48a703a4667b71fc8dc6565cc8ce47dfc34fc52c12aadbf38` |
-
-- Google 버튼 한 줄에서만 사용한다.
-- Google이 제공한 정적 500 TTF를 수정하지 않는다.
-- Google Fonts가 배포하는 원본이며, 앱에는 원본 파일의 라이선스 메타데이터가 포함된다.
-
-## `appleid_button.png`
-
-Apple 공식 버튼 생성기가 렌더한 **완성형 버튼**이다. 로고·한국어 문구·서체·배치를
-앱에서 다시 만들지 않고 PNG 전체를 320×48pt로 표시한다.
-
-다운로드 파일명은 `appleid_button@3x.png`였지만 React Native가 `@3x`를 배율 변형
-접미사로 해석하므로, 픽셀을 바꾸지 않고 저장 이름만 `appleid_button.png`로 정규화했다.
-
-|         |                                                                    |
-| ------- | ------------------------------------------------------------------ |
-| 설정    | Black · Sign in · `ko_KR` · @3x · 320×48pt · radius 12pt           |
-| 픽셀    | 960×144px                                                          |
-| 받은 날 | 2026-08-25                                                         |
-| sha256  | `49122c5c2b3090c214332b88715b7adcdb48a1350d5362a4ac82a9f9426b5e82` |
-| 생성기  | https://appleid.apple.com/signinwithapple/button                   |
-
-### 라이선스 — **임베딩이 허용된다. 단 조건이 붙는다**
-
-dmg 를 열 때 동의하는 `Apple Inc. Developer Artwork License Agreement for Sign in
-with Apple` §2A 가 **앱 UI 안에서의 사용**을 허용한다:
-
-> use the Developer Artwork **in the user interface of your software applications**
-> that run on Apple's iOS … (**and corresponding web-based or other versions** of
-> your software applications that have the same title and substantially equivalent
-> features and functionality …)
-
-- 괄호 안의 「other versions」가 **우리 안드로이드 빌드**를 덮는다 — 같은 제목·같은
-  기능의 대응 버전이다
-- ⚠ **「only if you are an Apple Developer Program member」** 가 붙는다 — 멤버십이
-  끊기면 이 아트워크를 쓸 근거도 끊긴다
-- ⚠ `modify` · `create derivative works` 금지 — **좌표를 손대지 않는다**
-- ⚠ dmg 볼륨 안의 `Apple Design Resources License.rtf` 는 **다른 문서다**(「mock-up
-  전용 · 소프트웨어 임베드 금지」인 범용 라이선스). 이 아트워크에 적용되는 것은
-  위의 SIWA 전용 계약이다 — 둘을 헷갈리면 반대 결론이 나온다
-
-### 원본 다시 받기
-
-```
-curl -LO https://devimages-cdn.apple.com/design/resources/download/Logo-Sign-in-with-Apple.dmg
-yes | PAGER=cat hdiutil attach -nobrowse -readonly Logo-Sign-in-with-Apple.dmg
-```
-
-⚠ `yes |` 는 **라이선스 동의**를 자동으로 누르는 것이다. 회사·조직을 구속하는
-계약이므로 (§ 「on behalf of your company or organization」) 무엇에 동의하는지 알고
-누른다.
-
 ## 여기 없는 것
 
 - **카카오 심볼**은 `src/components/ds/icons/paths.ts` 의 벡터 글리프로 그린다 —
   카카오가 배포하는 것은 PNG·PSD 뿐이라 벡터 원본이 없다(`Icon`)
-- **버튼 이미지 전체**(카카오 `kakao_login_*.png` · 애플 버튼 API · 구글 버튼 SVG)는
-  담지 않는다. 전체 폭 버튼이라 고정 크기 이미지가 맞지 않고, 문구도 각 사 목록에서
-  우리가 고른 것이다. **규격 수치를 실측하는 데에만 썼다**(`docs/DESIGN.md` 「로그인」)
+- **애플 로고**는 담지 않는다 — 로그인 버튼은 시스템 버튼(`ASAuthorizationAppleIDButton`)을
+  원으로 두고, 폭이 좁으면 시스템이 로고만 그린다(2026-10-13 · `SocialButton`).
+  예전의 완성형 버튼 그림(`appleid_button.png`)과 구글 라벨용 Roboto 는 버튼에서 글자를
+  뺄 때 함께 지웠다(`docs/DESIGN.md` 「로그인」)
