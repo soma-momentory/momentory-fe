@@ -114,7 +114,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 
 화면명은 login, home, archive, rest, report, my, onboarding, schedule_new,
 schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
-wish_cards, wish_card_trail, sense_pond, body_release, worry_box, treasure_box, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다.
+wish_cards, wish_card_trail, sense_pond, body_release, worry_box, worry_list, treasure_box, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다.
 온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다.
 retroTime 단계에서는 진행 여부와 알림 권한 허용 여부(notify_permission_result)를 알 수 있다.
 설정 시각·예약 성공은 수집하지 않는다. 마이 M2 에서는 꺼진 알림을 켤 때 묻는 결과만 남는다.
@@ -177,8 +177,8 @@ worry_box, treasure_box)로 가른다. 시간은 모두 전면 시계로 잰다.
   오늘의 보물함 write(쓰다가)/tucking(담는 연출 중).
   화면이 닫힐 때 보내므로, 쉼 콘텐츠 화면에서 앱을 강제 종료하면 빠질 수 있다 — 그때는 screen_left
   (exit=background)의 마지막 화면으로 본다.
-- 걱정상자는 쓴 걱정을 **보내지 않는다.** worry_box_handed 는 글자 수(chars)만 싣는다. 걱정 원문은
-  속성 허용 목록에 없다.
+- 걱정상자는 쓴 걱정을 **계측으로 보내지 않는다.** worry_box_handed 는 글자 수(chars)만 싣는다. 걱정 원문은
+  속성 허용 목록에 없다. 「잠시 맡겨둘게요」를 고른 걱정은 서버(`/api/v1/worries`)에 남지만 계측과는 무관하다.
 - 오늘의 보물함은 쓴 보물을 서버에 저장하지만 **계측으로는 보내지 않는다.** treasure_box_tucked 는 글자
   수(chars)만 싣는다.
 - 감각연못의 `sense_pond_*` 는 그대로 함께 보낸다(단계 시간 · 멈춘 간격 · 꾹 누르기).

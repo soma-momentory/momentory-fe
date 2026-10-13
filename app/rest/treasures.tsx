@@ -74,7 +74,7 @@ export default function TreasuresScreen() {
             <Text variant="label1" color={labelColor.alternative}>
               {`${formatKoreanDateShort(day.date)} ${koreanWeekday(day.date)}요일`}
             </Text>
-            {day.treasures.map((t, i) => (
+            {day.items.map((t, i) => (
               <TreasureRow key={t.id} treasure={t} mark={markAt(i)} />
             ))}
           </SceneCard>

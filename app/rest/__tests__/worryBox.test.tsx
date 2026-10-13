@@ -7,14 +7,20 @@ import { track } from "@/features/analytics";
 
 import { worryBoxFinish as F, worryBoxMotion as M } from "@/design/ds";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
+import { keepWorry } from "@/features/rest/data/worryApi";
 
 /**
  * 걱정상자 — 걱정 한 줄을 적어 카피바라에게 건네고, 상자에 넣고, 맡겨두거나 흘려보낸다.
  *
  * 여기서 고정하는 것: 적기 전에는 「상자에 맡기기」가 꺼져 있다(공백만으로는 안 켜진다) ·
  * 맡기면 쓴 걱정이 종이 카드가 되어 건네지고 상자가 닫힌 뒤에야 선택지가 온다 ·
- * 두 끝 다 연출이 끝난 뒤에야 「쉼터로 돌아가기」가 붙는다.
+ * 두 끝 다 연출이 끝난 뒤에야 「쉼터로 돌아가기」가 붙는다 · 맡겨둔 걱정만 서버로 간다.
  */
+jest.mock("@/features/rest/data/worryApi", () => ({
+  keepWorry: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchWorries: jest.fn(),
+}));
+
 jest.mock("@/features/rest/data/restRecordApi", () => ({
   addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
   fetchRestRecords: jest.fn(),
@@ -154,6 +160,29 @@ describe("걱정상자", () => {
     expect(router.replace).not.toHaveBeenCalled();
     await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
+    // 맡겨둔 걱정은 쓴 그대로 서버에 남는다
+    expect(keepWorry).toHaveBeenCalledTimes(1);
+    expect(keepWorry).toHaveBeenCalledWith(WORRY);
+  });
+
+  it("맡겨두기 저장이 실패해도 연출은 끝까지 가고, 끝에서 한 줄로 알린다", async () => {
+    jest.mocked(keepWorry).mockResolvedValueOnce({ ok: false, code: "network" });
+    const r = await render(<WorryBoxScreen />);
+    await handOver(r);
+    await pass(HANDING + 100);
+
+    await fireEvent.press(r.getByRole("button", { name: /잠시 맡겨둘게요/ }));
+    await pass(400 + M.keepSlide + F.glow.duration);
+    expect(r.getByText("걱정을 맡아두지 못했어요. 잠시 뒤에 다시 맡겨주세요.")).toBeTruthy();
+    expect(r.getByText("쉼터로 돌아가기")).toBeTruthy();
+  });
+
+  it("오른쪽 위 원 — 맡겨둔 걱정과 이용 기록으로 각각 간다", async () => {
+    const r = await render(<WorryBoxScreen />);
+    await fireEvent.press(r.getByRole("button", { name: "맡겨둔 걱정" }));
+    expect(router.push).toHaveBeenCalledWith("/rest/worries");
+    await fireEvent.press(r.getByRole("button", { name: "지난 기록 보기" }));
+    expect(router.push).toHaveBeenCalledWith("/rest/records?content=worry_box");
   });
 
   it("「흘려보낼게요」 — 카피바라가 상자를 이고 걸어가 멀어진 뒤에야 돌아가는 길이 붙는다", async () => {
@@ -185,6 +214,8 @@ describe("걱정상자", () => {
     expect(r.queryByText("쉼터로 돌아가기")).toBeNull();
     await pass(F.message.delay + F.message.duration);
     expect(r.getByText("쉼터로 돌아가기")).toBeTruthy();
+    // 흘려보낸 걱정은 어디로도 가지 않는다
+    expect(keepWorry).not.toHaveBeenCalled();
   });
 
   describe("계측", () => {

@@ -40,7 +40,7 @@ export const REST_GUIDES: Record<RestRecordContent, RestGuide> = {
       "카피바라에게 건네면 상자에 담아 줘요",
       "잠시 맡겨둘지, 흘려보낼지 골라요",
     ],
-    note: "적은 걱정은 어디에도 저장되지 않아요",
+    note: "흘려보낸 걱정은 어디에도 남지 않아요. 맡겨둔 걱정만 나중에 다시 볼 수 있어요",
   },
   treasure_box: {
     id: "treasureBox",
