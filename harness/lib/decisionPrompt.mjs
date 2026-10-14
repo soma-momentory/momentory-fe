@@ -1,9 +1,10 @@
 // @ts-check
 import readline from 'node:readline';
+import { randomBytes } from 'node:crypto';
 import { readJson, writeJsonAtomic } from './runStore.mjs';
 
 // Human Decision 인터랙티브 입력 (Task 007, D1 / D2).
-// --resume + TTY에서만 사용한다. 답변은 받을 때마다 decisions.json에 저장한다.
+// TTY에서만 사용한다. 질문별 확인을 마친 답변만 decisions.json에 저장한다.
 
 /** @typedef {import('./harness.mjs').DecisionQuestion & { answer?: unknown }} StoredQuestion */
 
@@ -36,42 +37,22 @@ export function selectableOptions(question) {
 }
 
 /**
- * Enter로 추천안을 고를 수 있는지. recommendation이 실제 선택지가 아닌 질문(DEPENDENCY)은 제외한다. (D2)
- * @param {StoredQuestion} question
- * @param {Set<string>} noDefaultIds
- */
-export function allowsRecommendation(question, noDefaultIds) {
-  return (
-    !noDefaultIds.has(question.id) &&
-    typeof question.recommendation === 'string' &&
-    question.recommendation.trim() !== ''
-  );
-}
-
-/**
- * 입력 해석: 번호 → 선택지 label 원문, Enter → recommendation 원문, q → 중단, 그 외 → 입력 문장 (D2)
+ * 입력 해석: 번호 → 선택지 label 원문, q → 중단, 그 외 → 입력 문장.
+ * 빈 줄은 결정을 뜻하지 않는다.
  * @param {string} input
  * @param {StoredQuestion} question
- * @param {boolean} allowDefault
  * @returns {ParsedInput}
  */
-export function parseAnswer(input, question, allowDefault) {
+export function parseAnswer(input, question) {
   const text = input.trim();
   if (text.toLowerCase() === 'q') return { kind: 'quit' };
 
   if (text === '') {
-    const recommendation =
-      typeof question.recommendation === 'string'
-        ? question.recommendation.trim()
-        : '';
-    // 빈 answer는 저장하지 않는다.
-    return allowDefault && recommendation !== ''
-      ? { kind: 'answer', answer: recommendation }
-      : {
-          kind: 'invalid',
-          message:
-            '이 질문은 Enter로 추천안을 선택할 수 없습니다. 번호를 고르거나 직접 입력하세요.',
-        };
+    return {
+      kind: 'invalid',
+      message:
+        '빈 줄은 답변으로 저장하지 않습니다. 번호를 고르거나 직접 입력하세요.',
+    };
   }
 
   if (/^\d+$/.test(text)) {
@@ -97,9 +78,8 @@ export function parseAnswer(input, question, allowDefault) {
  * @param {StoredQuestion} question
  * @param {number} position 1부터
  * @param {number} total
- * @param {boolean} allowDefault
  */
-export function formatQuestion(question, position, total, allowDefault) {
+export function formatQuestion(question, position, total) {
   const selectable = selectableOptions(question);
   const options = selectable.map((option, index) =>
     [
@@ -110,7 +90,6 @@ export function formatQuestion(question, position, total, allowDefault) {
   );
   const inputs = [
     ...(selectable.length > 0 ? ['번호 선택'] : []),
-    ...(allowDefault ? ['Enter = 추천안'] : []),
     '직접 입력',
     'q = 중단',
   ];
@@ -123,7 +102,7 @@ export function formatQuestion(question, position, total, allowDefault) {
     ...(options.length > 0 ? options : ['  (선택지 없음)']),
     `추천: ${question.recommendation}`,
     `영향: ${question.impact}`,
-    `입력: ${inputs.join(' / ')}${allowDefault ? '' : ' (Enter 추천안 선택 불가)'}`,
+    `입력: ${inputs.join(' / ')} (빈 줄은 선택하지 않음)`,
   ].join('\n');
 }
 
@@ -137,6 +116,18 @@ export function formatQuestion(question, position, total, allowDefault) {
 export function saveDecisionAnswer(dir, file, index, answer) {
   const decisions = readJson(dir, file);
   decisions.questions[index].answer = answer;
+  decisions.approved = false;
+  writeJsonAtomic(dir, file, decisions);
+}
+
+/**
+ * 최종 요약을 확인한 뒤에만 다음 단계로 진행할 수 있게 기록한다.
+ * @param {string} dir
+ * @param {string} file
+ */
+export function approveDecisions(dir, file) {
+  const decisions = readJson(dir, file);
+  decisions.approved = true;
   writeJsonAtomic(dir, file, decisions);
 }
 
@@ -147,7 +138,8 @@ export function saveDecisionAnswer(dir, file, index, answer) {
  * @param {PromptSession['ask']} params.ask
  * @param {(text: string) => void} params.print
  * @param {(index: number, answer: string) => void} params.save
- * @param {(question: StoredQuestion) => boolean} params.allowDefault
+ * @param {() => void} params.approve
+ * @param {() => string} [params.confirmationCode] 테스트에서 고정 코드 주입
  * @returns {Promise<{ completed: true } | { completed: false, reason: 'quit' | 'interrupted' }>}
  */
 export async function askDecisions({
@@ -155,31 +147,74 @@ export async function askDecisions({
   ask,
   print,
   save,
-  allowDefault,
+  approve,
+  confirmationCode = () => randomBytes(4).toString('hex'),
 }) {
   const pending = questions
     .map((question, index) => ({ question, index }))
     .filter(({ question }) => !isAnswered(question));
 
   for (const [position, { question, index }] of pending.entries()) {
-    const withDefault = allowDefault(question);
-    print(formatQuestion(question, position + 1, pending.length, withDefault));
+    print(formatQuestion(question, position + 1, pending.length));
 
     for (;;) {
       const input = await ask('> ');
       if (input === null) return { completed: false, reason: 'interrupted' };
-      const parsed = parseAnswer(input, question, withDefault);
+      const parsed = parseAnswer(input, question);
       if (parsed.kind === 'quit') return { completed: false, reason: 'quit' };
       if (parsed.kind === 'invalid') {
         print(parsed.message);
         continue;
       }
-      save(index, parsed.answer);
-      print(`✓ ${question.id} → ${parsed.answer}`);
-      break;
+      const code = confirmationCode();
+      print(`답변 확인 · ${question.id} → ${parsed.answer}`);
+      print(
+        `이 질문의 답을 저장하려면 확인 코드 ${code}를 입력하세요. 다시 답하려면 r, 중단하려면 q.`,
+      );
+      for (;;) {
+        const confirmation = await ask(`확인 코드 ${code}> `);
+        if (confirmation === null)
+          return { completed: false, reason: 'interrupted' };
+        if (confirmation.trim().toLowerCase() === 'q')
+          return { completed: false, reason: 'quit' };
+        if (confirmation.trim().toLowerCase() === 'r') break;
+        if (confirmation.trim() !== code) {
+          print(
+            '확인 코드가 맞지 않습니다. 현재 질문의 답은 아직 저장되지 않았습니다.',
+          );
+          continue;
+        }
+        save(index, parsed.answer);
+        question.answer = parsed.answer;
+        print(`✓ ${question.id} → ${parsed.answer}`);
+        break;
+      }
+      if (question.answer === parsed.answer) break;
     }
   }
-  return { completed: true };
+
+  print(
+    [
+      '',
+      '결정 답변 요약',
+      ...questions.map((q) => `- ${q.id} ${q.question}\n  → ${q.answer}`),
+    ].join('\n'),
+  );
+  const finalCode = confirmationCode();
+  print(`모든 결정을 반영하려면 승인 ${finalCode}를 입력하세요. q = 중단.`);
+  for (;;) {
+    const approval = await ask(`최종 승인 ${finalCode}> `);
+    if (approval === null) return { completed: false, reason: 'interrupted' };
+    if (approval.trim().toLowerCase() === 'q')
+      return { completed: false, reason: 'quit' };
+    if (approval.trim() === `승인 ${finalCode}`) {
+      approve();
+      return { completed: true };
+    }
+    print(
+      '최종 승인 코드가 맞지 않습니다. 결정은 아직 다음 단계에 반영되지 않았습니다.',
+    );
+  }
 }
 
 /**
@@ -189,8 +224,6 @@ export async function askDecisions({
  */
 export function openTerminalPrompt({ input, output, terminal }) {
   const rl = readline.createInterface({ input, output, terminal });
-  /** @type {string[]} */
-  const lines = [];
   /** @type {((value: string | null) => void) | null} */
   let waiting = null;
   let closed = false;
@@ -204,7 +237,7 @@ export function openTerminalPrompt({ input, output, terminal }) {
 
   rl.on('line', (line) => {
     if (waiting) deliver(line);
-    else lines.push(line);
+    // 한 번에 붙여 넣은 남은 줄을 다음 질문에 전달하지 않는다.
   });
   rl.on('SIGINT', () => {
     output.write('\n');
@@ -219,8 +252,6 @@ export function openTerminalPrompt({ input, output, terminal }) {
 
   return {
     ask(prompt) {
-      const buffered = lines.shift();
-      if (buffered !== undefined) return Promise.resolve(buffered);
       if (closed) return Promise.resolve(null);
       return new Promise((resolve) => {
         waiting = resolve;

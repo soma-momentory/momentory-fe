@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "coreVersion": "1.0.0",
+  "coreVersion": "1.0.1",
   "projectName": "momentory-fe",
   "repoRoot": "..",
   "runCommand": "node harness/run.mjs",

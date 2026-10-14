@@ -4,7 +4,7 @@ import path from 'node:path';
 import { CLAUDE_COMMAND, callClaude, claudeEnv } from './claude.mjs';
 import { CODEX_COMMAND, callCodex } from './codex.mjs';
 import {
-  allowsRecommendation,
+  approveDecisions,
   askDecisions,
   isAnswered,
   saveDecisionAnswer,
@@ -459,7 +459,8 @@ function waitForDecision(
   writeJson(ctx.dir, 'decisions.json', {
     runId: ctx.state.runId,
     source,
-    instructions: `터미널에서 ${resumeHint(ctx.deps, ctx.state.runId)} 를 실행해 질문에 답하거나, 각 질문의 answer에 결정을 적은 뒤 같은 명령으로 재개하세요.`,
+    instructions: `터미널에서 ${resumeHint(ctx.deps, ctx.state.runId)} 를 실행해 답변 요약을 최종 승인하세요. 파일로 답한다면 각 answer를 채우고 approved를 true로 명시한 뒤 재개하세요.`,
+    approved: false,
     questions: questions.map((question) => ({ ...question, answer: '' })),
   });
   ctx.state.pendingDecision = {
@@ -1357,7 +1358,7 @@ function finalize(ctx) {
     }
     progress.log(`재개: ${resumeHint(deps, state.runId)}`);
     progress.log(
-      `- 터미널에서 재개하면 질문에 바로 답할 수 있습니다. (${decisionsPath}의 각 answer를 직접 채운 뒤 재개해도 됩니다)`,
+      `- 터미널에서 재개하면 질문과 최종 승인을 진행합니다. (파일 방식: ${decisionsPath}의 각 answer를 채우고 전체를 확인한 뒤 approved를 true로 설정)`,
     );
   }
   if (state.status === STATUS.MANUAL_VALIDATION_REQUIRED) {
@@ -1433,11 +1434,9 @@ async function answerInSession(ctx, openPrompt) {
   const unanswered = decisions.questions.filter(
     (question) => !isAnswered(question),
   );
-  if (unanswered.length === 0) return true;
-
   deps.progress.stop();
   deps.progress.step(
-    `⚠ Human Decision ${unanswered.length}개${state.taskFile ? ` (상세: ${state.taskFile})` : ''}`,
+    `⚠ Human Decision ${unanswered.length}개${unanswered.length === 0 ? ' · 최종 승인 대기' : ''}${state.taskFile ? ` (상세: ${state.taskFile})` : ''}`,
   );
   ctx.awaitingInput = true;
   /** @type {Awaited<ReturnType<typeof askUnanswered>>} */
@@ -1458,7 +1457,7 @@ async function answerInSession(ctx, openPrompt) {
       (/** @type {{ answer?: unknown }} */ question) => !isAnswered(question),
     ).length;
     deps.progress.log(
-      `\n${result.reason === 'quit' ? '중단했습니다' : '입력이 중단되었습니다'}. 입력한 결정은 저장되었습니다. (남은 질문 ${remaining}개: ${toRepoPath(deps.root, path.join(dir, pending.file))})`,
+      `\n${result.reason === 'quit' ? '중단했습니다' : '입력이 중단되었습니다'}. 확인한 결정은 저장되었습니다. (${remaining === 0 ? '최종 승인 대기' : `남은 질문 ${remaining}개`}: ${toRepoPath(deps.root, path.join(dir, pending.file))})`,
     );
     return false;
   }
@@ -1479,7 +1478,7 @@ async function applyDecisions(ctx) {
   const decisionsPath = toRepoPath(deps.root, path.join(dir, pending.file));
 
   // 다음 단계로 넘어가기 직전 전체 결정을 다시 검증한다. (파일 직접 수정 포함, trim 후 빈 answer는 미답변)
-  /** @type {{ questions: (DecisionQuestion & { answer: string })[] }} */
+  /** @type {{ approved?: boolean, questions: (DecisionQuestion & { answer: string })[] }} */
   const answered = readJson(dir, pending.file);
   const missing = answered.questions.filter(
     (question) => !isAnswered(question),
@@ -1492,6 +1491,12 @@ async function applyDecisions(ctx) {
     );
     deps.progress.log(
       `answer를 채운 뒤 다시 재개하세요: ${resumeHint(ctx.deps, state.runId)}`,
+    );
+    return false;
+  }
+  if (answered.approved !== true) {
+    deps.progress.log(
+      `\n결정 답변의 최종 승인이 필요합니다 (${decisionsPath}). 터미널에서 승인하거나, 파일 내용을 확인한 뒤 approved를 true로 설정하세요.`,
     );
     return false;
   }
@@ -2186,12 +2191,6 @@ export async function startRun(requirement, deps) {
  */
 async function askUnanswered(ctx, openPrompt, file, questions) {
   const { deps, dir } = ctx;
-  const noDefault = new Set([
-    DEPENDENCY_QUESTION_ID,
-    ...questions
-      .map((question) => question.id)
-      .filter((id) => id.startsWith(RECLASSIFY_PREFIX)),
-  ]);
   const session = openPrompt();
   try {
     return await askDecisions({
@@ -2199,7 +2198,7 @@ async function askUnanswered(ctx, openPrompt, file, questions) {
       ask: (prompt) => session.ask(prompt),
       print: (text) => deps.progress.log(text),
       save: (index, answer) => saveDecisionAnswer(dir, file, index, answer),
-      allowDefault: (question) => allowsRecommendation(question, noDefault),
+      approve: () => approveDecisions(dir, file),
     });
   } finally {
     session.close();
@@ -2393,18 +2392,29 @@ export async function resumeRun(requestedRunId, deps) {
 
   const pending = state.pendingDecision;
   if (state.status === STATUS.WAITING_HUMAN_DECISION && pending) {
-    /** @type {{ questions: import('./decisionPrompt.mjs').StoredQuestion[] }} */
+    /** @type {{ approved?: boolean, questions: import('./decisionPrompt.mjs').StoredQuestion[] }} */
     const decisions = readJson(dir, pending.file);
     const unanswered = decisions.questions.filter(
       (question) => !isAnswered(question),
     );
     // non-TTY: 기존 파일 기반 동작
-    if (unanswered.length > 0 && !deps.prompt) {
+    if (
+      !deps.prompt &&
+      (unanswered.length > 0 || decisions.approved !== true)
+    ) {
       const decisionsPath = toRepoPath(deps.root, path.join(dir, pending.file));
-      deps.progress.log(`아직 답하지 않은 결정이 있습니다 (${decisionsPath}):`);
-      deps.progress.log(formatDecisionQuestions(unanswered));
+      if (unanswered.length > 0) {
+        deps.progress.log(
+          `아직 답하지 않은 결정이 있습니다 (${decisionsPath}):`,
+        );
+        deps.progress.log(formatDecisionQuestions(unanswered));
+      }
+      if (decisions.approved !== true)
+        deps.progress.log(
+          `결정 답변의 최종 승인이 필요합니다 (${decisionsPath}). 터미널에서 요약을 승인하거나, 파일 내용을 확인한 뒤 approved를 true로 설정하세요.`,
+        );
       deps.progress.log(
-        '\nanswer를 채운 뒤 다시 재개하세요. 터미널(TTY)에서 재개하면 질문에 바로 답할 수 있습니다.',
+        '\n답변과 최종 승인을 마친 뒤 다시 재개하세요. 터미널(TTY)에서 재개하면 질문에 바로 답할 수 있습니다.',
       );
       return outcomeOf(state);
     }
