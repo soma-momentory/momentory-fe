@@ -1,0 +1,148 @@
+{
+  "type": "object",
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["PASS", "FIX_REQUIRED", "HUMAN_DECISION_REQUIRED", "BLOCKED"]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "mustFix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": ["integer", "null"]
+          },
+          "problem": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "title", "file", "line", "problem", "expected"],
+        "additionalProperties": false
+      }
+    },
+    "niceToHave": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": ["title", "file", "detail"],
+        "additionalProperties": false
+      }
+    },
+    "humanDecisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "pros": {
+                  "type": "string"
+                },
+                "cons": {
+                  "type": "string"
+                }
+              },
+              "required": ["label", "pros", "cons"],
+              "additionalProperties": false
+            }
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "reason",
+          "options",
+          "recommendation",
+          "impact"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "manualValidation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "check": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "noteRequired": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "title", "check", "reason", "noteRequired"],
+        "additionalProperties": false
+      }
+    },
+    "blockedReason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "verdict",
+    "summary",
+    "mustFix",
+    "niceToHave",
+    "humanDecisions",
+    "manualValidation",
+    "blockedReason"
+  ],
+  "additionalProperties": false
+}

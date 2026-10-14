@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "type": "integer" },
+    "coreVersion": { "type": "string" },
+    "projectName": { "type": "string" },
+    "repoRoot": { "type": "string" },
+    "runCommand": { "type": "string" },
+    "taskDir": { "type": "string" },
+    "taskTemplate": { "type": "string" },
+    "entryDocs": { "type": "array", "items": { "type": "string" } },
+    "referenceDocs": { "type": "array", "items": { "type": "string" } },
+    "navigationDoc": { "type": "string" },
+    "promptDir": { "type": "string" },
+    "runsDir": { "type": "string" },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "command": { "type": "string" },
+          "args": { "type": "array", "items": { "type": "string" } },
+          "timeoutMs": { "type": "integer" }
+        },
+        "required": ["name", "command", "args"],
+        "additionalProperties": false
+      }
+    },
+    "protectedPaths": { "type": "array", "items": { "type": "string" } },
+    "migrationDir": { "type": "string" },
+    "migrationCheck": { "type": "string" },
+    "dependencyFiles": { "type": "array", "items": { "type": "string" } },
+    "ai": {
+      "type": "object",
+      "properties": {
+        "claude": {
+          "type": "object",
+          "properties": {
+            "command": { "type": "string" },
+            "allowedTools": { "type": "array", "items": { "type": "string" } },
+            "disallowedTools": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "configDir": { "type": "string" }
+          },
+          "required": ["command", "allowedTools", "disallowedTools"],
+          "additionalProperties": false
+        },
+        "codex": {
+          "type": "object",
+          "properties": { "command": { "type": "string" } },
+          "required": ["command"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["claude", "codex"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "coreVersion",
+    "projectName",
+    "repoRoot",
+    "runCommand",
+    "taskDir",
+    "taskTemplate",
+    "entryDocs",
+    "referenceDocs",
+    "navigationDoc",
+    "promptDir",
+    "runsDir",
+    "verification",
+    "protectedPaths",
+    "migrationDir",
+    "migrationCheck",
+    "dependencyFiles",
+    "ai"
+  ],
+  "additionalProperties": false
+}

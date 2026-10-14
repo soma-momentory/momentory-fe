@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "properties": {
+    "taskFile": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "decisionsNeeded": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "pros": {
+                  "type": "string"
+                },
+                "cons": {
+                  "type": "string"
+                }
+              },
+              "required": ["label", "pros", "cons"],
+              "additionalProperties": false
+            }
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "reason",
+          "options",
+          "recommendation",
+          "impact"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "resolvedDecisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        },
+        "required": ["question", "resolution", "source"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["taskFile", "title", "decisionsNeeded", "resolvedDecisions"],
+  "additionalProperties": false
+}

@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "coreVersion": "1.0.0",
+  "projectName": "momentory-fe",
+  "repoRoot": "..",
+  "runCommand": "node harness/run.mjs",
+  "taskDir": "tasks",
+  "taskTemplate": "tasks/TASK_TEMPLATE.md",
+  "entryDocs": ["docs/CONTRIBUTING.md", "CLAUDE.md"],
+  "referenceDocs": [
+    "docs/spec/RULES.md",
+    "docs/DESIGN.md",
+    "docs/PRODUCT.md",
+    "docs/ARCHITECTURE.md",
+    "docs/TASKS.md",
+    "docs/EXPO_WEB_DESIGN_LAB_PLAN.md",
+    "design-lab/README.md",
+    "expo-lab/README.md"
+  ],
+  "navigationDoc": "docs/HARNESS_NAV.md",
+  "promptDir": "harness/prompts",
+  "runsDir": "harness/runs",
+  "verification": [
+    {
+      "name": "app-typecheck",
+      "command": "npm",
+      "args": ["run", "typecheck"]
+    },
+    {
+      "name": "vite-lab-typecheck",
+      "command": "npm",
+      "args": ["run", "typecheck:lab"]
+    },
+    {
+      "name": "expo-lab-typecheck",
+      "command": "npm",
+      "args": ["run", "typecheck:expo-lab"]
+    },
+    {
+      "name": "lint",
+      "command": "npm",
+      "args": ["run", "lint"]
+    },
+    {
+      "name": "format-check",
+      "command": "npm",
+      "args": ["run", "format:check"]
+    },
+    {
+      "name": "jest-ci",
+      "command": "npm",
+      "args": ["run", "test", "--", "--ci"]
+    }
+  ],
+  "protectedPaths": [
+    "harness/",
+    "docs/CONTRIBUTING.md",
+    "CLAUDE.md",
+    "design-lab/CLAUDE.md",
+    "docs/spec/",
+    "docs/api/openapi.json",
+    "tasks/TASK_TEMPLATE.md",
+    ".env*",
+    ".gitignore"
+  ],
+  "migrationDir": "",
+  "migrationCheck": "FE 저장소에는 DB migration이 없습니다. 외부 서비스와 네이티브 빌드는 담당자가 수동 확인합니다.",
+  "dependencyFiles": [
+    "package.json",
+    "package-lock.json",
+    "design-lab/package.json",
+    "design-lab/package-lock.json",
+    "expo-lab/package.json"
+  ],
+  "ai": {
+    "claude": {
+      "command": "claude",
+      "allowedTools": [
+        "Bash(npm run typecheck)",
+        "Bash(npm run typecheck:lab)",
+        "Bash(npm run typecheck:expo-lab)",
+        "Bash(npm run lint)",
+        "Bash(npm run format:check)",
+        "Bash(npm run test -- --ci)",
+        "Bash(npm run build --prefix design-lab)",
+        "Bash(git status*)",
+        "Bash(git diff*)",
+        "Bash(git log*)"
+      ],
+      "disallowedTools": [
+        "Bash(git commit*)",
+        "Bash(git push*)",
+        "Bash(git reset*)",
+        "Bash(git checkout*)",
+        "Bash(git clean*)",
+        "Bash(npm install*)",
+        "Bash(npm ci*)",
+        "Bash(npx expo install*)",
+        "Bash(npx eas*)",
+        "WebFetch"
+      ]
+    },
+    "codex": {
+      "command": "codex"
+    }
+  }
+}
