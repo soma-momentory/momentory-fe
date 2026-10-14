@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
+  "workspaces": [
+    "expo-lab"
+  ],
   "engines": {
     "node": ">=22.14.0"
   },
@@ -11,6 +14,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
+    "typecheck:lab": "npm run typecheck --prefix design-lab",
+    "typecheck:expo-lab": "npm run typecheck --workspace momentory-expo-lab",
+    "lab:web": "npm run web --workspace momentory-expo-lab --",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -20,6 +26,7 @@
   },
   "dependencies": {
     "@amplitude/analytics-react-native": "^1.8.0",
+    "@expo/metro-runtime": "~57.0.16",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-google-signin/google-signin": "^16.1.4",
     "@react-native-seoul/kakao-login": "^6.0.4",
@@ -43,10 +50,12 @@
     "expo-store-review": "~57.0.3",
     "expo-web-browser": "~57.0.2",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
