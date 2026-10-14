@@ -1,0 +1,8 @@
+/* iOS 26 UI Kit — minimal reset + link defaults. */
+
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:var(--font-system);font-size:var(--type-body-size);line-height:var(--type-body-line);letter-spacing:var(--type-body-track);color:var(--labels-primary);background:var(--backgrounds-primary);-webkit-font-smoothing:antialiased}
+a{color:var(--accents-blue);text-decoration:none}
+a:hover{opacity:.7}
+a:active{opacity:.5}
+button,input,select,textarea{font:inherit;letter-spacing:inherit;color:inherit}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:relative;width:100%;height:100%;aspect-ratio:3/4">
+  <img src="assets/baba/base-tail.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <img src="assets/baba/base-body.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <img src="assets/baba/base-feet.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <img src="assets/baba/base-arms.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <img src="assets/baba/base-muzzle.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <img src="assets/baba/base-mouth.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <img src="assets/baba/base-cheeks.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <img src="assets/baba/base-eyes.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <img src="assets/baba/base-ears.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">
+  <sc-if value="{{ beanie }}" hint-placeholder-val="{{ false }}"><img src="assets/baba/hat-beanie.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain"></sc-if>
+  <sc-if value="{{ beanie2 }}" hint-placeholder-val="{{ false }}"><img src="assets/baba/hat-beanie-2.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain"><img src="assets/baba/base-ears-front.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain"></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:300,&quot;height&quot;:400},&quot;hat&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;beanie&quot;,&quot;beanie-2&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;'none'|'beanie'|'beanie-2'&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const h = this.props.hat ?? 'none';
+    return { beanie: h === 'beanie', beanie2: h === 'beanie-2' };
+  }
+}
+</script>
+</body>
+</html>
