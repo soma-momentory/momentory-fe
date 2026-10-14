@@ -2,8 +2,10 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Line, Path, Rect } from "react-native-svg";
 
 import { claudeHomeColor as c } from "../claude-home/tokens";
+import { CurrentHomeMockPreview } from "../current-home/MockPreview";
 import { captureAssets } from "./captures";
 import type { CatalogScreen } from "./screens";
+import { captureThumbnails } from "./thumbnails";
 import type { LabVariant } from "./variants";
 
 export const devices = [
@@ -38,17 +40,19 @@ export function CapturePhone({
   screen,
   device,
   scale = 1,
+  thumbnail = false,
 }: {
   screen: CatalogScreen;
   device: PreviewDevice;
   scale?: number;
+  thumbnail?: boolean;
 }) {
   return (
     <ScaledPhone width={device.width + 14} height={device.height + 14} scale={scale}>
       <View style={[styles.capturePhone, { width: device.width + 14, height: device.height + 14 }]}>
         <Image
           accessibilityLabel={`${screen.title} 실제 앱 화면 캡처`}
-          source={captureAssets[screen.id]}
+          source={thumbnail ? captureThumbnails[screen.id] : captureAssets[screen.id]}
           resizeMode="stretch"
           style={{ width: device.width, height: device.height }}
         />
@@ -118,6 +122,27 @@ export function VariantPhone({
       <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
         <PreviewStatusBar width={device.width} />
         {variant.render({ scenarioId, onMessage })}
+      </View>
+    </ScaledPhone>
+  );
+}
+
+export function CurrentHomePhone({
+  scenarioId,
+  device,
+  scale = 1,
+  onMessage,
+}: {
+  scenarioId: string;
+  device: PreviewDevice;
+  scale?: number;
+  onMessage: (message: string) => void;
+}) {
+  return (
+    <ScaledPhone width={device.width + 20} height={device.height + 20} scale={scale}>
+      <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
+        <PreviewStatusBar width={device.width} />
+        <CurrentHomeMockPreview scenarioId={scenarioId} onMessage={onMessage} scale={scale} />
       </View>
     </ScaledPhone>
   );

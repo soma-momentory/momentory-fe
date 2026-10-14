@@ -22,6 +22,7 @@ import {
   TextField,
   Toast,
 } from "@/components/ds";
+import { anchoredMenuTop } from "@/components/ds/Menu";
 import { ICON_PATHS, type IconName } from "@/components/ds/icons/paths";
 import { interaction, label, primary, social, status, zIndex } from "@/design/ds";
 
@@ -703,6 +704,32 @@ describe("SectionHeader", () => {
 });
 
 describe("Menu", () => {
+  it("행 아래 공간이 있으면 간격을 유지하고, 하단에서는 행 위로 뒤집는다", async () => {
+    expect(anchoredMenuTop(308, 256, 800, 90, 2)).toBe(308);
+    expect(anchoredMenuTop(678, 626, 800, 90, 2)).toBe(530);
+
+    const screen = await render(
+      <Menu
+        actions={[
+          { label: "수정하기", onPress: () => {} },
+          { label: "삭제하기", onPress: () => {} },
+        ]}
+        top={678}
+        anchorTop={626}
+        bottomInset={90}
+        onDismiss={() => {}}
+      />,
+    );
+    await fireEvent(screen.getByTestId("ds-menu-overlay"), "layout", {
+      nativeEvent: { layout: { height: 800 } },
+    });
+    expect(flatten(screen.getByTestId("ds-menu-panel").props.style).top).toBe(530);
+  });
+
+  it("위아래가 모두 부족해도 화면 하단 밖으로 나가지 않는다", () => {
+    expect(anchoredMenuTop(128, 76, 220, 40, 2)).toBe(84);
+  });
+
   it("바깥을 누르면 닫힌다 — ⋮ 메뉴의 유일한 취소 길이다", async () => {
     const onDismiss = jest.fn();
     const { getByLabelText } = await render(

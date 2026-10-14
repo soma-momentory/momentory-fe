@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { Text } from "@/components/ds";
+import { Text } from "@/components/ds/Text";
 import {
   label as labelColor,
   motion,

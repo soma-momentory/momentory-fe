@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -8,7 +8,10 @@ import {
   type GestureResponderHandlers,
 } from "react-native";
 
-import { Icon, IconButton, ListCell, Text } from "@/components/ds";
+import { Icon } from "@/components/ds/icons/Icon";
+import { IconButton } from "@/components/ds/IconButton";
+import { ListCell } from "@/components/ds/ListCell";
+import { Text } from "@/components/ds/Text";
 import {
   background,
   fontFamily,
@@ -55,8 +58,8 @@ import { CheckBurst } from "./CheckBurst";
 type Props = {
   schedule: Schedule;
   onToggleDone: (id: string) => void;
-  /** ⋮ — 누른 지점의 y 를 함께 올린다. 메뉴가 그 아래에 뜬다 */
-  onMore: (id: string, atY: number) => void;
+  /** ⋮ 터치 위치가 아닌 버튼의 화면상 위·아래 경계를 올린다. */
+  onMore: (id: string, topPageY: number, bottomPageY: number) => void;
   onMove: (id: string, direction: "up" | "down") => void;
   /** `ScheduleList` 의 꾹 누르기 — 제목에만 붙는다 */
   dragHandlers?: GestureResponderHandlers;
@@ -80,6 +83,7 @@ export function ScheduleItem({
   const { id, title, done } = schedule;
   // 손으로 마친 횟수 — 바뀔 때마다 끝맺음이 새로 한 번 핀다(`key`)
   const [burst, setBurst] = useState(0);
+  const moreRef = useRef<View>(null);
   // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다
   const [pop] = useState(() => new Animated.Value(0));
 
@@ -162,15 +166,29 @@ export function ScheduleItem({
             <Icon name="handle" size={size.icon.md} color={labelColor.alternative} />
           </View>
         ) : (
-          <IconButton
-            name="more-vertical"
-            size={size.icon.md}
-            accessibilityLabel={`${title} 더보기`}
-            color={labelColor.alternative}
-            onPress={(e) => onMore(id, e.nativeEvent.pageY)}
-            // 히트 44 는 지키되 줄 높이를 밀지 않게 음수 여백으로 당긴다 (시안과 같은 방식)
+          <View
+            ref={moreRef}
+            collapsable={false}
+            testID={`schedule-more-anchor-${id}`}
             style={styles.more}
-          />
+          >
+            <IconButton
+              name="more-vertical"
+              size={size.icon.md}
+              accessibilityLabel={`${title} 더보기`}
+              color={labelColor.alternative}
+              onPress={(e) => {
+                const pressedY = e.nativeEvent.pageY;
+                if (moreRef.current == null) {
+                  onMore(id, pressedY, pressedY + layout.minTouch);
+                  return;
+                }
+                moreRef.current.measureInWindow((_, y, __, height) => {
+                  onMore(id, y, y + height);
+                });
+              }}
+            />
+          </View>
         )
       }
     />

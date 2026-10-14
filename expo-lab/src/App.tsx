@@ -1,7 +1,8 @@
 import { Gaegu_400Regular, Gaegu_700Bold, useFonts } from "@expo-google-fonts/gaegu";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
+  FlatList,
   Platform,
   Pressable,
   ScrollView,
@@ -12,7 +13,7 @@ import {
 } from "react-native";
 
 import { claudeHomeColor as c, claudeHomeFont as font } from "./claude-home/tokens";
-import { CapturePhone, devices, VariantPhone } from "./catalog/PhonePreview";
+import { CapturePhone, CurrentHomePhone, devices, VariantPhone } from "./catalog/PhonePreview";
 import type { CaptureId } from "./catalog/captures";
 import {
   findScreen,
@@ -20,6 +21,7 @@ import {
   screenGroups,
   screens,
   type CatalogScreen,
+  type ScreenGroup,
 } from "./catalog/screens";
 import { variantsFor } from "./catalog/variants";
 
@@ -32,9 +34,36 @@ type LabRoute = {
   deviceWidth: number;
 };
 
+type AtlasRow =
+  | { id: string; kind: "heading"; group: ScreenGroup; length: number }
+  | { id: string; kind: "cards"; screens: readonly CatalogScreen[]; length: number };
+
+const ATLAS_CARD_WIDTH = 320;
+const ATLAS_GAP = 16;
+const ATLAS_HEADING_HEIGHT = 74;
+
+function atlasRows(deviceHeight: number, columns: number): AtlasRow[] {
+  const cardHeight = Math.ceil(132 + (deviceHeight + 14) * 0.65);
+  return screenGroups.flatMap((group) => {
+    const rows: AtlasRow[] = [
+      { id: `heading-${group.id}`, kind: "heading", group, length: ATLAS_HEADING_HEIGHT },
+    ];
+    for (let index = 0; index < group.screens.length; index += columns) {
+      const last = index + columns >= group.screens.length;
+      rows.push({
+        id: `cards-${group.id}-${index}`,
+        kind: "cards",
+        screens: group.screens.slice(index, index + columns),
+        length: cardHeight + (last ? 0 : ATLAS_GAP),
+      });
+    }
+    return rows;
+  });
+}
+
 function readRoute(): LabRoute {
   const fallback: LabRoute = {
-    page: "atlas",
+    page: "compare",
     groupId: "",
     screenId: "home-main",
     variantId: "claude-v2",
@@ -56,10 +85,7 @@ function readRoute(): LabRoute {
   const requestedWidth = Number(search.get("device"));
   const deviceWidth = devices.find((item) => item.width === requestedWidth)?.width ?? 390;
   return {
-    page:
-      parts[0] === "compare" || parts[0] === "preview" || (!path && !!window.location.search)
-        ? "compare"
-        : "atlas",
+    page: parts[0] === "atlas" ? "atlas" : "compare",
     groupId:
       parts[0] === "atlas" && screenGroups.some((item) => item.id === parts[1])
         ? (parts[1] ?? "")
@@ -111,18 +137,14 @@ function CaptureBadge({ screen }: { screen: CatalogScreen }) {
   );
 }
 
-function Atlas({
+function AtlasHeader({
   deviceWidth,
-  onOpen,
   onDeviceWidth,
   onJump,
-  onGroupLayout,
 }: {
   deviceWidth: number;
-  onOpen: (screenId: CaptureId) => void;
   onDeviceWidth: (width: number) => void;
   onJump: (groupId: string) => void;
-  onGroupLayout: (groupId: string, y: number) => void;
 }) {
   const device = devices.find((item) => item.width === deviceWidth) ?? devices[1];
   return (
@@ -154,36 +176,51 @@ function Atlas({
           />
         ))}
       </View>
-      {screenGroups.map((group) => (
-        <View
-          key={group.id}
-          style={styles.group}
-          onLayout={(event) => onGroupLayout(group.id, event.nativeEvent.layout.y)}
-        >
-          <View style={styles.groupHeading}>
-            <Text style={styles.groupTitle}>{group.title}</Text>
-            <Text style={styles.meta}>{group.screens.length}개 화면</Text>
-          </View>
-          <View style={styles.atlasGrid}>
-            {group.screens.map((screen) => (
-              <Pressable
-                key={screen.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${screen.title} 화면 크게 보기`}
-                onPress={() => onOpen(screen.id)}
-                style={styles.atlasCard}
-              >
-                <Text style={styles.routeText}>{screen.route}</Text>
-                <Text style={styles.cardTitle}>{screen.title}</Text>
-                <CaptureBadge screen={screen} />
-                <View style={styles.atlasPhone}>
-                  <CapturePhone screen={screen} device={device} scale={0.65} />
-                </View>
-                <Text style={styles.openText}>크게 보기 · 시안 비교 ↗</Text>
-              </Pressable>
-            ))}
-          </View>
+    </View>
+  );
+}
+
+function AtlasRowView({
+  row,
+  deviceWidth,
+  contentWidth,
+  onOpen,
+}: {
+  row: AtlasRow;
+  deviceWidth: number;
+  contentWidth: number;
+  onOpen: (screenId: CaptureId) => void;
+}) {
+  if (row.kind === "heading") {
+    return (
+      <View style={[styles.atlasHeadingRow, { width: contentWidth, height: row.length }]}>
+        <View style={styles.groupHeading}>
+          <Text style={styles.groupTitle}>{row.group.title}</Text>
+          <Text style={styles.meta}>{row.group.screens.length}개 화면</Text>
         </View>
+      </View>
+    );
+  }
+  const device = devices.find((item) => item.width === deviceWidth) ?? devices[1];
+  const cardHeight = Math.ceil(132 + (device.height + 14) * 0.65);
+  return (
+    <View style={[styles.atlasGrid, { width: contentWidth, height: row.length }]}>
+      {row.screens.map((screen) => (
+        <Pressable
+          key={screen.id}
+          accessibilityRole="button"
+          accessibilityLabel={`${screen.title} 화면 크게 보기`}
+          onPress={() => onOpen(screen.id)}
+          style={[styles.atlasCard, { height: cardHeight }]}
+        >
+          <Text style={styles.routeText}>{screen.route}</Text>
+          <Text style={styles.cardTitle}>{screen.title}</Text>
+          <CaptureBadge screen={screen} />
+          <View style={styles.atlasPhone}>
+            <CapturePhone screen={screen} device={device} scale={0.65} thumbnail />
+          </View>
+          <Text style={styles.openText}>크게 보기 · 시안 비교 ↗</Text>
+        </Pressable>
       ))}
     </View>
   );
@@ -200,6 +237,7 @@ function Compare({
   onNavigate: (change: Partial<LabRoute>) => void;
   onMessage: (message: string) => void;
 }) {
+  const [showHomeCapture, setShowHomeCapture] = useState(false);
   const screen = findScreen(route.screenId) ?? screens[0]!;
   const group = screenGroups.find((item) => item.screens.some((entry) => entry.id === screen.id))!;
   const variants = variantsFor(screen.id);
@@ -207,14 +245,15 @@ function Compare({
   const device = devices.find((item) => item.width === route.deviceWidth) ?? devices[1];
   const sideBySide = viewportWidth >= 960;
   const scale = sideBySide ? 1 : Math.min(1, (viewportWidth - 64) / (device.width + 20));
+  const liveHome = screen.id === "home-main" && !showHomeCapture;
 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionKicker}>SCREEN COMPARISON</Text>
       <Text style={styles.sectionTitle}>{screen.title} · 기존 화면과 시안</Text>
       <Text style={styles.description}>
-        왼쪽은 기존 앱의 정지 캡처, 오른쪽은 Lab의 React Native 시안입니다. 시안의 동작은 Mock만
-        사용합니다.
+        홈은 기존 앱 UI 부품을 재사용한 실제 React Native 화면과 Claude 시안을 함께 조작할 수
+        있습니다. 다른 화면의 기존 캡처는 이전 참고 자료이며 모든 동작은 Lab Mock입니다.
       </Text>
       <View style={styles.controls}>
         <Text style={styles.controlLabel}>화면 그룹</Text>
@@ -284,15 +323,43 @@ function Compare({
       <View style={[styles.compareGrid, !sideBySide && styles.compareStack]}>
         <View style={[styles.comparePanel, sideBySide && styles.comparePanelWide]}>
           <Text style={styles.panelEyebrow}>CURRENT APP</Text>
-          <Text style={styles.panelTitle}>기존 앱 화면</Text>
+          <Text style={styles.panelTitle}>
+            {liveHome ? "기존 홈 · 실제 UI" : "기존 앱 화면 · 캡처"}
+          </Text>
           <Text style={styles.routeText}>{screen.route}</Text>
-          <CaptureBadge screen={screen} />
+          {screen.id === "home-main" ? (
+            <View style={styles.chipRow}>
+              <Choice
+                label="실제 UI"
+                selected={!showHomeCapture}
+                onPress={() => setShowHomeCapture(false)}
+              />
+              <Choice
+                label="원본 캡처 참고"
+                selected={showHomeCapture}
+                onPress={() => setShowHomeCapture(true)}
+              />
+            </View>
+          ) : (
+            <CaptureBadge screen={screen} />
+          )}
           <View style={styles.phoneSpace}>
-            <CapturePhone screen={screen} device={device} scale={scale} />
+            {liveHome ? (
+              <CurrentHomePhone
+                key={`${screen.id}-${route.scenarioId}`}
+                scenarioId={route.scenarioId}
+                device={device}
+                scale={scale}
+                onMessage={onMessage}
+              />
+            ) : (
+              <CapturePhone screen={screen} device={device} scale={scale} />
+            )}
           </View>
           <Text style={styles.panelNote}>
-            375×812pt 실기 캡처를 선택한 화면 크기에 맞춰 표시합니다. 실제 앱 동작은 포함되지
-            않습니다.
+            {liveHome
+              ? "앱의 홈 UI 컴포넌트·토큰을 사용합니다. 일정과 모든 이동은 Lab 메모리 안에서만 동작합니다."
+              : "375×812pt 실기 캡처를 선택한 크기에 맞춰 표시합니다. 캡처에는 동작이 없습니다."}
           </Text>
         </View>
         <View style={[styles.comparePanel, sideBySide && styles.comparePanelWide]}>
@@ -300,7 +367,7 @@ function Compare({
           <Text style={styles.panelTitle}>{variant?.label ?? "등록된 시안 없음"}</Text>
           <Text style={styles.panelNote}>
             {variant
-              ? "React Native 공유 UI · Lab Mock 데이터 · 운영 앱 미적용"
+              ? "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
               : "이 화면의 새 시안은 아직 없습니다. 시안이 등록되면 기존 캡처와 나란히 비교합니다."}
           </Text>
           {variant ? (
@@ -325,14 +392,55 @@ function Compare({
   );
 }
 
+function LabHeader({
+  page,
+  onAtlas,
+  onCompare,
+}: {
+  page: LabRoute["page"];
+  onAtlas: () => void;
+  onCompare: () => void;
+}) {
+  return (
+    <View style={styles.header}>
+      <Text style={styles.kicker}>MOMENTORY · EXPO DESIGN LAB</Text>
+      <Text style={styles.title}>Design Lab</Text>
+      <Text style={styles.description}>
+        홈의 실제 React Native UI를 비교·조작합니다. 38개 기존 화면 캡처는 이전 참고 자료로
+        보존합니다. 운영 앱과 API에는 연결되지 않습니다.
+      </Text>
+      <View style={styles.navigation}>
+        <Choice label="화면 선택 · 시안 비교" selected={page === "compare"} onPress={onCompare} />
+        <Choice label="기존 앱 · 전체 화면" selected={page === "atlas"} onPress={onAtlas} />
+      </View>
+    </View>
+  );
+}
+
 function LabApp() {
-  const [fontsLoaded, fontError] = useFonts({ Gaegu_400Regular, Gaegu_700Bold });
+  const [fontsLoaded, fontError] = useFonts({
+    Gaegu_400Regular,
+    Gaegu_700Bold,
+    KyoboHandwriting2025lyb: require("../../assets/fonts/KyoboHandwriting2025lyb.ttf"),
+  });
   const [route, setRoute] = useState(readRoute);
-  const [message, setMessage] = useState("시안의 일정 체크와 날씨 스티커를 눌러 볼 수 있어요.");
+  const [message, setMessage] = useState(
+    "홈의 두 실제 UI에서 일정과 감정, 캐릭터를 눌러 비교할 수 있어요.",
+  );
   const { width: viewportWidth } = useWindowDimensions();
-  const scrollRef = useRef<ScrollView>(null);
-  const atlasTop = useRef(0);
-  const groupOffsets = useRef<Record<string, number>>({});
+  const atlasListRef = useRef<FlatList<AtlasRow>>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const device = devices.find((item) => item.width === route.deviceWidth) ?? devices[1];
+  const contentWidth = Math.min(Math.max(viewportWidth - 36, ATLAS_CARD_WIDTH), 1200);
+  const columns = Math.max(
+    1,
+    Math.floor((contentWidth + ATLAS_GAP) / (ATLAS_CARD_WIDTH + ATLAS_GAP)),
+  );
+  const rows = useMemo(() => atlasRows(device.height, columns), [device.height, columns]);
+  const rowOffsets = useMemo(
+    () => rows.map((_, index) => rows.slice(0, index).reduce((sum, row) => sum + row.length, 0)),
+    [rows],
+  );
 
   useEffect(() => {
     if (Platform.OS !== "web") return;
@@ -342,12 +450,15 @@ function LabApp() {
   }, []);
 
   useEffect(() => {
-    if (route.page !== "atlas" || !route.groupId) return;
-    const offset = groupOffsets.current[route.groupId];
-    if (offset !== undefined) {
-      scrollRef.current?.scrollTo({ y: atlasTop.current + offset, animated: true });
-    }
-  }, [route.page, route.groupId]);
+    if (route.page !== "atlas" || !route.groupId || !headerHeight) return;
+    const index = rows.findIndex((row) => row.kind === "heading" && row.group.id === route.groupId);
+    if (index < 0) return;
+    const offset = 28 + headerHeight + rowOffsets[index]!;
+    const frame = requestAnimationFrame(() =>
+      atlasListRef.current?.scrollToOffset({ offset, animated: false }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [route.page, route.groupId, headerHeight, rows, rowOffsets]);
 
   const navigate = (change: Partial<LabRoute>) => {
     const next = { ...route, ...change };
@@ -383,59 +494,71 @@ function LabApp() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView ref={scrollRef} style={styles.page} contentContainerStyle={styles.pageInner}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>MOMENTORY · EXPO DESIGN LAB</Text>
-          <Text style={styles.title}>Design Lab</Text>
-          <Text style={styles.description}>
-            기존 앱 38개 화면과 React Native 시안을 한곳에서 탐색합니다. 운영 앱과 API에는 연결되지
-            않습니다.
-          </Text>
-          <View style={styles.navigation}>
-            <Choice
-              label="기존 앱 · 전체 화면"
-              selected={route.page === "atlas"}
-              onPress={() => navigate({ page: "atlas", groupId: "" })}
-            />
-            <Choice
-              label="화면 선택 · 시안 비교"
-              selected={route.page === "compare"}
-              onPress={() => navigate({ page: "compare" })}
-            />
-          </View>
-        </View>
-        {route.page === "atlas" ? (
-          <View
-            style={styles.section}
-            onLayout={(event) => {
-              atlasTop.current = event.nativeEvent.layout.y;
-            }}
-          >
-            <Atlas
+      {route.page === "atlas" ? (
+        <FlatList
+          ref={atlasListRef}
+          style={styles.page}
+          contentContainerStyle={styles.pageInner}
+          data={rows}
+          keyExtractor={(row) => row.id}
+          extraData={route}
+          initialNumToRender={3}
+          maxToRenderPerBatch={4}
+          windowSize={5}
+          getItemLayout={(_, index) => ({
+            index,
+            length: rows[index]!.length,
+            offset: 28 + headerHeight + rowOffsets[index]!,
+          })}
+          ListHeaderComponent={
+            <View
+              style={[styles.listHeader, { width: contentWidth }]}
+              onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+            >
+              <LabHeader
+                page="atlas"
+                onAtlas={() => navigate({ page: "atlas", groupId: "" })}
+                onCompare={() => navigate({ page: "compare" })}
+              />
+              <AtlasHeader
+                deviceWidth={route.deviceWidth}
+                onDeviceWidth={(deviceWidth) => navigate({ deviceWidth })}
+                onJump={(groupId) => navigate({ groupId })}
+              />
+            </View>
+          }
+          renderItem={({ item }) => (
+            <AtlasRowView
+              row={item}
               deviceWidth={route.deviceWidth}
-              onDeviceWidth={(deviceWidth) => navigate({ deviceWidth })}
-              onJump={(groupId) => navigate({ groupId })}
-              onGroupLayout={(groupId, y) => {
-                groupOffsets.current[groupId] = y;
-                if (route.groupId === groupId) {
-                  scrollRef.current?.scrollTo({ y: atlasTop.current + y, animated: false });
-                }
-              }}
+              contentWidth={contentWidth}
               onOpen={(screenId) => navigate({ page: "compare", screenId })}
             />
-          </View>
-        ) : (
+          )}
+          ListFooterComponent={
+            <Text accessibilityLiveRegion="polite" style={styles.message}>
+              {message}
+            </Text>
+          }
+        />
+      ) : (
+        <ScrollView style={styles.page} contentContainerStyle={styles.pageInner}>
+          <LabHeader
+            page="compare"
+            onAtlas={() => navigate({ page: "atlas", groupId: "" })}
+            onCompare={() => navigate({ page: "compare" })}
+          />
           <Compare
             route={route}
             viewportWidth={viewportWidth}
             onNavigate={navigate}
             onMessage={setMessage}
           />
-        )}
-        <Text accessibilityLiveRegion="polite" style={styles.message}>
-          {message}
-        </Text>
-      </ScrollView>
+          <Text accessibilityLiveRegion="polite" style={styles.message}>
+            {message}
+          </Text>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -452,6 +575,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: c.paper },
   page: { flex: 1, backgroundColor: c.paper },
   pageInner: { alignItems: "center", paddingHorizontal: 18, paddingTop: 28, paddingBottom: 64 },
+  listHeader: { alignSelf: "center" },
   header: { width: "100%", maxWidth: 1200, gap: 5, marginBottom: 28 },
   kicker: { color: c.green, fontSize: 12, fontWeight: "700", letterSpacing: 1.5 },
   title: { color: c.ink, fontFamily: font.bold, fontSize: 40, lineHeight: 48 },
@@ -461,11 +585,16 @@ const styles = StyleSheet.create({
   sectionKicker: { color: c.green, fontSize: 11, fontWeight: "700", letterSpacing: 1.4 },
   sectionTitle: { color: c.ink, fontFamily: font.bold, fontSize: 30, lineHeight: 38 },
   groupJump: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
-  group: { marginTop: 28, gap: 14 },
+  atlasHeadingRow: {
+    alignSelf: "center",
+    paddingTop: 28,
+    paddingBottom: 14,
+    justifyContent: "flex-end",
+  },
   groupHeading: { flexDirection: "row", alignItems: "baseline", gap: 10 },
   groupTitle: { color: c.ink, fontFamily: font.bold, fontSize: 25, lineHeight: 32 },
   meta: { color: c.muted, fontSize: 13 },
-  atlasGrid: { flexDirection: "row", flexWrap: "wrap", gap: 16 },
+  atlasGrid: { alignSelf: "center", flexDirection: "row", gap: 16 },
   atlasCard: {
     width: 320,
     backgroundColor: c.card,

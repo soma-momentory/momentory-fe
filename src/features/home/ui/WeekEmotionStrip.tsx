@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
-import { EmotionPebble, SectionHeader, SelectLift, Text, WeekEmptyDot } from "@/components/ds";
+import { EmotionPebble } from "@/components/ds/EmotionPebble";
+import { SectionHeader } from "@/components/ds/SectionHeader";
+import { SelectLift } from "@/components/ds/SelectLift";
+import { Text } from "@/components/ds/Text";
+import { WeekEmptyDot } from "@/components/ds/WeekEmptyDot";
 import { label as labelColor, space } from "@/design/ds";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";

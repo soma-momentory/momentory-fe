@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import {
@@ -51,15 +52,48 @@ type Props = {
   actions: readonly MenuAction[];
   /** 패널 위쪽 y — 보통 ⋮ 를 누른 지점 바로 아래 */
   top: number;
+  /** 하단에서 뒤집어 띄울 때 사용할 ⋮ 버튼의 위쪽 y */
+  anchorTop?: number;
+  /** 패널이 침범하지 않을 탭바·홈 인디케이터 높이 */
+  bottomInset?: number;
   onDismiss: () => void;
 };
 
 /** 시안의 메뉴 폭 (`Schedule.dc.html` 4-2 `menuWidth`) */
 const MENU_WIDTH = 168;
 
-export function Menu({ actions, top, onDismiss }: Props) {
+/** 공간이 부족하면 행 위로 뒤집고, 어느 쪽도 부족하면 가용 높이 안에 고정한다. */
+export function anchoredMenuTop(
+  desiredTop: number,
+  anchorTop: number,
+  viewportHeight: number,
+  bottomInset: number,
+  actionCount: number,
+) {
+  const menuHeight = actionCount * space.xl4 + space.xs * 2;
+  const lowerEdge = viewportHeight - bottomInset - space.sm;
+  if (desiredTop + menuHeight <= lowerEdge) return desiredTop;
+  const above = anchorTop - space.sm - menuHeight;
+  if (above >= space.sm) return above;
+  return Math.max(space.sm, Math.min(desiredTop, lowerEdge - menuHeight));
+}
+
+export function Menu({ actions, top, anchorTop, bottomInset = 0, onDismiss }: Props) {
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const panelTop =
+    anchorTop != null && viewportHeight > 0
+      ? anchoredMenuTop(top, anchorTop, viewportHeight, bottomInset, actions.length)
+      : top;
   return (
-    <View testID="ds-menu-overlay" style={styles.root}>
+    <View
+      testID="ds-menu-overlay"
+      style={styles.root}
+      onLayout={
+        anchorTop == null
+          ? undefined
+          : (event) => setViewportHeight(event.nativeEvent.layout.height)
+      }
+    >
       {/* 딤이 없다 — 뒤가 계속 보여야 무엇에 대한 메뉴인지 잃지 않는다 */}
       <Pressable
         style={StyleSheet.absoluteFill}
@@ -67,7 +101,13 @@ export function Menu({ actions, top, onDismiss }: Props) {
         accessibilityLabel="메뉴 닫기"
         onPress={onDismiss}
       />
-      <View style={[styles.panel, { top }]}>
+      <View
+        testID="ds-menu-panel"
+        style={[
+          styles.panel,
+          { top: panelTop, opacity: anchorTop != null && !viewportHeight ? 0 : 1 },
+        ]}
+      >
         {actions.map((action) => (
           <Pressable
             key={action.label}

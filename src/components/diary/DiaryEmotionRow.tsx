@@ -1,6 +1,8 @@
 import { StyleSheet, View } from "react-native";
 
-import { EmotionDot, EmotionPebble, Text } from "@/components/ds";
+import { EmotionDot } from "@/components/ds/EmotionDot";
+import { EmotionPebble } from "@/components/ds/EmotionPebble";
+import { Text } from "@/components/ds/Text";
 import { label as labelColor, space } from "@/design/ds";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 
