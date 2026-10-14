@@ -565,13 +565,30 @@ Play 가 「디버그 모드로 서명됨」으로 거절할 때에야 알게 �
 
 ### 빌드
 
+순서가 있다 — **`.env` 를 운영으로 바꾼 뒤** prebuild 해야 한다. `.env` 가 플러그인 목록을
+정하므로(`productionCleanupPlugins` 는 `MOMENTORY_BUILD_ENV=production` 일 때만 붙는다)
+prebuild 뒤에 `.env` 만 바꾸면 네이티브에는 반영되지 않는다.
+
 ```bash
-npx expo prebuild -p android              # /android 를 다시 만든다
+# 0. .env 두 줄 — 끝나면 되돌린다
+#    EXPO_PUBLIC_API_BASE_URL=https://api.momentory.co.kr
+#    MOMENTORY_BUILD_ENV=production
+# 1. app.config.ts 의 version · android.versionCode 를 올린다(아래 「versionCode」)
+npx expo config --type public --json | jq '{version, versionCode: .android.versionCode, api: .extra.apiBaseUrl}'
+#    → 1.3.0 · 10 · https://api.momentory.co.kr 처럼 셋이 맞는지 눈으로 본다
+npx expo prebuild -p android --clean --no-install   # /android 를 지우고 다시 만든다
 echo "sdk.dir=$HOME/Library/Android/sdk" > android/local.properties
 cd android
 JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home \
   ./gradlew :app:bundleRelease            # → app/build/outputs/bundle/release/app-release.aab
+cd ..
+cp android/app/build/outputs/bundle/release/app-release.aab \
+   ../output/momentory-android-<version>-vc<versionCode>.aab   # 산출물은 저장소 밖 ../output 에 둔다
+# 2. .env 를 개발 주소(dev.momentory.co.kr) · MOMENTORY_BUILD_ENV 주석으로 되돌린다
 ```
+
+`--clean` 은 `/android` 를 통째로 지운다 — 키스토어가 `~/keys` 에 있는 이유다(준비물 표).
+`.env` 를 되돌린 뒤 `npm run android` 를 하면 개발용으로 다시 prebuild 된다.
 
 **막히는 자리 둘. 둘 다 prebuild 가 원인이다.**
 
@@ -595,6 +612,20 @@ keytool -J-Duser.language=en -printcert -jarfile android/app/build/outputs/bundl
 [`app.config.ts`](../app.config.ts) 의 `android.versionCode` 를 **업로드마다 1 씩** 올린다.
 Play 는 같은 값을 두 번 받지 않고, 심사 반려 뒤 재업로드도 포함이다.
 `android/app/build.gradle` 에서 올리면 다음 prebuild 에 1 로 되돌아간다.
+
+**이력** — 산출물 이름(`../output/momentory-android-<version>-vc<code>.aab`)과 같이 적는다.
+`version` 은 사람이 읽는 이름이라 되돌아갈 수도 있고(vc8 의 1.1.2), 순서는 `versionCode` 만 만든다.
+
+| versionCode | version | 날짜         | 비고                                                                           |
+| ----------- | ------- | ------------ | ------------------------------------------------------------------------------ |
+| 1 · 2       | 0.1.x   | 2026-08-26   | 첫 비공개 테스트 업로드(8-26) 와 그 뒤 갱신                                    |
+| 3           | —       | 2026-09      | **소비됨** — dev 서버로 빌드한 AAB 를 올렸다 지웠다(`app.config.ts` 주석)      |
+| 4 · 5       | 0.1.x   | 2026-09-06 ~ | 비공개 테스트 갱신 — 5 까지 업로드됐다(2026-10-03 확인)                        |
+| 6           | 0.1.1   | 2026-10-03   | `momentory-0.1.1-vc6.aab`                                                      |
+| 7           | 1.2.0   | 2026-10-06   | `momentory-1.2.0-vc7.aab`                                                      |
+| 8           | 1.1.2   | 2026-10-06   | `momentory-android-1.1.2-vc8.aab`                                              |
+| 9           | 1.2.0   | 2026-10-09   | `momentory-android-1.2.0-vc9.aab` — Play 에 올라가 번호가 소비됐다             |
+| **10**      | 1.3.0   | 2026-10-14   | `momentory-android-1.3.0-vc10.aab` — **운영 서버**(`api.momentory.co.kr`) 빌드 |
 
 ### 지문 셋 — 하나라도 빠지면 그 빌드에서만 로그인이 실패한다
 

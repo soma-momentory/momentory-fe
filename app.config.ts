@@ -224,7 +224,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 올렸다가 출시를 지웠는데, Play 는 **아티팩트가 라이브러리에 들어간 시점에**
     // 번호를 소비한다 — 출시를 지워도 그 번호는 돌아오지 않는다. 그래서 4 다.
     // (테스터에게 나가지는 않았다. 출시 전에 지웠다.)
-    versionCode: 6,
+    //
+    // 이력은 `docs/SETUP.md` §8 「versionCode」 표에 둔다 — 여기 숫자와 그 표를 같이 올린다.
+    // `10` = 1.3.0 · 운영 서버(`api.momentory.co.kr`) · 2026-10-14. 9 는 10-09 의 1.2.0 빌드가 썼다.
+    versionCode: 10,
   },
 
   // ⚠ 플러그인의 유일한 출처. `npx expo install` 이 app.json 을 만들어 여기 목록을
