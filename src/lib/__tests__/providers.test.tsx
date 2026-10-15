@@ -3,6 +3,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { Text } from "react-native";
 import { render } from "@testing-library/react-native";
 
+import { homeV2 } from "@/design/ds";
+
 import { AppProviders } from "../providers";
 
 jest.mock("expo-font", () => ({ useFonts: jest.fn() }));
@@ -33,6 +35,24 @@ describe("AppProviders", () => {
     );
 
     expect(getByText("모멘토리")).toBeTruthy();
+  });
+
+  it("홈 v2 의 Gaegu 두 굵기를 파일 이름 그대로 등록한다 — homeV2.font 와 같은 키", async () => {
+    // Android 는 fontWeight 로 굵기를 고르지 않는다 — 굵기마다 이름 하나(규칙 5)
+    mockFonts(true);
+    await render(
+      <AppProviders>
+        <Text>모멘토리</Text>
+      </AppProviders>,
+    );
+
+    const table = (useFonts as jest.Mock).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(Object.keys(table)).toEqual(
+      expect.arrayContaining([homeV2.font.regular, homeV2.font.bold]),
+    );
+    expect(homeV2.font).toEqual({ regular: "Gaegu-Regular", bold: "Gaegu-Bold" });
+    // 글로벌 서체는 그대로다(HD-3)
+    expect(Object.keys(table)).toEqual(expect.arrayContaining(["KyoboHandwriting2025lyb"]));
   });
 
   it("폰트를 기다리는 동안은 아무것도 그리지 않는다", async () => {
