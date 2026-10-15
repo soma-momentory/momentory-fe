@@ -29,6 +29,10 @@ function run(command, args, cwd) {
 
 const root = process.cwd();
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const resume = process.argv[2] === '--resume';
+const coreArgs = resume
+  ? ['harness/run.mjs', '--resume', process.argv[3]]
+  : ['harness/run.mjs', process.argv[2]];
 for (const dir of [root, path.join(root, 'design-lab')]) {
   if (
     !fs.existsSync(path.join(dir, 'package-lock.json')) ||
@@ -40,6 +44,4 @@ for (const dir of [root, path.join(root, 'design-lab')]) {
   if (code !== 0) process.exit(code);
 }
 if (stopping) process.exit(143);
-process.exit(
-  await run(process.execPath, ['harness/run.mjs', process.argv[2]], root),
-);
+process.exit(await run(process.execPath, coreArgs, root));

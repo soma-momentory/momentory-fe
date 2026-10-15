@@ -28,6 +28,25 @@ export function startCoreWorker({
   return child;
 }
 
+/** Resume the existing Core run in its original worktree; keep the first attempt's files. */
+export function startResumeWorker({ worktree, coreRunId, logFile, onExit }) {
+  fs.mkdirSync(path.dirname(logFile), { recursive: true });
+  const log = fs.openSync(logFile, 'wx');
+  const child = spawn(
+    process.execPath,
+    ['harness/parallel/worker-entry.mjs', '--resume', coreRunId],
+    {
+      cwd: worktree,
+      stdio: ['ignore', log, log],
+      detached: process.platform !== 'win32',
+    },
+  );
+  fs.closeSync(log);
+  child.once('error', (error) => onExit({ code: null, error: error.message }));
+  child.once('exit', (code, signal) => onExit({ code, signal }));
+  return child;
+}
+
 export function stopWorker(child) {
   if (!child || child.exitCode !== null) return;
   child.kill('SIGTERM'); // The entry forwards SIGTERM to Core for lock cleanup.
