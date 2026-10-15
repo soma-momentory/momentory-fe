@@ -1,0 +1,62 @@
+/* ⚠ 반입본 — 원본 `design-proposals/components/tokens.css`(v0.2 · sha256 8a9d32c2…) 에서
+   @font-face 의 경로만 이 저장소 `assets/fonts/` 의 같은 파일로 바꿨다(바이트 동일 확인).
+   토큰 값은 고치지 않는다 — 원본이 바뀌면 다시 반입한다(src/design-system/README.md). */
+@font-face {
+  font-family: MomentoryPre;
+  src: url(../../../../assets/fonts/Pretendard-Regular.otf);
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: MomentoryPre;
+  src: url(../../../../assets/fonts/Pretendard-SemiBold.otf);
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: MomentoryHand;
+  src: url(../../../../assets/fonts/KyoboHandwriting2025lyb.ttf);
+  font-display: swap;
+}
+:root {
+  --surface-page: #fffdf6;
+  --surface-card: #fffefa;
+  --surface-memo: #fffdf2;
+  --surface-disabled: #f1eee5;
+  --surface-overlay: rgba(48, 38, 28, 0.38);
+  --text-primary: #3c2e22;
+  --text-secondary: #6b5c4a;
+  --text-muted: #796b5a;
+  --text-inverse: #fffdf8;
+  --brand-action: #56755f;
+  --brand-pressed: #45634e;
+  --accent-highlight: #f3d07a;
+  --accent-tape-sage: #a8c79b;
+  --accent-tape-rose: #e9a9a0;
+  --line-rule: rgba(130, 165, 200, 0.3);
+  --line-margin: rgba(233, 140, 130, 0.5);
+  --line-border: rgba(60, 46, 34, 0.16);
+  --line-control: #796b5a;
+  --state-positive: #4b7138;
+  --state-caution: #956507;
+  --state-negative: #a94430;
+  --state-disabled: #756653;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --radius-small: 0.5rem;
+  --radius-medium: 0.75rem;
+  --radius-card: 1rem;
+  --radius-modal: 1.25rem;
+  --radius-pill: 999px;
+  --shadow-card: 0 4px 12px rgba(60, 46, 34, 0.08);
+  --shadow-paper: 0 10px 18px -12px rgba(60, 46, 34, 0.5);
+  --font-body: MomentoryPre, Pretendard, system-ui, sans-serif;
+  --font-hand: MomentoryHand, var(--font-body);
+}

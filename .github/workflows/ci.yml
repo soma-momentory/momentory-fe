@@ -18,11 +18,14 @@ jobs:
 
       # .npmrc 의 legacy-peer-deps 를 그대로 쓴다 — 로컬과 같은 트리가 나와야 한다.
       - run: npm ci
+      - run: npm ci --prefix design-lab
 
       # 생성물이 손으로 수정됐는지 본다.
       # 상류 저장소 없이 도는 검사다 — 커밋된 파일의 자기 일관성만 확인한다.
 
       - run: npm run typecheck
+      - run: npm run typecheck:lab
+      - run: npm run typecheck:expo-lab
       - run: npm run lint
       # eslint-config-prettier 는 충돌 규칙을 끌 뿐 포맷을 검사하지 않는다 — 검사는 이 단계다.
       - run: npm run format:check

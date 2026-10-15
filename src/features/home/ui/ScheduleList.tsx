@@ -41,8 +41,8 @@ type Props = {
   schedules: Schedule[];
   /** 체크박스 — 마침을 켜고 끈다. **감정을 묻지 않는다**(N7) */
   onToggleDone: (id: string) => void;
-  /** ⋮ — 누른 지점의 y 와 함께 올린다 */
-  onMore: (id: string, atY: number) => void;
+  /** ⋮ 버튼의 화면상 위·아래 경계 */
+  onMore: (id: string, topPageY: number, bottomPageY: number) => void;
   onMove: (id: string, direction: "up" | "down") => void;
   onReorder: (id: string, toIndex: number) => void;
   /** 끄는 동안 바깥 스크롤을 멈춘다 — 손가락 하나가 두 일을 하지 않게 */
@@ -141,7 +141,7 @@ function DraggableRow({
   drag: Drag | null;
   offset: Animated.Value;
   onToggleDone: (id: string) => void;
-  onMore: (id: string, atY: number) => void;
+  onMore: (id: string, topPageY: number, bottomPageY: number) => void;
   onMove: (id: string, direction: "up" | "down") => void;
   onBegin: (index: number, id: string) => void;
   onMoveBy: (dy: number) => void;

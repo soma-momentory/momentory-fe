@@ -1,0 +1,119 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "changedFiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "manualValidation": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "humanDecisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "pros": {
+                  "type": "string"
+                },
+                "cons": {
+                  "type": "string"
+                }
+              },
+              "required": ["label", "pros", "cons"],
+              "additionalProperties": false
+            }
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "reason",
+          "options",
+          "recommendation",
+          "impact"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "resolvedMustFix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "resolution"],
+        "additionalProperties": false
+      }
+    },
+    "manualOnlyMustFix": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "reason"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "changedFiles",
+    "tests",
+    "manualValidation",
+    "humanDecisions",
+    "resolvedMustFix",
+    "manualOnlyMustFix"
+  ],
+  "additionalProperties": false
+}

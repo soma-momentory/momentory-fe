@@ -12,7 +12,11 @@ import {
   type ScheduleFailureCode,
 } from "@/features/home/data/scheduleApi";
 import type { Schedule } from "@/features/home/model/types";
+import { visibleSchedules } from "@/features/home/model/presentation";
 import { clock } from "@/lib/clock";
+
+// 기존 화면의 import 경로는 유지한다. UI는 API store 대신 순수 presentation 모듈을 읽는다.
+export { MAX_VISIBLE_SCHEDULES, remainingLabel, visibleSchedules } from "./presentation";
 
 /**
  * 오늘 하루 — 일정과 순간.
@@ -356,19 +360,6 @@ export function weekStartOf(iso: string): string {
   return `${sunday.getFullYear()}-${pad(sunday.getMonth() + 1)}-${pad(sunday.getDate())}`;
 }
 
-/** 목록에 보이는 일정 — 숨긴 것은 빼고 센다 */
-export const visibleSchedules = (schedules: readonly Schedule[]) =>
-  schedules.filter((s) => !s.hidden);
-
-/**
- * 목록이 이 수를 넘으면 여기까지만 펼치고 `[n개 더 보기]` 로 접는다(`12.md`).
- *
- * ⚠ **디자인 값이 아니라 제품 규칙이다.** 오랫동안 `design/tokens.mvp.ts` 의
- * `home.maxVisibleSchedules` 로 있었는데, 그러면 토큰 파일을 지우는 순간 규칙이
- * 조용히 사라진다 — 디자인 세대가 바뀌어도 「5개까지 펼친다」는 그대로다.
- */
-export const MAX_VISIBLE_SCHEDULES = 5;
-
 /**
  * 「2/4 마침」. **진행률·배지가 아니라 사실**이다(`12.md`) — 퍼센트로 바꾸거나
  * 막대를 그리지 않는다.
@@ -380,17 +371,4 @@ export const MAX_VISIBLE_SCHEDULES = 5;
 export const doneCountLabel = (schedules: readonly Schedule[]) => {
   const shown = visibleSchedules(schedules);
   return `${shown.filter((s) => s.done).length}/${shown.length} 마침`;
-};
-
-/**
- * 「3개 남음」 — **남은(미완료) 수**다(`DESIGN.md` 「홈」).
- *
- * 마친 수를 세면 「얼마나 해냈는가」가 되고, 남은 수를 세면 「무엇이 남았는가」가
- * 된다. 진행률·배지를 만들지 않는다는 규칙(`12.md`)은 그대로다 — 다 마쳤을 때도
- * 점수 대신 **끝났다는 사실**만 말한다.
- */
-export const remainingLabel = (schedules: readonly Schedule[]) => {
-  const shown = visibleSchedules(schedules);
-  const left = shown.filter((s) => !s.done).length;
-  return left > 0 ? `${left}개 남음` : "모두 완료";
 };

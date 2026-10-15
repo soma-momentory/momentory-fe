@@ -24,8 +24,12 @@ module.exports = [
       "android/**",
       "ios/**",
       "expo-env.d.ts",
+      // Claude Design 다운로드 원본 — 생성된 런타임·디자인 스냅샷은 수정/린트하지 않는다.
+      "design-imports/**",
       // 새 디자인 반입 스냅샷 — 직접 수정 금지 대상이라 린트하지 않는다 (docs/design/IMPORT.md)
       "docs/design/prototype/**",
+      // 리디자인 웹 프로토타입의 빌드 산출물 (design-lab/CLAUDE.md) — 소스는 린트한다
+      "design-lab/dist/**",
     ],
   },
   {
@@ -44,7 +48,7 @@ module.exports = [
   {
     // 토큰이 사는 곳 — 여기서만 hex 리터럴이 정상이다.
     // theme.ts 는 상류 생성물이고, tokens.mvp.ts 는 상류 반영 전까지의 오버라이드다.
-    files: ["src/design/**", "app.config.ts"],
+    files: ["src/design/**", "expo-lab/src/claude-home/tokens.ts", "app.config.ts"],
     rules: {
       "no-restricted-syntax": "off",
     },
@@ -69,6 +73,14 @@ module.exports = [
           ],
         },
       ],
+    },
+  },
+  {
+    // design-lab 은 Vite 프로젝트다 — `virtual:` 모듈은 Vite 플러그인이 만들어 린터가
+    // 경로를 풀 수 없다. 그 접두사만 풀어 주고 나머지 import 검사는 그대로 둔다.
+    files: ["design-lab/**/*.{ts,tsx}"],
+    rules: {
+      "import/no-unresolved": ["error", { ignore: ["^virtual:"] }],
     },
   },
 ];

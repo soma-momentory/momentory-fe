@@ -1,5 +1,6 @@
 import { act, render, fireEvent, within } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { View } from "react-native";
 
 import Home from "../home";
 
@@ -29,9 +30,17 @@ beforeEach(() => {
   useDay.setState({ schedules: testSchedules() });
 });
 
-/** ⋮ 를 눌러 그 줄의 메뉴를 연다 — 메뉴는 누른 지점 아래에 뜬다 */
-const openMenu = async (r: Awaited<ReturnType<typeof render>>, title: string) =>
-  fireEvent.press(r.getByLabelText(`${title} 더보기`), { nativeEvent: { pageY: 300 } });
+/** 터치 좌표와 다른 버튼 경계를 재게 해 메뉴가 실제 행을 기준으로 뜨는지 본다. */
+const openMenu = async (r: Awaited<ReturnType<typeof render>>, title: string) => {
+  const measure = jest.spyOn(View.prototype, "measureInWindow").mockImplementation((callback) => {
+    callback(0, 280, 44, 44);
+  });
+  try {
+    await fireEvent.press(r.getByLabelText(`${title} 더보기`), { nativeEvent: { pageY: 300 } });
+  } finally {
+    measure.mockRestore();
+  }
+};
 
 describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", () => {
   it("날씨 씬이 사라졌다 — 날씨를 말하지 않는다 (PLAN.md A-3)", async () => {
@@ -61,6 +70,11 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     // 홈에서 회고로 들어간 길을 남긴다 — 조회만으로는 어디서 왔는지 모른다
     const { track } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
     expect(track).toHaveBeenCalledWith("retro_cta_clicked", { source: "home" });
+    expect(track).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(track.mock.invocationCallOrder[0]).toBeLessThan(
+      (router.push as jest.Mock).mock.invocationCallOrder[0]!,
+    );
   });
 
   it("오늘 일기를 이미 썼으면 일정 확인을 건너뛰고 대화(「이미 마쳤어요」)로 바로 간다", async () => {
@@ -250,6 +264,7 @@ describe("일정 행 — 체크박스와 ⋮", () => {
     const r = await render(<Home />);
     await openMenu(r, "운동 가기");
 
+    expect(flatten(r.getByTestId("ds-menu-panel").props.style).top).toBe(332);
     expect(r.getByText("수정하기")).toBeTruthy();
     expect(r.getByText("삭제하기")).toBeTruthy();
 
