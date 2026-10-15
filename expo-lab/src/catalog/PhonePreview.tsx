@@ -121,7 +121,7 @@ export function VariantPhone({
     <ScaledPhone width={device.width + 20} height={device.height + 20} scale={scale}>
       <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
         <PreviewStatusBar width={device.width} />
-        {variant.render({ scenarioId, onMessage })}
+        {variant.render({ scenarioId, onMessage, scale })}
       </View>
     </ScaledPhone>
   );

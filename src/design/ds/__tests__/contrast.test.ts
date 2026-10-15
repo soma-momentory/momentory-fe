@@ -1,6 +1,7 @@
 import {
   background,
   emotion,
+  homeV2,
   interaction,
   label,
   primary,
@@ -156,5 +157,39 @@ describe("쉼터 안의 빈티지 버튼 — 잉크 글자", () => {
     ["꿀빛 주 행동 면", restScene.accent],
   ])("%s 위에서 4.5 를 넘는다", (_, face) => {
     expect(contrast(restScene.ink, face)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+/**
+ * 홈 v2(`ds/homeV2.ts`) — 시안 값 둘(마친 일정 글자 · 체크 테두리)이 미달이라 보정했다.
+ * 보정 값을 시안으로 되돌리면 여기가 깨진다(A-5 선례).
+ */
+describe("홈 v2 — 종이 위 글자와 체크", () => {
+  const v2 = homeV2.color;
+
+  it("홈 v2 — 마친 일정 글자는 카드 위 4.5 를 넘는다(v2 `#A8988A` 2.63 로 되돌리면 깨진다)", () => {
+    expect(contrast(v2.taskDone, v2.card)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast("#A8988A", v2.card)).toBeLessThan(3);
+  });
+
+  it("홈 v2 — 체크 테두리 · 읽지 않음 점은 3:1 을 넘는다", () => {
+    expect(contrast(v2.taskBorder, v2.card)).toBeGreaterThanOrEqual(3);
+    expect(contrast("#C9BBA8", v2.card)).toBeLessThan(3);
+    expect(contrast(v2.alert, v2.paper)).toBeGreaterThanOrEqual(3);
+  });
+
+  it.each([
+    ["잉크 / 종이", v2.ink, v2.paper],
+    ["잉크 / 날짜 종이", v2.ink, v2.date],
+    ["잉크 / 요일 종이", v2.ink, v2.weekday],
+    ["잉크 / 오늘 형광", v2.ink, v2.today],
+    ["보조 / 카드", v2.muted, v2.card],
+    ["보조 / 종이", v2.muted, v2.paper],
+  ])("홈 v2 — 잉크 · 보조 글자는 종이 · 날짜 종이 · 요일 종이 · 카드 위 4.5 — %s", (_, fg, bg) => {
+    expect(contrast(fg, bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("홈 v2 — CTA 흰 글자 4.5", () => {
+    expect(contrast(v2.white, v2.green)).toBeGreaterThanOrEqual(4.5);
   });
 });

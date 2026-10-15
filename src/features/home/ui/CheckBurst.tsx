@@ -16,6 +16,8 @@ import { secondary, status } from "@/design/ds";
 type Props = {
   /** 체크박스 한 변 — 링이 이 크기에서 퍼진다 */
   size: number;
+  /** 링 · 초록 알갱이의 색 — 기본은 「완료 체크」 색. 홈 v2 종이 목록은 `homeV2` 의 녹색을 넘긴다 */
+  color?: string;
 };
 
 /** 링이 퍼져 사라지는 시간 · 다 퍼진 크기(체크박스의 배수) */
@@ -38,7 +40,7 @@ const YELLOW: readonly Mote[] = [
   { x: -15, y: -4, rise: 18, drift: -8, size: 3 },
 ];
 
-export function CheckBurst({ size }: Props) {
+export function CheckBurst({ size, color = status.positive }: Props) {
   // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다
   const [bloom] = useState(() => new Animated.Value(0));
 
@@ -64,6 +66,7 @@ export function CheckBurst({ size }: Props) {
             width: size,
             height: size,
             borderRadius: size / 2,
+            borderColor: color,
             opacity: bloom.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0] }),
             transform: [
               { scale: bloom.interpolate({ inputRange: [0, 1], outputRange: [1, RING_SCALE] }) },
@@ -77,7 +80,7 @@ export function CheckBurst({ size }: Props) {
         motes={GREEN}
         duration={MOTE_MS}
         stagger={MOTE_STAGGER}
-        color={status.positive}
+        color={color}
       />
       <RisingMotes
         left={0}
@@ -95,5 +98,5 @@ export function CheckBurst({ size }: Props) {
 const styles = StyleSheet.create({
   // 체크박스 한가운데의 점 — 부모(체크박스)의 50% 자리
   origin: { position: "absolute", left: "50%", top: "50%", width: 0, height: 0 },
-  ring: { position: "absolute", borderWidth: 2, borderColor: status.positive },
+  ring: { position: "absolute", borderWidth: 2 },
 });

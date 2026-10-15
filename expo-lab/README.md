@@ -9,29 +9,40 @@ npm ci
 npm run lab:web
 ```
 
-터미널에 표시된 웹 주소를 연다. 첫 페이지는 홈 UI 비교다. 왼쪽의 기존 홈 RN UI와 오른쪽 Claude v2 RN UI를 나란히 조작한다. **기존 앱 · 전체 화면**에서 38개 기존 앱 캡처를 그룹별로 보고, 홈의 **원본 캡처 참고** 선택기로 이전 캡처를 다시 볼 수 있다. 다른 37개 화면은 단계적으로 이전하기 전까지 캡처만 표시한다. 375·390·402·430px 화면 크기를 선택할 수 있다. 캡처 38개는 iPhone 13 mini(375×812pt)에서 찍었으므로 다른 크기에서는 이미지를 늘려 표시할 뿐 해당 기기에서 다시 캡처한 것은 아니다.
+터미널에 표시된 웹 주소를 연다. 첫 페이지는 홈 UI 비교다. 왼쪽의 기존(운영) 홈 RN UI와 오른쪽 홈 시안 변형을 나란히 조작한다. 오른쪽 변형은 둘이다 — **시안 원본 · Claude Design v2**(`claude-v2`)와 **운영판 v2 · 공유 뷰**(`app-v2`, 2026-10-15 · 홈 v2 계획 P2). **기존 앱 · 전체 화면**에서 38개 기존 앱 캡처를 그룹별로 보고, 홈의 **원본 캡처 참고** 선택기로 이전 캡처를 다시 볼 수 있다. 다른 37개 화면은 단계적으로 이전하기 전까지 캡처만 표시한다. 375·390·402·430px 화면 크기를 선택할 수 있다. 캡처 38개는 iPhone 13 mini(375×812pt)에서 찍었으므로 다른 크기에서는 이미지를 늘려 표시할 뿐 해당 기기에서 다시 캡처한 것은 아니다.
 
 화면·시안·상태·기기 선택은 URL 해시에 저장된다. 예: `#compare/home-main/claude-v2?device=402&scenario=5e`. 새로고침과 브라우저 뒤로/앞으로에서 다시 열 수 있다. 이전 Expo Lab의 `?scenario=5e&device=402`, Vite Lab의 `#preview/home-main` 형식도 읽는다.
 
 ## 통합 범위와 확장 위치
 
-| 영역           | 파일                                                                       | 역할                                                                  |
-| -------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 기존 화면 목록 | `src/catalog/screens.ts`                                                   | Vite Lab에서 이전한 7개 그룹·38개 화면명·경로·예시 데이터 표시        |
-| 기존 캡처      | `assets/current-app/`, `src/catalog/captures.ts`                           | Vite Lab PNG 38개 바이트 동일 복사본과 상세 비교용 원본 참조          |
-| 갤러리 축소본  | `assets/current-app-thumbnails/`, `src/catalog/thumbnails.ts`              | 540px PNG 38개. 목록에서만 사용하고 상세는 원본을 사용                |
-| 기기 프레임    | `src/catalog/PhonePreview.tsx`                                             | 실제 앱 캡처와 RN 시안의 공통 크기 선택·미리보기                      |
-| 시안 등록      | `src/catalog/variants.tsx`                                                 | 화면 ID별 시안·상태 목록. 쉼터·보관함·회고 시안을 여기에 추가         |
-| 홈 UI          | `src/claude-home/HomeView.tsx`, `variants.ts`                              | 기존 5a–5f React Native UI와 동일 Props 계약. A/B/C 홈 시안 등록 자리 |
-| Lab Mock       | `src/claude-home/MockPreview.tsx`, `scenarios.ts`                          | 일정 체크·추가·날씨 변경 등 로컬 상태와 가짜 액션만 제공              |
-| 기존 홈 RN UI  | `../src/features/home/ui/HomeView.tsx`, `src/current-home/MockPreview.tsx` | 운영 앱과 동일한 화면 조립 코드, Lab 전용 Mock 데이터·행동            |
-| 도구 UI        | `src/App.tsx`                                                              | 가상화된 목록, 그룹 바로가기, 단일 화면 선택, 시안 비교, URL 상태     |
+| 영역           | 파일                                                                             | 역할                                                                    |
+| -------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 기존 화면 목록 | `src/catalog/screens.ts`                                                         | Vite Lab에서 이전한 7개 그룹·38개 화면명·경로·예시 데이터 표시          |
+| 기존 캡처      | `assets/current-app/`, `src/catalog/captures.ts`                                 | Vite Lab PNG 38개 바이트 동일 복사본과 상세 비교용 원본 참조            |
+| 갤러리 축소본  | `assets/current-app-thumbnails/`, `src/catalog/thumbnails.ts`                    | 540px PNG 38개. 목록에서만 사용하고 상세는 원본을 사용                  |
+| 기기 프레임    | `src/catalog/PhonePreview.tsx`                                                   | 실제 앱 캡처와 RN 시안의 공통 크기 선택·미리보기                        |
+| 시안 등록      | `src/catalog/variants.tsx`                                                       | 화면 ID별 시안·상태 목록. 쉼터·보관함·회고 시안을 여기에 추가           |
+| 홈 UI          | `src/claude-home/HomeView.tsx`, `variants.ts`                                    | 시안 원본 5a–5f RN UI(`design`)와 운영판 v2(`app`) 두 갈래 변형 등록    |
+| 운영판 v2      | `../src/features/home/ui/v2/HomeV2View.tsx`, `src/claude-home/HomeV2Preview.tsx` | 앱이 소유한 홈 v2 공유 뷰 + Lab Mock 어댑터(날씨 `null` · 알림 점 없음) |
+| Lab Mock       | `src/claude-home/MockPreview.tsx`, `scenarios.ts`                                | 일정 체크·추가·날씨 변경 등 로컬 상태와 가짜 액션만 제공                |
+| 기존 홈 RN UI  | `../src/features/home/ui/HomeView.tsx`, `src/current-home/MockPreview.tsx`       | 운영 앱과 동일한 화면 조립 코드, Lab 전용 Mock 데이터·행동              |
+| 도구 UI        | `src/App.tsx`                                                                    | 가상화된 목록, 그룹 바로가기, 단일 화면 선택, 시안 비교, URL 상태       |
 
-시안이 없는 화면은 기존 캡처를 표시하고 오른쪽에 “시안 등록 대기 중”을 명시한다. 홈 이외의 기존 화면은 아직 RN UI로 이전하지 않는다. 기존 홈은 운영 라우트와 Lab MockPreview가 같은 `src/features/home/ui/HomeView.tsx`를 렌더링한다. 운영 라우트만 Store·API·Router·Analytics를 사용하며 Lab은 Mock만 주입한다. `src/current-home/HomeView.tsx`는 공통화 전 작업 결과를 보존한 비활성 파일로, 화면 진입점에서 import하지 않는다. Claude 홈 UI는 별도 시안으로 남고 운영 화면에서는 import하지 않는다. 자세한 의존성·제약·검증은 [홈 UI 이전 기록](HOME_UI_VALIDATION.md)에 있다.
+시안이 없는 화면은 기존 캡처를 표시하고 오른쪽에 “시안 등록 대기 중”을 명시한다. 홈 이외의 기존 화면은 아직 RN UI로 이전하지 않는다. 기존 홈은 운영 라우트와 Lab MockPreview가 같은 `src/features/home/ui/HomeView.tsx`를 렌더링한다. 운영 라우트만 Store·API·Router·Analytics를 사용하며 Lab은 Mock만 주입한다. 공통화 전 복사본 `src/current-home/HomeView.tsx`는 참조가 없어 홈 v2 계획 §1.6 에 따라 P2 에서 삭제했다. Claude 홈 UI는 「시안 원본」 변형으로 남고 운영 화면에서는 import하지 않는다. **운영판 v2** 는 앱의 `src/features/home/ui/v2/` 를 그대로 그리고, 앱은 Lab 을 import하지 않는다(`eslint.config.js` 가 막는다). 운영 홈 라우트는 P3 전까지 옛 `HomeView` 다. 자세한 의존성·제약·검증은 [홈 UI 이전 기록](HOME_UI_VALIDATION.md)에 있다.
 
-홈 A/B/C 시안은 동일한 `HomeVariantProps`를 구현해 `src/claude-home/variants.ts`에 추가하면 화면별 시안 선택기에 나타난다. 다른 화면은 해당 화면의 RN UI와 Lab Mock 어댑터를 분리해 만들고 `src/catalog/variants.tsx`에 화면 ID로 등록한다. 시안 등록만으로 서비스 앱에 반영되지 않는다.
+홈 시안은 `src/claude-home/variants.ts` 에 추가하면 화면별 시안 선택기에 나타난다 — 시안 번역이면 `kind: "design"`(`HomeVariantProps` 구현), 앱 공유 뷰를 Mock 으로 그리면 `kind: "app"`(`{ scenarioId, onMessage, scale }` 어댑터). 다른 화면은 해당 화면의 RN UI와 Lab Mock 어댑터를 분리해 만들고 `src/catalog/variants.tsx`에 화면 ID로 등록한다. 시안 등록만으로 서비스 앱에 반영되지 않는다.
 
 캡처 다섯 장(`schedule-edit`, `retro-talk`, `retro-draft`, `diary-detail`, `report`)은 실제 앱에 예시 데이터를 넣어 찍은 이미지이며 배지로 구분한다. 캡처는 정지 이미지로서 로그인·API·키보드·OS 권한 동작을 제공하지 않는다.
+
+## 서체 — 앱과 같은 Gaegu 파일 (2026-10-15)
+
+Lab 은 `@expo-google-fonts/gaegu` 를 더 이상 쓰지 않는다(결정 DN-4). `src/App.tsx` 가 앱의 `assets/fonts/Gaegu-Regular.ttf` ·
+`Gaegu-Bold.ttf` 를 **앱과 같은 이름**(`"Gaegu-Regular"` · `"Gaegu-Bold"`)으로 등록하고, 시안 원본(`claude-home/tokens.ts`)도 그 이름을 쓴다.
+파일은 그 의존성 0.4.1 의 400 · 700 파일을 이름만 바꾼 것이라(sha256 은 `assets/fonts/README.md`) 시안 원본의 굵기와 시각은 그대로다.
+
+## 홈 v2 비교 캡처 절차
+
+[홈 UI 기술 검증](HOME_UI_VALIDATION.md) 「홈 v2 운영판 비교」 절을 따른다 — **시안 원본 · 운영판 v2 · 현행** 세 폰을 5a~5f 로 나란히 찍는다.
 
 ## 검증과 남은 차이
 

@@ -1,5 +1,39 @@
 # 홈 실제 UI 비교 — 기술 검증
 
+## 홈 v2 운영판 비교 (2026-10-15 · 계획 P2)
+
+홈 v2 계획(`docs/redesign/HOME_V2_ROLLOUT_PLAN.md`) P2 로 **앱이 소유한 홈 v2 공유 뷰**
+(`src/features/home/ui/v2/HomeV2View.tsx`)가 생겼다. Lab 의 「운영판 v2 · 공유 뷰」(`app-v2`) 변형이
+`src/claude-home/HomeV2Preview.tsx` 어댑터로 그것을 그린다. ⚠ **운영 홈 라우트는 아직 옛 `HomeView`** 다(P3 전).
+
+| 변형                        | 무엇을 그리나                                      | 데이터                                                                                                 |
+| --------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| 현행(왼쪽 · `current-home`) | 운영 `src/features/home/ui/HomeView.tsx`           | 5a~5f 일정 · 빈 주 · 알림 꺼짐                                                                         |
+| 시안 원본(`claude-v2`)      | `src/claude-home/HomeView.tsx`(시안 번역 · 비교용) | 5a~5f 일정 · 목 감정 색 · 날씨 순환 · 읽지 않음 점 켜짐                                                |
+| 운영판 v2(`app-v2`)         | 앱 `features/home/ui/v2/HomeV2View.tsx`            | 5a~~5f 일정 · 5d~~5f 는 세 가지 날(감정 · 일기만 · 기록 없음) · 리마인더 21:30 · 날씨 `null` · 점 없음 |
+
+**캡처 절차** — `npm run lab:web` → 「화면 선택 · 시안 비교」 → 홈:
+
+1. 기기 375 · 390 · 402 · 430 중 하나를 고른다(최소 390 · 375 두 벌)
+2. 오른쪽 변형을 「시안 원본」으로 두고 5a~5f 를 차례로 찍는다 → 「운영판 v2」로 바꿔 같은 6장 → 왼쪽 현행은 두 번 모두 함께 찍힌다
+   (URL 예: `#compare/home-main/app-v2?device=390&scenario=5d`)
+3. 대조할 것:
+   - **문안** — 말풍선 · 리마인더(`밤 9:30엔 제가 / 먼저 말 걸어요`) · 「하루 돌아보기 ›」 · 빈 일정 · 「이번 주 / 감정」
+   - **보정 색** — 마친 일정 글자(시안 `#A8988A` → `#7D6D5E`) · 체크 테두리(`#C9BBA8` → `#998674`)가 시안보다 짙다
+   - **도크 빈 날** — 기록 없는 날 = 테두리 조약돌(`no-emotion.png`), 일기만 있는 날 = 채운 모래색 조약돌 + 가운데 점(DN-1).
+     두 빈 칸이 색이 아니라 **면의 유무와 점**으로 갈리는지
+   - **운영판에 없는 것** — 날씨 스티커 · 읽지 않음 점 · 종이 탭바(글로벌 탭바를 쓴다) · 바바 손짓
+   - **운영판에만 있는 것** — 일정 ⋮ 메뉴 · 꾹 눌러 끌기 · 5개 접기 「N개 더 보기」 · 「오늘 일정을 모두 마쳤어요.」
+4. 결과는 이 절 아래에 날짜와 함께 적는다 — 디자인 최종 검수(DN-1 시각)는 P3 전환 전에 한다
+
+**서체**: Lab 과 앱이 같은 `assets/fonts/Gaegu-*.ttf` 를 같은 이름으로 쓴다(DN-4). Gaegu 두 굵기가 다르게 그려지는지
+(웹 · 가능하면 Android dev client — Android 는 `fontWeight` 를 무시한다)를 함께 본다.
+
+**자동 검증**: `src/claude-home/__tests__/homeV2Preview.test.tsx` — 두 변형이 등록돼 있다 · 5a~5f 가 공유 뷰를 Mock 으로
+그린다 · 도크 일곱 칸 · 날씨/점 없음 · 어댑터가 운영 store · API · 라우터 · 계측을 import 하지 않는다.
+⚠ 이 절의 **캡처는 아직 찍지 않았다**(2026-10-15 구현 시점 — 자동 검증만 통과). 위 절차의 결과가 들어오기 전에는
+시각 동등성을 주장하지 않는다.
+
 ## 공통 HomeView 전환 (2026-10-14)
 
 운영 `app/(tabs)/home.tsx`와 Lab `src/current-home/MockPreview.tsx`는 이제 같은 `../src/features/home/ui/HomeView.tsx`의 화면 조립 코드를 사용한다. HomeView는 `HomeViewModel` 값과 `HomeViewActions` 콜백만 받고, UI 일시 상태(일정 펼침·드래그·메뉴·삭제 확인·토스트)만 관리한다. `renderFrame(body, overlay)`는 앱에서 기존 `TabScreen`을, Lab에서 `Screen`·`BottomNavigation` 가상 폰을 반환한다. `menuTopFromPageY`는 앱의 Safe Area 보정과 Lab 폰 위치 보정을 각각 담당한다. 순수 일정 표시 규칙은 `src/features/home/model/presentation.ts`로 분리했고 기존 `day.ts` export는 유지했다.

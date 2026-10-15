@@ -109,6 +109,9 @@ function useAppFonts() {
     "Pretendard-Bold": require("../../assets/fonts/Pretendard-Bold.otf"),
     // **앱 전체의 서체** — `ds/typography.ts` 의 `fontFamily` 다섯 이름이 모두 이 파일이다
     KyoboHandwriting2025lyb: require("../../assets/fonts/KyoboHandwriting2025lyb.ttf"),
+    // **홈 v2 전용** 손글씨(HD-3 · `ds/homeV2.ts` 의 `homeV2.font`) — 굵기마다 파일 하나
+    "Gaegu-Regular": require("../../assets/fonts/Gaegu-Regular.ttf"),
+    "Gaegu-Bold": require("../../assets/fonts/Gaegu-Bold.ttf"),
   });
 
   // 폰트 로딩이 실패해도 앱을 붙잡아두지 않는다 — 시스템 서체로라도 뜬다.

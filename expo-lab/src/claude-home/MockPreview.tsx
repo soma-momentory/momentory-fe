@@ -13,7 +13,7 @@ export function ClaudeHomeMockPreview({
   onMessage,
 }: {
   scenarioId: string;
-  variant: HomeVariant;
+  variant: Extract<HomeVariant, { kind: "design" }>;
   onMessage: (message: string) => void;
 }) {
   const scenario =

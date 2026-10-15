@@ -71,6 +71,14 @@ module.exports = [
                 "테스트 전용 고정값이다 — 앱 코드는 서버(features/<도메인>/data)에서 받은 값만 그린다.",
             },
           ],
+          // Expo Lab 은 앱 코드를 빌려 쓰지만 그 반대는 없다 — Lab 의 시안 번역 · Mock 이
+          // 운영 번들에 섞이지 않게 한다(계획 HOME_V2_ROLLOUT_PLAN.md §0.1)
+          patterns: [
+            {
+              group: ["**/expo-lab/**"],
+              message: "Expo Lab 은 앱이 import 하지 않는다 — 값은 src/design/ds 로 옮겨 쓴다.",
+            },
+          ],
         },
       ],
     },
