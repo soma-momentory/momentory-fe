@@ -15,6 +15,7 @@ import { Text } from "@/components/ds/Text";
 import {
   background,
   fontFamily,
+  homeV2,
   interaction,
   label as labelColor,
   layout,
@@ -54,7 +55,15 @@ import { CheckBurst } from "./CheckBurst";
  * **줄 전체를 꾹 누르는** 방식이라, 그 동작을 **끌기가 시작되는 자리와 같은
  * 요소**(제목)에 옮겨 달았다. 시각이 바뀌어도 스크린리더로 옮기는 길은 그대로다
  * (`RULES.md` 「접근성」 · `PLAN.md` A-4).
+ *
+ * ## 겉모습은 둘, 논리는 하나 (2026-10-15 · 홈 v2 계획 §2.3)
+ *
+ * `appearance="paper"` 는 홈 v2 의 종이 목록이다 — **원형 체크 24**(테두리 1.75) · 마치면
+ * **녹색 면 + ✓ + 취소선 + 글자색**(색만으로 말하지 않는다) · Gaegu 글자. 히트 44 · ⋮ 메뉴 ·
+ * 끝맺음 · 끌기 · 접근성 이동은 **같은 코드**를 지난다. 기본 `"ds"` 는 운영 홈 그대로다.
  */
+export type ScheduleAppearance = "ds" | "paper";
+
 type Props = {
   schedule: Schedule;
   onToggleDone: (id: string) => void;
@@ -65,6 +74,7 @@ type Props = {
   dragHandlers?: GestureResponderHandlers;
   /** 들린 줄 — ⋮ 자리에 손잡이 글리프가 온다(시안 4-5·4-6) */
   lifted?: boolean;
+  appearance?: ScheduleAppearance;
 };
 
 const ORDER_ACTIONS = [
@@ -79,8 +89,12 @@ export function ScheduleItem({
   onMove,
   dragHandlers,
   lifted = false,
+  appearance = "ds",
 }: Props) {
   const { id, title, done } = schedule;
+  const paper = appearance === "paper";
+  const check = paper ? PAPER_CHECK : CHECK;
+  const quiet = paper ? homeV2.color.ink : labelColor.alternative;
   // 손으로 마친 횟수 — 바뀔 때마다 끝맺음이 새로 한 번 핀다(`key`)
   const [burst, setBurst] = useState(0);
   const moreRef = useRef<View>(null);
@@ -108,22 +122,29 @@ export function ScheduleItem({
           accessibilityRole="checkbox"
           accessibilityState={{ checked: done }}
           accessibilityLabel={`${title} 마침`}
-          // 20 짜리 상자의 44 타깃을 시각 크기를 키우지 않고 채운다 (RULES.md)
-          hitSlop={(layout.minTouch - CHECK) / 2}
+          // 20(종이 24) 짜리 상자의 44 타깃을 시각 크기를 키우지 않고 채운다 (RULES.md)
+          hitSlop={(layout.minTouch - check) / 2}
           onPress={() => {
             if (!done) setBurst((n) => n + 1);
             onToggleDone(id);
           }}
-          style={styles.check}
+          style={paper ? styles.checkPaper : styles.check}
         >
-          {/* 안 마친 상자는 옅은 그림자 위에 떠 있고, 마치면 그 깊이만큼 내려앉아 그림자를 덮는다 */}
+          {/* 안 마친 상자는 옅은 그림자 위에 떠 있고, 마치면 그 깊이만큼 내려앉아 그림자를 덮는다.
+              종이 체크는 그림자 없이 동그라미 하나다 — 마치면 녹색 면에 ✓ 가 선다 */}
           <Animated.View
             style={[
-              styles.box,
-              done ? styles.checkOn : styles.checkOff,
+              paper ? styles.circle : styles.box,
+              paper
+                ? done
+                  ? styles.paperOn
+                  : styles.paperOff
+                : done
+                  ? styles.checkOn
+                  : styles.checkOff,
               {
                 transform: [
-                  { translateY: done ? raised.checkDepth : 0 },
+                  { translateY: done && !paper ? raised.checkDepth : 0 },
                   {
                     scale: pop.interpolate({
                       inputRange: [0, 0.35, 1],
@@ -134,9 +155,17 @@ export function ScheduleItem({
               },
             ]}
           >
-            {done ? <Icon name="check" size={size.icon.sm} color={labelColor.onFill} /> : null}
+            {done ? (
+              <Icon
+                name="check"
+                size={size.icon.sm}
+                color={paper ? homeV2.color.white : labelColor.onFill}
+              />
+            ) : null}
           </Animated.View>
-          {burst > 0 ? <CheckBurst key={burst} size={CHECK} /> : null}
+          {burst > 0 ? (
+            <CheckBurst key={burst} size={check} color={paper ? homeV2.color.green : undefined} />
+          ) : null}
         </Pressable>
       }
       title={
@@ -152,9 +181,20 @@ export function ScheduleItem({
         >
           <Text
             variant="body1"
-            color={done ? labelColor.neutral : labelColor.strong}
+            color={
+              paper
+                ? done
+                  ? homeV2.color.taskDone
+                  : homeV2.color.ink
+                : done
+                  ? labelColor.neutral
+                  : labelColor.strong
+            }
             numberOfLines={1}
-            style={[styles.title, done ? styles.titleDone : null]}
+            style={[
+              paper ? styles.titlePaper : styles.title,
+              done ? (paper ? styles.titleDonePaper : styles.titleDone) : null,
+            ]}
           >
             {title}
           </Text>
@@ -163,7 +203,7 @@ export function ScheduleItem({
       trailing={
         lifted ? (
           <View style={styles.handle}>
-            <Icon name="handle" size={size.icon.md} color={labelColor.alternative} />
+            <Icon name="handle" size={size.icon.md} color={quiet} />
           </View>
         ) : (
           <View
@@ -176,7 +216,7 @@ export function ScheduleItem({
               name="more-vertical"
               size={size.icon.md}
               accessibilityLabel={`${title} 더보기`}
-              color={labelColor.alternative}
+              color={quiet}
               onPress={(e) => {
                 const pressedY = e.nativeEvent.pageY;
                 if (moreRef.current == null) {
@@ -197,6 +237,8 @@ export function ScheduleItem({
 
 /** 체크박스 한 변 — 제목의 행간(24) 안에 앉는 크기 */
 const CHECK = 20;
+/** 홈 v2 종이 목록의 원형 체크 지름 */
+const PAPER_CHECK = homeV2.size.check;
 /** 마치는 순간 상자가 톡 커졌다 돌아오는 시간 · 가장 커지는 배수 */
 const POP_MS = 360;
 const POP_SCALE = 1.2;
@@ -230,4 +272,30 @@ const styles = StyleSheet.create({
   more: { marginVertical: -space.sm - space.xs2, marginRight: -space.md },
   // ⋮ 가 빠진 자리를 같은 폭으로 채운다 — 들릴 때 제목이 밀리지 않는다
   handle: { width: size.icon.lg, alignItems: "center" },
+
+  // ── 홈 v2 종이 목록(`appearance="paper"`) — 값은 전부 `homeV2` ──
+  checkPaper: { width: PAPER_CHECK, height: PAPER_CHECK },
+  circle: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: PAPER_CHECK / 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // 안 마친 동그라미 — 테두리만(보정한 `taskBorder` · 3:1)
+  paperOff: { borderWidth: homeV2.size.checkBorder, borderColor: homeV2.color.taskBorder },
+  // 마친 동그라미 — 녹색 면 + ✓(색만으로 말하지 않는다)
+  paperOn: {
+    borderWidth: homeV2.size.checkBorder,
+    borderColor: homeV2.color.green,
+    backgroundColor: homeV2.color.green,
+  },
+  titlePaper: {
+    fontFamily: homeV2.font.bold,
+    fontSize: homeV2.type.task.fontSize,
+    lineHeight: homeV2.type.task.lineHeight,
+  },
+  titleDonePaper: {
+    textDecorationLine: "line-through",
+    textDecorationColor: homeV2.color.taskDone,
+  },
 });

@@ -23,7 +23,8 @@ export const claudeHomeColor = {
   shadow: "#48291A",
 } as const;
 
+/** 앱 `assets/fonts/Gaegu-*.ttf` 를 `App.tsx` 가 이 이름으로 등록한다 — 앱 `homeV2.font` 와 같은 이름 */
 export const claudeHomeFont = {
-  regular: "Gaegu_400Regular",
-  bold: "Gaegu_700Bold",
+  regular: "Gaegu-Regular",
+  bold: "Gaegu-Bold",
 } as const;
