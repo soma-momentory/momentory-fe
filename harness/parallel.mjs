@@ -2,11 +2,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProject } from './lib/project.mjs';
 import {
+  approvalState,
   createRun,
   executeRun,
   readRun,
   requestStop,
   restartRun,
+  resumeTask,
+  runStatus,
 } from './parallel/orchestrator.mjs';
 import { loadPlan } from './parallel/plan.mjs';
 
@@ -15,7 +18,14 @@ const repoRoot = path.resolve(
   '..',
 );
 const project = loadProject(path.join(repoRoot, 'harness'));
-const [command, arg] = process.argv.slice(2);
+const [command, arg, taskId] = process.argv.slice(2);
+
+function exitCode(status) {
+  if (status === 'DONE') return 0;
+  if (status === 'WAITING' || status === 'READY') return 2;
+  if (status === 'STOPPED') return 130;
+  return 1;
+}
 
 try {
   if (command === 'start' && arg) {
@@ -36,9 +46,41 @@ try {
         2,
       ),
     );
-    process.exitCode = result.status === 'DONE' ? 0 : 1;
+    process.exitCode = exitCode(result.status);
   } else if (command === 'status' && arg) {
-    console.log(JSON.stringify(readRun(repoRoot, arg).state, null, 2));
+    const { state } = readRun(repoRoot, arg);
+    console.log(
+      JSON.stringify(
+        {
+          ...state,
+          effectiveStatus: ['DONE', 'FAILED', 'WAITING'].includes(state.status)
+            ? runStatus(state.tasks)
+            : state.status,
+          tasks: state.tasks.map((task) => ({
+            ...task,
+            approval: approvalState(task),
+          })),
+        },
+        null,
+        2,
+      ),
+    );
+  } else if (command === 'resume' && arg && taskId) {
+    const result = await resumeTask(repoRoot, arg, taskId, {
+      protectedPaths: project.protectedPaths,
+    });
+    console.log(
+      JSON.stringify(
+        {
+          runId: result.runId,
+          status: result.status,
+          task: result.tasks.find((task) => task.id === taskId)?.status,
+        },
+        null,
+        2,
+      ),
+    );
+    process.exitCode = exitCode(result.status);
   } else if (command === 'stop' && arg) {
     requestStop(repoRoot, arg);
     console.log(`중단 요청: ${arg}`);
@@ -58,10 +100,10 @@ try {
         2,
       ),
     );
-    process.exitCode = result.status === 'DONE' ? 0 : 1;
+    process.exitCode = exitCode(result.status);
   } else {
     console.log(
-      '사용법: node harness/parallel.mjs start <plan.json> | status <runId> | stop <runId> | restart <runId>',
+      '사용법: node harness/parallel.mjs start <plan.json> | status <runId> | resume <runId> <taskId> | stop <runId> | restart <runId>',
     );
     process.exitCode = command ? 1 : 0;
   }
