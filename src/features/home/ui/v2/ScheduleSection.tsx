@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 
 import { Text } from "@/components/ds/Text";
-import { homeV2 } from "@/design/ds";
+import { homeV2, maxFontScale } from "@/design/ds";
 import { remainingLabel } from "@/features/home/model/presentation";
 import type { Schedule } from "@/features/home/model/types";
 
@@ -23,14 +23,22 @@ export function ScheduleSectionHeader({
   empty: boolean;
   onAdd: () => void;
 }) {
+  const { fontScale } = useWindowDimensions();
+  const scale = Math.min(fontScale, maxFontScale);
   return (
     <View style={styles.header}>
       <View style={styles.heading}>
-        <Text style={styles.title} color={homeV2.color.ink}>
+        <Text
+          style={[styles.title, { lineHeight: homeV2.type.sectionTitle.lineHeight * scale }]}
+          color={homeV2.color.ink}
+        >
           오늘 일정
         </Text>
         {/* 남은 수 — 다 마치면 「모두 완료」(S13). 일정이 없으면 「0개」(v2) */}
-        <Text style={styles.count} color={homeV2.color.muted}>
+        <Text
+          style={[styles.count, { lineHeight: homeV2.type.count.lineHeight * scale }]}
+          color={homeV2.color.muted}
+        >
           {empty ? "0개" : remainingLabel(schedules)}
         </Text>
       </View>
@@ -41,7 +49,10 @@ export function ScheduleSectionHeader({
         hitSlop={ADD_HIT_SLOP}
         style={styles.add}
       >
-        <Text style={styles.addText} color={homeV2.color.ink}>
+        <Text
+          style={[styles.addText, { lineHeight: homeV2.type.add.lineHeight * scale }]}
+          color={homeV2.color.ink}
+        >
           + 추가
         </Text>
       </Pressable>
@@ -78,14 +89,22 @@ export function ScheduleSection({
   onDragStateChange,
   onRowPitch,
 }: BodyProps) {
+  const { fontScale } = useWindowDimensions();
+  const scale = Math.min(fontScale, maxFontScale);
   // 빈 상태 전용 레이아웃을 만들지 않는다 — 같은 자리에 빈 카드 한 장(S18). 머리 · 히어로 · 도크는 그대로다
   if (empty) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyTitle} color={homeV2.color.ink}>
+        <Text
+          style={[styles.emptyTitle, { lineHeight: homeV2.type.emptyTitle.lineHeight * scale }]}
+          color={homeV2.color.ink}
+        >
           오늘은 일정이 없어요
         </Text>
-        <Text style={styles.emptyBody} color={homeV2.color.muted}>
+        <Text
+          style={[styles.emptyBody, { lineHeight: homeV2.type.emptyBody.lineHeight * scale }]}
+          color={homeV2.color.muted}
+        >
           여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?
         </Text>
       </View>
@@ -141,10 +160,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 30,
   },
-  heading: { flexDirection: "row", alignItems: "baseline", gap: 8 },
+  heading: {
+    flexDirection: "row",
+    flexShrink: 1,
+    flexWrap: "wrap",
+    alignItems: "baseline",
+    gap: 8,
+  },
   title: { fontFamily: homeV2.font.bold, ...homeV2.type.sectionTitle },
   count: { fontFamily: homeV2.font.regular, ...homeV2.type.count },
   add: {
+    flexShrink: 0,
     backgroundColor: homeV2.color.card,
     paddingHorizontal: 12,
     paddingVertical: 2,
@@ -176,11 +202,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontFamily: homeV2.font.bold,
     ...homeV2.type.emptyTitle,
+    alignSelf: "stretch",
     textAlign: "center",
   },
   emptyBody: {
     fontFamily: homeV2.font.regular,
     ...homeV2.type.emptyBody,
+    alignSelf: "stretch",
     textAlign: "center",
   },
 });

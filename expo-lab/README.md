@@ -28,7 +28,7 @@ npm run lab:web
 | 기존 홈 RN UI  | `../src/features/home/ui/HomeView.tsx`, `src/current-home/MockPreview.tsx`       | 운영 앱과 동일한 화면 조립 코드, Lab 전용 Mock 데이터·행동              |
 | 도구 UI        | `src/App.tsx`                                                                    | 가상화된 목록, 그룹 바로가기, 단일 화면 선택, 시안 비교, URL 상태       |
 
-시안이 없는 화면은 기존 캡처를 표시하고 오른쪽에 “시안 등록 대기 중”을 명시한다. 홈 이외의 기존 화면은 아직 RN UI로 이전하지 않는다. 기존 홈은 운영 라우트와 Lab MockPreview가 같은 `src/features/home/ui/HomeView.tsx`를 렌더링한다. 운영 라우트만 Store·API·Router·Analytics를 사용하며 Lab은 Mock만 주입한다. 공통화 전 복사본 `src/current-home/HomeView.tsx`는 참조가 없어 홈 v2 계획 §1.6 에 따라 P2 에서 삭제했다. Claude 홈 UI는 「시안 원본」 변형으로 남고 운영 화면에서는 import하지 않는다. **운영판 v2** 는 앱의 `src/features/home/ui/v2/` 를 그대로 그리고, 앱은 Lab 을 import하지 않는다(`eslint.config.js` 가 막는다). 운영 홈 라우트는 P3 전까지 옛 `HomeView` 다. 자세한 의존성·제약·검증은 [홈 UI 이전 기록](HOME_UI_VALIDATION.md)에 있다.
+시안이 없는 화면은 기존 캡처를 표시하고 오른쪽에 “시안 등록 대기 중”을 명시한다. 홈 이외의 기존 화면은 아직 RN UI로 이전하지 않는다. 왼쪽의 기존 홈은 보존된 `src/features/home/ui/HomeView.tsx`를 Lab Mock으로 그린다. 운영 라우트는 P3에서 오른쪽 **운영판 v2**와 같은 `src/features/home/ui/v2/HomeV2View.tsx`로 전환했다. 운영 라우트만 Store·API·Router·Analytics를 연결하고 Lab은 Mock만 주입한다. Claude 홈 UI는 「시안 원본」 변형으로 남고 운영 화면에서는 import하지 않는다. 앱은 Lab을 import하지 않는다(`eslint.config.js`가 막는다). 자세한 의존성·제약·검증은 [홈 UI 이전 기록](HOME_UI_VALIDATION.md)에 있다.
 
 홈 시안은 `src/claude-home/variants.ts` 에 추가하면 화면별 시안 선택기에 나타난다 — 시안 번역이면 `kind: "design"`(`HomeVariantProps` 구현), 앱 공유 뷰를 Mock 으로 그리면 `kind: "app"`(`{ scenarioId, onMessage, scale }` 어댑터). 다른 화면은 해당 화면의 RN UI와 Lab Mock 어댑터를 분리해 만들고 `src/catalog/variants.tsx`에 화면 ID로 등록한다. 시안 등록만으로 서비스 앱에 반영되지 않는다.
 

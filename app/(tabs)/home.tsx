@@ -8,7 +8,7 @@ import { track } from "@/features/analytics";
 import { useDiary } from "@/features/diary/model/diary";
 import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDay, useTodayContext, weekStartOf } from "@/features/home/model/day";
-import { HomeView } from "@/features/home/ui/HomeView";
+import { HomeV2View } from "@/features/home/ui/v2/HomeV2View";
 import { useSettings } from "@/features/my/model/settings";
 import { weekDays, weekEnd } from "@/features/report/model/report";
 
@@ -37,13 +37,15 @@ export default function Home() {
   }, [diaries, today]);
 
   return (
-    <HomeView
+    <HomeV2View
       model={{
         today,
         schedules,
         week,
         retroReminderTime:
           retroNotify.enabled && retroNotify.time != null ? retroNotify.time : null,
+        weather: null,
+        hasUnreadNotifications: false,
       }}
       actions={{
         onToggleDone: toggleDone,
@@ -58,6 +60,8 @@ export default function Home() {
           router.push(hasDiaryOn(diaries, today) ? "/retro/talk" : "/retro/confirm");
         },
         onOpenNotificationSettings: () => router.push("/my"),
+        onOpenNotifications: () => router.push("/my"),
+        onOpenWeatherInfo: () => {},
       }}
       renderFrame={(body, overlay) => (
         <TabScreen active="홈" overlay={overlay}>
