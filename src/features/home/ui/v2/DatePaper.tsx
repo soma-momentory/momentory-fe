@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import Svg, { Polygon } from "react-native-svg";
 
 import { Text } from "@/components/ds/Text";
-import { homeV2 } from "@/design/ds";
+import { homeV2, maxFontScale } from "@/design/ds";
 import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
 
 /**
@@ -11,10 +11,27 @@ import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
  * 찢은 종이 모양은 다각형 하나이고 장식이다 — 글자만 읽힌다. 날짜와 요일은 옛 홈처럼 두 줄로
  * 나눠 쓰고(`lib/day.ts`), 서체는 Gaegu 굵게(HD-3).
  */
-export function DatePaper({ today }: { today: string }) {
+/** Keep the same 28pt overlap with the hero gap while both paper scraps grow with text. */
+export function datePaperExtraFor(fontScale: number) {
+  const scale = Math.min(fontScale, maxFontScale);
   return (
-    <View style={styles.wrap}>
-      <View style={styles.date}>
+    Math.max(0, homeV2.type.date.lineHeight * (scale - 1)) +
+    Math.max(0, homeV2.type.weekday.lineHeight * (scale - 1))
+  );
+}
+
+export function DatePaper({ today, fontScale = 1 }: { today: string; fontScale?: number }) {
+  const dateExtra = Math.max(
+    0,
+    homeV2.type.date.lineHeight * (Math.min(fontScale, maxFontScale) - 1),
+  );
+  const weekdayExtra = Math.max(
+    0,
+    homeV2.type.weekday.lineHeight * (Math.min(fontScale, maxFontScale) - 1),
+  );
+  return (
+    <View style={[styles.wrap, { height: 72 + dateExtra + weekdayExtra }]}>
+      <View style={[styles.date, { height: 44 + dateExtra }]}>
         <Svg
           width="100%"
           height="100%"
@@ -31,7 +48,7 @@ export function DatePaper({ today }: { today: string }) {
           {formatKoreanDateShort(today)}
         </Text>
       </View>
-      <View style={styles.weekday}>
+      <View style={[styles.weekday, { top: 36 + dateExtra, height: 27 + weekdayExtra }]}>
         <Svg
           width="100%"
           height="100%"

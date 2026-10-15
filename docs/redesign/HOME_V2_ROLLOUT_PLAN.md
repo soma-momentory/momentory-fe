@@ -1,7 +1,7 @@
 # 홈 v2 운영 적용 계획 — 날씨 · 알림함 FE/BE 계약과 단계별 구현
 
-> 상태: **P0~P2 진행** · Task `tasks/001-home-v2-p1-p2-shared-view.md` (2026-10-15 · 계획 작성은 Task `tasks/001-home-v2-production-rollout-plan.md`).
-> P0(정본 문서) · P1(토큰 · Gaegu · 바바) · P2(공유 뷰 · Expo Lab)가 한 PR 이고, **운영 홈은 아직 옛 화면**이다 — P3~~P6 은 남았다.
+> 상태: **P0~P2 main 반영 · P3 운영 홈 전환은 `feat/home-v2-p3`에서 구현** (2026-10-15). P4~P6 은 남았다.
+> P0(정본 문서) · P1(토큰 · Gaegu · 바바) · P2(공유 뷰 · Expo Lab)는 Task `tasks/001-home-v2-p1-p2-shared-view.md`에서 진행했다. 계획 작성은 Task `tasks/001-home-v2-production-rollout-plan.md`를 따른다.
 > 이 문서를 처음 쓸 때는 코드 · 정본을 바꾸지 않았고, 정본 문서는 §8 목록을 따라 구현 단계(P0~~P6)에서 함께 고친다. BE(`momentory-be`)는 이 저장소에 없으므로 §4 · §5 의 서버
 > 계약은 **제안**이고, **확정은 BE 배포 후 `npm run sync:api` 로 반입된 `docs/api/openapi.json` 이
 > 정본이다**(`docs/api/README.md`). 이 문서와 반입된 계약이 다르면 계약이 이기고, 이 문서를 고친다.

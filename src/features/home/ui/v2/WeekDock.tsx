@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 
 import { EmotionPebble } from "@/components/ds/EmotionPebble";
 import { SelectLift } from "@/components/ds/SelectLift";
 import { Text } from "@/components/ds/Text";
-import { homeV2 } from "@/design/ds";
+import { homeV2, maxFontScale } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";
 
@@ -51,6 +51,8 @@ export function dockDayName(day: WeekDay) {
 }
 
 export function WeekDock({ days, today }: Props) {
+  const { fontScale } = useWindowDimensions();
+  const scale = Math.min(fontScale, maxFontScale);
   const [picked, setPicked] = useState<string | null>(null);
   const day = days.find((d) => d.date === picked) ?? null;
 
@@ -65,7 +67,10 @@ export function WeekDock({ days, today }: Props) {
       ) : null}
 
       <View testID="week-dock" style={styles.dock}>
-        <Text style={styles.title} color={homeV2.color.ink}>
+        <Text
+          style={[styles.title, { lineHeight: homeV2.type.dockTitle.lineHeight * scale }]}
+          color={homeV2.color.ink}
+        >
           {"이번 주\n감정"}
         </Text>
         <View style={styles.days}>
@@ -139,8 +144,13 @@ const styles = StyleSheet.create({
     paddingRight: 14,
     boxShadow: homeV2.shadow.dock,
   },
-  title: { fontFamily: homeV2.font.bold, ...homeV2.type.dockTitle, textAlign: "center" },
-  days: { flex: 1, flexDirection: "row", justifyContent: "space-between" },
+  title: {
+    fontFamily: homeV2.font.bold,
+    ...homeV2.type.dockTitle,
+    flexShrink: 0,
+    textAlign: "center",
+  },
+  days: { flex: 1, minWidth: 0, flexDirection: "row", justifyContent: "space-between" },
   day: { flex: 1, alignItems: "center", gap: 3 },
   pebble: { width: PEBBLE, height: PEBBLE },
   // 조약돌 모양 — 정원이 아니게 모서리 둘을 조금 덜 굴린다(시안 `moodPebble`)

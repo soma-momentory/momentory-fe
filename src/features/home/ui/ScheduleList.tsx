@@ -64,7 +64,7 @@ const ROW_CONTENT = 24;
 /** 한 칸 = 내용 + 줄 간격 20 — **배율 1 의 기본값**이다. 실제 배치는 잰 `pitch` 를 쓴다 */
 export const ROW_PITCH = ROW_CONTENT + space.xl;
 /** 홈 v2 종이 목록의 한 칸 — v2 시안의 줄 높이(48) */
-const PAPER_ROW_PITCH = 48;
+export const PAPER_ROW_PITCH = 48;
 
 /**
  * 겉모습마다 **배율 1 의 한 칸**과 그때의 **내용 높이**. 내용은 그리는 글자의 행간이다 —

@@ -11,6 +11,7 @@ import {
   type HomeV2ViewActions,
   type HomeV2ViewModel,
 } from "@/features/home/ui/v2/HomeV2View";
+import { DatePaper } from "@/features/home/ui/v2/DatePaper";
 import { weekDays, weekEnd, type WeekDay } from "@/features/report/model/report";
 
 /**
@@ -97,6 +98,23 @@ describe("홈 v2 — 표시 전용", () => {
       // 스키마의 옛 Weather 타입을 import 하지 않는다(MF-5)
       expect(src).not.toMatch(/\bWeather\b[^;]*from "@\/features\/home\/model\/types"/);
     }
+  });
+});
+
+describe("홈 v2 — 큰 글씨 날짜", () => {
+  it("날짜와 요일 종이가 글씨 배율에 맞춰 늘어난다", async () => {
+    const normal = await render(<DatePaper today={TODAY} />);
+    const normalDate = flatten(normal.getByText("10월 14일").parent?.props.style).height as number;
+    const normalWeekday = flatten(normal.getByText("수요일").parent?.props.style).height as number;
+    await normal.unmount();
+
+    const large = await render(<DatePaper today={TODAY} fontScale={1.3} />);
+    expect(flatten(large.getByText("10월 14일").parent?.props.style).height).toBeGreaterThan(
+      normalDate,
+    );
+    expect(flatten(large.getByText("수요일").parent?.props.style).height).toBeGreaterThan(
+      normalWeekday,
+    );
   });
 });
 
@@ -358,6 +376,34 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     await fireEvent(r.getByLabelText("일정 2"), "responderMove", { nativeEvent: { pageY: 10 } });
     expect(scroll().props.scrollEnabled).toBe(false);
 
+    await fireEvent(r.getByLabelText("일정 2"), "responderRelease", {});
+    expect(scroll().props.scrollEnabled).toBe(true);
+    jest.useRealTimers();
+  });
+
+  it("좁은 화면에서는 날짜와 목록이 함께 스크롤하고, 끄는 동안 그 스크롤도 잠긴다", async () => {
+    jest.useFakeTimers();
+    const r = await show();
+    await fireEvent(r.getByTestId("home-v2-root"), "layout", {
+      nativeEvent: { layout: { width: 360, height: 500 } },
+    });
+    await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
+      nativeEvent: { layout: { width: 360, height: 370 } },
+    });
+    const scroll = () => r.getByTestId("home-v2-body-scroll");
+    expect(scroll().props.scrollEnabled).toBe(true);
+    expect(within(scroll()).getByText("10월 14일")).toBeTruthy();
+    expect(within(scroll()).getByText("일정 2")).toBeTruthy();
+    expect(r.getByTestId("week-dock")).toBeTruthy();
+
+    await fireEvent(r.getByLabelText("일정 2"), "responderGrant", { nativeEvent: { pageY: 0 } });
+    await act(async () => {
+      jest.advanceTimersByTime(220);
+    });
+    await fireEvent(r.getByLabelText("일정 2"), "responderMove", {
+      nativeEvent: { pageY: 10 },
+    });
+    expect(scroll().props.scrollEnabled).toBe(false);
     await fireEvent(r.getByLabelText("일정 2"), "responderRelease", {});
     expect(scroll().props.scrollEnabled).toBe(true);
     jest.useRealTimers();

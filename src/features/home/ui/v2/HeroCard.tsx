@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, { Rect } from "react-native-svg";
 
 import { Text } from "@/components/ds/Text";
-import { homeV2 } from "@/design/ds";
+import { homeV2, maxFontScale } from "@/design/ds";
 import { formatKoreanTime } from "@/lib/time";
 
 import { Baba } from "./Baba";
@@ -34,13 +34,16 @@ type Props = {
 const TAPE = { width: 92, height: 24, cell: 6, pitch: 12 } as const;
 
 export function HeroCard({ retroReminderTime, onStartReflection }: Props) {
+  const { fontScale } = useWindowDimensions();
+  const scale = Math.min(fontScale, maxFontScale);
+  const extra = Math.max(0, scale - 1);
   const note =
     retroReminderTime != null
       ? `${formatKoreanTime(retroReminderTime)}엔 제가\n먼저 말 걸어요`
       : "편할 때 언제든 돌아볼 수 있어요";
 
   return (
-    <View style={styles.hero}>
+    <View style={[styles.hero, { height: homeV2.size.hero.height + 90 * extra }]}>
       <View
         pointerEvents="none"
         accessibilityElementsHidden
@@ -70,14 +73,26 @@ export function HeroCard({ retroReminderTime, onStartReflection }: Props) {
         </Svg>
       </View>
 
-      <View style={styles.bubble}>
-        <Text style={styles.bubbleText} color={homeV2.color.ink}>
+      <View style={[styles.bubble, { minWidth: 150 + 150 * extra }]}>
+        <Text
+          style={[styles.bubbleText, { lineHeight: homeV2.type.bubble.lineHeight * scale }]}
+          color={homeV2.color.ink}
+        >
           {"오늘 하루는\n어땠어요?"}
         </Text>
         <View style={styles.bubbleTail} />
       </View>
 
-      <Text style={styles.note} color={homeV2.color.muted}>
+      <Text
+        style={[
+          styles.note,
+          {
+            top: 128 + 60 * extra,
+            lineHeight: homeV2.type.note.lineHeight * scale,
+          },
+        ]}
+        color={homeV2.color.muted}
+      >
         {note}
       </Text>
 
@@ -92,7 +107,10 @@ export function HeroCard({ retroReminderTime, onStartReflection }: Props) {
         onPress={onStartReflection}
         style={styles.cta}
       >
-        <Text style={styles.ctaText} color={homeV2.color.white}>
+        <Text
+          style={[styles.ctaText, { lineHeight: homeV2.type.cta.lineHeight * scale }]}
+          color={homeV2.color.white}
+        >
           하루 돌아보기 ›
         </Text>
       </Pressable>

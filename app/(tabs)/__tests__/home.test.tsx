@@ -43,10 +43,11 @@ const openMenu = async (r: Awaited<ReturnType<typeof render>>, title: string) =>
 };
 
 describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", () => {
-  it("날씨 씬이 사라졌다 — 날씨를 말하지 않는다 (PLAN.md A-3)", async () => {
-    const { queryByText } = await render(<Home />);
+  it("날씨 API 전에는 스티커와 오류 문구를 표시하지 않는다", async () => {
+    const { queryByText, queryByTestId } = await render(<Home />);
 
-    expect(queryByText("맑음 · 27°")).toBeNull();
+    expect(queryByTestId("home-v2-weather")).toBeNull();
+    expect(queryByText(/날씨를 확인/)).toBeNull();
   });
 
   it("날짜와 요일을 두 줄로 말한다", async () => {
@@ -63,9 +64,9 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     });
     const { getByText, getByRole } = await render(<Home />);
 
-    expect(getByText("오늘 하루는 어땠어요?")).toBeTruthy();
+    expect(getByText("오늘 하루는\n어땠어요?")).toBeTruthy();
     // 인사 화면(`C1`)이 사라져 **곧바로 일정 확인**으로 간다(`DESIGN.md` 「일기」 1)
-    await fireEvent.press(getByRole("button", { name: "지금 하루 돌아보기" }));
+    await fireEvent.press(getByRole("button", { name: "하루 돌아보기" }));
     expect(router.push).toHaveBeenCalledWith("/retro/confirm");
     // 홈에서 회고로 들어간 길을 남긴다 — 조회만으로는 어디서 왔는지 모른다
     const { track } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
@@ -82,28 +83,28 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     useDiary.setState({ diaries: [{ ...sample!, date: "2026-07-27" }] });
     const { getByRole } = await render(<Home />);
 
-    await fireEvent.press(getByRole("button", { name: "지금 하루 돌아보기" }));
+    await fireEvent.press(getByRole("button", { name: "하루 돌아보기" }));
     expect(router.push).toHaveBeenCalledWith("/retro/talk");
   });
 
   it("알림을 켠 사람에게만 정한 시각을 말한다", async () => {
     const { getByText } = await render(<Home />);
 
-    expect(getByText("밤 9:30엔 제가 먼저 말 걸어요")).toBeTruthy();
+    expect(getByText("밤 9:30엔 제가\n먼저 말 걸어요")).toBeTruthy();
   });
 
   it("종은 갈 곳이 있다 — 알림 설정으로 간다", async () => {
     const { getByLabelText } = await render(<Home />);
 
     // 옛 `/my/notify` 는 마이 이관에서 **시트가 됐다** — 그 시트를 여는 곳이 `M1` 이다
-    await fireEvent.press(getByLabelText("알림 설정"));
+    await fireEvent.press(getByLabelText("알림"));
     expect(router.push).toHaveBeenCalledWith("/my");
   });
 
   it("이번 주 감정은 요일마다 한 칸이고, 이름을 낭독기에 준다", async () => {
     const { getByText, getByLabelText } = await render(<Home />);
 
-    expect(getByText("이번 주 감정")).toBeTruthy();
+    expect(getByText("이번 주\n감정")).toBeTruthy();
     // 샘플 하루(7/27 월)의 일기 감정은 불안함·우울함 둘이다 — 색만으로 말하지 않고,
     // 도트가 하나뿐이라 낭독기에는 **둘 다** 읽힌다
     expect(getByLabelText("월요일 · 불안함, 우울함")).toBeTruthy();
@@ -117,9 +118,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     await fireEvent.press(getByLabelText("월요일 · 불안함, 우울함"));
 
     // 도트 하나는 첫 감정 색만 맡는다 — 나머지가 보이는 곳은 여기뿐이다
-    expect(getByText("월요일 ·")).toBeTruthy();
-    expect(getByText("불안함")).toBeTruthy();
-    expect(getByText("우울함")).toBeTruthy();
+    expect(getByText("월요일 · 불안함, 우울함")).toBeTruthy();
   });
 
   it("일기는 썼는데 감정이 없는 날은 「기록 없음」이 아니라 「기록 있음」이다", async () => {
@@ -133,8 +132,8 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     });
     const { getByLabelText, getByText } = await render(<Home />);
 
-    await fireEvent.press(getByLabelText("금요일 · 기록 있음"));
-    expect(getByText("기록 있음")).toBeTruthy();
+    await fireEvent.press(getByLabelText("금요일 · 기록 있음, 감정 없음"));
+    expect(getByText("금요일 · 기록 있음, 감정 없음")).toBeTruthy();
   });
 
   it("일정 4건과 「2개 남음」을 보인다 — 남은 수이지 달성률이 아니다", async () => {
@@ -246,11 +245,11 @@ describe("일정 행 — 체크박스와 ⋮", () => {
     expect(bursts()).toHaveLength(1);
   });
 
-  it("체크박스는 20 이지만 히트 영역은 44 다", async () => {
+  it("체크박스는 24 이지만 히트 영역은 44 다", async () => {
     // 작은 글리프는 시각 크기를 키우지 말고 hitSlop 으로 44 를 확보한다 (RULES.md)
     const { getByLabelText } = await render(<Home />);
 
-    expect(getByLabelText("팀 회의 마침").props.hitSlop).toBe(12); // (44 - 20) / 2
+    expect(getByLabelText("팀 회의 마침").props.hitSlop).toBe(10); // (44 - 24) / 2
   });
 
   it("마친 줄은 취소선으로 목록에 남는다 — 사라지지 않는다", async () => {
@@ -343,6 +342,42 @@ describe("목록이 길 때 — 5개까지 펼친다 (12.md)", () => {
   });
 });
 
+describe("운영 홈 v2 배치", () => {
+  it.each([0, 3, 6, 10])("일정 %i개에서도 도크와 모눈 종이가 남는다", async (count) => {
+    await act(() =>
+      useDay.setState({
+        schedules: Array.from({ length: count }, (_, i) => ({
+          ...testSchedules()[3]!,
+          id: `case-${i}`,
+          title: `검증 일정 ${i}`,
+        })),
+      }),
+    );
+    const r = await render(<Home />);
+    expect(r.getByTestId("home-v2-grid", { includeHiddenElements: true })).toBeTruthy();
+    expect(r.getByTestId("week-dock")).toBeTruthy();
+    expect(r.getByTestId("home-v2-list-scroll")).toBeTruthy();
+    expect(r.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
+    if (count > 5) {
+      expect(r.getByRole("button", { name: `${count - 5}개 더 보기` })).toBeTruthy();
+    }
+  });
+
+  it("목록 공간이 두 행보다 작으면 날짜와 일정이 함께 스크롤하고 도크는 고정한다", async () => {
+    const r = await render(<Home />);
+    await fireEvent(r.getByTestId("home-v2-root"), "layout", {
+      nativeEvent: { layout: { width: 360, height: 500 } },
+    });
+    // 고정 영역은 날짜와 Baba를 포함한다. 실측 공간을 줄여 LY-1 분기를 확인한다.
+    await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
+      nativeEvent: { layout: { width: 360, height: 370 } },
+    });
+    expect(r.queryByTestId("home-v2-list-scroll")).toBeNull();
+    expect(r.getByTestId("home-v2-body-scroll")).toBeTruthy();
+    expect(r.getByTestId("week-dock")).toBeTruthy();
+  });
+});
+
 describe("12-b · 일정이 없는 경우", () => {
   const emptyDay = () => act(() => useDay.setState({ schedules: [] }));
 
@@ -351,19 +386,18 @@ describe("12-b · 일정이 없는 경우", () => {
     const { getByText, getByRole } = await render(<Home />);
 
     expect(getByText("오늘 일정")).toBeTruthy();
-    expect(getByText("＋ 추가")).toBeTruthy();
+    expect(getByText("+ 추가")).toBeTruthy();
     // 일정이 없어도 회고는 열린다 (12-b.md)
-    expect(getByRole("button", { name: "지금 하루 돌아보기" })).toBeTruthy();
+    expect(getByRole("button", { name: "하루 돌아보기" })).toBeTruthy();
   });
 
   it("목록 슬롯의 줄만 초대 문구로 바뀐다", async () => {
     await emptyDay();
     const { getByText, queryByText } = await render(<Home />);
 
-    expect(getByText("오늘 하루를 차곡차곡 담아볼까요?")).toBeTruthy();
-    expect(
-      getByText("일정을 추가하면 하루를 돌아볼 때 더 풍부한 대화를 나눌 수 있어요."),
-    ).toBeTruthy();
+    expect(getByText("오늘은 일정이 없어요")).toBeTruthy();
+    expect(getByText("여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?")).toBeTruthy();
+    expect(getByText("0개")).toBeTruthy();
     // 셀 것이 없으면 세지 않는다
     expect(queryByText(/개 남음/)).toBeNull();
     expect(queryByText("모두 완료")).toBeNull();
