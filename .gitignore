@@ -79,3 +79,4 @@ assets/treasure-box/source/
 # 그때그때 눈으로 보고 버리는 것이라 이력에 담지 않는다
 .screen-sweep/
 harness/runs/
+harness/parallel-runs/
