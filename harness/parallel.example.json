@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "tasks": [
+    {
+      "id": "note-a",
+      "requirement": "docs/notes/a.md를 작성한다.",
+      "allowedPaths": ["docs/notes/a.md"],
+      "dependsOn": []
+    },
+    {
+      "id": "note-b",
+      "requirement": "docs/notes/b.md를 작성한다.",
+      "allowedPaths": ["docs/notes/b.md"],
+      "dependsOn": []
+    }
+  ]
+}
