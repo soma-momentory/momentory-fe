@@ -26,6 +26,7 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
       expect(screen.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
       if (scenario.tasks.length === 0) {
         expect(screen.getByText("오늘은 일정이 없어요")).toBeTruthy();
+        expect(screen.getByText("여유로운 하루예요.\n하고 싶은 일 하나 적어둘까요?")).toBeTruthy();
       } else {
         expect(screen.getByText(scenario.tasks[0]!.title)).toBeTruthy();
       }

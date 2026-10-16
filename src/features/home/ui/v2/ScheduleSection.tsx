@@ -7,6 +7,8 @@ import type { Schedule } from "@/features/home/model/types";
 
 import { ScheduleList } from "../ScheduleList";
 
+const EMPTY_BODY = ["여유로운 하루예요.", "하고 싶은 일 하나 적어둘까요?"] as const;
+
 /**
  * 홈 v2 의 **오늘 일정** — 머리(고정)와 목록(스크롤)을 따로 낸다(계획 §2.1).
  *
@@ -104,8 +106,9 @@ export function ScheduleSection({
         <Text
           style={[styles.emptyBody, { lineHeight: homeV2.type.emptyBody.lineHeight * scale }]}
           color={homeV2.color.muted}
+          accessibilityLabel={EMPTY_BODY.join(" ")}
         >
-          여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?
+          {EMPTY_BODY.join("\n")}
         </Text>
       </View>
     );

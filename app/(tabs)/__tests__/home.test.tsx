@@ -492,7 +492,7 @@ describe("12-b · 일정이 없는 경우", () => {
     const { getByText, queryByText } = await render(<Home />);
 
     expect(getByText("오늘은 일정이 없어요")).toBeTruthy();
-    expect(getByText("여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?")).toBeTruthy();
+    expect(getByText("여유로운 하루예요.\n하고 싶은 일 하나 적어둘까요?")).toBeTruthy();
     expect(getByText("0개")).toBeTruthy();
     // 셀 것이 없으면 세지 않는다
     expect(queryByText(/개 남음/)).toBeNull();
