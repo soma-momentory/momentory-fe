@@ -33,12 +33,13 @@ type Props = TextProps & {
   color?: string;
 };
 
-/** Lab Web의 큰 글씨 레이아웃 검사에만 사용한다. 운영 기본값은 1이다. */
-export const PreviewFontScaleContext = createContext(1);
+/** Lab Web의 큰 글씨 레이아웃 검사에만 사용한다. 운영에서는 기기 배율을 그대로 따른다. */
+export const PreviewFontScaleContext = createContext<number | null>(null);
 
 export function useEffectiveFontScale() {
   const { fontScale } = useWindowDimensions();
-  return Math.max(fontScale, useContext(PreviewFontScaleContext));
+  const previewScale = useContext(PreviewFontScaleContext);
+  return previewScale == null ? fontScale : Math.max(fontScale, previewScale);
 }
 
 export function Text({
@@ -49,18 +50,19 @@ export function Text({
   ...rest
 }: Props) {
   const previewScale = useContext(PreviewFontScaleContext);
-  const flat = StyleSheet.flatten([text[variant], style]);
+  const flat =
+    previewScale == null || previewScale === 1 ? null : StyleSheet.flatten([text[variant], style]);
   // 홈 v2의 일부 텍스트는 화면 높이를 계산하면서 lineHeight도 이미 조정한다.
   const lastStyle = Array.isArray(style) ? style[style.length - 1] : null;
   const lineHeightHandled =
     lastStyle != null && typeof lastStyle === "object" && "lineHeight" in lastStyle;
   const scaled =
-    previewScale === 1
+    previewScale == null || previewScale === 1
       ? undefined
       : {
-          fontSize: typeof flat.fontSize === "number" ? flat.fontSize * previewScale : undefined,
+          fontSize: typeof flat?.fontSize === "number" ? flat.fontSize * previewScale : undefined,
           lineHeight:
-            !lineHeightHandled && typeof flat.lineHeight === "number"
+            !lineHeightHandled && typeof flat?.lineHeight === "number"
               ? flat.lineHeight * previewScale
               : undefined,
         };
