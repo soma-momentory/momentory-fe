@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { IconButton } from "@/components/ds/IconButton";
+import { useEffectiveFontScale } from "@/components/ds/Text";
 import { Menu, type MenuAction } from "@/components/ds/Menu";
 import { Modal } from "@/components/ds/Modal";
 import { Toast } from "@/components/ds/Toast";
@@ -52,7 +53,7 @@ export function HomeV2View({
   const [menu, setMenu] = useState<{ id: string; top: number; anchorTop: number } | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const { fontScale } = useWindowDimensions();
+  const fontScale = useEffectiveFontScale();
   const sizes = useRef({ root: 0, fixed: 0, pitch: PAPER_ROW_PITCH, empty: 0 });
   const bellRef = useRef<View>(null);
   const [mode, setMode] = useState<HomeLayoutMode>("listOnly");

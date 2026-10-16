@@ -1,30 +1,43 @@
 import { useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
 import { Screen } from "../../../src/components/ds/Screen";
+import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
 import { background, layout } from "../../../src/design/ds";
 import type { Schedule } from "../../../src/features/home/model/types";
+import { ScheduleEditBar } from "../../../src/features/home/ui/ScheduleEditBar";
+import { toHomeWeatherView } from "../../../src/features/home/ui/v2/weatherStickers";
 import { weekDays, weekEnd, type WeekDay } from "../../../src/features/report/model/report";
 import { HomeV2View } from "../../../src/features/home/ui/v2/HomeV2View";
+import { InboxPopover } from "../../../src/features/notifications/ui/InboxPopover";
 import { claudeHomeScenarios } from "./scenarios";
+import {
+  inboxForScenario,
+  weatherForScenario,
+  type InboxScenarioId,
+  type WeatherScenarioId,
+} from "./validationScenarios";
 
 /**
  * **운영판 v2** 변형 — 앱의 공유 뷰(`HomeV2View`)를 Lab Mock 으로 그린다(계획 §6 P2).
  *
- * Lab 어댑터다: 시나리오 5a~5f 를 뷰의 Props 로 바꾸고, 행동은 이 컴포넌트 안의 상태만 바꾼다.
+ * Lab 어댑터다: 일정·날씨·알림 시나리오를 뷰의 Props 로 바꾸고, 행동은 이 컴포넌트 안의 상태만 바꾼다.
  * **앱의 store · API · 라우터 · 계측을 import 하지 않는다**(`current-home/MockPreview.tsx` 선례).
  * 운영 앱에서 이 파일을 import 하지 않는다 — 린터가 막는다(`eslint.config.js`).
  *
- * - 날씨는 `null`, 읽지 않은 알림은 `false` — P2 계약 그대로다(P4 · P5 에서 찬다)
+ * - 날씨 매핑과 알림 팝오버는 운영 컴포넌트를 공유하고, 서버 없이 Mock 데이터만 주입한다
  * - 탭바는 글로벌 DS 의 것(앱의 `TabScreen` 과 같은 `BottomNavigation`) — v2 의 종이 탭바를 쓰지 않는다
- * - 이번 주 감정: 감정 고정 시나리오(5d~5f)는 **세 가지 날**(감정 · 일기만 · 기록 없음)을 함께 보이고,
+ * - 이번 주 감정: 도크 시나리오(5d~5h)는 **세 가지 날**(감정 · 일기만 · 기록 없음)을 함께 보이고,
  *   나머지는 기록이 없는 주(일곱 칸 모두 빈 조약돌)를 보인다 — DN-1 의 두 빈 칸을 나란히 대조한다
  */
 export type HomeV2PreviewProps = {
   scenarioId: string;
   onMessage: (message: string) => void;
   scale?: number;
+  weatherId?: WeatherScenarioId;
+  inboxId?: InboxScenarioId;
+  fontScale?: 1 | 1.3;
 };
 
 const TODAY = "2026-10-14";
@@ -64,11 +77,26 @@ function fixture(scenarioId: string): Schedule[] {
   }));
 }
 
-export function HomeV2Preview({ scenarioId, onMessage, scale = 1 }: HomeV2PreviewProps) {
+export function HomeV2Preview({
+  scenarioId,
+  onMessage,
+  scale = 1,
+  weatherId = "none",
+  inboxId = "empty",
+  fontScale = 1,
+}: HomeV2PreviewProps) {
   const rootRef = useRef<View>(null);
   const scenario =
     claudeHomeScenarios.find((item) => item.id === scenarioId) ?? claudeHomeScenarios[0]!;
   const [schedules, setSchedules] = useState<Schedule[]>(() => fixture(scenarioId));
+  const [inboxItems, setInboxItems] = useState(() => inboxForScenario(inboxId).items);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const [inboxTop, setInboxTop] = useState(0);
+  const [editor, setEditor] = useState<{ id: string | null; title: string } | null>(null);
+  const inboxStatus = inboxForScenario(inboxId).status;
+  const weather = weatherForScenario(weatherId);
+  const weatherView = toHomeWeatherView(weather);
+
   const visible = schedules.filter((schedule) => !schedule.hidden);
 
   const reorder = (id: string, toIndex: number) => {
@@ -84,94 +112,144 @@ export function HomeV2Preview({ scenarioId, onMessage, scale = 1 }: HomeV2Previe
   };
 
   return (
-    <View ref={rootRef} style={styles.root}>
-      <HomeV2View
-        model={{
-          today: TODAY,
-          schedules,
-          week: scenario.showWeekDock ? MIXED_WEEK : EMPTY_WEEK,
-          retroReminderTime: "21:30",
-          weather: null,
-          hasUnreadNotifications: false,
-        }}
-        actions={{
-          onToggleDone: (id) =>
-            setSchedules((current) =>
-              current.map((schedule) =>
-                schedule.id === id
-                  ? {
-                      ...schedule,
-                      done: !schedule.done,
-                      doneAt: schedule.done ? null : `${TODAY}T09:00:00.000Z`,
-                    }
-                  : schedule,
+    <PreviewFontScaleContext.Provider value={Platform.OS === "web" ? fontScale : 1}>
+      <View ref={rootRef} style={styles.root}>
+        <HomeV2View
+          model={{
+            today: TODAY,
+            schedules,
+            week: scenario.showWeekDock ? MIXED_WEEK : EMPTY_WEEK,
+            retroReminderTime: "21:30",
+            weather: weatherView,
+            hasUnreadNotifications: inboxItems.some((item) => item.readAt == null),
+          }}
+          actions={{
+            onToggleDone: (id) =>
+              setSchedules((current) =>
+                current.map((schedule) =>
+                  schedule.id === id
+                    ? {
+                        ...schedule,
+                        done: !schedule.done,
+                        doneAt: schedule.done ? null : `${TODAY}T09:00:00.000Z`,
+                      }
+                    : schedule,
+                ),
               ),
-            ),
-          onMove: (id, direction) => {
-            const at = visible.findIndex((schedule) => schedule.id === id);
-            reorder(id, at + (direction === "up" ? -1 : 1));
-          },
-          onReorder: reorder,
-          onHideCalendarSchedule: (id) =>
-            setSchedules((current) =>
-              current.map((schedule) =>
-                schedule.id === id ? { ...schedule, hidden: true } : schedule,
+            onMove: (id, direction) => {
+              const at = visible.findIndex((schedule) => schedule.id === id);
+              reorder(id, at + (direction === "up" ? -1 : 1));
+            },
+            onReorder: reorder,
+            onHideCalendarSchedule: (id) =>
+              setSchedules((current) =>
+                current.map((schedule) =>
+                  schedule.id === id ? { ...schedule, hidden: true } : schedule,
+                ),
               ),
-            ),
-          onDeleteManualSchedule: (id) =>
-            setSchedules((current) => current.filter((schedule) => schedule.id !== id)),
-          onEditManualSchedule: () => onMessage("일정 수정 시트는 Lab에 연결하지 않았습니다."),
-          onAddSchedule: () => {
-            setSchedules((current) => [
-              ...current,
-              {
-                id: `lab-${current.length}`,
-                date: TODAY,
-                title: "새 일정",
-                time: null,
-                source: "manual",
-                externalId: null,
-                done: false,
-                doneAt: null,
-                emotions: [],
-                hidden: false,
-              },
-            ]);
-            onMessage("Lab Mock 일정만 추가했습니다.");
-          },
-          onStartReflection: () => onMessage("회고 진입은 Lab Mock 액션입니다."),
-          onOpenNotifications: () => onMessage("알림함은 운영 앱에서 열립니다."),
-          onOpenNotificationSettings: () => onMessage("알림 설정은 Lab에 연결하지 않았습니다."),
-          onOpenWeatherInfo: () => onMessage("날씨 정보는 운영 앱에서 열립니다."),
-        }}
-        renderFrame={(body, overlay) => (
-          <>
-            <Screen padded={false} edges={[]}>
-              <View style={styles.body}>{body}</View>
-              <BottomNavigation
-                items={TABS}
-                active="홈"
-                onPress={(tab) => onMessage(`${tab} 탭은 미리보기 전용입니다.`)}
+            onDeleteManualSchedule: (id) =>
+              setSchedules((current) => current.filter((schedule) => schedule.id !== id)),
+            onEditManualSchedule: (id) => {
+              const schedule = schedules.find((item) => item.id === id);
+              if (schedule != null) setEditor({ id, title: schedule.title });
+            },
+            onAddSchedule: () => setEditor({ id: null, title: "" }),
+            onStartReflection: () => onMessage("회고 진입은 Lab Mock 액션입니다."),
+            onOpenNotifications: (top) => {
+              setInboxTop(top);
+              setInboxOpen(true);
+            },
+            onOpenNotificationSettings: () => onMessage("알림 설정은 Lab에 연결하지 않았습니다."),
+            onOpenWeatherInfo: () => onMessage("날씨 출처 시트는 운영 앱에서 확인합니다."),
+          }}
+          inboxPopover={
+            inboxOpen ? (
+              <InboxPopover
+                items={inboxItems}
+                status={inboxStatus}
+                unreadIds={inboxItems.filter((item) => item.readAt == null).map((item) => item.id)}
+                hasMore={false}
+                top={inboxTop}
+                onDismiss={() => setInboxOpen(false)}
+                onOpenSettings={() => onMessage("알림 설정은 Lab에 연결하지 않았습니다.")}
+                onPressItem={(item) =>
+                  setInboxItems((current) =>
+                    current.map((entry) =>
+                      entry.id === item.id
+                        ? { ...entry, readAt: "2026-10-14T10:00:00+09:00" }
+                        : entry,
+                    ),
+                  )
+                }
+                onEndReached={() => {}}
+                onSeen={() => {}}
               />
-              <View style={styles.underTab} />
-            </Screen>
-            {overlay}
-          </>
-        )}
-        menuTopFromPageY={(pageY) =>
-          new Promise<number>((resolve) => {
-            if (rootRef.current == null) {
-              resolve(pageY / scale);
-              return;
-            }
-            rootRef.current.measureInWindow((_, y) => {
-              resolve((pageY - y) / scale);
-            });
-          })
-        }
-        menuBottomInset={layout.tabBar + layout.minBottomInset}
-      />
-    </View>
+            ) : null
+          }
+          renderFrame={(body, overlay) => (
+            <>
+              <Screen padded={false} edges={[]}>
+                <View style={styles.body}>{body}</View>
+                <BottomNavigation
+                  items={TABS}
+                  active="홈"
+                  onPress={(tab) => onMessage(`${tab} 탭은 미리보기 전용입니다.`)}
+                />
+                <View style={styles.underTab} />
+              </Screen>
+              {overlay}
+            </>
+          )}
+          menuTopFromPageY={(pageY) =>
+            new Promise<number>((resolve) => {
+              if (rootRef.current == null) {
+                resolve(pageY / scale);
+                return;
+              }
+              rootRef.current.measureInWindow((_, y) => {
+                resolve((pageY - y) / scale);
+              });
+            })
+          }
+          menuBottomInset={layout.tabBar + layout.minBottomInset}
+        />
+        {editor != null ? (
+          <View style={StyleSheet.absoluteFill}>
+            <ScheduleEditBar
+              key={editor.id ?? "new"}
+              mode={editor.id == null ? "add" : "edit"}
+              initialTitle={editor.title}
+              caption={editor.id == null ? "Lab Mock 일정 추가" : "Lab Mock 일정 수정"}
+              onDismiss={() => setEditor(null)}
+              onSubmit={(title) => {
+                if (editor.id == null) {
+                  setSchedules((current) => [
+                    ...current,
+                    {
+                      id: `lab-${Date.now()}`,
+                      date: TODAY,
+                      title,
+                      time: null,
+                      source: "manual",
+                      externalId: null,
+                      done: false,
+                      doneAt: null,
+                      emotions: [],
+                      hidden: false,
+                    },
+                  ]);
+                } else {
+                  setSchedules((current) =>
+                    current.map((item) => (item.id === editor.id ? { ...item, title } : item)),
+                  );
+                }
+                setEditor(null);
+              }}
+            />
+          </View>
+        ) : null}
+      </View>
+    </PreviewFontScaleContext.Provider>
   );
 }
 

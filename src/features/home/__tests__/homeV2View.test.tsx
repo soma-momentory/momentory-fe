@@ -357,7 +357,11 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     const a = actions();
     const r = await show(baseModel({ schedules: [] }), a);
     expect(r.getByText("오늘은 일정이 없어요")).toBeTruthy();
-    expect(r.getByText("여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?")).toBeTruthy();
+    const emptyBody = r.getByText("여유로운 하루예요.\n하고 싶은 일 하나 적어둘까요?");
+    expect(emptyBody.props.accessibilityLabel).toBe(
+      "여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?",
+    );
+    expect(emptyBody.props.numberOfLines).toBeUndefined();
     expect(r.getByText("0개")).toBeTruthy();
     expect(r.queryByText("오늘 하루를 차곡차곡 담아볼까요?")).toBeNull();
     expect(r.getByRole("button", { name: "하루 돌아보기" })).toBeTruthy();

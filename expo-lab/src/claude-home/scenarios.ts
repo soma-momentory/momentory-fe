@@ -1,7 +1,7 @@
 import type { ClaudeHomeTask } from "./HomeView";
 
 export type ClaudeHomeScenario = {
-  id: "5a" | "5b" | "5c" | "5d" | "5e" | "5f";
+  id: "5a" | "5b" | "5c" | "5d" | "5e" | "5f" | "5g" | "5h";
   label: string;
   tasks: ClaudeHomeTask[];
   showWeekDock: boolean;
@@ -27,4 +27,32 @@ export const claudeHomeScenarios: ClaudeHomeScenario[] = [
   { id: "5d", label: "감정 하단 고정", tasks: few, showWeekDock: true },
   { id: "5e", label: "일정 많음 + 감정 고정", tasks: many, showWeekDock: true },
   { id: "5f", label: "일정 없음 + 감정 고정", tasks: [], showWeekDock: true },
+  {
+    id: "5g",
+    label: "일정 10개 · 접기/펼치기",
+    tasks: [
+      ...many,
+      ...Array.from({ length: 5 }, (_, index) => ({
+        id: `extra-${index + 1}`,
+        title: `추가 일정 ${index + 1}`,
+        time: "21:00",
+        done: false,
+      })),
+    ],
+    showWeekDock: true,
+  },
+  {
+    id: "5h",
+    label: "긴 일정 제목",
+    tasks: [
+      {
+        id: "long-title",
+        title: "아주 긴 일정 제목이 작은 화면에서 말줄임되고 메뉴와 겹치지 않는지 확인하기",
+        time: "09:00",
+        done: false,
+      },
+      ...few,
+    ],
+    showWeekDock: true,
+  },
 ];

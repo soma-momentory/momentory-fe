@@ -1,11 +1,13 @@
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { Text } from "@/components/ds/Text";
+import { Text, useEffectiveFontScale } from "@/components/ds/Text";
 import { homeV2, maxFontScale } from "@/design/ds";
 import { remainingLabel } from "@/features/home/model/presentation";
 import type { Schedule } from "@/features/home/model/types";
 
 import { ScheduleList } from "../ScheduleList";
+
+const EMPTY_BODY = ["여유로운 하루예요.", "하고 싶은 일 하나 적어둘까요?"] as const;
 
 /**
  * 홈 v2 의 **오늘 일정** — 머리(고정)와 목록(스크롤)을 따로 낸다(계획 §2.1).
@@ -23,7 +25,7 @@ export function ScheduleSectionHeader({
   empty: boolean;
   onAdd: () => void;
 }) {
-  const { fontScale } = useWindowDimensions();
+  const fontScale = useEffectiveFontScale();
   const scale = Math.min(fontScale, maxFontScale);
   return (
     <View style={styles.header}>
@@ -89,7 +91,7 @@ export function ScheduleSection({
   onDragStateChange,
   onRowPitch,
 }: BodyProps) {
-  const { fontScale } = useWindowDimensions();
+  const fontScale = useEffectiveFontScale();
   const scale = Math.min(fontScale, maxFontScale);
   // 빈 상태 전용 레이아웃을 만들지 않는다 — 같은 자리에 빈 카드 한 장(S18). 머리 · 히어로 · 도크는 그대로다
   if (empty) {
@@ -104,8 +106,9 @@ export function ScheduleSection({
         <Text
           style={[styles.emptyBody, { lineHeight: homeV2.type.emptyBody.lineHeight * scale }]}
           color={homeV2.color.muted}
+          accessibilityLabel={EMPTY_BODY.join(" ")}
         >
-          여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?
+          {EMPTY_BODY.join("\n")}
         </Text>
       </View>
     );

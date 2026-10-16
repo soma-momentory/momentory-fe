@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Rect } from "react-native-svg";
 
-import { Text } from "@/components/ds/Text";
+import { Text, useEffectiveFontScale } from "@/components/ds/Text";
 import { homeV2, maxFontScale } from "@/design/ds";
 import { formatKoreanTime } from "@/lib/time";
 
@@ -42,7 +42,7 @@ export function HeroCard({
   onStartReflection,
   onOpenWeatherInfo,
 }: Props) {
-  const { fontScale } = useWindowDimensions();
+  const fontScale = useEffectiveFontScale();
   const scale = Math.min(fontScale, maxFontScale);
   const extra = Math.max(0, scale - 1);
   const note =
