@@ -236,7 +236,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "expo-location",
       {
-        locationWhenInUsePermission: "현재 위치의 날씨를 일기에 기록하기 위해 위치를 사용합니다.",
+        // iOS `NSLocationWhenInUseUsageDescription`. 목적(홈 · 일기 날씨)은 반드시 적는다.
+        // 「위치는 저장하지 않습니다」는 서버 쪽 검증(`docs/PLAY-DATA-SAFETY.md` 「위치」 V3~V10) 전에는 넣지 않는다.
+        locationWhenInUsePermission:
+          "홈과 일기에 지금 있는 곳의 날씨를 보여 주기 위해 위치를 사용합니다.",
         isIosBackgroundLocationEnabled: false,
         isAndroidBackgroundLocationEnabled: false,
         isAndroidForegroundServiceEnabled: false,
