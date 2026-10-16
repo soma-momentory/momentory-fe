@@ -19,7 +19,7 @@ export type LabVariant = {
     scale?: number;
     weatherId: WeatherScenarioId;
     inboxId: InboxScenarioId;
-    fontScale: 1 | 1.3;
+    fontScale: 1 | 1.3 | 1.5;
   }) => ReactNode;
 };
 

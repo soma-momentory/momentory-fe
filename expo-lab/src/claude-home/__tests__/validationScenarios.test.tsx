@@ -106,21 +106,24 @@ describe("Expo Lab 운영 홈 시나리오", () => {
     await read.unmount();
   });
 
-  it("큰 글씨 Mock은 공유 DS 글자 크기와 줄 높이를 키운다", async () => {
-    const normal = await render(<Text variant="body1">긴 문장 확인</Text>);
-    const normalStyle = StyleSheet.flatten(normal.getByText("긴 문장 확인").props.style);
-    await normal.unmount();
+  it.each([1.3, 1.5])(
+    "%.1f배 Mock은 공유 DS 글자 크기와 줄 높이를 한 번씩 키운다",
+    async (scale) => {
+      const normal = await render(<Text variant="body1">긴 문장 확인</Text>);
+      const normalStyle = StyleSheet.flatten(normal.getByText("긴 문장 확인").props.style);
+      await normal.unmount();
 
-    const large = await render(
-      <PreviewFontScaleContext.Provider value={1.3}>
-        <Text variant="body1">긴 문장 확인</Text>
-      </PreviewFontScaleContext.Provider>,
-    );
-    const largeStyle = StyleSheet.flatten(large.getByText("긴 문장 확인").props.style);
-    expect(largeStyle.fontSize).toBeCloseTo(normalStyle.fontSize * 1.3);
-    expect(largeStyle.lineHeight).toBeCloseTo(normalStyle.lineHeight * 1.3);
-    await large.unmount();
-  });
+      const large = await render(
+        <PreviewFontScaleContext.Provider value={scale}>
+          <Text variant="body1">긴 문장 확인</Text>
+        </PreviewFontScaleContext.Provider>,
+      );
+      const largeStyle = StyleSheet.flatten(large.getByText("긴 문장 확인").props.style);
+      expect(largeStyle.fontSize).toBeCloseTo(normalStyle.fontSize * scale);
+      expect(largeStyle.lineHeight).toBeCloseTo(normalStyle.lineHeight * scale);
+      await large.unmount();
+    },
+  );
 
   it("10개 일정은 접었다 펼치고, 긴 제목은 접근성 이름으로 보존한다", async () => {
     const many = await preview({ scenarioId: "5g" });

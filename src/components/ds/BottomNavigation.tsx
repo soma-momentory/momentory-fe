@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 
 import { background, hairline, interaction, label as labelColor, layout, space } from "@/design/ds";
 
@@ -37,6 +37,7 @@ type Props<T extends string> = {
 };
 
 export function BottomNavigation<T extends string>({ items, active, onPress }: Props<T>) {
+  const { fontScale } = useWindowDimensions();
   return (
     <View style={styles.bar} accessibilityRole="tablist">
       {items.map((item) => {
@@ -57,9 +58,10 @@ export function BottomNavigation<T extends string>({ items, active, onPress }: P
             />
             {/* 크기가 함께 바뀐다 — caption1(12) → label1(14). 위 머리말 참고 */}
             <Text
+              key={`${item.name}-${fontScale}`}
               variant={on ? "label1" : "caption1"}
               color={on ? labelColor.normal : interaction.inactive}
-              numberOfLines={1}
+              style={styles.tabLabel}
             >
               {item.label}
             </Text>
@@ -92,4 +94,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: space.xs2,
   },
+  tabLabel: { maxWidth: "100%", textAlign: "center" },
 });

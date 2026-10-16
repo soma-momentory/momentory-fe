@@ -6,7 +6,7 @@ import { useEffectiveFontScale } from "@/components/ds/Text";
 import { Menu, type MenuAction } from "@/components/ds/Menu";
 import { Modal } from "@/components/ds/Modal";
 import { Toast } from "@/components/ds/Toast";
-import { homeV2, layout, maxFontScale, space } from "@/design/ds";
+import { homeV2, layout, space } from "@/design/ds";
 import { homeLayoutMode, type HomeLayoutMode } from "@/features/home/model/homeLayout";
 import { MAX_VISIBLE_SCHEDULES, visibleSchedules } from "@/features/home/model/presentation";
 
@@ -68,11 +68,7 @@ export function HomeV2View({
     const { root, fixed, pitch, empty: measuredEmpty } = sizes.current;
     if (root === 0 || fixed === 0) return;
     const rowPitch = empty
-      ? PAPER_ROW_PITCH +
-        Math.max(
-          0,
-          Math.round(homeV2.type.task.lineHeight * (Math.min(fontScale, maxFontScale) - 1)),
-        )
+      ? PAPER_ROW_PITCH + Math.max(0, Math.round(homeV2.type.task.lineHeight * (fontScale - 1)))
       : pitch;
     // Schedule count, check state and fold state do not affect this decision.
     setMode((previous) =>

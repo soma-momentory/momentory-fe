@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text, useEffectiveFontScale } from "@/components/ds/Text";
-import { homeV2, maxFontScale } from "@/design/ds";
+import { homeV2 } from "@/design/ds";
 import { remainingLabel } from "@/features/home/model/presentation";
 import type { Schedule } from "@/features/home/model/types";
 
@@ -26,7 +26,7 @@ export function ScheduleSectionHeader({
   onAdd: () => void;
 }) {
   const fontScale = useEffectiveFontScale();
-  const scale = Math.min(fontScale, maxFontScale);
+  const scale = fontScale;
   return (
     <View style={styles.header}>
       <View style={styles.heading}>
@@ -92,7 +92,7 @@ export function ScheduleSection({
   onRowPitch,
 }: BodyProps) {
   const fontScale = useEffectiveFontScale();
-  const scale = Math.min(fontScale, maxFontScale);
+  const scale = fontScale;
   // 빈 상태 전용 레이아웃을 만들지 않는다 — 같은 자리에 빈 카드 한 장(S18). 머리 · 히어로 · 도크는 그대로다
   if (empty) {
     return (
@@ -159,13 +159,16 @@ const ADD_HIT_SLOP = { top: 10, bottom: 10, left: 4, right: 4 } as const;
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
+    columnGap: 8,
+    rowGap: 8,
     paddingTop: 30,
   },
   heading: {
     flexDirection: "row",
-    flexShrink: 1,
+    maxWidth: "100%",
     flexWrap: "wrap",
     alignItems: "baseline",
     gap: 8,

@@ -39,7 +39,7 @@ type LabRoute = {
   scenarioId: string;
   weatherId: WeatherScenarioId;
   inboxId: InboxScenarioId;
-  fontScale: 1 | 1.3;
+  fontScale: 1 | 1.3 | 1.5;
   deviceWidth: number;
 };
 
@@ -100,7 +100,8 @@ function readRoute(): LabRoute {
     weatherScenarios.find((item) => item.id === search.get("weather"))?.id ?? fallback.weatherId;
   const inboxId =
     inboxScenarios.find((item) => item.id === search.get("inbox"))?.id ?? fallback.inboxId;
-  const fontScale = search.get("type") === "large" ? 1.3 : 1;
+  const type = search.get("type");
+  const fontScale = type === "1.5" ? 1.5 : type === "large" ? 1.3 : 1;
   return {
     page: parts[0] === "atlas" ? "atlas" : "compare",
     groupId:
@@ -128,7 +129,10 @@ function routeHash(route: LabRoute): string {
   if (route.page === "compare" && route.variantId === "app-v2") {
     params.set("weather", route.weatherId);
     params.set("inbox", route.inboxId);
-    params.set("type", route.fontScale === 1.3 ? "large" : "normal");
+    params.set(
+      "type",
+      route.fontScale === 1.5 ? "1.5" : route.fontScale === 1.3 ? "large" : "normal",
+    );
   }
   return `#${path}?${params.toString()}`;
 }
@@ -378,7 +382,16 @@ function Compare({
                     selected={route.fontScale === 1.3}
                     onPress={() => onNavigate({ fontScale: 1.3 })}
                   />
+                  <Choice
+                    label="큰 글씨 1.5배 · XXXL 대비"
+                    selected={route.fontScale === 1.5}
+                    onPress={() => onNavigate({ fontScale: 1.5 })}
+                  />
                 </View>
+                <Text style={styles.meta}>
+                  1.5배는 운영 앱의 글씨 배율 상한을 넘겨 배치를 점검하는 Web 모의입니다. 실제 OS
+                  변경과 앱 재시작은 네이티브에서 별도 확인해야 합니다.
+                </Text>
                 <Text style={styles.meta}>
                   날씨 조회 중·실패·미매핑은 운영 정책대로 스티커를 숨깁니다. 알림과 일정 조작은 Lab
                   메모리에서만 바뀝니다.
