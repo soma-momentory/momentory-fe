@@ -23,6 +23,7 @@ import {
   Toast,
 } from "@/components/ds";
 import { anchoredMenuTop } from "@/components/ds/Menu";
+import { PreviewFontScaleContext } from "@/components/ds/Text";
 import { ICON_PATHS, type IconName } from "@/components/ds/icons/paths";
 import { interaction, label, primary, social, status, zIndex } from "@/design/ds";
 
@@ -356,6 +357,22 @@ describe("BottomNavigation", () => {
     );
     await fireEvent.press(getByLabelText("리포트"));
     expect(onPress).toHaveBeenCalledWith("리포트");
+  });
+
+  it("큰 글씨와 긴 탭 이름도 한 줄 말줄임 없이 줄바꿈한다", async () => {
+    const longTabs = TABS.map((item) =>
+      item.name === "보관함" ? { ...item, label: "보관함 둘러보기" } : item,
+    );
+    const screen = await render(
+      <PreviewFontScaleContext.Provider value={1.5}>
+        <BottomNavigation items={longTabs} active="보관함" onPress={() => {}} />
+      </PreviewFontScaleContext.Provider>,
+    );
+    const tab = screen.getByRole("tab", { name: "보관함 둘러보기" });
+    const label = screen.getByText("보관함 둘러보기");
+    expect(tab.props.accessibilityLabel).toBe("보관함 둘러보기");
+    expect(label.props.numberOfLines).toBeUndefined();
+    expect(flatten(label.props.style).textAlign).toBe("center");
   });
 });
 

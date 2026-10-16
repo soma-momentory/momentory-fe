@@ -37,7 +37,7 @@ export type HomeV2PreviewProps = {
   scale?: number;
   weatherId?: WeatherScenarioId;
   inboxId?: InboxScenarioId;
-  fontScale?: 1 | 1.3;
+  fontScale?: 1 | 1.3 | 1.5;
 };
 
 const TODAY = "2026-10-14";

@@ -4,6 +4,7 @@ import { join } from "path";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
+import { PreviewFontScaleContext } from "@/components/ds/Text";
 import { homeV2 } from "@/design/ds";
 import type { Schedule } from "@/features/home/model/types";
 import {
@@ -115,6 +116,40 @@ describe("홈 v2 — 큰 글씨 날짜", () => {
     expect(flatten(large.getByText("수요일").parent?.props.style).height).toBeGreaterThan(
       normalWeekday,
     );
+  });
+
+  it("1.5배 모의에서 날짜 종이 폭도 글자와 함께 늘어난다", async () => {
+    const screen = await render(<DatePaper today={TODAY} fontScale={1.5} />);
+    expect(flatten(screen.getByText("10월 14일").parent?.parent?.props.style).width).toBe(270);
+  });
+});
+
+describe("홈 v2 — 큰 글씨 배치", () => {
+  it("안내문과 CTA는 줄 수에 따라 카드 높이를 늘리고, 일정 머리글은 필요한 경우 접힌다", async () => {
+    const screen = await render(
+      <PreviewFontScaleContext.Provider value={1.5}>
+        <HomeV2View
+          model={baseModel({ schedules: [], retroReminderTime: "21:30" })}
+          actions={actions()}
+          renderFrame={frame}
+          menuTopFromPageY={(y) => y}
+        />
+      </PreviewFontScaleContext.Provider>,
+    );
+    const note = screen.getByText("밤 9:30엔 제가\n먼저 말 걸어요");
+    const noteStyle = flatten(note.props.style);
+    const heroStyle = flatten(note.parent?.props.style);
+    const ctaStyle = flatten(screen.getByRole("button", { name: "하루 돌아보기" }).props.style);
+    const headingStyle = flatten(screen.getByText("오늘 일정").parent?.parent?.props.style);
+
+    expect(noteStyle.lineHeight).toBe(homeV2.type.note.lineHeight * 1.5);
+    expect(noteStyle.position).toBeUndefined();
+    expect(heroStyle.minHeight).toBe(homeV2.size.hero.height);
+    expect(heroStyle.height).toBeUndefined();
+    expect(heroStyle.paddingTop).toBeGreaterThan(128);
+    expect(ctaStyle.position).toBeUndefined();
+    expect(ctaStyle.marginTop).toBeGreaterThan(0);
+    expect(headingStyle.flexWrap).toBe("wrap");
   });
 });
 

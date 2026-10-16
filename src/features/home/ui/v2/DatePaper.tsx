@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import Svg, { Polygon } from "react-native-svg";
 
 import { Text } from "@/components/ds/Text";
-import { homeV2, maxFontScale } from "@/design/ds";
+import { homeV2 } from "@/design/ds";
 import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
 
 /**
@@ -13,7 +13,7 @@ import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
  */
 /** Keep the same 28pt overlap with the hero gap while both paper scraps grow with text. */
 export function datePaperExtraFor(fontScale: number) {
-  const scale = Math.min(fontScale, maxFontScale);
+  const scale = fontScale;
   return (
     Math.max(0, homeV2.type.date.lineHeight * (scale - 1)) +
     Math.max(0, homeV2.type.weekday.lineHeight * (scale - 1))
@@ -21,16 +21,11 @@ export function datePaperExtraFor(fontScale: number) {
 }
 
 export function DatePaper({ today, fontScale = 1 }: { today: string; fontScale?: number }) {
-  const dateExtra = Math.max(
-    0,
-    homeV2.type.date.lineHeight * (Math.min(fontScale, maxFontScale) - 1),
-  );
-  const weekdayExtra = Math.max(
-    0,
-    homeV2.type.weekday.lineHeight * (Math.min(fontScale, maxFontScale) - 1),
-  );
+  const extraWidth = Math.max(0, fontScale - 1) * 100;
+  const dateExtra = Math.max(0, homeV2.type.date.lineHeight * (fontScale - 1));
+  const weekdayExtra = Math.max(0, homeV2.type.weekday.lineHeight * (fontScale - 1));
   return (
-    <View style={[styles.wrap, { height: 72 + dateExtra + weekdayExtra }]}>
+    <View style={[styles.wrap, { width: 220 + extraWidth, height: 72 + dateExtra + weekdayExtra }]}>
       <View style={[styles.date, { height: 44 + dateExtra }]}>
         <Svg
           width="100%"

@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Rect } from "react-native-svg";
 
 import { Text, useEffectiveFontScale } from "@/components/ds/Text";
-import { homeV2, maxFontScale } from "@/design/ds";
+import { homeV2 } from "@/design/ds";
 import { formatKoreanTime } from "@/lib/time";
 
 import { Baba } from "./Baba";
@@ -43,7 +43,7 @@ export function HeroCard({
   onOpenWeatherInfo,
 }: Props) {
   const fontScale = useEffectiveFontScale();
-  const scale = Math.min(fontScale, maxFontScale);
+  const scale = fontScale;
   const extra = Math.max(0, scale - 1);
   const note =
     retroReminderTime != null
@@ -52,7 +52,7 @@ export function HeroCard({
   const visibleWeather = weather != null && weatherStickerForKey(weather.stickerKey) != null;
 
   return (
-    <View style={[styles.hero, { height: homeV2.size.hero.height + 90 * extra }]}>
+    <View style={[styles.hero, { paddingTop: 128 + 60 * extra }]}>
       <View
         pointerEvents="none"
         accessibilityElementsHidden
@@ -104,13 +104,7 @@ export function HeroCard({
       ) : null}
 
       <Text
-        style={[
-          styles.note,
-          {
-            top: 128 + 60 * extra,
-            lineHeight: homeV2.type.note.lineHeight * scale,
-          },
-        ]}
+        style={[styles.note, { lineHeight: homeV2.type.note.lineHeight * scale }]}
         color={homeV2.color.muted}
       >
         {note}
@@ -140,7 +134,7 @@ export function HeroCard({
 
 const styles = StyleSheet.create({
   hero: {
-    height: homeV2.size.hero.height,
+    minHeight: homeV2.size.hero.height,
     marginTop: homeV2.size.hero.marginTop,
     borderRadius: homeV2.size.hero.radius,
     backgroundColor: homeV2.color.card,
@@ -179,9 +173,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "45deg" }],
   },
   note: {
-    position: "absolute",
-    left: 26,
-    top: 128,
+    marginLeft: 26,
     maxWidth: 160,
     fontFamily: homeV2.font.regular,
     ...homeV2.type.note,
@@ -199,9 +191,10 @@ const styles = StyleSheet.create({
   },
   baba: { position: "absolute", right: 16, bottom: -24, zIndex: 1 },
   cta: {
-    position: "absolute",
-    left: 18,
-    bottom: 20,
+    alignSelf: "flex-start",
+    marginLeft: 18,
+    marginTop: 26,
+    marginBottom: 20,
     minHeight: homeV2.size.cta.height,
     paddingHorizontal: 20,
     borderTopLeftRadius: 34,

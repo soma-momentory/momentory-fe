@@ -39,7 +39,8 @@ export const PreviewFontScaleContext = createContext<number | null>(null);
 export function useEffectiveFontScale() {
   const { fontScale } = useWindowDimensions();
   const previewScale = useContext(PreviewFontScaleContext);
-  return previewScale == null ? fontScale : Math.max(fontScale, previewScale);
+  const nativeScale = Math.min(fontScale, maxFontScale);
+  return previewScale == null ? nativeScale : Math.max(nativeScale, previewScale);
 }
 
 export function Text({
@@ -60,11 +61,10 @@ export function Text({
     previewScale == null || previewScale === 1
       ? undefined
       : {
-          fontSize: typeof flat?.fontSize === "number" ? flat.fontSize * previewScale : undefined,
-          lineHeight:
-            !lineHeightHandled && typeof flat?.lineHeight === "number"
-              ? flat.lineHeight * previewScale
-              : undefined,
+          ...(typeof flat?.fontSize === "number" ? { fontSize: flat.fontSize * previewScale } : {}),
+          ...(!lineHeightHandled && typeof flat?.lineHeight === "number"
+            ? { lineHeight: flat.lineHeight * previewScale }
+            : {}),
         };
   return (
     <RNText

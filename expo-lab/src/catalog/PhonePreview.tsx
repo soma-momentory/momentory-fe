@@ -119,7 +119,7 @@ export function VariantPhone({
   scenarioId: string;
   weatherId: WeatherScenarioId;
   inboxId: InboxScenarioId;
-  fontScale: 1 | 1.3;
+  fontScale: 1 | 1.3 | 1.5;
   device: PreviewDevice;
   scale?: number;
   onMessage: (message: string) => void;
