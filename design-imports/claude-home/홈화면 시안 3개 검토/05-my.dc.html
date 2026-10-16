@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+
+<link rel="stylesheet" href="_ds/ios-26-ui-kit-design-system-138099d6-44dc-4034-b75e-1d1d671d173e/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/ios-26-ui-kit-design-system-138099d6-44dc-4034-b75e-1d1d671d173e/tokens/colors.css">
+<link rel="stylesheet" href="_ds/ios-26-ui-kit-design-system-138099d6-44dc-4034-b75e-1d1d671d173e/styles.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap">
+<script src="_ds/ios-26-ui-kit-design-system-138099d6-44dc-4034-b75e-1d1d671d173e/_ds_bundle.js"></script>
+<style>body{margin:0;background:#E6DDCC;font-family:var(--font-text, -apple-system, system-ui, sans-serif);} a{color:#48291A;} a:hover{color:#5B7553;}</style>
+</helmet>
+<div data-screen-label="5b 마이 가로카드" style="width:402px;height:874px;border-radius:44px;overflow:hidden;position:relative;background-color:#F6F1E7;background-image:linear-gradient(#EAE2D3 1px, transparent 1px),linear-gradient(90deg,#EAE2D3 1px, transparent 1px);background-size:22px 22px;box-shadow:0 0 0 10px #1F1A15, 0 30px 60px rgba(0,0,0,.18)">
+      <x-import component-from-global-scope="IOS26UIKitDesignSystem_138099.StatusBar" hint-size="100%,62px" style="position:relative"></x-import>
+      <div style="padding:4px 22px 0"><div style="display:inline-block;background:#E9D6BF;padding:4px 18px 8px 14px;transform:rotate(-3deg);clip-path:polygon(2% 10%, 8% 0, 30% 6%, 55% 0, 80% 5%, 98% 0, 100% 45%, 97% 100%, 70% 94%, 40% 100%, 12% 95%, 0 100%, 3% 50%)"><span style="font-family:Gaegu, cursive;font-weight:700;font-size:30px;color:#48291A;white-space:nowrap">마이</span></div></div>
+      <div style="position:relative;margin:16px 16px 0;padding:18px 18px 16px;background-color:#FBF6EA;background-image:radial-gradient(rgba(72,41,26,.03) 1px, transparent 1.3px),radial-gradient(rgba(255,255,255,.5) 1px, transparent 1.3px),linear-gradient(115deg, rgba(255,255,255,.5), rgba(233,214,191,.25));background-size:5px 5px, 7px 7px, 100% 100%;background-position:0 0, 2px 3px, 0 0;transform:rotate(-.6deg);box-shadow:0 5px 12px rgba(72,41,26,.12), inset 0 0 0 1px rgba(205,174,138,.25);clip-path:polygon(0 2%, 22% 0, 48% 1.5%, 74% 0, 100% 2%, 99.5% 50%, 100% 98%, 76% 100%, 50% 98.5%, 24% 100%, 0 98%, .5% 50%)">
+        <div style="padding-right:72px;display:flex;flex-direction:column;gap:4px">
+          <span style="font-family:Gaegu, cursive;font-weight:700;font-size:28px;line-height:1;color:#3A2114;white-space:nowrap">지은 님</span>
+          <span style="font-family:Gaegu, cursive;font-size:15px;color:#5E4535;white-space:nowrap">10월 4일부터 · 12일째 함께예요</span>
+        </div>
+        <div style="margin:16px 0 0;height:0;border-top:1.5px dashed #E1D3BD"></div>
+        <div style="margin-top:14px;display:grid;grid-template-columns:repeat(2, minmax(0,1fr))">
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:6px"><span style="font-family:Gaegu, cursive;font-weight:700;font-size:19px;color:#5E4535;white-space:nowrap">일기 쓴 날</span><span style="font-family:Gaegu, cursive;font-weight:700;font-size:30px;line-height:1;color:#3A2114;white-space:nowrap">12일</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;border-left:1.5px dashed #E1D3BD"><span style="font-family:Gaegu, cursive;font-weight:700;font-size:19px;color:#5E4535;white-space:nowrap">쉼</span><span style="font-family:Gaegu, cursive;font-weight:700;font-size:30px;line-height:1;color:#3A2114;white-space:nowrap">5번</span></div>
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:center;align-items:center;gap:5px;font-family:Gaegu, cursive;font-size:15px;color:#6A4C38;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="#E7A79E"><path d="M12 20s-7.5-4.6-7.5-10A4 4 0 0 1 12 7.6 4 4 0 0 1 19.5 10C19.5 15.4 12 20 12 20Z"></path></svg>바람카드 3장 모았어요</div>
+      </div>
+      <div style="position:absolute;right:24px;top:106px;width:72px;height:92px;transform:rotate(8deg);filter:drop-shadow(3px 0 0 #FFFFFF) drop-shadow(-3px 0 0 #FFFFFF) drop-shadow(0 3px 0 #FFFFFF) drop-shadow(0 -3px 0 #FFFFFF) drop-shadow(0 4px 5px rgba(72,41,26,.25));z-index:2"><dc-import name="Baba" hat="none" hint-size="100%,100%" style="width:100%;height:100%"></dc-import></div>
+      <div style="margin:18px 18px 0;display:flex;flex-direction:column;gap:14px">
+        <sc-for list="{{ groups6 }}" as="g" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="align-self:flex-start;margin-left:4px;white-space:nowrap;font-family:Gaegu, cursive;font-weight:700;font-size:18px;color:#3A2114;background:linear-gradient(transparent 58%, {{ g.hl }} 58%);padding:0 2px">{{ g.title }}</span>
+            <div style="position:relative;background:{{ g.paper }};padding:0 14px 0 10px;border-radius:6px 10px 8px 12px;transform:rotate({{ g.cr }});box-shadow:0 4px 10px rgba(72,41,26,.10)">
+              <div style="position:absolute;right:18px;top:-8px;width:46px;height:15px;transform:rotate({{ g.tr }});background:{{ g.tapeBg }}"></div>
+              <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2">
+                <div style="height:42px;display:flex;align-items:center;gap:10px;border-top:{{ r.bt }};cursor:pointer" style-active="opacity:.6">
+                  <span style="width:28px;height:28px;flex-shrink:0;border-radius:48% 52% 50% 46%;background:{{ g.dot }};display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5E4535" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ r.d }}"></path></svg></span>
+                  <span style="flex:1;font-family:Gaegu, cursive;font-weight:700;font-size:18px;color:#3A2114">{{ r.k }}</span>
+                  <span style="font-family:Gaegu, cursive;font-size:15px;color:#5E4535">{{ r.v }}</span>
+                  <span style="font-size:17px;color:#A8988A">›</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <dc-import name="PaperTabBar" selected="{{ 4 }}" floating="{{ true }}" hint-size="100%,96px" style="position:absolute;left:0;right:0;bottom:0"></dc-import>
+    </div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const G = [
+      ['앱 설정', '#E9D6BF', [['알림 설정', '매일 밤 9:30', 'M6 15V10a6 6 0 0112 0v5l1.5 2h-15L6 15zM10 20a2 2 0 004 0'], ['캘린더 연동', '연결 안 함', 'M3 5h18v15H3zM3 10h18M8 3v4M16 3v4'], ['기본 정보 수정', '', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 21a7.5 7.5 0 0 1 15 0']]],
+      ['지원', '#B9CBA8', [['문의하기', '', 'M3 11l18-8-6 18-3-7-9-3z'], ['이용약관', '', 'M6 3h8l4 4v14H6zM9 12h6M9 16h6'], ['개인정보 처리방침', '', 'M6 3h8l4 4v14H6zM9 12h6M9 16h6']]],
+      ['계정', '#CDAE8A', [['로그아웃', '', 'M10 4H5v16h5M14 8l4 4-4 4M18 12H9']]]
+    ];
+    const tb = ['radial-gradient(rgba(255,255,255,.8) 2px, transparent 2.5px) 0 0/9px 9px, rgba(246,222,138,.85)', 'repeating-linear-gradient(90deg, rgba(150,175,135,.7) 0 2px, rgba(232,240,224,.8) 2px 7px)', 'repeating-linear-gradient(45deg, rgba(231,157,150,.6) 0 5px, rgba(255,255,255,.55) 5px 10px)'];
+    const hl = ['rgba(246,222,138,.75)', 'rgba(185,203,168,.7)', 'rgba(231,157,150,.45)'];
+    const tr = ['-4deg', '3deg', '-2deg'];
+    return {
+      groups6: G.map(([title, tape, rows], gi) => ({ title, tapeBg: tb[gi], hl: hl[gi], tr: tr[gi], cr: ['-.8deg', '.7deg', '-.5deg'][gi], paper: ['#FFFDF7', '#F5F9EE', '#FDF4EF'][gi], dot: ['#F8E7A2', '#DCE8D0', '#F6D3C8'][gi], rows: rows.map(([k, v, d], i) => ({ k, v, d, bt: i ? '1.5px dashed #E6DCCB' : '0 solid transparent' })) })),
+      groups: G.map(([title, tape, rows]) => ({ title, tape, rows: rows.map(([k, v, d], i) => ({ k, v, v2: v || 'p.' + (i + 1), d, sep: i ? '0 -1px 0 #EFE7DA' : 'none' })) }))
+    };
+  }
+}
+</script>
+</body>
+</html>
