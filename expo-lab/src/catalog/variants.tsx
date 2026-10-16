@@ -5,6 +5,7 @@ import { claudeHomeScenarios } from "../claude-home/scenarios";
 import { homeVariants } from "../claude-home/variants";
 import type { InboxScenarioId, WeatherScenarioId } from "../claude-home/validationScenarios";
 import type { CaptureId } from "./captures";
+import { RestHubPreview, restHubScenarios } from "../rest/RestHubPreview";
 
 export type VariantScenario = { id: string; label: string };
 export type LabVariant = {
@@ -24,31 +25,54 @@ export type LabVariant = {
 };
 
 /** Add independent RN variants by screen id; keep API/fixtures in their Lab adapters. */
-export const labVariants: readonly LabVariant[] = homeVariants.map((variant) => ({
-  id: variant.id,
-  screenId: "home-main",
-  label: variant.label,
-  scenarios: claudeHomeScenarios,
-  render: ({ scenarioId, onMessage, scale, weatherId, inboxId, fontScale }) =>
-    variant.kind === "design" ? (
-      <ClaudeHomeMockPreview
-        key={`${variant.id}-${scenarioId}`}
-        variant={variant}
+export const labVariants: readonly LabVariant[] = [
+  ...homeVariants.map((variant) => ({
+    id: variant.id,
+    screenId: "home-main" as const,
+    label: variant.label,
+    scenarios: claudeHomeScenarios,
+    render: ({
+      scenarioId,
+      onMessage,
+      scale,
+      weatherId,
+      inboxId,
+      fontScale,
+    }: Parameters<LabVariant["render"]>[0]) =>
+      variant.kind === "design" ? (
+        <ClaudeHomeMockPreview
+          key={`${variant.id}-${scenarioId}`}
+          variant={variant}
+          scenarioId={scenarioId}
+          onMessage={onMessage}
+        />
+      ) : (
+        <variant.Preview
+          key={`${variant.id}-${scenarioId}`}
+          scenarioId={scenarioId}
+          onMessage={onMessage}
+          scale={scale}
+          weatherId={weatherId}
+          inboxId={inboxId}
+          fontScale={fontScale}
+        />
+      ),
+  })),
+  {
+    id: "app-rest",
+    screenId: "rest-hub",
+    label: "운영 쉼터 · 공유 UI",
+    scenarios: restHubScenarios,
+    render: ({ scenarioId, onMessage, fontScale }) => (
+      <RestHubPreview
+        key={scenarioId}
         scenarioId={scenarioId}
         onMessage={onMessage}
-      />
-    ) : (
-      <variant.Preview
-        key={`${variant.id}-${scenarioId}`}
-        scenarioId={scenarioId}
-        onMessage={onMessage}
-        scale={scale}
-        weatherId={weatherId}
-        inboxId={inboxId}
         fontScale={fontScale}
       />
     ),
-}));
+  },
+];
 
 export const variantsFor = (screenId: CaptureId) =>
   labVariants.filter((variant) => variant.screenId === screenId);
