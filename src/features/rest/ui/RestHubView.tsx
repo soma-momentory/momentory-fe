@@ -1,9 +1,10 @@
-import { StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
+import { ScrollView, StyleSheet, View } from "react-native";
 
-import { Card, Icon, Text } from "@/components/ds";
+import { Text } from "@/components/ds";
 import { RestCardPressable } from "@/components/rest/RestCardPressable";
 import { RestContentGrid } from "@/components/rest/RestContentGrid";
-import { label as labelColor, primary, space } from "@/design/ds";
+import { homeV2, layout } from "@/design/ds";
 import { REST_CONTENTS_PROMPT, type RestContent } from "@/features/rest/model/contents";
 
 type Props = {
@@ -13,49 +14,127 @@ type Props = {
   onOpenContent: (content: RestContent) => void;
 };
 
-/** 쉼터 탭의 표시 영역. 데이터 조회, 추천 결정, 저장 및 화면 이동은 호출자가 맡는다. */
+/** Production and Expo Lab share this display-only view. Navigation and recommendation stay in adapters. */
 export function RestHubView({ summary, contents, onOpenCards, onOpenContent }: Props) {
+  const longSummary = summary.length > 60;
   return (
-    <>
-      <View style={styles.header}>
-        <Text variant="title3Hand" color={labelColor.strong}>
+    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <View style={styles.headingPaper}>
+        <Text variant="title3Hand" style={styles.heading}>
           쉼터
         </Text>
       </View>
 
-      <RestCardPressable accessibilityLabel="바람카드 보기" onPress={onOpenCards}>
-        <Card padding="loose" style={styles.entry}>
-          <View style={styles.head}>
-            <Text variant="heading1" color={labelColor.strong}>
-              바람카드
+      <RestCardPressable
+        accessibilityLabel="바람카드 보기"
+        onPress={onOpenCards}
+        style={styles.wishPressable}
+      >
+        <View style={[styles.wishPaper, longSummary && styles.wishPaperLong]}>
+          <View style={styles.wishTape} />
+          <View style={styles.wishCopy}>
+            <Text variant="caption1" style={styles.wishEyebrow}>
+              내 바람카드
             </Text>
-            <Icon name="heart" size={20} color={primary.strong} />
+            <Text variant={longSummary ? "body1" : "heading1"} style={styles.wishSummary}>
+              {summary}
+            </Text>
+            <Text variant="caption1" style={styles.wishLink}>
+              바람카드 모아보기 ›
+            </Text>
           </View>
-
-          <Text variant="body2" color={labelColor.neutral}>
-            {summary}
-          </Text>
-        </Card>
+          <View style={styles.wishPhoto}>
+            <View style={styles.wishPhotoImage}>
+              <Image
+                source={require("../../../../assets/rest/baba-sleep.webp")}
+                style={styles.wishBaba}
+                contentFit="contain"
+              />
+            </View>
+            <Text variant="caption2" style={styles.wishPhotoCaption}>
+              쉬는 중
+            </Text>
+            <View style={styles.photoTape} />
+          </View>
+        </View>
       </RestCardPressable>
 
-      <View style={styles.contents}>
-        <Text variant="body2" color={labelColor.neutral}>
+      <View style={styles.section}>
+        <Text variant="headline1" style={styles.sectionTitle}>
           {REST_CONTENTS_PROMPT}
         </Text>
         <RestContentGrid items={contents} onOpen={onOpenContent} />
       </View>
-    </>
+    </ScrollView>
   );
 }
 
+const colors = homeV2.color;
+const font = homeV2.font;
+
 const styles = StyleSheet.create({
-  header: { paddingTop: space.sm, paddingBottom: space.xl },
-  entry: { gap: space.md },
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: space.md,
+  root: { flex: 1, marginHorizontal: -layout.screenPadding },
+  content: { paddingHorizontal: layout.screenPadding, paddingTop: 8, paddingBottom: 30 },
+  headingPaper: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.date,
+    paddingHorizontal: 16,
+    paddingVertical: 3,
+    transform: [{ rotate: "-3deg" }],
   },
-  contents: { paddingTop: space.xl2, gap: space.md },
+  heading: { fontFamily: font.bold, color: colors.ink },
+  wishPressable: { marginTop: 24, marginRight: 4 },
+  wishPaper: {
+    minHeight: 136,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.emptyBorder,
+    paddingVertical: 14,
+    paddingLeft: 16,
+    paddingRight: 126,
+  },
+  wishPaperLong: { paddingTop: 116, paddingRight: 16 },
+  wishTape: {
+    position: "absolute",
+    left: -8,
+    top: -9,
+    width: 56,
+    height: 18,
+    backgroundColor: colors.today,
+    opacity: 0.85,
+    transform: [{ rotate: "-14deg" }],
+  },
+  wishCopy: { gap: 4 },
+  wishEyebrow: { fontFamily: font.regular, color: colors.muted },
+  wishSummary: { fontFamily: font.bold, color: colors.ink },
+  wishLink: { fontFamily: font.bold, color: colors.green, marginTop: 4 },
+  wishPhoto: {
+    position: "absolute",
+    right: 10,
+    top: -14,
+    width: 108,
+    height: 126,
+    backgroundColor: colors.white,
+    padding: 6,
+    transform: [{ rotate: "3deg" }],
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.16,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  wishPhotoImage: { flex: 1, backgroundColor: colors.greenSoft },
+  wishBaba: { width: "100%", height: "100%" },
+  wishPhotoCaption: { fontFamily: font.regular, color: colors.muted, textAlign: "center" },
+  photoTape: {
+    position: "absolute",
+    left: 30,
+    top: -8,
+    width: 50,
+    height: 16,
+    backgroundColor: colors.tapeStripe,
+    transform: [{ rotate: "-6deg" }],
+  },
+  section: { paddingTop: 32, gap: 22 },
+  sectionTitle: { fontFamily: font.bold, color: colors.ink, alignSelf: "flex-start" },
 });
