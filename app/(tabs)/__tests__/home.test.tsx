@@ -1,22 +1,28 @@
-import { act, render, fireEvent, within } from "@testing-library/react-native";
+import { act, render, fireEvent, waitFor, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { View } from "react-native";
+import { useEffect as mockUseEffect } from "react";
 
 import Home from "../home";
 
 import { useDiary } from "@/features/diary/model/diary";
+import { useAuth } from "@/features/auth/model/auth";
 import { useDay } from "@/features/home/model/day";
+import { useHomeWeather } from "@/features/home/model/useHomeWeather";
 import type { Schedule } from "@/features/home/model/types";
+import { useInbox } from "@/features/notifications/model/inbox";
 import { seedDiaries, testSchedules } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Stack: jest.fn(() => null),
+  useFocusEffect: (effect: () => void | (() => void)) => mockUseEffect(effect, [effect]),
 }));
 jest.mock("@/features/analytics", () => ({
   ...jest.requireActual("@/features/analytics"),
   track: jest.fn(),
 }));
+jest.mock("@/features/home/model/useHomeWeather", () => ({ useHomeWeather: jest.fn() }));
 
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
@@ -24,6 +30,15 @@ const flatten = (style: unknown) =>
 // 모듈 store 라 테스트 사이에 값이 샌다 — 매번 샘플 하루로 되돌린다
 beforeEach(() => {
   jest.clearAllMocks();
+  useAuth.setState({ status: "anonymous" });
+  useInbox.getState().reset();
+  jest.mocked(useHomeWeather).mockReturnValue({
+    status: "hidden",
+    weather: null,
+    ownerUserId: null,
+    acceptIntro: jest.fn(async () => {}),
+    dismissIntro: jest.fn(async () => {}),
+  });
   // 이번 주 감정 줄은 일기에서 나온다 — store 기본값이 비어 있으니 샘플로 seed 한다
   // (운영은 `load()` 가 채운다 · 다른 diary 테스트와 같은 결)
   seedDiaries();
@@ -93,12 +108,93 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     expect(getByText("밤 9:30엔 제가\n먼저 말 걸어요")).toBeTruthy();
   });
 
-  it("종은 갈 곳이 있다 — 알림 설정으로 간다", async () => {
-    const { getByLabelText } = await render(<Home />);
-
-    // 옛 `/my/notify` 는 마이 이관에서 **시트가 됐다** — 그 시트를 여는 곳이 `M1` 이다
+  it("인증되지 않은 상태의 종은 앞 계정의 알림함을 열지 않는다", async () => {
+    const { getByLabelText, queryByTestId } = await render(<Home />);
     await fireEvent.press(getByLabelText("알림"));
-    expect(router.push).toHaveBeenCalledWith("/my");
+    expect(queryByTestId("inbox-popover-overlay")).toBeNull();
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it("서버 unread 점으로 알림 팝오버를 열고, 설정은 마이의 기존 시트로 이동한다", async () => {
+    useAuth.setState({ status: "authenticated" });
+    useInbox.getState().bindUser(7);
+    useInbox.setState({ hasUnread: true });
+    const measure = jest.spyOn(View.prototype, "measureInWindow").mockImplementation((callback) => {
+      callback(0, 24, 44, 44);
+    });
+    const r = await render(<Home />);
+    expect(r.getByTestId("home-v2-unread-dot")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "알림, 읽지 않은 소식 있음" }));
+    expect(r.getByTestId("inbox-popover-overlay")).toBeTruthy();
+    expect(r.getByTestId("inbox-popover-panel").props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ top: 72 })]),
+    );
+    const settings = r.getByRole("button", { name: "알림 설정" });
+    await fireEvent.press(settings);
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/my",
+      params: { openNotificationSettings: "1" },
+    });
+    measure.mockRestore();
+  });
+
+  it("날씨의 주인이 현재 사용자일 때만 스티커·기온·출처를 보인다", async () => {
+    useAuth.setState({ status: "authenticated" });
+    useInbox.getState().bindUser(7);
+    const weather = {
+      condition: {
+        code: "clear.day",
+        family: "clear",
+        intensity: null,
+        showers: false,
+        thunder: false,
+        daylight: "day",
+        windy: false,
+      },
+      label: "맑음",
+      temperatureC: 22,
+      forecastTime: "2026-10-15T13:00:00Z",
+      updatedAt: "2026-10-15T12:31:07Z",
+      source: "MET Norway",
+    } as const;
+    jest.mocked(useHomeWeather).mockReturnValue({
+      status: "ready",
+      weather,
+      ownerUserId: 7,
+      acceptIntro: jest.fn(async () => {}),
+      dismissIntro: jest.fn(async () => {}),
+    });
+    const r = await render(<Home />);
+    expect(r.getByRole("button", { name: "날씨: 맑음 22도" })).toBeTruthy();
+    expect(r.getByText("22℃")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "날씨: 맑음 22도" }));
+    expect(r.getByText(/MET Norway 예보 · .*밤 9:31 갱신/)).toBeTruthy();
+
+    await act(() => useInbox.getState().bindUser(8));
+    expect(r.queryByTestId("home-v2-weather")).toBeNull();
+    expect(r.queryByText("22℃")).toBeNull();
+    expect(r.queryByTestId("home-v2-unread-dot")).toBeNull();
+  });
+
+  it("첫 위치 안내는 지연해 열고 기존 훅의 허용 동작에 연결한다", async () => {
+    useAuth.setState({ status: "authenticated" });
+    useInbox.getState().bindUser(7);
+    const acceptIntro = jest.fn(async () => {});
+    jest.mocked(useHomeWeather).mockReturnValue({
+      status: "intro",
+      weather: null,
+      ownerUserId: 7,
+      acceptIntro,
+      dismissIntro: jest.fn(async () => {}),
+    });
+    const r = await render(<Home />);
+    expect(r.queryByText("오늘 날씨도 함께 볼까요?")).toBeNull();
+    await waitFor(() => expect(r.getByText("오늘 날씨도 함께 볼까요?")).toBeTruthy());
+    expect(
+      r.getByText("지금 있는 곳의 날씨를 홈에 붙여 둘게요. 위치는 날씨를 찾는 데만 써요."),
+    ).toBeTruthy();
+    await fireEvent.press(r.getByText("위치 허용하기"));
+    expect(acceptIntro).toHaveBeenCalledTimes(1);
   });
 
   it("이번 주 감정은 요일마다 한 칸이고, 이름을 낭독기에 준다", async () => {

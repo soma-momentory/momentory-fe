@@ -3,7 +3,7 @@ import { Dimensions } from "react-native";
 // jest.mock 팩토리는 `mock` 으로 시작하는 이름만 밖에서 끌어 쓸 수 있다(호이스팅 가드)
 import { useEffect as mockUseEffect } from "react";
 
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 import My from "../my";
 import Report from "../report";
@@ -22,8 +22,9 @@ import { useWeeklyReport } from "@/features/report/model/weeklyReport";
 import { seedDiaries, seedProfile } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), setParams: jest.fn() },
   Stack: jest.fn(() => null),
+  useLocalSearchParams: jest.fn(() => ({})),
   // 리포트는 **포커스마다** 다시 받는다 — 테스트에는 화면이 하나뿐이라 마운트가 곧 포커스다
   useFocusEffect: (effect: () => void | (() => void)) => mockUseEffect(effect, [effect]),
 }));
@@ -125,6 +126,7 @@ beforeEach(() => {
   // 탈퇴 상태가 테스트 사이로 새지 않게 — 한 곳만 이 store 를 건드린다
   useAuth.setState({ withdrawing: false, withdrawError: null });
   jest.clearAllMocks();
+  jest.mocked(useLocalSearchParams).mockReturnValue({});
   notifications.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   notifications.requestPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: false });
   // 캘린더 권한도 기본은 허용이다 — 거부로 바꾼 테스트의 값이 다음 테스트로 새지 않게 되돌린다
@@ -802,6 +804,13 @@ describe("M1 · 캘린더 연동 — 온보딩에서 미룬 사람이 다시 잇
 describe("M2 · 알림 설정 시트 — 하나의 결정만 담는다", () => {
   /** 시트 제목과 줄 이름이 같은 말이다 — 줄은 목록에 먼저 있다 */
   const row = (r: Awaited<ReturnType<typeof render>>) => r.getAllByText("알림 설정")[0]!;
+
+  it("홈 알림함의 설정 버튼에서 오면 기존 시간 시트를 곧장 연다", async () => {
+    jest.mocked(useLocalSearchParams).mockReturnValue({ openNotificationSettings: "1" });
+    const r = await render(<My />);
+    await waitFor(() => expect(r.getByText("알림 시간")).toBeTruthy());
+    expect(router.setParams).toHaveBeenCalledWith({ openNotificationSettings: "" });
+  });
 
   it("줄을 누르면 시각을 고르는 시트가 열린다", async () => {
     const r = await render(<My />);

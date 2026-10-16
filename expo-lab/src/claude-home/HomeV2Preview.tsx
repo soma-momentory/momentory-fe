@@ -140,9 +140,9 @@ export function HomeV2Preview({ scenarioId, onMessage, scale = 1 }: HomeV2Previe
             onMessage("Lab Mock 일정만 추가했습니다.");
           },
           onStartReflection: () => onMessage("회고 진입은 Lab Mock 액션입니다."),
-          onOpenNotifications: () => onMessage("알림함은 P5 에서 연결합니다."),
+          onOpenNotifications: () => onMessage("알림함은 운영 앱에서 열립니다."),
           onOpenNotificationSettings: () => onMessage("알림 설정은 Lab에 연결하지 않았습니다."),
-          onOpenWeatherInfo: () => onMessage("날씨는 P4 에서 연결합니다."),
+          onOpenWeatherInfo: () => onMessage("날씨 정보는 운영 앱에서 열립니다."),
         }}
         renderFrame={(body, overlay) => (
           <>

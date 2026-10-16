@@ -63,6 +63,14 @@ describe("요청", () => {
     });
   });
 
+  it("토큰 조회 중 계정이 바뀌면 보내지 않도록 요청 주인을 HTTP 계층에 전달한다", async () => {
+    await fetchCurrentWeather(SEOUL, 7);
+    expect(jest.mocked(authedRequest).mock.calls[0]![3]).toEqual({
+      timeoutMs: 10_000,
+      expectedUserId: 7,
+    });
+  });
+
   it.each([
     ["NaN", { latitude: NaN, longitude: 126.9 }],
     ["Infinity", { latitude: 37.5, longitude: Infinity }],

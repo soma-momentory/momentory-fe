@@ -35,10 +35,7 @@ export type { HomeV2ViewActions, HomeV2ViewModel, HomeV2ViewProps, HomeWeatherVi
  * 끄는 동안에는 스크롤을 잠근다. 목록 칸이 일정 2행보다 좁으면 날짜부터 일정까지 한 덩어리로
  * 스크롤한다(LY-1). 판정에는 `ScheduleList` 가 실제 배치에 쓰는 한 칸을 쓴다.
  *
- * ## 이번 단계에서 비어 있는 것
- *
- * - 날씨 스티커 — `model.weather` 가 `null` 이면 그리지 않는다(P4)
- * - 종의 점 — `hasUnreadNotifications` 가 `true` 일 때만 점과 「읽지 않은 소식 있음」(P5)
+ * 날씨는 `model.weather` 가 있을 때만, 종의 점은 서버 unread가 참일 때만 그린다.
  */
 export function HomeV2View({
   model,
@@ -47,6 +44,8 @@ export function HomeV2View({
   menuTopFromPageY,
   menuBottomInset = 0,
   onRowPitch,
+  inboxPopover,
+  weatherIntroSheet,
 }: HomeV2ViewProps) {
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -55,6 +54,7 @@ export function HomeV2View({
   const [toast, setToast] = useState<string | null>(null);
   const { fontScale } = useWindowDimensions();
   const sizes = useRef({ root: 0, fixed: 0, pitch: PAPER_ROW_PITCH, empty: 0 });
+  const bellRef = useRef<View>(null);
   const [mode, setMode] = useState<HomeLayoutMode>("listOnly");
 
   const shown = visibleSchedules(model.schedules);
@@ -142,12 +142,18 @@ export function HomeV2View({
     >
       <View style={[styles.header, { height: layout.minTouch + datePaperExtraFor(fontScale) }]}>
         <DatePaper today={model.today} fontScale={fontScale} />
-        <View>
+        <View ref={bellRef}>
           <IconButton
             name="bell"
             accessibilityLabel={unread ? "알림, 읽지 않은 소식 있음" : "알림"}
             color={homeV2.color.ink}
-            onPress={actions.onOpenNotifications}
+            onPress={() => {
+              bellRef.current?.measureInWindow((_x, y, _width, height) => {
+                const top = menuTopFromPageY(y + height + space.xs);
+                if (typeof top === "number") actions.onOpenNotifications(top);
+                else void top.then(actions.onOpenNotifications);
+              });
+            }}
           />
           {/* 점은 장식이 아니라 상태다 — 그래서 이름도 함께 바뀐다(위). 숫자는 세지 않는다 */}
           {unread ? <View testID="home-v2-unread-dot" style={styles.dot} /> : null}
@@ -159,6 +165,7 @@ export function HomeV2View({
           retroReminderTime={model.retroReminderTime}
           weather={model.weather}
           onStartReflection={actions.onStartReflection}
+          onOpenWeatherInfo={actions.onOpenWeatherInfo}
         />
       </View>
 
@@ -282,6 +289,10 @@ export function HomeV2View({
       {toast != null ? (
         <Toast message={toast} variant="positive" onDismiss={() => setToast(null)} />
       ) : null}
+      {inboxPopover}
+      {menu == null && asking == null && toast == null && inboxPopover == null
+        ? weatherIntroSheet
+        : null}
     </>
   );
 

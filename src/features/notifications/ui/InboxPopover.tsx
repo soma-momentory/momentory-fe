@@ -33,7 +33,7 @@ import { formatKoreanDateShort } from "@/lib/day";
  *
  * **표시 전용이다** — store · API · 라우터 · 계측을 모른다(`HomeV2View` 와 같은 원칙). 무엇을 읽음으로
  * 보낼지 · 어디로 갈지는 호출자가 콜백으로 정한다. 그래서 `HomeV2View` 안에 넣지 않고 따로 둔다 —
- * 홈 연결 Task 가 이것을 홈의 `overlay` 슬롯에 꽂는다.
+ * 운영 홈은 이것을 공유 뷰의 `overlay` 슬롯에 꽂는다.
  *
  * ## 화면이 아니다
  *
@@ -191,9 +191,9 @@ export function InboxPopover({
           <Text variant="headline1" color={labelColor.strong} accessibilityRole="header">
             알림
           </Text>
-          {/* Wanted 세트에 톱니가 없다 — 있는 글리프(시계 · 회고 알림 시각)로 둔다(결정 H1) */}
+          {/* 시간 의미의 임시 시계를 설정 조절 글리프로 바꾼다. 색·크기·히트는 DS를 따른다. */}
           <IconButton
-            name="clock"
+            name="settings"
             size={size.icon.md}
             accessibilityLabel="알림 설정"
             color={labelColor.neutral}

@@ -7,6 +7,8 @@ import { formatKoreanTime } from "@/lib/time";
 
 import { Baba } from "./Baba";
 import type { HomeWeatherView } from "./types";
+import { WeatherSticker } from "./WeatherSticker";
+import { weatherStickerForKey } from "./weatherStickers";
 
 /**
  * 홈 v2 의 **히어로 카드** — 말풍선 · 리마인더 · 바바 · 「하루 돌아보기」(시안 `HeroCard` · HD-6).
@@ -22,18 +24,24 @@ import type { HomeWeatherView } from "./types";
  * ## 날씨 자리 (P4)
  *
  * `weather` 가 `null` 이면 **스티커 자리를 그리지 않는다** — 빈 틀도 문구도 없다(HW-4 와 같은 모양).
- * P2 는 늘 `null` 이다. 스티커(`WeatherSticker`)와 그림은 P4 가 더한다(결정 D4 — 그림은 그때 승격).
+ * 운영 홈은 P4의 `WeatherSticker`를 재사용한다. 그림이 없는 조건과 기온은 함께 숨긴다.
  */
 type Props = {
   retroReminderTime: string | null;
   weather: HomeWeatherView | null;
   onStartReflection: () => void;
+  onOpenWeatherInfo: () => void;
 };
 
 /** 녹색 체크무늬 테이프 한 장 — 시안의 92 × 24 */
 const TAPE = { width: 92, height: 24, cell: 6, pitch: 12 } as const;
 
-export function HeroCard({ retroReminderTime, onStartReflection }: Props) {
+export function HeroCard({
+  retroReminderTime,
+  weather,
+  onStartReflection,
+  onOpenWeatherInfo,
+}: Props) {
   const { fontScale } = useWindowDimensions();
   const scale = Math.min(fontScale, maxFontScale);
   const extra = Math.max(0, scale - 1);
@@ -41,6 +49,7 @@ export function HeroCard({ retroReminderTime, onStartReflection }: Props) {
     retroReminderTime != null
       ? `${formatKoreanTime(retroReminderTime)}엔 제가\n먼저 말 걸어요`
       : "편할 때 언제든 돌아볼 수 있어요";
+  const visibleWeather = weather != null && weatherStickerForKey(weather.stickerKey) != null;
 
   return (
     <View style={[styles.hero, { height: homeV2.size.hero.height + 90 * extra }]}>
@@ -82,6 +91,17 @@ export function HeroCard({ retroReminderTime, onStartReflection }: Props) {
         </Text>
         <View style={styles.bubbleTail} />
       </View>
+
+      {visibleWeather ? (
+        <View testID="home-v2-weather" style={styles.weather}>
+          <WeatherSticker weather={weather} onPress={onOpenWeatherInfo} />
+          {weather.temperatureC != null ? (
+            <Text style={styles.weatherTemperature} color={homeV2.color.ink}>
+              {weather.temperatureC}℃
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
 
       <Text
         style={[
@@ -147,6 +167,8 @@ const styles = StyleSheet.create({
     boxShadow: homeV2.shadow.bubble,
   },
   bubbleText: { fontFamily: homeV2.font.bold, ...homeV2.type.bubble },
+  weather: { position: "absolute", top: 20, right: 14, alignItems: "center", zIndex: 3 },
+  weatherTemperature: { fontFamily: homeV2.font.bold, fontSize: 18, lineHeight: 22, marginTop: 2 },
   bubbleTail: {
     position: "absolute",
     right: 28,

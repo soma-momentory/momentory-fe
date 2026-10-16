@@ -8,7 +8,7 @@ import { toHomeWeather, type HomeWeather } from "../model/weather";
  *
  * `CurrentWeatherController` · `CurrentWeatherRequest/Response` 및 BE OpenAPI 테스트와 대조했다.
  * FE `docs/api/openapi.json` 은 아직 이전 스냅샷이며 운영 배포는 미확인이다.
- * 홈 화면은 아직 이 어댑터를 부르지 않는다.
+ * 운영 홈의 `useHomeWeather`가 이 어댑터를 부른다. 호출자의 사용자 ID를 토큰 조회까지 전달한다.
  *
  * - **좌표는 본문에만 싣는다(WX-2).** 쿼리스트링은 접근 로그 · 프록시에 남기 쉽다 — 경로는 상수이고
  *   쿼리를 만들지 않는다. 조회지만 `POST` 인 이유가 이것이다.
@@ -25,10 +25,10 @@ export const CURRENT_WEATHER_TIMEOUT_MS = 10_000;
 export type CurrentWeatherResult =
   { kind: "ready"; weather: HomeWeather } | { kind: "unavailable" };
 
-export async function fetchCurrentWeather(position: {
-  latitude: number;
-  longitude: number;
-}): Promise<CurrentWeatherResult> {
+export async function fetchCurrentWeather(
+  position: { latitude: number; longitude: number },
+  expectedUserId?: number,
+): Promise<CurrentWeatherResult> {
   if (!isValidCoordinate(position.latitude, position.longitude)) return { kind: "unavailable" };
   const latitude = roundCoordinate(position.latitude);
   const longitude = roundCoordinate(position.longitude);
@@ -38,7 +38,10 @@ export async function fetchCurrentWeather(position: {
       "POST",
       CURRENT_WEATHER_PATH,
       { latitude, longitude },
-      { timeoutMs: CURRENT_WEATHER_TIMEOUT_MS },
+      {
+        timeoutMs: CURRENT_WEATHER_TIMEOUT_MS,
+        ...(expectedUserId == null ? {} : { expectedUserId }),
+      },
     );
     if (!result.ok) return { kind: "unavailable" };
     const weather = toHomeWeather(result.data);

@@ -18,7 +18,7 @@ import { isWeatherFresh, type HomeWeather } from "./weather";
 /**
  * 홈 날씨 스티커의 상태 — 계획 `docs/redesign/HOME_V2_ROLLOUT_PLAN.md` §4.6 (HW-3 · HW-4 · MF-2 · MF-2A · MF-2B).
  *
- * 조회 경로는 BE `dev` d77d023에 있다. 운영 배포는 미확인이고 이 훅을 부르는 화면은 아직 없다.
+ * 조회 경로는 BE `dev` d77d023에 있다. 운영 홈이 이 훅을 부르지만 BE 운영 배포는 미확인이다.
  *
  * | 상태     | 화면                                                                       |
  * | -------- | -------------------------------------------------------------------------- |
@@ -43,6 +43,7 @@ import { isWeatherFresh, type HomeWeather } from "./weather";
  * 같은 세대의 조회가 진행 중이면 새로 떠나지 않는다 — 무효화된 조회는 진행 중으로 치지 않는다.
  * 위치를 얻은 뒤 서버로 보내기 **직전에도** 사용자와 인증 상태를 다시 대조한다 — 응답을 받은 뒤의
  * 대조만으로는 이전 사용자의 조회가 새 세션 토큰으로 나가는 것을 막지 못한다.
+ * `fetchCurrentWeather`에도 출발 사용자 ID를 넘겨 비동기 토큰 조회·갱신 사이의 계정 변경을 막는다.
  *
  * 경과 시간은 실제 시계(`Date.now()`)로 잰다 — 04:00 하루와 무관한 「지난 시간」이라서다
  * (`auth.ts` 의 `nowMs` 와 같은 이유). 좌표는 이 훅이 들고 있지 않는다.
@@ -52,15 +53,17 @@ export type HomeWeatherStatus = "hidden" | "intro" | "ready";
 export type UseHomeWeather = {
   status: HomeWeatherStatus;
   weather: HomeWeather | null;
+  /** 화면에 내보낸 값의 주인. 세션 변경 직후 첫 렌더에서도 이전 계정의 값을 숨긴다. */
+  ownerUserId: number | null;
   /** 안내의 「위치 허용하기」 — 기록을 남기고 OS 권한 창을 띄운다 */
   acceptIntro: () => Promise<void>;
   /** 안내를 닫는 길 전부(✕ · 바깥 · 쓸어내리기 · 「다음에」) — 기록을 남기고 숨긴다 */
   dismissIntro: () => Promise<void>;
 };
 
-type View = { status: HomeWeatherStatus; weather: HomeWeather | null };
+type View = { status: HomeWeatherStatus; weather: HomeWeather | null; ownerUserId: number | null };
 
-const HIDDEN: View = { status: "hidden", weather: null };
+const HIDDEN: View = { status: "hidden", weather: null, ownerUserId: null };
 
 export function useHomeWeather(): UseHomeWeather {
   const [view, setView] = useState<View>(HIDDEN);
@@ -120,7 +123,7 @@ export function useHomeWeather(): UseHomeWeather {
       }
       const result =
         position.kind === "located"
-          ? await fetchCurrentWeather(position)
+          ? await fetchCurrentWeather(position, userId)
           : ({ kind: "unavailable" } as const);
       const nowUser = await currentUserId();
       if (!mounted.current || gen !== fetchGen.current) return;
@@ -131,7 +134,11 @@ export function useHomeWeather(): UseHomeWeather {
       }
       lastSucceeded.current = result.kind === "ready";
       // 실패는 TTL 안이어도 이전 값을 버린다(MF-2) — 이전 스티커는 실패한 조회 뒤에 남지 않는다
-      show(result.kind === "ready" ? { status: "ready", weather: result.weather } : HIDDEN);
+      show(
+        result.kind === "ready"
+          ? { status: "ready", weather: result.weather, ownerUserId: userId }
+          : HIDDEN,
+      );
     },
     [invalidate, show],
   );
@@ -164,7 +171,7 @@ export function useHomeWeather(): UseHomeWeather {
       invalidate();
       const seen = await readWeatherIntroSeen(userId);
       if (stale()) return;
-      show(seen ? HIDDEN : { status: "intro", weather: null });
+      show(seen ? HIDDEN : { status: "intro", weather: null, ownerUserId: userId });
       return;
     }
 
@@ -257,5 +264,5 @@ export function useHomeWeather(): UseHomeWeather {
     await markWeatherIntroSeen(userId);
   }, [introOwner, introUserId, show]);
 
-  return { status: view.status, weather: view.weather, acceptIntro, dismissIntro };
+  return { ...view, acceptIntro, dismissIntro };
 }

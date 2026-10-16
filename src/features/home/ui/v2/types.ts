@@ -6,9 +6,8 @@ import type { WeekDay } from "@/features/report/model/report";
 /**
  * 홈 v2 공유 뷰의 계약 (계획 `docs/redesign/HOME_V2_ROLLOUT_PLAN.md` §6 P2).
  *
- * 옛 `HomeView` 의 계약(`../HomeView.tsx`)에 날씨 · 알림 자리를 더했다. **P2 에서는 늘 비어 있다** —
- * `weather` 는 `null`(스티커를 그리지 않는다), `hasUnreadNotifications` 는 `false`(점 없음).
- * 값이 차는 것은 P4(날씨) · P5(알림함)다.
+ * 옛 `HomeView` 의 계약(`../HomeView.tsx`)에 날씨 · 알림 자리를 더했다. Lab에서는
+ * 빈 값도 그릴 수 있고, 운영 홈은 P4·P5의 상태를 넘긴다.
  */
 
 /**
@@ -35,9 +34,9 @@ export type HomeV2ViewModel = {
   week: readonly WeekDay[];
   /** 알림을 켰고 시각이 있을 때만 값이 있다(`"21:30"`) */
   retroReminderTime: string | null;
-  /** P2 는 늘 `null` — 스티커 자리를 그리지 않는다(HW-4 와 같은 모양) */
+  /** 권한 거부·조회 실패·미매핑이면 `null` — 스티커 자리를 그리지 않는다 */
   weather: HomeWeatherView | null;
-  /** P2 는 늘 `false` — 점도 「읽지 않은」 이름도 없다 */
+  /** 서버가 확인한 unread 상태일 때만 `true` */
   hasUnreadNotifications: boolean;
 };
 
@@ -51,9 +50,9 @@ export type HomeV2ViewActions = {
   onEditManualSchedule: (id: string) => void;
   onAddSchedule: () => void;
   onStartReflection: () => void;
-  /** 종 — P5 의 알림 모달. 그전에는 호출자가 목적지를 정한다(P3: `/my`) */
-  onOpenNotifications: () => void;
-  /** 알림 모달의 설정 아이콘(P5) — 지금 뷰 안에서 부르는 자리는 없다 */
+  /** 종 — 호출자가 잰 위치에 P5 알림 팝오버를 연다 */
+  onOpenNotifications: (top: number) => void;
+  /** 알림 설정 이동. 팝오버는 별도 컴포넌트라 운영 어댑터가 직접 연결한다. */
   onOpenNotificationSettings: () => void;
   /** 날씨 스티커를 누르면 출처 · 갱신 시각(HW-5 · P4) */
   onOpenWeatherInfo: () => void;
@@ -70,4 +69,8 @@ export type HomeV2ViewProps = {
   menuBottomInset?: number;
   /** 잰 일정 한 칸 — P3 의 배치 판정(LY-1)이 이 값을 쓴다 */
   onRowPitch?: (pitch: number) => void;
+  /** 운영 앱의 독립 알림 팝오버. Lab은 생략할 수 있다. */
+  inboxPopover?: ReactNode;
+  /** 첫 위치 안내. 내부 일정 메뉴와 알림 팝오버가 열렸으면 표시를 미룬다. */
+  weatherIntroSheet?: ReactNode;
 };

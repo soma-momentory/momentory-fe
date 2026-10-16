@@ -112,9 +112,9 @@ SDK 공통 메타데이터는 발생 시각 · **임의 기기 ID** · 세션 ID
   `Accuracy.Balanced` 로 위치를 읽어 **소수 둘째 자리로 반올림한 좌표**를 HTTPS
   `PUT /api/v1/diaries/{id}/weather` 본문(`{ latitude, longitude }`)으로 보낸다
   (`src/features/diary/data/diaryWeather.ts` · `src/lib/location.ts`). 서버는 날씨 문자열을 돌려준다.
-- **홈 날씨(준비 중 · 미출시)** — `POST /api/v1/weather/current` 는 BE `dev` d77d023에 있다.
+- **홈 날씨(통합 브랜치에서 운영 홈 연결 · 미출시)** — `POST /api/v1/weather/current` 는 BE `dev` d77d023에 있다.
   FE `docs/api/openapi.json`에는 아직 반입되지 않았고 운영 배포도 미확인이다.
-  어댑터(`src/features/home/data/weatherApi.ts`)와 상태 훅은 있지만 **어느 화면도 부르지 않는다.**
+  이 브랜치의 운영 홈은 어댑터(`src/features/home/data/weatherApi.ts`)와 상태 훅을 호출한다.
   출시 전에 이 절을 다시 확인한다(PV-1).
 - 권한 목적 문구(iOS `NSLocationWhenInUseUsageDescription` · `app.config.ts`)는 2026-10-16 에
   「홈과 일기에 지금 있는 곳의 날씨를 보여 주기 위해 위치를 사용합니다.」로 바뀌었다 — **다음 네이티브
@@ -135,9 +135,15 @@ SDK 공통 메타데이터는 발생 시각 · **임의 기기 ID** · 세션 ID
 | V7  | 사용자와의 연결                        | **BE `dev` 코드**: 인증 사용자 ID로 1분 요청 제한을 적용한다. 좌표 캐시 키에는 사용자 ID가 없다. 운영 로그 등 다른 연결 경로는 미검증이다.                                                                                                                                                                                           |
 | V8  | 실제 신고 내용                         | **미검증** — Play Console · App Store Connect **제출본** 확인 필요(담당자)                                                                                                                                                                                                                                                           |
 | V9  | 스토어 정책 대조                       | **미검증** — V1~V7 결과가 나온 뒤                                                                                                                                                                                                                                                                                                    |
-| V10 | 홈 경로 고유                           | **BE `dev` 코드 확인** — Controller·DTO·OpenAPI 테스트가 있다. FE 홈 연결·BE 운영 배포·실제 응답은 미검증이다.                                                                                                                                                                                                                       |
+| V10 | 홈 경로 고유                           | **BE `dev` 코드 확인** — Controller·DTO·OpenAPI 테스트가 있다. FE 통합 브랜치에서 홈 연결 구현 · BE 운영 배포·실제 응답은 미검증이다.                                                                                                                                                                                                |
 
 BE Controller의 「저장하지 않는다」 설명은 위 메모리 좌표 캐시의 존재와 범위를 함께 검토해야 한다.
+**2026-10-16 통합 확인:** 운영 `https://api.momentory.co.kr/v3/api-docs`는 응답했지만
+`/api/v1/weather/current`와 알림함 네 경로가 없다. dev 문서 요청은 시간 초과였다.
+이 브랜치에서 홈을 연결했으나 BE 운영 배포·실제 응답은 미확인이다. 게시된
+`https://momentory.co.kr/privacy` v4(2026-10-14)의 처리 항목·외부 서비스 표에는
+위치와 MET Norway가 명시되지 않았다. 위치 처리·외부 전송·보유 기간 문안과
+Play/App Store 제출본은 출시 전에 담당자가 실제 운영 증거에 맞춰 확인해야 한다.
 결과와 증거(BE 커밋 · 로그 검색 · 콘솔 화면)는 이 표에 적고, 그 결론으로 위 위치 줄 · App Store 개인정보 ·
 웹 처리방침 · 권한 문구의 「저장하지 않습니다」 여부를 고른다. 콘솔 제출과 처리방침 게시는 담당자가 한다.
 

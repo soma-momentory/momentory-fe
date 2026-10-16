@@ -1,5 +1,5 @@
 import { captureAnalytics, track } from "@/features/analytics";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
@@ -82,6 +82,9 @@ import {
 const WITHDRAW_CONFIRM_PHRASE = "회원탈퇴";
 
 export default function My() {
+  const { openNotificationSettings } = useLocalSearchParams<{
+    openNotificationSettings?: string;
+  }>();
   const diaries = useDiary((s) => s.diaries);
   const nickname = useProfile((s) => s.nickname);
   const retro = useSettings((s) => s.notify.retro);
@@ -93,6 +96,16 @@ export default function My() {
 
   /** 시트를 여는 동안만 사는 값 — **`완료` 를 눌러야 설정이 된다**(`DESIGN.md` §11) */
   const [editingTime, setEditingTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (openNotificationSettings !== "1") return;
+    const timer = setTimeout(() => {
+      setEditingTime(retro.time ?? "21:30");
+      // 닫은 뒤 같은 URL로 돌아와도 시트를 다시 열지 않는다.
+      router.setParams({ openNotificationSettings: "" });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [openNotificationSettings, retro.time]);
   /** 탈퇴 확인 시트가 떠 있는가. 되돌릴 수 없는 행동이라 문구를 따라 써야 실행된다 */
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
   /** 확인 시트의 입력값 — `WITHDRAW_CONFIRM_PHRASE` 와 맞아야 탈퇴 버튼이 켜진다 */

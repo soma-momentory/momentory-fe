@@ -2,6 +2,7 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { View } from "react-native";
 
 import { HomeV2Preview } from "../HomeV2Preview";
 import { claudeHomeScenarios } from "../scenarios";
@@ -52,9 +53,13 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
     expect(screen.getByText("오늘 일정을 모두 마쳤어요.")).toBeTruthy();
 
     await fireEvent.press(screen.getByRole("button", { name: "하루 돌아보기" }));
+    const measure = jest.spyOn(View.prototype, "measureInWindow").mockImplementation((callback) => {
+      callback(0, 24, 44, 44);
+    });
     await fireEvent.press(screen.getByRole("button", { name: "알림" }));
+    measure.mockRestore();
     expect(onMessage).toHaveBeenNthCalledWith(1, "회고 진입은 Lab Mock 액션입니다.");
-    expect(onMessage).toHaveBeenNthCalledWith(2, "알림함은 P5 에서 연결합니다.");
+    expect(onMessage).toHaveBeenNthCalledWith(2, "알림함은 운영 앱에서 열립니다.");
   });
 
   it("운영 모듈(store · API · 라우터 · 계측)을 import 하지 않는다", () => {
