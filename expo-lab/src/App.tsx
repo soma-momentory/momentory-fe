@@ -13,6 +13,12 @@ import {
 } from "react-native";
 
 import { claudeHomeColor as c, claudeHomeFont as font } from "./claude-home/tokens";
+import {
+  inboxScenarios,
+  weatherScenarios,
+  type InboxScenarioId,
+  type WeatherScenarioId,
+} from "./claude-home/validationScenarios";
 import { CapturePhone, CurrentHomePhone, devices, VariantPhone } from "./catalog/PhonePreview";
 import type { CaptureId } from "./catalog/captures";
 import {
@@ -31,6 +37,9 @@ type LabRoute = {
   screenId: CaptureId;
   variantId: string;
   scenarioId: string;
+  weatherId: WeatherScenarioId;
+  inboxId: InboxScenarioId;
+  fontScale: 1 | 1.3;
   deviceWidth: number;
 };
 
@@ -68,6 +77,9 @@ function readRoute(): LabRoute {
     screenId: "home-main",
     variantId: "claude-v2",
     scenarioId: "5d",
+    weatherId: "none",
+    inboxId: "empty",
+    fontScale: 1,
     deviceWidth: 390,
   };
   if (Platform.OS !== "web") return fallback;
@@ -84,6 +96,11 @@ function readRoute(): LabRoute {
     "5d";
   const requestedWidth = Number(search.get("device"));
   const deviceWidth = devices.find((item) => item.width === requestedWidth)?.width ?? 390;
+  const weatherId =
+    weatherScenarios.find((item) => item.id === search.get("weather"))?.id ?? fallback.weatherId;
+  const inboxId =
+    inboxScenarios.find((item) => item.id === search.get("inbox"))?.id ?? fallback.inboxId;
+  const fontScale = search.get("type") === "large" ? 1.3 : 1;
   return {
     page: parts[0] === "atlas" ? "atlas" : "compare",
     groupId:
@@ -93,6 +110,9 @@ function readRoute(): LabRoute {
     screenId: screen.id,
     variantId: variant?.id ?? "",
     scenarioId,
+    weatherId,
+    inboxId,
+    fontScale,
     deviceWidth,
   };
 }
@@ -105,6 +125,11 @@ function routeHash(route: LabRoute): string {
   const params = new URLSearchParams();
   params.set("device", String(route.deviceWidth));
   if (route.page === "compare" && route.variantId) params.set("scenario", route.scenarioId);
+  if (route.page === "compare" && route.variantId === "app-v2") {
+    params.set("weather", route.weatherId);
+    params.set("inbox", route.inboxId);
+    params.set("type", route.fontScale === 1.3 ? "large" : "normal");
+  }
   return `#${path}?${params.toString()}`;
 }
 
@@ -317,6 +342,49 @@ function Compare({
                 </View>
               </>
             ) : null}
+            {variant?.id === "app-v2" ? (
+              <>
+                <Text style={styles.controlLabel}>운영 홈 날씨 Mock</Text>
+                <View style={styles.chipRow}>
+                  {weatherScenarios.map((item) => (
+                    <Choice
+                      key={item.id}
+                      label={item.label}
+                      selected={item.id === route.weatherId}
+                      onPress={() => onNavigate({ weatherId: item.id })}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.controlLabel}>운영 홈 알림 Mock</Text>
+                <View style={styles.chipRow}>
+                  {inboxScenarios.map((item) => (
+                    <Choice
+                      key={item.id}
+                      label={item.label}
+                      selected={item.id === route.inboxId}
+                      onPress={() => onNavigate({ inboxId: item.id })}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.controlLabel}>글씨 크기 · Web 모의</Text>
+                <View style={styles.chipRow}>
+                  <Choice
+                    label="기본 1.0배"
+                    selected={route.fontScale === 1}
+                    onPress={() => onNavigate({ fontScale: 1 })}
+                  />
+                  <Choice
+                    label="큰 글씨 1.3배"
+                    selected={route.fontScale === 1.3}
+                    onPress={() => onNavigate({ fontScale: 1.3 })}
+                  />
+                </View>
+                <Text style={styles.meta}>
+                  날씨 조회 중·실패·미매핑은 운영 정책대로 스티커를 숨깁니다. 알림과 일정 조작은 Lab
+                  메모리에서만 바뀝니다.
+                </Text>
+              </>
+            ) : null}
           </>
         ) : null}
       </View>
@@ -367,15 +435,20 @@ function Compare({
           <Text style={styles.panelTitle}>{variant?.label ?? "등록된 시안 없음"}</Text>
           <Text style={styles.panelNote}>
             {variant
-              ? "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
+              ? variant.id === "app-v2"
+                ? "운영 홈과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
+                : "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
               : "이 화면의 새 시안은 아직 없습니다. 시안이 등록되면 기존 캡처와 나란히 비교합니다."}
           </Text>
           {variant ? (
             <View style={styles.phoneSpace}>
               <VariantPhone
-                key={`${screen.id}-${variant.id}-${route.scenarioId}`}
+                key={`${screen.id}-${variant.id}-${route.scenarioId}-${route.inboxId}`}
                 variant={variant}
                 scenarioId={route.scenarioId}
+                weatherId={route.weatherId}
+                inboxId={route.inboxId}
+                fontScale={route.fontScale}
                 device={device}
                 scale={scale}
                 onMessage={onMessage}
@@ -487,7 +560,7 @@ function LabApp() {
     return (
       <View style={styles.loading}>
         <Text style={styles.meta}>
-          {fontError ? "Gaegu 폰트를 읽지 못했습니다." : "폰트를 불러오는 중…"}
+          {fontError ? "폰트를 읽지 못했습니다." : "폰트를 불러오는 중…"}
         </Text>
       </View>
     );

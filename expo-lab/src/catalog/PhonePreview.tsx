@@ -3,6 +3,7 @@ import Svg, { Line, Path, Rect } from "react-native-svg";
 
 import { claudeHomeColor as c } from "../claude-home/tokens";
 import { CurrentHomeMockPreview } from "../current-home/MockPreview";
+import type { InboxScenarioId, WeatherScenarioId } from "../claude-home/validationScenarios";
 import { captureAssets } from "./captures";
 import type { CatalogScreen } from "./screens";
 import { captureThumbnails } from "./thumbnails";
@@ -107,12 +108,18 @@ function PreviewStatusBar({ width }: { width: number }) {
 export function VariantPhone({
   variant,
   scenarioId,
+  weatherId,
+  inboxId,
+  fontScale,
   device,
   scale = 1,
   onMessage,
 }: {
   variant: LabVariant;
   scenarioId: string;
+  weatherId: WeatherScenarioId;
+  inboxId: InboxScenarioId;
+  fontScale: 1 | 1.3;
   device: PreviewDevice;
   scale?: number;
   onMessage: (message: string) => void;
@@ -121,7 +128,7 @@ export function VariantPhone({
     <ScaledPhone width={device.width + 20} height={device.height + 20} scale={scale}>
       <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
         <PreviewStatusBar width={device.width} />
-        {variant.render({ scenarioId, onMessage, scale })}
+        {variant.render({ scenarioId, weatherId, inboxId, fontScale, onMessage, scale })}
       </View>
     </ScaledPhone>
   );

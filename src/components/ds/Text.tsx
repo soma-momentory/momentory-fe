@@ -1,4 +1,5 @@
-import { Text as RNText, type TextProps } from "react-native";
+import { createContext, useContext } from "react";
+import { StyleSheet, Text as RNText, useWindowDimensions, type TextProps } from "react-native";
 
 import { label as labelColor, maxFontScale, text, type TextToken } from "@/design/ds";
 
@@ -32,6 +33,14 @@ type Props = TextProps & {
   color?: string;
 };
 
+/** Lab Web의 큰 글씨 레이아웃 검사에만 사용한다. 운영 기본값은 1이다. */
+export const PreviewFontScaleContext = createContext(1);
+
+export function useEffectiveFontScale() {
+  const { fontScale } = useWindowDimensions();
+  return Math.max(fontScale, useContext(PreviewFontScaleContext));
+}
+
 export function Text({
   variant = "body1",
   color = labelColor.normal,
@@ -39,11 +48,27 @@ export function Text({
   style,
   ...rest
 }: Props) {
+  const previewScale = useContext(PreviewFontScaleContext);
+  const flat = StyleSheet.flatten([text[variant], style]);
+  // 홈 v2의 일부 텍스트는 화면 높이를 계산하면서 lineHeight도 이미 조정한다.
+  const lastStyle = Array.isArray(style) ? style[style.length - 1] : null;
+  const lineHeightHandled =
+    lastStyle != null && typeof lastStyle === "object" && "lineHeight" in lastStyle;
+  const scaled =
+    previewScale === 1
+      ? undefined
+      : {
+          fontSize: typeof flat.fontSize === "number" ? flat.fontSize * previewScale : undefined,
+          lineHeight:
+            !lineHeightHandled && typeof flat.lineHeight === "number"
+              ? flat.lineHeight * previewScale
+              : undefined,
+        };
   return (
     <RNText
       maxFontSizeMultiplier={maxFontSizeMultiplier}
       {...rest}
-      style={[text[variant], { color }, style]}
+      style={[text[variant], { color }, style, scaled]}
     />
   );
 }

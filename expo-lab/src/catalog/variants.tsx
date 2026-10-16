@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ClaudeHomeMockPreview } from "../claude-home/MockPreview";
 import { claudeHomeScenarios } from "../claude-home/scenarios";
 import { homeVariants } from "../claude-home/variants";
+import type { InboxScenarioId, WeatherScenarioId } from "../claude-home/validationScenarios";
 import type { CaptureId } from "./captures";
 
 export type VariantScenario = { id: string; label: string };
@@ -16,6 +17,9 @@ export type LabVariant = {
     scenarioId: string;
     onMessage: (message: string) => void;
     scale?: number;
+    weatherId: WeatherScenarioId;
+    inboxId: InboxScenarioId;
+    fontScale: 1 | 1.3;
   }) => ReactNode;
 };
 
@@ -25,7 +29,7 @@ export const labVariants: readonly LabVariant[] = homeVariants.map((variant) => 
   screenId: "home-main",
   label: variant.label,
   scenarios: claudeHomeScenarios,
-  render: ({ scenarioId, onMessage, scale }) =>
+  render: ({ scenarioId, onMessage, scale, weatherId, inboxId, fontScale }) =>
     variant.kind === "design" ? (
       <ClaudeHomeMockPreview
         key={`${variant.id}-${scenarioId}`}
@@ -39,6 +43,9 @@ export const labVariants: readonly LabVariant[] = homeVariants.map((variant) => 
         scenarioId={scenarioId}
         onMessage={onMessage}
         scale={scale}
+        weatherId={weatherId}
+        inboxId={inboxId}
+        fontScale={fontScale}
       />
     ),
 }));

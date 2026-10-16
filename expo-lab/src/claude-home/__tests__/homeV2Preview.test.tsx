@@ -29,7 +29,7 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
       } else {
         expect(screen.getByText(scenario.tasks[0]!.title)).toBeTruthy();
       }
-      // P2 계약 — 날씨 · 읽지 않음은 비어 있다
+      // 기본 시나리오 — 날씨 데이터와 읽지 않은 알림은 없다
       expect(screen.queryByLabelText(/날씨/)).toBeNull();
       expect(screen.getByRole("button", { name: "알림" })).toBeTruthy();
     },
@@ -59,7 +59,8 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
     await fireEvent.press(screen.getByRole("button", { name: "알림" }));
     measure.mockRestore();
     expect(onMessage).toHaveBeenNthCalledWith(1, "회고 진입은 Lab Mock 액션입니다.");
-    expect(onMessage).toHaveBeenNthCalledWith(2, "알림함은 운영 앱에서 열립니다.");
+    expect(screen.getByTestId("inbox-popover-ready")).toBeTruthy();
+    expect(onMessage).toHaveBeenCalledTimes(1);
   });
 
   it("운영 모듈(store · API · 라우터 · 계측)을 import 하지 않는다", () => {

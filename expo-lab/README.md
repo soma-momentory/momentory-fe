@@ -15,18 +15,18 @@ npm run lab:web
 
 ## 통합 범위와 확장 위치
 
-| 영역           | 파일                                                                             | 역할                                                                    |
-| -------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| 기존 화면 목록 | `src/catalog/screens.ts`                                                         | Vite Lab에서 이전한 7개 그룹·38개 화면명·경로·예시 데이터 표시          |
-| 기존 캡처      | `assets/current-app/`, `src/catalog/captures.ts`                                 | Vite Lab PNG 38개 바이트 동일 복사본과 상세 비교용 원본 참조            |
-| 갤러리 축소본  | `assets/current-app-thumbnails/`, `src/catalog/thumbnails.ts`                    | 540px PNG 38개. 목록에서만 사용하고 상세는 원본을 사용                  |
-| 기기 프레임    | `src/catalog/PhonePreview.tsx`                                                   | 실제 앱 캡처와 RN 시안의 공통 크기 선택·미리보기                        |
-| 시안 등록      | `src/catalog/variants.tsx`                                                       | 화면 ID별 시안·상태 목록. 쉼터·보관함·회고 시안을 여기에 추가           |
-| 홈 UI          | `src/claude-home/HomeView.tsx`, `variants.ts`                                    | 시안 원본 5a–5f RN UI(`design`)와 운영판 v2(`app`) 두 갈래 변형 등록    |
-| 운영판 v2      | `../src/features/home/ui/v2/HomeV2View.tsx`, `src/claude-home/HomeV2Preview.tsx` | 앱이 소유한 홈 v2 공유 뷰 + Lab Mock 어댑터(날씨 `null` · 알림 점 없음) |
-| Lab Mock       | `src/claude-home/MockPreview.tsx`, `scenarios.ts`                                | 일정 체크·추가·날씨 변경 등 로컬 상태와 가짜 액션만 제공                |
-| 기존 홈 RN UI  | `../src/features/home/ui/HomeView.tsx`, `src/current-home/MockPreview.tsx`       | 운영 앱과 동일한 화면 조립 코드, Lab 전용 Mock 데이터·행동              |
-| 도구 UI        | `src/App.tsx`                                                                    | 가상화된 목록, 그룹 바로가기, 단일 화면 선택, 시안 비교, URL 상태       |
+| 영역           | 파일                                                                             | 역할                                                                 |
+| -------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 기존 화면 목록 | `src/catalog/screens.ts`                                                         | Vite Lab에서 이전한 7개 그룹·38개 화면명·경로·예시 데이터 표시       |
+| 기존 캡처      | `assets/current-app/`, `src/catalog/captures.ts`                                 | Vite Lab PNG 38개 바이트 동일 복사본과 상세 비교용 원본 참조         |
+| 갤러리 축소본  | `assets/current-app-thumbnails/`, `src/catalog/thumbnails.ts`                    | 540px PNG 38개. 목록에서만 사용하고 상세는 원본을 사용               |
+| 기기 프레임    | `src/catalog/PhonePreview.tsx`                                                   | 실제 앱 캡처와 RN 시안의 공통 크기 선택·미리보기                     |
+| 시안 등록      | `src/catalog/variants.tsx`                                                       | 화면 ID별 시안·상태 목록. 쉼터·보관함·회고 시안을 여기에 추가        |
+| 홈 UI          | `src/claude-home/HomeView.tsx`, `variants.ts`                                    | 시안 원본 5a–5f RN UI(`design`)와 운영판 v2(`app`) 두 갈래 변형 등록 |
+| 운영판 v2      | `../src/features/home/ui/v2/HomeV2View.tsx`, `src/claude-home/HomeV2Preview.tsx` | 앱이 소유한 홈 v2 공유 뷰 + Lab Mock 어댑터                          |
+| Lab Mock       | `src/claude-home/MockPreview.tsx`, `scenarios.ts`                                | 일정 체크·추가·날씨 변경 등 로컬 상태와 가짜 액션만 제공             |
+| 기존 홈 RN UI  | `../src/features/home/ui/HomeView.tsx`, `src/current-home/MockPreview.tsx`       | 운영 앱과 동일한 화면 조립 코드, Lab 전용 Mock 데이터·행동           |
+| 도구 UI        | `src/App.tsx`                                                                    | 가상화된 목록, 그룹 바로가기, 단일 화면 선택, 시안 비교, URL 상태    |
 
 시안이 없는 화면은 기존 캡처를 표시하고 오른쪽에 “시안 등록 대기 중”을 명시한다. 홈 이외의 기존 화면은 아직 RN UI로 이전하지 않는다. 왼쪽의 기존 홈은 보존된 `src/features/home/ui/HomeView.tsx`를 Lab Mock으로 그린다. 운영 라우트는 P3에서 오른쪽 **운영판 v2**와 같은 `src/features/home/ui/v2/HomeV2View.tsx`로 전환했다. 운영 라우트만 Store·API·Router·Analytics를 연결하고 Lab은 Mock만 주입한다. Claude 홈 UI는 「시안 원본」 변형으로 남고 운영 화면에서는 import하지 않는다. 앱은 Lab을 import하지 않는다(`eslint.config.js`가 막는다). 자세한 의존성·제약·검증은 [홈 UI 이전 기록](HOME_UI_VALIDATION.md)에 있다.
 
@@ -39,6 +39,14 @@ npm run lab:web
 Lab 은 `@expo-google-fonts/gaegu` 를 더 이상 쓰지 않는다(결정 DN-4). `src/App.tsx` 가 앱의 `assets/fonts/Gaegu-Regular.ttf` ·
 `Gaegu-Bold.ttf` 를 **앱과 같은 이름**(`"Gaegu-Regular"` · `"Gaegu-Bold"`)으로 등록하고, 시안 원본(`claude-home/tokens.ts`)도 그 이름을 쓴다.
 파일은 그 의존성 0.4.1 의 400 · 700 파일을 이름만 바꾼 것이라(sha256 은 `assets/fonts/README.md`) 시안 원본의 굵기와 시각은 그대로다.
+
+## 운영 홈 UI 시나리오 (P1)
+
+`app-v2` 변형은 운영 라우트 `app/(tabs)/home.tsx`와 동일한 `HomeV2View`를 사용한다. 화면 크기 375·390·402·430pt, 일정 0·2·5·10개와 긴 제목, 날씨 11가지, 알림 6가지, 일반/큰 글씨를 선택할 수 있다. 예: `#compare/home-main/app-v2?device=375&scenario=5g&weather=thunder&inbox=long&type=large`. 선택한 상태는 URL 해시에 저장된다.
+
+날씨는 운영 `toHomeWeatherView` 매핑을 통과하며 야간·미매핑·데이터 없음·로딩·오류는 운영 정책처럼 스티커를 표시하지 않는다. 알림은 운영 `InboxPopover`를 사용하고, 팝오버 안에서 읽음 처리해도 Lab의 메모리 상태만 바뀐다. 일정 추가·수정은 운영 `ScheduleEditBar`를 열어 Lab의 일정 배열만 바꾼다. 삭제 확인·체크·접기·펼치기도 같은 공유 UI에서 조작한다. 긴 일정 제목은 운영 정책상 한 줄로 줄이되 접근성 이름에는 전체 제목이 남는다.
+
+Lab Web의 큰 글씨 선택은 공유 DS 글자와 홈 레이아웃에 1.3배 프리뷰 배율을 적용한다. 앱의 실제 OS 글꼴 크기 설정이나 네이티브 접근성을 대체하지 않는다. 현재 main의 운영 홈은 `src/design/ds/typography.ts`의 교보 손글씨 2025를 쓴다. Pretendard 4종은 로그인 화면만 쓰므로 홈 시나리오에서는 적용되지 않는다. Lab은 홈에 필요한 교보 손글씨와 Gaegu를 앱과 같은 자산 파일에서 등록한다. iOS·Android의 글꼴 렌더링·화면 터치·키보드·권한은 실제 시뮬레이터에서 최종 확인해야 한다.
 
 ## 홈 v2 비교 캡처 절차
 

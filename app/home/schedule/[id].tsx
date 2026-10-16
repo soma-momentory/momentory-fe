@@ -34,6 +34,7 @@ export default function ScheduleEdit() {
   return (
     <ScheduleEditBar
       mode="edit"
+      onDismiss={() => router.back()}
       initialTitle={schedule.title}
       readOnly={!manual}
       caption={manual ? "일정 수정" : "캘린더에서 가져온 일정이라 제목을 고칠 수 없어요"}

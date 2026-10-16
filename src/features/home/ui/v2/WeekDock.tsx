@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 
 import { EmotionPebble } from "@/components/ds/EmotionPebble";
 import { SelectLift } from "@/components/ds/SelectLift";
-import { Text } from "@/components/ds/Text";
+import { Text, useEffectiveFontScale } from "@/components/ds/Text";
 import { homeV2, maxFontScale } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";
@@ -51,7 +51,7 @@ export function dockDayName(day: WeekDay) {
 }
 
 export function WeekDock({ days, today }: Props) {
-  const { fontScale } = useWindowDimensions();
+  const fontScale = useEffectiveFontScale();
   const scale = Math.min(fontScale, maxFontScale);
   const [picked, setPicked] = useState<string | null>(null);
   const day = days.find((d) => d.date === picked) ?? null;

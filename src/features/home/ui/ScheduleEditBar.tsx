@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,6 +42,7 @@ type Props = {
   /** 캘린더에서 가져온 일정 — 제목을 고칠 수 없다(`12-c`) */
   readOnly?: boolean;
   onSubmit: (title: string) => void;
+  onDismiss: () => void;
   /** 바 위 한 줄 — 수정이면 「일정 수정」, 추가면 어디에 저장되는지 */
   caption: string;
 };
@@ -52,6 +52,7 @@ export function ScheduleEditBar({
   initialTitle = "",
   readOnly = false,
   onSubmit,
+  onDismiss,
   caption,
 }: Props) {
   const [title, setTitle] = useState(initialTitle);
@@ -62,7 +63,7 @@ export function ScheduleEditBar({
   /** 바 아래 시스템 바 여백 — 키보드가 없을 때의 바닥 숨 */
   const bottomPad = Math.max(insets.bottom, layout.minBottomInset) + layout.androidNavGap;
 
-  const close = () => router.back();
+  const close = onDismiss;
   const submit = () => {
     if (!ready) return;
     onSubmit(title);

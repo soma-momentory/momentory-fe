@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BackHandler,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   useWindowDimensions,
@@ -143,6 +144,7 @@ export function InboxPopover({
     onDismissRef.current = onDismiss;
   }, [onDismiss]);
   useEffect(() => {
+    if (Platform.OS === "web") return;
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
       onDismissRef.current();
       return true;

@@ -1,3 +1,5 @@
+import { router } from "expo-router";
+
 import { useDay } from "@/features/home/model/day";
 import { ScheduleEditBar } from "@/features/home/ui/ScheduleEditBar";
 
@@ -23,6 +25,7 @@ export default function NewSchedule() {
   return (
     <ScheduleEditBar
       mode="add"
+      onDismiss={() => router.back()}
       caption="모멘토리에만 저장돼요 · 캘린더에는 추가되지 않아요"
       onSubmit={(title) => addSchedule(title)}
     />
