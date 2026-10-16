@@ -126,9 +126,14 @@ function routeHash(route: LabRoute): string {
   const params = new URLSearchParams();
   params.set("device", String(route.deviceWidth));
   if (route.page === "compare" && route.variantId) params.set("scenario", route.scenarioId);
-  if (route.page === "compare" && route.variantId === "app-v2") {
-    params.set("weather", route.weatherId);
-    params.set("inbox", route.inboxId);
+  if (
+    route.page === "compare" &&
+    (route.variantId === "app-v2" || route.variantId === "app-rest")
+  ) {
+    if (route.variantId === "app-v2") {
+      params.set("weather", route.weatherId);
+      params.set("inbox", route.inboxId);
+    }
     params.set(
       "type",
       route.fontScale === 1.5 ? "1.5" : route.fontScale === 1.3 ? "large" : "normal",
@@ -281,8 +286,8 @@ function Compare({
       <Text style={styles.sectionKicker}>SCREEN COMPARISON</Text>
       <Text style={styles.sectionTitle}>{screen.title} · 기존 화면과 시안</Text>
       <Text style={styles.description}>
-        홈은 기존 앱 UI 부품을 재사용한 실제 React Native 화면과 Claude 시안을 함께 조작할 수
-        있습니다. 다른 화면의 기존 캡처는 이전 참고 자료이며 모든 동작은 Lab Mock입니다.
+        홈과 쉼터는 운영 앱과 공유하는 React Native UI를 Lab Mock으로 조작할 수 있습니다. 다른
+        화면의 기존 캡처는 이전 참고 자료이며 모든 동작은 Lab Mock입니다.
       </Text>
       <View style={styles.controls}>
         <Text style={styles.controlLabel}>화면 그룹</Text>
@@ -346,30 +351,34 @@ function Compare({
                 </View>
               </>
             ) : null}
-            {variant?.id === "app-v2" ? (
+            {variant?.id === "app-v2" || variant?.id === "app-rest" ? (
               <>
-                <Text style={styles.controlLabel}>운영 홈 날씨 Mock</Text>
-                <View style={styles.chipRow}>
-                  {weatherScenarios.map((item) => (
-                    <Choice
-                      key={item.id}
-                      label={item.label}
-                      selected={item.id === route.weatherId}
-                      onPress={() => onNavigate({ weatherId: item.id })}
-                    />
-                  ))}
-                </View>
-                <Text style={styles.controlLabel}>운영 홈 알림 Mock</Text>
-                <View style={styles.chipRow}>
-                  {inboxScenarios.map((item) => (
-                    <Choice
-                      key={item.id}
-                      label={item.label}
-                      selected={item.id === route.inboxId}
-                      onPress={() => onNavigate({ inboxId: item.id })}
-                    />
-                  ))}
-                </View>
+                {variant?.id === "app-v2" ? (
+                  <>
+                    <Text style={styles.controlLabel}>운영 홈 날씨 Mock</Text>
+                    <View style={styles.chipRow}>
+                      {weatherScenarios.map((item) => (
+                        <Choice
+                          key={item.id}
+                          label={item.label}
+                          selected={item.id === route.weatherId}
+                          onPress={() => onNavigate({ weatherId: item.id })}
+                        />
+                      ))}
+                    </View>
+                    <Text style={styles.controlLabel}>운영 홈 알림 Mock</Text>
+                    <View style={styles.chipRow}>
+                      {inboxScenarios.map((item) => (
+                        <Choice
+                          key={item.id}
+                          label={item.label}
+                          selected={item.id === route.inboxId}
+                          onPress={() => onNavigate({ inboxId: item.id })}
+                        />
+                      ))}
+                    </View>
+                  </>
+                ) : null}
                 <Text style={styles.controlLabel}>글씨 크기 · Web 모의</Text>
                 <View style={styles.chipRow}>
                   <Choice
@@ -392,10 +401,12 @@ function Compare({
                   1.5배는 운영 앱의 글씨 배율 상한을 넘겨 배치를 점검하는 Web 모의입니다. 실제 OS
                   변경과 앱 재시작은 네이티브에서 별도 확인해야 합니다.
                 </Text>
-                <Text style={styles.meta}>
-                  날씨 조회 중·실패·미매핑은 운영 정책대로 스티커를 숨깁니다. 알림과 일정 조작은 Lab
-                  메모리에서만 바뀝니다.
-                </Text>
+                {variant?.id === "app-v2" ? (
+                  <Text style={styles.meta}>
+                    날씨 조회 중·실패·미매핑은 운영 정책대로 스티커를 숨깁니다. 알림과 일정 조작은
+                    Lab 메모리에서만 바뀝니다.
+                  </Text>
+                ) : null}
               </>
             ) : null}
           </>
@@ -448,8 +459,8 @@ function Compare({
           <Text style={styles.panelTitle}>{variant?.label ?? "등록된 시안 없음"}</Text>
           <Text style={styles.panelNote}>
             {variant
-              ? variant.id === "app-v2"
-                ? "운영 홈과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
+              ? variant.id === "app-v2" || variant.id === "app-rest"
+                ? "운영 앱과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
                 : "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
               : "이 화면의 새 시안은 아직 없습니다. 시안이 등록되면 기존 캡처와 나란히 비교합니다."}
           </Text>
@@ -492,7 +503,7 @@ function LabHeader({
       <Text style={styles.kicker}>MOMENTORY · EXPO DESIGN LAB</Text>
       <Text style={styles.title}>Design Lab</Text>
       <Text style={styles.description}>
-        홈의 실제 React Native UI를 비교·조작합니다. 38개 기존 화면 캡처는 이전 참고 자료로
+        홈과 쉼터의 실제 React Native UI를 비교·조작합니다. 38개 기존 화면 캡처는 이전 참고 자료로
         보존합니다. 운영 앱과 API에는 연결되지 않습니다.
       </Text>
       <View style={styles.navigation}>
@@ -512,7 +523,7 @@ function LabApp() {
   });
   const [route, setRoute] = useState(readRoute);
   const [message, setMessage] = useState(
-    "홈의 두 실제 UI에서 일정과 감정, 캐릭터를 눌러 비교할 수 있어요.",
+    "공유 UI에서 카드와 버튼을 눌러 Lab Mock 동작을 비교할 수 있어요.",
   );
   const { width: viewportWidth } = useWindowDimensions();
   const atlasListRef = useRef<FlatList<AtlasRow>>(null);
