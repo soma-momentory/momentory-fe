@@ -2,41 +2,17 @@ import { currentUserId } from "@/features/auth/model/auth";
 import { isServerId } from "@/features/diary/data/diaryApi";
 import { clock } from "@/lib/clock";
 import { authedRequest } from "@/lib/http";
+import { locateRounded, requestLocationPermission, type RoundedPosition } from "@/lib/location";
 
 export type WeatherResult =
   { kind: "ready"; weather: string } | { kind: "denied" | "unavailable" | "skipped" };
 
-// 앱을 재빌드하기 전의 dev client에서도 일기 읽기를 막지 않는다.
-async function locate() {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const location: typeof import("expo-location") = require("expo-location");
-    const permission = await location.requestForegroundPermissionsAsync();
-    if (!permission.granted) return { kind: "denied" } as const;
-    if (!(await location.hasServicesEnabledAsync())) return { kind: "unavailable" } as const;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    try {
-      const position = await Promise.race([
-        location.getCurrentPositionAsync({ accuracy: location.Accuracy.Balanced }),
-        new Promise<null>((resolve) => {
-          timer = setTimeout(() => resolve(null), 12_000);
-        }),
-      ]);
-      if (position == null) return { kind: "unavailable" } as const;
-      const { latitude, longitude } = position.coords;
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
-        return { kind: "unavailable" } as const;
-      return {
-        kind: "located",
-        latitude: Math.round(latitude * 100) / 100,
-        longitude: Math.round(longitude * 100) / 100,
-      } as const;
-    } finally {
-      if (timer) clearTimeout(timer);
-    }
-  } catch {
-    return { kind: "unavailable" } as const;
-  }
+// 일기는 「묻고 → 위치」다(1.3.0 부터). 위치는 홈 날씨와 같은 `lib/location.ts` 를 지난다 —
+// 모듈이 없는 옛 dev client 에서도 던지지 않아 일기 읽기를 막지 않는다.
+async function locate(): Promise<RoundedPosition | { kind: "denied" }> {
+  const permission = await requestLocationPermission();
+  if (permission !== "granted") return { kind: permission };
+  return locateRounded();
 }
 
 export async function recordDiaryWeather(id: string, date: string): Promise<WeatherResult> {
