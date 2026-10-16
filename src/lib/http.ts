@@ -43,6 +43,8 @@ type RequestOptions = {
   timeoutMs?: number;
   /** 화면이 벗어날 때 등 바깥에서 취소하는 신호 */
   signal?: AbortSignal;
+  /** 사용자별 요청은 토큰을 읽은 뒤에도 이 ID의 세션일 때만 보낸다 */
+  expectedUserId?: number;
 };
 
 /**
@@ -85,7 +87,7 @@ export async function authedRequest<T>(
   const baseUrl = getApiBaseUrl();
   if (!baseUrl) return { ok: false, error: { code: "unconfigured" } };
 
-  const token = await getAccessToken();
+  const token = await getAccessToken(options?.expectedUserId);
   if (token == null) return { ok: false, error: { code: "unauthenticated" } };
 
   const controller = new AbortController();

@@ -20,7 +20,7 @@ jest.mock("@/lib/config", () => ({
 
 const baseUrl = jest.mocked(getApiBaseUrl);
 
-type SecureMock = { __store: Map<string, string> };
+type SecureMock = { __store: Map<string, string>; getItemAsync: jest.Mock };
 const secure = jest.requireMock("expo-secure-store") as SecureMock;
 
 /** 살아 있는 세션 — 없으면 요청 자체가 나가지 않는다 */
@@ -142,6 +142,33 @@ describe("응답", () => {
 });
 
 describe("보내지 않는 경우 — fail-closed", () => {
+  it("토큰 조회 중 계정이 바뀌면 사용자별 요청을 새 계정 토큰으로 보내지 않는다", async () => {
+    let release!: (value: string | null) => void;
+    const pending = new Promise<string | null>((resolve) => {
+      release = resolve;
+    });
+    secure.getItemAsync.mockImplementationOnce(() => pending);
+    const fetchMock = mockFetch(async () => respond(204, ""));
+
+    const request = authedRequest(
+      "POST",
+      "/api/v1/notifications/read",
+      { ids: ["1"] },
+      {
+        expectedUserId: 7,
+      },
+    );
+    const nextSession = JSON.parse(secure.__store.get(SESSION_KEY)!) as Record<string, unknown>;
+    secure.__store.set(
+      SESSION_KEY,
+      JSON.stringify({ ...nextSession, userId: 8, accessToken: "other-access" }),
+    );
+    release(secure.__store.get(SESSION_KEY)!);
+
+    await expect(request).resolves.toEqual({ ok: false, error: { code: "unauthenticated" } });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("세션이 없으면 요청하지 않고 unauthenticated 로 닫는다", async () => {
     // 이미 죽은 걸 아는 토큰을 보내 401 을 받느니 여기서 접는다
     secure.__store.clear();
