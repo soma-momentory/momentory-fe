@@ -130,5 +130,7 @@ export const homeV2 = {
     tape: "-2deg",
     add: "-3deg",
     ground: "-3deg",
+    weather: "7deg",
+    weatherTape: "-4deg",
   },
 } as const;

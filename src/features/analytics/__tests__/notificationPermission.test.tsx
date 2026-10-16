@@ -15,7 +15,8 @@ import { seedDiaries, seedProfile } from "@/testing/fixtures";
  * 결과가 어디서 왔는지와 함께 남는지**만 본다. 설정 시각·예약은 여전히 보내지 않는다.
  */
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), setParams: jest.fn() },
+  useLocalSearchParams: jest.fn(() => ({})),
 }));
 jest.mock("@/features/analytics", () => ({
   ...jest.requireActual("@/features/analytics"),

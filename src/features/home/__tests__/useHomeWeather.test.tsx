@@ -161,7 +161,7 @@ describe("허용 · 안내 · 거부", () => {
     const { result } = await mount();
     expect(result.current.status).toBe("ready");
     expect(result.current.weather).toEqual(SUNNY);
-    expect(fetchCurrentWeather).toHaveBeenCalledWith(SEOUL);
+    expect(fetchCurrentWeather).toHaveBeenCalledWith(SEOUL, 7);
     expect(requestLocationPermission).not.toHaveBeenCalled();
   });
 

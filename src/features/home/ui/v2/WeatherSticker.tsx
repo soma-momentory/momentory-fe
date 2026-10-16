@@ -7,15 +7,14 @@ import type { HomeWeatherView } from "./types";
 import { weatherStickerForKey } from "./weatherStickers";
 
 /**
- * 홈 v2 히어로의 **날씨 스티커**(P4 · 계획 §4.5 · HW-4 · HW-5) — 아직 어느 화면도 그리지 않는다.
+ * 홈 v2 히어로의 **날씨 스티커**(P4 · 계획 §4.5 · HW-4 · HW-5).
  *
  * - `weather` 가 없거나 그림이 없는 열쇠면 **아무것도 그리지 않는다** — 빈 틀도 문구도 없다(HW-4).
  * - 누르면 출처 · 갱신 시각 시트(`WeatherCreditSheet`)를 여는 것은 부르는 쪽 몫이다(`onPress`).
  * - 자리(히어로 오른쪽 위 · `position`)는 부르는 쪽이 `style` 로 정한다 — 이 컴포넌트는 종이 한 장이다.
  *
- * 크기 · 기울기는 홈 v2 시안의 Lab 번역(`HomeView.tsx` 의 `weatherSticker`)을 따르고, 색 · 그림자는
- * `homeV2` 토큰이다. 스티커 기울기(7°) · 테이프 기울기(−4°)는 `homeV2.tilt` 에 아직 이름이 없다 — 홈 화면에
- * 붙일 때 `homeV2.tilt.weather` · `homeV2.tilt.weatherTape` 로 옮긴다(결정 H2 · `ds/` 는 이 Task 의 허용 파일 밖).
+ * 크기 · 기울기는 홈 v2 시안의 Lab 번역(`HomeView.tsx` 의 `weatherSticker`)을 따르고,
+ * 색 · 그림자 · 기울기는 `homeV2` 토큰이다.
  */
 export function WeatherSticker({
   weather,
@@ -58,7 +57,7 @@ const styles = StyleSheet.create({
     paddingBottom: 18,
     backgroundColor: homeV2.color.white,
     boxShadow: homeV2.shadow.sticker,
-    transform: [{ rotate: "7deg" }],
+    transform: [{ rotate: homeV2.tilt.weather }],
   },
   image: { width: "100%", height: "100%", backgroundColor: homeV2.color.card },
   tape: {
@@ -69,6 +68,6 @@ const styles = StyleSheet.create({
     height: 16,
     backgroundColor: homeV2.color.weatherTape,
     opacity: 0.85,
-    transform: [{ rotate: "-4deg" }],
+    transform: [{ rotate: homeV2.tilt.weatherTape }],
   },
 });

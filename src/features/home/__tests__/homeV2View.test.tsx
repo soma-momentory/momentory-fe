@@ -167,12 +167,16 @@ describe("홈 v2 — 히어로 문안(계획 §2.2)", () => {
 
 describe("홈 v2 — 종(알림)", () => {
   it("hasUnreadNotifications == false 면 점도 「읽지 않은」 접근성 이름도 없다", async () => {
+    const measure = jest.spyOn(View.prototype, "measureInWindow").mockImplementation((callback) => {
+      callback(0, 24, 44, 44);
+    });
     const a = actions();
     const r = await show(baseModel({ hasUnreadNotifications: false }), a);
     expect(r.queryByTestId("home-v2-unread-dot", { includeHiddenElements: true })).toBeNull();
     expect(r.queryByLabelText(/읽지 않은/)).toBeNull();
     await fireEvent.press(r.getByRole("button", { name: "알림" }));
-    expect(a.onOpenNotifications).toHaveBeenCalledTimes(1);
+    expect(a.onOpenNotifications).toHaveBeenCalledWith(24 + 44 + 4);
+    measure.mockRestore();
   });
 
   it("읽지 않은 소식이 있으면 점과 이름이 함께 바뀐다 — 숫자는 없다(P5 계약)", async () => {
