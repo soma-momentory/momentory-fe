@@ -34,7 +34,7 @@ export function RestHubView({ summary, contents, onOpenCards, onOpenContent }: P
           <View style={styles.wishTape} />
           <View style={styles.wishCopy}>
             <Text variant="caption1" style={styles.wishEyebrow}>
-              내 바람카드
+              바람카드
             </Text>
             <Text variant={longSummary ? "body1" : "heading1"} style={styles.wishSummary}>
               {summary}

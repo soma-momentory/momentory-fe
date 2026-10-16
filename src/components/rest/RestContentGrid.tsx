@@ -60,7 +60,7 @@ export function RestContentGrid({ items, onOpen }: Props) {
                       {item.title}
                     </Text>
                     <Text variant="caption2" style={styles.duration}>
-                      {item.duration}
+                      {item.duration.replace(/^약 /, "")}
                     </Text>
                   </View>
                   <Text variant="caption1" style={styles.description}>
