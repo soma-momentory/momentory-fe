@@ -128,7 +128,9 @@ function routeHash(route: LabRoute): string {
   if (route.page === "compare" && route.variantId) params.set("scenario", route.scenarioId);
   if (
     route.page === "compare" &&
-    (route.variantId === "app-v2" || route.variantId === "app-rest")
+    (route.variantId === "app-v2" ||
+      route.variantId === "app-rest" ||
+      route.variantId === "app-archive")
   ) {
     if (route.variantId === "app-v2") {
       params.set("weather", route.weatherId);
@@ -286,7 +288,7 @@ function Compare({
       <Text style={styles.sectionKicker}>SCREEN COMPARISON</Text>
       <Text style={styles.sectionTitle}>{screen.title} · 기존 화면과 시안</Text>
       <Text style={styles.description}>
-        홈과 쉼터는 운영 앱과 공유하는 React Native UI를 Lab Mock으로 조작할 수 있습니다. 다른
+        홈·쉼터·보관함은 운영 앱과 공유하는 React Native UI를 Lab Mock으로 조작할 수 있습니다. 다른
         화면의 기존 캡처는 이전 참고 자료이며 모든 동작은 Lab Mock입니다.
       </Text>
       <View style={styles.controls}>
@@ -351,7 +353,9 @@ function Compare({
                 </View>
               </>
             ) : null}
-            {variant?.id === "app-v2" || variant?.id === "app-rest" ? (
+            {variant?.id === "app-v2" ||
+            variant?.id === "app-rest" ||
+            variant?.id === "app-archive" ? (
               <>
                 {variant?.id === "app-v2" ? (
                   <>
@@ -459,7 +463,7 @@ function Compare({
           <Text style={styles.panelTitle}>{variant?.label ?? "등록된 시안 없음"}</Text>
           <Text style={styles.panelNote}>
             {variant
-              ? variant.id === "app-v2" || variant.id === "app-rest"
+              ? variant.id === "app-v2" || variant.id === "app-rest" || variant.id === "app-archive"
                 ? "운영 앱과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
                 : "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
               : "이 화면의 새 시안은 아직 없습니다. 시안이 등록되면 기존 캡처와 나란히 비교합니다."}
@@ -503,8 +507,8 @@ function LabHeader({
       <Text style={styles.kicker}>MOMENTORY · EXPO DESIGN LAB</Text>
       <Text style={styles.title}>Design Lab</Text>
       <Text style={styles.description}>
-        홈과 쉼터의 실제 React Native UI를 비교·조작합니다. 38개 기존 화면 캡처는 이전 참고 자료로
-        보존합니다. 운영 앱과 API에는 연결되지 않습니다.
+        홈·쉼터·보관함의 실제 React Native UI를 비교·조작합니다. 38개 기존 화면 캡처는 이전 참고
+        자료로 보존합니다. 운영 앱과 API에는 연결되지 않습니다.
       </Text>
       <View style={styles.navigation}>
         <Choice label="화면 선택 · 시안 비교" selected={page === "compare"} onPress={onCompare} />
