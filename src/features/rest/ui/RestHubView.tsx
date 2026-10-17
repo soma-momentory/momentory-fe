@@ -26,8 +26,12 @@ export function RestHubView({
 }: Props) {
   const longSummary = summary.length > 60;
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <View style={styles.headingPaper}>
+    <ScrollView
+      testID="studio-rest-root"
+      style={styles.root}
+      contentContainerStyle={styles.content}
+    >
+      <View testID="studio-rest-heading" style={styles.headingPaper}>
         <Text variant="title3Hand" style={styles.heading}>
           쉼터
         </Text>
@@ -50,20 +54,25 @@ export function RestHubView({
           ]}
         >
           <View style={styles.wishTape} />
-          <View style={styles.wishCopy}>
+          <View testID="studio-rest-wish-copy" style={styles.wishCopy}>
             <Text variant="caption1" style={styles.wishEyebrow}>
               바람카드
             </Text>
-            <Text variant={longSummary ? "body1" : "heading1"} style={styles.wishSummary}>
+            <Text
+              testID="studio-rest-wish-summary"
+              variant={longSummary ? "body1" : "heading1"}
+              style={styles.wishSummary}
+            >
               {summary}
             </Text>
             <Text variant="caption1" style={styles.wishLink}>
               바람카드 모아보기 ›
             </Text>
           </View>
-          <View style={styles.wishPhoto}>
+          <View testID="studio-rest-wish-photo" style={styles.wishPhoto}>
             <View style={styles.wishPhotoImage}>
               <Image
+                testID="studio-rest-baba-image"
                 source={require("../../../../assets/rest/baba-sleep.webp")}
                 style={styles.wishBaba}
                 contentFit="contain"
@@ -77,7 +86,7 @@ export function RestHubView({
         </View>
       </RestCardPressable>
 
-      <View style={styles.section}>
+      <View testID="studio-rest-content-section" style={styles.section}>
         <Text variant="headline1" style={styles.sectionTitle}>
           {REST_CONTENTS_PROMPT}
         </Text>

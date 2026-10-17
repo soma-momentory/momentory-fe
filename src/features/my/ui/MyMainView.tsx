@@ -47,8 +47,12 @@ export function MyMainView({
   onOpenWithdraw,
 }: Props) {
   return (
-    <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-      <View style={styles.titleTape}>
+    <ScrollView
+      testID="studio-my-root"
+      contentContainerStyle={styles.body}
+      showsVerticalScrollIndicator={false}
+    >
+      <View testID="studio-my-title" style={styles.titleTape}>
         <Text variant="title1Hand" color={labelColor.normal}>
           마이
         </Text>
@@ -69,7 +73,12 @@ export function MyMainView({
         <View style={styles.profileTop}>
           <View style={styles.profileCopy}>
             <View style={styles.nicknameRow}>
-              <Text variant="title3Hand" color={labelColor.strong} style={styles.nickname}>
+              <Text
+                testID="studio-my-nickname"
+                variant="title3Hand"
+                color={labelColor.strong}
+                style={styles.nickname}
+              >
                 {nickname}
               </Text>
               <Text variant="title3Hand" color={labelColor.strong}>
@@ -81,6 +90,7 @@ export function MyMainView({
             </Text>
           </View>
           <View
+            testID="studio-my-baba"
             style={styles.babaFrame}
             pointerEvents="none"
             accessibilityElementsHidden
