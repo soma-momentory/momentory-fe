@@ -28,7 +28,11 @@ describe("MyMainView", () => {
     );
 
     for (const text of [
+      "마이",
       "모멘토리",
+      "모멘토리와 함께한 기록",
+      "일기 쓴 날",
+      "12일",
       "일기 12일 기록",
       "알림 설정",
       "캘린더 연동",
@@ -42,6 +46,12 @@ describe("MyMainView", () => {
     ]) {
       expect(screen.getByText(text)).toBeTruthy();
     }
+    expect(screen.getByTestId("my-profile-card")).toBeTruthy();
+    // 장식용 바바는 화면에 그리되 낭독기 탐색에서는 숨긴다.
+    expect(screen.queryByTestId("home-v2-baba")).toBeNull();
+    // HTML의 쉼/바람카드 예시 수치는 운영 데이터가 전달되지 않아 표시하지 않는다.
+    expect(screen.queryByText("쉼 5번")).toBeNull();
+    expect(screen.queryByText("바람카드 3장 모았어요")).toBeNull();
   });
 
   it("행 누름은 제공된 콜백으로 전달하고 연결된 캘린더는 누르지 못한다", async () => {
@@ -90,6 +100,7 @@ describe("MyMainView", () => {
     );
 
     expect(screen.getByText(nickname)).toBeTruthy();
+    expect(screen.getByText("0일")).toBeTruthy();
     expect(screen.getByText("일기 0일 기록")).toBeTruthy();
     expect(screen.getByText("설정을 저장하지 못했어요.")).toBeTruthy();
     expect(screen.getByText("탈퇴하지 못했어요.")).toBeTruthy();
