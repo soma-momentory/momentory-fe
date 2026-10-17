@@ -6,6 +6,8 @@ import { claudeHomeScenarios } from "../claude-home/scenarios";
 import { homeVariants } from "../claude-home/variants";
 import type { InboxScenarioId, WeatherScenarioId } from "../claude-home/validationScenarios";
 import type { CaptureId } from "./captures";
+import { MyMainPreview, myMainScenarios } from "../my/MyMainPreview";
+import { ReportPreview, reportScenarios } from "../report/ReportPreview";
 import { RestHubPreview, restHubScenarios } from "../rest/RestHubPreview";
 
 export type VariantScenario = { id: string; label: string };
@@ -80,6 +82,34 @@ export const labVariants: readonly LabVariant[] = [
     scenarios: archiveScenarios,
     render: ({ scenarioId, onMessage, fontScale }) => (
       <ArchivePreview
+        key={scenarioId}
+        scenarioId={scenarioId}
+        onMessage={onMessage}
+        fontScale={fontScale}
+      />
+    ),
+  },
+  {
+    id: "app-my",
+    screenId: "my-main",
+    label: "운영 마이 · 공유 UI",
+    scenarios: myMainScenarios,
+    render: ({ scenarioId, onMessage, fontScale }) => (
+      <MyMainPreview
+        key={scenarioId}
+        scenarioId={scenarioId}
+        onMessage={onMessage}
+        fontScale={fontScale}
+      />
+    ),
+  },
+  {
+    id: "app-report",
+    screenId: "report",
+    label: "운영 리포트 · 공유 UI",
+    scenarios: reportScenarios,
+    render: ({ scenarioId, onMessage, fontScale }) => (
+      <ReportPreview
         key={scenarioId}
         scenarioId={scenarioId}
         onMessage={onMessage}

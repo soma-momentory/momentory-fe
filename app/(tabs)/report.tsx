@@ -2,18 +2,12 @@ import { track } from "@/features/analytics";
 import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-
-import { Button, Card, Icon, Spinner, TabScreen, Text } from "@/components/ds";
-import { WeekCountList } from "@/components/report/WeekCountList";
-import { WeekEmotionCard } from "@/components/report/WeekEmotionCard";
-import { WeekMoodSummary } from "@/components/report/WeekMoodSummary";
+import { TabScreen } from "@/components/ds";
 import { WeekPickerSheet } from "@/components/report/WeekPickerSheet";
-import { WeekWishCard } from "@/components/report/WeekWishCard";
-import { label as labelColor, layout, space } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { weekEnd } from "@/features/report/model/report";
 import { isThisWeek, useWeeklyReport, weekOptions } from "@/features/report/model/weeklyReport";
+import { ReportView } from "@/features/report/ui/ReportView";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -37,8 +31,8 @@ import { formatKoreanDateShort } from "@/lib/day";
  * ## 화면은 네 덩이다
  *
  * **주차 이동 → 한 주를 한 문장으로 → 감정 더미 일곱 → 바람카드 → 이번 주 기록 →
- * 기록 보러가기.** 각 조각의 규칙은 `src/components/report/` 에 있고 여기는 조립과 상태
- * 분기만 한다.
+ * 기록 보러가기.** 각 조각의 규칙은 `src/components/report/` 에 있고 표시 영역의 조립과
+ * 상태 분기는 `ReportView` 가 맡는다. 이 라우트는 조회·주 선택·이동·계측을 맡는다.
  *
  * **한 문장과 하루하루가 갈라졌다**(2026-09-12 · 사용자 시안) — 그 주를 한 문장으로
  * 말하는 자리와 하루하루를 쌓아 보여주는 카드는 읽는 눈이 다르다(`WeekMoodSummary` 머리말).
@@ -132,109 +126,15 @@ export default function Report() {
           return current.status === "ready" && current.report?.startDate === weekStart;
         }}
       />
-      {/*
-        날짜 줄 **전체**가 주를 고르는 문이다 — 날짜를 눌러도 아이콘을 눌러도 같은 시트가
-        열린다. 아이콘은 **줄 오른쪽 끝**에 선다(2026-08-24 · 사용자 요청): 날짜 옆에
-        붙여 두면 글자의 장식으로 읽혀 「고를 수 있다」가 티가 나지 않았다. 오른쪽 끝은
-        보관함의 기간 줄(`기간 · ›`)과 같은 자리라, 「누르면 바뀌는 값」의 문법을 공유한다.
-        아이콘 세트에 아래 꺾쇠가 없어 달력으로 쓴다(`DESIGN.md` §10 「없는 글리프를
-        만들지 않는다」).
-      */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${range} · 주 고르기`}
-        onPress={() => setPicking(true)}
-        style={styles.weekNav}
-      >
-        {/* 날짜는 **손글씨(교보 2025)** 로 쓴다(2026-08-24) — 제목이 따로 없는 화면에서
-            이 줄이 손글씨 제목 노릇을 한다(보관함·쉼터·마이의 `title3Hand` 와 같은 자리).
-            `headline1`(18) 자리를 `title3Hand`(24)로 올린다 — 손글씨는 같은 크기 고딕보다
-            작아 보인다(`my.tsx` 의 같은 판단). 길어지면 줄이 아니라 말줄임으로 접는다 */}
-        <Text variant="title3Hand" color={labelColor.strong} numberOfLines={1} style={styles.range}>
-          {range}
-        </Text>
-        {/* `interaction.inactive` 가 아니다 — 그 토큰은 「지금 활성이 아닌 것」이고
-            이 아이콘은 **눌리는 것**이다. 값(날짜)보다는 약하게 둔다 */}
-        <Icon name="calendar" size={20} color={labelColor.neutral} />
-      </Pressable>
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {report == null ? (
-          <Card padding="loose" style={styles.notice}>
-            {status === "failed" ? (
-              // 한 줄로 흡수한다 — 무엇을 잘못했는지 묻지 않고, 다시 열면 다시 받는다
-              <Text variant="body2Reading" color={labelColor.alternative}>
-                리포트를 불러오지 못했어요 · 잠시 뒤에 다시 열어 주세요
-              </Text>
-            ) : (
-              <View style={styles.loading}>
-                <Spinner />
-                <Text variant="body2Reading" color={labelColor.alternative}>
-                  한 주를 모으고 있어요
-                </Text>
-              </View>
-            )}
-          </Card>
-        ) : (
-          <>
-            <WeekMoodSummary report={report} />
-
-            <WeekEmotionCard report={report} thisWeek={thisWeek} writtenDates={writtenDates} />
-
-            <WeekWishCard report={report} thisWeek={thisWeek} />
-
-            <View style={styles.section}>
-              <Text variant="label1" color={labelColor.neutral} style={styles.sectionLabel}>
-                {thisWeek ? "이번 주 기록" : "이 주 기록"}
-              </Text>
-              <WeekCountList report={report} />
-            </View>
-
-            {/* 보조 행동이라 Outlined 다 — 이 화면에 Solid Primary 는 없다(`DESIGN.md` §6).
-                탭은 쌓이는 화면이 아니라 **옮겨간다**(`TabScreen` 과 같은 이유).
-                **보고 있는 주의 첫날(일요일)을 들려 보낸다** — 보관함이 그 달을 열고 그
-                칸을 고른 채로 선다. 날짜를 안 주면 오늘이 든 달로 열려서, 지난 주를 보다
-                누른 사람은 「내가 보던 주」를 다시 찾아가야 한다 */}
-            <Button
-              label={thisWeek ? "이번 주 기록 보기" : "이 주의 기록 보기"}
-              variant="outlined"
-              fill
-              onPress={() => router.replace({ pathname: "/archive", params: { date: weekStart } })}
-            />
-          </>
-        )}
-      </ScrollView>
+      <ReportView
+        range={range}
+        report={report}
+        status={status}
+        thisWeek={thisWeek}
+        writtenDates={writtenDates}
+        onOpenWeekPicker={() => setPicking(true)}
+        onOpenArchive={() => router.replace({ pathname: "/archive", params: { date: weekStart } })}
+      />
     </TabScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  // 줄 전체가 눌린다 — 히트 44 를 지키고(`RULES.md` 터치 최소 44) 날짜는 왼쪽,
-  // 아이콘은 오른쪽 끝이다(다른 탭의 손글씨 제목도 왼쪽에서 시작한다)
-  weekNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: space.sm,
-    minHeight: layout.minTouch,
-    marginTop: space.sm,
-    marginBottom: space.md,
-  },
-
-  // 글꼴 배율이 커져도 달력 아이콘을 밀어내지 않는다 — 글자 쪽이 줄어든다
-  range: { flexShrink: 1 },
-
-  // 남은 높이를 다 쓰고 그 안에서만 스크롤한다 — 안 잡으면 내용 높이만큼 자라 넘친다
-  scroll: { flex: 1, minHeight: 0 },
-  content: { gap: space.lg, paddingBottom: space.xl },
-  section: { gap: space.md },
-  // 시안이 섹션 라벨만 4px 안쪽에서 시작한다
-  sectionLabel: { paddingLeft: space.xs },
-
-  notice: { gap: space.sm },
-  loading: { alignItems: "center", gap: space.md, paddingVertical: space.sm },
-});
