@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { StudioDesign } from "../../../src/design/studioDesign";
 
 import { ArchivePreview, archiveScenarios } from "../archive/ArchivePreview";
 import { ClaudeHomeMockPreview } from "../claude-home/MockPreview";
@@ -18,6 +19,7 @@ export type LabVariant = {
   scenarios: readonly VariantScenario[];
   /** `scale` — 가상 폰의 축소 배율. 메뉴처럼 화면 좌표를 쓰는 어댑터가 되돌릴 때 쓴다 */
   render: (props: {
+    design?: StudioDesign;
     scenarioId: string;
     onMessage: (message: string) => void;
     scale?: number;
@@ -41,6 +43,7 @@ export const labVariants: readonly LabVariant[] = [
       weatherId,
       inboxId,
       fontScale,
+      design,
     }: Parameters<LabVariant["render"]>[0]) =>
       variant.kind === "design" ? (
         <ClaudeHomeMockPreview
@@ -58,6 +61,7 @@ export const labVariants: readonly LabVariant[] = [
           weatherId={weatherId}
           inboxId={inboxId}
           fontScale={fontScale}
+          design={design}
         />
       ),
   })),
@@ -66,12 +70,13 @@ export const labVariants: readonly LabVariant[] = [
     screenId: "rest-hub",
     label: "운영 쉼터 · 공유 UI",
     scenarios: restHubScenarios,
-    render: ({ scenarioId, onMessage, fontScale }) => (
+    render: ({ scenarioId, onMessage, fontScale, design }) => (
       <RestHubPreview
         key={scenarioId}
         scenarioId={scenarioId}
         onMessage={onMessage}
         fontScale={fontScale}
+        design={design}
       />
     ),
   },
@@ -80,12 +85,13 @@ export const labVariants: readonly LabVariant[] = [
     screenId: "archive",
     label: "운영 보관함 · 공유 UI",
     scenarios: archiveScenarios,
-    render: ({ scenarioId, onMessage, fontScale }) => (
+    render: ({ scenarioId, onMessage, fontScale, design }) => (
       <ArchivePreview
         key={scenarioId}
         scenarioId={scenarioId}
         onMessage={onMessage}
         fontScale={fontScale}
+        design={design}
       />
     ),
   },
@@ -94,12 +100,13 @@ export const labVariants: readonly LabVariant[] = [
     screenId: "my-main",
     label: "운영 마이 · 공유 UI",
     scenarios: myMainScenarios,
-    render: ({ scenarioId, onMessage, fontScale }) => (
+    render: ({ scenarioId, onMessage, fontScale, design }) => (
       <MyMainPreview
         key={scenarioId}
         scenarioId={scenarioId}
         onMessage={onMessage}
         fontScale={fontScale}
+        design={design}
       />
     ),
   },
@@ -108,12 +115,13 @@ export const labVariants: readonly LabVariant[] = [
     screenId: "report",
     label: "운영 리포트 · 공유 UI",
     scenarios: reportScenarios,
-    render: ({ scenarioId, onMessage, fontScale }) => (
+    render: ({ scenarioId, onMessage, fontScale, design }) => (
       <ReportPreview
         key={scenarioId}
         scenarioId={scenarioId}
         onMessage={onMessage}
         fontScale={fontScale}
+        design={design}
       />
     ),
   },

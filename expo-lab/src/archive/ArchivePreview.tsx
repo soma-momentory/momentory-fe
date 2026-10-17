@@ -87,10 +87,12 @@ function shiftedMonth(month: string, step: -1 | 1) {
 }
 
 export function ArchivePreview({
+  design,
   scenarioId,
   fontScale = 1,
   onMessage,
 }: {
+  design?: import("../../../src/design/studioDesign").StudioDesign;
   scenarioId: string;
   fontScale?: 1 | 1.3 | 1.5;
   onMessage: (message: string) => void;
@@ -133,6 +135,7 @@ export function ArchivePreview({
         <Screen padded={false} edges={[]}>
           <View style={styles.body}>
             <ArchiveView
+              design={design}
               month={month}
               selectedDate={selectedDate}
               selectedDiary={selectedDiary}

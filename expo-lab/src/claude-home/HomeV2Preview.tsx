@@ -32,6 +32,7 @@ import {
  *   나머지는 기록이 없는 주(일곱 칸 모두 빈 조약돌)를 보인다 — DN-1 의 두 빈 칸을 나란히 대조한다
  */
 export type HomeV2PreviewProps = {
+  design?: import("../../../src/design/studioDesign").StudioDesign;
   scenarioId: string;
   onMessage: (message: string) => void;
   scale?: number;
@@ -78,6 +79,7 @@ function fixture(scenarioId: string): Schedule[] {
 }
 
 export function HomeV2Preview({
+  design,
   scenarioId,
   onMessage,
   scale = 1,
@@ -115,6 +117,7 @@ export function HomeV2Preview({
     <PreviewFontScaleContext.Provider value={Platform.OS === "web" ? fontScale : 1}>
       <View ref={rootRef} style={styles.root}>
         <HomeV2View
+          design={design}
           model={{
             today: TODAY,
             schedules,

@@ -9,10 +9,12 @@ import { WeekMoodSummary } from "@/components/report/WeekMoodSummary";
 import { WeekWishCard } from "@/components/report/WeekWishCard";
 import { label as labelColor, layout, space } from "@/design/ds";
 import { reportPaper } from "@/design/ds/reportPaper";
+import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
 import { Baba } from "@/features/home/ui/v2/Baba";
 import type { WeeklyReport, WeeklyReportStatus } from "@/features/report/model/weeklyReport";
 
 type Props = {
+  design?: StudioDesign;
   range: string;
   report: WeeklyReport | null;
   status: WeeklyReportStatus;
@@ -24,6 +26,7 @@ type Props = {
 
 /** 주간 리포트의 표시 영역. 조회, 주차 선택, 이동, 계측은 호출자가 맡는다. */
 export function ReportView({
+  design = approvedDesign,
   range,
   report,
   status,
@@ -52,11 +55,26 @@ export function ReportView({
         style={styles.weekNav}
       >
         <View style={styles.weekTitleGroup}>
-          <View style={styles.weekTitlePaper}>
+          <View
+            testID="studio-report-week-title"
+            style={[
+              styles.weekTitlePaper,
+              {
+                backgroundColor: design["report.weekTitlePaper.backgroundColor"],
+                paddingHorizontal: design["report.weekTitlePaper.paddingHorizontal"],
+              },
+            ]}
+          >
             <Text
               variant="title3Hand"
               color={reportPaper.ink}
-              style={[styles.weekTitle, { lineHeight: 36 * fontScale }]}
+              style={[
+                styles.weekTitle,
+                {
+                  fontSize: design["report.weekTitle.fontSize"],
+                  lineHeight: Math.max(36, design["report.weekTitle.fontSize"] + 6) * fontScale,
+                },
+              ]}
             >
               {thisWeek ? "이번 주" : "이 주"}
             </Text>

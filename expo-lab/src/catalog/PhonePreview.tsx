@@ -8,6 +8,7 @@ import { captureAssets } from "./captures";
 import type { CatalogScreen } from "./screens";
 import { captureThumbnails } from "./thumbnails";
 import type { LabVariant } from "./variants";
+import type { StudioDesign } from "../../../src/design/studioDesign";
 
 export const devices = [
   { label: "iPhone 13 mini", width: 375, height: 812 },
@@ -106,6 +107,7 @@ function PreviewStatusBar({ width }: { width: number }) {
 }
 
 export function VariantPhone({
+  design,
   variant,
   scenarioId,
   weatherId,
@@ -115,6 +117,7 @@ export function VariantPhone({
   scale = 1,
   onMessage,
 }: {
+  design?: StudioDesign;
   variant: LabVariant;
   scenarioId: string;
   weatherId: WeatherScenarioId;
@@ -128,7 +131,7 @@ export function VariantPhone({
     <ScaledPhone width={device.width + 20} height={device.height + 20} scale={scale}>
       <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
         <PreviewStatusBar width={device.width} />
-        {variant.render({ scenarioId, weatherId, inboxId, fontScale, onMessage, scale })}
+        {variant.render({ scenarioId, weatherId, inboxId, fontScale, onMessage, scale, design })}
       </View>
     </ScaledPhone>
   );

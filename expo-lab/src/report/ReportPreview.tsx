@@ -94,10 +94,12 @@ const TABS = [
 
 /** 서버·일기 Store·라우터 대신 고정 데이터와 이 컴포넌트의 메모리만 사용한다. */
 export function ReportPreview({
+  design,
   scenarioId,
   fontScale = 1,
   onMessage,
 }: {
+  design?: import("../../../src/design/studioDesign").StudioDesign;
   scenarioId: string;
   fontScale?: 1 | 1.3 | 1.5;
   onMessage: (message: string) => void;
@@ -128,6 +130,7 @@ export function ReportPreview({
         <Screen padded={false} edges={[]}>
           <View style={styles.body}>
             <ReportView
+              design={design}
               range={range}
               report={report}
               status={scenario === "error" ? "failed" : report == null ? "loading" : "ready"}

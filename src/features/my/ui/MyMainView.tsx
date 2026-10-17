@@ -3,9 +3,11 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Icon, Text, type IconName } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
 import { myPaper as paper } from "@/design/ds/myPaper";
+import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
 import { Baba } from "@/features/home/ui/v2/Baba";
 
 type Props = {
+  design?: StudioDesign;
   nickname: string;
   recordedDays: number;
   notifyValue: string;
@@ -27,6 +29,7 @@ type Tone = "settings" | "support" | "account";
 
 /** 운영과 Lab이 같은 종이 카드·설정 행을 그린다. 값과 동작은 각 어댑터가 전달한다. */
 export function MyMainView({
+  design = approvedDesign,
   nickname,
   recordedDays,
   notifyValue,
@@ -51,7 +54,18 @@ export function MyMainView({
         </Text>
       </View>
 
-      <View testID="my-profile-card" style={styles.profileCard}>
+      <View
+        testID="my-profile-card"
+        style={[
+          styles.profileCard,
+          {
+            backgroundColor: design["my.profileCard.backgroundColor"],
+            borderRadius: design["my.profileCard.borderRadius"],
+            paddingHorizontal: design["my.profileCard.paddingHorizontal"],
+            shadowOpacity: design["my.profileCard.shadowOpacity"],
+          },
+        ]}
+      >
         <View style={styles.profileTop}>
           <View style={styles.profileCopy}>
             <View style={styles.nicknameRow}>

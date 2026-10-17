@@ -3,6 +3,7 @@ import Svg, { Rect } from "react-native-svg";
 
 import { Text, useEffectiveFontScale } from "@/components/ds/Text";
 import { homeV2 } from "@/design/ds";
+import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
 import { formatKoreanTime } from "@/lib/time";
 
 import { Baba } from "./Baba";
@@ -27,6 +28,7 @@ import { weatherStickerForKey } from "./weatherStickers";
  * 운영 홈은 P4의 `WeatherSticker`를 재사용한다. 그림이 없는 조건과 기온은 함께 숨긴다.
  */
 type Props = {
+  design?: StudioDesign;
   retroReminderTime: string | null;
   weather: HomeWeatherView | null;
   onStartReflection: () => void;
@@ -37,6 +39,7 @@ type Props = {
 const TAPE = { width: 92, height: 24, cell: 6, pitch: 12 } as const;
 
 export function HeroCard({
+  design = approvedDesign,
   retroReminderTime,
   weather,
   onStartReflection,
@@ -52,7 +55,17 @@ export function HeroCard({
   const visibleWeather = weather != null && weatherStickerForKey(weather.stickerKey) != null;
 
   return (
-    <View style={[styles.hero, { paddingTop: 128 + 60 * extra }]}>
+    <View
+      testID="studio-home-hero"
+      style={[
+        styles.hero,
+        {
+          paddingTop: 128 + 60 * extra,
+          backgroundColor: design["home.hero.backgroundColor"],
+          borderRadius: design["home.hero.borderRadius"],
+        },
+      ]}
+    >
       <View
         pointerEvents="none"
         accessibilityElementsHidden
@@ -82,14 +95,26 @@ export function HeroCard({
         </Svg>
       </View>
 
-      <View style={[styles.bubble, { minWidth: 150 + 150 * extra }]}>
+      <View
+        style={[
+          styles.bubble,
+          {
+            minWidth: 150 + 150 * extra,
+            backgroundColor: design["home.bubble.backgroundColor"],
+            borderRadius: design["home.bubble.borderRadius"],
+            paddingHorizontal: design["home.bubble.paddingHorizontal"],
+          },
+        ]}
+      >
         <Text
           style={[styles.bubbleText, { lineHeight: homeV2.type.bubble.lineHeight * scale }]}
           color={homeV2.color.ink}
         >
           {"오늘 하루는\n어땠어요?"}
         </Text>
-        <View style={styles.bubbleTail} />
+        <View
+          style={[styles.bubbleTail, { backgroundColor: design["home.bubble.backgroundColor"] }]}
+        />
       </View>
 
       {visibleWeather ? (

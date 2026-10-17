@@ -26,6 +26,7 @@ import {
   withAlpha,
 } from "@/design/ds";
 import type { Diary } from "@/features/diary/model/types";
+import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 import type { Schedule } from "@/features/home/model/types";
 import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
@@ -38,6 +39,7 @@ const VIEWS: readonly ViewOption<ArchiveMode>[] = [
 ];
 
 type Props = {
+  design?: StudioDesign;
   month: string;
   selectedDate: string;
   selectedDiary: Diary | null;
@@ -60,6 +62,7 @@ type Props = {
 
 /** The app and Expo Lab render this same RN body; all data and side effects arrive as props. */
 export function ArchiveView({
+  design = approvedDesign,
   month,
   selectedDate,
   selectedDiary,
@@ -87,8 +90,21 @@ export function ArchiveView({
     <View style={styles.root}>
       <View style={styles.header}>
         <View>
-          <View style={styles.titleWrap}>
-            <Text variant="title3Hand" color={labelColor.normal} style={styles.title}>
+          <View
+            testID="studio-archive-title"
+            style={[
+              styles.titleWrap,
+              {
+                backgroundColor: design["archive.titleWrap.backgroundColor"],
+                paddingHorizontal: design["archive.titleWrap.paddingHorizontal"],
+              },
+            ]}
+          >
+            <Text
+              variant="title3Hand"
+              color={labelColor.normal}
+              style={[styles.title, { fontSize: design["archive.title.fontSize"] }]}
+            >
               보관함
             </Text>
           </View>

@@ -5,9 +5,11 @@ import { Text } from "@/components/ds";
 import { RestCardPressable } from "@/components/rest/RestCardPressable";
 import { RestContentGrid } from "@/components/rest/RestContentGrid";
 import { homeV2, layout } from "@/design/ds";
+import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
 import { REST_CONTENTS_PROMPT, type RestContent } from "@/features/rest/model/contents";
 
 type Props = {
+  design?: StudioDesign;
   summary: string;
   contents: readonly RestContent[];
   onOpenCards: () => void;
@@ -15,7 +17,13 @@ type Props = {
 };
 
 /** Production and Expo Lab share this display-only view. Navigation and recommendation stay in adapters. */
-export function RestHubView({ summary, contents, onOpenCards, onOpenContent }: Props) {
+export function RestHubView({
+  summary,
+  contents,
+  onOpenCards,
+  onOpenContent,
+  design = approvedDesign,
+}: Props) {
   const longSummary = summary.length > 60;
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -30,7 +38,17 @@ export function RestHubView({ summary, contents, onOpenCards, onOpenContent }: P
         onPress={onOpenCards}
         style={styles.wishPressable}
       >
-        <View style={[styles.wishPaper, longSummary && styles.wishPaperLong]}>
+        <View
+          testID="studio-rest-wish-paper"
+          style={[
+            styles.wishPaper,
+            longSummary && styles.wishPaperLong,
+            {
+              backgroundColor: design["rest.wishPaper.backgroundColor"],
+              paddingLeft: design["rest.wishPaper.paddingLeft"],
+            },
+          ]}
+        >
           <View style={styles.wishTape} />
           <View style={styles.wishCopy}>
             <Text variant="caption1" style={styles.wishEyebrow}>
