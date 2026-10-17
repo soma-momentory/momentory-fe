@@ -21,6 +21,7 @@ module.exports = [
       "node_modules/**",
       ".expo/**",
       "dist/**",
+      "expo-lab/dist/**",
       "expo-lab/dist-*/**",
       "android/**",
       "ios/**",

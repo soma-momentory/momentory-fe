@@ -46,6 +46,7 @@ jobs:
       - run: npm run lint
       # eslint-config-prettier 는 충돌 규칙을 끌 뿐 포맷을 검사하지 않는다 — 검사는 이 단계다.
       - run: npm run format:check
+      - run: npm run test:design-apply
       - run: npm run test -- --ci
 
       # 시크릿이 이력에 들어갔는지 — .gitignore 를 우회해 강제 추가한 경우를 잡는다.

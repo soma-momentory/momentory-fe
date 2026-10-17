@@ -244,6 +244,11 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
       ?.id ?? "home.hero",
   );
   const [selectionMode, setSelectionMode] = useState(true);
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(true);
+  const [screenQuery, setScreenQuery] = useState("");
+  const [mockQuery, setMockQuery] = useState("");
+  const [recentScreens, setRecentScreens] = useState<StudioScreenId[]>([]);
   const [layerQuery, setLayerQuery] = useState("");
   const [data, setData] = useState<StudioDrafts>(() => {
     if (Platform.OS !== "web") return initialDrafts();
@@ -277,6 +282,16 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
   const stacked = width < 1200;
   const onMessage = useCallback((text: string) => setMessage(text), []);
   const onSelect = useCallback((id: string) => setSelectedComponent(id), []);
+  const selectScreen = useCallback((next: StudioScreenId) => {
+    setScreenId(next);
+    setScenarioId("");
+    setSelectedComponent(
+      editableComponents.find((layer) => layer.screenId === next && layer.properties.length)?.id ??
+        "",
+    );
+    setRecentScreens((current) => [next, ...current.filter((id) => id !== next)].slice(0, 3));
+    if (Platform.OS === "web") window.location.hash = `#studio/${next}`;
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -292,11 +307,19 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     const syncScreen = () => {
       const path = window.location.hash.slice(1).split("?")[0];
       const next = studioScreens.find((item) => `studio/${item.id}` === path)?.id;
-      if (next) setScreenId(next);
+      if (next && next !== screenId) {
+        setScreenId(next);
+        setScenarioId("");
+        setSelectedComponent(
+          editableComponents.find((layer) => layer.screenId === next && layer.properties.length)
+            ?.id ?? "",
+        );
+        setRecentScreens((current) => [next, ...current.filter((id) => id !== next)].slice(0, 3));
+      }
     };
     window.addEventListener("hashchange", syncScreen);
     return () => window.removeEventListener("hashchange", syncScreen);
-  }, []);
+  }, [screenId]);
 
   const update = (key: StudioDesignKey, value: string | number) => {
     if (design[key] === value) return;
@@ -403,85 +426,122 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
 
   return (
     <View style={[styles.root, stacked && styles.rootStack]}>
-      <ScrollView
-        testID="studio-sidebar"
-        style={[styles.left, stacked && styles.sideStack]}
-        contentContainerStyle={styles.sideContent}
-      >
-        <Text style={styles.kicker}>MOMENTORY</Text>
-        <Text style={styles.title}>Design Studio</Text>
-        <Text style={styles.hint}>실제 공유 RN View · Lab Mock</Text>
-        <Text style={styles.heading}>화면</Text>
-        {studioScreens.map((item) => (
-          <Button
-            key={item.id}
-            label={item.label}
-            selected={screenId === item.id}
-            onPress={() => {
-              setScreenId(item.id);
-              setScenarioId("");
-              setSelectedComponent(
-                editableComponents.find(
-                  (layer) => layer.screenId === item.id && layer.properties.length,
-                )?.id ?? "",
-              );
-              if (Platform.OS === "web") window.location.hash = `#studio/${item.id}`;
-            }}
+      {leftOpen ? (
+        <ScrollView
+          testID="studio-sidebar"
+          style={[styles.left, stacked && styles.sideStack]}
+          contentContainerStyle={styles.sideContent}
+        >
+          <Text style={styles.kicker}>MOMENTORY</Text>
+          <Text style={styles.title}>Design Studio</Text>
+          <Text style={styles.hint}>실제 공유 RN View · Lab Mock</Text>
+          <Text style={styles.heading}>화면</Text>
+          <TextInput
+            accessibilityLabel="화면 검색"
+            placeholder="화면 검색"
+            value={screenQuery}
+            onChangeText={setScreenQuery}
+            style={styles.input}
           />
-        ))}
-        <Text style={styles.heading}>Mock 상태</Text>
-        {variant.scenarios.map((item) => (
-          <Button
-            key={item.id}
-            label={item.label}
-            selected={scenario.id === item.id}
-            onPress={() => setScenarioId(item.id)}
-          />
-        ))}
-        {screenId === "home-main" ? (
-          <>
-            <Text style={styles.heading}>날씨</Text>
-            {weatherScenarios.map((item) => (
+          {recentScreens.length ? (
+            <Text style={styles.hint}>
+              최근 화면:{" "}
+              {recentScreens
+                .map((id) => studioScreens.find((item) => item.id === id)?.label)
+                .join(" · ")}
+            </Text>
+          ) : null}
+          {studioScreens
+            .filter(
+              (item) =>
+                item.label.includes(screenQuery.trim()) ||
+                item.id.includes(screenQuery.trim().toLowerCase()),
+            )
+            .map((item) => (
               <Button
                 key={item.id}
                 label={item.label}
-                selected={weatherId === item.id}
-                onPress={() => setWeatherId(item.id)}
+                selected={screenId === item.id}
+                onPress={() => selectScreen(item.id)}
               />
             ))}
-            <Text style={styles.heading}>알림</Text>
-            {inboxScenarios.map((item) => (
+          <Text style={styles.heading}>Mock 상태</Text>
+          <TextInput
+            accessibilityLabel="Mock 검색"
+            placeholder="Mock 검색"
+            value={mockQuery}
+            onChangeText={setMockQuery}
+            style={styles.input}
+          />
+          {variant.scenarios
+            .filter(
+              (item) =>
+                item.label.includes(mockQuery.trim()) ||
+                item.id.includes(mockQuery.trim().toLowerCase()),
+            )
+            .map((item) => (
               <Button
                 key={item.id}
                 label={item.label}
-                selected={inboxId === item.id}
-                onPress={() => setInboxId(item.id)}
+                selected={scenario.id === item.id}
+                onPress={() => setScenarioId(item.id)}
               />
             ))}
-          </>
-        ) : null}
-        <Text style={styles.heading}>컴포넌트 레이어</Text>
-        <TextInput
-          accessibilityLabel="컴포넌트 검색"
-          placeholder="레이어 검색"
-          value={layerQuery}
-          onChangeText={setLayerQuery}
-          style={styles.input}
-        />
-        <LayerTree
-          layers={components}
-          selectedId={selectedComponent}
-          query={layerQuery}
-          onSelect={onSelect}
-        />
-        <Button label="선택 해제" onPress={() => setSelectedComponent("")} />
-      </ScrollView>
+          {screenId === "home-main" ? (
+            <>
+              <Text style={styles.heading}>날씨</Text>
+              {weatherScenarios.map((item) => (
+                <Button
+                  key={item.id}
+                  label={item.label}
+                  selected={weatherId === item.id}
+                  onPress={() => setWeatherId(item.id)}
+                />
+              ))}
+              <Text style={styles.heading}>알림</Text>
+              {inboxScenarios.map((item) => (
+                <Button
+                  key={item.id}
+                  label={item.label}
+                  selected={inboxId === item.id}
+                  onPress={() => setInboxId(item.id)}
+                />
+              ))}
+            </>
+          ) : null}
+          <Text style={styles.heading}>컴포넌트 레이어</Text>
+          <TextInput
+            accessibilityLabel="컴포넌트 검색"
+            placeholder="레이어 검색"
+            value={layerQuery}
+            onChangeText={setLayerQuery}
+            style={styles.input}
+          />
+          <LayerTree
+            layers={components}
+            selectedId={selectedComponent}
+            query={layerQuery}
+            onSelect={onSelect}
+          />
+          <Button label="선택 해제" onPress={() => setSelectedComponent("")} />
+        </ScrollView>
+      ) : null}
       <ScrollView
         testID="studio-canvas"
         style={stacked ? styles.centerStack : styles.center}
         contentContainerStyle={styles.centerContent}
       >
         <View style={styles.toolbar}>
+          <View style={styles.row}>
+            <Button
+              label={leftOpen ? "왼쪽 패널 접기" : "왼쪽 패널 열기"}
+              onPress={() => setLeftOpen((open) => !open)}
+            />
+            <Button
+              label={rightOpen ? "오른쪽 패널 접기" : "오른쪽 패널 열기"}
+              onPress={() => setRightOpen((open) => !open)}
+            />
+          </View>
           <Text style={styles.heading}>
             {screen.label} · {scenario.label}
           </Text>
@@ -575,83 +635,86 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
           {message}
         </Text>
       </ScrollView>
-      <ScrollView
-        testID="studio-properties"
-        style={[styles.right, stacked && styles.sideStack]}
-        contentContainerStyle={styles.sideContent}
-      >
-        <Text style={styles.heading}>속성 · {component?.label ?? "선택 없음"}</Text>
-        {component && !component.properties.length ? (
-          <Text style={styles.hint}>
-            이 요소는 선택할 수 있지만 편집 속성이 아직 등록되지 않았습니다.
-          </Text>
-        ) : null}
-        {component?.properties.map((property) => (
-          <PropertyInput
-            key={property.key}
-            property={property}
-            value={design[property.key]}
-            onChange={update}
-          />
-        ))}
-        <View style={styles.row}>
-          <Button label="Undo" disabled={!undo.length} onPress={undoEdit} />
-          <Button label="Redo" disabled={!redo.length} onPress={redoEdit} />
-        </View>
-        <Button
-          label="B 디자인 초기화"
-          disabled={!changes.length}
-          onPress={() => replaceDesign({ ...approvedDesign })}
-        />
-        <Text style={styles.heading}>시안 저장</Text>
-        {Object.keys(data.drafts).map((name) => (
+      {rightOpen ? (
+        <ScrollView
+          testID="studio-properties"
+          style={[styles.right, stacked && styles.sideStack]}
+          contentContainerStyle={styles.sideContent}
+        >
+          <Text style={styles.heading}>속성 · {component?.label ?? "선택 없음"}</Text>
+          {component && !component.properties.length ? (
+            <Text style={styles.hint}>
+              이 요소는 선택할 수 있지만 편집 속성이 아직 등록되지 않았습니다.
+            </Text>
+          ) : null}
+          {component?.properties.map((property) => (
+            <PropertyInput
+              key={property.key}
+              property={property}
+              value={design[property.key]}
+              onChange={update}
+            />
+          ))}
+          <View style={styles.row}>
+            <Button label="Undo" disabled={!undo.length} onPress={undoEdit} />
+            <Button label="Redo" disabled={!redo.length} onPress={redoEdit} />
+          </View>
           <Button
-            key={name}
-            label={name}
-            selected={data.active === name}
+            label="B 디자인 초기화"
+            disabled={!changes.length}
+            onPress={() => replaceDesign({ ...approvedDesign })}
+          />
+          <Text style={styles.heading}>시안 저장</Text>
+          {Object.keys(data.drafts).map((name) => (
+            <Button
+              key={name}
+              label={name}
+              selected={data.active === name}
+              onPress={() => {
+                setData((current) => ({ ...current, active: name }));
+                setUndo([]);
+                setRedo([]);
+              }}
+            />
+          ))}
+          <TextInput
+            accessibilityLabel="새 시안 이름"
+            placeholder="새 시안 이름"
+            value={nameInput}
+            onChangeText={setNameInput}
+            style={styles.input}
+          />
+          <View style={styles.row}>
+            <Button label="새 시안" onPress={() => createDraft(true)} />
+            <Button label="현재 시안 복제" onPress={() => createDraft(false)} />
+            <Button label="시안 이름 변경" onPress={renameDraft} />
+          </View>
+          <Text style={styles.heading}>변경 사항 · {changes.length}개</Text>
+          {changes.length ? (
+            changes.map((change) => (
+              <Text key={change.key} style={styles.diff}>
+                {change.key}
+                {"\n"}
+                {String(change.before)} → {String(change.after)}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.hint}>운영 기본 디자인과 같습니다.</Text>
+          )}
+          <Button
+            label="JSON 내보내기"
             onPress={() => {
-              setData((current) => ({ ...current, active: name }));
-              setUndo([]);
-              setRedo([]);
+              if (Platform.OS === "web")
+                downloadJson(data.active, exportDraft(data.active, design));
             }}
           />
-        ))}
-        <TextInput
-          accessibilityLabel="새 시안 이름"
-          placeholder="새 시안 이름"
-          value={nameInput}
-          onChangeText={setNameInput}
-          style={styles.input}
-        />
-        <View style={styles.row}>
-          <Button label="새 시안" onPress={() => createDraft(true)} />
-          <Button label="현재 시안 복제" onPress={() => createDraft(false)} />
-          <Button label="시안 이름 변경" onPress={renameDraft} />
-        </View>
-        <Text style={styles.heading}>변경 사항 · {changes.length}개</Text>
-        {changes.length ? (
-          changes.map((change) => (
-            <Text key={change.key} style={styles.diff}>
-              {change.key}
-              {"\n"}
-              {String(change.before)} → {String(change.after)}
-            </Text>
-          ))
-        ) : (
-          <Text style={styles.hint}>운영 기본 디자인과 같습니다.</Text>
-        )}
-        <Button
-          label="JSON 내보내기"
-          onPress={() => {
-            if (Platform.OS === "web") downloadJson(data.active, exportDraft(data.active, design));
-          }}
-        />
-        <Button label="JSON 가져오기" onPress={openImport} />
-        <Text style={styles.hint}>
-          운영 적용: 내보낸 JSON을 코드 검증 명령에 전달해 변경 파일을 만듭니다. 브라우저 편집만으로
-          운영 소스는 바뀌지 않습니다.
-        </Text>
-      </ScrollView>
+          <Button label="JSON 가져오기" onPress={openImport} />
+          <Text style={styles.hint}>
+            운영 적용: 내보낸 JSON을 코드 검증 명령에 전달해 변경 파일을 만듭니다. 브라우저
+            편집만으로 운영 소스는 바뀌지 않습니다.
+          </Text>
+        </ScrollView>
+      ) : null}
     </View>
   );
 }

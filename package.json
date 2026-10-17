@@ -18,6 +18,7 @@
     "typecheck:expo-lab": "npm run typecheck --workspace momentory-expo-lab",
     "lab:web": "npm run web --workspace momentory-expo-lab --",
     "design:apply": "node expo-lab/scripts/apply-design.mjs",
+    "test:design-apply": "node --test expo-lab/scripts/apply-design.test.mjs",
     "test:visual": "playwright test",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
