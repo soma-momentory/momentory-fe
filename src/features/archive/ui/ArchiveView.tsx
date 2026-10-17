@@ -103,8 +103,14 @@ export function ArchiveView({
             <Text
               testID="studio-archive-title-text"
               variant="title3Hand"
-              color={labelColor.normal}
-              style={[styles.title, { fontSize: design["archive.title.fontSize"] }]}
+              color={design["archive.titleText.color"]}
+              style={[
+                styles.title,
+                {
+                  fontSize: design["archive.title.fontSize"],
+                  fontFamily: design["archive.titleText.fontFamily"],
+                },
+              ]}
             >
               보관함
             </Text>
@@ -142,7 +148,16 @@ export function ArchiveView({
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View testID="studio-archive-calendar" style={styles.calendarPaper}>
+          <View
+            testID="studio-archive-calendar"
+            style={[
+              styles.calendarPaper,
+              {
+                backgroundColor: design["archive.calendar.backgroundColor"],
+                borderRadius: design["archive.calendar.borderRadius"],
+              },
+            ]}
+          >
             <View
               style={styles.tape}
               accessibilityElementsHidden

@@ -62,18 +62,21 @@ export function ReportView({
               {
                 backgroundColor: design["report.weekTitlePaper.backgroundColor"],
                 paddingHorizontal: design["report.weekTitlePaper.paddingHorizontal"],
+                borderRadius: design["report.weekTitlePaper.borderRadius"],
               },
             ]}
           >
             <Text
               testID="studio-report-week-text"
               variant="title3Hand"
-              color={reportPaper.ink}
+              color={design["report.weekTitle.color"]}
               style={[
                 styles.weekTitle,
                 {
                   fontSize: design["report.weekTitle.fontSize"],
                   lineHeight: Math.max(36, design["report.weekTitle.fontSize"] + 6) * fontScale,
+                  fontFamily: design["report.weekTitle.fontFamily"],
+                  letterSpacing: design["report.weekTitle.letterSpacing"],
                 },
               ]}
             >
@@ -117,7 +120,10 @@ export function ReportView({
           </Card>
         ) : (
           <>
-            <View testID="studio-report-summary" style={styles.summary}>
+            <View
+              testID="studio-report-summary"
+              style={[styles.summary, { minHeight: design["report.summary.minHeight"] }]}
+            >
               <View style={styles.babaFrame}>
                 <View style={styles.babaScaled}>
                   <Baba />

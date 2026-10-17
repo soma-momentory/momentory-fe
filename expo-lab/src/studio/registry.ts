@@ -1,12 +1,14 @@
 import type { StudioDesignKey } from "../../../src/design/studioDesign";
+import { isStudioAssetId } from "../../../src/design/studioAssets";
 
 export type EditableProperty = {
   key: StudioDesignKey;
   label: string;
-  kind: "color" | "number";
+  kind: "color" | "number" | "asset" | "choice";
   min?: number;
   max?: number;
   step?: number;
+  options?: readonly { value: string; label: string }[];
 };
 
 export type EditableComponent = {
@@ -31,6 +33,26 @@ const number = (
   max: number,
   step = 1,
 ): EditableProperty => ({ key, label, kind: "number", min, max, step });
+const asset = (key: StudioDesignKey, label = "이미지"): EditableProperty => ({
+  key,
+  label,
+  kind: "asset",
+});
+const fonts = [
+  { value: "Gaegu-Regular", label: "가에구 보통" },
+  { value: "Gaegu-Bold", label: "가에구 굵게" },
+  { value: "KyoboHandwriting2025lyb", label: "교보 손글씨" },
+] as const;
+const alignments = [
+  { value: "left", label: "왼쪽" },
+  { value: "center", label: "가운데" },
+  { value: "right", label: "오른쪽" },
+] as const;
+const choice = (
+  key: StudioDesignKey,
+  label: string,
+  options: EditableProperty["options"],
+): EditableProperty => ({ key, label, kind: "choice", options });
 
 /** Every layer points to a real testID on the shared RN View. Only listed properties can be edited. */
 export const editableComponents: readonly EditableComponent[] = [
@@ -74,7 +96,25 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-home-bubble-text",
     kind: "text",
     label: "말풍선 문구",
-    properties: [],
+    properties: [
+      color("home.bubbleText.color", "글씨 색"),
+      number("home.bubbleText.fontSize", "글씨 크기", 18, 34),
+      choice("home.bubbleText.fontFamily", "글꼴", fonts),
+      choice("home.bubbleText.textAlign", "정렬", alignments),
+      number("home.bubbleText.letterSpacing", "글자 간격", -1, 4, 0.1),
+    ],
+  },
+  {
+    id: "home.cta",
+    screenId: "home-main",
+    parentId: "home.hero",
+    testId: "studio-home-cta",
+    kind: "card",
+    label: "하루 돌아보기 버튼",
+    properties: [
+      color("home.cta.backgroundColor"),
+      number("home.cta.paddingHorizontal", "가로 여백", 12, 36),
+    ],
   },
   {
     id: "home.baba",
@@ -110,7 +150,10 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-rest-heading",
     kind: "text",
     label: "쉼터 제목",
-    properties: [],
+    properties: [
+      color("rest.heading.backgroundColor", "종이 색"),
+      number("rest.heading.fontSize", "글씨 크기", 22, 40),
+    ],
   },
   {
     id: "rest.wishPaper",
@@ -140,7 +183,13 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-rest-wish-summary",
     kind: "text",
     label: "바람카드 문구",
-    properties: [],
+    properties: [
+      color("rest.wishSummary.color", "글씨 색"),
+      number("rest.wishSummary.fontSize", "글씨 크기", 16, 30),
+      choice("rest.wishSummary.fontFamily", "글꼴", fonts),
+      choice("rest.wishSummary.textAlign", "정렬", alignments),
+      number("rest.wishSummary.letterSpacing", "글자 간격", -1, 4, 0.1),
+    ],
   },
   {
     id: "rest.wishPhoto",
@@ -149,7 +198,10 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-rest-wish-photo",
     kind: "section",
     label: "바바 사진",
-    properties: [],
+    properties: [
+      number("rest.wishPhoto.width", "사진 너비", 80, 130),
+      number("rest.wishPhoto.rotation", "회전 각도", -15, 15),
+    ],
   },
   {
     id: "rest.babaImage",
@@ -158,7 +210,10 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-rest-baba-image",
     kind: "image",
     label: "바바 이미지",
-    properties: [],
+    properties: [
+      asset("rest.babaImage.assetId"),
+      number("rest.babaImage.opacity", "투명도", 0.2, 1, 0.05),
+    ],
   },
   {
     id: "rest.contents",
@@ -198,7 +253,10 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-archive-title-text",
     kind: "text",
     label: "보관함 제목 글씨",
-    properties: [],
+    properties: [
+      color("archive.titleText.color", "글씨 색"),
+      choice("archive.titleText.fontFamily", "글꼴", fonts),
+    ],
   },
   {
     id: "archive.calendar",
@@ -207,7 +265,10 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-archive-calendar",
     kind: "section",
     label: "달력",
-    properties: [],
+    properties: [
+      color("archive.calendar.backgroundColor"),
+      number("archive.calendar.borderRadius", "모서리", 0, 32),
+    ],
   },
 
   {
@@ -225,7 +286,7 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-my-title",
     kind: "text",
     label: "마이 제목",
-    properties: [],
+    properties: [color("my.title.backgroundColor", "종이 색")],
   },
   {
     id: "my.profileCard",
@@ -248,7 +309,10 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-my-nickname",
     kind: "text",
     label: "닉네임",
-    properties: [],
+    properties: [
+      color("my.nickname.color", "글씨 색"),
+      choice("my.nickname.fontFamily", "글꼴", fonts),
+    ],
   },
   {
     id: "my.baba",
@@ -278,6 +342,7 @@ export const editableComponents: readonly EditableComponent[] = [
     properties: [
       color("report.weekTitlePaper.backgroundColor", "종이 색"),
       number("report.weekTitlePaper.paddingHorizontal", "가로 여백", 8, 32),
+      number("report.weekTitlePaper.borderRadius", "모서리", 0, 24),
       number("report.weekTitle.fontSize", "글씨 크기", 24, 40),
     ],
   },
@@ -288,7 +353,11 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-report-week-text",
     kind: "text",
     label: "주간 제목 글씨",
-    properties: [],
+    properties: [
+      color("report.weekTitle.color", "글씨 색"),
+      choice("report.weekTitle.fontFamily", "글꼴", fonts),
+      number("report.weekTitle.letterSpacing", "글자 간격", -1, 4, 0.1),
+    ],
   },
   {
     id: "report.summary",
@@ -297,13 +366,16 @@ export const editableComponents: readonly EditableComponent[] = [
     testId: "studio-report-summary",
     kind: "section",
     label: "요약",
-    properties: [],
+    properties: [number("report.summary.minHeight", "최소 높이", 100, 200)],
   },
 ];
 
 export const editableKeys = editableComponents.flatMap((component) => component.properties);
 
 export function validValue(property: EditableProperty, value: unknown): boolean {
+  if (property.kind === "asset") return isStudioAssetId(value);
+  if (property.kind === "choice")
+    return property.options?.some((item) => item.value === value) ?? false;
   if (property.kind === "color")
     return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
   return (

@@ -52,7 +52,10 @@ export function MyMainView({
       contentContainerStyle={styles.body}
       showsVerticalScrollIndicator={false}
     >
-      <View testID="studio-my-title" style={styles.titleTape}>
+      <View
+        testID="studio-my-title"
+        style={[styles.titleTape, { backgroundColor: design["my.title.backgroundColor"] }]}
+      >
         <Text variant="title1Hand" color={labelColor.normal}>
           마이
         </Text>
@@ -76,8 +79,8 @@ export function MyMainView({
               <Text
                 testID="studio-my-nickname"
                 variant="title3Hand"
-                color={labelColor.strong}
-                style={styles.nickname}
+                color={design["my.nickname.color"]}
+                style={[styles.nickname, { fontFamily: design["my.nickname.fontFamily"] }]}
               >
                 {nickname}
               </Text>
