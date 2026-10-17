@@ -126,10 +126,7 @@ function routeHash(route: LabRoute): string {
   const params = new URLSearchParams();
   params.set("device", String(route.deviceWidth));
   if (route.page === "compare" && route.variantId) params.set("scenario", route.scenarioId);
-  if (
-    route.page === "compare" &&
-    (route.variantId === "app-v2" || route.variantId === "app-rest")
-  ) {
+  if (route.page === "compare" && ["app-v2", "app-rest", "app-report"].includes(route.variantId)) {
     if (route.variantId === "app-v2") {
       params.set("weather", route.weatherId);
       params.set("inbox", route.inboxId);
@@ -351,7 +348,9 @@ function Compare({
                 </View>
               </>
             ) : null}
-            {variant?.id === "app-v2" || variant?.id === "app-rest" ? (
+            {variant?.id === "app-v2" ||
+            variant?.id === "app-rest" ||
+            variant?.id === "app-report" ? (
               <>
                 {variant?.id === "app-v2" ? (
                   <>
@@ -459,7 +458,7 @@ function Compare({
           <Text style={styles.panelTitle}>{variant?.label ?? "등록된 시안 없음"}</Text>
           <Text style={styles.panelNote}>
             {variant
-              ? variant.id === "app-v2" || variant.id === "app-rest"
+              ? variant.id === "app-v2" || variant.id === "app-rest" || variant.id === "app-report"
                 ? "운영 앱과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
                 : "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
               : "이 화면의 새 시안은 아직 없습니다. 시안이 등록되면 기존 캡처와 나란히 비교합니다."}
