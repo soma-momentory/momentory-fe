@@ -109,7 +109,7 @@ export function HeroCard({
       >
         <Text
           testID="studio-home-bubble-text"
-          style={StyleSheet.flatten([
+          style={[
             styles.bubbleText,
             {
               fontSize: design["home.bubbleText.fontSize"],
@@ -118,7 +118,7 @@ export function HeroCard({
               textAlign: design["home.bubbleText.textAlign"] as "left" | "center" | "right",
               letterSpacing: design["home.bubbleText.letterSpacing"],
             },
-          ])}
+          ]}
           color={design["home.bubbleText.color"]}
         >
           {"오늘 하루는\n어땠어요?"}
