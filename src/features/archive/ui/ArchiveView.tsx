@@ -6,6 +6,7 @@ import { EmotionFilter } from "@/components/archive/EmotionFilter";
 import {
   Calendar,
   Icon,
+  IconButton,
   InfoBlock,
   SearchField,
   Text,
@@ -16,6 +17,7 @@ import {
 import {
   background,
   emotion,
+  homeV2,
   label as labelColor,
   layout,
   line,
@@ -26,7 +28,7 @@ import {
 import type { Diary } from "@/features/diary/model/types";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 import type { Schedule } from "@/features/home/model/types";
-import { formatKoreanDateShort } from "@/lib/day";
+import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
 
 export type ArchiveMode = "calendar" | "list";
 
@@ -83,10 +85,37 @@ export function ArchiveView({
 
   return (
     <View style={styles.root}>
-      <View style={styles.titleWrap}>
-        <Text variant="title3Hand" color={labelColor.normal} style={styles.title}>
-          보관함
-        </Text>
+      <View style={styles.header}>
+        <View>
+          <View style={styles.titleWrap}>
+            <Text variant="title3Hand" color={labelColor.normal} style={styles.title}>
+              보관함
+            </Text>
+          </View>
+          {view === "calendar" ? (
+            <View style={styles.monthPaper}>
+              <Text variant="label1" style={styles.monthLabel}>
+                {formatKoreanMonth(month)}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {view === "calendar" ? (
+          <View style={styles.monthActions}>
+            <IconButton
+              name="chevron-left"
+              size={20}
+              accessibilityLabel="이전 달"
+              onPress={() => onMonthStep(-1)}
+            />
+            <IconButton
+              name="chevron-right"
+              size={20}
+              accessibilityLabel="다음 달"
+              onPress={() => onMonthStep(1)}
+            />
+          </View>
+        ) : null}
       </View>
 
       {view === "calendar" ? (
@@ -109,19 +138,26 @@ export function ArchiveView({
               onMonthStep={onMonthStep}
               markOf={markOf}
               dateSticker
+              compactDateSticker
+              showMonthControls={false}
             />
           </View>
 
           <View style={styles.dayScene}>
             <View style={styles.dayPaper}>
               {selectedDiary != null ? (
-                <DiaryPreviewCard diary={selectedDiary} onOpen={onOpenDiary} showOpenLink />
+                <DiaryPreviewCard
+                  diary={selectedDiary}
+                  onOpen={onOpenDiary}
+                  showOpenLink
+                  embedded
+                />
               ) : (
-                <InfoBlock style={styles.emptyDay}>
+                <View style={styles.emptyDay}>
                   <Text variant="body2Reading" color={labelColor.neutral} style={styles.emptyText}>
                     {"이 날은 기록이 없어요.\n비어 있어도 괜찮은 날이에요."}
                   </Text>
-                </InfoBlock>
+                </View>
               )}
               {daySchedules.length > 0 ? (
                 <View style={styles.scheduleSection}>
@@ -223,18 +259,37 @@ const styles = StyleSheet.create({
     minHeight: 0,
     marginHorizontal: -layout.screenPadding,
     paddingHorizontal: layout.screenPadding,
-    backgroundColor: background.alternative,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 10,
   },
   titleWrap: {
     alignSelf: "flex-start",
-    marginTop: space.sm,
-    marginBottom: space.lg,
     backgroundColor: background.splash,
     transform: [{ rotate: "-3deg" }],
     paddingHorizontal: 18,
-    paddingVertical: 6,
+    paddingVertical: 3,
   },
   title: { fontSize: 34 },
+  monthPaper: {
+    alignSelf: "flex-start",
+    marginLeft: 14,
+    marginTop: -4,
+    backgroundColor: homeV2.color.weekday,
+    paddingHorizontal: 14,
+    paddingVertical: 2,
+    transform: [{ rotate: "-1deg" }],
+  },
+  monthLabel: {
+    fontFamily: homeV2.font.bold,
+    fontSize: 18,
+    lineHeight: 22,
+    color: homeV2.color.ink,
+  },
+  monthActions: { flexDirection: "row", gap: 2 },
   scroll: { flex: 1, minHeight: 0 },
   content: { gap: 18, paddingBottom: 24 },
   calendarPaper: {
@@ -274,7 +329,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   baba: { position: "absolute", width: 96, height: 140, right: -8, bottom: -8 },
-  emptyDay: { padding: space.xl },
+  emptyDay: { padding: space.md },
   emptyText: { textAlign: "center" },
   scheduleSection: {
     borderTopWidth: 1,

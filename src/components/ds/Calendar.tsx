@@ -93,6 +93,10 @@ type Props = {
    * 점 모드(쉼터의 수행/미수행 점).
    */
   dateSticker?: boolean;
+  /** HTML 보관함 시안처럼 46pt 줄에 작은 얼굴을 배치한다. 기본 달력 크기는 유지한다. */
+  compactDateSticker?: boolean;
+  /** 월 이동 UI를 화면 제목 옆에 배치할 때 달력 안의 중복 행을 숨긴다. */
+  showMonthControls?: boolean;
   /**
    * 격자가 **늘 잡아 두는 주 줄 수**. 한 달은 5줄일 때도 6줄일 때도 있어서, 그 달의
    * 줄 수만큼만 높으면 달을 넘길 때 격자 높이가 한 줄씩 오르내린다 — 달력을
@@ -118,6 +122,8 @@ export function Calendar({
   onMonthStep,
   markOf,
   dateSticker = false,
+  compactDateSticker = false,
+  showMonthControls = true,
   reserveRows,
 }: Props) {
   const [gridWidth, setGridWidth] = useState(0);
@@ -130,10 +136,12 @@ export function Calendar({
    * (칸 35 남짓)에서 그림이 칸을 넘어 이웃과 겹치고, 넓은 기기에서는 얼굴이 작아
    * 표정이 안 보인다. 폭을 재기 전 한 프레임은 최대값으로 선다.
    */
-  const stickerSize =
-    cell == null
+  const stickerSize = compactDateSticker
+    ? 22
+    : cell == null
       ? STICKER_MAX
       : Math.max(STICKER_MIN, Math.min(STICKER_MAX, Math.round(cell - STICKER_GUTTER)));
+  const schedDotTop = compactDateSticker ? 2 : SCHED_DOT_TOP;
 
   const [y = "2026", m = "1"] = month.split("-");
   // 1일의 요일만큼 앞을 비운다 — 요일 머리글과 줄이 맞아야 달력으로 읽힌다
@@ -150,32 +158,34 @@ export function Calendar({
    * 덕에 **아래**에 남는다(`styles.grid`).
    */
   const cellHeight = dateSticker
-    ? DATE_TOP + DATE_ROW + SCHED_DOT_TOP + SCHED_DOT + STICKER_GAP + stickerSize
+    ? DATE_TOP + DATE_ROW + schedDotTop + SCHED_DOT + STICKER_GAP + stickerSize
     : CELL_HEIGHT;
   const reservedGridHeight =
     reserveRows == null ? null : HEAD_HEIGHT + reserveRows * (cellHeight + ROW_GAP);
 
   return (
     <View style={styles.root}>
-      <View style={styles.monthRow}>
-        <IconButton
-          name="chevron-left"
-          size={20}
-          accessibilityLabel="이전 달"
-          onPress={() => onMonthStep(-1)}
-          style={styles.monthButton}
-        />
-        <Text variant="label1" color={labelColor.strong}>
-          {formatKoreanMonth(month)}
-        </Text>
-        <IconButton
-          name="chevron-right"
-          size={20}
-          accessibilityLabel="다음 달"
-          onPress={() => onMonthStep(1)}
-          style={styles.monthButton}
-        />
-      </View>
+      {showMonthControls ? (
+        <View style={styles.monthRow}>
+          <IconButton
+            name="chevron-left"
+            size={20}
+            accessibilityLabel="이전 달"
+            onPress={() => onMonthStep(-1)}
+            style={styles.monthButton}
+          />
+          <Text variant="label1" color={labelColor.strong}>
+            {formatKoreanMonth(month)}
+          </Text>
+          <IconButton
+            name="chevron-right"
+            size={20}
+            accessibilityLabel="다음 달"
+            onPress={() => onMonthStep(1)}
+            style={styles.monthButton}
+          />
+        </View>
+      ) : null}
 
       <View
         style={[styles.grid, reservedGridHeight != null ? { minHeight: reservedGridHeight } : null]}
@@ -246,7 +256,7 @@ export function Calendar({
                       (보관함=홈 CTA 색). 자리는 늘 잡고 색이 있는 날만 그린다. SVG 원이라
                       first-paint 에 네모로 굳지 않는다(아래 `Dot` 주석) */}
                   <View
-                    style={styles.schedSlot}
+                    style={[styles.schedSlot, { marginTop: schedDotTop }]}
                     testID={mark.dotColor != null ? SCHEDULE_DOT : undefined}
                   >
                     <Dot size={SCHED_DOT} color={mark.dotColor} />
