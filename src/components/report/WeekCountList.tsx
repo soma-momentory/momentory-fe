@@ -1,11 +1,13 @@
 import { StyleSheet, View } from "react-native";
 
-import { Card, Icon, Text, type IconName } from "@/components/ds";
-import { interaction, label as labelColor, space } from "@/design/ds";
+import { Icon, Text, type IconName } from "@/components/ds";
+import { useEffectiveFontScale } from "@/components/ds/Text";
+import { interaction, space } from "@/design/ds";
+import { reportPaper } from "@/design/ds/reportPaper";
 import type { WeeklyReport } from "@/features/report/model/weeklyReport";
 
 /**
- * `W1` · 「**이번 주 기록**」 — 일정과 일기를 한 줄씩 센다.
+ * `W1` · 「**이번 주 기록**」 — 일정과 일기를 HTML 시안의 종이 통계 타일에 센다.
  *
  * ## 바람카드 줄이 빠졌다 · 이름도 바뀌었다 (2026-09-12)
  *
@@ -65,34 +67,70 @@ export const weekCounts = (report: WeeklyReport): WeekCount[] => [
 ];
 
 export function WeekCountList({ report }: { report: WeeklyReport }) {
+  const fontScale = useEffectiveFontScale();
   return (
-    <Card padding="loose" style={styles.card}>
-      {weekCounts(report).map((c) => (
-        <View key={c.label} style={styles.row}>
-          <Icon name={c.icon} size={20} color={interaction.inactive} />
-          <Text variant="body2" color={labelColor.neutral} style={styles.label}>
-            {c.label}
-          </Text>
+    <View style={styles.grid}>
+      {weekCounts(report).map((c, index) => (
+        <View key={c.label} style={[styles.tile, index % 2 === 0 ? styles.left : styles.right]}>
+          <View style={[styles.tape, index % 2 === 0 ? styles.tapeGold : styles.tapePink]} />
+          <View style={styles.labelRow}>
+            <Icon name={c.icon} size={16} color={interaction.inactive} />
+            <Text
+              variant="body2"
+              color={reportPaper.muted}
+              style={[styles.label, { lineHeight: 22 * fontScale }]}
+            >
+              {c.label}
+            </Text>
+          </View>
           <View style={styles.values}>
             {c.prefix.length > 0 ? (
-              <Text variant="caption1" color={labelColor.alternative}>
+              <Text
+                variant="caption1"
+                color={reportPaper.muted}
+                style={[styles.prefix, { lineHeight: 18 * fontScale }]}
+              >
                 {c.prefix}
               </Text>
             ) : null}
-            <Text variant="headline1" color={labelColor.strong}>
+            <Text
+              variant="headline1"
+              color={reportPaper.strong}
+              style={[styles.value, { lineHeight: 26 * fontScale }]}
+            >
               {c.value}
             </Text>
           </View>
         </View>
       ))}
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { gap: space.xl },
-  row: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  label: { flex: 1, minWidth: 0 },
-  // 「12개 중」과 「9개 완료」가 한 줄에 선다 — 밑줄을 맞춰야 굵기 차이가 위계로 읽힌다
-  values: { flexDirection: "row", alignItems: "baseline", gap: space.xs, flexShrink: 1 },
+  grid: { flexDirection: "row", gap: 16, paddingHorizontal: space.xs },
+  tile: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 88,
+    justifyContent: "space-between",
+    gap: space.xs,
+    paddingHorizontal: 12,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: reportPaper.white,
+    borderWidth: 1,
+    borderColor: reportPaper.border,
+    boxShadow: `0px 4px 8px ${reportPaper.shadow}1A`,
+  },
+  left: { transform: [{ rotate: "-2deg" }] },
+  right: { transform: [{ rotate: "1.5deg" }] },
+  tape: { position: "absolute", top: -8, left: "38%", width: 42, height: 16 },
+  tapeGold: { backgroundColor: reportPaper.tape, opacity: 0.85 },
+  tapePink: { backgroundColor: reportPaper.date, opacity: 0.9 },
+  labelRow: { flexDirection: "row", alignItems: "center", gap: space.xs },
+  label: { flexShrink: 1, fontFamily: reportPaper.font.regular, fontSize: 17, lineHeight: 22 },
+  values: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: space.xs },
+  prefix: { fontFamily: reportPaper.font.regular, fontSize: 14, lineHeight: 18 },
+  value: { fontFamily: reportPaper.font.bold, fontSize: 21, lineHeight: 26 },
 });
