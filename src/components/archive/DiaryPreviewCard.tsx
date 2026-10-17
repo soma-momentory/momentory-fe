@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Card, EmotionPebble, Icon, Text } from "@/components/ds";
+import { useEffectiveFontScale } from "@/components/ds/Text";
 import { label as labelColor, space } from "@/design/ds";
 import type { Diary } from "@/features/diary/model/diary";
 import { emotionName } from "@/features/emotion/model/emotion";
@@ -29,21 +30,29 @@ type Props = {
   onOpen: (id: string) => void;
   /** `A1` 선택 날짜 카드에만 붙는다 — 목록은 카드 자체가 링크라 `›` 로 말한다 */
   showOpenLink?: boolean;
+  /** 선택 날짜의 바깥 종이가 카드가 되므로 안쪽의 두 번째 카드 장식을 뺀다. */
+  embedded?: boolean;
 };
 
-export function DiaryPreviewCard({ diary, onOpen, showOpenLink = false }: Props) {
+export function DiaryPreviewCard({ diary, onOpen, showOpenLink = false, embedded = false }: Props) {
+  const largeText = useEffectiveFontScale() > 1.2 && embedded;
   return (
     <Pressable accessibilityRole="button" onPress={() => onOpen(diary.id)}>
-      <Card style={styles.card}>
-        <View style={styles.head}>
-          <Text variant="body1" color={labelColor.strong} numberOfLines={1} style={styles.date}>
+      <Card style={[styles.card, embedded && styles.embedded]}>
+        <View style={[styles.head, embedded && styles.headEmbedded, largeText && styles.headLarge]}>
+          <Text
+            variant="body1"
+            color={labelColor.strong}
+            numberOfLines={embedded ? 2 : 1}
+            style={[styles.date, largeText && styles.dateLarge]}
+          >
             {`${formatKoreanDateShort(diary.date)}의 일기`}
           </Text>
 
           {/* 감정은 머리 오른쪽으로 — 조약돌 옆에는 늘 이름이 붙는다(감정색은
               대비가 낮아 색만으로 읽히지 않는다) */}
           {diary.emotions.length > 0 ? (
-            <View style={styles.tags}>
+            <View style={[styles.tags, largeText && styles.tagsLarge]}>
               {diary.emotions.map((e, i) => (
                 <View key={`${e}-${i}`} style={styles.tag}>
                   <EmotionPebble id={e} size={12} />
@@ -77,8 +86,12 @@ export function DiaryPreviewCard({ diary, onOpen, showOpenLink = false }: Props)
 
 const styles = StyleSheet.create({
   card: { gap: space.sm },
+  embedded: { padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
   head: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  headEmbedded: { alignItems: "flex-start" },
+  headLarge: { flexDirection: "column", alignItems: "stretch" },
   date: { flex: 1, minWidth: 0 },
+  dateLarge: { flex: 0 },
   // 오른쪽 정렬 + 줄바꿈 — 감정이 둘 이상이면 오른쪽에서 접힌다(날짜가 밀리지 않게)
   tags: {
     flexShrink: 1,
@@ -88,5 +101,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     gap: space.sm,
   },
+  tagsLarge: { alignSelf: "flex-end" },
   tag: { flexDirection: "row", alignItems: "center", gap: space.xs },
 });
