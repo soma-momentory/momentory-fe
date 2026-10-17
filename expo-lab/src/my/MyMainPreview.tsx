@@ -29,10 +29,12 @@ const TABS = [
 
 /** 운영 Store/API/권한을 읽지 않는 마이 본문 어댑터. */
 export function MyMainPreview({
+  design,
   scenarioId,
   fontScale = 1,
   onMessage,
 }: {
+  design?: import("../../../src/design/studioDesign").StudioDesign;
   scenarioId: string;
   fontScale?: 1 | 1.3 | 1.5;
   onMessage: (message: string) => void;
@@ -46,6 +48,7 @@ export function MyMainPreview({
         <Screen padded={false} edges={[]}>
           <View style={styles.body}>
             <MyMainView
+              design={design}
               nickname={
                 scenario === "long-nickname"
                   ? "길고긴닉네임으로마이화면의줄임표와기록일수를확인해요"

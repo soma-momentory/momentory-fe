@@ -7,6 +7,7 @@ import { Menu, type MenuAction } from "@/components/ds/Menu";
 import { Modal } from "@/components/ds/Modal";
 import { Toast } from "@/components/ds/Toast";
 import { homeV2, layout, space } from "@/design/ds";
+import { type StudioDesign } from "@/design/studioDesign";
 import { homeLayoutMode, type HomeLayoutMode } from "@/features/home/model/homeLayout";
 import { MAX_VISIBLE_SCHEDULES, visibleSchedules } from "@/features/home/model/presentation";
 
@@ -39,6 +40,7 @@ export type { HomeV2ViewActions, HomeV2ViewModel, HomeV2ViewProps, HomeWeatherVi
  * 날씨는 `model.weather` 가 있을 때만, 종의 점은 서버 unread가 참일 때만 그린다.
  */
 export function HomeV2View({
+  design,
   model,
   actions,
   renderFrame,
@@ -47,7 +49,7 @@ export function HomeV2View({
   onRowPitch,
   inboxPopover,
   weatherIntroSheet,
-}: HomeV2ViewProps) {
+}: HomeV2ViewProps & { design?: StudioDesign }) {
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [menu, setMenu] = useState<{ id: string; top: number; anchorTop: number } | null>(null);
@@ -159,6 +161,7 @@ export function HomeV2View({
 
       <View style={styles.heroWrap}>
         <HeroCard
+          design={design}
           retroReminderTime={model.retroReminderTime}
           weather={model.weather}
           onStartReflection={actions.onStartReflection}

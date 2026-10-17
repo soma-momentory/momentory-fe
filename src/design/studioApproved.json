@@ -1,0 +1,19 @@
+{
+  "home.hero.backgroundColor": "#FBF8F1",
+  "home.hero.borderRadius": 16,
+  "home.bubble.backgroundColor": "#FFFFFF",
+  "home.bubble.borderRadius": 22,
+  "home.bubble.paddingHorizontal": 18,
+  "rest.wishPaper.backgroundColor": "#FBF8F1",
+  "rest.wishPaper.paddingLeft": 16,
+  "archive.titleWrap.backgroundColor": "#EFE0C6",
+  "archive.titleWrap.paddingHorizontal": 18,
+  "archive.title.fontSize": 34,
+  "my.profileCard.backgroundColor": "#FBF6EA",
+  "my.profileCard.borderRadius": 8,
+  "my.profileCard.paddingHorizontal": 18,
+  "my.profileCard.shadowOpacity": 0.12,
+  "report.weekTitlePaper.backgroundColor": "#E9D6BF",
+  "report.weekTitlePaper.paddingHorizontal": 14,
+  "report.weekTitle.fontSize": 30
+}

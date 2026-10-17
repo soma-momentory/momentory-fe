@@ -42,10 +42,12 @@ const TABS = [
 ] as const;
 
 export function RestHubPreview({
+  design,
   scenarioId,
   fontScale = 1,
   onMessage,
 }: {
+  design?: import("../../../src/design/studioDesign").StudioDesign;
   scenarioId: string;
   fontScale?: 1 | 1.3 | 1.5;
   onMessage: (message: string) => void;
@@ -66,6 +68,7 @@ export function RestHubPreview({
         <Screen padded={false} edges={[]}>
           <View style={styles.body}>
             <RestHubView
+              design={design}
               summary={SUMMARIES[scenario]}
               contents={contents}
               onOpenCards={() => onMessage("바람카드 이동은 Lab Mock입니다.")}
