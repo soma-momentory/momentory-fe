@@ -1,5 +1,7 @@
 import { fireEvent, render } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 
+import { PreviewFontScaleContext } from "@/components/ds/Text";
 import type { WeeklyReport } from "@/features/report/model/weeklyReport";
 import { ReportView } from "@/features/report/ui/ReportView";
 
@@ -76,5 +78,40 @@ describe("ReportView", () => {
     expect(screen.getByText(message)).toBeTruthy();
     expect(screen.getByText("이 주 감정들")).toBeTruthy();
     expect(screen.getByText("이 주의 기록 보기")).toBeTruthy();
+  });
+
+  it("HTML 종이 배치에서 실제 주간 값만 보여 주고 일곱 요일을 선택할 수 있다", async () => {
+    const report = {
+      ...REPORT,
+      days: REPORT.days.map((day, index) =>
+        index === 1 ? { ...day, emotion: 1 as const, emotions: [1 as const] } : day,
+      ),
+    };
+    const screen = await render(<ReportView {...props} report={report} />);
+
+    expect(screen.getByText("바바의 한 주 정리")).toBeTruthy();
+    expect(screen.getByText("요일별")).toBeTruthy();
+    expect(screen.getByText("이번 주 기록")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /요일 / })).toHaveLength(7);
+    expect(screen.queryByText("쉼터에 들른 날")).toBeNull();
+    expect(screen.queryByText("완료한 일정")).toBeNull();
+
+    await fireEvent.press(screen.getByRole("button", { name: "월요일 행복함" }));
+    expect(screen.getByText("월요일 ·")).toBeTruthy();
+  });
+
+  it("큰 글씨 모의에서도 긴 서버 문장과 카드 내용을 자르지 않는다", async () => {
+    const message = "길고 긴 한 주의 마음을 천천히 돌아보며 오늘의 장면을 기억해요.";
+    const screen = await render(
+      <PreviewFontScaleContext.Provider value={1.5}>
+        <ReportView {...props} report={{ ...REPORT, moodMessage: message }} />
+      </PreviewFontScaleContext.Provider>,
+    );
+
+    const summary = screen.getByText(message);
+    expect(summary.props.numberOfLines).toBeUndefined();
+    expect(StyleSheet.flatten(summary.props.style).lineHeight).toBeGreaterThan(25);
+    expect(screen.getByText("요일별")).toBeTruthy();
+    expect(screen.getByText("이번 주 기록 보기")).toBeTruthy();
   });
 });
