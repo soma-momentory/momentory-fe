@@ -346,7 +346,7 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
       </ScrollView>
       <ScrollView
         testID="studio-canvas"
-        style={styles.center}
+        style={stacked ? styles.centerStack : styles.center}
         contentContainerStyle={styles.centerContent}
       >
         <View style={styles.toolbar}>
@@ -497,7 +497,7 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
 
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: "row", backgroundColor: c.paper },
-  rootStack: { flexDirection: "column" },
+  rootStack: { flexDirection: "column", overflow: "scroll" },
   left: {
     width: 225,
     flexGrow: 0,
@@ -512,9 +512,10 @@ const styles = StyleSheet.create({
     borderColor: c.emptyBorder,
     backgroundColor: c.card,
   },
-  sideStack: { width: "100%", maxHeight: 310 },
+  sideStack: { width: "100%", height: 310, flexShrink: 0 },
   sideContent: { padding: 14, gap: 7 },
   center: { flex: 1 },
+  centerStack: { width: "100%", height: 900, flexShrink: 0 },
   centerContent: { alignItems: "center", padding: 20, gap: 16 },
   kicker: { color: c.green, fontSize: 11, fontWeight: "700", letterSpacing: 1.4 },
   title: { color: c.ink, fontSize: 24, fontWeight: "700" },

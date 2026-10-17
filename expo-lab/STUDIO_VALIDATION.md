@@ -21,11 +21,11 @@
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | 0 Worktree    | 시작 시 15개. 병합·깨끗함을 확인한 10개 중 4개는 Git 등록이 해제됐으나 Windows 긴 경로와 잠긴 `node_modules` 때문에 디렉터리가 남았다. 원래 작업 디렉터리, 미병합 검증 브랜치, 분석 Worktree는 보호했다. 새 feature Worktree 생성 뒤 Git 목록은 12개(그중 2개 `prunable`). 강제 삭제·hard reset 없음. | `git worktree list --porcelain`, 각 HEAD의 `origin/main` 포함 여부, PR 병합 상태, `git status --porcelain` |
 | 1 성능        | 기존 아틀라스는 이미 `FlatList`와 540px 축소본을 사용한다. Mock은 등록만 되고 선택 화면의 Preview만 마운트된다. Studio는 A 패널을 `memo`로 분리했다. B 배경 편집 시 A DOM 변경 0회, B 1회.                                                                                                            | Chromium 1440×1000, `MutationObserver` 단일 조작                                                           |
-| 2–4 편집·비교 | 5개 공유 View가 A/B에 렌더링. 화면·Mock·기기·글씨·확대 전환, 제한된 속성 편집, Undo/Redo, 여러 Draft, 자동 저장/복구, JSON 왕복, A/B 조작 초기화, 기본값 대비 Diff.                                                                                                                                   | Playwright 조작 3개 테스트, 5개 화면 스크린샷                                                              |
+| 2–4 편집·비교 | 5개 공유 View가 A/B에 렌더링. 화면·Mock·기기·글씨·확대 전환, 제한된 속성 편집, Undo/Redo, 여러 Draft, 자동 저장/복구, JSON 왕복, A/B 조작 초기화, 기본값 대비 Diff.                                                                                                                                   | Playwright 조작 4개 테스트, 5개 화면 스크린샷                                                              |
 | 5 시각 검증   | 5개 화면의 승인 디자인과 홈 375pt·1.5배 글씨 기준 캡처 6장. Windows Chromium 기준선과 CI 작업 추가.                                                                                                                                                                                                   | `npm run test:visual`                                                                                      |
 | 6 품질        | 타입·린트·포맷·Jest·Web export·운영 앱 JS export를 각각 확인한다.                                                                                                                                                                                                                                     | 명령 결과는 PR/CI와 최종 보고에서 기록                                                                     |
 
-Phase 6 최종 결과: 앱·Lab 타입, ESLint, Prettier, 기존 Vite Lab 빌드, Web export, Android JS export가 통과했다. Jest는 125개 suite·1,661개 테스트가 통과했고 Playwright는 3개 브라우저 테스트와 6개 시각 기준선이 통과했다. 전체 Jest에서 Playwright 파일은 별도 러너로 제외했다. 기존 `bodyRelease` 타이머 테스트가 전체 실행 부하에서 5초 제한을 넘겨 Jest 제한을 15초로 조정했고, 단독·전체 재실행에서 통과했다.
+Phase 6 최종 결과: 앱·Lab 타입, ESLint, Prettier, 기존 Vite Lab 빌드, Web export, Android JS export가 통과했다. Jest는 125개 suite·1,661개 테스트가 통과했고 Playwright는 4개 브라우저 테스트와 6개 시각 기준선이 통과했다. 전체 Jest에서 Playwright 파일은 별도 러너로 제외했다. 기존 `bodyRelease` 타이머 테스트가 전체 실행 부하에서 5초 제한을 넘겨 Jest 제한을 15초로 조정했고, 단독·전체 재실행에서 통과했다.
 
 ## Web 성능 수치
 
@@ -37,3 +37,4 @@ Phase 6 최종 결과: 앱·Lab 타입, ESLint, Prettier, 기존 Vite Lab 빌드
 - 1.5배 글씨는 Web 모의 배율이다. 네이티브 iOS·Android 접근성 글꼴과 실제 터치는 이 작업에서 검증하지 않았다.
 - 375pt·1.5배 홈 캡처에서 하단 콘텐츠가 도크 주변에 가까워진다. 실제 기기에서 스크롤 접근성과 잘림을 별도 확인해야 한다.
 - 시각 기준선은 Windows Chromium에서 생성했다. 스크린샷 픽셀 비교 CI도 Windows에서 실행한다.
+- 800×600px 브라우저에서는 세 패널을 세로로 스크롤해 접근할 수 있음을 Playwright에서 확인했다. 이는 미리보기의 375–430pt 기기 폭 검증과 별개다.

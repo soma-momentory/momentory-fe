@@ -61,6 +61,19 @@ test("keeps named drafts separate and rejects invalid property input", async ({ 
   );
 });
 
+test("keeps the canvas and property panel reachable in a narrow browser", async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 600 });
+  const canvas = page.getByTestId("studio-canvas");
+  const properties = page.getByTestId("studio-properties");
+  expect((await canvas.boundingBox())?.height).toBeGreaterThan(500);
+  await properties.scrollIntoViewIfNeeded();
+  await properties.getByRole("textbox", { name: "배경색" }).fill(claudeHomeColor.today);
+  await expect(page.getByTestId("studio-preview-B").getByTestId("studio-home-hero")).toHaveCSS(
+    "background-color",
+    "rgb(246, 222, 138)",
+  );
+});
+
 test("renders five shared views with matching scenarios in A and B", async ({ page }) => {
   for (const screen of screens) {
     await page.goto(`/#studio/${screen}`);
