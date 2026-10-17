@@ -1,7 +1,24 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { claudeHomeColor } from "../src/claude-home/tokens";
 
 const screens = ["home-main", "rest-hub", "archive", "my-main", "report"];
+
+async function expectPanelSnapshot(page: Page, name: string, width = 365, height = 779) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      Array.from(document.images, (image) => image.decode().catch(() => undefined)),
+    );
+  });
+  const box = await page.getByTestId("studio-preview-A").boundingBox();
+  expect(box).not.toBeNull();
+  const screenshot = await page.screenshot({
+    clip: { x: box!.x, y: box!.y, width, height },
+    animations: "disabled",
+    scale: "css",
+  });
+  expect(screenshot).toMatchSnapshot(name);
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/#studio/home-main");
@@ -79,7 +96,7 @@ test("renders five shared views with matching scenarios in A and B", async ({ pa
     await page.goto(`/#studio/${screen}`);
     await expect(page.getByTestId("studio-preview-A")).toBeVisible();
     await expect(page.getByTestId("studio-preview-B")).toBeVisible();
-    await expect(page.getByTestId("studio-preview-A")).toHaveScreenshot(`${screen}-approved.png`);
+    await expectPanelSnapshot(page, `${screen}-approved.png`);
   }
   await page.goto("/#studio/home-main");
   const sidebar = page.getByTestId("studio-sidebar");
@@ -88,5 +105,5 @@ test("renders five shared views with matching scenarios in A and B", async ({ pa
   await expect(page.getByTestId("studio-preview-B")).toContainText("하루 돌아보기");
   await page.getByRole("button", { name: "375pt" }).click();
   await page.getByRole("button", { name: "글씨 1.5×" }).click();
-  await expect(page.getByTestId("studio-preview-A")).toHaveScreenshot("home-375-large-type.png");
+  await expectPanelSnapshot(page, "home-375-large-type.png", 353, 752);
 });

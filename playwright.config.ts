@@ -6,7 +6,7 @@ export default defineConfig({
   expect: {
     timeout: 30_000,
     // Windows CI and local Windows rasterize font edges slightly differently.
-    toHaveScreenshot: { animations: "disabled", maxDiffPixelRatio: 0.04 },
+    toMatchSnapshot: { maxDiffPixelRatio: 0.04 },
   },
   use: {
     ...devices["Desktop Chrome"],
