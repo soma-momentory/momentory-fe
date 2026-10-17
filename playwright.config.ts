@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const port = Number(process.env.EXPO_LAB_PORT ?? 8085);
+
 export default defineConfig({
   testDir: "./expo-lab/e2e",
   timeout: 120_000,
@@ -10,13 +12,13 @@ export default defineConfig({
   },
   use: {
     ...devices["Desktop Chrome"],
-    baseURL: "http://127.0.0.1:8085",
+    baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 1440, height: 1000 },
   },
   webServer: {
-    command: "npx expo start --web --port 8085",
+    command: `npx expo start --web --port ${port}`,
     cwd: "expo-lab",
-    url: "http://127.0.0.1:8085",
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

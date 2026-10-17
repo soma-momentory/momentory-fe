@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -30,6 +31,8 @@ import {
   type ScreenGroup,
 } from "./catalog/screens";
 import { variantsFor } from "./catalog/variants";
+import { StudioShell, type StudioMode } from "./studio/StudioShell";
+import { designDiff, initialDrafts, parseDrafts, STORAGE_KEY } from "./studio/model";
 
 const Studio = lazy(() => import("./studio/Studio").then((module) => ({ default: module.Studio })));
 
@@ -53,18 +56,29 @@ const ATLAS_CARD_WIDTH = 320;
 const ATLAS_GAP = 16;
 const ATLAS_HEADING_HEIGHT = 74;
 
-function atlasRows(deviceHeight: number, columns: number): AtlasRow[] {
+function atlasRows(deviceHeight: number, columns: number, query = ""): AtlasRow[] {
   const cardHeight = Math.ceil(132 + (deviceHeight + 14) * 0.65);
   return screenGroups.flatMap((group) => {
+    const matches = group.screens.filter((screen) =>
+      `${screen.title} ${screen.route} ${group.title}`
+        .toLocaleLowerCase()
+        .includes(query.toLocaleLowerCase()),
+    );
+    if (!matches.length) return [];
     const rows: AtlasRow[] = [
-      { id: `heading-${group.id}`, kind: "heading", group, length: ATLAS_HEADING_HEIGHT },
+      {
+        id: `heading-${group.id}`,
+        kind: "heading",
+        group: { ...group, screens: matches },
+        length: ATLAS_HEADING_HEIGHT,
+      },
     ];
-    for (let index = 0; index < group.screens.length; index += columns) {
-      const last = index + columns >= group.screens.length;
+    for (let index = 0; index < matches.length; index += columns) {
+      const last = index + columns >= matches.length;
       rows.push({
         id: `cards-${group.id}-${index}`,
         kind: "cards",
-        screens: group.screens.slice(index, index + columns),
+        screens: matches.slice(index, index + columns),
         length: cardHeight + (last ? 0 : ATLAS_GAP),
       });
     }
@@ -74,7 +88,7 @@ function atlasRows(deviceHeight: number, columns: number): AtlasRow[] {
 
 function readRoute(): LabRoute {
   const fallback: LabRoute = {
-    page: "compare",
+    page: "studio",
     groupId: "",
     screenId: "home-main",
     variantId: "claude-v2",
@@ -105,7 +119,7 @@ function readRoute(): LabRoute {
   const type = search.get("type");
   const fontScale = type === "1.5" ? 1.5 : type === "large" ? 1.3 : 1;
   return {
-    page: parts[0] === "atlas" ? "atlas" : parts[0] === "studio" ? "studio" : "compare",
+    page: parts[0] === "atlas" ? "atlas" : parts[0] === "compare" ? "compare" : "studio",
     groupId:
       parts[0] === "atlas" && screenGroups.some((item) => item.id === parts[1])
         ? (parts[1] ?? "")
@@ -177,10 +191,14 @@ function CaptureBadge({ screen }: { screen: CatalogScreen }) {
 
 function AtlasHeader({
   deviceWidth,
+  query,
+  onQuery,
   onDeviceWidth,
   onJump,
 }: {
   deviceWidth: number;
+  query: string;
+  onQuery: (query: string) => void;
   onDeviceWidth: (width: number) => void;
   onJump: (groupId: string) => void;
 }) {
@@ -194,6 +212,13 @@ function AtlasHeader({
         화면과 등록된 시안을 비교할 수 있습니다.
       </Text>
       <Text style={styles.controlLabel}>스마트폰 종류</Text>
+      <TextInput
+        accessibilityLabel="화면 검색"
+        placeholder="화면 이름 또는 경로 검색"
+        value={query}
+        onChangeText={onQuery}
+        style={styles.searchInput}
+      />
       <View style={styles.chipRow}>
         {devices.map((item) => (
           <Choice
@@ -497,34 +522,6 @@ function Compare({
   );
 }
 
-function LabHeader({
-  page,
-  onAtlas,
-  onCompare,
-  onStudio,
-}: {
-  page: LabRoute["page"];
-  onAtlas: () => void;
-  onCompare: () => void;
-  onStudio: () => void;
-}) {
-  return (
-    <View style={styles.header}>
-      <Text style={styles.kicker}>MOMENTORY · EXPO DESIGN LAB</Text>
-      <Text style={styles.title}>Design Lab</Text>
-      <Text style={styles.description}>
-        홈·쉼터·보관함·마이·리포트의 실제 React Native UI를 비교·조작합니다. 38개 기존 화면 캡처는
-        이전 참고 자료로 보존합니다. 운영 앱과 API에는 연결되지 않습니다.
-      </Text>
-      <View style={styles.navigation}>
-        <Choice label="Design Studio" selected={page === "studio"} onPress={onStudio} />
-        <Choice label="화면 선택 · 시안 비교" selected={page === "compare"} onPress={onCompare} />
-        <Choice label="기존 앱 · 전체 화면" selected={page === "atlas"} onPress={onAtlas} />
-      </View>
-    </View>
-  );
-}
-
 function LabApp() {
   // 앱과 같은 파일 · 같은 이름(assets/fonts/README.md 「Gaegu」 · 결정 DN-4) — 시안 원본 변형도 이 이름을 쓴다
   const [fontsLoaded, fontError] = useFonts({
@@ -533,6 +530,15 @@ function LabApp() {
     KyoboHandwriting2025lyb: require("../../assets/fonts/KyoboHandwriting2025lyb.ttf"),
   });
   const [route, setRoute] = useState(readRoute);
+  const [atlasQuery, setAtlasQuery] = useState("");
+  const [draftStatus, setDraftStatus] = useState(() => {
+    if (Platform.OS !== "web") return initialDrafts();
+    try {
+      return parseDrafts(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null"));
+    } catch {
+      return initialDrafts();
+    }
+  });
   const [message, setMessage] = useState(
     "공유 UI에서 카드와 버튼을 눌러 Lab Mock 동작을 비교할 수 있어요.",
   );
@@ -545,7 +551,10 @@ function LabApp() {
     1,
     Math.floor((contentWidth + ATLAS_GAP) / (ATLAS_CARD_WIDTH + ATLAS_GAP)),
   );
-  const rows = useMemo(() => atlasRows(device.height, columns), [device.height, columns]);
+  const rows = useMemo(
+    () => atlasRows(device.height, columns, atlasQuery),
+    [device.height, columns, atlasQuery],
+  );
   const rowOffsets = useMemo(
     () => rows.map((_, index) => rows.slice(0, index).reduce((sum, row) => sum + row.length, 0)),
     [rows],
@@ -554,8 +563,19 @@ function LabApp() {
   useEffect(() => {
     if (Platform.OS !== "web") return;
     const syncRoute = () => setRoute(readRoute());
+    const syncDraft = () => {
+      try {
+        setDraftStatus(parseDrafts(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null")));
+      } catch {
+        setDraftStatus(initialDrafts());
+      }
+    };
     window.addEventListener("hashchange", syncRoute);
-    return () => window.removeEventListener("hashchange", syncRoute);
+    window.addEventListener("studio-draft-changed", syncDraft);
+    return () => {
+      window.removeEventListener("hashchange", syncRoute);
+      window.removeEventListener("studio-draft-changed", syncDraft);
+    };
   }, []);
 
   useEffect(() => {
@@ -603,6 +623,12 @@ function LabApp() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StudioShell
+        mode={route.page}
+        draftName={draftStatus.active}
+        changeCount={designDiff(draftStatus.drafts[draftStatus.active]!).length}
+        onMode={(page: StudioMode) => navigate({ page, groupId: "" })}
+      />
       {route.page === "studio" ? (
         <Suspense
           fallback={
@@ -611,7 +637,7 @@ function LabApp() {
             </View>
           }
         >
-          <Studio key={route.screenId} initialScreen={route.screenId} />
+          <Studio initialScreen={route.screenId} />
         </Suspense>
       ) : route.page === "atlas" ? (
         <FlatList
@@ -634,14 +660,10 @@ function LabApp() {
               style={[styles.listHeader, { width: contentWidth }]}
               onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
             >
-              <LabHeader
-                page="atlas"
-                onAtlas={() => navigate({ page: "atlas", groupId: "" })}
-                onCompare={() => navigate({ page: "compare" })}
-                onStudio={() => navigate({ page: "studio", screenId: "home-main" })}
-              />
               <AtlasHeader
                 deviceWidth={route.deviceWidth}
+                query={atlasQuery}
+                onQuery={setAtlasQuery}
                 onDeviceWidth={(deviceWidth) => navigate({ deviceWidth })}
                 onJump={(groupId) => navigate({ groupId })}
               />
@@ -663,12 +685,6 @@ function LabApp() {
         />
       ) : (
         <ScrollView style={styles.page} contentContainerStyle={styles.pageInner}>
-          <LabHeader
-            page="compare"
-            onAtlas={() => navigate({ page: "atlas", groupId: "" })}
-            onCompare={() => navigate({ page: "compare" })}
-            onStudio={() => navigate({ page: "studio", screenId: "home-main" })}
-          />
           <Compare
             route={route}
             viewportWidth={viewportWidth}
@@ -744,6 +760,16 @@ const styles = StyleSheet.create({
   choiceSelected: { backgroundColor: c.green, borderColor: c.green, borderWidth: 2 },
   choiceText: { color: c.ink, fontSize: 12, fontWeight: "600" },
   choiceTextSelected: { color: c.white, fontWeight: "700" },
+  searchInput: {
+    maxWidth: 420,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderColor: c.taskBorder,
+    borderRadius: 8,
+    backgroundColor: c.white,
+    color: c.ink,
+  },
   compareGrid: { flexDirection: "row", gap: 18, alignItems: "flex-start" },
   compareStack: { flexDirection: "column" },
   comparePanel: {
