@@ -214,8 +214,22 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
   const onMessage = useCallback((text: string) => setMessage(text), []);
 
   useEffect(() => {
-    if (Platform.OS === "web") window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    if (Platform.OS === "web") {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      window.dispatchEvent(new Event("studio-draft-changed"));
+    }
   }, [data]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const syncScreen = () => {
+      const path = window.location.hash.slice(1).split("?")[0];
+      const next = studioScreens.find((item) => `studio/${item.id}` === path)?.id;
+      if (next) setScreenId(next);
+    };
+    window.addEventListener("hashchange", syncScreen);
+    return () => window.removeEventListener("hashchange", syncScreen);
+  }, []);
 
   const update = (key: StudioDesignKey, value: string | number) => {
     if (design[key] === value) return;
