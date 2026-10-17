@@ -160,6 +160,8 @@ describe("A1 · 보관함 달력", () => {
     await fireEvent.press(r.getByLabelText("22일, 화남"));
 
     expect(r.queryByText(/전체 일기 보기/)).toBeNull();
+    await fireEvent.press(r.getByText("일기 열어보기 ›"));
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/diary/d-fixture-22");
   });
 
   it("일기가 없는 날은 같은 자리에 한 장만 바뀐다 — 빈 상태 전용 화면이 아니다", async () => {

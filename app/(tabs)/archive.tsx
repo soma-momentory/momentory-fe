@@ -1,33 +1,24 @@
 import { track } from "@/features/analytics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { ScrollView, useWindowDimensions } from "react-native";
 
-import { DayScheduleList } from "@/components/archive/DayScheduleList";
-import { DiaryPreviewCard } from "@/components/archive/DiaryPreviewCard";
-import { EmotionFilter } from "@/components/archive/EmotionFilter";
 import {
   BottomSheet,
-  Calendar,
-  Card,
   EmotionSticker,
   Icon,
-  InfoBlock,
   ListCell,
-  SearchField,
   TabScreen,
-  Text,
-  ViewSwitcher,
   type CalendarMark,
-  type ViewOption,
 } from "@/components/ds";
-import { label as labelColor, scheduleDot, space, withAlpha } from "@/design/ds";
+import { label as labelColor, scheduleDot, withAlpha } from "@/design/ds";
 import { byLatest, diariesInMonth, monthOf } from "@/features/archive/model/archive";
 import { useMonthSchedules } from "@/features/archive/model/monthSchedules";
 import { useDiary } from "@/features/diary/model/diary";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
+import { ArchiveView, type ArchiveMode } from "@/features/archive/ui/ArchiveView";
 import { useTodayContext, visibleSchedules } from "@/features/home/model/day";
-import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
+import { formatKoreanMonth } from "@/lib/day";
 
 /**
  * `A1` 보관함 · 달력 + `A2` 보관함 · 목록 + 감정 필터
@@ -56,11 +47,6 @@ import { formatKoreanDateShort, formatKoreanMonth } from "@/lib/day";
  *   달라 색이 안 보여도 갈리고, 이름은 기록 카드와 칸의 낭독기 이름이 말한다
  * - 빈 날·빈 결과는 **전용 레이아웃이 아니라 같은 자리의 한 장**이다(`A1.md`)
  */
-const VIEWS: readonly ViewOption<"calendar" | "list">[] = [
-  { name: "calendar", icon: "calendar", accessibilityLabel: "달력으로 보기" },
-  { name: "list", icon: "list", accessibilityLabel: "목록으로 보기" },
-];
-
 /**
  * 라우트 파라미터로 건너온 날짜 — 모양이 어긋나면 **없는 것으로 친다**(`null`).
  *
@@ -102,7 +88,7 @@ export default function Archive() {
    */
   const openedAt = askedDate(useLocalSearchParams().date) ?? todayDate;
 
-  const [view, setView] = useState<"calendar" | "list">("calendar");
+  const [view, setView] = useState<ArchiveMode>("calendar");
   // 보관함이 여는 달은 건너온 날(없으면 오늘)이 속한 달이다 — `‹ ›` 로 옮기면 두 면이 함께 따라간다
   const [month, setMonth] = useState(monthOf(openedAt));
   const [selectedDate, setSelectedDate] = useState(openedAt);
@@ -214,10 +200,6 @@ export default function Archive() {
       overlay={
         monthPickerOpen ? (
           <BottomSheet onDismiss={() => setMonthPickerOpen(false)}>
-            {/* 시트는 하나의 결정만 담는다 — 여기선 「어느 기간을 볼지」 하나다(§11).
-                제목 줄은 두지 않는다(2026-08-24 · 사용자 요청) — 「전체 보기 · 2026년 7월 …」
-                이 그 자체로 무엇을 고르는 자리인지 말한다. 여는 버튼의 낭독기 이름
-                (「기간 선택, 지금 …」)이 그 몫을 대신 진다 */}
             <ScrollView
               style={{ maxHeight: Math.round(windowHeight * 0.35) }}
               showsVerticalScrollIndicator
@@ -249,152 +231,39 @@ export default function Archive() {
         ) : null
       }
     >
-      {/* 탭 루트라 상단 내비 제목을 두지 않는다 — 본문의 Title 3(손글씨)가 제목이다(`DESIGN.md` §10) */}
-      <View style={styles.header}>
-        <Text variant="title3Hand" color={labelColor.strong}>
-          보관함
-        </Text>
-        <ViewSwitcher
-          options={VIEWS}
-          active={view}
-          onChange={(next) => {
-            if (next !== view) track("archive_view_changed", { view: next });
-            setView(next);
-          }}
-        />
-      </View>
-
-      {view === "calendar" ? (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Card>
-            <Calendar
-              month={month}
-              selectedDate={selectedDate}
-              onSelect={(date) => {
-                track("archive_date_selected", {
-                  days_from_today: Math.round(
-                    (Date.parse(date) - Date.parse(todayDate)) / 86400000,
-                  ),
-                  has_diary: diaries.some((d) => d.date === date),
-                });
-                setSelectedDate(date);
-              }}
-              onMonthStep={goMonth}
-              markOf={markOf}
-              dateSticker
-            />
-          </Card>
-
-          <View style={styles.section}>
-            {/* 「○월 ○일의 기록」 머리글은 뺐다(2026-08-24) — 일기 카드가 이미 그
-                날짜를 말하고, 아래 일정은 자기 머리글(「○월 ○일의 일정」)을 갖는다 */}
-            {selectedDiary != null ? (
-              <DiaryPreviewCard diary={selectedDiary} onOpen={open} showOpenLink />
-            ) : (
-              <Note>{"이 날은 기록이 없어요.\n비어 있어도 괜찮은 날이에요."}</Note>
-            )}
-
-            {/* 일기 아래 그날 일정 — 작은 갈색 머리글로 일기와 나누고, 오른쪽으로
-                조금 들여 종속으로 보인다. 완료는 점으로(채운 초록 = 완료 · 빈 점 =
-                미완료 · 홈의 완료와 이어진다) */}
-            <DayScheduleList
-              schedules={daySchedules}
-              title={`${formatKoreanDateShort(selectedDate)}의 일정`}
-              titleVariant="label1"
-              titleColor={labelColor.neutral}
-              inset={space.md}
-              showStatusDot
-            />
-          </View>
-        </ScrollView>
-      ) : (
-        <>
-          <View style={styles.listTop}>
-            <SearchField
-              value={query}
-              onChangeText={setQuery}
-              placeholder="일기 내용 검색"
-              accessibilityLabel="일기 내용 검색"
-            />
-
-            {/* 칩 줄은 **화면 끝까지 흐른다** — 좌우 20 을 되돌리고 그만큼을
-                스크롤 내용의 여백으로 옮긴다. 감싸는 View 에 패딩을 주면 칩이
-                20px 지점에서 잘린다 */}
-            <View style={styles.bleed}>
-              <EmotionFilter selected={filters} onToggle={toggleFilter} edgePadding={space.xl} />
-            </View>
-
-            <View style={styles.countRow}>
-              <Text variant="body2" color={labelColor.neutral}>
-                {`기록 ${listed.length}건`}
-              </Text>
-              {/* 달을 고르거나 전체를 보는 자리 — 누르면 기간 시트가 열린다 */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`기간 선택, 지금 ${listMonthLabel}`}
-                onPress={() => setMonthPickerOpen(true)}
-                hitSlop={space.sm}
-                style={styles.scopeTrigger}
-              >
-                <Text variant="body2" color={labelColor.normal}>
-                  {listMonthLabel}
-                </Text>
-                <Icon name="chevron-right" size={16} color={labelColor.assistive} />
-              </Pressable>
-            </View>
-          </View>
-
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {listed.length === 0 ? (
-              <Note>조건에 맞는 일기가 없어요.</Note>
-            ) : (
-              listed.map((d) => <DiaryPreviewCard key={d.id} diary={d} onOpen={open} />)
-            )}
-          </ScrollView>
-        </>
-      )}
-
-      {/*
-        ⚠ **되돌리기 줄이 없다**(2026-08-21). 삭제 앞에 확인 모달이 있으므로 같은
-        것을 두 번 묻는 셈이었다 — `DESIGN.md` 「삭제는 확인 모달 1회」. 결과는
-        토스트 한 줄로만 말한다(`lib/toast.ts`). 차이 기록: `docs/PRODUCT.md`.
-      */}
+      <ArchiveView
+        month={month}
+        selectedDate={selectedDate}
+        selectedDiary={selectedDiary}
+        daySchedules={daySchedules}
+        monthly={monthly}
+        listed={listed}
+        markOf={markOf}
+        view={view}
+        filters={filters}
+        query={query}
+        listMonthLabel={listMonthLabel}
+        onViewChange={(next) => {
+          if (next !== view) track("archive_view_changed", { view: next });
+          setView(next);
+        }}
+        onSelectDate={(date) => {
+          track("archive_date_selected", {
+            days_from_today: Math.round((Date.parse(date) - Date.parse(todayDate)) / 86400000),
+            has_diary: diaries.some((diary) => diary.date === date),
+          });
+          setSelectedDate(date);
+        }}
+        onMonthStep={goMonth}
+        onToggleFilter={toggleFilter}
+        onQueryChange={setQuery}
+        onOpenPeriod={() => setMonthPickerOpen(true)}
+        onOpenDiary={open}
+      />
     </TabScreen>
   );
 }
 
-/**
- * 빈 날·빈 결과의 한 장. **빈 상태 전용 레이아웃을 만들지 않는다**(`A1.md`) —
- * 기록 카드가 있던 자리에 같은 폭의 안내가 그대로 앉는다.
- *
- * 카드가 아니라 `InfoBlock` 이다 — **안내문은 카드가 아니다**(`DESIGN.md` §8).
- * 카드와 같은 테두리를 주면 「기록이 있는 것」과 같은 위계로 읽힌다.
- */
-function Note({ children }: { children: string }) {
-  return (
-    <InfoBlock style={styles.note}>
-      <Text variant="body2Reading" color={labelColor.neutral} style={styles.noteText}>
-        {children}
-      </Text>
-    </InfoBlock>
-  );
-}
-
-/**
- * 기간 시트의 한 줄. 고른 것에는 **체크**를 둔다 — 선택을 색만으로 표시하지
- * 않는다(`CLAUDE.md` 요약 3). 달력의 `‹ ›` 는 이웃 달로 한 칸씩 옮기는 것이고,
- * 여기선 지난 달로 **바로 건너뛰거나** 전체를 편다.
- */
 function MonthOption({
   label,
   selected,
@@ -414,28 +283,3 @@ function MonthOption({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: space.md,
-    paddingTop: space.sm,
-    paddingBottom: space.lg,
-  },
-
-  // 남은 높이를 다 쓰고 그 안에서만 스크롤한다 — 안 잡으면 내용 높이만큼 자라 넘친다
-  scroll: { flex: 1, minHeight: 0 },
-  content: { gap: space.lg, paddingBottom: space.xl },
-  section: { gap: space.md },
-
-  listTop: { gap: space.md, paddingBottom: space.md },
-  // 화면 좌우 20 을 되돌려 칩 줄이 끝까지 흐르게 한다
-  bleed: { marginHorizontal: -space.xl },
-  countRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  scopeTrigger: { flexDirection: "row", alignItems: "center", gap: space.xs },
-
-  note: { padding: space.xl },
-  noteText: { textAlign: "center" },
-});

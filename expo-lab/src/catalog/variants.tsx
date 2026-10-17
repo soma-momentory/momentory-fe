@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { ArchivePreview, archiveScenarios } from "../archive/ArchivePreview";
 import { ClaudeHomeMockPreview } from "../claude-home/MockPreview";
 import { claudeHomeScenarios } from "../claude-home/scenarios";
 import { homeVariants } from "../claude-home/variants";
@@ -67,6 +68,20 @@ export const labVariants: readonly LabVariant[] = [
     scenarios: restHubScenarios,
     render: ({ scenarioId, onMessage, fontScale }) => (
       <RestHubPreview
+        key={scenarioId}
+        scenarioId={scenarioId}
+        onMessage={onMessage}
+        fontScale={fontScale}
+      />
+    ),
+  },
+  {
+    id: "app-archive",
+    screenId: "archive",
+    label: "운영 보관함 · 공유 UI",
+    scenarios: archiveScenarios,
+    render: ({ scenarioId, onMessage, fontScale }) => (
+      <ArchivePreview
         key={scenarioId}
         scenarioId={scenarioId}
         onMessage={onMessage}
