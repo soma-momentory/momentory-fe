@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -34,6 +34,8 @@ import {
   type StudioDrafts,
 } from "./model";
 import { editableComponents, validValue, type EditableProperty } from "./registry";
+import { LayerTree } from "./LayerTree";
+import { useVisualSelection } from "./useVisualSelection";
 
 const studioScreens = [
   { id: "home-main", label: "홈", variant: "app-v2" },
@@ -43,6 +45,8 @@ const studioScreens = [
   { id: "report", label: "리포트", variant: "app-report" },
 ] as const;
 type StudioScreenId = (typeof studioScreens)[number]["id"];
+const noLayers: readonly (typeof editableComponents)[number][] = [];
+const noSelect = () => undefined;
 
 function Button({
   label,
@@ -129,6 +133,10 @@ const PreviewPanel = memo(function PreviewPanel({
   design,
   resetKey,
   onMessage,
+  layers,
+  selectedId,
+  onSelect,
+  selectionMode,
 }: {
   label: string;
   variant: LabVariant;
@@ -141,13 +149,33 @@ const PreviewPanel = memo(function PreviewPanel({
   design: StudioDesign;
   resetKey: number;
   onMessage: (message: string) => void;
+  layers: readonly (typeof editableComponents)[number][];
+  selectedId: string;
+  onSelect: (id: string) => void;
+  selectionMode: boolean;
 }) {
+  const rootRef = useRef<View>(null);
+  useVisualSelection({
+    rootRef,
+    enabled: label.startsWith("B") && selectionMode,
+    layers,
+    selectedId,
+    onSelect,
+    refresh: [design, scenarioId, resetKey],
+  });
+  const selectedLabel = layers.find((layer) => layer.id === selectedId)?.label;
   return (
     <View
+      ref={rootRef}
       testID={label.startsWith("A") ? "studio-preview-A" : "studio-preview-B"}
       style={styles.previewPanel}
     >
       <Text style={styles.previewLabel}>{label}</Text>
+      {label.startsWith("B") && selectionMode ? (
+        <Text testID="studio-selection-label" style={styles.hint}>
+          {selectedLabel ? `선택: ${selectedLabel}` : "화면에서 요소를 선택하세요"}
+        </Text>
+      ) : null}
       <VariantPhone
         key={`${variant.id}-${scenarioId}-${weatherId}-${inboxId}-${resetKey}`}
         variant={variant}
@@ -183,7 +211,12 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
   const [fontScale, setFontScale] = useState<1 | 1.3 | 1.5>(1);
   const [deviceWidth, setDeviceWidth] = useState(390);
   const [zoom, setZoom] = useState(0.85);
-  const [selectedComponent, setSelectedComponent] = useState("");
+  const [selectedComponent, setSelectedComponent] = useState(
+    editableComponents.find((item) => item.screenId === initialScreen && item.properties.length)
+      ?.id ?? "home.hero",
+  );
+  const [selectionMode, setSelectionMode] = useState(true);
+  const [layerQuery, setLayerQuery] = useState("");
   const [data, setData] = useState<StudioDrafts>(() => {
     if (Platform.OS !== "web") return initialDrafts();
     try {
@@ -206,12 +239,16 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
   const scenario =
     variant.scenarios.find((item) => item.id === scenarioId) ?? variant.scenarios[0]!;
   const device = devices.find((item) => item.width === deviceWidth) ?? devices[1];
-  const components = editableComponents.filter((item) => item.screenId === screenId);
-  const component = components.find((item) => item.id === selectedComponent) ?? components[0]!;
+  const components = useMemo(
+    () => editableComponents.filter((item) => item.screenId === screenId),
+    [screenId],
+  );
+  const component = components.find((item) => item.id === selectedComponent);
   const design = data.drafts[data.active] ?? approvedDesign;
   const changes = useMemo(() => designDiff(design), [design]);
   const stacked = width < 1200;
   const onMessage = useCallback((text: string) => setMessage(text), []);
+  const onSelect = useCallback((id: string) => setSelectedComponent(id), []);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -229,6 +266,18 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     };
     window.addEventListener("hashchange", syncScreen);
     return () => window.removeEventListener("hashchange", syncScreen);
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable='true']")) return;
+      setSelectedComponent("");
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const update = (key: StudioDesignKey, value: string | number) => {
@@ -312,7 +361,11 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
             onPress={() => {
               setScreenId(item.id);
               setScenarioId("");
-              setSelectedComponent("");
+              setSelectedComponent(
+                editableComponents.find(
+                  (layer) => layer.screenId === item.id && layer.properties.length,
+                )?.id ?? "",
+              );
               if (Platform.OS === "web") window.location.hash = `#studio/${item.id}`;
             }}
           />
@@ -348,15 +401,21 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
             ))}
           </>
         ) : null}
-        <Text style={styles.heading}>편집 가능한 컴포넌트</Text>
-        {components.map((item) => (
-          <Button
-            key={item.id}
-            label={item.label}
-            selected={component.id === item.id}
-            onPress={() => setSelectedComponent(item.id)}
-          />
-        ))}
+        <Text style={styles.heading}>컴포넌트 레이어</Text>
+        <TextInput
+          accessibilityLabel="컴포넌트 검색"
+          placeholder="레이어 검색"
+          value={layerQuery}
+          onChangeText={setLayerQuery}
+          style={styles.input}
+        />
+        <LayerTree
+          layers={components}
+          selectedId={selectedComponent}
+          query={layerQuery}
+          onSelect={onSelect}
+        />
+        <Button label="선택 해제" onPress={() => setSelectedComponent("")} />
       </ScrollView>
       <ScrollView
         testID="studio-canvas"
@@ -367,6 +426,18 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
           <Text style={styles.heading}>
             {screen.label} · {scenario.label}
           </Text>
+          <View style={styles.row}>
+            <Button
+              label="선택 모드"
+              selected={selectionMode}
+              onPress={() => setSelectionMode(true)}
+            />
+            <Button
+              label="기능 테스트 모드"
+              selected={!selectionMode}
+              onPress={() => setSelectionMode(false)}
+            />
+          </View>
           <View style={styles.row}>
             {devices.map((item) => (
               <Button
@@ -413,6 +484,10 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
               design={approvedDesign}
               resetKey={aReset}
               onMessage={onMessage}
+              layers={noLayers}
+              selectedId=""
+              onSelect={noSelect}
+              selectionMode={false}
             />
             <Button label="A 조작 초기화" onPress={() => setAReset((value) => value + 1)} />
           </View>
@@ -429,6 +504,10 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
               design={design}
               resetKey={bReset}
               onMessage={onMessage}
+              layers={components}
+              selectedId={selectedComponent}
+              onSelect={onSelect}
+              selectionMode={selectionMode}
             />
             <Button label="B 조작 초기화" onPress={() => setBReset((value) => value + 1)} />
           </View>
@@ -442,8 +521,13 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
         style={[styles.right, stacked && styles.sideStack]}
         contentContainerStyle={styles.sideContent}
       >
-        <Text style={styles.heading}>속성 · {component.label}</Text>
-        {component.properties.map((property) => (
+        <Text style={styles.heading}>속성 · {component?.label ?? "선택 없음"}</Text>
+        {component && !component.properties.length ? (
+          <Text style={styles.hint}>
+            이 요소는 선택할 수 있지만 편집 속성이 아직 등록되지 않았습니다.
+          </Text>
+        ) : null}
+        {component?.properties.map((property) => (
           <PropertyInput
             key={property.key}
             property={property}

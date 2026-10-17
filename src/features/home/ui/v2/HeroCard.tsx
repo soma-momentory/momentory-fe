@@ -96,6 +96,7 @@ export function HeroCard({
       </View>
 
       <View
+        testID="studio-home-bubble"
         style={[
           styles.bubble,
           {
@@ -107,6 +108,7 @@ export function HeroCard({
         ]}
       >
         <Text
+          testID="studio-home-bubble-text"
           style={[styles.bubbleText, { lineHeight: homeV2.type.bubble.lineHeight * scale }]}
           color={homeV2.color.ink}
         >
@@ -136,7 +138,7 @@ export function HeroCard({
       </Text>
 
       <View pointerEvents="none" style={styles.ground} />
-      <View style={styles.baba}>
+      <View testID="studio-home-baba" style={styles.baba}>
         <Baba />
       </View>
 

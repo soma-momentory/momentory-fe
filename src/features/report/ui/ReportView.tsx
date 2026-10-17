@@ -38,7 +38,7 @@ export function ReportView({
   const fontScale = useEffectiveFontScale();
 
   return (
-    <View style={styles.root}>
+    <View testID="studio-report-root" style={styles.root}>
       <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
         <Defs>
           <Pattern id="report-paper-grid" width={22} height={22} patternUnits="userSpaceOnUse">
@@ -66,6 +66,7 @@ export function ReportView({
             ]}
           >
             <Text
+              testID="studio-report-week-text"
               variant="title3Hand"
               color={reportPaper.ink}
               style={[
@@ -116,7 +117,7 @@ export function ReportView({
           </Card>
         ) : (
           <>
-            <View style={styles.summary}>
+            <View testID="studio-report-summary" style={styles.summary}>
               <View style={styles.babaFrame}>
                 <View style={styles.babaScaled}>
                   <Baba />

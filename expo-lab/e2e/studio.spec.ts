@@ -92,6 +92,8 @@ test("keeps the canvas and property panel reachable in a narrow browser", async 
 });
 
 test("renders five shared views with matching scenarios in A and B", async ({ page }) => {
+  // The integrated shell sits above the canvas; keep the full phone inside the viewport.
+  await page.setViewportSize({ width: 1440, height: 1200 });
   for (const screen of screens) {
     await page.goto(`/#studio/${screen}`);
     await expect(page.getByTestId("studio-preview-A")).toBeVisible();

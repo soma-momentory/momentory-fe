@@ -87,7 +87,7 @@ export function ArchiveView({
     .slice(0, 3);
 
   return (
-    <View style={styles.root}>
+    <View testID="studio-archive-root" style={styles.root}>
       <View style={styles.header}>
         <View>
           <View
@@ -101,6 +101,7 @@ export function ArchiveView({
             ]}
           >
             <Text
+              testID="studio-archive-title-text"
               variant="title3Hand"
               color={labelColor.normal}
               style={[styles.title, { fontSize: design["archive.title.fontSize"] }]}
@@ -141,7 +142,7 @@ export function ArchiveView({
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.calendarPaper}>
+          <View testID="studio-archive-calendar" style={styles.calendarPaper}>
             <View
               style={styles.tape}
               accessibilityElementsHidden
