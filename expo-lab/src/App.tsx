@@ -1,5 +1,5 @@
 import { useFonts } from "expo-font";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
   FlatList,
@@ -31,8 +31,10 @@ import {
 } from "./catalog/screens";
 import { variantsFor } from "./catalog/variants";
 
+const Studio = lazy(() => import("./studio/Studio").then((module) => ({ default: module.Studio })));
+
 type LabRoute = {
-  page: "atlas" | "compare";
+  page: "atlas" | "compare" | "studio";
   groupId: string;
   screenId: CaptureId;
   variantId: string;
@@ -103,7 +105,7 @@ function readRoute(): LabRoute {
   const type = search.get("type");
   const fontScale = type === "1.5" ? 1.5 : type === "large" ? 1.3 : 1;
   return {
-    page: parts[0] === "atlas" ? "atlas" : "compare",
+    page: parts[0] === "atlas" ? "atlas" : parts[0] === "studio" ? "studio" : "compare",
     groupId:
       parts[0] === "atlas" && screenGroups.some((item) => item.id === parts[1])
         ? (parts[1] ?? "")
@@ -122,7 +124,9 @@ function routeHash(route: LabRoute): string {
   const path =
     route.page === "atlas"
       ? `atlas${route.groupId ? `/${route.groupId}` : ""}`
-      : `compare/${route.screenId}${route.variantId ? `/${route.variantId}` : ""}`;
+      : route.page === "studio"
+        ? `studio/${route.screenId}`
+        : `compare/${route.screenId}${route.variantId ? `/${route.variantId}` : ""}`;
   const params = new URLSearchParams();
   params.set("device", String(route.deviceWidth));
   if (route.page === "compare" && route.variantId) params.set("scenario", route.scenarioId);
@@ -497,10 +501,12 @@ function LabHeader({
   page,
   onAtlas,
   onCompare,
+  onStudio,
 }: {
   page: LabRoute["page"];
   onAtlas: () => void;
   onCompare: () => void;
+  onStudio: () => void;
 }) {
   return (
     <View style={styles.header}>
@@ -511,6 +517,7 @@ function LabHeader({
         이전 참고 자료로 보존합니다. 운영 앱과 API에는 연결되지 않습니다.
       </Text>
       <View style={styles.navigation}>
+        <Choice label="Design Studio" selected={page === "studio"} onPress={onStudio} />
         <Choice label="화면 선택 · 시안 비교" selected={page === "compare"} onPress={onCompare} />
         <Choice label="기존 앱 · 전체 화면" selected={page === "atlas"} onPress={onAtlas} />
       </View>
@@ -596,7 +603,17 @@ function LabApp() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {route.page === "atlas" ? (
+      {route.page === "studio" ? (
+        <Suspense
+          fallback={
+            <View style={styles.loading}>
+              <Text style={styles.meta}>Studio를 불러오는 중…</Text>
+            </View>
+          }
+        >
+          <Studio key={route.screenId} initialScreen={route.screenId} />
+        </Suspense>
+      ) : route.page === "atlas" ? (
         <FlatList
           ref={atlasListRef}
           style={styles.page}
@@ -621,6 +638,7 @@ function LabApp() {
                 page="atlas"
                 onAtlas={() => navigate({ page: "atlas", groupId: "" })}
                 onCompare={() => navigate({ page: "compare" })}
+                onStudio={() => navigate({ page: "studio", screenId: "home-main" })}
               />
               <AtlasHeader
                 deviceWidth={route.deviceWidth}
@@ -649,6 +667,7 @@ function LabApp() {
             page="compare"
             onAtlas={() => navigate({ page: "atlas", groupId: "" })}
             onCompare={() => navigate({ page: "compare" })}
+            onStudio={() => navigate({ page: "studio", screenId: "home-main" })}
           />
           <Compare
             route={route}

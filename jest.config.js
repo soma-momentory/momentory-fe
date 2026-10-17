@@ -8,6 +8,8 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
+  testPathIgnorePatterns: ["/expo-lab/e2e/"],
+  testTimeout: 15000,
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
     "app/**/*.{ts,tsx}",

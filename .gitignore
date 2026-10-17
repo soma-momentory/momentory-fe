@@ -47,6 +47,8 @@ yarn-error.*
 
 # 테스트·커버리지
 coverage/
+test-results/
+playwright-report/
 
 # OS · OneDrive 부산물
 .DS_Store
