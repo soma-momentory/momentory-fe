@@ -31,10 +31,14 @@ import {
   type ScreenGroup,
 } from "./catalog/screens";
 import { variantsFor } from "./catalog/variants";
+import type { StudioDesign } from "../../src/design/studioDesign";
 import { StudioShell, type StudioMode } from "./studio/StudioShell";
 import { designDiff, initialDrafts, parseDrafts, STORAGE_KEY } from "./studio/model";
 
 const Studio = lazy(() => import("./studio/Studio").then((module) => ({ default: module.Studio })));
+const StateComparison = lazy(() =>
+  import("./studio/StateComparison").then((module) => ({ default: module.StateComparison })),
+);
 
 type LabRoute = {
   page: "atlas" | "compare" | "studio";
@@ -55,14 +59,29 @@ type AtlasRow =
 const ATLAS_CARD_WIDTH = 320;
 const ATLAS_GAP = 16;
 const ATLAS_HEADING_HEIGHT = 74;
+const editableScreenIds = new Set<CaptureId>([
+  "home-main",
+  "rest-hub",
+  "archive",
+  "my-main",
+  "report",
+]);
+type AtlasFilter = "all" | "editable" | "static";
 
-function atlasRows(deviceHeight: number, columns: number, query = ""): AtlasRow[] {
-  const cardHeight = Math.ceil(132 + (deviceHeight + 14) * 0.65);
+function atlasRows(
+  deviceHeight: number,
+  columns: number,
+  query = "",
+  filter: AtlasFilter = "all",
+): AtlasRow[] {
+  const cardHeight = Math.ceil(172 + (deviceHeight + 14) * 0.65);
   return screenGroups.flatMap((group) => {
-    const matches = group.screens.filter((screen) =>
-      `${screen.title} ${screen.route} ${group.title}`
-        .toLocaleLowerCase()
-        .includes(query.toLocaleLowerCase()),
+    const matches = group.screens.filter(
+      (screen) =>
+        (filter === "all" || (filter === "editable") === editableScreenIds.has(screen.id)) &&
+        `${screen.title} ${screen.route} ${group.title}`
+          .toLocaleLowerCase()
+          .includes(query.toLocaleLowerCase()),
     );
     if (!matches.length) return [];
     const rows: AtlasRow[] = [
@@ -193,12 +212,16 @@ function AtlasHeader({
   deviceWidth,
   query,
   onQuery,
+  filter,
+  onFilter,
   onDeviceWidth,
   onJump,
 }: {
   deviceWidth: number;
   query: string;
   onQuery: (query: string) => void;
+  filter: AtlasFilter;
+  onFilter: (filter: AtlasFilter) => void;
   onDeviceWidth: (width: number) => void;
   onJump: (groupId: string) => void;
 }) {
@@ -219,6 +242,19 @@ function AtlasHeader({
         onChangeText={onQuery}
         style={styles.searchInput}
       />
+      <View style={styles.chipRow}>
+        <Choice label="전체 38개" selected={filter === "all"} onPress={() => onFilter("all")} />
+        <Choice
+          label="공유 RN 편집 가능"
+          selected={filter === "editable"}
+          onPress={() => onFilter("editable")}
+        />
+        <Choice
+          label="정적 캡처만"
+          selected={filter === "static"}
+          onPress={() => onFilter("static")}
+        />
+      </View>
       <View style={styles.chipRow}>
         {devices.map((item) => (
           <Choice
@@ -248,11 +284,13 @@ function AtlasRowView({
   deviceWidth,
   contentWidth,
   onOpen,
+  onEdit,
 }: {
   row: AtlasRow;
   deviceWidth: number;
   contentWidth: number;
   onOpen: (screenId: CaptureId) => void;
+  onEdit: (screenId: CaptureId) => void;
 }) {
   if (row.kind === "heading") {
     return (
@@ -265,25 +303,30 @@ function AtlasRowView({
     );
   }
   const device = devices.find((item) => item.width === deviceWidth) ?? devices[1];
-  const cardHeight = Math.ceil(132 + (device.height + 14) * 0.65);
+  const cardHeight = Math.ceil(172 + (device.height + 14) * 0.65);
   return (
     <View style={[styles.atlasGrid, { width: contentWidth, height: row.length }]}>
       {row.screens.map((screen) => (
-        <Pressable
-          key={screen.id}
-          accessibilityRole="button"
-          accessibilityLabel={`${screen.title} 화면 크게 보기`}
-          onPress={() => onOpen(screen.id)}
-          style={[styles.atlasCard, { height: cardHeight }]}
-        >
-          <Text style={styles.routeText}>{screen.route}</Text>
-          <Text style={styles.cardTitle}>{screen.title}</Text>
-          <CaptureBadge screen={screen} />
-          <View style={styles.atlasPhone}>
-            <CapturePhone screen={screen} device={device} scale={0.65} thumbnail />
+        <View key={screen.id} style={[styles.atlasCard, { height: cardHeight }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${screen.title} 화면 크게 보기`}
+            onPress={() => onOpen(screen.id)}
+          >
+            <Text style={styles.routeText}>{screen.route}</Text>
+            <Text style={styles.cardTitle}>{screen.title}</Text>
+            <CaptureBadge screen={screen} />
+            <View style={styles.atlasPhone}>
+              <CapturePhone screen={screen} device={device} scale={0.65} thumbnail />
+            </View>
+          </Pressable>
+          <View style={styles.atlasActions}>
+            <Choice label="캡처 비교" selected={false} onPress={() => onOpen(screen.id)} />
+            {editableScreenIds.has(screen.id) ? (
+              <Choice label="공유 RN 편집" selected={false} onPress={() => onEdit(screen.id)} />
+            ) : null}
           </View>
-          <Text style={styles.openText}>크게 보기 · 시안 비교 ↗</Text>
-        </Pressable>
+        </View>
       ))}
     </View>
   );
@@ -292,19 +335,25 @@ function AtlasRowView({
 function Compare({
   route,
   viewportWidth,
+  draftDesign,
   onNavigate,
   onMessage,
 }: {
   route: LabRoute;
   viewportWidth: number;
+  draftDesign: StudioDesign;
   onNavigate: (change: Partial<LabRoute>) => void;
   onMessage: (message: string) => void;
 }) {
   const [showHomeCapture, setShowHomeCapture] = useState(false);
+  const [comparisonKind, setComparisonKind] = useState<"state" | "reference">("state");
   const screen = findScreen(route.screenId) ?? screens[0]!;
   const group = screenGroups.find((item) => item.screens.some((entry) => entry.id === screen.id))!;
   const variants = variantsFor(screen.id);
   const variant = variants.find((item) => item.id === route.variantId) ?? variants[0];
+  const sharedVariant = variants.find((item) =>
+    ["app-v2", "app-rest", "app-archive", "app-my", "app-report"].includes(item.id),
+  );
   const device = devices.find((item) => item.width === route.deviceWidth) ?? devices[1];
   const sideBySide = viewportWidth >= 960;
   const scale = sideBySide ? 1 : Math.min(1, (viewportWidth - 64) / (device.width + 20));
@@ -313,7 +362,7 @@ function Compare({
   return (
     <View style={styles.section}>
       <Text style={styles.sectionKicker}>SCREEN COMPARISON</Text>
-      <Text style={styles.sectionTitle}>{screen.title} · 기존 화면과 시안</Text>
+      <Text style={styles.sectionTitle}>{screen.title} · 상태와 레퍼런스 비교</Text>
       <Text style={styles.description}>
         홈·쉼터·보관함·마이·리포트는 운영 앱과 공유하는 React Native UI를 Lab Mock으로 조작할 수
         있습니다. 다른 화면의 기존 캡처는 이전 참고 자료이며 모든 동작은 Lab Mock입니다.
@@ -352,7 +401,7 @@ function Compare({
             />
           ))}
         </View>
-        {variants.length > 0 ? (
+        {variants.length > 0 && (!sharedVariant || comparisonKind === "reference") ? (
           <>
             <Text style={styles.controlLabel}>이 화면의 시안</Text>
             <View style={styles.chipRow}>
@@ -445,79 +494,108 @@ function Compare({
           </>
         ) : null}
       </View>
-      <View style={[styles.compareGrid, !sideBySide && styles.compareStack]}>
-        <View style={[styles.comparePanel, sideBySide && styles.comparePanelWide]}>
-          <Text style={styles.panelEyebrow}>CURRENT APP</Text>
-          <Text style={styles.panelTitle}>
-            {liveHome ? "기존 홈 · 실제 UI" : "기존 앱 화면 · 캡처"}
-          </Text>
-          <Text style={styles.routeText}>{screen.route}</Text>
-          {screen.id === "home-main" ? (
-            <View style={styles.chipRow}>
-              <Choice
-                label="실제 UI"
-                selected={!showHomeCapture}
-                onPress={() => setShowHomeCapture(false)}
-              />
-              <Choice
-                label="원본 캡처 참고"
-                selected={showHomeCapture}
-                onPress={() => setShowHomeCapture(true)}
-              />
-            </View>
-          ) : (
-            <CaptureBadge screen={screen} />
-          )}
-          <View style={styles.phoneSpace}>
-            {liveHome ? (
-              <CurrentHomePhone
-                key={`${screen.id}-${route.scenarioId}`}
-                scenarioId={route.scenarioId}
-                device={device}
-                scale={scale}
-                onMessage={onMessage}
-              />
+      {sharedVariant ? (
+        <View style={styles.chipRow}>
+          <Choice
+            label="Mock 상태 A/B"
+            selected={comparisonKind === "state"}
+            onPress={() => setComparisonKind("state")}
+          />
+          <Choice
+            label="기존 캡처 대비"
+            selected={comparisonKind === "reference"}
+            onPress={() => setComparisonKind("reference")}
+          />
+        </View>
+      ) : null}
+      {sharedVariant && comparisonKind === "state" ? (
+        <Suspense fallback={<Text style={styles.meta}>상태 비교를 불러오는 중…</Text>}>
+          <StateComparison
+            key={sharedVariant.id}
+            variant={sharedVariant}
+            device={device}
+            fontScale={route.fontScale}
+            viewportWidth={viewportWidth}
+            draftDesign={draftDesign}
+            onFontScale={(fontScale) => onNavigate({ fontScale })}
+            onMessage={onMessage}
+          />
+        </Suspense>
+      ) : (
+        <View style={[styles.compareGrid, !sideBySide && styles.compareStack]}>
+          <View style={[styles.comparePanel, sideBySide && styles.comparePanelWide]}>
+            <Text style={styles.panelEyebrow}>CURRENT APP</Text>
+            <Text style={styles.panelTitle}>
+              {liveHome ? "기존 홈 · 실제 UI" : "기존 앱 화면 · 캡처"}
+            </Text>
+            <Text style={styles.routeText}>{screen.route}</Text>
+            {screen.id === "home-main" ? (
+              <View style={styles.chipRow}>
+                <Choice
+                  label="실제 UI"
+                  selected={!showHomeCapture}
+                  onPress={() => setShowHomeCapture(false)}
+                />
+                <Choice
+                  label="원본 캡처 참고"
+                  selected={showHomeCapture}
+                  onPress={() => setShowHomeCapture(true)}
+                />
+              </View>
             ) : (
-              <CapturePhone screen={screen} device={device} scale={scale} />
+              <CaptureBadge screen={screen} />
+            )}
+            <View style={styles.phoneSpace}>
+              {liveHome ? (
+                <CurrentHomePhone
+                  key={`${screen.id}-${route.scenarioId}`}
+                  scenarioId={route.scenarioId}
+                  device={device}
+                  scale={scale}
+                  onMessage={onMessage}
+                />
+              ) : (
+                <CapturePhone screen={screen} device={device} scale={scale} />
+              )}
+            </View>
+            <Text style={styles.panelNote}>
+              {liveHome
+                ? "앱의 홈 UI 컴포넌트·토큰을 사용합니다. 일정과 모든 이동은 Lab 메모리 안에서만 동작합니다."
+                : "375×812pt 실기 캡처를 선택한 크기에 맞춰 표시합니다. 캡처에는 동작이 없습니다."}
+            </Text>
+          </View>
+          <View style={[styles.comparePanel, sideBySide && styles.comparePanelWide]}>
+            <Text style={styles.panelEyebrow}>DESIGN VARIANT</Text>
+            <Text style={styles.panelTitle}>{variant?.label ?? "등록된 시안 없음"}</Text>
+            <Text style={styles.panelNote}>
+              {variant
+                ? ["app-v2", "app-rest", "app-archive", "app-my", "app-report"].includes(variant.id)
+                  ? "운영 앱과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
+                  : "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
+                : "이 화면의 새 시안은 아직 없습니다. 시안이 등록되면 기존 캡처와 나란히 비교합니다."}
+            </Text>
+            {variant ? (
+              <View style={styles.phoneSpace}>
+                <VariantPhone
+                  key={`${screen.id}-${variant.id}-${route.scenarioId}-${route.inboxId}`}
+                  variant={variant}
+                  scenarioId={route.scenarioId}
+                  weatherId={route.weatherId}
+                  inboxId={route.inboxId}
+                  fontScale={route.fontScale}
+                  device={device}
+                  scale={scale}
+                  onMessage={onMessage}
+                />
+              </View>
+            ) : (
+              <View style={[styles.emptyVariant, { height: (device.height + 20) * scale }]}>
+                <Text style={styles.emptyVariantText}>시안 등록 대기 중</Text>
+              </View>
             )}
           </View>
-          <Text style={styles.panelNote}>
-            {liveHome
-              ? "앱의 홈 UI 컴포넌트·토큰을 사용합니다. 일정과 모든 이동은 Lab 메모리 안에서만 동작합니다."
-              : "375×812pt 실기 캡처를 선택한 크기에 맞춰 표시합니다. 캡처에는 동작이 없습니다."}
-          </Text>
         </View>
-        <View style={[styles.comparePanel, sideBySide && styles.comparePanelWide]}>
-          <Text style={styles.panelEyebrow}>DESIGN VARIANT</Text>
-          <Text style={styles.panelTitle}>{variant?.label ?? "등록된 시안 없음"}</Text>
-          <Text style={styles.panelNote}>
-            {variant
-              ? ["app-v2", "app-rest", "app-archive", "app-my", "app-report"].includes(variant.id)
-                ? "운영 앱과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
-                : "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
-              : "이 화면의 새 시안은 아직 없습니다. 시안이 등록되면 기존 캡처와 나란히 비교합니다."}
-          </Text>
-          {variant ? (
-            <View style={styles.phoneSpace}>
-              <VariantPhone
-                key={`${screen.id}-${variant.id}-${route.scenarioId}-${route.inboxId}`}
-                variant={variant}
-                scenarioId={route.scenarioId}
-                weatherId={route.weatherId}
-                inboxId={route.inboxId}
-                fontScale={route.fontScale}
-                device={device}
-                scale={scale}
-                onMessage={onMessage}
-              />
-            </View>
-          ) : (
-            <View style={[styles.emptyVariant, { height: (device.height + 20) * scale }]}>
-              <Text style={styles.emptyVariantText}>시안 등록 대기 중</Text>
-            </View>
-          )}
-        </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -531,6 +609,7 @@ function LabApp() {
   });
   const [route, setRoute] = useState(readRoute);
   const [atlasQuery, setAtlasQuery] = useState("");
+  const [atlasFilter, setAtlasFilter] = useState<AtlasFilter>("all");
   const [draftStatus, setDraftStatus] = useState(() => {
     if (Platform.OS !== "web") return initialDrafts();
     try {
@@ -552,8 +631,8 @@ function LabApp() {
     Math.floor((contentWidth + ATLAS_GAP) / (ATLAS_CARD_WIDTH + ATLAS_GAP)),
   );
   const rows = useMemo(
-    () => atlasRows(device.height, columns, atlasQuery),
-    [device.height, columns, atlasQuery],
+    () => atlasRows(device.height, columns, atlasQuery, atlasFilter),
+    [device.height, columns, atlasQuery, atlasFilter],
   );
   const rowOffsets = useMemo(
     () => rows.map((_, index) => rows.slice(0, index).reduce((sum, row) => sum + row.length, 0)),
@@ -664,6 +743,8 @@ function LabApp() {
                 deviceWidth={route.deviceWidth}
                 query={atlasQuery}
                 onQuery={setAtlasQuery}
+                filter={atlasFilter}
+                onFilter={setAtlasFilter}
                 onDeviceWidth={(deviceWidth) => navigate({ deviceWidth })}
                 onJump={(groupId) => navigate({ groupId })}
               />
@@ -675,6 +756,7 @@ function LabApp() {
               deviceWidth={route.deviceWidth}
               contentWidth={contentWidth}
               onOpen={(screenId) => navigate({ page: "compare", screenId })}
+              onEdit={(screenId) => navigate({ page: "studio", screenId })}
             />
           )}
           ListFooterComponent={
@@ -688,6 +770,7 @@ function LabApp() {
           <Compare
             route={route}
             viewportWidth={viewportWidth}
+            draftDesign={draftStatus.drafts[draftStatus.active]!}
             onNavigate={navigate}
             onMessage={setMessage}
           />
@@ -745,6 +828,7 @@ const styles = StyleSheet.create({
   cardTitle: { color: c.ink, fontFamily: font.bold, fontSize: 23, lineHeight: 27 },
   badge: { alignSelf: "flex-start", color: c.green, fontSize: 11, fontWeight: "700" },
   atlasPhone: { marginVertical: 8 },
+  atlasActions: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: "auto" },
   openText: { alignSelf: "center", color: c.green, fontSize: 12, fontWeight: "700" },
   controls: { gap: 10, marginTop: 12, marginBottom: 16 },
   controlLabel: { color: c.ink, fontSize: 13, fontWeight: "700", marginTop: 5 },
