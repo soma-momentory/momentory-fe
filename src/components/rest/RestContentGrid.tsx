@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ds";
+import { useEffectiveFontScale } from "@/components/ds/Text";
 import { homeV2 } from "@/design/ds";
 import type { RestContent, RestContentId } from "@/features/rest/model/contents";
 
@@ -36,6 +37,7 @@ const ROTATIONS: Record<RestContentId, string> = {
 };
 
 export function RestContentGrid({ items, onOpen }: Props) {
+  const largeText = useEffectiveFontScale() > 1.2;
   const rows: RestContent[][] = [];
   for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
 
@@ -55,11 +57,18 @@ export function RestContentGrid({ items, onOpen }: Props) {
                   />
                 </View>
                 <View style={styles.caption}>
-                  <View style={styles.heading}>
-                    <Text variant="headline1" numberOfLines={2} style={styles.title}>
+                  <View style={[styles.heading, largeText && styles.headingLarge]}>
+                    <Text
+                      variant="headline1"
+                      numberOfLines={2}
+                      style={[styles.title, largeText && styles.titleLarge]}
+                    >
                       {item.title}
                     </Text>
-                    <Text variant="caption2" style={styles.duration}>
+                    <Text
+                      variant="caption2"
+                      style={[styles.duration, largeText && styles.durationLarge]}
+                    >
                       {item.duration.replace(/^약 /, "")}
                     </Text>
                   </View>
@@ -128,8 +137,11 @@ const styles = StyleSheet.create({
   photoImage: { width: "100%", height: "100%" },
   caption: { paddingHorizontal: 3, paddingTop: 7, paddingBottom: 3, gap: 3 },
   heading: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
+  headingLarge: { flexDirection: "column", alignItems: "stretch" },
   title: { flex: 1, fontFamily: font.bold, color: colors.ink },
+  titleLarge: { flex: 0 },
   duration: { flexShrink: 0, fontFamily: font.bold, color: colors.green },
+  durationLarge: { alignSelf: "flex-end" },
   description: { fontFamily: font.regular, color: colors.muted },
   note: { fontFamily: font.regular, color: colors.green },
 });
