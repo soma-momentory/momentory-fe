@@ -17,6 +17,8 @@
     "typecheck:lab": "npm run typecheck --prefix design-lab",
     "typecheck:expo-lab": "npm run typecheck --workspace momentory-expo-lab",
     "lab:web": "npm run web --workspace momentory-expo-lab --",
+    "design:apply": "node expo-lab/scripts/apply-design.mjs",
+    "test:visual": "playwright test",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -59,6 +61,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@react-native/jest-preset": "^0.86.2",
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "^29.5.14",

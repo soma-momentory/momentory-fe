@@ -9,6 +9,26 @@ npm ci
 npm run lab:web
 ```
 
+## Design Studio 2.0
+
+```bash
+cd expo-lab
+npx expo start --web --port 8085
+```
+
+정확한 주소: `http://localhost:8085/#studio/home-main` (쉼터 `rest-hub`, 보관함 `archive`, 마이 `my-main`, 리포트 `report`). 왼쪽에서 화면·Mock 상태·편집 컴포넌트를, 가운데에서 375/390/402/430pt·글씨 배율·확대를, 오른쪽에서 등록된 속성을 선택한다. A는 운영 기본 설정, B는 현재 Draft다. 두 패널은 같은 공유 React Native View와 Mock 조건으로 시작하며 조작 상태는 각각 독립적이다.
+
+Draft는 브라우저 `localStorage`에 자동 저장된다. 오른쪽에서 시안을 복제·전환하고 Undo/Redo·초기화·JSON 내보내기/가져오기를 실행한다. 운영 앱은 `src/design/studioApproved.json`만 사용하며 브라우저 편집은 Git 파일을 바꾸지 않는다. 내보낸 파일로 운영 변경을 준비할 때는 저장소 루트에서 다음 명령을 실행한다.
+
+```bash
+node expo-lab/scripts/apply-design.mjs path/to/export.json
+node expo-lab/scripts/apply-design.mjs path/to/export.json --write
+git diff -- src/design/studioApproved.json
+npm run typecheck && npm run test:visual
+```
+
+첫 명령은 변경 Diff만 출력한다. `--write`를 명시한 두 번째 명령만 승인된 기본 설정 파일을 갱신한다. Git Diff와 테스트를 검토해 별도 PR로 적용한다. [검증 기록](STUDIO_VALIDATION.md)에 편집 범위와 측정 결과가 있다.
+
 터미널에 표시된 웹 주소를 연다. 첫 페이지는 홈 UI 비교다. 왼쪽의 기존(운영) 홈 RN UI와 오른쪽 홈 시안 변형을 나란히 조작한다. 오른쪽 변형은 둘이다 — **시안 원본 · Claude Design v2**(`claude-v2`)와 **운영판 v2 · 공유 뷰**(`app-v2`, 2026-10-15 · 홈 v2 계획 P2). **기존 앱 · 전체 화면**에서 38개 기존 앱 캡처를 그룹별로 보고, 홈의 **원본 캡처 참고** 선택기로 이전 캡처를 다시 볼 수 있다. 다른 37개 화면은 단계적으로 이전하기 전까지 캡처만 표시한다. 375·390·402·430px 화면 크기를 선택할 수 있다. 캡처 38개는 iPhone 13 mini(375×812pt)에서 찍었으므로 다른 크기에서는 이미지를 늘려 표시할 뿐 해당 기기에서 다시 캡처한 것은 아니다.
 
 화면·시안·상태·기기 선택은 URL 해시에 저장된다. 예: `#compare/home-main/claude-v2?device=402&scenario=5e`. 새로고침과 브라우저 뒤로/앞으로에서 다시 열 수 있다. 이전 Expo Lab의 `?scenario=5e&device=402`, Vite Lab의 `#preview/home-main` 형식도 읽는다.
