@@ -128,7 +128,7 @@ function routeHash(route: LabRoute): string {
   if (route.page === "compare" && route.variantId) params.set("scenario", route.scenarioId);
   if (
     route.page === "compare" &&
-    ["app-v2", "app-rest", "app-archive", "app-report"].includes(route.variantId)
+    ["app-v2", "app-rest", "app-archive", "app-my", "app-report"].includes(route.variantId)
   ) {
     if (route.variantId === "app-v2") {
       params.set("weather", route.weatherId);
@@ -354,6 +354,7 @@ function Compare({
             {variant?.id === "app-v2" ||
             variant?.id === "app-rest" ||
             variant?.id === "app-archive" ||
+            variant?.id === "app-my" ||
             variant?.id === "app-report" ? (
               <>
                 {variant?.id === "app-v2" ? (

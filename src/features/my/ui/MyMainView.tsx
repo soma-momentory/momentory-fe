@@ -1,7 +1,9 @@
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { Card, Icon, ListCell, ListDivider, Text } from "@/components/ds";
+import { Icon, Text, type IconName } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
+import { myPaper as paper } from "@/design/ds/myPaper";
+import { Baba } from "@/features/home/ui/v2/Baba";
 
 type Props = {
   nickname: string;
@@ -21,7 +23,9 @@ type Props = {
   onOpenWithdraw: () => void;
 };
 
-/** 마이 본문의 운영 UI. 값과 동작은 라우트 또는 Lab 어댑터가 전달한다. */
+type Tone = "settings" | "support" | "account";
+
+/** 운영과 Lab이 같은 종이 카드·설정 행을 그린다. 값과 동작은 각 어댑터가 전달한다. */
 export function MyMainView({
   nickname,
   recordedDays,
@@ -41,72 +45,91 @@ export function MyMainView({
 }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-      <View style={styles.profile}>
-        <View style={styles.profileCopy}>
-          <Text variant="title3Hand" color={labelColor.strong} numberOfLines={1}>
-            {nickname}
-          </Text>
-          <Text variant="caption1" color={labelColor.alternative}>
-            {`일기 ${recordedDays}일 기록`}
-          </Text>
-        </View>
+      <View style={styles.titleTape}>
+        <Text variant="title1Hand" color={labelColor.normal}>
+          마이
+        </Text>
       </View>
 
-      <Group label="앱 설정" note={settingsNote}>
-        <ListCell
+      <View testID="my-profile-card" style={styles.profileCard}>
+        <View style={styles.profileTop}>
+          <View style={styles.profileCopy}>
+            <View style={styles.nicknameRow}>
+              <Text variant="title3Hand" color={labelColor.strong} style={styles.nickname}>
+                {nickname}
+              </Text>
+              <Text variant="title3Hand" color={labelColor.strong}>
+                님
+              </Text>
+            </View>
+            <Text variant="body1ReadingHand" color={labelColor.neutral}>
+              모멘토리와 함께한 기록
+            </Text>
+          </View>
+          <View
+            style={styles.babaFrame}
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <View style={styles.babaScaled}>
+              <Baba />
+            </View>
+          </View>
+        </View>
+        <View style={styles.profileRule} />
+        <View style={styles.profileStat}>
+          <Text variant="body1ReadingHandLg" color={labelColor.neutral}>
+            일기 쓴 날
+          </Text>
+          <Text variant="title3Hand" color={labelColor.strong}>
+            {recordedDays}일
+          </Text>
+        </View>
+        <Text variant="caption1" color={labelColor.alternative} style={styles.recordedCaption}>
+          {"일기 " + recordedDays + "일 기록"}
+        </Text>
+      </View>
+
+      <Group label="앱 설정" tone="settings" note={settingsNote}>
+        <SettingRow
           title="알림 설정"
-          leading={<Icon name="bell" size={20} color={labelColor.alternative} />}
+          icon="bell"
           value={notifyValue}
+          tone="settings"
           onPress={onOpenNotificationSettings}
-          chevron
         />
-        <ListDivider />
-        <ListCell
+        <SettingRow
           title="캘린더 연동"
-          leading={<Icon name="calendar" size={20} color={labelColor.alternative} />}
+          icon="calendar"
           value={calendarOn ? "연결됨" : "연결 안 함"}
+          tone="settings"
           onPress={calendarOn ? undefined : onOpenCalendarLink}
-          chevron={!calendarOn}
+          divided
         />
-        <ListDivider />
-        <ListCell
+        <SettingRow
           title="기본 정보 수정"
-          leading={<Icon name="nav-my-page" size={20} color={labelColor.alternative} />}
+          icon="nav-my-page"
+          tone="settings"
           onPress={onOpenProfile}
-          chevron
+          divided
         />
       </Group>
 
-      <Group label="지원">
-        <ListCell
-          title="문의하기"
-          leading={<Icon name="send" size={20} color={labelColor.alternative} />}
-          onPress={onOpenInquiry}
-          chevron
-        />
-        <ListDivider />
-        <ListCell
-          title="이용약관"
-          leading={<Icon name="document" size={20} color={labelColor.alternative} />}
-          onPress={onOpenTerms}
-          chevron
-        />
-        <ListDivider />
-        <ListCell
+      <Group label="지원" tone="support">
+        <SettingRow title="문의하기" icon="send" tone="support" onPress={onOpenInquiry} />
+        <SettingRow title="이용약관" icon="document" tone="support" onPress={onOpenTerms} divided />
+        <SettingRow
           title="개인정보 처리방침"
-          leading={<Icon name="document" size={20} color={labelColor.alternative} />}
+          icon="document"
+          tone="support"
           onPress={onOpenPrivacy}
-          chevron
+          divided
         />
       </Group>
 
-      <Group label="계정">
-        <ListCell
-          title="로그아웃"
-          leading={<Icon name="logout" size={20} color={labelColor.alternative} />}
-          onPress={onSignOut}
-          chevron
-        />
+      <Group label="계정" tone="account">
+        <SettingRow title="로그아웃" icon="logout" tone="account" onPress={onSignOut} />
       </Group>
 
       <View style={styles.leave}>
@@ -131,26 +154,31 @@ export function MyMainView({
   );
 }
 
-/** 그룹 라벨 + 줄 카드 한 장 — 운영 화면의 기존 간격과 면을 유지한다. */
 function Group({
   label,
+  tone,
   note,
   children,
 }: {
   label: string;
+  tone: Tone;
   note?: string;
   children: React.ReactNode;
 }) {
   return (
     <View style={styles.group}>
-      <Text variant="label2" color={labelColor.alternative} style={styles.groupLabel}>
-        {label}
-      </Text>
-      <Card padding="none" style={styles.groupCard}>
+      <View style={styles.groupHeading}>
+        <View style={[styles.headingHighlight, HIGHLIGHTS[tone]]} />
+        <Text variant="body1ReadingHandLg" color={labelColor.strong}>
+          {label}
+        </Text>
+      </View>
+      <View style={[styles.groupCard, GROUP_PAPER[tone]]}>
+        <View pointerEvents="none" style={[styles.tape, TAPES[tone]]} />
         {children}
-      </Card>
+      </View>
       {note != null ? (
-        <Text variant="caption1" color={labelColor.alternative} style={styles.groupLabel}>
+        <Text variant="caption1" color={labelColor.alternative} style={styles.groupNote}>
           {note}
         </Text>
       ) : null}
@@ -158,12 +186,137 @@ function Group({
   );
 }
 
+function SettingRow({
+  title,
+  icon,
+  value,
+  tone,
+  onPress,
+  divided = false,
+}: {
+  title: string;
+  icon: IconName;
+  value?: string;
+  tone: Tone;
+  onPress?: () => void;
+  divided?: boolean;
+}) {
+  const content = (
+    <>
+      <View style={[styles.iconDot, DOTS[tone]]}>
+        <Icon name={icon} size={16} color={labelColor.neutral} />
+      </View>
+      <Text variant="body1ReadingHandLg" color={labelColor.normal} style={styles.rowTitle}>
+        {title}
+      </Text>
+      {value != null ? (
+        <Text variant="body1ReadingHand" color={labelColor.neutral} style={styles.rowValue}>
+          {value}
+        </Text>
+      ) : null}
+      {onPress != null ? (
+        <Icon name="chevron-right" size={16} color={labelColor.alternative} />
+      ) : null}
+    </>
+  );
+  const rowStyle = [styles.row, divided ? styles.rowDivided : null];
+
+  if (onPress == null) return <View style={rowStyle}>{content}</View>;
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={rowStyle}>
+      {content}
+    </Pressable>
+  );
+}
+
+const GROUP_PAPER = {
+  settings: { backgroundColor: paper.settings, transform: [{ rotate: "-0.8deg" }] },
+  support: { backgroundColor: paper.support, transform: [{ rotate: "0.7deg" }] },
+  account: { backgroundColor: paper.account, transform: [{ rotate: "-0.5deg" }] },
+} as const;
+
+const DOTS = {
+  settings: { backgroundColor: paper.settingsDot },
+  support: { backgroundColor: paper.supportDot },
+  account: { backgroundColor: paper.accountDot },
+} as const;
+
+const HIGHLIGHTS = {
+  settings: { backgroundColor: paper.settingsDot },
+  support: { backgroundColor: paper.supportTape },
+  account: { backgroundColor: paper.accountTape },
+} as const;
+
+const TAPES = {
+  settings: { backgroundColor: paper.settingsDot, transform: [{ rotate: "-4deg" }] },
+  support: { backgroundColor: paper.supportTape, transform: [{ rotate: "3deg" }] },
+  account: { backgroundColor: paper.accountTape, transform: [{ rotate: "-2deg" }] },
+} as const;
+
 const styles = StyleSheet.create({
-  body: { gap: space.xl2, paddingTop: space.sm, paddingBottom: space.xl },
-  profile: { flexDirection: "row", alignItems: "center", gap: 14 },
-  profileCopy: { flex: 1, minWidth: 0, gap: space.xs2 },
-  group: { gap: space.sm },
-  groupLabel: { paddingLeft: space.xs },
-  groupCard: { paddingHorizontal: space.lg, paddingVertical: space.xs },
+  body: { gap: 18, paddingTop: space.xs, paddingBottom: space.xl },
+  titleTape: {
+    alignSelf: "flex-start",
+    backgroundColor: paper.title,
+    paddingHorizontal: 14,
+    paddingVertical: 2,
+    borderRadius: 4,
+    transform: [{ rotate: "-3deg" }],
+  },
+  profileCard: {
+    backgroundColor: paper.profile,
+    borderColor: paper.rule,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    transform: [{ rotate: "-0.6deg" }],
+    shadowColor: paper.shadow,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+  profileTop: { flexDirection: "row", alignItems: "center", gap: 6 },
+  profileCopy: { flex: 1, minWidth: 0, gap: 4 },
+  nicknameRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 4 },
+  nickname: { flexShrink: 1 },
+  babaFrame: { width: 72, height: 92, overflow: "hidden" },
+  babaScaled: { position: "absolute", left: -49, top: -67, transform: [{ scale: 0.4 }] },
+  profileRule: { marginTop: 12, borderTopWidth: 1, borderColor: paper.rule, borderStyle: "dashed" },
+  profileStat: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "baseline",
+    gap: 8,
+    paddingTop: 10,
+  },
+  recordedCaption: { textAlign: "center", marginTop: 2 },
+  group: { gap: 8 },
+  groupHeading: { alignSelf: "flex-start", marginLeft: 4, paddingHorizontal: 2 },
+  headingHighlight: { position: "absolute", left: 0, right: 0, bottom: 4, height: 9 },
+  groupCard: {
+    borderRadius: 9,
+    paddingHorizontal: 12,
+    shadowColor: paper.shadow,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  tape: { position: "absolute", top: -7, right: 17, width: 46, height: 14, opacity: 0.8 },
+  groupNote: { marginLeft: 4 },
+  row: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48, paddingVertical: 8 },
+  rowDivided: { borderTopWidth: 1, borderColor: paper.rule, borderStyle: "dashed" },
+  iconDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rowTitle: { flex: 1, minWidth: 0 },
+  rowValue: { maxWidth: "42%", textAlign: "right", flexShrink: 1 },
   leave: { alignItems: "center", gap: space.xs, paddingTop: space.xs },
 });
