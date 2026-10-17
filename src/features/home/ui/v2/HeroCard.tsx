@@ -109,8 +109,17 @@ export function HeroCard({
       >
         <Text
           testID="studio-home-bubble-text"
-          style={[styles.bubbleText, { lineHeight: homeV2.type.bubble.lineHeight * scale }]}
-          color={homeV2.color.ink}
+          style={[
+            styles.bubbleText,
+            {
+              fontSize: design["home.bubbleText.fontSize"],
+              lineHeight: (design["home.bubbleText.fontSize"] + 4) * scale,
+              fontFamily: design["home.bubbleText.fontFamily"],
+              textAlign: design["home.bubbleText.textAlign"] as "left" | "center" | "right",
+              letterSpacing: design["home.bubbleText.letterSpacing"],
+            },
+          ]}
+          color={design["home.bubbleText.color"]}
         >
           {"오늘 하루는\n어땠어요?"}
         </Text>
@@ -143,10 +152,17 @@ export function HeroCard({
       </View>
 
       <Pressable
+        testID="studio-home-cta"
         accessibilityRole="button"
         accessibilityLabel="하루 돌아보기"
         onPress={onStartReflection}
-        style={styles.cta}
+        style={[
+          styles.cta,
+          {
+            backgroundColor: design["home.cta.backgroundColor"],
+            paddingHorizontal: design["home.cta.paddingHorizontal"],
+          },
+        ]}
       >
         <Text
           style={[styles.ctaText, { lineHeight: homeV2.type.cta.lineHeight * scale }]}

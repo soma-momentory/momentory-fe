@@ -35,7 +35,10 @@ import {
 } from "./model";
 import { editableComponents, validValue, type EditableProperty } from "./registry";
 import { LayerTree } from "./LayerTree";
+import { AssetBrowser } from "./AssetBrowser";
 import { useVisualSelection } from "./useVisualSelection";
+import type { StudioAssetId } from "../../../src/design/studioAssets";
+import { readSessionHistory, saveSessionHistory } from "./sessionHistory";
 
 const studioScreens = [
   { id: "home-main", label: "홈", variant: "app-v2" },
@@ -92,6 +95,31 @@ function PropertyInput({
     const candidate = property.kind === "number" ? Number(text) : text;
     if (text !== "" && validValue(property, candidate)) onChange(property.key, candidate);
   };
+  if (property.kind === "asset") {
+    return (
+      <AssetBrowser
+        value={value as StudioAssetId}
+        onChange={(assetId) => onChange(property.key, assetId)}
+      />
+    );
+  }
+  if (property.kind === "choice") {
+    return (
+      <View style={styles.field}>
+        <Text style={styles.fieldLabel}>{property.label}</Text>
+        <View style={styles.row}>
+          {property.options?.map((option) => (
+            <Button
+              key={option.value}
+              label={option.label}
+              selected={value === option.value}
+              onPress={() => onChange(property.key, option.value)}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{property.label}</Text>
@@ -226,8 +254,8 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     }
   });
   const [nameInput, setNameInput] = useState("");
-  const [undo, setUndo] = useState<StudioDesign[]>([]);
-  const [redo, setRedo] = useState<StudioDesign[]>([]);
+  const [undo, setUndo] = useState<StudioDesign[]>(() => readSessionHistory(data.active).undo);
+  const [redo, setRedo] = useState<StudioDesign[]>(() => readSessionHistory(data.active).redo);
   const [aReset, setAReset] = useState(0);
   const [bReset, setBReset] = useState(0);
   const [message, setMessage] = useState(
@@ -257,6 +285,8 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     }
   }, [data]);
 
+  useEffect(() => saveSessionHistory(data.active, undo, redo), [data.active, undo, redo]);
+
   useEffect(() => {
     if (Platform.OS !== "web") return;
     const syncScreen = () => {
@@ -266,18 +296,6 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     };
     window.addEventListener("hashchange", syncScreen);
     return () => window.removeEventListener("hashchange", syncScreen);
-  }, []);
-
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, [contenteditable='true']")) return;
-      setSelectedComponent("");
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const update = (key: StudioDesignKey, value: string | number) => {
@@ -294,7 +312,7 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     setRedo([]);
     setData((current) => ({ ...current, drafts: { ...current.drafts, [current.active]: next } }));
   };
-  const undoEdit = () => {
+  const undoEdit = useCallback(() => {
     const previous = undo[undo.length - 1];
     if (!previous) return;
     setUndo((history) => history.slice(0, -1));
@@ -303,14 +321,36 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
       ...current,
       drafts: { ...current.drafts, [current.active]: previous },
     }));
-  };
-  const redoEdit = () => {
+  }, [undo, design]);
+  const redoEdit = useCallback(() => {
     const next = redo[redo.length - 1];
     if (!next) return;
     setRedo((history) => history.slice(0, -1));
     setUndo((history) => [...history, design]);
     setData((current) => ({ ...current, drafts: { ...current.drafts, [current.active]: next } }));
-  };
+  }, [redo, design]);
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable='true']")) return;
+      if (event.key === "Escape") setSelectedComponent("");
+      const modifier = event.ctrlKey || event.metaKey;
+      if (!modifier) return;
+      if (event.key.toLowerCase() === "z" && event.shiftKey && redo.length) {
+        event.preventDefault();
+        redoEdit();
+      } else if (event.key.toLowerCase() === "z" && undo.length) {
+        event.preventDefault();
+        undoEdit();
+      } else if (event.key.toLowerCase() === "y" && redo.length) {
+        event.preventDefault();
+        redoEdit();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [undo, redo, undoEdit, redoEdit]);
   const openImport = () => {
     if (Platform.OS !== "web") return;
     const input = document.createElement("input");
@@ -329,17 +369,36 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     };
     input.click();
   };
-  const createDraft = () => {
+  const createDraft = (fromApproved = false) => {
     const name = nameInput.trim();
     if (!name || name.length > 40 || data.drafts[name] || Object.keys(data.drafts).length >= 20) {
       setMessage("1–40자의 새 시안 이름을 입력하세요. 최대 20개입니다.");
       return;
     }
-    setData((current) => ({ active: name, drafts: { ...current.drafts, [name]: { ...design } } }));
+    setData((current) => ({
+      active: name,
+      drafts: { ...current.drafts, [name]: { ...(fromApproved ? approvedDesign : design) } },
+    }));
     setUndo([]);
     setRedo([]);
     setNameInput("");
     setMessage(`${name} 시안을 저장했습니다.`);
+  };
+  const renameDraft = () => {
+    const name = nameInput.trim();
+    if (!name || name.length > 40 || (name !== data.active && data.drafts[name])) {
+      setMessage("1–40자의 사용하지 않은 시안 이름을 입력하세요.");
+      return;
+    }
+    if (name === data.active) return;
+    setData((current) => {
+      const drafts = { ...current.drafts };
+      drafts[name] = drafts[current.active]!;
+      delete drafts[current.active];
+      return { active: name, drafts };
+    });
+    setNameInput("");
+    setMessage(`${name}(으)로 시안 이름을 변경했습니다.`);
   };
 
   return (
@@ -564,7 +623,11 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
           onChangeText={setNameInput}
           style={styles.input}
         />
-        <Button label="현재 시안 복제" onPress={createDraft} />
+        <View style={styles.row}>
+          <Button label="새 시안" onPress={() => createDraft(true)} />
+          <Button label="현재 시안 복제" onPress={() => createDraft(false)} />
+          <Button label="시안 이름 변경" onPress={renameDraft} />
+        </View>
         <Text style={styles.heading}>변경 사항 · {changes.length}개</Text>
         {changes.length ? (
           changes.map((change) => (

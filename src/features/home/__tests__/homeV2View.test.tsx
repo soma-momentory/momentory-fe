@@ -138,11 +138,13 @@ describe("홈 v2 — 큰 글씨 배치", () => {
     );
     const note = screen.getByText("밤 9:30엔 제가\n먼저 말 걸어요");
     const noteStyle = flatten(note.props.style);
+    const bubbleStyle = flatten(screen.getByText("오늘 하루는\n어땠어요?").props.style);
     const heroStyle = flatten(note.parent?.props.style);
     const ctaStyle = flatten(screen.getByRole("button", { name: "하루 돌아보기" }).props.style);
     const headingStyle = flatten(screen.getByText("오늘 일정").parent?.parent?.props.style);
 
     expect(noteStyle.lineHeight).toBe(homeV2.type.note.lineHeight * 1.5);
+    expect(bubbleStyle.lineHeight).toBe(homeV2.type.bubble.lineHeight * 1.5);
     expect(noteStyle.position).toBeUndefined();
     expect(heroStyle.minHeight).toBe(homeV2.size.hero.height);
     expect(heroStyle.height).toBeUndefined();

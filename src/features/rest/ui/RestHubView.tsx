@@ -6,6 +6,7 @@ import { RestCardPressable } from "@/components/rest/RestCardPressable";
 import { RestContentGrid } from "@/components/rest/RestContentGrid";
 import { homeV2, layout } from "@/design/ds";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
+import { studioAssetSource } from "@/design/studioAssets";
 import { REST_CONTENTS_PROMPT, type RestContent } from "@/features/rest/model/contents";
 
 type Props = {
@@ -31,8 +32,20 @@ export function RestHubView({
       style={styles.root}
       contentContainerStyle={styles.content}
     >
-      <View testID="studio-rest-heading" style={styles.headingPaper}>
-        <Text variant="title3Hand" style={styles.heading}>
+      <View
+        testID="studio-rest-heading"
+        style={[styles.headingPaper, { backgroundColor: design["rest.heading.backgroundColor"] }]}
+      >
+        <Text
+          variant="title3Hand"
+          style={[
+            styles.heading,
+            {
+              fontSize: design["rest.heading.fontSize"],
+              lineHeight: design["rest.heading.fontSize"] + 4,
+            },
+          ]}
+        >
           쉼터
         </Text>
       </View>
@@ -61,7 +74,17 @@ export function RestHubView({
             <Text
               testID="studio-rest-wish-summary"
               variant={longSummary ? "body1" : "heading1"}
-              style={styles.wishSummary}
+              style={[
+                styles.wishSummary,
+                {
+                  color: design["rest.wishSummary.color"],
+                  fontSize: design["rest.wishSummary.fontSize"],
+                  lineHeight: design["rest.wishSummary.fontSize"] + 4,
+                  fontFamily: design["rest.wishSummary.fontFamily"],
+                  textAlign: design["rest.wishSummary.textAlign"] as "left" | "center" | "right",
+                  letterSpacing: design["rest.wishSummary.letterSpacing"],
+                },
+              ]}
             >
               {summary}
             </Text>
@@ -69,12 +92,21 @@ export function RestHubView({
               바람카드 모아보기 ›
             </Text>
           </View>
-          <View testID="studio-rest-wish-photo" style={styles.wishPhoto}>
+          <View
+            testID="studio-rest-wish-photo"
+            style={[
+              styles.wishPhoto,
+              {
+                width: design["rest.wishPhoto.width"],
+                transform: [{ rotate: `${design["rest.wishPhoto.rotation"]}deg` }],
+              },
+            ]}
+          >
             <View style={styles.wishPhotoImage}>
               <Image
                 testID="studio-rest-baba-image"
-                source={require("../../../../assets/rest/baba-sleep.webp")}
-                style={styles.wishBaba}
+                source={studioAssetSource(design["rest.babaImage.assetId"])}
+                style={[styles.wishBaba, { opacity: design["rest.babaImage.opacity"] }]}
                 contentFit="contain"
               />
             </View>

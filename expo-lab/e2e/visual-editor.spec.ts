@@ -9,9 +9,7 @@ test("selects a real nested RN element and keeps tree and inspector in sync", as
   await expect(
     page.getByTestId("studio-layer-tree").getByRole("button", { name: "바바 이미지 레이어" }),
   ).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByTestId("studio-properties")).toContainText(
-    "속성이 아직 등록되지 않았습니다",
-  );
+  await expect(page.getByTestId("studio-asset-browser")).toBeVisible();
   await expect(photo).toHaveCSS("outline-style", "solid");
 
   await page

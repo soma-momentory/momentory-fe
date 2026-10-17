@@ -4,18 +4,40 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const approvedPath = path.join(root, "src/design/studioApproved.json");
+const assetIds = new Set([
+  "rest-baba-sleep",
+  "home-baba-idle",
+  "home-baba-wave",
+  "rest-records",
+  "rest-treasures",
+]);
+const fontFamilies = new Set(["Gaegu-Regular", "Gaegu-Bold", "KyoboHandwriting2025lyb"]);
+const alignments = new Set(["left", "center", "right"]);
 const ranges = {
   "home.hero.borderRadius": [0, 40],
   "home.bubble.borderRadius": [0, 40],
   "home.bubble.paddingHorizontal": [8, 32],
+  "home.bubbleText.fontSize": [18, 34],
+  "home.bubbleText.letterSpacing": [-1, 4],
+  "home.cta.paddingHorizontal": [12, 36],
+  "rest.heading.fontSize": [22, 40],
   "rest.wishPaper.paddingLeft": [8, 28],
+  "rest.wishSummary.fontSize": [16, 30],
+  "rest.wishSummary.letterSpacing": [-1, 4],
+  "rest.babaImage.opacity": [0.2, 1],
+  "rest.wishPhoto.width": [80, 130],
+  "rest.wishPhoto.rotation": [-15, 15],
   "archive.titleWrap.paddingHorizontal": [8, 32],
   "archive.title.fontSize": [24, 44],
+  "archive.calendar.borderRadius": [0, 32],
   "my.profileCard.borderRadius": [0, 32],
   "my.profileCard.paddingHorizontal": [8, 32],
   "my.profileCard.shadowOpacity": [0, 0.4],
   "report.weekTitlePaper.paddingHorizontal": [8, 32],
+  "report.weekTitlePaper.borderRadius": [0, 24],
   "report.weekTitle.fontSize": [24, 40],
+  "report.weekTitle.letterSpacing": [-1, 4],
+  "report.summary.minHeight": [100, 200],
 };
 
 export function validateDesign(design, approved) {
@@ -33,6 +55,12 @@ export function validateDesign(design, approved) {
       const [min, max] = ranges[key];
       if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max)
         throw new Error(`Invalid ${key}`);
+    } else if (key.endsWith(".fontFamily")) {
+      if (!fontFamilies.has(value)) throw new Error(`Invalid ${key}`);
+    } else if (key.endsWith(".textAlign")) {
+      if (!alignments.has(value)) throw new Error(`Invalid ${key}`);
+    } else if (key === "rest.babaImage.assetId") {
+      if (!assetIds.has(value)) throw new Error(`Invalid ${key}`);
     } else if (typeof value !== "string" || !/^#[0-9a-fA-F]{6}$/.test(value))
       throw new Error(`Invalid ${key}`);
   }

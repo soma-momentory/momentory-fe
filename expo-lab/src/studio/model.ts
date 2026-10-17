@@ -7,6 +7,25 @@ import {
 import { editableKeys, validValue } from "./registry";
 
 export const STORAGE_KEY = "momentory-design-studio-v1";
+const legacyKeys = [
+  "home.hero.backgroundColor",
+  "home.hero.borderRadius",
+  "home.bubble.backgroundColor",
+  "home.bubble.borderRadius",
+  "home.bubble.paddingHorizontal",
+  "rest.wishPaper.backgroundColor",
+  "rest.wishPaper.paddingLeft",
+  "archive.titleWrap.backgroundColor",
+  "archive.titleWrap.paddingHorizontal",
+  "archive.title.fontSize",
+  "my.profileCard.backgroundColor",
+  "my.profileCard.borderRadius",
+  "my.profileCard.paddingHorizontal",
+  "my.profileCard.shadowOpacity",
+  "report.weekTitlePaper.backgroundColor",
+  "report.weekTitlePaper.paddingHorizontal",
+  "report.weekTitle.fontSize",
+];
 export type StudioDrafts = { active: string; drafts: Record<string, StudioDesign> };
 export const initialDrafts = (): StudioDrafts => ({
   active: "Draft 1",
@@ -18,6 +37,13 @@ export function parseDesign(value: unknown): StudioDesign {
     throw new Error("디자인 객체가 필요합니다.");
   const record = value as Record<string, unknown>;
   const keys = editableKeys.map((property) => property.key);
+  if (
+    Object.keys(record).length === legacyKeys.length &&
+    Object.keys(record).every((key) => legacyKeys.includes(key))
+  ) {
+    // Version 2 drafts have no explicit schema version. Fill only the new approved defaults.
+    return parseDesign({ ...approvedDesign, ...record });
+  }
   if (
     Object.keys(record).length !== keys.length ||
     Object.keys(record).some((key) => !keys.includes(key as StudioDesignKey))
