@@ -6,6 +6,23 @@ on:
   pull_request:
 
 jobs:
+  design-studio-visual:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: npm run test:visual
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: design-studio-playwright-results
+          path: test-results/
+
   check:
     runs-on: ubuntu-latest
     steps:
