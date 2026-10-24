@@ -12,7 +12,7 @@ export function validateHeroStructure(value: unknown): HeroStructureNode[] {
     if (typeof node.id !== "string" || !validId.test(node.id) || ids.has(node.id)) throw new Error("Invalid or duplicate hero block ID");
     ids.add(node.id);
     if (++count > 12) throw new Error("Too many hero blocks");
-    if (node.kind === "text" && Object.keys(node).length === 3 && typeof node.text === "string" && node.text.trim().length > 0 && node.text.length <= 80 && !/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u.test(node.text))
+    if (node.kind === "text" && Object.keys(node).length === 3 && typeof node.text === "string" && node.text.trim().length > 0 && node.text.length <= 80 && !/[\u0000-\u001f\u007f\u061c\u200b-\u200f\u2028-\u202e\u2066-\u2069\ufeff]/u.test(node.text))
       return { id: node.id, kind: "text", text: node.text };
     if (node.kind === "group" && Object.keys(node).length === 3 && depth === 0 && Array.isArray(node.children) && node.children.length <= 6)
       return { id: node.id, kind: "group", children: visit(node.children, depth + 1) };
