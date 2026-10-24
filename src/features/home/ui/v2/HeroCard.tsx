@@ -174,11 +174,11 @@ export function HeroCard({
       {design["home.hero.structure"].length ? (
         <View testID="studio-home-structure" style={styles.structure}>
           {design["home.hero.structure"].map((block) => block.kind === "text" ? (
-            <Text key={block.id} testID={`studio-block-${block.id}`} style={styles.structureText} color={homeV2.color.ink}>{block.text}</Text>
+            <Text key={block.id} testID={`studio-block-${block.id}`} style={[styles.structureText, { lineHeight: 23 * scale }]} color={homeV2.color.ink}>{block.text}</Text>
           ) : (
             <View key={block.id} testID={`studio-block-${block.id}`} style={styles.structureGroup}>
               {block.children.map((child) => child.kind === "text" ? (
-                <Text key={child.id} testID={`studio-block-${child.id}`} style={styles.structureText} color={homeV2.color.ink}>{child.text}</Text>
+                <Text key={child.id} testID={`studio-block-${child.id}`} style={[styles.structureText, { lineHeight: 23 * scale }]} color={homeV2.color.ink}>{child.text}</Text>
               ) : null)}
             </View>
           ))}
