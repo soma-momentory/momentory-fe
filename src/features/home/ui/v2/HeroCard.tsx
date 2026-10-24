@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     borderColor: homeV2.color.paper,
   },
   ctaText: { fontFamily: homeV2.font.bold, ...homeV2.type.cta },
-  structure: { marginHorizontal: 18, marginBottom: 28, gap: 8, zIndex: 2 },
+  structure: { marginLeft: 18, maxWidth: 125, marginBottom: 28, gap: 8, zIndex: 2 },
   structureGroup: { padding: 10, borderRadius: 10, backgroundColor: homeV2.color.paper, gap: 5 },
   structureText: { fontFamily: homeV2.font.regular, fontSize: 17, lineHeight: 23 },
 });
