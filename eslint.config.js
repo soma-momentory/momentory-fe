@@ -19,6 +19,10 @@ module.exports = [
   {
     ignores: [
       "node_modules/**",
+      "data/**",
+      ".gradle/**",
+      "build/**",
+      "out/**",
       ".expo/**",
       "dist/**",
       "expo-lab/dist/**",
