@@ -17,5 +17,6 @@ describe("editable hero structure", () => {
     expect(() => validateHeroStructure([{id:"script",kind:"script",text:"run"}])).toThrow();
     expect(() => validateHeroStructure([{id:"same",kind:"text",text:"a"},{id:"same",kind:"text",text:"b"}])).toThrow();
     expect(() => validateHeroStructure([{id:"outer",kind:"group",children:[{id:"inner",kind:"group",children:[]}]}])).toThrow();
+    expect(() => validateHeroStructure([{id:"hidden",kind:"text",text:"safe\u202Eevil"}])).toThrow();
   });
 });

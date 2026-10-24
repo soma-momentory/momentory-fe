@@ -21,7 +21,7 @@ function validateHeroStructure(value) {
       typeof block.id !== "string" || !/^[a-z][a-z0-9-]{0,39}$/.test(block.id) || ids.has(block.id) || ++count > 12)
       throw new Error("Invalid hero block");
     ids.add(block.id);
-    if (block.kind === "text" && Object.keys(block).length === 3 && typeof block.text === "string" && block.text.trim() && block.text.length <= 80)
+    if (block.kind === "text" && Object.keys(block).length === 3 && typeof block.text === "string" && block.text.trim() && block.text.length <= 80 && !/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u.test(block.text))
       return { id:block.id, kind:"text", text:block.text };
     if (block.kind === "group" && Object.keys(block).length === 3 && depth === 0 && Array.isArray(block.children) && block.children.length <= 6)
       return { id:block.id, kind:"group", children:visit(block.children,1) };
