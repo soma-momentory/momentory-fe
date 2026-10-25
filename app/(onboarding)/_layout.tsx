@@ -6,22 +6,15 @@ import { useAuth } from "@/features/auth/model/auth";
 import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
 /**
- * 온보딩 스택. 상단바는 **여기서 그리지 않는다** — 화면마다 있고 없고가 다르다:
- *
- * - `03` 첫 메시지 · `10` 완료 — 뒤로 **없음**(돌아갈 곳이 없다)
- * - `05-a` 나이 · `05-c` 성별 — 뒤로 + **우상단 건너뛰기**(선택 항목)
- * - 나머지 — 뒤로만
- *
- * **진행 표시(1/8)는 두지 않는다**(`DESIGN.md` 「온보딩」) — 옛 `ProgressDots` 는 빠졌다.
- * 상단바 자리는 `OnboardingChat` 이 고정한다.
+ * 로그인 뒤 온보딩 스택(v2 · 2026-10-25) — 질문 넷 · 목표 · 답 정리 · 이름 · 나이 성별 · 캘린더 ·
+ * 알림 · 연구 그래프 · 지금 첫 회고. 로그인 전 화면(시작 · 문제 · 소개)은 `app/intro/` 다.
+ * 상단바 · 진행 막대는 화면마다 `OnboardingFrame` 이 그린다.
  *
  * **라우트 가드가 최종 권한을 갖는다**(`ARCHITECTURE §3-3`) — 진입 판정(S0)
  * 한 번으로 끝내지 않고, 이 레이아웃이 `authenticated` 가 아니면 무조건
  * 로그인으로 되돌린다. 딥링크로 바로 들어와도 여기서 막힌다.
  *
- * **선택지도 여기서 한 번 받아둔다**(`04`·`05-b`·`06` 이 같은 목록을 본다).
- * **기다리지 않는다** — 화면은 대역으로 즉시 그리고 답이 오면 조용히 바뀐다.
- * 선택지를 기다리느라 온보딩 첫 화면을 붙잡아 두지 않는다.
+ * 선택지(`GET /onboarding/options` — 이름 길이 상한)도 여기서 한 번 받아 둔다. 기다리지 않는다.
  */
 export default function OnboardingLayout() {
   const status = useAuth((s) => s.status);

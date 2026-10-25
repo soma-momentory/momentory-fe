@@ -184,7 +184,7 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
     seedSession(Date.now() + 60_000);
     me.mockResolvedValueOnce({
       ok: true,
-      data: { userId: 1, onboardingRequired: false, profile: meProfile() },
+      data: { userId: 1, onboardingRequired: false, needsOnboarding: false, profile: meProfile() },
     });
 
     await useAuth.getState().hydrate();
@@ -198,7 +198,7 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
     useOnboardingCompletion.getState().complete(); // 앞 사용자·앞 세션의 흔적
     me.mockResolvedValueOnce({
       ok: true,
-      data: { userId: 1, onboardingRequired: true, profile: null },
+      data: { userId: 1, onboardingRequired: true, needsOnboarding: true, profile: null },
     });
 
     await useAuth.getState().hydrate();
@@ -213,6 +213,7 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
       data: {
         userId: 1,
         onboardingRequired: false,
+        needsOnboarding: false,
         profile: meProfile({ nickname: "서버닉", retroTime: "07:00" }),
       },
     });
@@ -228,7 +229,7 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
     seedSession(Date.now() + 60_000);
     me.mockResolvedValueOnce({
       ok: true,
-      data: { userId: 1, onboardingRequired: false, profile: meProfile() },
+      data: { userId: 1, onboardingRequired: false, needsOnboarding: false, profile: meProfile() },
     });
 
     await useAuth.getState().hydrate();
@@ -243,7 +244,7 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
     const notifyBefore = useSettings.getState().notify.retro.enabled;
     me.mockResolvedValueOnce({
       ok: true,
-      data: { userId: 1, onboardingRequired: false, profile: meProfile() },
+      data: { userId: 1, onboardingRequired: false, needsOnboarding: false, profile: meProfile() },
     });
 
     await useAuth.getState().hydrate();
@@ -256,7 +257,7 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
     const before = useProfile.getState().nickname;
     me.mockResolvedValueOnce({
       ok: true,
-      data: { userId: 1, onboardingRequired: true, profile: null },
+      data: { userId: 1, onboardingRequired: true, needsOnboarding: true, profile: null },
     });
 
     await useAuth.getState().hydrate();
@@ -299,7 +300,7 @@ describe("syncMe — 온보딩 완료 여부와 프로필은 서버가 정본이
     });
     me.mockResolvedValueOnce({
       ok: true,
-      data: { userId: 1, onboardingRequired: false, profile: meProfile() },
+      data: { userId: 1, onboardingRequired: false, needsOnboarding: false, profile: meProfile() },
     });
 
     await useAuth.getState().hydrate();

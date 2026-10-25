@@ -30,27 +30,40 @@ const routes: Record<string, ScreenName> = {
   "my/interests": "profile_interests",
   "my/rest": "profile_rest",
 };
+/** 온보딩 v2 라우트 → 단계. 소개 장은 `intro/<id>`, 로그인 뒤 화면은 `(onboarding)/<route>` 다 */
 const steps: Record<string, OnboardingStepName> = {
-  welcome: "welcome",
-  nickname: "nickname",
-  age: "age",
-  gender: "gender",
-  interests: "interests",
-  rest: "rest",
-  "retro-time": "retroTime",
-  calendar: "calendar",
-  done: "done",
+  "intro/start": "start",
+  "intro/feelings": "feelings",
+  "intro/blur": "blur",
+  "intro/ruminate": "ruminate",
+  "intro/blank": "blank",
+  "intro/help": "help",
+  "intro/schedule": "schedule",
+  "intro/talk": "talk",
+  "intro/diary": "diary",
+  "intro/rest": "rest",
+  "intro/letter": "letter",
+  "intro/report": "report",
+  "(onboarding)/mood": "mood",
+  "(onboarding)/why": "why",
+  "(onboarding)/day-end": "day_end",
+  "(onboarding)/diary-history": "diary_history",
+  "(onboarding)/goal": "goal",
+  "(onboarding)/reading": "reading",
+  "(onboarding)/name": "name",
+  "(onboarding)/about": "about",
+  "(onboarding)/calendar": "calendar",
+  "(onboarding)/notify": "notify",
+  "(onboarding)/research": "research",
+  "(onboarding)/now": "now",
 };
 
 export function describeRoute(
   route: string,
 ): { screen: ScreenName; step?: OnboardingStepName } | null {
   const normalized = route.replace(/\/index$/, "");
-  const parts = normalized.split("/");
-  if (parts[0] === "(onboarding)" && parts.length === 2) {
-    const step = steps[parts[1]!];
-    return step ? { screen: "onboarding", step } : null;
-  }
+  const step = steps[normalized];
+  if (step) return { screen: "onboarding", step };
   const screen = routes[normalized];
   return screen ? { screen } : null;
 }

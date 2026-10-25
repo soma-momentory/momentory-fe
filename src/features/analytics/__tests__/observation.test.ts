@@ -2,7 +2,9 @@ import { createScreenObserver, createForegroundObserver, describeRoute } from ".
 import { createAnalytics, type AnalyticsEnvelope } from "../client";
 
 it("온보딩 rest와 쉼터를 구분하며 동적 경로 원문을 화면명으로 보내지 않는다", () => {
-  expect(describeRoute("(onboarding)/rest")).toEqual({ screen: "onboarding", step: "rest" });
+  expect(describeRoute("(onboarding)/day-end")).toEqual({ screen: "onboarding", step: "day_end" });
+  // 로그인 전 소개 장도 온보딩 단계다
+  expect(describeRoute("intro/rest")).toEqual({ screen: "onboarding", step: "rest" });
   expect(describeRoute("(tabs)/rest")).toEqual({ screen: "rest" });
   expect(describeRoute("rest/sense-pond")).toEqual({ screen: "sense_pond" });
   expect(describeRoute("diary/[id]/index")).toEqual({ screen: "diary_detail" });
@@ -43,18 +45,18 @@ it("화면 재렌더는 한 번, 다른 화면을 거친 재진입은 다시 센
   pass(4_000);
   observer.route("(tabs)/home");
   pass(1_000);
-  observer.route("(onboarding)/nickname");
+  observer.route("(onboarding)/name");
   pass(12_000);
-  observer.route("(onboarding)/nickname");
+  observer.route("(onboarding)/name");
   observer.route("(tabs)/home");
 
   expect(await events()).toEqual([
     ["screen_viewed", { screen: "home" }],
     ["screen_left", { screen: "home", duration_ms: 5_000, exit: "navigate" }],
     ["screen_viewed", { screen: "onboarding" }],
-    ["onboarding_step_viewed", { step: "nickname" }],
+    ["onboarding_step_viewed", { step: "name" }],
     // 온보딩은 화면명이 하나라 단계로 닫는다
-    ["onboarding_step_left", { step: "nickname", duration_ms: 12_000, exit: "navigate" }],
+    ["onboarding_step_left", { step: "name", duration_ms: 12_000, exit: "navigate" }],
     ["screen_viewed", { screen: "home" }],
   ]);
 });

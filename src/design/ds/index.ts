@@ -37,6 +37,7 @@ export {
   interaction,
   label,
   line,
+  onboardingArt,
   overlay,
   pond,
   primary,

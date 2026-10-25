@@ -36,6 +36,12 @@ export type Me = {
   userId: number;
   /** `true` 면 온보딩부터. **이 값이 완료 플래그의 정본이다** */
   onboardingRequired: boolean;
+  /**
+   * **최신 판 온보딩을 해야 하는가**(2026-10-25). 한 번도 안 했거나(`onboardingRequired`) 옛 판만
+   * 마쳤으면(`onboardingVersion < latestOnboardingVersion`) 참이다. 판 필드를 모르는 옛 서버면
+   * `onboardingRequired` 만 본다. ⚠ 옛 앱은 판 필드를 몰라 기존 사용자를 다시 온보딩시키지 않는다.
+   */
+  needsOnboarding: boolean;
   /** 온보딩 전에는 없다 — 그때는 아무것도 덮지 않는다 */
   profile: MeProfile | null;
 };
@@ -164,9 +170,14 @@ export const toMe = (v: unknown): Me | null => {
   if (typeof v.userId !== "number" || !Number.isFinite(v.userId)) return null;
   if (typeof v.onboardingRequired !== "boolean") return null;
 
+  const version = typeof v.onboardingVersion === "number" ? v.onboardingVersion : null;
+  const latest = typeof v.latestOnboardingVersion === "number" ? v.latestOnboardingVersion : null;
+
   return {
     userId: v.userId,
     onboardingRequired: v.onboardingRequired,
+    needsOnboarding:
+      v.onboardingRequired || (version != null && latest != null && version < latest),
     // 온보딩 전에는 `null` 이고, 서버가 `@JsonInclude(NON_NULL)` 이라 아예 안 오기도 한다
     profile: toProfile(v.profile),
   };

@@ -35,7 +35,7 @@ const seedSession = () =>
 const answerMe = (onboardingRequired: boolean) =>
   jest.mocked(fetchMe).mockResolvedValueOnce({
     ok: true,
-    data: { userId: 1, onboardingRequired, profile: null },
+    data: { userId: 1, onboardingRequired, needsOnboarding: onboardingRequired, profile: null },
   });
 
 beforeEach(() => {
@@ -59,20 +59,20 @@ const settle = async () => {
 };
 
 describe("S0 · 진입 판정 — 세 갈래", () => {
-  it("세션이 없으면 로그인으로", async () => {
+  it("세션이 없으면 소개 첫 장으로 — 로그인은 소개 뒤다", async () => {
     await render(<Splash />);
     await settle();
 
-    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/login"));
+    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/intro/start"));
   });
 
-  it("세션이 있고 온보딩 전이면 온보딩으로", async () => {
+  it("세션이 있고 최신 판 온보딩 전이면 소개 첫 장으로 — 로그인만 건너뛴다", async () => {
     seedSession();
     answerMe(true);
     await render(<Splash />);
     await settle();
 
-    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/welcome"));
+    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/intro/start"));
   });
 
   it("세션이 있고 온보딩을 마쳤으면 홈으로", async () => {
@@ -103,7 +103,7 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     });
 
     await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
-    expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/welcome");
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/intro/start");
   });
 
   it("서버가 0.8초보다 늦게 답해도 그 답을 기다렸다가 판정한다", async () => {
@@ -117,7 +117,12 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
             () =>
               resolve({
                 ok: true,
-                data: { userId: 1, onboardingRequired: false, profile: null },
+                data: {
+                  userId: 1,
+                  onboardingRequired: false,
+                  needsOnboarding: false,
+                  profile: null,
+                },
               }),
             1500,
           ),
@@ -133,7 +138,7 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     });
 
     await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home"));
-    expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/welcome");
+    expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/intro/start");
   });
 
   it("0.8초 하한 전에는 아무 데도 보내지 않는다", async () => {
@@ -183,11 +188,11 @@ describe("온보딩 완료 플래그 — 인증 이후에만 읽는다", () => {
     expect(useOnboardingCompletion.getState().completed).toBeNull();
   });
 
-  it("완료 플래그가 있어도 세션이 없으면 로그인으로 간다", async () => {
+  it("완료 플래그가 있어도 세션이 없으면 소개로 간다", async () => {
     useOnboardingCompletion.getState().complete();
     await render(<Splash />);
     await settle();
 
-    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/login"));
+    await waitFor(() => expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/intro/start"));
   });
 });

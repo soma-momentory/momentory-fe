@@ -15,17 +15,61 @@ const week: Field<string> = (v) =>
 /** 밀리초 길이 — 음수·무한은 버리고 정수로 반올림한다 */
 const millis: Field<number> = (v) =>
   typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : undefined;
+/** 온보딩 v2 단계(2026-10-25) — 로그인 전 소개 장 + 로그인 뒤 화면. 옛 대화형 단계는 보내지 않는다 */
 const step = choice(
-  "welcome",
-  "nickname",
-  "age",
-  "gender",
-  "interests",
+  "start",
+  "feelings",
+  "blur",
+  "ruminate",
+  "blank",
+  "help",
+  "schedule",
+  "talk",
+  "diary",
   "rest",
-  "retroTime",
+  "letter",
+  "report",
+  "mood",
+  "why",
+  "day_end",
+  "diary_history",
+  "goal",
+  "reading",
+  "name",
+  "about",
   "calendar",
-  "done",
+  "notify",
+  "research",
+  "now",
 );
+const question = choice("moodChange", "knowWhy", "dayEnd", "diaryHistory");
+/** 질문 답 코드 — 서버 enum 과 같다. 건너뛰면 SKIPPED */
+const answer = choice(
+  "RARELY",
+  "FEW_TIMES",
+  "VERY_OFTEN",
+  "MOSTLY",
+  "SOMETIMES",
+  "NOT_SURE",
+  "TIRED_SLEEP",
+  "OVERTHINK",
+  "OKAY",
+  "REGULARLY",
+  "STOPPED",
+  "SKIPPED",
+);
+const GOAL_CODES = [
+  "KNOW_WHEN_TIRED",
+  "FIND_TIRED_REASON",
+  "WRAPUP_HABIT",
+  "DIARY_HABIT",
+  "REST_ON_HARD_DAYS",
+];
+/** 고른 목표 — 코드를 쉼표로 이은 것(빈 문자열은 고르지 않음). 목록 밖 코드가 섞이면 버린다 */
+const goals: Field<string> = (v) =>
+  typeof v === "string" && (v === "" || v.split(",").every((g) => GOAL_CODES.includes(g)))
+    ? v
+    : undefined;
 const provider = choice("kakao", "apple", "google");
 const pondStep = choice("see", "hear", "feel");
 /** 쉼 콘텐츠 — 화면이 있는 것만(2026-10-05) */
@@ -129,7 +173,21 @@ export const events = {
   onboarding_step_completed: { step },
   onboarding_step_left: { step, duration_ms: millis, exit: leaveKind },
   notify_permission_result: { source: notificationSource, granted: bool },
-  onboarding_completed: {},
+  onboarding_question_answered: { question, answer },
+  /**
+   * 새 온보딩을 마쳤다. 답 묶음별 재방문을 이 이벤트의 속성으로 가른다(정본은 서버 응답 기록).
+   * `is_reonboarding` — 기존 사용자가 다시 한 것. 새 가입자와 퍼널을 섞지 않는다
+   */
+  onboarding_completed: {
+    version: count,
+    is_reonboarding: bool,
+    mood_change: answer,
+    know_why: answer,
+    day_end: answer,
+    diary_history: answer,
+    goals,
+    first_retro: choice("now", "later"),
+  },
   onboarding_options_selected: { step: choice("interests", "rest"), count },
   onboarding_submit_failed: { code: onboardingFailure },
   calendar_permission_result: { granted: bool },

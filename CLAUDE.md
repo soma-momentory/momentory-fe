@@ -219,12 +219,12 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 
 ```
 app/_layout.tsx  app/index.tsx (S0)  app/(auth)/login.tsx (S1)
-app/(onboarding)/{_layout, welcome, nickname, age, gender, interests, rest, retro-time, calendar, done}.tsx
-                  = 03 · 04 · 05-a · 05-c · 06(+06-b·06-c) · 07 · 08 · 09 · 10(+10-b)
-                  ← 옛 `profile.tsx`(나이+성별 한 화면)가 **age · gender 둘로 갈렸다**
-                    (2026-08-20 · 대화형은 질문 하나에 답 하나다 — PLAN.md A-9).
-                    대화는 `features/onboarding/model/conversation.ts` 가 파생시키고
-                    껍데기는 `components/onboarding/OnboardingChat` 하나다
+app/intro/{start, feelings, blur, ruminate, blank, help, schedule, talk, diary, rest, letter, report}.tsx
+                  = 온보딩 v2 로그인 전(시작 · 문제 5 · 소개) — 인증 없이 열린다(2026-10-25)
+app/(onboarding)/{_layout, mood, why, day-end, diary-history, goal, reading, name, about, calendar, notify, research, now}.tsx
+                  = 온보딩 v2 로그인 뒤 — 순서 · 문구 · 기능 스위치는 `features/onboarding/model/flow.ts` 하나다.
+                    옛 대화형 9화면(welcome … done)과 `OnboardingChat` · `conversation.ts` 는 지웠다.
+                    다시 온보딩 판정은 서버 `onboardingVersion < latestOnboardingVersion`(`meApi.ts` `needsOnboarding`)
 app/(tabs)/{_layout, home, rest, archive, report, my}.tsx
                   = 12 · 12-b · R1 · A1 · A2 · W1 · M1 (+ 알림 설정 시트)
                   ← **탭은 다섯이다**(홈 · 쉼터 · 보관함 · 리포트 · 마이).
@@ -272,7 +272,8 @@ src/components/ds/                        ← **공용 컴포넌트.** 새 화�
                                             채팅 3종(ChatBubble·ChatDock·ChatScaffold)이
                                             온보딩과 회고를 함께 덮는다 — 옛 `components/chat/`
                                             `components/common/` `components/primitives/` 는 없다
-src/components/onboarding/{OnboardingChat, QuickReplies, OtherReplyInput, SkipButton}.tsx
+src/components/onboarding/{OnboardingParts, IntroScreen, IntroArt, QuestionScreen, startQuestions}.tsx
+                                          ← 온보딩 v2 껍데기 · 그림. QuickReplies · OtherReplyInput 은 마이 편집이 쓴다
 src/components/my/BasicInfoEditor.tsx     ← 기본 정보 다섯 화면이 공유하는 껍데기
                                             (상단바 · 저장 · 실패 한 줄)
 src/components/archive/{DayScheduleList, DiaryPreviewCard, EmotionFilter}.tsx
@@ -427,11 +428,11 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 
 네이티브 모듈이 섞여 있어 **dev client 재빌드 필요**.
 ⚠ **`08` 회고 시간 선택은 외부 피커 모듈이 아니다** — `src/components/ds/WheelPicker.tsx`
-의 3열 자체 구현을 쓴다(`app/(onboarding)/retro-time.tsx` · `app/(tabs)/my.tsx`).
+의 3열 자체 구현을 쓴다(`app/(onboarding)/notify.tsx` · `app/(tabs)/my.tsx`).
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
-> 진입 분기는 `app/index.tsx` 에 있다 — 세션 없음 → 로그인 · 온보딩 전 → 온보딩 ·
+> 진입 분기는 `app/index.tsx` 에 있다 — 세션 없음 → 소개(`intro/start`) · 최신 판 온보딩 전 → 소개(로그인 건너뜀) ·
 > 완료 → 홈. **완료 여부의 정본은 서버다**(`GET /api/v1/users/me` · `auth.ts` 의 `syncMe`)라
 > 앱을 껐다 켜도 온보딩이 되풀이되지 않는다. **서버에 못 물어본 채로 켜지면**(오프라인 등)
 > 완료 여부는 「모른다」(`null`)이고, 스플래시가 「인터넷 연결을 기다리고 있어요」 한 줄을

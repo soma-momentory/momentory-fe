@@ -32,10 +32,12 @@ import { useOnboardingCompletion } from "@/features/onboarding/model/completion"
  *   (`hydrating` 동안 보이는 것이 곧 S0 다, `ARCHITECTURE §3`). 판정 셋:
  *
  * ```
- * 세션 없음                    → (auth)/login
- * 세션 있음 · 온보딩 미완료     → (onboarding)/welcome
- * 세션 있음 · 온보딩 완료       → (tabs)/home
+ * 세션 없음                         → intro/start (시작 → 문제 → 소개 → 로그인)
+ * 세션 있음 · 최신 판 온보딩 미완료  → intro/start (로그인만 건너뛴다 · 2026-10-25)
+ * 세션 있음 · 최신 판 온보딩 완료    → (tabs)/home
  * ```
+ *
+ * 「최신 판」 — 옛 온보딩만 마친 기존 사용자도 새 온보딩을 한 번 본다(`meApi.ts` `needsOnboarding`).
  *
  * **온보딩 완료 여부의 정본은 서버다** — `hydrate` 가 `GET /api/v1/users/me` 를
  * 기다렸다가 `completion` 에 적는다(`auth.ts` `syncMe`). 그래서 앱을 껐다 켜도
@@ -89,14 +91,14 @@ export default function Splash() {
     // 0.8초 하한과 hydration 둘 다 끝나야 넘어간다 — 먼저 끝난 쪽이 기다린다
     if (!minDone || !hydrated) return;
     if (status !== "authenticated") {
-      router.replace("/login");
+      router.replace("/intro/start");
       return;
     }
     // 서버에 못 물어봤다 — 아래 재시도가 답을 받으면 `completed` 가 바뀌어 여기가 다시 돈다
     if (completed == null) return;
     // 온보딩을 마친 사람은 홈으로 — 매번 온보딩을 다시 보게 하지 않는다.
     // 이 값은 `hydrate` 가 서버에 물어 적어둔 것이다(위 주석)
-    router.replace(completed ? "/home" : "/welcome");
+    router.replace(completed ? "/home" : "/intro/start");
   }, [minDone, hydrated, status, completed]);
 
   useEffect(() => {
