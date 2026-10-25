@@ -36,81 +36,82 @@ FE는 main 기준이다. MOMENTORY_BUILD_ENV=production은 기존 네이티브 �
 SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 버전, OS/플랫폼 등이다.
 자동 화면/클릭/네트워크 수집과 세션 리플레이는 사용하지 않는다.
 
-| 이벤트                       | 발생 지점/의미                                     | 이벤트 속성                               |
-| ---------------------------- | -------------------------------------------------- | ----------------------------------------- |
-| app_opened                   | 앱의 JS 실행 시작, 한 번                           | 없음                                      |
-| app_foregrounded             | 실제 background를 거친 active 복귀                 | 없음                                      |
-| screen_viewed                | 허용된 라우트의 화면 진입                          | screen: 고정 화면명                       |
-| screen_left                  | 화면을 떠남 또는 백그라운드 전환                   | screen, duration_ms, exit                 |
-| login_started                | 소셜 로그인 중복 실행 가드 통과                    | provider: kakao/apple/google              |
-| login_succeeded              | 서버 세션을 기기에 저장하고 채택                   | provider, onboarding_required             |
-| login_not_completed          | 로그인 취소 또는 실패                              | provider, outcome: cancelled/failed       |
-| onboarding_step_viewed       | 해당 온보딩 화면 진입                              | step: 고정 단계명                         |
-| onboarding_step_completed    | 다음 단계로 이동, 선택 항목 건너뛰기도 포함        | step                                      |
-| onboarding_step_left         | 온보딩 단계를 떠남 또는 백그라운드 전환            | step, duration_ms, exit                   |
-| notify_permission_result     | 온보딩 08·마이 M2 의 알림 권한 결과                | source: onboarding/my, granted            |
-| onboarding_completed         | 완료 API가 onboardingRequired=false로 응답         | 없음                                      |
-| onboarding_options_selected  | 관심사·쉬는 방법 단계에서 다음으로 이동            | step: interests/rest, count               |
-| onboarding_submit_failed     | 완료 API 실패 또는 아직 온보딩 필요 응답           | code (아래)                               |
-| calendar_permission_result   | 온보딩 캘린더 연결 요청 결과                       | granted                                   |
-| calendar_link_chosen         | 캘린더 연결 여부를 고름                            | source: onboarding/my, choice             |
-| calendar_sync_succeeded      | 캘린더 동기화 성공 응답                            | created, updated, deleted 개수            |
-| calendar_sync_failed         | 캘린더를 읽거나 보내지 못함 (아래)                 | outcome: unreadable/failed                |
-| schedule_created             | 직접 일정 추가 성공                                | schedule_id, source                       |
-| schedule_updated             | 일정 제목 편집 성공                                | schedule_id                               |
-| schedule_deleted             | 일정 삭제 성공                                     | schedule_id                               |
-| schedule_visibility_changed  | 캘린더 일정 숨김/표시 성공                         | schedule_id, hidden                       |
-| schedule_completion_changed  | 일정 완료 상태 저장 성공                           | schedule_id, completed, source            |
-| retrospect_started           | 회고 시작 API 성공                                 | retrospect_id                             |
-| retrospect_turn_succeeded    | 대화 턴 API 성공                                   | retrospect_id, input_kind: text/selection |
-| retrospect_turn_timed        | 대화 턴 성공, 화면에서 잰 시간                     | retrospect_id, phase, turn_no 외 (아래)   |
-| retrospect_exited            | 회고가 끝나기 전에 닫음                            | retrospect_id, phase, turn_no             |
-| retro_cta_clicked            | 홈의 지금 하루 돌아보기 클릭                       | source: home                              |
-| voice_input_started          | 회고 입력창의 마이크로 음성 인식이 시작됨          | retrospect_id                             |
-| voice_permission_result      | 마이크 권한 팝업의 응답                            | granted                                   |
-| voice_input_failed           | 음성 인식 실패 (아래)                              | code: no_speech/network/unavailable/other |
-| reminder_opened              | 예약한 알림을 눌러 앱을 엶                         | reminder: retro/daily/weekly              |
-| retrospect_branch_selected   | 고정 분기 선택 제출                                | branch: diary/explore                     |
-| retrospect_completed         | done=true이면서 phase=complete인 정상 응답         | retrospect_id                             |
-| retrospect_request_failed    | 시작/턴 API 실패 또는 응답 검증 실패               | operation: start/turn, 고정 code          |
-| wish_card_created            | 정상 완료 응답에 실제 wishCardId가 있음            | retrospect_id, wish_card_id               |
-| archive_view_changed         | 달력/목록 모드 전환                                | view: calendar/list                       |
-| archive_date_selected        | 보관함 달력 날짜 선택                              | days_from_today, has_diary                |
-| archive_month_changed        | 보관함 달력 이전/다음 월                           | direction: previous/next                  |
-| archive_period_changed       | 보관함 목록 조회 기간 선택                         | period: all/month                         |
-| diary_open_clicked           | 보관함에서 일기 열기 클릭                          | diary_id, source: calendar/list           |
-| diary_viewed                 | 일기 상세 데이터가 실제 표시됨                     | diary_id                                  |
-| diary_deleted                | 일기 삭제 성공                                     | diary_id                                  |
-| diary_updated                | 회고 완료 화면에서 일기 본문 편집 성공             | retrospect_id                             |
-| diary_edit_started           | 회고 완료 화면에서 직접 고치기 시작                | retrospect_id                             |
-| diary_edit_finished          | 직접 고치기를 마치고 읽기로 돌아감                 | retrospect_id, duration_ms, chars_delta   |
-| wish_card_open_clicked       | 쉼터의 바람카드 보기 클릭                          | source: rest                              |
-| wish_card_viewed             | 선택 카드 데이터가 실제 표시됨                     | wish_card_id, source: cards/trail         |
-| wish_card_completion_changed | 해봤어요/되돌리기 API 성공                         | wish_card_id, completed                   |
-| wish_card_deleted            | 바람카드 삭제 성공                                 | wish_card_id                              |
-| sense_pond_step_completed    | 감각연못 한 단계의 목표를 채움                     | step, duration_ms 외 2개 (아래)           |
-| sense_pond_finished          | 감각연못 마지막 단계의 목표를 채움                 | duration_ms                               |
-| sense_pond_exited            | 끝내지 않고 감각연못 화면을 떠남                   | step, found, hold_cancels, duration_ms    |
-| rest_recommendation_shown    | 일기를 쓴 날 쉼터에서 쉼 추천 시트가 올라옴        | content, basis (아래)                     |
-| rest_recommendation_accepted | 추천 시트의 「해볼게요」 · 「오늘 추천」 칸을 누름 | content, basis, form: sheet/hint (아래)   |
-| rest_content_opened          | 쉼 콘텐츠 화면을 엶                                | content, entry, diary_today (아래)        |
-| rest_content_completed       | 쉼 콘텐츠를 끝까지 함                              | content, duration_ms                      |
-| rest_content_exited          | 끝내지 않고 쉼 콘텐츠 화면을 떠남                  | content, stage, duration_ms               |
-| rest_guide_opened            | 쉼터의 「?」 원을 눌러 설명 카드를 다시 엶         | content                                   |
-| worry_box_handed             | 걱정상자에 걱정을 맡김                             | chars (글자 수만)                         |
-| worry_box_choice_selected    | 걱정상자의 맡겨두기/흘려보내기 선택                | choice: keep/release                      |
-| treasure_box_tucked          | 오늘의 보물함에 보물을 담음                        | chars (글자 수만)                         |
-| store_review_requested       | 쉼터를 「나아졌어요」로 마치고 나와 별점 창을 요청 | 없음 (창이 떴는지는 알 수 없음)           |
-| inquiry_submitted            | 마이 「문의하기」에서 문의를 보냄                  | category: bug/suggestion/account/etc      |
-| report_week_selected         | 다른 주 선택                                       | week_start                                |
-| weekly_report_viewed         | 선택 주와 일치하는 리포트가 ready로 표시됨         | week_start                                |
-| logout_clicked               | 마이 로그아웃 클릭                                 | 없음                                      |
-| logout_completed             | 기기의 로그인 상태를 비움                          | 없음                                      |
-| withdrawal_opened            | 탈퇴 확인 시트 열기                                | 없음                                      |
-| withdrawal_cancelled         | 제출 중이 아닐 때 시트를 닫음                      | 없음                                      |
-| withdrawal_submitted         | 탈퇴 중복 실행 가드를 통과해 요청 시작             | 없음                                      |
-| withdrawal_completed         | 서버 계정 삭제 성공 응답                           | 없음                                      |
-| withdrawal_failed            | 서버 계정 삭제 실패 응답                           | 없음                                      |
+| 이벤트                       | 발생 지점/의미                                                   | 이벤트 속성                                                                                 |
+| ---------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| app_opened                   | 앱의 JS 실행 시작, 한 번                                         | 없음                                                                                        |
+| app_foregrounded             | 실제 background를 거친 active 복귀                               | 없음                                                                                        |
+| screen_viewed                | 허용된 라우트의 화면 진입                                        | screen: 고정 화면명                                                                         |
+| screen_left                  | 화면을 떠남 또는 백그라운드 전환                                 | screen, duration_ms, exit                                                                   |
+| login_started                | 소셜 로그인 중복 실행 가드 통과                                  | provider: kakao/apple/google                                                                |
+| login_succeeded              | 서버 세션을 기기에 저장하고 채택                                 | provider, onboarding_required                                                               |
+| login_not_completed          | 로그인 취소 또는 실패                                            | provider, outcome: cancelled/failed                                                         |
+| onboarding_step_viewed       | 해당 온보딩 화면 진입(v2 · 로그인 전 소개 장 포함)               | step: 고정 단계명(아래)                                                                     |
+| onboarding_step_completed    | ⛔ 폐기(2026-10-25) — 옛 대화형 온보딩만 보냈다                  | step                                                                                        |
+| onboarding_step_left         | 온보딩 단계를 떠남 또는 백그라운드 전환                          | step, duration_ms, exit                                                                     |
+| notify_permission_result     | 온보딩 08·마이 M2 의 알림 권한 결과                              | source: onboarding/my, granted                                                              |
+| onboarding_question_answered | 온보딩 v2 질문에 답하거나 건너뜀                                 | question, answer(서버 enum · SKIPPED)                                                       |
+| onboarding_completed         | v2 완료 API가 onboardingRequired=false로 응답                    | version, is_reonboarding, mood_change, know_why, day_end, diary_history, goals, first_retro |
+| onboarding_options_selected  | ⛔ 폐기(2026-10-25) — 새 온보딩은 관심사·쉬는 방법을 묻지 않는다 | step: interests/rest, count                                                                 |
+| onboarding_submit_failed     | 완료 API 실패 또는 아직 온보딩 필요 응답                         | code (아래)                                                                                 |
+| calendar_permission_result   | 온보딩 캘린더 연결 요청 결과                                     | granted                                                                                     |
+| calendar_link_chosen         | 캘린더 연결 여부를 고름                                          | source: onboarding/my, choice                                                               |
+| calendar_sync_succeeded      | 캘린더 동기화 성공 응답                                          | created, updated, deleted 개수                                                              |
+| calendar_sync_failed         | 캘린더를 읽거나 보내지 못함 (아래)                               | outcome: unreadable/failed                                                                  |
+| schedule_created             | 직접 일정 추가 성공                                              | schedule_id, source                                                                         |
+| schedule_updated             | 일정 제목 편집 성공                                              | schedule_id                                                                                 |
+| schedule_deleted             | 일정 삭제 성공                                                   | schedule_id                                                                                 |
+| schedule_visibility_changed  | 캘린더 일정 숨김/표시 성공                                       | schedule_id, hidden                                                                         |
+| schedule_completion_changed  | 일정 완료 상태 저장 성공                                         | schedule_id, completed, source                                                              |
+| retrospect_started           | 회고 시작 API 성공                                               | retrospect_id                                                                               |
+| retrospect_turn_succeeded    | 대화 턴 API 성공                                                 | retrospect_id, input_kind: text/selection                                                   |
+| retrospect_turn_timed        | 대화 턴 성공, 화면에서 잰 시간                                   | retrospect_id, phase, turn_no 외 (아래)                                                     |
+| retrospect_exited            | 회고가 끝나기 전에 닫음                                          | retrospect_id, phase, turn_no                                                               |
+| retro_cta_clicked            | 홈의 지금 하루 돌아보기 클릭                                     | source: home                                                                                |
+| voice_input_started          | 회고 입력창의 마이크로 음성 인식이 시작됨                        | retrospect_id                                                                               |
+| voice_permission_result      | 마이크 권한 팝업의 응답                                          | granted                                                                                     |
+| voice_input_failed           | 음성 인식 실패 (아래)                                            | code: no_speech/network/unavailable/other                                                   |
+| reminder_opened              | 예약한 알림을 눌러 앱을 엶                                       | reminder: retro/daily/weekly                                                                |
+| retrospect_branch_selected   | 고정 분기 선택 제출                                              | branch: diary/explore                                                                       |
+| retrospect_completed         | done=true이면서 phase=complete인 정상 응답                       | retrospect_id                                                                               |
+| retrospect_request_failed    | 시작/턴 API 실패 또는 응답 검증 실패                             | operation: start/turn, 고정 code                                                            |
+| wish_card_created            | 정상 완료 응답에 실제 wishCardId가 있음                          | retrospect_id, wish_card_id                                                                 |
+| archive_view_changed         | 달력/목록 모드 전환                                              | view: calendar/list                                                                         |
+| archive_date_selected        | 보관함 달력 날짜 선택                                            | days_from_today, has_diary                                                                  |
+| archive_month_changed        | 보관함 달력 이전/다음 월                                         | direction: previous/next                                                                    |
+| archive_period_changed       | 보관함 목록 조회 기간 선택                                       | period: all/month                                                                           |
+| diary_open_clicked           | 보관함에서 일기 열기 클릭                                        | diary_id, source: calendar/list                                                             |
+| diary_viewed                 | 일기 상세 데이터가 실제 표시됨                                   | diary_id                                                                                    |
+| diary_deleted                | 일기 삭제 성공                                                   | diary_id                                                                                    |
+| diary_updated                | 회고 완료 화면에서 일기 본문 편집 성공                           | retrospect_id                                                                               |
+| diary_edit_started           | 회고 완료 화면에서 직접 고치기 시작                              | retrospect_id                                                                               |
+| diary_edit_finished          | 직접 고치기를 마치고 읽기로 돌아감                               | retrospect_id, duration_ms, chars_delta                                                     |
+| wish_card_open_clicked       | 쉼터의 바람카드 보기 클릭                                        | source: rest                                                                                |
+| wish_card_viewed             | 선택 카드 데이터가 실제 표시됨                                   | wish_card_id, source: cards/trail                                                           |
+| wish_card_completion_changed | 해봤어요/되돌리기 API 성공                                       | wish_card_id, completed                                                                     |
+| wish_card_deleted            | 바람카드 삭제 성공                                               | wish_card_id                                                                                |
+| sense_pond_step_completed    | 감각연못 한 단계의 목표를 채움                                   | step, duration_ms 외 2개 (아래)                                                             |
+| sense_pond_finished          | 감각연못 마지막 단계의 목표를 채움                               | duration_ms                                                                                 |
+| sense_pond_exited            | 끝내지 않고 감각연못 화면을 떠남                                 | step, found, hold_cancels, duration_ms                                                      |
+| rest_recommendation_shown    | 일기를 쓴 날 쉼터에서 쉼 추천 시트가 올라옴                      | content, basis (아래)                                                                       |
+| rest_recommendation_accepted | 추천 시트의 「해볼게요」 · 「오늘 추천」 칸을 누름               | content, basis, form: sheet/hint (아래)                                                     |
+| rest_content_opened          | 쉼 콘텐츠 화면을 엶                                              | content, entry, diary_today (아래)                                                          |
+| rest_content_completed       | 쉼 콘텐츠를 끝까지 함                                            | content, duration_ms                                                                        |
+| rest_content_exited          | 끝내지 않고 쉼 콘텐츠 화면을 떠남                                | content, stage, duration_ms                                                                 |
+| rest_guide_opened            | 쉼터의 「?」 원을 눌러 설명 카드를 다시 엶                       | content                                                                                     |
+| worry_box_handed             | 걱정상자에 걱정을 맡김                                           | chars (글자 수만)                                                                           |
+| worry_box_choice_selected    | 걱정상자의 맡겨두기/흘려보내기 선택                              | choice: keep/release                                                                        |
+| treasure_box_tucked          | 오늘의 보물함에 보물을 담음                                      | chars (글자 수만)                                                                           |
+| store_review_requested       | 쉼터를 「나아졌어요」로 마치고 나와 별점 창을 요청               | 없음 (창이 떴는지는 알 수 없음)                                                             |
+| inquiry_submitted            | 마이 「문의하기」에서 문의를 보냄                                | category: bug/suggestion/account/etc                                                        |
+| report_week_selected         | 다른 주 선택                                                     | week_start                                                                                  |
+| weekly_report_viewed         | 선택 주와 일치하는 리포트가 ready로 표시됨                       | week_start                                                                                  |
+| logout_clicked               | 마이 로그아웃 클릭                                               | 없음                                                                                        |
+| logout_completed             | 기기의 로그인 상태를 비움                                        | 없음                                                                                        |
+| withdrawal_opened            | 탈퇴 확인 시트 열기                                              | 없음                                                                                        |
+| withdrawal_cancelled         | 제출 중이 아닐 때 시트를 닫음                                    | 없음                                                                                        |
+| withdrawal_submitted         | 탈퇴 중복 실행 가드를 통과해 요청 시작                           | 없음                                                                                        |
+| withdrawal_completed         | 서버 계정 삭제 성공 응답                                         | 없음                                                                                        |
+| withdrawal_failed            | 서버 계정 삭제 실패 응답                                         | 없음                                                                                        |
 
 화면명은 login, home, archive, rest, report, my, onboarding, schedule_new,
 schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
@@ -220,6 +221,12 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 
 2026-09-28 계측 보강:
 
+- 온보딩 v2 단계명(2026-10-25): 로그인 전 start, feelings, blur, ruminate, blank, help, talk, diary, rest, report
+  (schedule · letter 는 기능이 나오면 보인다) · 로그인 뒤 mood, why, day_end, diary_history, goal, reading, name, about,
+  calendar, notify, research, now. 옛 welcome · nickname · age · gender · interests · retroTime · done 은 더 오지 않는다.
+- onboarding_completed 의 is_reonboarding 은 **기존 사용자가 새 판을 다시 한 것**이다 — 새 가입자와 퍼널을 섞지 않는다.
+  질문 답 · 목표는 **사용자 속성이 아니라 이 이벤트의 속성**으로 보낸다(답 묶음별 재방문은 「onboarding_completed 의
+  day_end = X」로 시작 이벤트를 걸러 본다). 정본은 서버 `user_onboarding_responses` 다. goals 는 코드를 쉼표로 이은 문자열이다.
 - onboarding_options_selected 는 고른 **개수만** 보낸다. 무엇을 골랐는지는 보내지 않는다. 기타 입력도 한 개로 센다.
 - onboarding_submit_failed 의 code 는 invalid, unauthorized, no_session, network, server, malformed,
   unconfigured 중 하나이고, 서버가 받았는데 아직 온보딩이 필요하다고 답하면 still_required 다.
