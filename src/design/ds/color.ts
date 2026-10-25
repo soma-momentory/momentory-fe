@@ -485,6 +485,30 @@ export const raisedShadow = {
   grass: "#3E5546",
 } as const;
 
+/**
+ * 온보딩 v2 그림(2026-10-25 · `proto-v2.html` 값). **그림 전용**이다 — 글자를 얹지 않고,
+ * 그래프 숫자처럼 색이 말하는 자리에는 같은 뜻의 글자(범례 · 낭독기 이름)를 함께 둔다.
+ */
+export const onboardingArt = {
+  /** 연구 그래프 「혼자 되새긴 사람」 · 되새김 고리 */
+  rumination: "#8C7FC4",
+  ruminationSoft: "#CFC4E2",
+  /** 연구 그래프 「떨어져서 돌아본 사람」 */
+  reflection: "#3E8A4F",
+  /** 진행 막대의 지난 칸 */
+  segmentDone: "#A9BCA2",
+  /** 일기장 · 빈 페이지 종이 */
+  paper: "#FFFCF4",
+  /** 내 답 말풍선 · 고른 목표 면 */
+  sageSoft: "#E1E8D7",
+  /** 알림 잠금화면 위 · 아래 */
+  lockTop: "#2E3550",
+  lockBottom: "#5E6383",
+  lockCard: "rgba(255,255,255,0.88)",
+  /** 「그래서, 바바가 도와줄게요」 장 아래쪽 바탕 */
+  turn: "#E6EFDF",
+} as const;
+
 export const color = {
   background,
   label,

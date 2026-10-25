@@ -5,6 +5,7 @@ import { Platform } from "react-native";
 import Login from "../login";
 
 import { useAuth, type SignInOutcome } from "@/features/auth/model/auth";
+import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 
 /**
  * `S1` — 카카오 버튼이 실제 로그인에 닿는가, 그리고 **실패가 화면을 어지럽히지
@@ -38,8 +39,19 @@ const browser = jest.requireMock("expo-web-browser") as { openBrowserAsync: jest
 
 const replace = jest.mocked(router.replace);
 
+/**
+ * 로그인 store 가 하는 일 중 화면이 보는 것 하나 — 완료 플래그를 세운다(`adoptSession`).
+ * 화면은 그 플래그로 홈 · 질문을 가른다(2026-10-25).
+ */
+const signedIn = (outcome: SignInOutcome) => {
+  if (outcome.kind === "signed-in") {
+    useOnboardingCompletion.setState({ completed: !outcome.onboardingRequired });
+  }
+  return outcome;
+};
+
 const mockSignIn = (outcome: SignInOutcome) => {
-  const signIn = jest.fn(async () => outcome);
+  const signIn = jest.fn(async () => signedIn(outcome));
   useAuth.setState({ signInWithKakao: signIn });
   return signIn;
 };
@@ -47,17 +59,18 @@ const mockSignIn = (outcome: SignInOutcome) => {
 beforeEach(() => {
   jest.clearAllMocks();
   useAuth.setState({ status: "anonymous", signingIn: false, signInError: null });
+  useOnboardingCompletion.getState().reset();
 });
 
 describe("카카오 버튼 — 실제 로그인에 연결돼 있다", () => {
-  it("온보딩이 필요하면 온보딩으로 보낸다", async () => {
+  it("온보딩이 필요하면 첫 질문으로 보낸다 — 소개는 로그인 전에 봤다", async () => {
     const signIn = mockSignIn({ kind: "signed-in", onboardingRequired: true });
     const { getByLabelText } = await render(<Login />);
 
     await fireEvent.press(getByLabelText("카카오 로그인"));
 
     await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
-    expect(replace).toHaveBeenCalledWith("/welcome");
+    expect(replace).toHaveBeenCalledWith("/mood");
   });
 
   it("온보딩을 마친 사용자는 홈으로 보낸다", async () => {
@@ -67,6 +80,20 @@ describe("카카오 버튼 — 실제 로그인에 연결돼 있다", () => {
     await fireEvent.press(getByLabelText("카카오 로그인"));
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
+  });
+
+  it("최신 판을 마쳤는지 서버에 못 물어봤으면 스플래시로 — 거기서 답을 기다린다", async () => {
+    useAuth.setState({
+      signInWithKakao: jest.fn(async () => {
+        useOnboardingCompletion.setState({ completed: null });
+        return { kind: "signed-in", onboardingRequired: false } as const;
+      }),
+    });
+    const { getByLabelText } = await render(<Login />);
+
+    await fireEvent.press(getByLabelText("카카오 로그인"));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/"));
   });
 
   it("취소하면 화면을 옮기지도, 아무 말도 하지 않는다", async () => {
@@ -88,7 +115,7 @@ describe("애플 버튼 — 카카오와 같은 자리로 연결돼 있다", () 
    * 카카오와 똑같다 — 여기서 거는 것은 그 「똑같음」이다.
    */
   const mockApple = (outcome: SignInOutcome) => {
-    const signIn = jest.fn(async () => outcome);
+    const signIn = jest.fn(async () => signedIn(outcome));
     useAuth.setState({ signInWithApple: signIn });
     return signIn;
   };
@@ -201,7 +228,7 @@ describe("Google 버튼 — 실제 로그인에 연결돼 있다", () => {
    * 같아졌다. 개발 통로는 **워드마크 길게 누르기**로 옮겼다 — 아래에서 따로 건다.
    */
   const mockGoogle = (outcome: SignInOutcome) => {
-    const signIn = jest.fn(async () => outcome);
+    const signIn = jest.fn(async () => signedIn(outcome));
     useAuth.setState({ signInWithGoogle: signIn });
     return signIn;
   };
@@ -216,7 +243,7 @@ describe("Google 버튼 — 실제 로그인에 연결돼 있다", () => {
 
     await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
     expect(dev).not.toHaveBeenCalled();
-    expect(replace).toHaveBeenCalledWith("/welcome");
+    expect(replace).toHaveBeenCalledWith("/mood");
   });
 
   it("온보딩을 마친 사용자는 홈으로 보낸다", async () => {
@@ -239,7 +266,7 @@ describe("Google 버튼 — 실제 로그인에 연결돼 있다", () => {
 });
 
 describe("개발 통로 — 버튼이 아니라 워드마크에 있다", () => {
-  it("워드마크를 길게 누르면 가짜 세션으로 온보딩에 들어간다", async () => {
+  it("워드마크를 길게 누르면 가짜 세션으로 질문에 들어간다", async () => {
     const dev = jest.fn(async () => {});
     useAuth.setState({ signInDev: dev });
     const { getByText } = await render(<Login />);
@@ -247,7 +274,7 @@ describe("개발 통로 — 버튼이 아니라 워드마크에 있다", () => {
     await fireEvent(getByText("모멘토리"), "longPress");
 
     await waitFor(() => expect(dev).toHaveBeenCalledTimes(1));
-    expect(replace).toHaveBeenCalledWith("/welcome");
+    expect(replace).toHaveBeenCalledWith("/mood");
   });
 
   it("짧게 누르면 아무 일도 없다 — 워드마크는 버튼이 아니다", async () => {

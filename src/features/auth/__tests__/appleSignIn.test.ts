@@ -2,6 +2,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 
 import { requestAppleCredential } from "../data/appleSdk";
+import { fetchMe } from "../data/meApi";
 import { SESSION_KEY, useAuth, type Session } from "../model/auth";
 
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
@@ -315,6 +316,10 @@ describe("store — 애플 인가가 모멘토리 세션이 된다", () => {
 
   it("온보딩을 마친 사용자는 완료 플래그가 선다 — 서버 답이 정본이다", async () => {
     setFetch(async () => respondOk({ ...SERVER_BODY, onboardingRequired: false }));
+    jest.mocked(fetchMe).mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: false, needsOnboarding: false, profile: null },
+    });
 
     const outcome = await useAuth.getState().signInWithApple();
 

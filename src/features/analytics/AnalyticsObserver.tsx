@@ -41,7 +41,8 @@ function ActiveObserver() {
   useEffect(() => {
     // 가드가 보호 화면 대신 스플래시/로그인을 렌더하는 동안은 조회가 아니다.
     if (auth === "hydrating") return;
-    if (auth === "anonymous" && route !== "(auth)/login") return;
+    // 로그인 전에 열리는 화면은 로그인과 소개 장(`intro/*`)뿐이다
+    if (auth === "anonymous" && route !== "(auth)/login" && !route.startsWith("intro/")) return;
     observe.current.route(route);
   }, [route, auth]);
   return null;

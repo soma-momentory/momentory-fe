@@ -421,7 +421,9 @@ const adoptSession = async (
 
   // 온보딩 완료 여부는 **서버가 정본**이다. 이 기기에 남아 있던 로컬
   // 플래그(앞 사용자·앞 세션의 것)를 서버 답에 맞춰 덮는다.
-  useOnboardingCompletion.setState({ completed: !session.onboardingRequired });
+  // 로그인 응답은 「한 번이라도 했나」만 안다 — 옛 판만 마친 사람인지는 `GET /users/me` 가
+  // 알려 준다(2026-10-25). 그래서 마친 적이 있으면 아래 `syncMe` 를 **기다려서** 정한다.
+  useOnboardingCompletion.setState({ completed: session.onboardingRequired ? false : null });
   // 알림함의 주인 — 다른 계정이면 앞 사람의 점 · 목록을 비운다
   useInbox.getState().bindUser(session.userId);
 
@@ -429,10 +431,11 @@ const adoptSession = async (
   track("login_succeeded", { provider, onboarding_required: session.onboardingRequired });
   set({ status: "authenticated" });
 
-  // 프로필을 뒤따라 채운다 — **기다리지 않는다.** 다음 화면은 위 플래그가
-  // 이미 정했고, 여기서 더 받을 것은 닉네임·관심사뿐이라 로그인을 붙잡을
-  // 이유가 없다. 실패해도 조용하다(`syncMe`).
-  void get().syncMe();
+  // 처음 가입한 사람은 받을 것이 없어 기다리지 않는다. 마친 적이 있는 사람은 최신 판을
+  // 마쳤는지와 프로필(온보딩 미리 채우기)이 필요해 기다린다. 실패해도 조용하다(`syncMe`) —
+  // 그때 완료 여부는 「모른다」로 남고 스플래시가 다시 묻는다.
+  if (session.onboardingRequired) void get().syncMe();
+  else await get().syncMe();
 
   return { kind: "signed-in", onboardingRequired: session.onboardingRequired };
 };
@@ -680,7 +683,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
 
     if (result.ok) {
       // 온보딩 완료 여부의 정본은 서버다 — 기기에 남아 있던 판정을 덮는다
-      useOnboardingCompletion.setState({ completed: !result.data.onboardingRequired });
+      useOnboardingCompletion.setState({ completed: !result.data.needsOnboarding });
 
       // 온보딩 전에는 프로필이 없다. 없는 것으로 지금 값을 지우지 않는다
       if (result.data.profile != null) adoptProfile(result.data.profile);

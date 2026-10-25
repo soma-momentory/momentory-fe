@@ -1,5 +1,6 @@
 import { login as kakaoLogin } from "@react-native-seoul/kakao-login";
 
+import { fetchMe } from "../data/meApi";
 import { SESSION_KEY, useAuth, type Session } from "../model/auth";
 
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
@@ -80,13 +81,38 @@ describe("성공 — 세션이 생긴다", () => {
   });
 
   it("온보딩이 끝난 사용자면 완료 플래그를 서버 답에 맞춘다", async () => {
-    // 이 기기에 남아 있던 로컬 플래그가 아니라 **서버가 정본**이다
+    // 이 기기에 남아 있던 로컬 플래그가 아니라 **서버가 정본**이다. 마친 적이 있으면 최신 판을
+    // 마쳤는지는 `GET /users/me` 가 정한다(2026-10-25) — 로그인은 그 답을 기다린다
     setFetch(async () => respondOk({ ...SERVER_BODY, onboardingRequired: false }));
+    jest.mocked(fetchMe).mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: false, needsOnboarding: false, profile: null },
+    });
 
     const outcome = await useAuth.getState().signInWithKakao();
 
     expect(outcome).toEqual({ kind: "signed-in", onboardingRequired: false });
     expect(useOnboardingCompletion.getState().completed).toBe(true);
+  });
+
+  it("옛 판만 마친 사용자는 완료가 아니다 — 새 온보딩으로 간다", async () => {
+    setFetch(async () => respondOk({ ...SERVER_BODY, onboardingRequired: false }));
+    jest.mocked(fetchMe).mockResolvedValueOnce({
+      ok: true,
+      data: { userId: 1, onboardingRequired: false, needsOnboarding: true, profile: null },
+    });
+
+    await useAuth.getState().signInWithKakao();
+
+    expect(useOnboardingCompletion.getState().completed).toBe(false);
+  });
+
+  it("마친 적이 있는데 서버에 못 물어봤으면 「모른다」로 남는다 — 스플래시가 다시 묻는다", async () => {
+    setFetch(async () => respondOk({ ...SERVER_BODY, onboardingRequired: false }));
+
+    await useAuth.getState().signInWithKakao();
+
+    expect(useOnboardingCompletion.getState().completed).toBeNull();
   });
 
   it("초 단위 만료를 **절대 시각**으로 바꿔 저장한다", async () => {

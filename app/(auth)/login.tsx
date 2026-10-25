@@ -1,7 +1,7 @@
-import { router } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
 
 import { Screen, SocialButton, Text } from "@/components/ds";
+import { routeAfterSignIn, startQuestions } from "@/components/onboarding/startQuestions";
 import { gothic, label as labelColor, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { openExternalLink, type ExternalLink } from "@/lib/links";
@@ -56,7 +56,7 @@ const skipAuth = async () => {
   // 지난 시도의 실패 안내는 지운다 — 남아 있으면 방금 한 것의 결과로 읽힌다
   useAuth.getState().clearSignInError();
   await useAuth.getState().signInDev();
-  router.replace("/welcome");
+  startQuestions("replace");
 };
 
 export default function Login() {
@@ -72,8 +72,7 @@ export default function Login() {
    */
   const signInKakao = async () => {
     const outcome = await useAuth.getState().signInWithKakao();
-    if (outcome.kind !== "signed-in") return;
-    router.replace(outcome.onboardingRequired ? "/welcome" : "/home");
+    if (outcome.kind === "signed-in") routeAfterSignIn();
   };
 
   /**
@@ -92,8 +91,7 @@ export default function Login() {
    */
   const signInApple = async () => {
     const outcome = await useAuth.getState().signInWithApple();
-    if (outcome.kind !== "signed-in") return;
-    router.replace(outcome.onboardingRequired ? "/welcome" : "/home");
+    if (outcome.kind === "signed-in") routeAfterSignIn();
   };
 
   /**
@@ -106,8 +104,7 @@ export default function Login() {
    */
   const signInGoogle = async () => {
     const outcome = await useAuth.getState().signInWithGoogle();
-    if (outcome.kind !== "signed-in") return;
-    router.replace(outcome.onboardingRequired ? "/welcome" : "/home");
+    if (outcome.kind === "signed-in") routeAfterSignIn();
   };
 
   return (

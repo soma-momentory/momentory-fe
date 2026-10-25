@@ -98,6 +98,7 @@ describe("성공 — 서버 값을 화면 값으로 옮긴다", () => {
       data: {
         userId: 7,
         onboardingRequired: false,
+        needsOnboarding: false,
         profile: {
           nickname: "모리",
           age: "25",
@@ -163,7 +164,7 @@ describe("성공 — 서버 값을 화면 값으로 옮긴다", () => {
 
     expect(result).toEqual({
       ok: true,
-      data: { userId: 7, onboardingRequired: true, profile: null },
+      data: { userId: 7, onboardingRequired: true, needsOnboarding: true, profile: null },
     });
   });
 
@@ -255,5 +256,31 @@ describe("실패 — 401 과 나머지를 가른다", () => {
     mockFetch(async () => respond(503, null));
 
     expect(await fetchMe()).toEqual({ ok: false, code: "server" });
+  });
+});
+
+describe("다시 온보딩 판정 — 판(2026-10-25)", () => {
+  const needs = async (body: object) => {
+    mockFetch(async () => respond(200, { ...BODY, ...body }));
+    const result = await fetchMe();
+    return result.ok ? result.data.needsOnboarding : "failed";
+  };
+
+  it("옛 판만 마친 기존 사용자는 새 온보딩을 한다 — onboardingRequired 는 그대로 false", async () => {
+    expect(await needs({ onboardingVersion: 1, latestOnboardingVersion: 2 })).toBe(true);
+  });
+
+  it("최신 판을 마쳤으면 하지 않는다", async () => {
+    expect(await needs({ onboardingVersion: 2, latestOnboardingVersion: 2 })).toBe(false);
+  });
+
+  it("한 번도 안 했으면 판과 상관없이 한다", async () => {
+    expect(
+      await needs({ onboardingRequired: true, onboardingVersion: 0, latestOnboardingVersion: 2 }),
+    ).toBe(true);
+  });
+
+  it("판 필드가 없는 옛 서버면 onboardingRequired 만 본다", async () => {
+    expect(await needs({})).toBe(false);
   });
 });

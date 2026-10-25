@@ -1,9 +1,12 @@
 import { SESSION_KEY } from "@/features/auth/model/auth";
 import {
   COMPLETE_ONBOARDING_PATH,
+  COMPLETE_ONBOARDING_V2_PATH,
   completeOnboarding,
+  completeOnboardingV2,
   toRequestBody,
   type OnboardingSubmission,
+  type OnboardingV2Submission,
 } from "@/features/onboarding/data/completeOnboardingApi";
 import { getApiBaseUrl } from "@/lib/config";
 
@@ -207,5 +210,48 @@ describe("응답", () => {
       ok: false,
       code: "network",
     });
+  });
+});
+
+describe("v2 — 새 온보딩(2026-10-25)", () => {
+  const v2 = (over: Partial<OnboardingV2Submission> = {}): OnboardingV2Submission => ({
+    nickname: " 하늘 ",
+    age: "",
+    gender: null,
+    retroTime: "21:00",
+    notifyRetro: true,
+    calendarLinked: false,
+    answers: { moodChange: "FEW_TIMES", knowWhy: null, dayEnd: "TIRED_SLEEP", diaryHistory: null },
+    goals: ["DIARY_HABIT"],
+    ...over,
+  });
+
+  it("v2 경로로 보내고, 관심사 · 쉬는 방법은 싣지 않는다 — 서버가 있던 값을 그대로 둔다", async () => {
+    const fetchMock = mockFetch(async () => respond(200, { ...OK, onboardingVersion: 2 }));
+
+    const result = await completeOnboardingV2(v2());
+
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(`http://api.test${COMPLETE_ONBOARDING_V2_PATH}`);
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual({
+      nickname: "하늘",
+      age: null,
+      gender: "UNSPECIFIED",
+      reflectionTime: "21:00",
+      notificationEnabled: true,
+      calendarIntegrationEnabled: false,
+      moodChange: "FEW_TIMES",
+      knowWhy: null,
+      dayEnd: "TIRED_SLEEP",
+      diaryHistory: null,
+      goals: ["DIARY_HABIT"],
+    });
+    expect(result).toEqual({ ok: true, data: { onboardingRequired: false } });
+  });
+
+  it("실패는 v1 과 같은 사유 코드로 닫는다", async () => {
+    mockFetch(async () => respond(400, { code: "INVALID_REQUEST", message: "x" }));
+    expect(await completeOnboardingV2(v2())).toEqual({ ok: false, code: "invalid" });
   });
 });

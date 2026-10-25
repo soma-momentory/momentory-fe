@@ -3,6 +3,7 @@ import {
   OTHER_REST_METHOD,
   UNSPECIFIED_GENDER,
 } from "@/features/onboarding/model/draft";
+import type { Answers, Goal } from "@/features/onboarding/model/flow";
 import { authedRequest, type HttpError } from "@/lib/http";
 
 /**
@@ -160,17 +161,63 @@ export async function completeOnboarding(
   input: OnboardingSubmission,
   options?: { signal?: AbortSignal },
 ): Promise<CompleteOnboardingResult> {
-  const result = await authedRequest<unknown>(
-    "PUT",
-    COMPLETE_ONBOARDING_PATH,
-    toRequestBody(input),
-    { timeoutMs: COMPLETE_ONBOARDING_TIMEOUT_MS, signal: options?.signal },
-  );
+  return submit(COMPLETE_ONBOARDING_PATH, toRequestBody(input), options);
+}
+
+// ── v2 · 새 온보딩(2026-10-25) ────────────────────────────────────────
+
+/**
+ * 새 온보딩 완료. **받은 항목만 고친다** — 관심사 · 쉬는 방법은 보내지 않고, 서버는 있던 값을
+ * 그대로 둔다. 마이페이지 저장은 계속 v1(위)을 쓴다.
+ */
+export const COMPLETE_ONBOARDING_V2_PATH = "/api/v2/users/me/onboarding";
+
+export type OnboardingV2Submission = {
+  nickname: string;
+  age: string;
+  gender: string | null;
+  retroTime: string;
+  notifyRetro: boolean;
+  calendarLinked: boolean;
+  answers: Answers;
+  goals: Goal[];
+};
+
+export const toV2RequestBody = (input: OnboardingV2Submission) => ({
+  nickname: input.nickname.trim(),
+  age: asAge(input.age),
+  gender: input.gender ?? UNSPECIFIED_GENDER,
+  reflectionTime: input.retroTime,
+  notificationEnabled: input.notifyRetro,
+  calendarIntegrationEnabled: input.calendarLinked,
+  moodChange: input.answers.moodChange,
+  knowWhy: input.answers.knowWhy,
+  dayEnd: input.answers.dayEnd,
+  diaryHistory: input.answers.diaryHistory,
+  goals: input.goals,
+});
+
+export async function completeOnboardingV2(
+  input: OnboardingV2Submission,
+  options?: { signal?: AbortSignal },
+): Promise<CompleteOnboardingResult> {
+  return submit(COMPLETE_ONBOARDING_V2_PATH, toV2RequestBody(input), options);
+}
+
+async function submit(
+  path: string,
+  body: object,
+  options?: { signal?: AbortSignal },
+): Promise<CompleteOnboardingResult> {
+  const result = await authedRequest<unknown>("PUT", path, body, {
+    timeoutMs: COMPLETE_ONBOARDING_TIMEOUT_MS,
+    signal: options?.signal,
+  });
   if (!result.ok) return { ok: false, code: mapError(result.error) };
 
-  const body = result.data;
-  if (!isObject(body) || typeof body.onboardingRequired !== "boolean") {
+  const data = result.data;
+  if (!isObject(data) || typeof data.onboardingRequired !== "boolean") {
     return { ok: false, code: "malformed" };
   }
-  return { ok: true, data: { onboardingRequired: body.onboardingRequired } };
+  return { ok: true, data: { onboardingRequired: data.onboardingRequired } };
 }
