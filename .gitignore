@@ -13,6 +13,7 @@ expo-env.d.ts
 # 네이티브를 고쳐야 하면 여기가 아니라 config plugin 을 고친다.
 /ios
 /android
+/expo-lab/android
 .kotlin/
 *.orig.*
 
