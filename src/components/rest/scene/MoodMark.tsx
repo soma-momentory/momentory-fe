@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import Svg, { Circle, G, Line, Path } from "react-native-svg";
 
 import { restMood } from "@/design/ds";
@@ -13,13 +14,7 @@ const RAYS = [0, 45, 90, 135, 180, 225, 270, 315];
 
 export function MoodMark({ mood, size }: { mood: RestMood | null; size: number }) {
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...decorativeAccessibilityProps}>
       {mood === "better" ? (
         <G>
           <Circle cx={12} cy={12} r={4.6} fill={restMood.sun} />

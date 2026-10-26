@@ -1,7 +1,8 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { Icon, Text, type IconName } from "@/components/ds";
-import { label as labelColor, space, status } from "@/design/ds";
+import { homeV2, label as labelColor, space, status } from "@/design/ds";
 import { myPaper as paper } from "@/design/ds/myPaper";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
 import { Baba } from "@/features/home/ui/v2/Baba";
@@ -56,7 +57,7 @@ export function MyMainView({
         testID="studio-my-title"
         style={[styles.titleTape, { backgroundColor: design["my.title.backgroundColor"] }]}
       >
-        <Text variant="title1Hand" color={labelColor.normal}>
+        <Text variant="title1Hand" color={homeV2.color.ink} style={styles.titleText}>
           마이
         </Text>
       </View>
@@ -96,8 +97,7 @@ export function MyMainView({
             testID="studio-my-baba"
             style={styles.babaFrame}
             pointerEvents="none"
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
+            {...decorativeAccessibilityProps}
           >
             <View style={styles.babaScaled}>
               <Baba />
@@ -196,7 +196,7 @@ function Group({
     <View style={styles.group}>
       <View style={styles.groupHeading}>
         <View style={[styles.headingHighlight, HIGHLIGHTS[tone]]} />
-        <Text variant="body1ReadingHandLg" color={labelColor.strong}>
+        <Text variant="body1ReadingHandLg" color={homeV2.color.ink} style={styles.groupTitle}>
           {label}
         </Text>
       </View>
@@ -233,11 +233,11 @@ function SettingRow({
       <View style={[styles.iconDot, DOTS[tone]]}>
         <Icon name={icon} size={16} color={labelColor.neutral} />
       </View>
-      <Text variant="body1ReadingHandLg" color={labelColor.normal} style={styles.rowTitle}>
+      <Text variant="body1ReadingHandLg" color={homeV2.color.ink} style={styles.rowTitle}>
         {title}
       </Text>
       {value != null ? (
-        <Text variant="body1ReadingHand" color={labelColor.neutral} style={styles.rowValue}>
+        <Text variant="body1ReadingHand" color={homeV2.color.muted} style={styles.rowValue}>
           {value}
         </Text>
       ) : null}
@@ -281,7 +281,11 @@ const TAPES = {
 } as const;
 
 const styles = StyleSheet.create({
-  body: { gap: 18, paddingTop: space.xs, paddingBottom: space.xl },
+  body: {
+    gap: 18,
+    paddingTop: space.xs,
+    paddingBottom: space.xl,
+  },
   titleTape: {
     alignSelf: "flex-start",
     backgroundColor: paper.title,
@@ -290,6 +294,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     transform: [{ rotate: "-3deg" }],
   },
+  titleText: { fontFamily: homeV2.font.bold, fontSize: 34, lineHeight: 40 },
   profileCard: {
     backgroundColor: paper.profile,
     borderColor: paper.rule,
@@ -307,7 +312,7 @@ const styles = StyleSheet.create({
   profileTop: { flexDirection: "row", alignItems: "center", gap: 6 },
   profileCopy: { flex: 1, minWidth: 0, gap: 4 },
   nicknameRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 4 },
-  nickname: { flexShrink: 1 },
+  nickname: { flexShrink: 1, color: homeV2.color.ink },
   babaFrame: { width: 72, height: 92, overflow: "hidden" },
   babaScaled: { position: "absolute", left: -49, top: -67, transform: [{ scale: 0.4 }] },
   profileRule: { marginTop: 12, borderTopWidth: 1, borderColor: paper.rule, borderStyle: "dashed" },
@@ -322,6 +327,7 @@ const styles = StyleSheet.create({
   recordedCaption: { textAlign: "center", marginTop: 2 },
   group: { gap: 8 },
   groupHeading: { alignSelf: "flex-start", marginLeft: 4, paddingHorizontal: 2 },
+  groupTitle: { fontFamily: homeV2.font.bold, fontSize: 21, lineHeight: 27 },
   headingHighlight: { position: "absolute", left: 0, right: 0, bottom: 4, height: 9 },
   groupCard: {
     borderRadius: 9,
@@ -343,7 +349,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  rowTitle: { flex: 1, minWidth: 0 },
-  rowValue: { maxWidth: "42%", textAlign: "right", flexShrink: 1 },
+  rowTitle: { flex: 1, minWidth: 0, fontFamily: homeV2.font.bold, fontSize: 19, lineHeight: 25 },
+  rowValue: {
+    maxWidth: "42%",
+    textAlign: "right",
+    flexShrink: 1,
+    fontFamily: homeV2.font.regular,
+    fontSize: 17,
+    lineHeight: 22,
+  },
   leave: { alignItems: "center", gap: space.xs, paddingTop: space.xs },
 });

@@ -82,7 +82,9 @@ const GEOMETRY = {
  */
 export function rowPitchFor(appearance: ScheduleAppearance, measured: number | null) {
   const base = GEOMETRY[appearance];
-  const content = measured ?? base.content * Math.min(PixelRatio.getFontScale(), maxFontScale);
+  const content =
+    measured ??
+    base.content * Math.min(PixelRatio.getFontScale(), appearance === "paper" ? 1.5 : maxFontScale);
   return base.pitch + Math.max(0, Math.round(content - base.content));
 }
 

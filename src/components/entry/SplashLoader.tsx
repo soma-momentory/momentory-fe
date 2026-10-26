@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { useEffect, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from "react-native";
 import Svg, { Line } from "react-native-svg";
@@ -65,11 +66,7 @@ export function SplashLoader() {
   const c = SIZE / 2;
 
   return (
-    <View
-      style={styles.root}
-      importantForAccessibility="no-hide-descendants"
-      accessibilityElementsHidden
-    >
+    <View style={styles.root} {...decorativeAccessibilityProps}>
       <Animated.View style={{ transform: [{ rotate }] }}>
         <Svg width={SIZE} height={SIZE}>
           {Array.from({ length: SPOKES }, (_, i) => {

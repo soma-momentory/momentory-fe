@@ -1,8 +1,10 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
+import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Rect } from "react-native-svg";
 
 import { Text, useEffectiveFontScale } from "@/components/ds/Text";
-import { homeV2 } from "@/design/ds";
+import { fontRole, homeV2 } from "@/design/ds";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
 import { formatKoreanTime } from "@/lib/time";
 
@@ -48,6 +50,17 @@ export function HeroCard({
   const fontScale = useEffectiveFontScale();
   const scale = fontScale;
   const extra = Math.max(0, scale - 1);
+  const [noteLayout, setNoteLayout] = useState({ width: 0, height: 0 });
+  const topPadding = 128 + 60 * extra;
+  // 큰 글씨에서 리마인더가 바바 머리와 만나지 않도록 실제 문장 높이만큼 카드를 늘린다.
+  const tiltClearance = Math.ceil(noteLayout.width * Math.sin((4 * Math.PI) / 180));
+  const minHeight =
+    scale >= 1.3
+      ? Math.max(
+          homeV2.size.hero.height,
+          topPadding + noteLayout.height + tiltClearance + homeV2.size.baba.height - 24,
+        )
+      : homeV2.size.hero.height;
   const note =
     retroReminderTime != null
       ? `${formatKoreanTime(retroReminderTime)}엔 제가\n먼저 말 걸어요`
@@ -60,18 +73,14 @@ export function HeroCard({
       style={[
         styles.hero,
         {
-          paddingTop: 128 + 60 * extra,
+          paddingTop: topPadding,
+          minHeight,
           backgroundColor: design["home.hero.backgroundColor"],
           borderRadius: design["home.hero.borderRadius"],
         },
       ]}
     >
-      <View
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={styles.tape}
-      >
+      <View pointerEvents="none" {...decorativeAccessibilityProps} style={styles.tape}>
         <Svg width={TAPE.width} height={TAPE.height}>
           <Rect width={TAPE.width} height={TAPE.height} fill={homeV2.color.tapeBase} />
           {Array.from({ length: TAPE.width / TAPE.pitch + 1 }, (_, i) => (
@@ -131,16 +140,28 @@ export function HeroCard({
       {visibleWeather ? (
         <View testID="home-v2-weather" style={styles.weather}>
           <WeatherSticker weather={weather} onPress={onOpenWeatherInfo} />
-          {weather.temperatureC != null ? (
-            <Text style={styles.weatherTemperature} color={homeV2.color.ink}>
-              {weather.temperatureC}℃
-            </Text>
-          ) : null}
         </View>
       ) : null}
 
       <Text
-        style={[styles.note, { lineHeight: homeV2.type.note.lineHeight * scale }]}
+        testID="home-v2-reminder"
+        onLayout={(event) => {
+          const next = {
+            width: Math.ceil(event.nativeEvent.layout.width),
+            height: Math.ceil(event.nativeEvent.layout.height),
+          };
+          setNoteLayout((current) =>
+            current.width === next.width && current.height === next.height ? current : next,
+          );
+        }}
+        style={[
+          styles.note,
+          {
+            lineHeight: homeV2.type.note.lineHeight * scale,
+            maxWidth: scale >= 1.3 ? 280 : 160,
+            marginRight: scale >= 1.3 ? 24 : 0,
+          },
+        ]}
         color={homeV2.color.muted}
       >
         {note}
@@ -173,15 +194,37 @@ export function HeroCard({
       </Pressable>
       {design["home.hero.structure"].length ? (
         <View testID="studio-home-structure" style={styles.structure}>
-          {design["home.hero.structure"].map((block) => block.kind === "text" ? (
-            <Text key={block.id} testID={`studio-block-${block.id}`} style={[styles.structureText, { lineHeight: 23 * scale }]} color={homeV2.color.ink}>{block.text}</Text>
-          ) : (
-            <View key={block.id} testID={`studio-block-${block.id}`} style={styles.structureGroup}>
-              {block.children.map((child) => child.kind === "text" ? (
-                <Text key={child.id} testID={`studio-block-${child.id}`} style={[styles.structureText, { lineHeight: 23 * scale }]} color={homeV2.color.ink}>{child.text}</Text>
-              ) : null)}
-            </View>
-          ))}
+          {design["home.hero.structure"].map((block) =>
+            block.kind === "text" ? (
+              <Text
+                key={block.id}
+                testID={`studio-block-${block.id}`}
+                style={[styles.structureText, { lineHeight: 23 * scale }]}
+                color={homeV2.color.ink}
+              >
+                {block.text}
+              </Text>
+            ) : (
+              <View
+                key={block.id}
+                testID={`studio-block-${block.id}`}
+                style={styles.structureGroup}
+              >
+                {block.children.map((child) =>
+                  child.kind === "text" ? (
+                    <Text
+                      key={child.id}
+                      testID={`studio-block-${child.id}`}
+                      style={[styles.structureText, { lineHeight: 23 * scale }]}
+                      color={homeV2.color.ink}
+                    >
+                      {child.text}
+                    </Text>
+                  ) : null,
+                )}
+              </View>
+            ),
+          )}
         </View>
       ) : null}
     </View>
@@ -216,9 +259,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
     boxShadow: homeV2.shadow.bubble,
   },
-  bubbleText: { fontFamily: homeV2.font.bold, ...homeV2.type.bubble },
-  weather: { position: "absolute", top: 20, right: 14, alignItems: "center", zIndex: 3 },
-  weatherTemperature: { fontFamily: homeV2.font.bold, fontSize: 18, lineHeight: 22, marginTop: 2 },
+  bubbleText: { fontFamily: fontRole.hand, ...homeV2.type.bubble },
+  weather: { position: "absolute", top: -35, right: 14, alignItems: "center", zIndex: 3 },
   bubbleTail: {
     position: "absolute",
     right: 28,
@@ -230,8 +272,7 @@ const styles = StyleSheet.create({
   },
   note: {
     marginLeft: 26,
-    maxWidth: 160,
-    fontFamily: homeV2.font.regular,
+    fontFamily: fontRole.hand,
     ...homeV2.type.note,
     transform: [{ rotate: homeV2.tilt.note }],
   },
@@ -263,8 +304,8 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: homeV2.color.paper,
   },
-  ctaText: { fontFamily: homeV2.font.bold, ...homeV2.type.cta },
-  structure: { marginLeft: 18, maxWidth: 125, marginBottom: 28, gap: 8, zIndex: 2 },
+  ctaText: { fontFamily: fontRole.hand, ...homeV2.type.cta },
+  structure: { marginLeft: 18, maxWidth: 170, marginBottom: 28, gap: 8, zIndex: 2 },
   structureGroup: { padding: 10, borderRadius: 10, backgroundColor: homeV2.color.paper, gap: 5 },
-  structureText: { fontFamily: homeV2.font.regular, fontSize: 17, lineHeight: 23 },
+  structureText: { fontFamily: fontRole.hand, fontSize: 17, lineHeight: 23 },
 });

@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image, StyleSheet } from "react-native";
 
 /**
@@ -44,8 +45,7 @@ export function WeekGround() {
       source={GROUND}
       style={styles.ground}
       resizeMode="stretch"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
     />
   );
 }

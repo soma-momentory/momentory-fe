@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { Animated, Easing, StyleSheet, View, useWindowDimensions } from "react-native";
@@ -164,8 +165,7 @@ export function BodyReleaseScene({ breath, progress, pose, sway, finished }: Pro
     <View
       testID="body-release-scene"
       pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
       style={StyleSheet.absoluteFill}
     >
       <Image source={SKY} contentFit="cover" transition={0} style={StyleSheet.absoluteFill} />

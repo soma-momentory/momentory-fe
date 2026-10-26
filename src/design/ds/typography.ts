@@ -39,6 +39,26 @@ export const gothicFamily = {
   bold: "Pretendard-Bold",
 } as const;
 
+/** 신규 화면이 역할별로 선택하는 서체. 기존 `fontFamily`는 화면별 이관 전까지 유지한다. */
+export const fontRole = {
+  body: gothicFamily,
+  hand: HAND,
+} as const;
+
+/** 신규 타이포그래피 정본의 시작 단. 가족·크기·행간을 함께 사용한다. */
+export const roleText = {
+  body: { fontFamily: HAND, fontSize: 16, lineHeight: 24 },
+  bodyReading: { fontFamily: gothicFamily.regular, fontSize: 16, lineHeight: 26 },
+  bodySecondary: { fontFamily: HAND, fontSize: 15, lineHeight: 24 },
+  informationHeading: { fontFamily: HAND, fontSize: 22, lineHeight: 30 },
+  handTitle: { fontFamily: HAND, fontSize: 24, lineHeight: 32 },
+  handLarge: { fontFamily: HAND, fontSize: 32, lineHeight: 42 },
+  handAction: { fontFamily: HAND, fontSize: 14, lineHeight: 20 },
+  actionLabel: { fontFamily: HAND, fontSize: 14, lineHeight: 20 },
+  tabLabel: { fontFamily: HAND, fontSize: 14, lineHeight: 20 },
+  informationAction: { fontFamily: gothicFamily.semibold, fontSize: 14, lineHeight: 20 },
+} as const;
+
 /**
  * 단이 고르는 서체. **네 이름이 전부 같은 파일을 가리킨다** — 위 머리말 참고.
  * `hand` 는 원래부터 이 서체였고, 이름을 쓰던 자리(제목·일기)를 그대로 둔다.

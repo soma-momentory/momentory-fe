@@ -15,6 +15,7 @@ import { Text } from "@/components/ds/Text";
 import {
   background,
   fontFamily,
+  fontRole,
   homeV2,
   interaction,
   label as labelColor,
@@ -59,7 +60,7 @@ import { CheckBurst } from "./CheckBurst";
  * ## 겉모습은 둘, 논리는 하나 (2026-10-15 · 홈 v2 계획 §2.3)
  *
  * `appearance="paper"` 는 홈 v2 의 종이 목록이다 — **원형 체크 24**(테두리 1.75) · 마치면
- * **녹색 면 + ✓ + 취소선 + 글자색**(색만으로 말하지 않는다) · Gaegu 글자. 히트 44 · ⋮ 메뉴 ·
+ * **녹색 면 + ✓ + 취소선 + 글자색**(색만으로 말하지 않는다) · 교보손글씨. 히트 44 · ⋮ 메뉴 ·
  * 끝맺음 · 끌기 · 접근성 이동은 **같은 코드**를 지난다. 기본 `"ds"` 는 운영 홈 그대로다.
  */
 export type ScheduleAppearance = "ds" | "paper";
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: homeV2.color.green,
   },
   titlePaper: {
-    fontFamily: homeV2.font.bold,
+    fontFamily: fontRole.hand,
     fontSize: homeV2.type.task.fontSize,
     lineHeight: homeV2.type.task.lineHeight,
   },

@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
 import { Screen } from "../../../src/components/ds/Screen";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
-import { background, layout } from "../../../src/design/ds";
+import { layout } from "../../../src/design/ds";
 import { MyMainView } from "../../../src/features/my/ui/MyMainView";
 
 export const myMainScenarios = [
@@ -45,7 +45,7 @@ export function MyMainPreview({
   return (
     <PreviewFontScaleContext.Provider value={fontScale}>
       <View style={styles.root}>
-        <Screen padded={false} edges={[]}>
+        <Screen padded={false} edges={[]} paperV2>
           <View style={styles.body}>
             <MyMainView
               design={design}
@@ -97,5 +97,5 @@ export function MyMainPreview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.elevated },
+  underTab: { height: layout.minBottomInset },
 });

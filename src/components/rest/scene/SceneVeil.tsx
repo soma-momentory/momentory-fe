@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { useId } from "react";
 import { View, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
@@ -41,13 +42,7 @@ export function SceneVeil({ stops, style, color = restScene.veil, testID }: Veil
   // SVG 그라디언트 이름 — `useId` 의 기호(:, « 등)는 url(#…) 안에서 깨지므로 걷어 낸다
   const id = `scene-veil-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
-    <View
-      testID={testID}
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={style}
-    >
+    <View testID={testID} pointerEvents="none" {...decorativeAccessibilityProps} style={style}>
       <Svg width="100%" height="100%">
         <Defs>
           <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">

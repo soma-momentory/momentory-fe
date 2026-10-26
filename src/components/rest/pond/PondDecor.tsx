@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image, StyleSheet, View } from "react-native";
 
 import { pondLayout } from "@/design/ds";
@@ -53,12 +54,7 @@ export type PondDecorId = keyof typeof ART;
 
 export function PondDecor({ width, height }: Props) {
   return (
-    <View
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={styles.layer}
-    >
+    <View pointerEvents="none" {...decorativeAccessibilityProps} style={styles.layer}>
       {pondLayout.decor.map((it) => {
         const art = ART[it.id];
         const w = width * it.width;

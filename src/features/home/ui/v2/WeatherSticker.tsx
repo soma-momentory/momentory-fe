@@ -1,7 +1,8 @@
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
-import { homeV2 } from "@/design/ds";
+import { Text } from "@/components/ds/Text";
+import { fontRole, homeV2 } from "@/design/ds";
 
 import type { HomeWeatherView } from "./types";
 import { weatherStickerForKey } from "./weatherStickers";
@@ -39,6 +40,11 @@ export function WeatherSticker({
       style={[styles.sticker, style]}
     >
       <Image source={sticker.source} contentFit="cover" style={styles.image} />
+      {weather.temperatureC != null ? (
+        <Text style={styles.temperature} color={homeV2.color.ink}>
+          {weather.temperatureC}℃
+        </Text>
+      ) : null}
       <View pointerEvents="none" style={styles.tape} />
     </Pressable>
   );
@@ -60,6 +66,16 @@ const styles = StyleSheet.create({
     transform: [{ rotate: homeV2.tilt.weather }],
   },
   image: { width: "100%", height: "100%", backgroundColor: homeV2.color.card },
+  temperature: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 1,
+    textAlign: "center",
+    fontFamily: fontRole.hand,
+    fontSize: 16,
+    lineHeight: 18,
+  },
   tape: {
     position: "absolute",
     left: 26,

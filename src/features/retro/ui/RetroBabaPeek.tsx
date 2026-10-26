@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { useEffect, useState } from "react";
 import { AccessibilityInfo, Animated, Image, StyleSheet } from "react-native";
 
@@ -128,8 +129,7 @@ export function RetroBabaPeek({ width = RETRO_BABA_PEEK_WIDTH }: Props) {
       // 앞발만큼 아래로 걸친다 — 음수 여백이라 독 위로 솟은 높이(대화가 비킬 몫)에는 앞발이 빠진다
       style={{ width, height, marginBottom: -height * PAW_RATIO, opacity }}
       accessible={false}
-      importantForAccessibility="no-hide-descendants"
-      accessibilityElementsHidden
+      {...decorativeAccessibilityProps}
     >
       {/* ⚠ 두 장 다 **폭·높이를 직접 준다.** `require` 한 그림은 파일 크기(480 × 389)를 기본 크기로
           들고 오고, 상하좌우만 잡는 `absoluteFill` 은 그걸 이기지 못한다 — 실기기에서 바바가 네 배로

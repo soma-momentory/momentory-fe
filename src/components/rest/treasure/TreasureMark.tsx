@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import Svg, { Path } from "react-native-svg";
 
 import { treasureBox } from "@/design/ds";
@@ -23,13 +24,7 @@ const FILL: Record<TreasureMarkName, string> = {
 
 export function TreasureMark({ name, size }: { name: TreasureMarkName; size: number }) {
   return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...decorativeAccessibilityProps}>
       <Path d={PATHS[name]} fill={FILL[name]} />
     </Svg>
   );

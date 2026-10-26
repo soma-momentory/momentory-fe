@@ -1,10 +1,11 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { useState } from "react";
 import { Image, Pressable, StyleSheet, View } from "react-native";
 
 import { EmotionPebble } from "@/components/ds/EmotionPebble";
 import { SelectLift } from "@/components/ds/SelectLift";
 import { Text, useEffectiveFontScale } from "@/components/ds/Text";
-import { homeV2 } from "@/design/ds";
+import { fontRole, homeV2 } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";
 
@@ -31,7 +32,7 @@ import type { WeekDay } from "@/features/report/model/report";
  * ## 누르면 그날 감정 이름이 선다 — 도크 위쪽 말풍선
  *
  * 도크 안에는 이름을 세울 자리가 없어 **도크 바로 위**에 작은 말풍선으로 띄운다(계획 §2.4).
- * 다시 누르면 접힌다. 오늘은 요일 글자의 **형광 바탕과 굵기**로 말한다.
+ * 다시 누르면 접힌다. 오늘은 요일 글자의 **형광 바탕과 크기**로 말한다.
  */
 type Props = {
   days: readonly WeekDay[];
@@ -42,6 +43,24 @@ type Props = {
 const NO_RECORD = require("../../../../../assets/emotion-pebble/no-emotion.png");
 
 const PEBBLE = homeV2.size.dock.pebble;
+const PICKED_GAP = 12;
+const PICKED_VERTICAL_PADDING = 8;
+
+export function dockHeightFor(scale: number) {
+  return Math.max(
+    homeV2.size.dock.height,
+    8 + PEBBLE + 3 + (homeV2.type.dockDay.lineHeight + 3) * scale + 4,
+  );
+}
+
+export function dockStackHeightFor(scale: number) {
+  return (
+    dockHeightFor(scale) +
+    PICKED_GAP +
+    PICKED_VERTICAL_PADDING * 2 +
+    homeV2.type.dockPicked.lineHeight * scale * 2
+  );
+}
 
 /** 낭독기와 말풍선이 함께 쓰는 그날의 말 */
 export function dockDayName(day: WeekDay) {
@@ -53,67 +72,103 @@ export function dockDayName(day: WeekDay) {
 export function WeekDock({ days, today }: Props) {
   const fontScale = useEffectiveFontScale();
   const scale = fontScale;
+  const dockHeight = dockHeightFor(scale);
+  const [expanded, setExpanded] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const day = days.find((d) => d.date === picked) ?? null;
 
   return (
-    <View>
+    <View testID="week-dock-stack" style={{ height: dockStackHeightFor(scale) }}>
+      <View
+        testID="week-dock"
+        style={[
+          styles.dock,
+          { height: dockHeight },
+          expanded
+            ? styles.dockExpanded
+            : [styles.dockCollapsed, { width: dockHeight, borderRadius: dockHeight / 2 }],
+        ]}
+      >
+        <Pressable
+          testID="week-dock-toggle"
+          accessibilityRole="button"
+          accessibilityLabel="이번 주 감정"
+          accessibilityState={{ expanded }}
+          aria-expanded={expanded}
+          onPress={() => {
+            setExpanded((current) => !current);
+            setPicked(null);
+          }}
+          style={[styles.toggle, { width: dockHeight, height: dockHeight }]}
+        >
+          <Text
+            style={[styles.title, { lineHeight: homeV2.type.dockTitle.lineHeight * scale }]}
+            color={homeV2.color.ink}
+          >
+            {"이번 주\n감정"}
+          </Text>
+        </Pressable>
+        {expanded ? (
+          <View testID="week-dock-days" style={[styles.daysPaper, { height: dockHeight }]}>
+            <View style={styles.days}>
+              {days.map((d) => {
+                const isToday = d.date === today;
+                const on = d.date === picked;
+                const first = d.emotions[0] ?? null;
+                return (
+                  <Pressable
+                    key={d.date}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    aria-pressed={on}
+                    accessibilityLabel={`${d.label}요일 · ${dockDayName(d)}`}
+                    onPress={() => setPicked(on ? null : d.date)}
+                    style={styles.day}
+                  >
+                    <SelectLift selected={on} size={PEBBLE}>
+                      {first != null ? (
+                        <EmotionPebble id={first} size={PEBBLE} />
+                      ) : d.written ? (
+                        <WrittenPebble />
+                      ) : (
+                        <Image
+                          testID="week-dock-no-record"
+                          source={NO_RECORD}
+                          resizeMode="contain"
+                          {...decorativeAccessibilityProps}
+                          style={styles.pebble}
+                        />
+                      )}
+                    </SelectLift>
+                    <Text
+                      style={[
+                        styles.dayName,
+                        isToday ? styles.todayName : null,
+                        {
+                          lineHeight: (homeV2.type.dockDay.lineHeight + (isToday ? 3 : 0)) * scale,
+                        },
+                      ]}
+                      color={homeV2.color.ink}
+                    >
+                      {d.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+      </View>
       {day != null ? (
         <View testID="week-dock-picked" style={styles.picked}>
-          <Text style={styles.pickedText} color={homeV2.color.ink}>
+          <Text
+            style={[styles.pickedText, { lineHeight: homeV2.type.dockPicked.lineHeight * scale }]}
+            color={homeV2.color.ink}
+          >
             {`${day.label}요일 · ${dockDayName(day)}`}
           </Text>
         </View>
       ) : null}
-
-      <View testID="week-dock" style={styles.dock}>
-        <Text
-          style={[styles.title, { lineHeight: homeV2.type.dockTitle.lineHeight * scale }]}
-          color={homeV2.color.ink}
-        >
-          {"이번 주\n감정"}
-        </Text>
-        <View style={styles.days}>
-          {days.map((d) => {
-            const isToday = d.date === today;
-            const on = d.date === picked;
-            const first = d.emotions[0] ?? null;
-            return (
-              <Pressable
-                key={d.date}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={`${d.label}요일 · ${dockDayName(d)}`}
-                onPress={() => setPicked(on ? null : d.date)}
-                style={styles.day}
-              >
-                <SelectLift selected={on} size={PEBBLE}>
-                  {first != null ? (
-                    <EmotionPebble id={first} size={PEBBLE} />
-                  ) : d.written ? (
-                    <WrittenPebble />
-                  ) : (
-                    <Image
-                      testID="week-dock-no-record"
-                      source={NO_RECORD}
-                      resizeMode="contain"
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
-                      style={styles.pebble}
-                    />
-                  )}
-                </SelectLift>
-                <Text
-                  style={[styles.dayName, isToday ? styles.todayName : null]}
-                  color={homeV2.color.ink}
-                >
-                  {d.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
     </View>
   );
 }
@@ -123,8 +178,7 @@ function WrittenPebble() {
   return (
     <View
       testID="week-dock-written"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
       style={[styles.pebble, styles.written]}
     >
       <View style={styles.writtenMark} />
@@ -135,20 +189,35 @@ function WrittenPebble() {
 const styles = StyleSheet.create({
   dock: {
     height: homeV2.size.dock.height,
-    borderRadius: homeV2.size.dock.radius,
-    backgroundColor: homeV2.color.dock,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingLeft: 16,
-    paddingRight: 14,
+    backgroundColor: homeV2.color.dock,
     boxShadow: homeV2.shadow.dock,
   },
+  dockCollapsed: {
+    width: homeV2.size.dock.height,
+    borderRadius: homeV2.size.dock.height / 2,
+  },
+  dockExpanded: { width: "100%", borderRadius: homeV2.size.dock.radius },
+  toggle: {
+    width: homeV2.size.dock.height,
+    height: homeV2.size.dock.height,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   title: {
-    fontFamily: homeV2.font.bold,
+    fontFamily: fontRole.hand,
     ...homeV2.type.dockTitle,
-    flexShrink: 0,
     textAlign: "center",
+  },
+  daysPaper: {
+    flex: 1,
+    minWidth: 0,
+    height: homeV2.size.dock.height,
+    paddingRight: 8,
+    paddingTop: 8,
+    paddingBottom: 4,
+    justifyContent: "center",
   },
   days: { flex: 1, minWidth: 0, flexDirection: "row", justifyContent: "space-between" },
   day: { flex: 1, alignItems: "center", gap: 3 },
@@ -169,21 +238,22 @@ const styles = StyleSheet.create({
     backgroundColor: homeV2.color.writtenMark,
   },
   dayName: {
-    fontFamily: homeV2.font.regular,
+    fontFamily: fontRole.hand,
     ...homeV2.type.dockDay,
     paddingHorizontal: 6,
     borderRadius: 10,
   },
-  // 오늘 — 형광 바탕 **과 굵기**(색만으로 말하지 않는다)
-  todayName: { fontFamily: homeV2.font.bold, backgroundColor: homeV2.color.today },
+  // 오늘 — 형광 바탕과 크기(색만으로 말하지 않는다)
+  todayName: { fontFamily: fontRole.hand, fontSize: 19, backgroundColor: homeV2.color.today },
   picked: {
     alignSelf: "center",
-    marginBottom: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    maxWidth: "100%",
+    marginTop: PICKED_GAP,
+    paddingHorizontal: 16,
+    paddingVertical: PICKED_VERTICAL_PADDING,
     borderRadius: 16,
     backgroundColor: homeV2.color.white,
     boxShadow: homeV2.shadow.bubble,
   },
-  pickedText: { fontFamily: homeV2.font.bold, ...homeV2.type.dockPicked },
+  pickedText: { fontFamily: fontRole.hand, ...homeV2.type.dockPicked },
 });

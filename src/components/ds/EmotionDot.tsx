@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { StyleSheet, View, type ViewStyle } from "react-native";
 
 import { emotion as emotionColor, emotionTint, fill, line } from "@/design/ds";
@@ -36,8 +37,7 @@ export function EmotionDot({ id, size = 10, style }: Props) {
 
   return (
     <View
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
       style={[
         styles.base,
         box,

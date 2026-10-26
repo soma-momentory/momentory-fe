@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image, StyleSheet, View, type ImageStyle } from "react-native";
 
 import type { EmotionId } from "@/features/emotion/model/emotion";
@@ -64,7 +65,7 @@ export function EmotionPebble({ id, size = 26 }: Props) {
   const box = { width: size, height: size, borderRadius: size / 2 } as const;
 
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={box}>
+    <View {...decorativeAccessibilityProps} style={box}>
       <Image
         source={id == null ? NO_EMOTION : MARKS[id]}
         style={[styles.art, box as ImageStyle]}

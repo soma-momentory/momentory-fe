@@ -201,6 +201,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     const { getByText, getByLabelText } = await render(<Home />);
 
     expect(getByText("이번 주\n감정")).toBeTruthy();
+    await fireEvent.press(getByLabelText("이번 주 감정"));
     // 샘플 하루(7/27 월)의 일기 감정은 불안함·우울함 둘이다 — 색만으로 말하지 않고,
     // 도트가 하나뿐이라 낭독기에는 **둘 다** 읽힌다
     expect(getByLabelText("월요일 · 불안함, 우울함")).toBeTruthy();
@@ -211,6 +212,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     const { getByLabelText, getByText, queryByText } = await render(<Home />);
 
     expect(queryByText("불안함")).toBeNull();
+    await fireEvent.press(getByLabelText("이번 주 감정"));
     await fireEvent.press(getByLabelText("월요일 · 불안함, 우울함"));
 
     // 도트 하나는 첫 감정 색만 맡는다 — 나머지가 보이는 곳은 여기뿐이다
@@ -228,6 +230,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     });
     const { getByLabelText, getByText } = await render(<Home />);
 
+    await fireEvent.press(getByLabelText("이번 주 감정"));
     await fireEvent.press(getByLabelText("금요일 · 기록 있음, 감정 없음"));
     expect(getByText("금요일 · 기록 있음, 감정 없음")).toBeTruthy();
   });
@@ -453,6 +456,7 @@ describe("운영 홈 v2 배치", () => {
     expect(r.getByTestId("home-v2-grid", { includeHiddenElements: true })).toBeTruthy();
     expect(r.getByTestId("week-dock")).toBeTruthy();
     expect(r.getByTestId("home-v2-list-scroll")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "이번 주 감정" }));
     expect(r.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
     if (count > 5) {
       expect(r.getByRole("button", { name: `${count - 5}개 더 보기` })).toBeTruthy();

@@ -38,7 +38,11 @@ export function parseDesign(value: unknown): StudioDesign {
     throw new Error("디자인 객체가 필요합니다.");
   const record = value as Record<string, unknown>;
   const keys = editableKeys.map((property) => property.key);
-  if (record["home.hero.structure"] === undefined && Object.keys(record).length === keys.length && Object.keys(record).every((key) => keys.some((item) => item === key)))
+  if (
+    record["home.hero.structure"] === undefined &&
+    Object.keys(record).length === keys.length &&
+    Object.keys(record).every((key) => keys.some((item) => item === key))
+  )
     return parseDesign({ ...approvedDesign, ...record });
   if (
     Object.keys(record).length === legacyKeys.length &&
@@ -49,7 +53,9 @@ export function parseDesign(value: unknown): StudioDesign {
   }
   if (
     Object.keys(record).length !== keys.length + 1 ||
-    Object.keys(record).some((key) => key !== "home.hero.structure" && !keys.some((item) => item === key))
+    Object.keys(record).some(
+      (key) => key !== "home.hero.structure" && !keys.some((item) => item === key),
+    )
   ) {
     throw new Error("등록되지 않았거나 누락된 속성이 있습니다.");
   }
@@ -101,14 +107,22 @@ export function importDraft(json: string): { name: string; design: StudioDesign 
 }
 
 export function designDiff(design: StudioDesign) {
-  const changes: {key: StudioDesignKey; before: string | number; after: string | number}[] = editableKeys
-    .filter((property) => design[property.key] !== approvedDesign[property.key])
-    .map((property) => ({
-      before: approvedDesign[property.key],
-      after: design[property.key],
-      key: property.key,
-    }));
-  if (JSON.stringify(design["home.hero.structure"]) !== JSON.stringify(approvedDesign["home.hero.structure"]))
-    changes.push({key:"home.hero.structure",before:JSON.stringify(approvedDesign["home.hero.structure"]),after:JSON.stringify(design["home.hero.structure"])});
+  const changes: { key: StudioDesignKey; before: string | number; after: string | number }[] =
+    editableKeys
+      .filter((property) => design[property.key] !== approvedDesign[property.key])
+      .map((property) => ({
+        before: approvedDesign[property.key],
+        after: design[property.key],
+        key: property.key,
+      }));
+  if (
+    JSON.stringify(design["home.hero.structure"]) !==
+    JSON.stringify(approvedDesign["home.hero.structure"])
+  )
+    changes.push({
+      key: "home.hero.structure",
+      before: JSON.stringify(approvedDesign["home.hero.structure"]),
+      after: JSON.stringify(design["home.hero.structure"]),
+    });
   return changes;
 }

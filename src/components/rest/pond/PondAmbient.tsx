@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image } from "expo-image";
 import { useState } from "react";
 import { StyleSheet } from "react-native";
@@ -77,8 +78,7 @@ export function PondAmbient({ width, height }: Props) {
       transition={0}
       onError={() => setFailed(true)}
       pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
       style={[styles.layer, { width, height }]}
     />
   );

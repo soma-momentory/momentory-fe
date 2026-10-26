@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text, useEffectiveFontScale } from "@/components/ds/Text";
-import { homeV2 } from "@/design/ds";
+import { fontRole, homeV2 } from "@/design/ds";
 import { remainingLabel } from "@/features/home/model/presentation";
 import type { Schedule } from "@/features/home/model/types";
 
@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
     alignItems: "baseline",
     gap: 8,
   },
-  title: { fontFamily: homeV2.font.bold, ...homeV2.type.sectionTitle },
-  count: { fontFamily: homeV2.font.regular, ...homeV2.type.count },
+  title: { fontFamily: fontRole.hand, ...homeV2.type.sectionTitle },
+  count: { fontFamily: fontRole.hand, ...homeV2.type.count },
   add: {
     flexShrink: 0,
     backgroundColor: homeV2.color.card,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: homeV2.tilt.add }],
     boxShadow: homeV2.shadow.sticker,
   },
-  addText: { fontFamily: homeV2.font.bold, ...homeV2.type.add },
+  addText: { fontFamily: fontRole.hand, ...homeV2.type.add },
   card: {
     marginTop: 10,
     borderRadius: homeV2.size.list.radius,
@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: homeV2.size.list.paddingX,
   },
   more: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingTop: 4 },
-  moreText: { fontFamily: homeV2.font.bold, ...homeV2.type.add },
-  done: { fontFamily: homeV2.font.regular, ...homeV2.type.count, paddingTop: 10 },
+  moreText: { fontFamily: fontRole.hand, ...homeV2.type.add },
+  done: { fontFamily: fontRole.hand, ...homeV2.type.count, paddingTop: 10 },
   empty: {
     marginTop: 10,
     borderRadius: homeV2.size.list.radius,
@@ -206,13 +206,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   emptyTitle: {
-    fontFamily: homeV2.font.bold,
+    fontFamily: fontRole.hand,
     ...homeV2.type.emptyTitle,
     alignSelf: "stretch",
     textAlign: "center",
   },
   emptyBody: {
-    fontFamily: homeV2.font.regular,
+    fontFamily: fontRole.body.regular,
     ...homeV2.type.emptyBody,
     alignSelf: "stretch",
     textAlign: "center",

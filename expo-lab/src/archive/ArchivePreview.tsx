@@ -9,13 +9,7 @@ import {
   Text,
   type CalendarMark,
 } from "../../../src/components/ds";
-import {
-  background,
-  label as labelColor,
-  layout,
-  scheduleDot,
-  withAlpha,
-} from "../../../src/design/ds";
+import { label as labelColor, layout, scheduleDot, withAlpha } from "../../../src/design/ds";
 import { byLatest, diariesInMonth } from "../../../src/features/archive/model/archive";
 import { ArchiveView, type ArchiveMode } from "../../../src/features/archive/ui/ArchiveView";
 import type { Diary } from "../../../src/features/diary/model/types";
@@ -132,7 +126,7 @@ export function ArchivePreview({
   return (
     <PreviewFontScaleContext.Provider value={fontScale}>
       <View style={styles.root}>
-        <Screen padded={false} edges={[]}>
+        <Screen padded={false} edges={[]} paperV2>
           <View style={styles.body}>
             <ArchiveView
               design={design}
@@ -201,6 +195,6 @@ export function ArchivePreview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.alternative },
+  underTab: { height: layout.minBottomInset },
   option: { padding: 16 },
 });

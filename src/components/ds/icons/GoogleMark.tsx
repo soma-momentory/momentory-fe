@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image } from "react-native";
 
 /**
@@ -28,8 +29,7 @@ export function GoogleMark({ size = MARK_HEIGHT }: { size?: number }) {
       // 정사각으로 그리면 2% 눌린 로고가 된다(가이드라인이 금지하는 「왜곡」)
       style={{ width: size * MARK_ASPECT, height: size }}
       resizeMode="contain"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
     />
   );
 }

@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image, StyleSheet } from "react-native";
 
 /**
@@ -42,8 +43,7 @@ export function PondBackdrop({ width, height }: Props) {
       source={POND_BACKGROUND}
       resizeMode="cover"
       style={[styles.image, { width, height }]}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
       testID="pond-backdrop"
     />
   );

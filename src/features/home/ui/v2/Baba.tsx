@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image, StyleSheet, View } from "react-native";
 
 import { homeV2 } from "@/design/ds";
@@ -27,8 +28,7 @@ export function Baba() {
     <View
       testID="home-v2-baba"
       pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
       style={styles.box}
     >
       {LAYERS.map((source, i) => (

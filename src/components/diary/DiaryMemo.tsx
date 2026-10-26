@@ -10,6 +10,7 @@ import {
 import Svg, { Defs, LinearGradient, Path, Pattern, Rect, Stop } from "react-native-svg";
 
 import { Text } from "@/components/ds";
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { space } from "@/design/ds";
 import { diaryMemo } from "@/design/ds/diaryMemo";
 
@@ -58,7 +59,7 @@ export function MemoPaper({
         style={styles.grain}
         pointerEvents="none"
         accessible={false}
-        importantForAccessibility="no-hide-descendants"
+        {...decorativeAccessibilityProps}
       >
         {Array.from({ length: rows * cols }, (_, i) => (
           <Image

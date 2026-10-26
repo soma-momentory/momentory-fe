@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { background, layout } from "@/design/ds";
+import { layout } from "@/design/ds";
 
 import { BottomNavigation, type TabItem } from "./BottomNavigation";
 import { Screen } from "./Screen";
@@ -77,10 +77,10 @@ export function TabScreen({ active, children, overlay }: Props) {
 
   return (
     <>
-      <Screen padded={false} edges={["top"]}>
+      <Screen padded={false} edges={["top"]} paperV2>
         <View style={styles.body}>{children}</View>
         <BottomNavigation items={TABS} active={active} onPress={go} />
-        {/* 홈 인디케이터·시스템 버튼 자리 — 탭바와 같은 면으로 이어 둔다 */}
+        {/* 홈 인디케이터·시스템 버튼 자리에도 모눈 배경을 이어 둔다. */}
         <View
           style={[styles.underTab, { height: Math.max(insets.bottom, layout.minBottomInset) }]}
         />
@@ -93,5 +93,5 @@ export function TabScreen({ active, children, overlay }: Props) {
 const styles = StyleSheet.create({
   // 본문이 남은 높이를 다 쓰고, 탭바는 아래에 고정된다
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { backgroundColor: background.elevated },
+  underTab: { backgroundColor: "transparent" },
 });

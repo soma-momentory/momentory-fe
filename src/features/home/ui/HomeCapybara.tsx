@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet } from "react-native";
 
@@ -141,8 +142,7 @@ export function HomeCapybara({ width = WIDTH }: Props) {
       onPress={() => setRaised(true)}
       // 낭독기에는 없는 것으로 둔다 — 눌러도 얻는 것이 없다(⚠ 위 머리말)
       accessible={false}
-      importantForAccessibility="no-hide-descendants"
-      accessibilityElementsHidden
+      {...decorativeAccessibilityProps}
       style={{ width, height }}
     >
       {/* 폭만 정하고 높이는 비율이 정한다 — 늘어난 캐릭터는 「고장 났다」로 읽힌다.

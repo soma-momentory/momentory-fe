@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import Svg, { Path } from "react-native-svg";
 
 import { label, size } from "@/design/ds";
@@ -27,13 +28,7 @@ type Props = {
 
 export function Icon({ name, size: px = size.icon.lg, color = label.normal }: Props) {
   return (
-    <Svg
-      width={px}
-      height={px}
-      viewBox="0 0 24 24"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
+    <Svg width={px} height={px} viewBox="0 0 24 24" {...decorativeAccessibilityProps}>
       {ICON_PATHS[name].map((p, i) =>
         "stroke" in p && p.stroke ? (
           // 직접 그린 선 글리프 — 채우지 않고 둥근 끝·이음으로 세트의 얇은 선을 맞춘다.

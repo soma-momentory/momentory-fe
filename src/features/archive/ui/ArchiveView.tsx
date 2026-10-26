@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
@@ -15,7 +16,6 @@ import {
   type ViewOption,
 } from "@/components/ds";
 import {
-  background,
   emotion,
   homeV2,
   label as labelColor,
@@ -158,11 +158,7 @@ export function ArchiveView({
               },
             ]}
           >
-            <View
-              style={styles.tape}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            />
+            <View style={styles.tape} {...decorativeAccessibilityProps} />
             <Calendar
               month={month}
               selectedDate={selectedDate}
@@ -210,8 +206,7 @@ export function ArchiveView({
               source={require("../../../../assets/home/capybara-idle.png")}
               style={styles.baba}
               resizeMode="contain"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+              {...decorativeAccessibilityProps}
             />
           </View>
         </ScrollView>
@@ -300,12 +295,12 @@ const styles = StyleSheet.create({
   },
   titleWrap: {
     alignSelf: "flex-start",
-    backgroundColor: background.splash,
+    backgroundColor: homeV2.color.date,
     transform: [{ rotate: "-3deg" }],
     paddingHorizontal: 18,
     paddingVertical: 3,
   },
-  title: { fontSize: 34 },
+  title: { fontSize: 34, fontFamily: homeV2.font.bold, color: homeV2.color.ink },
   monthPaper: {
     alignSelf: "flex-start",
     marginLeft: 14,
@@ -328,7 +323,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 10,
     borderRadius: 16,
-    backgroundColor: background.elevated,
+    backgroundColor: homeV2.color.card,
     shadowColor: labelColor.normal,
     shadowOpacity: 0.08,
     shadowRadius: 18,
@@ -341,7 +336,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     width: 90,
     height: 20,
-    backgroundColor: withAlpha(background.splash, 0.7),
+    backgroundColor: homeV2.color.greenSoft,
     transform: [{ rotate: "-2deg" }],
     zIndex: 1,
   },
@@ -352,7 +347,7 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 12,
     borderRadius: 20,
-    backgroundColor: background.elevated,
+    backgroundColor: homeV2.color.card,
     transform: [{ rotate: "-1deg" }],
     shadowColor: labelColor.normal,
     shadowOpacity: 0.1,
@@ -383,7 +378,7 @@ const styles = StyleSheet.create({
   summaryDock: {
     minHeight: 72,
     borderRadius: 24,
-    backgroundColor: background.elevated,
+    backgroundColor: homeV2.color.dock,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,

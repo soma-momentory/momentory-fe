@@ -125,6 +125,22 @@ describe("홈 v2 — 큰 글씨 날짜", () => {
 });
 
 describe("홈 v2 — 큰 글씨 배치", () => {
+  it("홈에만 1.5배 상한과 손글씨 중심 서체를 적용한다", async () => {
+    const r = await show();
+    const bubble = r.getByText("오늘 하루는\n어땠어요?");
+    const reminder = r.getByText("편할 때 언제든 돌아볼 수 있어요");
+    const cta = r.getByText("하루 돌아보기 ›");
+    const task = r.getByText("일정 2");
+
+    for (const item of [bubble, reminder, cta, task]) {
+      expect(item.props.maxFontSizeMultiplier).toBe(1.5);
+    }
+    expect(flatten(bubble.props.style).fontFamily).toBe("KyoboHandwriting2025lyb");
+    expect(flatten(cta.props.style).fontFamily).toBe("KyoboHandwriting2025lyb");
+    expect(flatten(reminder.props.style).fontFamily).toBe("KyoboHandwriting2025lyb");
+    expect(flatten(task.props.style).fontFamily).toBe("KyoboHandwriting2025lyb");
+  });
+
   it("안내문과 CTA는 줄 수에 따라 카드 높이를 늘리고, 일정 머리글은 필요한 경우 접힌다", async () => {
     const screen = await render(
       <PreviewFontScaleContext.Provider value={1.5}>
@@ -146,12 +162,17 @@ describe("홈 v2 — 큰 글씨 배치", () => {
     expect(noteStyle.lineHeight).toBe(homeV2.type.note.lineHeight * 1.5);
     expect(bubbleStyle.lineHeight).toBe(homeV2.type.bubble.lineHeight * 1.5);
     expect(noteStyle.position).toBeUndefined();
-    expect(heroStyle.minHeight).toBe(homeV2.size.hero.height);
+    expect(heroStyle.minHeight).toBeGreaterThan(homeV2.size.hero.height);
     expect(heroStyle.height).toBeUndefined();
     expect(heroStyle.paddingTop).toBeGreaterThan(128);
     expect(ctaStyle.position).toBeUndefined();
     expect(ctaStyle.marginTop).toBeGreaterThan(0);
     expect(headingStyle.flexWrap).toBe("wrap");
+
+    await fireEvent(note, "layout", { nativeEvent: { layout: { width: 240, height: 70 } } });
+    expect(flatten(note.parent?.props.style).minHeight).toBeGreaterThan(
+      heroStyle.minHeight as number,
+    );
   });
 });
 
@@ -180,6 +201,18 @@ describe("홈 v2 — 히어로 문안(계획 §2.2)", () => {
     expect(r.queryByTestId("home-v2-weather", { includeHiddenElements: true })).toBeNull();
     expect(r.queryByLabelText(/날씨/)).toBeNull();
     expect(r.queryByText(/날씨|맑음|℃/)).toBeNull();
+  });
+
+  it("온도는 날씨 스티커 안에 표시되고 스티커 전체를 누를 수 있다", async () => {
+    const a = actions();
+    const r = await show(
+      baseModel({ weather: { label: "맑음", temperatureC: 22, stickerKey: "clear.day" } }),
+      a,
+    );
+    const sticker = r.getByTestId("home-v2-weather-sticker");
+    expect(within(sticker).getByText("22℃")).toBeTruthy();
+    await fireEvent.press(sticker);
+    expect(a.onOpenWeatherInfo).toHaveBeenCalledTimes(1);
   });
 
   it("주 버튼은 「하루 돌아보기」 하나다 — ›는 장식이라 이름에 없다", async () => {
@@ -230,12 +263,19 @@ describe("홈 v2 — 이번 주 감정 도크(WK-1 · D2 · DN-1)", () => {
   it("도크는 이번 주 기록이 없어도 일곱 칸 · 빈 날은 「기록 없음」 + no-emotion 그림", async () => {
     const r = await show(baseModel({ week: emptyWeek() }));
     expect(r.getByText("이번 주\n감정")).toBeTruthy();
+    expect(r.queryByTestId("week-dock-days")).toBeNull();
+    expect(r.getByTestId("week-dock-toggle").props.accessibilityState.expanded).toBe(false);
+    await fireEvent.press(r.getByTestId("week-dock-toggle"));
+    expect(r.getByTestId("week-dock-days")).toBeTruthy();
+    expect(r.getByTestId("week-dock-toggle").props.accessibilityState.expanded).toBe(true);
     const cells = r.getAllByRole("button", { name: /요일 · / });
     expect(cells).toHaveLength(7);
     expect(r.getByRole("button", { name: "금요일 · 기록 없음" })).toBeTruthy();
     const marks = r.getAllByTestId("week-dock-no-record", { includeHiddenElements: true });
     expect(marks).toHaveLength(7);
     for (const mark of marks) expect(mark.props.source).toEqual(NO_EMOTION);
+    await fireEvent.press(r.getByTestId("week-dock-toggle"));
+    expect(r.queryByTestId("week-dock-days")).toBeNull();
   });
 
   it("감정이 있는 날은 감정 이름을 읽고 · 일기만 있는 날은 「기록 있음, 감정 없음」 — 두 빈 칸은 그림도 다르다", async () => {
@@ -248,6 +288,7 @@ describe("홈 v2 — 이번 주 감정 도크(WK-1 · D2 · DN-1)", () => {
     );
     const r = await show(baseModel({ week }));
 
+    await fireEvent.press(r.getByTestId("week-dock-toggle"));
     expect(r.getByRole("button", { name: "월요일 · 불안함, 우울함" })).toBeTruthy();
     expect(r.getByRole("button", { name: "화요일 · 기록 있음, 감정 없음" })).toBeTruthy();
     expect(r.getByRole("button", { name: "수요일 · 기록 없음" })).toBeTruthy();
@@ -259,30 +300,36 @@ describe("홈 v2 — 이번 주 감정 도크(WK-1 · D2 · DN-1)", () => {
     );
   });
 
-  it("칸을 누르면 그날 감정 이름이 도크 위에 서고, 다시 누르면 접힌다", async () => {
+  it("칸을 누르면 그날 감정 이름이 도크 아래에 나오고, 다시 누르면 접힌다", async () => {
     const week: WeekDay[] = emptyWeek().map((d) =>
       d.label === "월" ? { ...d, emotions: [1], written: true } : d,
     );
     const r = await show(baseModel({ week }));
     expect(r.queryByTestId("week-dock-picked")).toBeNull();
 
+    await fireEvent.press(r.getByTestId("week-dock-toggle"));
+    const dockHeight = flatten(r.getByTestId("week-dock-stack").props.style).height;
     await fireEvent.press(r.getByRole("button", { name: "월요일 · 행복함" }));
     expect(within(r.getByTestId("week-dock-picked")).getByText("월요일 · 행복함")).toBeTruthy();
+    expect(flatten(r.getByTestId("week-dock-stack").props.style).height).toBe(dockHeight);
 
     await fireEvent.press(r.getByRole("button", { name: "월요일 · 행복함" }));
     expect(r.queryByTestId("week-dock-picked")).toBeNull();
+    expect(flatten(r.getByTestId("week-dock-stack").props.style).height).toBe(dockHeight);
   });
 
-  it("오늘은 형광과 굵기로 — 색만으로 말하지 않는다", async () => {
+  it("오늘은 형광과 크기로 — 단일 웨이트 손글씨에서도 색만으로 말하지 않는다", async () => {
     const r = await show();
+    await fireEvent.press(r.getByTestId("week-dock-toggle"));
     const day = (label: string) =>
       flatten(
         within(r.getByRole("button", { name: `${label}요일 · 기록 없음` })).getByText(label).props
           .style,
       );
-    expect(day("수").fontFamily).toBe("Gaegu-Bold");
+    expect(day("수").fontFamily).toBe("KyoboHandwriting2025lyb");
+    expect(day("수").fontSize).toBeGreaterThan(day("목").fontSize as number);
     expect(day("수").backgroundColor).toBeDefined();
-    expect(day("목").fontFamily).toBe("Gaegu-Regular");
+    expect(day("목").fontFamily).toBe("KyoboHandwriting2025lyb");
     expect(day("목").backgroundColor).toBeUndefined();
   });
 });
@@ -402,6 +449,8 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     expect(r.getByText("0개")).toBeTruthy();
     expect(r.queryByText("오늘 하루를 차곡차곡 담아볼까요?")).toBeNull();
     expect(r.getByRole("button", { name: "하루 돌아보기" })).toBeTruthy();
+    expect(r.getByRole("button", { name: "이번 주 감정" })).toBeTruthy();
+    await fireEvent.press(r.getByTestId("week-dock-toggle"));
     expect(r.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
 
     await fireEvent.press(r.getByRole("button", { name: "일정 추가" }));
@@ -435,11 +484,14 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
       nativeEvent: { layout: { width: 360, height: 370 } },
     });
+    await fireEvent(r.getByTestId("home-v2-dock-position"), "layout", {
+      nativeEvent: { layout: { width: 328, height: 175 } },
+    });
     const scroll = () => r.getByTestId("home-v2-body-scroll");
     expect(scroll().props.scrollEnabled).toBe(true);
     expect(within(scroll()).getByText("10월 14일")).toBeTruthy();
     expect(within(scroll()).getByText("일정 2")).toBeTruthy();
-    expect(r.getByTestId("week-dock")).toBeTruthy();
+    expect(within(scroll()).getByTestId("week-dock")).toBeTruthy();
 
     await fireEvent(r.getByLabelText("일정 2"), "responderGrant", { nativeEvent: { pageY: 0 } });
     await act(async () => {
@@ -452,5 +504,23 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     await fireEvent(r.getByLabelText("일정 2"), "responderRelease", {});
     expect(scroll().props.scrollEnabled).toBe(true);
     jest.useRealTimers();
+  });
+
+  it("긴 문구로 고정 영역이 커지면 도크도 스크롤 흐름으로 옮긴다", async () => {
+    const r = await show();
+    const layout = { width: 360, height: 800 };
+    await fireEvent(r.getByTestId("home-v2-root"), "layout", { nativeEvent: { layout } });
+    await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
+      nativeEvent: { layout: { width: 360, height: 300 } },
+    });
+    await fireEvent(r.getByTestId("home-v2-dock-position"), "layout", {
+      nativeEvent: { layout: { width: 328, height: 175 } },
+    });
+    expect(r.getByTestId("home-v2-list-scroll")).toBeTruthy();
+
+    await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
+      nativeEvent: { layout: { width: 360, height: 680 } },
+    });
+    expect(within(r.getByTestId("home-v2-body-scroll")).getByTestId("week-dock")).toBeTruthy();
   });
 });

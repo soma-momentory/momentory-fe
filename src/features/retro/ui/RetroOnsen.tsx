@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image } from "react-native";
 
 /**
@@ -33,8 +34,7 @@ export function RetroOnsen({ size = RETRO_ONSEN_SIZE }: Props) {
       style={{ width: size, height: size }}
       resizeMode="contain"
       accessible={false}
-      importantForAccessibility="no-hide-descendants"
-      accessibilityElementsHidden
+      {...decorativeAccessibilityProps}
     />
   );
 }

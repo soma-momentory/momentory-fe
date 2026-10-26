@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { Animated, Easing, StyleSheet, View, useWindowDimensions } from "react-native";
@@ -273,8 +274,7 @@ export function WorryBoxScene({ stage, worry, onBoxed, onEnded }: Props) {
     <View
       testID="worry-box-scene"
       pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
       style={StyleSheet.absoluteFill}
     >
       <Image

@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image } from "react-native";
 
 /**
@@ -51,8 +52,7 @@ export function RetroBaba({ width = RETRO_BABA_WIDTH }: Props) {
       style={{ width, height: width / ASPECT }}
       resizeMode="contain"
       accessible={false}
-      importantForAccessibility="no-hide-descendants"
-      accessibilityElementsHidden
+      {...decorativeAccessibilityProps}
     />
   );
 }

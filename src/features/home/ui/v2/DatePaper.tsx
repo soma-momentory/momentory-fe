@@ -2,14 +2,14 @@ import { StyleSheet, View } from "react-native";
 import Svg, { Polygon } from "react-native-svg";
 
 import { Text } from "@/components/ds/Text";
-import { homeV2 } from "@/design/ds";
+import { fontRole, homeV2 } from "@/design/ds";
 import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
 
 /**
  * 홈 v2 머리의 **날짜 · 요일 종이 조각 두 장**(시안 `DateHeader`).
  *
  * 찢은 종이 모양은 다각형 하나이고 장식이다 — 글자만 읽힌다. 날짜와 요일은 옛 홈처럼 두 줄로
- * 나눠 쓰고(`lib/day.ts`), 서체는 Gaegu 굵게(HD-3).
+ * 나눠 쓰고(`lib/day.ts`), 서체는 교보손글씨.
  */
 /** Keep the same 28pt overlap with the hero gap while both paper scraps grow with text. */
 export function datePaperExtraFor(fontScale: number) {
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dateText: {
-    fontFamily: homeV2.font.bold,
+    fontFamily: fontRole.hand,
     ...homeV2.type.date,
     marginTop: -5,
   },
@@ -91,5 +91,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  weekdayText: { fontFamily: homeV2.font.bold, ...homeV2.type.weekday },
+  weekdayText: { fontFamily: fontRole.hand, ...homeV2.type.weekday },
 });

@@ -5,7 +5,7 @@ import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
 import { Screen } from "../../../src/components/ds/Screen";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
 import { RestRecommendSheet } from "../../../src/components/rest/RestRecommendSheet";
-import { background, layout } from "../../../src/design/ds";
+import { layout } from "../../../src/design/ds";
 import { REST_CONTENTS } from "../../../src/features/rest/model/contents";
 import { RestHubView } from "../../../src/features/rest/ui/RestHubView";
 
@@ -65,7 +65,7 @@ export function RestHubPreview({
   return (
     <PreviewFontScaleContext.Provider value={fontScale}>
       <View style={styles.root}>
-        <Screen padded={false} edges={[]}>
+        <Screen padded={false} edges={[]} paperV2>
           <View style={styles.body}>
             <RestHubView
               design={design}
@@ -101,5 +101,5 @@ export function RestHubPreview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.elevated },
+  underTab: { height: layout.minBottomInset },
 });

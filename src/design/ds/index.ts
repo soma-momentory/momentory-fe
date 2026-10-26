@@ -58,6 +58,7 @@ export {
 } from "./color";
 
 export {
+  fontRole,
   fontFamily,
   // 로그인(`S1`) 하나만 쓰는 고딕 — 다른 화면에서 부르지 않는다
   gothic,
@@ -67,6 +68,7 @@ export {
   maxFontScale,
   // 12단 밖에서 크기를 적는 한 자리(시간 휠)가 같은 보정을 타게 하는 손잡이
   scaleFont,
+  roleText,
   text,
   typography,
   type FontWeightName,

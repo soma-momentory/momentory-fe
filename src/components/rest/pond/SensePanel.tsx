@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { useEffect, useState } from "react";
 import { Animated, Easing, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
@@ -108,12 +109,7 @@ export function SensePanel({ current, found, footer, bottomInset, onLayout }: Pr
           <PanelVeil />
           <View style={styles.row}>
             {/* 줄의 높이만 잡는 보이지 않는 칸 — 진짜 칸은 가운데를 기준으로 떠 있다 */}
-            <View
-              style={styles.sizer}
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
+            <View style={styles.sizer} pointerEvents="none" {...decorativeAccessibilityProps}>
               <View style={styles.chipSpace} />
               <Text variant="label1"> </Text>
               <Text variant="body1"> </Text>

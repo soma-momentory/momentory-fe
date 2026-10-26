@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 
-import { background, hairline, interaction, label as labelColor, layout, space } from "@/design/ds";
+import { background, homeV2, interaction, label as labelColor, layout, space } from "@/design/ds";
 
 import { Icon, type IconName } from "./icons/Icon";
 import { Text } from "./Text";
@@ -82,11 +82,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: background.elevated,
-    ...hairline.alternative,
-    // 위쪽 선만 남긴다 — 사방 테두리는 탭바를 카드처럼 보이게 한다
-    borderBottomWidth: 0,
-    borderLeftWidth: 0,
-    borderRightWidth: 0,
+    marginHorizontal: layout.screenPadding,
+    marginBottom: 10,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: homeV2.color.emptyBorder,
+    overflow: "hidden",
   },
   tab: {
     flex: 1,

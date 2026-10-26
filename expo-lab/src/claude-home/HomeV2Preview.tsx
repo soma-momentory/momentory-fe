@@ -4,7 +4,7 @@ import { Platform, StyleSheet, View } from "react-native";
 import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
 import { Screen } from "../../../src/components/ds/Screen";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
-import { background, layout } from "../../../src/design/ds";
+import { layout } from "../../../src/design/ds";
 import type { Schedule } from "../../../src/features/home/model/types";
 import { ScheduleEditBar } from "../../../src/features/home/ui/ScheduleEditBar";
 import { toHomeWeatherView } from "../../../src/features/home/ui/v2/weatherStickers";
@@ -191,7 +191,7 @@ export function HomeV2Preview({
           }
           renderFrame={(body, overlay) => (
             <>
-              <Screen padded={false} edges={[]}>
+              <Screen padded={false} edges={[]} paperV2>
                 <View style={styles.body}>{body}</View>
                 <BottomNavigation
                   items={TABS}
@@ -259,5 +259,5 @@ export function HomeV2Preview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.elevated },
+  underTab: { height: layout.minBottomInset },
 });

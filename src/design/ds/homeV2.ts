@@ -105,8 +105,8 @@ export const homeV2 = {
     emptyTitle: { fontSize: 22, lineHeight: 25 },
     emptyBody: { fontSize: 18, lineHeight: 22 },
     dockTitle: { fontSize: 17, lineHeight: 19 },
-    dockDay: { fontSize: 14, lineHeight: 16 },
-    dockPicked: { fontSize: 16, lineHeight: 20 },
+    dockDay: { fontSize: 17, lineHeight: 20 },
+    dockPicked: { fontSize: 20, lineHeight: 25 },
   },
   size: {
     /** 모눈 한 칸 */

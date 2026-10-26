@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { IconButton } from "@/components/ds/IconButton";
-import { useEffectiveFontScale } from "@/components/ds/Text";
+import { FontScaleLimitContext, useEffectiveFontScale } from "@/components/ds/Text";
 import { Menu, type MenuAction } from "@/components/ds/Menu";
 import { Modal } from "@/components/ds/Modal";
 import { Toast } from "@/components/ds/Toast";
@@ -18,7 +18,7 @@ import { HeroCard } from "./HeroCard";
 import { HomePaperGrid } from "./HomePaperGrid";
 import { ScheduleSection, ScheduleSectionHeader } from "./ScheduleSection";
 import type { HomeV2ViewProps } from "./types";
-import { WeekDock } from "./WeekDock";
+import { WeekDock, dockStackHeightFor } from "./WeekDock";
 
 export type { HomeV2ViewActions, HomeV2ViewModel, HomeV2ViewProps, HomeWeatherView } from "./types";
 
@@ -55,10 +55,12 @@ export function HomeV2View({
   const [menu, setMenu] = useState<{ id: string; top: number; anchorTop: number } | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const fontScale = useEffectiveFontScale();
-  const sizes = useRef({ root: 0, fixed: 0, pitch: PAPER_ROW_PITCH, empty: 0 });
+  const fontScale = useEffectiveFontScale(1.5);
+  const sizes = useRef({ root: 0, fixed: 0, dock: 0, pitch: PAPER_ROW_PITCH, empty: 0 });
   const bellRef = useRef<View>(null);
   const [mode, setMode] = useState<HomeLayoutMode>("listOnly");
+  const [dockHeight, setDockHeight] = useState(0);
+  const dockSpace = (dockHeight || dockStackHeightFor(fontScale)) + DOCK_GAP * 2;
 
   const shown = visibleSchedules(model.schedules);
   const empty = shown.length === 0;
@@ -67,19 +69,22 @@ export function HomeV2View({
   const allDone = !empty && shown.every((schedule) => schedule.done);
   const target = model.schedules.find((schedule) => schedule.id === menu?.id) ?? null;
   const refreshMode = useCallback(() => {
-    const { root, fixed, pitch, empty: measuredEmpty } = sizes.current;
+    const { root, fixed, dock, pitch, empty: measuredEmpty } = sizes.current;
     if (root === 0 || fixed === 0) return;
+    const effectiveDock = dock || dockStackHeightFor(fontScale);
     const rowPitch = empty
       ? PAPER_ROW_PITCH + Math.max(0, Math.round(homeV2.type.task.lineHeight * (fontScale - 1)))
       : pitch;
     // Schedule count, check state and fold state do not affect this decision.
     setMode((previous) =>
-      homeLayoutMode({
-        availableHeight: root - fixed - DOCK_SPACE,
-        rowPitch,
-        emptyHeight: empty ? measuredEmpty : 0,
-        previous,
-      }),
+      fixed + effectiveDock + DOCK_GAP > root
+        ? "wholeBody"
+        : homeLayoutMode({
+            availableHeight: root - fixed - effectiveDock - DOCK_GAP,
+            rowPitch,
+            emptyHeight: empty ? measuredEmpty : 0,
+            previous,
+          }),
     );
   }, [empty, fontScale]);
   const handleRowPitch = useCallback(
@@ -232,7 +237,7 @@ export function HomeV2View({
           {fixed}
           <ScrollView
             testID="home-v2-list-scroll"
-            style={styles.list}
+            style={[styles.list, { marginBottom: dockSpace - DOCK_GAP }]}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             scrollEnabled={!dragging}
@@ -249,13 +254,34 @@ export function HomeV2View({
           scrollEnabled={!dragging}
         >
           {fixed}
+          <View
+            testID="home-v2-dock-position"
+            style={styles.flowDock}
+            onLayout={(event) => {
+              sizes.current.dock = event.nativeEvent.layout.height;
+              setDockHeight(event.nativeEvent.layout.height);
+              refreshMode();
+            }}
+          >
+            <WeekDock days={model.week} today={model.today} />
+          </View>
           <View style={styles.wholeList}>{list}</View>
         </ScrollView>
       )}
 
-      <View style={styles.dock}>
-        <WeekDock days={model.week} today={model.today} />
-      </View>
+      {mode === "listOnly" ? (
+        <View
+          testID="home-v2-dock-position"
+          style={styles.dock}
+          onLayout={(event) => {
+            sizes.current.dock = event.nativeEvent.layout.height;
+            setDockHeight(event.nativeEvent.layout.height);
+            refreshMode();
+          }}
+        >
+          <WeekDock days={model.week} today={model.today} />
+        </View>
+      ) : null}
     </View>
   );
 
@@ -267,7 +293,7 @@ export function HomeV2View({
           top={menu.top}
           anchorTop={menu.anchorTop}
           // ⋮ 메뉴가 도크를 덮지 않게 — 호출자의 탭바 여백 위에 도크 자리를 더한다
-          bottomInset={menuBottomInset + DOCK_SPACE}
+          bottomInset={menuBottomInset + dockSpace}
           onDismiss={() => setMenu(null)}
         />
       ) : null}
@@ -296,14 +322,14 @@ export function HomeV2View({
     </>
   );
 
-  return renderFrame(body, overlay);
+  return renderFrame(
+    <FontScaleLimitContext.Provider value={1.5}>{body}</FontScaleLimitContext.Provider>,
+    overlay,
+  );
 }
 
 /** 도크가 탭바 위로 떠 있는 간격 */
 const DOCK_GAP = space.md;
-/** 도크가 차지하는 아래 자리 — 목록 끝 여백 · 메뉴 아래 여백에 더한다 */
-const DOCK_SPACE = homeV2.size.dock.height + DOCK_GAP * 2;
-
 const styles = StyleSheet.create({
   // 프레임(TabScreen)의 좌우 패딩을 되돌린다 — 모눈 종이가 화면 끝까지 깔리고, 안쪽 여백은 v2 값을 쓴다
   root: { flex: 1, minHeight: 0, marginHorizontal: -layout.screenPadding },
@@ -328,9 +354,9 @@ const styles = StyleSheet.create({
   heroWrap: { marginHorizontal: space.lg },
   inset: { paddingHorizontal: space.xl },
   list: { flex: 1, minHeight: 0 },
-  // 마지막 줄이 도크 뒤에 숨지 않게 — 도크 자리만큼 아래를 비운다
-  listContent: { paddingHorizontal: space.xl, paddingBottom: DOCK_SPACE },
-  wholeContent: { paddingBottom: DOCK_SPACE },
+  listContent: { paddingHorizontal: space.xl, paddingBottom: DOCK_GAP },
+  wholeContent: { paddingBottom: DOCK_GAP },
   wholeList: { paddingHorizontal: space.xl },
   dock: { position: "absolute", left: space.lg, right: space.lg, bottom: DOCK_GAP },
+  flowDock: { marginHorizontal: space.lg, marginVertical: DOCK_GAP },
 });

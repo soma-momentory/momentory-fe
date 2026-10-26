@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { View, type ViewStyle } from "react-native";
 
 import { fill } from "@/design/ds";
@@ -40,7 +41,5 @@ export function WeekEmptyDot({ size = 26 }: Props) {
     backgroundColor: fill.normal,
   };
 
-  return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={box} />
-  );
+  return <View {...decorativeAccessibilityProps} style={box} />;
 }

@@ -22,7 +22,8 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
       const screen = await render(<HomeV2Preview scenarioId={scenario.id} onMessage={() => {}} />);
       expect(screen.getByRole("button", { name: "하루 돌아보기" })).toBeTruthy();
       expect(screen.getByText("밤 9:30엔 제가\n먼저 말 걸어요")).toBeTruthy();
-      // 도크는 시나리오와 상관없이 늘 일곱 칸이다(WK-1)
+      // 접힌 도크를 펼치면 시나리오와 상관없이 일곱 칸이다(WK-1)
+      await fireEvent.press(screen.getByRole("button", { name: "이번 주 감정" }));
       expect(screen.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
       if (scenario.tasks.length === 0) {
         expect(screen.getByText("오늘은 일정이 없어요")).toBeTruthy();
@@ -38,6 +39,7 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
 
   it("감정 고정 시나리오는 세 가지 날을 함께 보인다 — 감정 · 일기만 · 기록 없음(DN-1)", async () => {
     const screen = await render(<HomeV2Preview scenarioId="5d" onMessage={() => {}} />);
+    await fireEvent.press(screen.getByRole("button", { name: "이번 주 감정" }));
     expect(screen.getByRole("button", { name: "월요일 · 불안함, 우울함" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "화요일 · 기록 있음, 감정 없음" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "금요일 · 기록 없음" })).toBeTruthy();

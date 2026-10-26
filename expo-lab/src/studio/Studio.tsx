@@ -337,14 +337,25 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     setRedo([]);
     setData((current) => ({ ...current, drafts: { ...current.drafts, [current.active]: next } }));
   };
-  const editStructure = (type: "add-text" | "add-group" | "remove" | "up" | "down" | "nest" | "unnest" | "text", id?: string, text?: string) => {
+  const editStructure = (
+    type: "add-text" | "add-group" | "remove" | "up" | "down" | "nest" | "unnest" | "text",
+    id?: string,
+    text?: string,
+  ) => {
     try {
       const newId = type.startsWith("add-") ? `b-${crypto.randomUUID()}` : undefined;
-      const structure = changeHeroStructure(design["home.hero.structure"], {type,id,text,newId});
-      replaceDesign({...design,"home.hero.structure":structure});
+      const structure = changeHeroStructure(design["home.hero.structure"], {
+        type,
+        id,
+        text,
+        newId,
+      });
+      replaceDesign({ ...design, "home.hero.structure": structure });
       if (newId) setSelectedBlock(newId);
       if (type === "remove") setSelectedBlock("");
-    } catch (error) { setMessage(error instanceof Error ? error.message : "구조 변경 실패"); }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "구조 변경 실패");
+    }
   };
   const undoEdit = useCallback(() => {
     const previous = undo[undo.length - 1];
@@ -675,23 +686,58 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
               </View>
               {design["home.hero.structure"].map((block) => (
                 <View key={block.id}>
-                  <Button label={block.kind === "group" ? `그룹 · ${block.children.length}개` : block.text} selected={selectedBlock === block.id} onPress={() => setSelectedBlock(block.id)} />
-                  {block.kind === "group" ? block.children.map((child) => (
-                    <Button key={child.id} label={`↳ ${child.kind === "text" ? child.text : "그룹"}`} selected={selectedBlock === child.id} onPress={() => setSelectedBlock(child.id)} />
-                  )) : null}
+                  <Button
+                    label={
+                      block.kind === "group" ? `그룹 · ${block.children.length}개` : block.text
+                    }
+                    selected={selectedBlock === block.id}
+                    onPress={() => setSelectedBlock(block.id)}
+                  />
+                  {block.kind === "group"
+                    ? block.children.map((child) => (
+                        <Button
+                          key={child.id}
+                          label={`↳ ${child.kind === "text" ? child.text : "그룹"}`}
+                          selected={selectedBlock === child.id}
+                          onPress={() => setSelectedBlock(child.id)}
+                        />
+                      ))
+                    : null}
                 </View>
               ))}
               {selectedBlock ? (
                 <>
-                  {design["home.hero.structure"].flatMap((block) => block.id === selectedBlock ? [block] : block.kind === "group" ? block.children.filter((child) => child.id === selectedBlock) : []).map((block) => block.kind === "text" ? (
-                    <TextInput key={block.id} accessibilityLabel="구조 텍스트" value={block.text} onChangeText={(text) => editStructure("text",block.id,text)} style={styles.input} />
-                  ) : null)}
+                  {design["home.hero.structure"]
+                    .flatMap((block) =>
+                      block.id === selectedBlock
+                        ? [block]
+                        : block.kind === "group"
+                          ? block.children.filter((child) => child.id === selectedBlock)
+                          : [],
+                    )
+                    .map((block) =>
+                      block.kind === "text" ? (
+                        <TextInput
+                          key={block.id}
+                          accessibilityLabel="구조 텍스트"
+                          value={block.text}
+                          onChangeText={(text) => editStructure("text", block.id, text)}
+                          style={styles.input}
+                        />
+                      ) : null,
+                    )}
                   <View style={styles.row}>
-                    <Button label="위로" onPress={() => editStructure("up",selectedBlock)} />
-                    <Button label="아래로" onPress={() => editStructure("down",selectedBlock)} />
-                    <Button label="그룹에 넣기" onPress={() => editStructure("nest",selectedBlock)} />
-                    <Button label="그룹 밖으로" onPress={() => editStructure("unnest",selectedBlock)} />
-                    <Button label="삭제" onPress={() => editStructure("remove",selectedBlock)} />
+                    <Button label="위로" onPress={() => editStructure("up", selectedBlock)} />
+                    <Button label="아래로" onPress={() => editStructure("down", selectedBlock)} />
+                    <Button
+                      label="그룹에 넣기"
+                      onPress={() => editStructure("nest", selectedBlock)}
+                    />
+                    <Button
+                      label="그룹 밖으로"
+                      onPress={() => editStructure("unnest", selectedBlock)}
+                    />
+                    <Button label="삭제" onPress={() => editStructure("remove", selectedBlock)} />
                   </View>
                 </>
               ) : null}

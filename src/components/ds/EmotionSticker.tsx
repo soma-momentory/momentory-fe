@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image, type ImageStyle } from "react-native";
 
 import type { EmotionId } from "@/features/emotion/model/emotion";
@@ -45,8 +46,7 @@ export function EmotionSticker({ id, size }: Props) {
       style={box}
       // 정사각 원본이라 늘어날 일이 없지만, 원본이 갈릴 때를 대비해 비율을 지킨다
       resizeMode="contain"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
     />
   );
 }

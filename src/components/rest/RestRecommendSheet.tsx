@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
@@ -47,11 +48,7 @@ export function RestRecommendSheet({ content, reason, onAccept, onDismiss }: Pro
       {/* 장식이다 — 무엇을 하는지는 아래 글이 말한다. 비율은 틀이 잡고 그림은 그 안을 채운다
           (RN `Image` 는 원본 크기로 그려져 시트가 화면 밖으로 넘쳤다 · 2026-10-12 시뮬레이터 —
           쉼터 기록 화면처럼 `expo-image` 로 채운다) */}
-      <View
-        style={styles.art}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
+      <View style={styles.art} {...decorativeAccessibilityProps}>
         <Image
           testID="rest-recommend-art"
           source={ART[content.id]}

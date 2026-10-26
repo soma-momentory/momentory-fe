@@ -15,19 +15,43 @@ const fontFamilies = new Set(["Gaegu-Regular", "Gaegu-Bold", "KyoboHandwriting20
 const alignments = new Set(["left", "center", "right"]);
 function validateHeroStructure(value) {
   if (!Array.isArray(value) || value.length > 8) throw new Error("Invalid home.hero.structure");
-  const ids = new Set();let count = 0;
-  const visit = (blocks, depth) => blocks.map((block) => {
-    if (!block || typeof block !== "object" || Array.isArray(block) ||
-      typeof block.id !== "string" || !/^[a-z][a-z0-9-]{0,39}$/.test(block.id) || ids.has(block.id) || ++count > 12)
-      throw new Error("Invalid hero block");
-    ids.add(block.id);
-    if (block.kind === "text" && Object.keys(block).length === 3 && typeof block.text === "string" && block.text.trim() && block.text.length <= 80 && !/[\u0000-\u001f\u007f\u061c\u200b-\u200f\u2028-\u202e\u2066-\u2069\ufeff]/u.test(block.text))
-      return { id:block.id, kind:"text", text:block.text };
-    if (block.kind === "group" && Object.keys(block).length === 3 && depth === 0 && Array.isArray(block.children) && block.children.length <= 6)
-      return { id:block.id, kind:"group", children:visit(block.children,1) };
-    throw new Error("Unsupported hero block");
-  });
-  return visit(value,0);
+  const ids = new Set();
+  let count = 0;
+  const visit = (blocks, depth) =>
+    blocks.map((block) => {
+      if (
+        !block ||
+        typeof block !== "object" ||
+        Array.isArray(block) ||
+        typeof block.id !== "string" ||
+        !/^[a-z][a-z0-9-]{0,39}$/.test(block.id) ||
+        ids.has(block.id) ||
+        ++count > 12
+      )
+        throw new Error("Invalid hero block");
+      ids.add(block.id);
+      if (
+        block.kind === "text" &&
+        Object.keys(block).length === 3 &&
+        typeof block.text === "string" &&
+        block.text.trim() &&
+        block.text.length <= 80 &&
+        !/[\u0000-\u001f\u007f\u061c\u200b-\u200f\u2028-\u202e\u2066-\u2069\ufeff]/u.test(
+          block.text,
+        )
+      )
+        return { id: block.id, kind: "text", text: block.text };
+      if (
+        block.kind === "group" &&
+        Object.keys(block).length === 3 &&
+        depth === 0 &&
+        Array.isArray(block.children) &&
+        block.children.length <= 6
+      )
+        return { id: block.id, kind: "group", children: visit(block.children, 1) };
+      throw new Error("Unsupported hero block");
+    });
+  return visit(value, 0);
 }
 const ranges = {
   "home.hero.borderRadius": [0, 40],
@@ -96,7 +120,9 @@ async function main() {
   if (exported.version !== 1 || typeof exported.name !== "string")
     throw new Error("Unsupported Studio export");
   const next = validateDesign(exported.design, approved);
-  const changes = Object.keys(approved).filter((key) => JSON.stringify(approved[key]) !== JSON.stringify(next[key]));
+  const changes = Object.keys(approved).filter(
+    (key) => JSON.stringify(approved[key]) !== JSON.stringify(next[key]),
+  );
   for (const key of changes) process.stdout.write(`${key}: ${approved[key]} -> ${next[key]}\n`);
   process.stdout.write(`${changes.length} change(s)\n`);
   if (option === "--write") {

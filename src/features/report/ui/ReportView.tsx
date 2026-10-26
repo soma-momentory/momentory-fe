@@ -1,5 +1,4 @@
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import Svg, { Defs, Path, Pattern, Rect } from "react-native-svg";
 
 import { Button, Card, Icon, Spinner, Text } from "@/components/ds";
 import { useEffectiveFontScale } from "@/components/ds/Text";
@@ -39,14 +38,6 @@ export function ReportView({
 
   return (
     <View testID="studio-report-root" style={styles.root}>
-      <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <Pattern id="report-paper-grid" width={22} height={22} patternUnits="userSpaceOnUse">
-            <Path d="M 22 0 L 0 0 0 22" fill="none" stroke={reportPaper.grid} strokeWidth={1} />
-          </Pattern>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#report-paper-grid)" />
-      </Svg>
       {/* 주 선택 동작은 기존 주 목록을 그대로 연다. 시안의 이전/다음 주 버튼은 추가하지 않는다. */}
       <Pressable
         accessibilityRole="button"
@@ -164,7 +155,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
     marginHorizontal: -layout.screenPadding,
-    backgroundColor: reportPaper.paper,
   },
   weekNav: {
     flexDirection: "row",

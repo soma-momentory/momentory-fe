@@ -36,21 +36,26 @@ type Props = TextProps & {
 /** Lab Web의 큰 글씨 레이아웃 검사에만 사용한다. 운영에서는 기기 배율을 그대로 따른다. */
 export const PreviewFontScaleContext = createContext<number | null>(null);
 
-export function useEffectiveFontScale() {
+/** 화면 단위 이관용 상한. 기본 화면은 기존 정책을 유지한다. */
+export const FontScaleLimitContext = createContext<number | null>(null);
+
+export function useEffectiveFontScale(limit?: number) {
   const { fontScale } = useWindowDimensions();
   const previewScale = useContext(PreviewFontScaleContext);
-  const nativeScale = Math.min(fontScale, maxFontScale);
+  const screenLimit = useContext(FontScaleLimitContext);
+  const nativeScale = Math.min(fontScale, limit ?? screenLimit ?? maxFontScale);
   return previewScale == null ? nativeScale : Math.max(nativeScale, previewScale);
 }
 
 export function Text({
   variant = "body1",
   color = labelColor.normal,
-  maxFontSizeMultiplier = maxFontScale,
+  maxFontSizeMultiplier,
   style,
   ...rest
 }: Props) {
   const previewScale = useContext(PreviewFontScaleContext);
+  const screenLimit = useContext(FontScaleLimitContext);
   const flat =
     previewScale == null || previewScale === 1 ? null : StyleSheet.flatten([text[variant], style]);
   // 홈 v2의 일부 텍스트는 화면 높이를 계산하면서 lineHeight도 이미 조정한다.
@@ -68,7 +73,7 @@ export function Text({
         };
   return (
     <RNText
-      maxFontSizeMultiplier={maxFontSizeMultiplier}
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? screenLimit ?? maxFontScale}
       {...rest}
       style={[text[variant], { color }, style, scaled]}
     />

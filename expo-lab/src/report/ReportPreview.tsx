@@ -5,7 +5,7 @@ import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
 import { Screen } from "../../../src/components/ds/Screen";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
 import { WeekPickerSheet } from "../../../src/components/report/WeekPickerSheet";
-import { background, layout } from "../../../src/design/ds";
+import { layout } from "../../../src/design/ds";
 import type { WeeklyReport, WeekOption } from "../../../src/features/report/model/weeklyReport";
 import { ReportView } from "../../../src/features/report/ui/ReportView";
 
@@ -127,7 +127,7 @@ export function ReportPreview({
   return (
     <PreviewFontScaleContext.Provider value={fontScale}>
       <View style={styles.root}>
-        <Screen padded={false} edges={[]}>
+        <Screen padded={false} edges={[]} paperV2>
           <View style={styles.body}>
             <ReportView
               design={design}
@@ -166,5 +166,5 @@ export function ReportPreview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.elevated },
+  underTab: { height: layout.minBottomInset },
 });

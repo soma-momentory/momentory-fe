@@ -55,18 +55,33 @@ test("design apply previews changes, writes only on request, and rejects unknown
 
   delete design["unsupported.node.width"];
   design["home.hero.structure"] = [
-    {id:"group-one",kind:"group",children:[{id:"text-one",kind:"text",text:"오늘의 한 걸음"}]},
+    {
+      id: "group-one",
+      kind: "group",
+      children: [{ id: "text-one", kind: "text", text: "오늘의 한 걸음" }],
+    },
   ];
-  await writeFile(input, JSON.stringify({version:1,name:"structured",design}));
-  const structured = spawnSync(process.execPath,[copiedScript,input,"--write"],{encoding:"utf8"});
-  assert.equal(structured.status,0,structured.stderr);
-  assert.deepEqual(JSON.parse(await readFile(copiedApproved,"utf8"))["home.hero.structure"],design["home.hero.structure"]);
+  await writeFile(input, JSON.stringify({ version: 1, name: "structured", design }));
+  const structured = spawnSync(process.execPath, [copiedScript, input, "--write"], {
+    encoding: "utf8",
+  });
+  assert.equal(structured.status, 0, structured.stderr);
+  assert.deepEqual(
+    JSON.parse(await readFile(copiedApproved, "utf8"))["home.hero.structure"],
+    design["home.hero.structure"],
+  );
 
-  design["home.hero.structure"] = [{id:"group-one",kind:"script",children:[]}];
-  await writeFile(input, JSON.stringify({version:1,name:"rejected",design}));
-  const blocked = spawnSync(process.execPath,[copiedScript,input,"--write"],{encoding:"utf8"});
-  assert.equal(blocked.status,1);
-  assert.deepEqual(JSON.parse(await readFile(copiedApproved,"utf8"))["home.hero.structure"],[
-    {id:"group-one",kind:"group",children:[{id:"text-one",kind:"text",text:"오늘의 한 걸음"}]},
+  design["home.hero.structure"] = [{ id: "group-one", kind: "script", children: [] }];
+  await writeFile(input, JSON.stringify({ version: 1, name: "rejected", design }));
+  const blocked = spawnSync(process.execPath, [copiedScript, input, "--write"], {
+    encoding: "utf8",
+  });
+  assert.equal(blocked.status, 1);
+  assert.deepEqual(JSON.parse(await readFile(copiedApproved, "utf8"))["home.hero.structure"], [
+    {
+      id: "group-one",
+      kind: "group",
+      children: [{ id: "text-one", kind: "text", text: "오늘의 한 걸음" }],
+    },
   ]);
 });

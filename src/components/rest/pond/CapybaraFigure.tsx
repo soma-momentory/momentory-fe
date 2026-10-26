@@ -1,3 +1,4 @@
+import { decorativeAccessibilityProps } from "@/components/ds/decorativeAccessibility";
 import { Image } from "expo-image";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -88,8 +89,7 @@ export function CapybaraFigure({ size }: Props) {
     <View
       testID="pond-capybara"
       pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      {...decorativeAccessibilityProps}
       style={[styles.box, { width: size, height: size / ASPECT }]}
     >
       <Image

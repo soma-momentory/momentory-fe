@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { background, layout } from "@/design/ds";
+import { background, homeV2, layout } from "@/design/ds";
 
 import { GridBackground } from "./GridBackground";
+import { V2PaperGrid } from "./V2PaperGrid";
 
 /**
  * 화면 바닥 — 배경 + 격자 + Safe Area + **좌우 패딩 20**.
@@ -40,6 +41,8 @@ type Props = {
   padded?: boolean;
   /** 격자를 끈다 — 시안에서 격자가 없는 면(시트 내부 등) */
   grid?: boolean;
+  /** v2 tabs use one continuous notebook surface behind content and navigation. */
+  paperV2?: boolean;
   /** Safe Area 를 적용할 변. 탭바가 있는 화면은 아래를 탭바가 맡는다 */
   edges?: readonly ("top" | "bottom" | "left" | "right")[];
   /**
@@ -63,6 +66,7 @@ export function Screen({
   surface = "normal",
   padded = true,
   grid = true,
+  paperV2 = false,
   edges = ["top", "bottom"],
   backdrop,
 }: Props) {
@@ -81,8 +85,10 @@ export function Screen({
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: background[surface] }]}>
-      {grid ? <GridBackground /> : null}
+    <View
+      style={[styles.root, { backgroundColor: paperV2 ? homeV2.color.paper : background[surface] }]}
+    >
+      {paperV2 ? <V2PaperGrid /> : grid ? <GridBackground /> : null}
       {backdrop != null ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           {backdrop}

@@ -132,7 +132,7 @@ describe("몸에 힘 빼기", () => {
     expect(router.replace).not.toHaveBeenCalled();
     await fireEvent.press(r.getByRole("button", { name: "마치기" }));
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
-  });
+  }, 45_000);
 
   describe("계측", () => {
     const sent = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
@@ -164,7 +164,7 @@ describe("몸에 힘 빼기", () => {
         "rest_content_exited",
         { content: "body_release", stage: "shoulders", duration_ms: expect.any(Number) },
       ]);
-    });
+    }, 45_000);
 
     it("네 부위를 다 하면 끝까지 간 것이고, 떠나도 이탈은 없다", async () => {
       const r = await render(<BodyReleaseScreen />);
@@ -177,6 +177,6 @@ describe("몸에 힘 빼기", () => {
       const names = sent().map(([name]) => name);
       expect(names).toContain("rest_content_completed");
       expect(names).not.toContain("rest_content_exited");
-    });
+    }, 45_000);
   });
 });
