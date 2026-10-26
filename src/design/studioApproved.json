@@ -45,5 +45,6 @@
   "report.weekTitle.color": "#48291A",
   "report.weekTitle.fontFamily": "Gaegu-Bold",
   "report.weekTitle.letterSpacing": 0,
-  "report.summary.minHeight": 124
+  "report.summary.minHeight": 124,
+  "home.hero.structure": []
 }

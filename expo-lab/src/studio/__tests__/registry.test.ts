@@ -13,7 +13,7 @@ describe("visual editor registry", () => {
     );
     expect(new Set(editableKeys.map((property) => property.key)).size).toBe(editableKeys.length);
     expect(editableKeys.map((property) => property.key).sort()).toEqual(
-      Object.keys(approvedDesign).sort(),
+      Object.keys(approvedDesign).filter((key) => key !== "home.hero.structure").sort(),
     );
   });
 

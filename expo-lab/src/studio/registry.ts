@@ -2,7 +2,7 @@ import type { StudioDesignKey } from "../../../src/design/studioDesign";
 import { isStudioAssetId } from "../../../src/design/studioAssets";
 
 export type EditableProperty = {
-  key: StudioDesignKey;
+  key: Exclude<StudioDesignKey, "home.hero.structure">;
   label: string;
   kind: "color" | "number" | "asset" | "choice";
   min?: number;
@@ -10,6 +10,7 @@ export type EditableProperty = {
   step?: number;
   options?: readonly { value: string; label: string }[];
 };
+type ScalarKey = Exclude<StudioDesignKey, "home.hero.structure">;
 
 export type EditableComponent = {
   id: string;
@@ -21,19 +22,19 @@ export type EditableComponent = {
   properties: readonly EditableProperty[];
 };
 
-const color = (key: StudioDesignKey, label = "배경색"): EditableProperty => ({
+const color = (key: ScalarKey, label = "배경색"): EditableProperty => ({
   key,
   label,
   kind: "color",
 });
 const number = (
-  key: StudioDesignKey,
+  key: ScalarKey,
   label: string,
   min: number,
   max: number,
   step = 1,
 ): EditableProperty => ({ key, label, kind: "number", min, max, step });
-const asset = (key: StudioDesignKey, label = "이미지"): EditableProperty => ({
+const asset = (key: ScalarKey, label = "이미지"): EditableProperty => ({
   key,
   label,
   kind: "asset",
@@ -49,7 +50,7 @@ const alignments = [
   { value: "right", label: "오른쪽" },
 ] as const;
 const choice = (
-  key: StudioDesignKey,
+  key: ScalarKey,
   label: string,
   options: EditableProperty["options"],
 ): EditableProperty => ({ key, label, kind: "choice", options });

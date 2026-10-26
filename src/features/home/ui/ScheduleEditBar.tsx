@@ -2,7 +2,10 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button, IconButton, singleLineInput, Text } from "@/components/ds";
+import { Button } from "@/components/ds/Button";
+import { IconButton } from "@/components/ds/IconButton";
+import { singleLineInput } from "@/components/ds/singleLineInput";
+import { Text } from "@/components/ds/Text";
 import {
   background,
   elevation,

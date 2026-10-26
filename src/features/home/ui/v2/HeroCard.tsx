@@ -171,6 +171,19 @@ export function HeroCard({
           하루 돌아보기 ›
         </Text>
       </Pressable>
+      {design["home.hero.structure"].length ? (
+        <View testID="studio-home-structure" style={styles.structure}>
+          {design["home.hero.structure"].map((block) => block.kind === "text" ? (
+            <Text key={block.id} testID={`studio-block-${block.id}`} style={[styles.structureText, { lineHeight: 23 * scale }]} color={homeV2.color.ink}>{block.text}</Text>
+          ) : (
+            <View key={block.id} testID={`studio-block-${block.id}`} style={styles.structureGroup}>
+              {block.children.map((child) => child.kind === "text" ? (
+                <Text key={child.id} testID={`studio-block-${child.id}`} style={[styles.structureText, { lineHeight: 23 * scale }]} color={homeV2.color.ink}>{child.text}</Text>
+              ) : null)}
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -251,4 +264,7 @@ const styles = StyleSheet.create({
     borderColor: homeV2.color.paper,
   },
   ctaText: { fontFamily: homeV2.font.bold, ...homeV2.type.cta },
+  structure: { marginLeft: 18, maxWidth: 125, marginBottom: 28, gap: 8, zIndex: 2 },
+  structureGroup: { padding: 10, borderRadius: 10, backgroundColor: homeV2.color.paper, gap: 5 },
+  structureText: { fontFamily: homeV2.font.regular, fontSize: 17, lineHeight: 23 },
 });

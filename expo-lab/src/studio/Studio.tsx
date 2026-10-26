@@ -38,6 +38,7 @@ import { LayerTree } from "./LayerTree";
 import { AssetBrowser } from "./AssetBrowser";
 import { useVisualSelection } from "./useVisualSelection";
 import type { StudioAssetId } from "../../../src/design/studioAssets";
+import { changeHeroStructure } from "../../../src/design/heroStructure";
 import { readSessionHistory, saveSessionHistory } from "./sessionHistory";
 
 const studioScreens = [
@@ -244,6 +245,7 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
       ?.id ?? "home.hero",
   );
   const [selectionMode, setSelectionMode] = useState(true);
+  const [selectedBlock, setSelectedBlock] = useState("");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [screenQuery, setScreenQuery] = useState("");
@@ -334,6 +336,15 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     setUndo((history) => [...history.slice(-49), design]);
     setRedo([]);
     setData((current) => ({ ...current, drafts: { ...current.drafts, [current.active]: next } }));
+  };
+  const editStructure = (type: "add-text" | "add-group" | "remove" | "up" | "down" | "nest" | "unnest" | "text", id?: string, text?: string) => {
+    try {
+      const newId = type.startsWith("add-") ? `b-${crypto.randomUUID()}` : undefined;
+      const structure = changeHeroStructure(design["home.hero.structure"], {type,id,text,newId});
+      replaceDesign({...design,"home.hero.structure":structure});
+      if (newId) setSelectedBlock(newId);
+      if (type === "remove") setSelectedBlock("");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "구조 변경 실패"); }
   };
   const undoEdit = useCallback(() => {
     const previous = undo[undo.length - 1];
@@ -655,6 +666,37 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
               onChange={update}
             />
           ))}
+          {screenId === "home-main" ? (
+            <View testID="studio-structure-editor" style={styles.field}>
+              <Text style={styles.heading}>히어로 정보 구조</Text>
+              <View style={styles.row}>
+                <Button label="텍스트 추가" onPress={() => editStructure("add-text")} />
+                <Button label="그룹 추가" onPress={() => editStructure("add-group")} />
+              </View>
+              {design["home.hero.structure"].map((block) => (
+                <View key={block.id}>
+                  <Button label={block.kind === "group" ? `그룹 · ${block.children.length}개` : block.text} selected={selectedBlock === block.id} onPress={() => setSelectedBlock(block.id)} />
+                  {block.kind === "group" ? block.children.map((child) => (
+                    <Button key={child.id} label={`↳ ${child.kind === "text" ? child.text : "그룹"}`} selected={selectedBlock === child.id} onPress={() => setSelectedBlock(child.id)} />
+                  )) : null}
+                </View>
+              ))}
+              {selectedBlock ? (
+                <>
+                  {design["home.hero.structure"].flatMap((block) => block.id === selectedBlock ? [block] : block.kind === "group" ? block.children.filter((child) => child.id === selectedBlock) : []).map((block) => block.kind === "text" ? (
+                    <TextInput key={block.id} accessibilityLabel="구조 텍스트" value={block.text} onChangeText={(text) => editStructure("text",block.id,text)} style={styles.input} />
+                  ) : null)}
+                  <View style={styles.row}>
+                    <Button label="위로" onPress={() => editStructure("up",selectedBlock)} />
+                    <Button label="아래로" onPress={() => editStructure("down",selectedBlock)} />
+                    <Button label="그룹에 넣기" onPress={() => editStructure("nest",selectedBlock)} />
+                    <Button label="그룹 밖으로" onPress={() => editStructure("unnest",selectedBlock)} />
+                    <Button label="삭제" onPress={() => editStructure("remove",selectedBlock)} />
+                  </View>
+                </>
+              ) : null}
+            </View>
+          ) : null}
           <View style={styles.row}>
             <Button label="Undo" disabled={!undo.length} onPress={undoEdit} />
             <Button label="Redo" disabled={!redo.length} onPress={redoEdit} />

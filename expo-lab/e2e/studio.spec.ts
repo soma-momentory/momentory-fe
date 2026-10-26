@@ -78,6 +78,29 @@ test("keeps named drafts separate and rejects invalid property input", async ({ 
   );
 });
 
+test("edits nested hero information blocks and restores the live shared view", async ({page}) => {
+  const editor = page.getByTestId("studio-structure-editor");
+  const preview = page.getByTestId("studio-preview-B");
+  await editor.getByRole("button",{name:"그룹 추가"}).click();
+  await editor.getByRole("button",{name:"텍스트 추가"}).click();
+  await editor.getByRole("button",{name:"그룹에 넣기"}).click();
+  await editor.getByRole("textbox",{name:"구조 텍스트"}).fill("오늘의 한 걸음");
+  await expect(preview.getByTestId("studio-home-structure")).toContainText("오늘의 한 걸음");
+  await expect(page.getByTestId("studio-preview-A").getByTestId("studio-home-structure")).toHaveCount(0);
+  const downloadPromise=page.waitForEvent("download");
+  await page.getByRole("button",{name:"JSON 내보내기"}).click();
+  const download=await downloadPromise;
+  const exported=JSON.parse(await (await import("node:fs/promises")).readFile(await download.path(),"utf8"));
+  expect(exported.design["home.hero.structure"][0].children[0].text).toBe("오늘의 한 걸음");
+  await page.reload();
+  await expect(page.getByTestId("studio-preview-B").getByTestId("studio-home-structure")).toContainText("오늘의 한 걸음");
+  await editor.getByRole("button",{name:"↳ 오늘의 한 걸음"}).click();
+  await editor.getByRole("button",{name:"그룹 밖으로"}).click();
+  await editor.getByRole("button",{name:"위로"}).click();
+  await editor.getByRole("button",{name:"삭제"}).click();
+  await expect(page.getByTestId("studio-preview-B").getByText("오늘의 한 걸음")).toHaveCount(0);
+});
+
 test("keeps the canvas and property panel reachable in a narrow browser", async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 600 });
   const canvas = page.getByTestId("studio-canvas");
