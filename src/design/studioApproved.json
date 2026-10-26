@@ -46,5 +46,7 @@
   "report.weekTitle.fontFamily": "Gaegu-Bold",
   "report.weekTitle.letterSpacing": 0,
   "report.summary.minHeight": 124,
-  "home.hero.structure": []
+  "home.hero.structure": [
+    { "id": "mobile-qa-caption", "kind": "text", "text": "오늘의 작은 순간을 남겨요" }
+  ]
 }
