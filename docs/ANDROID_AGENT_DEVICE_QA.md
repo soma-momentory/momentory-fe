@@ -6,7 +6,7 @@ This procedure runs the existing Expo Lab as an Android development build. Its h
 
 Use a short Windows path for the QA checkout. A long path under `C:\SWM\ai-dev-workspace\data\...` failed during native C++ compilation because an object filename exceeded 260 characters. Keep the implementation task's Workspace worktree unchanged so its approval fingerprint remains valid.
 
-On Windows, install Node 22.14+, JDK 17+, Android SDK API 36, Build Tools 36, NDK 27.1, CMake 3.22.1, ADB, and one booted emulator. Check `adb devices -l`, `emulator -list-avds`, and `adb shell getprop sys.boot_completed`. Install the tested CLI with `npm install -g agent-device@0.21.31`, then run `agent-device --version` and `agent-device devices --platform android`. No app library or alternate mobile automation tool is needed.
+On Windows, install Node 22.14+, JDK 17+, Android SDK API 36, Build Tools 36, NDK 27.1, CMake 3.22.1, ADB, and one booted emulator. Check `adb devices -l`, `emulator -list-avds`, and `adb shell getprop sys.boot_completed`. Install the tested CLI with `npm install -g agent-device@0.21.31`, then run `agent-device --version` and `agent-device devices --platform android`. No alternate mobile automation tool is needed.
 
 From a clean short-path FE checkout at the revision under test:
 
