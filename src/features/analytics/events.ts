@@ -110,7 +110,7 @@ const notificationSource = choice("onboarding", "my");
  * 민감 정보라 외부 분석 도구로 내보내지 않는다(2026-09-28). 그 단계도 other 에 섞인다.
  */
 const retroPhase = choice("diary_chat", "await_branch", "emotion_exploration", "other");
-const reminderKey = choice("retro", "daily", "weekly");
+const reminderKey = choice("retro", "daily", "weekly", "letter", "letter_action");
 const inputKind = choice("text", "selection");
 const scheduleSource = choice("manual", "calendar");
 const onboardingFailure = choice(
@@ -275,6 +275,22 @@ export const events = {
   store_review_requested: {},
   /** 문의를 보냈다 — 내용은 보내지 않는다 */
   inquiry_submitted: { category: choice("bug", "suggestion", "account", "etc") },
+  /** 바바의 편지(2026-10-27 · PRD 10-1). 편지 본문 · 작은 일 문장은 보내지 않는다 */
+  letter_entry_shown: { has_unread: bool },
+  letter_opened: {
+    source: choice("notification", "home_icon", "diary_detail"),
+    status: choice("ready", "fallback", "quiet"),
+    wait_ms: millis,
+    days_after: choice("0", "1", "2+"),
+  },
+  letter_action_chosen: {
+    position: count,
+    source: choice("catalog", "fallback", "wish_card"),
+    when: choice("schedule", "lunch", "commute", "bedtime", "none"),
+    changed: bool,
+  },
+  letter_time_chosen: { time: choice("7:30", "8:30", "10:00", "custom"), notify: bool },
+  letter_notification_scheduled: { kind: choice("morning", "action", "unread_night") },
   report_week_selected: { week_start: week },
   weekly_report_viewed: { week_start: week },
   logout_clicked: {},

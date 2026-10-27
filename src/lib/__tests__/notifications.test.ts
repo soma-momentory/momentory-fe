@@ -21,6 +21,7 @@ const native = jest.requireMock("expo-notifications") as {
 
 const reminder = (over: Partial<Reminder> = {}): Reminder => ({
   key: "retro",
+  kind: "retro",
   time: "21:30",
   title: "돌아보는 시간이에요",
   body: "오늘 하루, 저와 잠깐 이야기해요.",
@@ -170,7 +171,7 @@ describe("알림을 눌러 앱을 열었다", () => {
     onReminderOpened(handler);
     await settle();
 
-    expect(handler).toHaveBeenCalledWith("retro");
+    expect(handler).toHaveBeenCalledWith("retro", expect.objectContaining({ reminder: "retro" }));
     expect(events.clearLastNotificationResponseAsync).toHaveBeenCalled();
   });
 

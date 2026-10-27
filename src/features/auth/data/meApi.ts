@@ -68,6 +68,11 @@ export type MeProfile = {
    * 없는 것으로 덮으면 앱을 다시 열 때마다 알림 설정이 뒤집힌다.
    */
   notifyRetro: boolean | undefined;
+  /**
+   * 바바의 편지 알림(2026-10-27). 서버가 `letterNotificationEnabled` 를 주지 않으면(편지를 모르는
+   * 옛 서버) `undefined` 다. `time` 이 `null` 이면 아직 안 골랐다 — 서버가 `letterTime` 을 비운다.
+   */
+  letter?: { time: string | null; enabled: boolean };
 };
 
 /**
@@ -161,6 +166,16 @@ const toProfile = (v: unknown): MeProfile | null => {
     calendarLinked: v.calendarIntegrationEnabled === true,
     // **안 준 것과 끈 것을 가른다** — 불리언이 아니면 모르는 것이다
     notifyRetro: typeof v.notificationEnabled === "boolean" ? v.notificationEnabled : undefined,
+    letter:
+      typeof v.letterNotificationEnabled === "boolean"
+        ? {
+            time:
+              typeof v.letterTime === "string" && /^\d{2}:\d{2}$/.test(v.letterTime)
+                ? v.letterTime
+                : null,
+            enabled: v.letterNotificationEnabled,
+          }
+        : undefined,
   };
 };
 

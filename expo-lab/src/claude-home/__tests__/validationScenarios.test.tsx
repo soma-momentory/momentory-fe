@@ -7,10 +7,9 @@ import { PreviewFontScaleContext, Text } from "../../../../src/components/ds/Tex
 import { toHomeWeatherView } from "../../../../src/features/home/ui/v2/weatherStickers";
 import { HomeV2Preview } from "../HomeV2Preview";
 import {
-  inboxForScenario,
+  letterScenarios,
   weatherForScenario,
   weatherScenarios,
-  type InboxScenarioId,
   type WeatherScenarioId,
 } from "../validationScenarios";
 
@@ -56,54 +55,22 @@ describe("Expo Lab 운영 홈 시나리오", () => {
     ]);
   });
 
-  it("읽지 않은 알림은 종의 점을 표시하고 기존 팝오버를 열고 닫는다", async () => {
-    const measure = jest.spyOn(View.prototype, "measureInWindow").mockImplementation((callback) => {
-      callback(0, 24, 44, 44);
-    });
-    try {
-      const screen = await preview({ inboxId: "unread" });
-      expect(screen.getByTestId("home-v2-unread-dot")).toBeTruthy();
-      await fireEvent.press(screen.getByRole("button", { name: /알림, 읽지 않은 소식 있음/ }));
-      expect(screen.getByTestId("inbox-popover-list")).toBeTruthy();
-      expect(screen.getByTestId("inbox-unread-dot-notice-1")).toBeTruthy();
-      await fireEvent.press(screen.getByRole("button", { name: /읽지 않음, 오늘의 소식/ }));
-      expect(screen.queryByTestId("home-v2-unread-dot")).toBeNull();
-      expect(screen.queryByTestId("inbox-unread-dot-notice-1")).toBeNull();
-      await fireEvent.press(screen.getByRole("button", { name: "알림 닫기" }));
-      expect(screen.queryByTestId("inbox-popover-overlay")).toBeNull();
-    } finally {
-      measure.mockRestore();
-    }
+  it("편지 선택지는 점 있음과 없음 두 가지다", () => {
+    expect(letterScenarios.map((item) => item.id)).toEqual(["none", "unread"]);
   });
 
-  it.each([
-    ["empty", "ready"],
-    ["loading", "loading"],
-    ["error", "failed"],
-  ] as [InboxScenarioId, string][])(
-    "%s 알림 상태는 기존 팝오버의 %s 상태를 쓴다",
-    async (id, status) => {
-      const measure = jest
-        .spyOn(View.prototype, "measureInWindow")
-        .mockImplementation((callback) => {
-          callback(0, 24, 44, 44);
-        });
-      try {
-        const screen = await preview({ inboxId: id });
-        await fireEvent.press(screen.getByRole("button", { name: "알림" }));
-        expect(screen.getByTestId(`inbox-popover-${status}`)).toBeTruthy();
-      } finally {
-        measure.mockRestore();
-      }
-    },
-  );
+  it("새 편지가 있으면 편지 아이콘에 점을 찍고, 누르면 안내 한 줄만 띄운다", async () => {
+    const onMessage = jest.fn();
+    const screen = await preview({ letterId: "unread", onMessage });
+    expect(screen.getByTestId("home-v2-unread-dot")).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: "바바의 편지, 새 편지 있음" }));
+    expect(onMessage).toHaveBeenCalledWith("바바의 편지는 Lab에 연결하지 않았습니다.");
+  });
 
-  it("모두 읽음은 점이 없고 긴 알림은 원문 데이터를 유지한다", async () => {
-    const read = await preview({ inboxId: "read" });
-    expect(read.queryByTestId("home-v2-unread-dot")).toBeNull();
-    expect(inboxForScenario("long").items[0]!.title.length).toBeGreaterThan(50);
-    expect(inboxForScenario("long").items[0]!.body.length).toBeGreaterThan(50);
-    await read.unmount();
+  it("새 편지가 없으면 점이 없다", async () => {
+    const screen = await preview({ letterId: "none" });
+    expect(screen.queryByTestId("home-v2-unread-dot")).toBeNull();
+    expect(screen.getByRole("button", { name: "바바의 편지" })).toBeTruthy();
   });
 
   it.each([1.3, 1.5])(

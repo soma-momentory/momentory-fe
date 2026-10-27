@@ -10,23 +10,22 @@ import { ScheduleEditBar } from "../../../src/features/home/ui/ScheduleEditBar";
 import { toHomeWeatherView } from "../../../src/features/home/ui/v2/weatherStickers";
 import { weekDays, weekEnd, type WeekDay } from "../../../src/features/report/model/report";
 import { HomeV2View } from "../../../src/features/home/ui/v2/HomeV2View";
-import { InboxPopover } from "../../../src/features/notifications/ui/InboxPopover";
 import { claudeHomeScenarios } from "./scenarios";
 import {
-  inboxForScenario,
   weatherForScenario,
-  type InboxScenarioId,
+  type LetterScenarioId,
   type WeatherScenarioId,
 } from "./validationScenarios";
 
 /**
  * **운영판 v2** 변형 — 앱의 공유 뷰(`HomeV2View`)를 Lab Mock 으로 그린다(계획 §6 P2).
  *
- * Lab 어댑터다: 일정·날씨·알림 시나리오를 뷰의 Props 로 바꾸고, 행동은 이 컴포넌트 안의 상태만 바꾼다.
+ * Lab 어댑터다: 일정·날씨·편지 시나리오를 뷰의 Props 로 바꾸고, 행동은 이 컴포넌트 안의 상태만 바꾼다.
  * **앱의 store · API · 라우터 · 계측을 import 하지 않는다**(`current-home/MockPreview.tsx` 선례).
  * 운영 앱에서 이 파일을 import 하지 않는다 — 린터가 막는다(`eslint.config.js`).
  *
- * - 날씨 매핑과 알림 팝오버는 운영 컴포넌트를 공유하고, 서버 없이 Mock 데이터만 주입한다
+ * - 날씨 매핑은 운영 컴포넌트를 공유하고, 서버 없이 Mock 데이터만 주입한다
+ * - 편지는 점 있음 · 없음만 고르고, 아이콘을 누르면 안내 한 줄만 띄운다
  * - 탭바는 글로벌 DS 의 것(앱의 `TabScreen` 과 같은 `BottomNavigation`) — v2 의 종이 탭바를 쓰지 않는다
  * - 이번 주 감정: 도크 시나리오(5d~5h)는 **세 가지 날**(감정 · 일기만 · 기록 없음)을 함께 보이고,
  *   나머지는 기록이 없는 주(일곱 칸 모두 빈 조약돌)를 보인다 — DN-1 의 두 빈 칸을 나란히 대조한다
@@ -37,7 +36,7 @@ export type HomeV2PreviewProps = {
   onMessage: (message: string) => void;
   scale?: number;
   weatherId?: WeatherScenarioId;
-  inboxId?: InboxScenarioId;
+  letterId?: LetterScenarioId;
   fontScale?: 1 | 1.3 | 1.5;
 };
 
@@ -84,18 +83,14 @@ export function HomeV2Preview({
   onMessage,
   scale = 1,
   weatherId = "none",
-  inboxId = "empty",
+  letterId = "none",
   fontScale = 1,
 }: HomeV2PreviewProps) {
   const rootRef = useRef<View>(null);
   const scenario =
     claudeHomeScenarios.find((item) => item.id === scenarioId) ?? claudeHomeScenarios[0]!;
   const [schedules, setSchedules] = useState<Schedule[]>(() => fixture(scenarioId));
-  const [inboxItems, setInboxItems] = useState(() => inboxForScenario(inboxId).items);
-  const [inboxOpen, setInboxOpen] = useState(false);
-  const [inboxTop, setInboxTop] = useState(0);
   const [editor, setEditor] = useState<{ id: string | null; title: string } | null>(null);
-  const inboxStatus = inboxForScenario(inboxId).status;
   const weather = weatherForScenario(weatherId);
   const weatherView = toHomeWeatherView(weather);
 
@@ -124,7 +119,7 @@ export function HomeV2Preview({
             week: scenario.showWeekDock ? MIXED_WEEK : EMPTY_WEEK,
             retroReminderTime: "21:30",
             weather: weatherView,
-            hasUnreadNotifications: inboxItems.some((item) => item.readAt == null),
+            hasUnreadLetter: letterId === "unread",
           }}
           actions={{
             onToggleDone: (id) =>
@@ -158,37 +153,10 @@ export function HomeV2Preview({
             },
             onAddSchedule: () => setEditor({ id: null, title: "" }),
             onStartReflection: () => onMessage("회고 진입은 Lab Mock 액션입니다."),
-            onOpenNotifications: (top) => {
-              setInboxTop(top);
-              setInboxOpen(true);
-            },
+            onOpenLetter: () => onMessage("바바의 편지는 Lab에 연결하지 않았습니다."),
             onOpenNotificationSettings: () => onMessage("알림 설정은 Lab에 연결하지 않았습니다."),
             onOpenWeatherInfo: () => onMessage("날씨 출처 시트는 운영 앱에서 확인합니다."),
           }}
-          inboxPopover={
-            inboxOpen ? (
-              <InboxPopover
-                items={inboxItems}
-                status={inboxStatus}
-                unreadIds={inboxItems.filter((item) => item.readAt == null).map((item) => item.id)}
-                hasMore={false}
-                top={inboxTop}
-                onDismiss={() => setInboxOpen(false)}
-                onOpenSettings={() => onMessage("알림 설정은 Lab에 연결하지 않았습니다.")}
-                onPressItem={(item) =>
-                  setInboxItems((current) =>
-                    current.map((entry) =>
-                      entry.id === item.id
-                        ? { ...entry, readAt: "2026-10-14T10:00:00+09:00" }
-                        : entry,
-                    ),
-                  )
-                }
-                onEndReached={() => {}}
-                onSeen={() => {}}
-              />
-            ) : null
-          }
           renderFrame={(body, overlay) => (
             <>
               <Screen padded={false} edges={[]}>

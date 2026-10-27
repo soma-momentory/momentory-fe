@@ -44,6 +44,24 @@ export function msUntilNextDay(from: Date): number {
   return next.getTime() - from.getTime();
 }
 
+const isoOf = (at: Date) => `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+
+/** `iso` 에서 `days` 일 뒤(음수면 앞). 달·해를 넘겨도 `Date` 가 맞춰준다 */
+export function addDays(iso: string, days: number): string {
+  const [y = "2026", m = "1", d = "1"] = iso.split("-");
+  return isoOf(new Date(Number(y), Number(m) - 1, Number(d) + days));
+}
+
+/**
+ * 「하루」 `day` 의 `hour:minute` 시각. 04:00 전 시각은 그 하루에 속하는 **다음 달력 날**이다 —
+ * 7/27 의 「새벽 1:00」은 7/28 01:00 이다(`dayFrom` 의 거꾸로).
+ */
+export function momentOf(day: string, hour: number, minute: number): Date {
+  const [y = "2026", m = "1", d = "1"] = day.split("-");
+  const date = Number(d) + (hour < DAY_BOUNDARY_HOUR ? 1 : 0);
+  return new Date(Number(y), Number(m) - 1, date, hour, minute, 0, 0);
+}
+
 /** 운영 시각 — 기기 시계 그대로, 하루 경계만 4:00 으로 옮긴다 */
 export const SystemClock: Clock = {
   now: () => new Date(),

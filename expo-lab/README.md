@@ -62,9 +62,9 @@ Lab 은 `@expo-google-fonts/gaegu` 를 더 이상 쓰지 않는다(결정 DN-4).
 
 ## 운영 홈 UI 시나리오 (P1)
 
-`app-v2` 변형은 운영 라우트 `app/(tabs)/home.tsx`와 동일한 `HomeV2View`를 사용한다. 화면 크기 375·390·402·430pt, 일정 0·2·5·10개와 긴 제목, 날씨 11가지, 알림 6가지, 일반/큰 글씨를 선택할 수 있다. 예: `#compare/home-main/app-v2?device=375&scenario=5g&weather=thunder&inbox=long&type=large`. 선택한 상태는 URL 해시에 저장된다.
+`app-v2` 변형은 운영 라우트 `app/(tabs)/home.tsx`와 동일한 `HomeV2View`를 사용한다. 화면 크기 375·390·402·430pt, 일정 0·2·5·10개와 긴 제목, 날씨 11가지, 편지 점 있음·없음, 일반/큰 글씨를 선택할 수 있다. 예: `#compare/home-main/app-v2?device=375&scenario=5g&weather=thunder&letter=unread&type=large`. 선택한 상태는 URL 해시에 저장된다.
 
-날씨는 운영 `toHomeWeatherView` 매핑을 통과하며 야간·미매핑·데이터 없음·로딩·오류는 운영 정책처럼 스티커를 표시하지 않는다. 알림은 운영 `InboxPopover`를 사용하고, 팝오버 안에서 읽음 처리해도 Lab의 메모리 상태만 바뀐다. 일정 추가·수정은 운영 `ScheduleEditBar`를 열어 Lab의 일정 배열만 바꾼다. 삭제 확인·체크·접기·펼치기도 같은 공유 UI에서 조작한다. 긴 일정 제목은 운영 정책상 한 줄로 줄이되 접근성 이름에는 전체 제목이 남는다.
+날씨는 운영 `toHomeWeatherView` 매핑을 통과하며 야간·미매핑·데이터 없음·로딩·오류는 운영 정책처럼 스티커를 표시하지 않는다. 편지 아이콘은 점 있음·없음만 고르고, 누르면 Lab 안내 한 줄만 띄운다. 일정 추가·수정은 운영 `ScheduleEditBar`를 열어 Lab의 일정 배열만 바꾼다. 삭제 확인·체크·접기·펼치기도 같은 공유 UI에서 조작한다. 긴 일정 제목은 운영 정책상 한 줄로 줄이되 접근성 이름에는 전체 제목이 남는다.
 
 Lab Web의 큰 글씨 선택은 공유 DS 글자와 홈 레이아웃에 1.3배 프리뷰 배율을 적용한다. 앱의 실제 OS 글꼴 크기 설정이나 네이티브 접근성을 대체하지 않는다. 현재 main의 운영 홈은 `src/design/ds/typography.ts`의 교보 손글씨 2025를 쓴다. Pretendard 4종은 로그인 화면만 쓰므로 홈 시나리오에서는 적용되지 않는다. Lab은 홈에 필요한 교보 손글씨와 Gaegu를 앱과 같은 자산 파일에서 등록한다. iOS·Android의 글꼴 렌더링·화면 터치·키보드·권한은 실제 시뮬레이터에서 최종 확인해야 한다.
 

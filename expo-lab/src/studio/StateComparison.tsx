@@ -3,9 +3,9 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { approvedDesign, type StudioDesign } from "../../../src/design/studioDesign";
 import {
-  inboxScenarios,
+  letterScenarios,
   weatherScenarios,
-  type InboxScenarioId,
+  type LetterScenarioId,
   type WeatherScenarioId,
 } from "../claude-home/validationScenarios";
 import { claudeHomeColor as c } from "../claude-home/tokens";
@@ -40,8 +40,8 @@ function StatePanel({
   onScenario,
   weatherId,
   onWeather,
-  inboxId,
-  onInbox,
+  letterId,
+  onLetter,
   fontScale,
   device,
   scale,
@@ -56,8 +56,8 @@ function StatePanel({
   onScenario: (id: string) => void;
   weatherId: WeatherScenarioId;
   onWeather: (id: WeatherScenarioId) => void;
-  inboxId: InboxScenarioId;
-  onInbox: (id: InboxScenarioId) => void;
+  letterId: LetterScenarioId;
+  onLetter: (id: LetterScenarioId) => void;
   fontScale: 1 | 1.3 | 1.5;
   device: (typeof devices)[number];
   scale: number;
@@ -95,25 +95,25 @@ function StatePanel({
               />
             ))}
           </View>
-          <Text style={styles.label}>알림</Text>
+          <Text style={styles.label}>편지</Text>
           <View style={styles.row}>
-            {inboxScenarios.map((item) => (
+            {letterScenarios.map((item) => (
               <Choice
                 key={item.id}
                 label={item.label}
-                selected={inboxId === item.id}
-                onPress={() => onInbox(item.id)}
+                selected={letterId === item.id}
+                onPress={() => onLetter(item.id)}
               />
             ))}
           </View>
         </>
       ) : null}
       <VariantPhone
-        key={`${variant.id}-${scenarioId}-${weatherId}-${inboxId}-${resetKey}`}
+        key={`${variant.id}-${scenarioId}-${weatherId}-${letterId}-${resetKey}`}
         variant={variant}
         scenarioId={scenarioId}
         weatherId={weatherId}
-        inboxId={inboxId}
+        letterId={letterId}
         fontScale={fontScale}
         device={device}
         scale={scale}
@@ -148,8 +148,8 @@ export function StateComparison({
   const [bChoice, setBChoice] = useState("");
   const [aWeather, setAWeather] = useState<WeatherScenarioId>("none");
   const [bWeather, setBWeather] = useState<WeatherScenarioId>("none");
-  const [aInbox, setAInbox] = useState<InboxScenarioId>("empty");
-  const [bInbox, setBInbox] = useState<InboxScenarioId>("empty");
+  const [aLetter, setALetter] = useState<LetterScenarioId>("none");
+  const [bLetter, setBLetter] = useState<LetterScenarioId>("none");
   const [aReset, setAReset] = useState(0);
   const [bReset, setBReset] = useState(0);
   const scenarioA =
@@ -201,8 +201,8 @@ export function StateComparison({
           onScenario={setAChoice}
           weatherId={aWeather}
           onWeather={setAWeather}
-          inboxId={aInbox}
-          onInbox={setAInbox}
+          letterId={aLetter}
+          onLetter={setALetter}
           fontScale={fontScale}
           device={device}
           scale={scale}
@@ -218,8 +218,8 @@ export function StateComparison({
           onScenario={setBChoice}
           weatherId={bWeather}
           onWeather={setBWeather}
-          inboxId={bInbox}
-          onInbox={setBInbox}
+          letterId={bLetter}
+          onLetter={setBLetter}
           fontScale={fontScale}
           device={device}
           scale={scale}

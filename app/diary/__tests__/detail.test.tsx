@@ -4,6 +4,8 @@ import { Redirect, router } from "expo-router";
 import DiaryDetail from "../[id]/index";
 
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
+import { fetchLetter } from "@/features/letter/data/letterApi";
+import { keepWords, useLetters } from "@/features/letter/model/letter";
 import { seedDiaries } from "@/testing/fixtures";
 
 /** 7월 27일 일기 — 바바의 면·근거·행동 카드가 다 붙어 있는 한 장 */
@@ -16,8 +18,14 @@ jest.mock("expo-router", () => ({
   useLocalSearchParams: () => mockParams,
 }));
 
+jest.mock("@/features/letter/data/letterApi", () => ({
+  fetchLetters: jest.fn(async () => ({ ok: true, data: [] })),
+  fetchLetter: jest.fn(async () => ({ ok: false })),
+}));
+
 beforeEach(() => {
   mockParams = { id: ID };
+  useLetters.setState({ userId: 7, summaries: [], letters: {} });
   seedDiaries();
   jest.clearAllMocks();
 });
@@ -178,3 +186,51 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
 // (A3-c 「해본 뒤」의 조작 — 해봤어요·되돌리기·느낀점 — 은 상세에서 제거됨(2026-08-20 ·
 //  읽기 전용). 그 동작은 쉼터(R2) 테스트와 store 테스트(diaryWrite.test)에 남아 있다.
 //  A3-b 「바바가 함께 본 오늘」 면도 상세에서 뺐고 컴포넌트째 지웠다.)
+
+describe("A3 · 바바의 편지 칸(2026-10-27)", () => {
+  const date = () => useDiary.getState().diaries.find((d) => d.id === ID)!.date;
+
+  it("그 날짜 편지가 없으면 칸도 없다", async () => {
+    const r = await render(<DiaryDetail />);
+
+    expect(r.queryByText("바바의 편지")).toBeNull();
+  });
+
+  it("편지가 있으면 테이프로 붙인 「바바의 편지」 쪽지 — 인용 미리보기 · 접힌 귀 · 누르면 편지", async () => {
+    useLetters.setState({
+      summaries: [{ id: "12", date: date(), isNew: true, openedAt: null }],
+    });
+    jest.mocked(fetchLetter).mockResolvedValueOnce({
+      ok: true,
+      data: {
+        id: "12",
+        date: date(),
+        status: "READY",
+        quote: "생각보다 괜찮았어",
+        insight: "준비한 만큼 말이 나온 날이었을지도 몰라요.",
+        tonightQuestion: null,
+        actions: [],
+        helplines: [],
+        isNew: true,
+        openedAt: null,
+      },
+    });
+    const r = await render(<DiaryDetail />);
+
+    expect(r.getByText("바바의 편지")).toBeTruthy(); // 테이프 글씨
+    expect(await r.findByText(keepWords("「생각보다 괜찮았어」"))).toBeTruthy();
+    expect(r.getByTestId("letter-entry-dogear")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: /^바바의 편지 열기/ }));
+    expect(router.push).toHaveBeenCalledWith(`/letter/${date()}?source=diary_detail`);
+  });
+
+  it("편지 내용을 못 받아도 칸은 남는다 — 날짜와 서명만", async () => {
+    useLetters.setState({
+      summaries: [{ id: "12", date: date(), isNew: false, openedAt: "2026-07-28T00:00:00Z" }],
+    });
+    const r = await render(<DiaryDetail />);
+
+    expect(r.getByText("바바가")).toBeTruthy();
+    expect(r.queryByTestId("letter-entry-dogear")).toBeNull();
+  });
+});

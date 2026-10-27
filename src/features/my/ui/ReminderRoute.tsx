@@ -5,7 +5,7 @@ import { track } from "@/features/analytics";
 import { useAuth } from "@/features/auth/model/auth";
 import { reminderHref } from "@/features/my/model/reminders";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
-import { onReminderOpened, type ReminderKey } from "@/lib/notifications";
+import { onReminderOpened, type ReminderKind } from "@/lib/notifications";
 
 /**
  * 알림을 눌러 들어오면 그 알림이 부른 화면으로 옮긴다(2026-10-12). 예전에는 열람만 세고
@@ -21,7 +21,7 @@ import { onReminderOpened, type ReminderKey } from "@/lib/notifications";
  */
 export function ReminderRoute() {
   /** 눌렸지만 아직 옮기지 못한 알림 */
-  const pending = useRef<ReminderKey | null>(null);
+  const pending = useRef<{ kind: ReminderKind; data: Record<string, string> } | null>(null);
   /** 눌릴 때마다 오른다 — 이미 들어갈 수 있는 상태에서도 아래 효과를 다시 돌리는 신호다 */
   const [opened, setOpened] = useState(0);
   const authenticated = useAuth((s) => s.status === "authenticated");
@@ -31,19 +31,19 @@ export function ReminderRoute() {
 
   useEffect(
     () =>
-      onReminderOpened((reminder) => {
+      onReminderOpened((reminder, data) => {
         track("reminder_opened", { reminder });
-        pending.current = reminder;
+        pending.current = { kind: reminder, data };
         setOpened((n) => n + 1);
       }),
     [],
   );
 
   useEffect(() => {
-    const key = pending.current;
-    if (key == null || !ready) return;
+    const tapped = pending.current;
+    if (tapped == null || !ready) return;
     pending.current = null;
-    void reminderHref(key).then((href) => {
+    void reminderHref(tapped.kind, tapped.data).then((href) => {
       if (href != null) router.push(href);
     });
   }, [opened, ready]);

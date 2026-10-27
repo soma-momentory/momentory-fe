@@ -26,6 +26,7 @@ import { asOneParagraph } from "@/features/diary/model/body";
 import { useDiary } from "@/features/diary/model/diary";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
+import { useSettings } from "@/features/my/model/settings";
 import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
 import { formatKoreanDateShort } from "@/lib/day";
 
@@ -166,16 +167,19 @@ export default function RetroDraft() {
     // 서버는 완료 때 이미 LLM 원본을 저장했다 — 사용자가 고쳤으면 그 회고의 일기 본문을
     // 갱신한다(fail-quiet · 못 닿으면 다음 load 에 서버 값이 다시 비친다). 안 고쳤으면 보내지 않는다.
     if (edited && sessionId != null) void updateDiaryBody(String(sessionId), body);
+    // 편지 시각을 고른 적이 없으면 다음 화면 전에 한 번 묻는다(바바의 편지 PRD 4-8 · 2026-10-27).
+    // 서버가 편지를 모르면(`null`) 묻지 않는다
+    const askLetterTime = useSettings.getState().letterChosen === false;
     if (wishCard != null) {
       // 바람카드는 저장 완료(`C7`)가 보여 준다 — 회고 한 벌은 **그 화면이 읽고 나서** 비운다
-      router.replace("/retro/done");
+      router.replace(askLetterTime ? "/letter/time?next=done" : "/retro/done");
       return;
     }
     // 바람카드가 없으면 `C7` 을 거치지 않는다(2026-10-12) — 쉼터로 넘어온 것이 곧 저장이 끝났다는 뜻이다.
     // `/rest` 가 아니라 `/(tabs)/rest` 다 — 온보딩 그룹의 같은 경로로 새지 않게(`C7` 과 같은 주소).
     // 회고 한 벌은 여기까지가 수명이다 — 다음 회고에 앞 대화가 섞이지 않게
     setLeaving(true);
-    router.replace("/(tabs)/rest");
+    router.replace(askLetterTime ? "/letter/time?next=rest" : "/(tabs)/rest");
     resetRetro();
   };
 

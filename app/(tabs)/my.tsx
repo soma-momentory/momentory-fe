@@ -17,6 +17,7 @@ import { label as labelColor, primary, space } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { CALENDAR_NOTICE } from "@/features/calendar/model/notice";
 import { useDiary } from "@/features/diary/model/diary";
+import { saveLetterPreference } from "@/features/letter/model/letter";
 import { saveRetroReminder } from "@/features/my/model/basicInfo";
 import { adoptGrantedCalendar, linkCalendar } from "@/features/my/model/calendarLink";
 import { useProfile, useSettings, type NotifySetting } from "@/features/my/model/settings";
@@ -95,6 +96,10 @@ export default function My() {
 
   /** 시트를 여는 동안만 사는 값 — **`완료` 를 눌러야 설정이 된다**(`DESIGN.md` §11) */
   const [editingTime, setEditingTime] = useState<string | null>(null);
+  /** 바바의 편지 알림 시트(2026-10-27) — 회고 시트와 같은 휠 · 같은 규칙이다 */
+  const [editingLetter, setEditingLetter] = useState<string | null>(null);
+  const letter = useSettings((s) => s.notify.letter);
+  const letterChosen = useSettings((s) => s.letterChosen);
 
   useEffect(() => {
     if (openNotificationSettings !== "1") return;
@@ -219,6 +224,29 @@ export default function My() {
     await saveRetro({ time: picked, enabled });
   };
 
+  /** 편지 알림 — 회고와 같다: 서버가 받은 뒤에 바꾸고, 꺼져 있었으면 `완료` 때 권한을 묻는다 */
+  const saveLetter = async (time: string, enabled: boolean) => {
+    setNotifyError(null);
+    if (time === letter.time && enabled === letter.enabled && letterChosen === true) return;
+    if (!(await saveLetterPreference(time, enabled))) {
+      setNotifyError("편지 알림을 저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.");
+    }
+  };
+
+  const confirmLetterTime = async () => {
+    const picked = editingLetter;
+    setEditingLetter(null);
+    if (picked == null) return;
+    let enabled = letter.enabled;
+    if (!enabled) {
+      const result = await requestNotificationPermission();
+      track("notify_permission_result", { source: "my", granted: result.granted });
+      setPermission(result);
+      enabled = result.granted;
+    }
+    await saveLetter(picked, enabled);
+  };
+
   /** 확인 시트를 연다 — 지난 실패 한 줄과 입력값을 지우고 연다 */
   const openWithdraw = () => {
     track("withdrawal_opened", {});
@@ -257,9 +285,6 @@ export default function My() {
   const calendarOn = calendarLinked && calendarAccess?.granted !== false;
   const calendarBlocked =
     calendarAccess != null && !calendarAccess.granted && !calendarAccess.canAskAgain;
-  const wheel = toWheelTime(editingTime ?? retro.time ?? "21:30");
-  const setWheel = (next: Partial<WheelTime>) =>
-    setEditingTime(fromWheelTime({ ...wheel, ...next }));
 
   return (
     <TabScreen
@@ -275,62 +300,44 @@ export default function My() {
       */
       overlay={
         editingTime != null ? (
-          <BottomSheet title="알림 설정" onDismiss={() => setEditingTime(null)}>
-            <Text variant="label2" color={labelColor.alternative}>
-              알림 시간
-            </Text>
-            {/* 세 열이 하이라이트 밴드 **하나**를 공유한다 — 열마다 그리면 사이가 끊긴다 */}
-            <WheelPicker
-              columns={[
-                {
-                  key: "period",
-                  label: "오전 오후",
-                  items: WHEEL_PERIODS,
-                  value: wheel.period,
-                  onChange: (period) => setWheel({ period }),
-                  width: 88,
-                },
-                {
-                  key: "hour",
-                  label: "시",
-                  items: WHEEL_HOURS,
-                  value: wheel.hour,
-                  onChange: (hour) => setWheel({ hour }),
-                  width: 72,
-                  format: (h) => `${h}시`,
-                },
-                {
-                  key: "minute",
-                  label: "분",
-                  items: WHEEL_MINUTES,
-                  value: wheel.minute,
-                  onChange: (minute) => setWheel({ minute }),
-                  width: 72,
-                  format: (m) => `${m}분`,
-                },
-              ]}
-            />
-            <Button label="완료" fill onPress={() => void confirmTime()} />
-            {/*
+          <TimeSheet
+            title="알림 설정"
+            time={editingTime}
+            onChange={setEditingTime}
+            onDismiss={() => setEditingTime(null)}
+            onDone={() => void confirmTime()}
+            /*
               ⚠ 시안에 없는 줄이다. 옛 알림 화면에는 스위치가 있었고 시안은 그 화면을
               통째로 시트로 줄이면서 **끄는 길을 그리지 않았다** — 그대로 옮기면 한 번 켠
               알림을 앱 안에서 끌 수 없게 된다. 켜져 있을 때만 나타나는 3순위 텍스트
               버튼으로 뒀다(`DESIGN.md` §6 CTA 위계 · 온보딩 `08` 의 「알림 없이 쓸게요」와 같은 자리).
-            */}
-            {retro.enabled ? (
-              <View style={styles.secondary}>
-                <Button
-                  label="알림 받지 않기"
-                  variant="text"
-                  onPress={() => {
+            */
+            onTurnOff={
+              retro.enabled
+                ? () => {
                     // 시각은 그대로 둔다 — 다시 켜면 그 시각이다
                     setEditingTime(null);
                     void saveRetro({ ...retro, enabled: false });
-                  }}
-                />
-              </View>
-            ) : null}
-          </BottomSheet>
+                  }
+                : undefined
+            }
+          />
+        ) : editingLetter != null ? (
+          <TimeSheet
+            title="바바의 편지 알림"
+            time={editingLetter}
+            onChange={setEditingLetter}
+            onDismiss={() => setEditingLetter(null)}
+            onDone={() => void confirmLetterTime()}
+            onTurnOff={
+              letter.enabled
+                ? () => {
+                    setEditingLetter(null);
+                    void saveLetter(letter.time ?? "08:30", false);
+                  }
+                : undefined
+            }
+          />
         ) : linkingCalendar ? (
           /*
             캘린더 연동 — 온보딩 `09` 와 **같은 약속**을 보이고 묻는다(`CALENDAR_NOTICE`).
@@ -402,6 +409,14 @@ export default function My() {
         nickname={nickname}
         recordedDays={recordedDays}
         notifyValue={notifyValue}
+        letterValue={
+          letterChosen == null
+            ? undefined
+            : letter.enabled
+              ? formatKoreanTime(letter.time ?? "08:30")
+              : "꺼짐"
+        }
+        onOpenLetterSettings={() => setEditingLetter(letter.time ?? "08:30")}
         settingsNote={
           notifyError ??
           calendarError ??
@@ -423,6 +438,72 @@ export default function My() {
         onOpenWithdraw={openWithdraw}
       />
     </TabScreen>
+  );
+}
+
+/** 시각 하나만 고르는 시트 — 회고 알림과 편지 알림이 같은 휠을 연다(`DESIGN.md` §11 「시간 선택」) */
+function TimeSheet({
+  title,
+  time,
+  onChange,
+  onDismiss,
+  onDone,
+  onTurnOff,
+}: {
+  title: string;
+  time: string;
+  onChange: (time: string) => void;
+  onDismiss: () => void;
+  onDone: () => void;
+  /** 켜져 있을 때만 — 「알림 받지 않기」 */
+  onTurnOff?: () => void;
+}) {
+  const wheel = toWheelTime(time);
+  const setWheel = (next: Partial<WheelTime>) => onChange(fromWheelTime({ ...wheel, ...next }));
+
+  return (
+    <BottomSheet title={title} onDismiss={onDismiss}>
+      <Text variant="label2" color={labelColor.alternative}>
+        알림 시간
+      </Text>
+      {/* 세 열이 하이라이트 밴드 **하나**를 공유한다 — 열마다 그리면 사이가 끊긴다 */}
+      <WheelPicker
+        columns={[
+          {
+            key: "period",
+            label: "오전 오후",
+            items: WHEEL_PERIODS,
+            value: wheel.period,
+            onChange: (period) => setWheel({ period }),
+            width: 88,
+          },
+          {
+            key: "hour",
+            label: "시",
+            items: WHEEL_HOURS,
+            value: wheel.hour,
+            onChange: (hour) => setWheel({ hour }),
+            width: 72,
+            format: (h) => `${h}시`,
+          },
+          {
+            key: "minute",
+            label: "분",
+            items: WHEEL_MINUTES,
+            value: wheel.minute,
+            onChange: (minute) => setWheel({ minute }),
+            width: 72,
+            format: (m) => `${m}분`,
+          },
+        ]}
+      />
+      <Button label="완료" fill onPress={onDone} />
+      {onTurnOff != null ? (
+        <View style={styles.secondary}>
+          <Button label="알림 받지 않기" variant="text" onPress={onTurnOff} />
+        </View>
+      ) : null}
+    </BottomSheet>
   );
 }
 

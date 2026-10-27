@@ -12,12 +12,11 @@ import { useDiary } from "@/features/diary/model/diary";
 import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDay, useTodayContext, weekStartOf } from "@/features/home/model/day";
 import { useHomeWeather } from "@/features/home/model/useHomeWeather";
+import { hasUnreadLetter, useLetters } from "@/features/letter/model/letter";
 import type { HomeWeather } from "@/features/home/model/weather";
 import { HomeV2View } from "@/features/home/ui/v2/HomeV2View";
 import { toHomeWeatherView } from "@/features/home/ui/v2/weatherStickers";
 import { useSettings } from "@/features/my/model/settings";
-import { useInbox } from "@/features/notifications/model/inbox";
-import { InboxPopover } from "@/features/notifications/ui/InboxPopover";
 import { weekDays, weekEnd } from "@/features/report/model/report";
 
 /** 홈의 서비스 어댑터. 조회·계측·라우팅은 Lab에 공유하지 않는다. */
@@ -32,31 +31,40 @@ export default function Home() {
   const diaries = useDiary((state) => state.diaries);
   const retroNotify = useSettings((state) => state.notify.retro);
   const authStatus = useAuth((state) => state.status);
-  const inbox = useInbox();
+  const letterUserId = useLetters((state) => state.userId);
+  const letters = useLetters((state) => state.summaries);
   const weather = useHomeWeather();
-  const [inboxTop, setInboxTop] = useState(0);
   const [weatherInfoFor, setWeatherInfoFor] = useState<HomeWeather | null>(null);
   const [weatherIntroReadyFor, setWeatherIntroReadyFor] = useState<number | null>(null);
   const [homeFocused, setHomeFocused] = useState(false);
   const { date: today } = useTodayContext();
   const insets = useSafeAreaInsets();
 
-  const sameUser = authStatus === "authenticated" && inbox.userId != null;
-  const currentWeather = sameUser && weather.ownerUserId === inbox.userId ? weather.weather : null;
+  const sameUser = authStatus === "authenticated" && letterUserId != null;
+  const currentWeather = sameUser && weather.ownerUserId === letterUserId ? weather.weather : null;
+  const unreadLetter = sameUser && hasUnreadLetter(letters);
   const weatherView = toHomeWeatherView(currentWeather);
 
   useFocusEffect(
     useCallback(() => {
       setHomeFocused(true);
-      if (authStatus === "authenticated" && inbox.userId != null) {
-        void useInbox.getState().refreshUnread();
+      if (authStatus === "authenticated" && letterUserId != null) {
+        // 편지는 아침에 열린다 — 홈에 올 때마다 목록 첫 칸으로 점을 다시 정한다(PRD 4-1)
+        void useLetters
+          .getState()
+          .refresh()
+          .then(() => {
+            const { summaries } = useLetters.getState();
+            if (summaries != null) {
+              track("letter_entry_shown", { has_unread: hasUnreadLetter(summaries) });
+            }
+          });
       }
       return () => {
         setHomeFocused(false);
-        void useInbox.getState().close();
         setWeatherInfoFor(null);
       };
-    }, [authStatus, inbox.userId]),
+    }, [authStatus, letterUserId]),
   );
 
   useEffect(() => {
@@ -64,13 +72,13 @@ export default function Home() {
       !homeFocused ||
       weather.status !== "intro" ||
       !sameUser ||
-      weather.ownerUserId !== inbox.userId
+      weather.ownerUserId !== letterUserId
     ) {
       return;
     }
-    const timer = setTimeout(() => setWeatherIntroReadyFor(inbox.userId), 600);
+    const timer = setTimeout(() => setWeatherIntroReadyFor(letterUserId), 600);
     return () => clearTimeout(timer);
-  }, [homeFocused, weather.status, weather.ownerUserId, sameUser, inbox.userId]);
+  }, [homeFocused, weather.status, weather.ownerUserId, sameUser, letterUserId]);
 
   // 서버 일정은 홈이 뜰 때만 가져온다. 실패해도 기존처럼 빈 목록을 그린다.
   useEffect(() => {
@@ -92,7 +100,7 @@ export default function Home() {
           retroReminderTime:
             retroNotify.enabled && retroNotify.time != null ? retroNotify.time : null,
           weather: weatherView,
-          hasUnreadNotifications: sameUser && inbox.hasUnread === true,
+          hasUnreadLetter: unreadLetter,
         }}
         actions={{
           onToggleDone: toggleDone,
@@ -107,49 +115,21 @@ export default function Home() {
             router.push(hasDiaryOn(diaries, today) ? "/retro/talk" : "/retro/confirm");
           },
           onOpenNotificationSettings: () => {
-            void useInbox.getState().close();
             router.push({ pathname: "/my", params: { openNotificationSettings: "1" } });
           },
-          onOpenNotifications: (top) => {
+          // 편지함 목록을 연다 — 지난 편지도 있다는 걸 목록으로 보인다(2026-10-27 · `app/letter/index.tsx`).
+          // 안 연 새 편지가 있으면 목록 위에 그 편지를 바로 펼친다 — 닫으면 목록이 남는다
+          onOpenLetter: () => {
             if (!sameUser) return;
-            setInboxTop(top);
-            void useInbox.getState().open();
+            const latest = letters?.[0];
+            router.push(unreadLetter && latest != null ? `/letter?open=${latest.date}` : "/letter");
           },
           onOpenWeatherInfo: () => {
             if (weatherView != null) setWeatherInfoFor(currentWeather);
           },
         }}
-        inboxPopover={
-          homeFocused && sameUser && inbox.isOpen ? (
-            <InboxPopover
-              items={inbox.items}
-              status={inbox.status}
-              unreadIds={inbox.unreadAtOpen}
-              hasMore={inbox.nextCursor != null}
-              loadingMore={inbox.loadingMore}
-              top={inboxTop}
-              onDismiss={() => void useInbox.getState().close()}
-              onOpenSettings={() => {
-                void useInbox.getState().close();
-                router.push({ pathname: "/my", params: { openNotificationSettings: "1" } });
-              }}
-              onPressItem={(item) => {
-                void useInbox.getState().markRead(item.id);
-                if (item.link != null) {
-                  void useInbox.getState().close();
-                  router.push(item.link);
-                }
-              }}
-              onEndReached={() => void useInbox.getState().loadMore()}
-              onSeen={(ids) => useInbox.getState().markSeen(ids)}
-            />
-          ) : null
-        }
         weatherIntroSheet={
-          homeFocused &&
-          weather.status === "intro" &&
-          weatherIntroReadyFor === inbox.userId &&
-          !inbox.isOpen ? (
+          homeFocused && weather.status === "intro" && weatherIntroReadyFor === letterUserId ? (
             <WeatherIntroSheet
               onAccept={() => void weather.acceptIntro()}
               onDismiss={() => void weather.dismissIntro()}

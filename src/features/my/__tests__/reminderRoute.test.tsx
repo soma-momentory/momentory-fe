@@ -7,7 +7,7 @@ import { useDiary } from "@/features/diary/model/diary";
 import { ReminderRoute } from "@/features/my/ui/ReminderRoute";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { clock } from "@/lib/clock";
-import { onReminderOpened, type ReminderKey } from "@/lib/notifications";
+import { onReminderOpened, type ReminderKind } from "@/lib/notifications";
 import { testDiaryData } from "@/testing/fixtures";
 
 /**
@@ -29,9 +29,9 @@ jest.mock("@/features/analytics", () => ({
 }));
 
 /** 사용자가 알림을 눌렀다 — 구독이 받은 손잡이를 부른다 */
-const tap = (key: ReminderKey) =>
+const tap = (key: ReminderKind, data: Record<string, string> = {}) =>
   act(async () => {
-    jest.mocked(onReminderOpened).mock.calls[0]![0](key);
+    jest.mocked(onReminderOpened).mock.calls[0]![0](key, data);
   });
 
 const todayDiary = () => ({ ...testDiaryData().diaries[0]!, id: "d-today", date: clock.today() });
@@ -65,6 +65,18 @@ it("오늘 일기가 있으면 그 일기로 간다", async () => {
 
   expect(router.push).toHaveBeenCalledWith("/diary/d-today");
 });
+
+it.each(["letter", "letter_action"] as const)(
+  "편지 알림(%s)은 편지함 목록을 거치지 않고 그 날짜 편지로 바로 간다",
+  async (kind) => {
+    await render(<ReminderRoute />);
+
+    await tap(kind, { date: "2026-10-26" });
+
+    expect(router.push).toHaveBeenCalledWith("/letter/2026-10-26?source=notification");
+    expect(router.push).not.toHaveBeenCalledWith("/letter");
+  },
+);
 
 it("스플래시가 판정을 마칠 때까지 기다렸다가 한 번 옮긴다", async () => {
   // 꺼져 있다가 알림으로 켜졌다 — 아직 스플래시(`/`)다

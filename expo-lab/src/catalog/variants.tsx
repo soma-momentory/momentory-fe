@@ -5,7 +5,7 @@ import { ArchivePreview, archiveScenarios } from "../archive/ArchivePreview";
 import { ClaudeHomeMockPreview } from "../claude-home/MockPreview";
 import { claudeHomeScenarios } from "../claude-home/scenarios";
 import { homeVariants } from "../claude-home/variants";
-import type { InboxScenarioId, WeatherScenarioId } from "../claude-home/validationScenarios";
+import type { LetterScenarioId, WeatherScenarioId } from "../claude-home/validationScenarios";
 import type { CaptureId } from "./captures";
 import { MyMainPreview, myMainScenarios } from "../my/MyMainPreview";
 import { ReportPreview, reportScenarios } from "../report/ReportPreview";
@@ -24,7 +24,7 @@ export type LabVariant = {
     onMessage: (message: string) => void;
     scale?: number;
     weatherId: WeatherScenarioId;
-    inboxId: InboxScenarioId;
+    letterId: LetterScenarioId;
     fontScale: 1 | 1.3 | 1.5;
   }) => ReactNode;
 };
@@ -41,7 +41,7 @@ export const labVariants: readonly LabVariant[] = [
       onMessage,
       scale,
       weatherId,
-      inboxId,
+      letterId,
       fontScale,
       design,
     }: Parameters<LabVariant["render"]>[0]) =>
@@ -59,7 +59,7 @@ export const labVariants: readonly LabVariant[] = [
           onMessage={onMessage}
           scale={scale}
           weatherId={weatherId}
-          inboxId={inboxId}
+          letterId={letterId}
           fontScale={fontScale}
           design={design}
         />

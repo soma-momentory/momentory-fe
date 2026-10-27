@@ -805,7 +805,7 @@ describe("M2 · 알림 설정 시트 — 하나의 결정만 담는다", () => {
   /** 시트 제목과 줄 이름이 같은 말이다 — 줄은 목록에 먼저 있다 */
   const row = (r: Awaited<ReturnType<typeof render>>) => r.getAllByText("알림 설정")[0]!;
 
-  it("홈 알림함의 설정 버튼에서 오면 기존 시간 시트를 곧장 연다", async () => {
+  it("홈에서 알림 설정으로 오면 기존 시간 시트를 곧장 연다", async () => {
     jest.mocked(useLocalSearchParams).mockReturnValue({ openNotificationSettings: "1" });
     const r = await render(<My />);
     await waitFor(() => expect(r.getByText("알림 시간")).toBeTruthy());
