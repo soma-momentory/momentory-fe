@@ -40,9 +40,20 @@ type Props = {
   inline?: boolean;
   /** 일기 상세처럼 카드 전체 높이를 줄여야 할 때 항목 사이 여백만 한 단계 줄인다. */
   compact?: boolean;
+  /**
+   * 오늘 만든 카드인가 — 그러면 비어 있는 「작은 행동」에 예고 문구(`ACTION_FROM_LETTER`)를 둔다.
+   * 다음 날부터는 「아직 정하지 않음」이다: 「내일 아침」이 틀린 말이 되고, 예전 카드에는 편지가 없다.
+   */
+  madeToday?: boolean;
 };
 
 const UNSET = "아직 정하지 않음";
+
+/**
+ * 작은 행동은 회고에서 고르지 않고 **다음 날 아침 편지**에서 고른다(2026-10-27 · PRD 14-3).
+ * 편지에서 고르면 서버가 카드의 `targetAction` 을 채운다 — 그때까지 이 줄이 자리를 지킨다.
+ */
+export const ACTION_FROM_LETTER = "내일 아침 바바가 골라 올게요";
 
 /**
  * 한 줄 배치가 쓰는 단 — 두 줄 배치보다 **한 단계 크다**(2026-09-06 · 약 1.2배).
@@ -68,6 +79,7 @@ export function WishCardFields({
   positive,
   inline = false,
   compact = false,
+  madeToday = false,
 }: Props) {
   const emotionText = emotions.map(emotionName).filter(Boolean).join(", ");
   const needsText = needs.join(", ");
@@ -80,7 +92,12 @@ export function WishCardFields({
       <Field label="감정" value={emotionText || UNSET} inline={inline} />
       <Field label={wishLabel} value={needsText || UNSET} inline={inline} />
       <Field label={shapeLabel} value={desiredState || UNSET} inline={inline} />
-      <Field label="작은 행동" value={smallAction || UNSET} inline={inline} strong />
+      <Field
+        label="작은 행동"
+        value={smallAction || (madeToday ? ACTION_FROM_LETTER : UNSET)}
+        inline={inline}
+        strong
+      />
     </View>
   );
 }

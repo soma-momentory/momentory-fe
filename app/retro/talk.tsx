@@ -54,8 +54,11 @@ import { RETRO_BABA_LIFT } from "@/features/retro/ui/RetroRug";
  * 형태를 보고 무엇을 그릴지 정한다: `options` 면 선택지(자유 텍스트는 `직접 적기` 선지에서 열린다),
  * 아니면 자유 입력.
  *
- * v2 흐름: 일기 작성(자유 입력) → 분기점(감정 더 알아볼까, 1택) → 감정 탐색(감정·바람 최대 2택, 작은
- * 행동) → 종료. 감정을 시작 시 고르지 않으므로 마운트하면 바로 시작한다.
+ * v2 흐름: 일기 작성(자유 입력) → (사건이 둘이면 사건 고르기 · `await_branch`) → 감정 탐색(감정 → 바람,
+ * 각각 최대 2택) → 종료. 감정을 시작 시 고르지 않으므로 마운트하면 바로 시작한다.
+ *
+ * 2026-10-27 — 「감정을 더 알아볼래요 / 일기 확인하러 갈래요」 분기와 작은 행동 고르기가 빠졌다. 일기를 쓰면
+ * 모두 감정 · 바람까지 가고, 작은 행동은 다음 날 바바의 편지에서 고른다(카드의 `smallAction` 은 늘 비어 온다).
  *
  * 지키는 것: 지난 버블을 지우지 않는다 · 오류는 한 줄로 흡수(모달 금지) · 진행률/숫자 압박 없음.
  *
@@ -205,13 +208,6 @@ export default function RetroTalk() {
 
   const runTurn = async (input: TurnInput) => {
     if (sessionId == null || pending) return;
-    if (lastReply?.phase === "await_branch" && input.optionIds?.length === 1) {
-      // API의 고정 분기 1/2만 매핑한다. 감정/바람 선택 값은 기록하지 않는다.
-      const selected = input.optionIds[0];
-      if (selected === "1" || selected === "2") {
-        track("retrospect_branch_selected", { branch: selected === "1" ? "explore" : "diary" });
-      }
-    }
     const sentAt = clock.now();
     const firstAt = firstInputAt.current ?? sentAt;
     const answering = timedPhase(lastReply?.phase);
@@ -281,8 +277,8 @@ export default function RetroTalk() {
   const goHome = () => router.replace("/home");
 
   const phase = lastReply?.phase ?? "";
-  // 「직접 적기」가 없는 선지 묶음은 양자택일(분기점·단답 체크인) → 하나만 고른다.
-  // 감정·바람·작은 행동처럼 직접 적기가 있는 추천은 여러 개 고를 수 있다.
+  // 「직접 적기」가 없는 선지 묶음은 하나만 고른다(사건 고르기 · 단답 체크인).
+  // 감정·바람처럼 직접 적기가 있는 추천은 여러 개 고를 수 있다.
   const singleSelect =
     (lastReply?.options ?? []).length > 0 &&
     !(lastReply?.options ?? []).some((o) => o.input === true);
@@ -323,7 +319,7 @@ export default function RetroTalk() {
   const hasOptions = !done && options != null && options.length > 0;
   // 후보 추천 스텝(감정 탐색) — 입력창을 늘 띄우고, 후보를 하나 고르면 「보내기」로 바뀐다(취소하면 다시 입력창).
   const candidateStep = phase === PHASE_EMOTION_EXPLORATION;
-  // 독: 「보내기」를 보일지. 후보 스텝은 하나 골랐을 때만, 그 외(분기점·체크인)는 옵션이 있으면 늘.
+  // 독: 「보내기」를 보일지. 후보 스텝은 하나 골랐을 때만, 그 외(사건 고르기 · 체크인)는 옵션이 있으면 늘.
   const showOptions = hasOptions && (!candidateStep || pickedIds.length > 0);
 
   const optionList =
@@ -443,8 +439,8 @@ const EMOTION_NAMES = new Set<string>(EMOTIONS.map((e) => e.name));
 /**
  * 감정 고르기 턴인가 — 감정 이름이 하나라도 섞여 있으면.
  *
- * 나머지 선지는 「직접 적기」·「아직 잘 모르겠어요」뿐이라 이 검사로 갈린다. 바람·작은 행동은
- * 감정 이름과 겹치지 않으므로 지금처럼 줄로 편다.
+ * 나머지 선지는 「직접 적기」·「아직 잘 모르겠어요」뿐이라 이 검사로 갈린다. 바람은 감정 이름과
+ * 겹치지 않으므로 지금처럼 줄로 편다.
  */
 const isEmotionChoice = (options: readonly ReplyOption[]) =>
   options.some((o) => EMOTION_NAMES.has(o.label));

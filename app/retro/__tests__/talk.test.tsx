@@ -176,33 +176,32 @@ describe("일기 작성 턴 — 자유 입력", () => {
   });
 });
 
-describe("분기점 — 감정을 더 알아볼까(단일 선택)", () => {
-  const withBranch = () =>
+describe("단답 체크인 — 직접 적기 없는 선지는 하나만 고른다", () => {
+  const withCheckIn = () =>
     mockStart.mockResolvedValue({
       ok: true,
       data: {
         sessionId: 7,
         reply: reply({
-          text: "지금 느낀 감정을 조금 더 알아볼까요?",
-          phase: "await_branch",
+          text: "해 보니 어땠어요?",
           options: [
-            option({ id: "1", label: "감정을 더 알아볼래요" }),
-            option({ id: "2", label: "일기 확인하러 갈래요" }),
+            option({ id: "1", label: "좋았어요" }),
+            option({ id: "2", label: "그저 그랬어요" }),
           ],
         }),
       },
     });
 
   it("하나를 고르면 optionIds 로 보낸다", async () => {
-    withBranch();
+    withCheckIn();
     mockTurn.mockResolvedValue({ ok: true, data: reply({ phase: "emotion_exploration" }) });
     const r = await render(<RetroTalk />);
 
-    await waitFor(() => expect(r.getByText("감정을 더 알아볼래요")).toBeTruthy());
+    await waitFor(() => expect(r.getByText("좋았어요")).toBeTruthy());
     // 선택지는 대화가 아니라 **아래 독**에 앉는다 — 바바를 덮는 자리다
-    expect(within(r.getByTestId("ds-chat-dock")).getByText("감정을 더 알아볼래요")).toBeTruthy();
-    expect(within(r.getByTestId("ds-chat-scroll")).queryByText("감정을 더 알아볼래요")).toBeNull();
-    await fireEvent.press(r.getByText("감정을 더 알아볼래요"));
+    expect(within(r.getByTestId("ds-chat-dock")).getByText("좋았어요")).toBeTruthy();
+    expect(within(r.getByTestId("ds-chat-scroll")).queryByText("좋았어요")).toBeNull();
+    await fireEvent.press(r.getByText("좋았어요"));
     await act(async () => {
       await fireEvent.press(r.getByText("보내기"));
     });
@@ -419,33 +418,61 @@ describe("계측 — 어느 질문에서 오래 걸렸는가", () => {
     expect(ExpoSpeechRecognitionModule.start).not.toHaveBeenCalled();
   });
 
+  it("사건 고르기(await_branch)는 그 단계로 잰다 — 옛 분기 계측은 보내지 않는다", async () => {
+    mockStart.mockResolvedValue({
+      ok: true,
+      data: {
+        sessionId: 7,
+        reply: reply({
+          text: "어떤 일부터 이야기해 볼까요?",
+          phase: "await_branch",
+          options: [
+            option({ id: "1", label: "회의에서 의견이 묻혔던 일" }),
+            option({ id: "2", label: "저녁에 친구와 통화한 일" }),
+          ],
+        }),
+      },
+    });
+    mockTurn.mockResolvedValue({ ok: true, data: reply({ phase: "emotion_exploration" }) });
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(r.getByText("회의에서 의견이 묻혔던 일")).toBeTruthy());
+
+    await fireEvent.press(r.getByText("회의에서 의견이 묻혔던 일"));
+    await act(async () => {
+      await fireEvent.press(r.getByText("보내기"));
+    });
+
+    expect(mockTurn).toHaveBeenCalledWith(7, { optionIds: ["1"] });
+    expect(sent("retrospect_turn_timed")[0]).toMatchObject({ phase: "await_branch" });
+    expect(sent("retrospect_branch_selected")).toEqual([]);
+  });
+
   it("선택지를 누른 순간이 첫 입력이다 — 고른 것은 보내지 않는다", async () => {
     mockStart.mockResolvedValue({
       ok: true,
       data: {
         sessionId: 7,
         reply: reply({
-          phase: "await_branch",
           options: [
-            option({ id: "1", label: "더 알아볼래요" }),
-            option({ id: "2", label: "일기 쓸래요" }),
+            option({ id: "1", label: "좋았어요" }),
+            option({ id: "2", label: "그저 그랬어요" }),
           ],
         }),
       },
     });
     mockTurn.mockResolvedValue({ ok: true, data: reply({ text: "좋아요." }) });
     const r = await render(<RetroTalk />);
-    await waitFor(() => expect(r.getByText("일기 쓸래요")).toBeTruthy());
+    await waitFor(() => expect(r.getByText("그저 그랬어요")).toBeTruthy());
 
     now += 4_000;
-    await fireEvent.press(r.getByText("일기 쓸래요"));
+    await fireEvent.press(r.getByText("그저 그랬어요"));
     now += 1_000;
     await act(async () => {
       await fireEvent.press(r.getByText("보내기"));
     });
 
     expect(sent("retrospect_turn_timed")[0]).toMatchObject({
-      phase: "await_branch",
+      phase: "diary_chat",
       input_kind: "selection",
       think_ms: 4_000,
       compose_ms: 1_000,

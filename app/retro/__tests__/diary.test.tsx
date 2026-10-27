@@ -337,6 +337,15 @@ describe("완료 — 허브로 만들지 않는다", () => {
     expect(getByText("바람카드 보기")).toBeTruthy();
   });
 
+  it("작은 행동은 아직 비어 있다 — 다음 날 편지에서 고른다고 예고한다", async () => {
+    seedCompleted(SEED_DIARY, { ...SEED_WISH, smallAction: null });
+    const { getByText, queryByText } = await render(<RetroDone />);
+
+    expect(getByText("작은 행동")).toBeTruthy();
+    expect(getByText("내일 아침 바바가 골라 올게요")).toBeTruthy();
+    expect(queryByText("아직 정하지 않음")).toBeNull();
+  });
+
   it("카드가 없으면 아무 설명도 하지 않는다 — 「오늘은 카드가 없어요」 금지", async () => {
     seedCompleted(SEED_DIARY, null);
     const { getByText, queryByText } = await render(<RetroDone />);

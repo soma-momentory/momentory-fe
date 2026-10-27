@@ -244,7 +244,7 @@ function LetterPage({
     if (action != null && when != null) {
       track("letter_action_chosen", {
         position: action.position,
-        source: action.source.toLowerCase() as "catalog" | "fallback" | "wish_card",
+        source: action.source.toLowerCase() as "catalog" | "fallback",
         when: when.kind,
         changed: chosen?.whenLabel != null,
       });

@@ -48,6 +48,8 @@ type Props = {
   date: string;
   /** 「오늘」처럼 날짜 오른쪽에 붙는 한 마디. 없으면 두지 않는다 */
   dateNote?: string;
+  /** 오늘 만든 카드인가 — 비어 있는 「작은 행동」에 예고 문구를 둔다(`WishCardFields`) */
+  madeToday?: boolean;
   onToggleDone: () => void;
   onSetReflection: (text: string) => void;
   /**
@@ -320,6 +322,7 @@ export function RestActionCard({
   card,
   date,
   dateNote,
+  madeToday = false,
   onToggleDone,
   onSetReflection,
   onMore,
@@ -447,68 +450,73 @@ export function RestActionCard({
             desiredState={card.desiredState}
             smallAction={card.targetAction}
             positive={card.sentiment === "positive"}
+            madeToday={madeToday}
             // 「상황: …」 한 줄 배치 — 달력 위 정해진 자리에 다섯 항목이 다 들어오게
             // (`WishCardFields` 의 「배치가 둘이다」)
             inline
           />
         </ScrollView>
 
-        <View style={styles.foot}>
-          {/* **입력창은 상태 줄의 자리에 선다** — 아래에 줄을 하나 더 두지 않는다.
+        {/* **할 일이 없으면 하단 줄째로 숨긴다**(2026-10-27). 작은 행동은 다음 날 편지에서
+            고른다 — 고르기 전에는 「했어요」를 누를 대상이 없다. 작은 행동 없이 이미 「했어요」를
+            누른 예전 카드는 「수행 취소」가 남아야 하니 그대로 둔다 */}
+        {card.done || (card.targetAction ?? "").length > 0 ? (
+          <View style={styles.foot}>
+            {/* **입력창은 상태 줄의 자리에 선다** — 아래에 줄을 하나 더 두지 않는다.
               카드 높이가 정해져 있어서(달력 위 자리) 줄이 늘면 위의 「작은 행동」이
               카드 밖으로 밀렸다. 상태를 잠깐 내주는 대신 다섯 항목이 남는다 —
               그 사이 상태는 오른쪽 버튼(「수행 취소」)이 말한다 */}
-          <View style={styles.statusRow}>
-            {writing ? (
-              <View style={[styles.noteInput, styles.noteSeat]}>
-                <TextInput
-                  value={draft}
-                  onChangeText={setDraft}
-                  placeholder="느낀 점을 남겨보세요…"
-                  placeholderTextColor={labelColor.assistive}
-                  accessibilityLabel="느낀 점"
-                  multiline
-                  // 넘치면 자르는 대신 **애초에 막는다** — 위 `NOTE_MAX` 주석
-                  maxLength={NOTE_MAX}
-                  style={styles.noteField}
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={empty ? "느낀 점 없이 넘어가기" : "느낀 점 저장"}
-                  onPress={save}
-                  style={[styles.send, empty ? styles.sendIdle : styles.sendReady]}
-                >
-                  <Icon
-                    name="send"
-                    size={16}
-                    color={empty ? labelColor.alternative : labelColor.onFill}
+            <View style={styles.statusRow}>
+              {writing ? (
+                <View style={[styles.noteInput, styles.noteSeat]}>
+                  <TextInput
+                    value={draft}
+                    onChangeText={setDraft}
+                    placeholder="느낀 점을 남겨보세요…"
+                    placeholderTextColor={labelColor.assistive}
+                    accessibilityLabel="느낀 점"
+                    multiline
+                    // 넘치면 자르는 대신 **애초에 막는다** — 위 `NOTE_MAX` 주석
+                    maxLength={NOTE_MAX}
+                    style={styles.noteField}
                   />
-                </Pressable>
-              </View>
-            ) : (
-              /* **체크 옆 한 자리가 상태에 따라 셋으로 바뀐다**(2026-09-06).
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={empty ? "느낀 점 없이 넘어가기" : "느낀 점 저장"}
+                    onPress={save}
+                    style={[styles.send, empty ? styles.sendIdle : styles.sendReady]}
+                  >
+                    <Icon
+                      name="send"
+                      size={16}
+                      color={empty ? labelColor.alternative : labelColor.onFill}
+                    />
+                  </Pressable>
+                </View>
+              ) : (
+                /* **체크 옆 한 자리가 상태에 따라 셋으로 바뀐다**(2026-09-06).
                  수행 전에는 「아직 하지 않았어요」, 수행하면 **「느낀 점 적기」**,
                  적고 나면 **그 느낀 점**이 선다. 「수행했어요」라는 글자는 두지 않는다 —
                  체크와 오른쪽 「수행 취소」가 이미 말하고 있어서, 그 자리를 되풀이에
                  쓰는 대신 **지금 할 수 있는 일**이나 **적어 둔 말**에 내준다 */
-              <View style={styles.statusSide}>
-                {/* **첫 줄에 맞춰 선다** — 느낀 점이 두 줄이 돼도 체크는 안 내려간다
+                <View style={styles.statusSide}>
+                  {/* **첫 줄에 맞춰 선다** — 느낀 점이 두 줄이 돼도 체크는 안 내려간다
                     (`statusSide` 가 위 정렬이고 이 그릇이 한 줄 높이를 잡는다) */}
-                <View style={styles.slotLine}>
-                  <Icon
-                    name={card.done ? "circle-check" : "clock"}
-                    size={16}
-                    color={card.done ? status.positive : labelColor.alternative}
-                  />
-                </View>
-                {!card.done ? (
                   <View style={styles.slotLine}>
-                    <Text variant="label1" color={labelColor.alternative}>
-                      아직 하지 않았어요
-                    </Text>
+                    <Icon
+                      name={card.done ? "circle-check" : "clock"}
+                      size={16}
+                      color={card.done ? status.positive : labelColor.alternative}
+                    />
                   </View>
-                ) : saved ? (
-                  /* **적어 둔 느낀 점을 누르면 고친다**(2026-09-06) — 따로 「고치기」
+                  {!card.done ? (
+                    <View style={styles.slotLine}>
+                      <Text variant="label1" color={labelColor.alternative}>
+                        아직 하지 않았어요
+                      </Text>
+                    </View>
+                  ) : saved ? (
+                    /* **적어 둔 느낀 점을 누르면 고친다**(2026-09-06) — 따로 「고치기」
                      버튼을 두지 않는다. 버튼을 아래 줄에 두면 그 줄만큼 하단이 커지고,
                      같은 줄에 두면 느낀 점이 쓸 폭이 반으로 줄어(495 → 278px) 상한이
                      24 → 14 자가 됐다. 글 자체를 누르게 하면 **자리도 폭도 그대로**다.
@@ -516,33 +524,34 @@ export function RestActionCard({
                      진입점」과 같은 결이되, 거기 있던 「보기」 같은 표시는 없다.
                      느낀 점은 손글씨(교보 2025) — 입력창과 같은 결이라 저장해도 서체가
                      바뀌지 않는다 */
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="느낀 점 고치기"
-                    onPress={openNote}
-                    style={styles.noteSaid}
-                  >
-                    <Text
-                      variant="body1ReadingHand"
-                      color={labelColor.neutral}
-                      numberOfLines={NOTE_LINES}
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="느낀 점 고치기"
+                      onPress={openNote}
+                      style={styles.noteSaid}
                     >
-                      {card.reflection}
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <Button label="느낀 점 적기" variant="text" size="small" onPress={openNote} />
-                )}
-              </View>
-            )}
-            <Button
-              label={card.done ? "수행 취소" : "했어요"}
-              variant="outlined"
-              size="small"
-              onPress={toggle}
-            />
+                      <Text
+                        variant="body1ReadingHand"
+                        color={labelColor.neutral}
+                        numberOfLines={NOTE_LINES}
+                      >
+                        {card.reflection}
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    <Button label="느낀 점 적기" variant="text" size="small" onPress={openNote} />
+                  )}
+                </View>
+              )}
+              <Button
+                label={card.done ? "수행 취소" : "했어요"}
+                variant="outlined"
+                size="small"
+                onPress={toggle}
+              />
+            </View>
           </View>
-        </View>
+        ) : null}
       </View>
     </View>
   );
