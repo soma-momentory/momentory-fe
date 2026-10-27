@@ -209,7 +209,12 @@ describe("편지 전체 화면", () => {
     jest
       .mocked(chooseLetterAction)
       .mockResolvedValueOnce({ ok: true, data: choose(1, null, null) })
-      .mockResolvedValueOnce({ ok: true, data: choose(1, "점심 뒤", "2026-10-27T03:30:00.000Z") });
+      // 서버가 돌려준 알림 시각도 고정 시계와 같은 기준(기기 시간대 12:30)이어야 한다 —
+      // UTC 고정값으로 두면 CI(UTC)에서는 9시보다 앞선 지난 시각이 되어 예약하지 않는다
+      .mockResolvedValueOnce({
+        ok: true,
+        data: choose(1, "점심 뒤", new Date(2026, 9, 27, 12, 30).toISOString()),
+      });
     const r = await render(<LetterScreen />);
     await waitFor(() => expect(r.getByText(keepWords("점심 뒤 한 바퀴 걷기"))).toBeTruthy());
 
