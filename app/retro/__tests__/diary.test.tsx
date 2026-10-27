@@ -6,6 +6,7 @@ import RetroDraft from "../draft";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
+import { useSettings } from "@/features/my/model/settings";
 import type { ReplyDiary, ReplyWishCard } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
 import { authedRequest } from "@/lib/http";
@@ -238,6 +239,21 @@ describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
 
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/retro/done");
     expect(useRetro.getState().wishCard).not.toBeNull();
+  });
+
+  it("편지 시각을 고른 적이 없으면 완료 전에 편지 시각부터 묻는다(바바의 편지 4-8)", async () => {
+    useSettings.setState({ letterChosen: false });
+    await save();
+
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/letter/time?next=done");
+    useSettings.getState().reset();
+  });
+
+  it("편지를 모르는 서버(letterChosen = null)면 묻지 않는다", async () => {
+    useSettings.setState({ letterChosen: null });
+    await save();
+
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/retro/done");
   });
 
   it("이미 쌓인 일기 뒤에 이어 붙는다 — 13번째 장", async () => {

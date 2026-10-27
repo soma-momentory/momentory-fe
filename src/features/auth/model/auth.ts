@@ -28,7 +28,7 @@ import { clearSyncState } from "@/features/calendar/data/syncStateStore";
 import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
-import { useInbox } from "@/features/notifications/model/inbox";
+import { useLetters } from "@/features/letter/model/letter";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
@@ -370,8 +370,8 @@ const clearUserScopedStores = (userId?: number) => {
   useProfile.getState().reset();
   useSettings.getState().reset();
   useCalendarSync.getState().reset();
-  // 알림함의 점 · 목록도 그 사람의 것이다 — 세대를 올려 진행 중 응답까지 버린다 (P5 · 2026-10-16)
-  useInbox.getState().reset();
+  // 편지 목록(홈 아이콘의 점)도 그 사람의 것이다 — 진행 중 응답은 주인이 바뀌어 버려진다 (2026-10-27)
+  useLetters.getState().reset();
 
   // 캘린더 동기화 상태는 **기기에 눕는다** — 메모리를 비우는 것만으로는 부족하다.
   // 남기면 다음 사용자가 앞 사람의 해시와 비교해 **자기 첫 동기화를 통째로
@@ -424,8 +424,8 @@ const adoptSession = async (
   // 로그인 응답은 「한 번이라도 했나」만 안다 — 옛 판만 마친 사람인지는 `GET /users/me` 가
   // 알려 준다(2026-10-25). 그래서 마친 적이 있으면 아래 `syncMe` 를 **기다려서** 정한다.
   useOnboardingCompletion.setState({ completed: session.onboardingRequired ? false : null });
-  // 알림함의 주인 — 다른 계정이면 앞 사람의 점 · 목록을 비운다
-  useInbox.getState().bindUser(session.userId);
+  // 편지 목록의 주인 — 다른 계정이면 앞 사람의 점 · 목록을 비운다
+  useLetters.getState().bindUser(session.userId);
 
   identifyAnalytics(session.userId);
   track("login_succeeded", { provider, onboarding_required: session.onboardingRequired });
@@ -603,7 +603,7 @@ export const getAccessToken = async (expectedUserId?: number): Promise<string | 
       if (result.reason === "evicted") {
         resetAnalytics();
         // 죽은 세션의 점 · 목록을 남기지 않는다(결정 D1) — 다른 store 는 지금처럼 둔다
-        useInbox.getState().reset();
+        useLetters.getState().reset();
         useAuth.setState({ status: "anonymous" });
       }
       return null;
@@ -635,7 +635,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
         return;
       }
       if (!isExpired(session)) {
-        useInbox.getState().bindUser(session.userId);
+        useLetters.getState().bindUser(session.userId);
         identifyAnalytics(session.userId);
         set({ status: "authenticated" });
         await get().syncMe();
@@ -656,7 +656,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
         set({ status: "anonymous" });
         return;
       }
-      useInbox.getState().bindUser(session.userId);
+      useLetters.getState().bindUser(session.userId);
       identifyAnalytics(session.userId);
       set({ status: "authenticated" });
       await get().syncMe();
@@ -882,7 +882,7 @@ export const useAuth = create<AuthStore>((set, get) => ({
     };
     // 개발 통로다 — 저장이 실패해도 이 세션 동안은 진행한다
     await persist(session);
-    useInbox.getState().bindUser(session.userId);
+    useLetters.getState().bindUser(session.userId);
     identifyAnalytics(session.userId);
     set({ status: "authenticated" });
   },

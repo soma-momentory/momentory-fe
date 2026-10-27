@@ -16,9 +16,9 @@ import {
   type StudioDesignKey,
 } from "../../../src/design/studioDesign";
 import {
-  inboxScenarios,
+  letterScenarios,
   weatherScenarios,
-  type InboxScenarioId,
+  type LetterScenarioId,
   type WeatherScenarioId,
 } from "../claude-home/validationScenarios";
 import { devices, VariantPhone } from "../catalog/PhonePreview";
@@ -154,7 +154,7 @@ const PreviewPanel = memo(function PreviewPanel({
   variant,
   scenarioId,
   weatherId,
-  inboxId,
+  letterId,
   fontScale,
   device,
   zoom,
@@ -170,7 +170,7 @@ const PreviewPanel = memo(function PreviewPanel({
   variant: LabVariant;
   scenarioId: string;
   weatherId: WeatherScenarioId;
-  inboxId: InboxScenarioId;
+  letterId: LetterScenarioId;
   fontScale: 1 | 1.3 | 1.5;
   device: (typeof devices)[number];
   zoom: number;
@@ -205,11 +205,11 @@ const PreviewPanel = memo(function PreviewPanel({
         </Text>
       ) : null}
       <VariantPhone
-        key={`${variant.id}-${scenarioId}-${weatherId}-${inboxId}-${resetKey}`}
+        key={`${variant.id}-${scenarioId}-${weatherId}-${letterId}-${resetKey}`}
         variant={variant}
         scenarioId={scenarioId}
         weatherId={weatherId}
-        inboxId={inboxId}
+        letterId={letterId}
         fontScale={fontScale}
         device={device}
         scale={zoom}
@@ -235,7 +235,7 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
   );
   const [scenarioId, setScenarioId] = useState("");
   const [weatherId, setWeatherId] = useState<WeatherScenarioId>("none");
-  const [inboxId, setInboxId] = useState<InboxScenarioId>("empty");
+  const [letterId, setLetterId] = useState<LetterScenarioId>("none");
   const [fontScale, setFontScale] = useState<1 | 1.3 | 1.5>(1);
   const [deviceWidth, setDeviceWidth] = useState(390);
   const [zoom, setZoom] = useState(0.85);
@@ -498,13 +498,13 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
                   onPress={() => setWeatherId(item.id)}
                 />
               ))}
-              <Text style={styles.heading}>알림</Text>
-              {inboxScenarios.map((item) => (
+              <Text style={styles.heading}>편지</Text>
+              {letterScenarios.map((item) => (
                 <Button
                   key={item.id}
                   label={item.label}
-                  selected={inboxId === item.id}
-                  onPress={() => setInboxId(item.id)}
+                  selected={letterId === item.id}
+                  onPress={() => setLetterId(item.id)}
                 />
               ))}
             </>
@@ -596,7 +596,7 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
               variant={variant}
               scenarioId={scenario.id}
               weatherId={weatherId}
-              inboxId={inboxId}
+              letterId={letterId}
               fontScale={fontScale}
               device={device}
               zoom={zoom}
@@ -616,7 +616,7 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
               variant={variant}
               scenarioId={scenario.id}
               weatherId={weatherId}
-              inboxId={inboxId}
+              letterId={letterId}
               fontScale={fontScale}
               device={device}
               zoom={zoom}

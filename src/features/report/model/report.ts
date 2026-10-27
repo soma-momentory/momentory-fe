@@ -1,5 +1,6 @@
 import type { Diary } from "@/features/diary/model/diary";
 import type { EmotionId } from "@/features/emotion/model/emotion";
+import { addDays } from "@/lib/clock";
 
 /**
  * 한 주를 **요일 일곱 칸으로 펼치는** 계산.
@@ -55,15 +56,6 @@ export function weekDays(diaries: readonly Diary[], start: string, end: string):
       written: byDate.has(iso),
     };
   });
-}
-
-const toIso = (at: Date) =>
-  `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, "0")}-${String(at.getDate()).padStart(2, "0")}`;
-
-/** `iso` 에서 `days` 일 뒤(음수면 앞). 달·해를 넘겨도 `Date` 가 맞춰준다 */
-function addDays(iso: string, days: number) {
-  const [y = "2026", m = "1", d = "1"] = iso.split("-");
-  return toIso(new Date(Number(y), Number(m) - 1, Number(d) + days));
 }
 
 /** 그 주의 끝(시작 + 6일) */

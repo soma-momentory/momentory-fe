@@ -13,7 +13,8 @@ import { create } from "zustand";
  * **회고 완료 축하 토글을 만들지 않는다** — 목록에 없는 것이 규칙이다.
  * 캘린더도 여기 없다(마이 홈의 `[연결 관리]` 한 곳뿐).
  */
-export type NotifyKey = "retro" | "daily" | "weekly" | "news";
+/** `letter` 는 바바의 편지 아침 알림(2026-10-27) — 스키마 밖이고 서버 `/users/me/letter-time` 이 정본이다 */
+export type NotifyKey = "retro" | "daily" | "weekly" | "news" | "letter";
 
 export type NotifySetting = {
   enabled: boolean;
@@ -23,6 +24,12 @@ export type NotifySetting = {
 
 type SettingsStore = {
   notify: Record<NotifyKey, NotifySetting>;
+  /**
+   * 편지 시각을 고른 적이 있는가 — 서버 `letterTime` 이 없으면 `false` 이고, 그 사람에게는 일기를
+   * 저장한 직후 한 번 묻는다(PRD 4-8). `null` 은 모른다(서버에 못 물었거나 편지를 모르는 옛 서버) —
+   * 모르면 묻지 않는다.
+   */
+  letterChosen: boolean | null;
   toggle: (key: NotifyKey) => void;
   /** 행을 눌러 시각을 고친다 — 스위치는 켜고 끄기만 한다 */
   setTime: (key: NotifyKey, time: string) => void;
@@ -39,10 +46,13 @@ const EMPTY: Record<NotifyKey, NotifySetting> = {
   weekly: { enabled: false, time: "21:00" },
   // 시각이 없는 알림 — 누를 곳이 없는 표식(`›`)을 만들지 않는다
   news: { enabled: false, time: null },
+  // 아직 안 골랐으면 08:30 이다(PRD 4-8 기본값). 고른 뒤에는 서버 값이 덮는다
+  letter: { enabled: true, time: "08:30" },
 };
 
 export const useSettings = create<SettingsStore>((set) => ({
   notify: { ...EMPTY },
+  letterChosen: null,
 
   toggle: (key) =>
     set((s) => ({
@@ -56,7 +66,7 @@ export const useSettings = create<SettingsStore>((set) => ({
   setTime: (key, time) =>
     set((s) => ({ notify: { ...s.notify, [key]: { ...s.notify[key], time } } })),
 
-  reset: () => set({ notify: { ...EMPTY } }),
+  reset: () => set({ notify: { ...EMPTY }, letterChosen: null }),
 }));
 
 /**
@@ -156,10 +166,23 @@ export type ProfileInput = {
   restMethods?: string[];
   restMethodOther?: string;
   notifyRetro?: boolean;
+  /**
+   * 편지 알림 — **서버가 편지를 알 때만** 온다. `time` 이 `null` 이면 아직 안 골랐다
+   * (`letterChosen = false`). 통째로 `undefined` 면 모른다 — 지금 값을 그대로 둔다.
+   */
+  letter?: { time: string | null; enabled: boolean };
 };
 
 export const adoptProfile = (input: ProfileInput): void => {
-  const { retroTime, notifyRetro, restMethods, interestOther, restMethodOther, ...profile } = input;
+  const {
+    retroTime,
+    notifyRetro,
+    letter,
+    restMethods,
+    interestOther,
+    restMethodOther,
+    ...profile
+  } = input;
 
   useProfile.getState().set({
     ...profile,
@@ -174,4 +197,13 @@ export const adoptProfile = (input: ProfileInput): void => {
   if (notifyRetro !== undefined && notifyRetro !== useSettings.getState().notify.retro.enabled) {
     useSettings.getState().toggle("retro");
   }
+  if (letter !== undefined) adoptLetterPreference(letter.time, letter.enabled);
+};
+
+/** 편지 시각 · 켜짐을 store 에 남긴다 — `null` 시각은 「아직 안 골랐다」라 기본 시각을 지킨다 */
+export const adoptLetterPreference = (time: string | null, enabled: boolean): void => {
+  useSettings.setState((s) => ({
+    letterChosen: time != null,
+    notify: { ...s.notify, letter: { enabled, time: time ?? s.notify.letter.time } },
+  }));
 };

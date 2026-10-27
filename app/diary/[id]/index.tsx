@@ -1,6 +1,6 @@
 import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
@@ -12,6 +12,9 @@ import { iosVariant, label as labelColor, space } from "@/design/ds";
 import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 import { useDay, visibleSchedules } from "@/features/home/model/day";
+import { fetchLetter } from "@/features/letter/data/letterApi";
+import { forgetLetterOf, useLetters } from "@/features/letter/model/letter";
+import { LetterPreviewCard } from "@/features/letter/ui/LetterPreviewCard";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /** 모눈종이 위에 남긴 일기. 바람 카드와 일정은 읽기 전용으로 이어진다. */
@@ -35,6 +38,21 @@ export default function DiaryDetail() {
   );
 
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // 그 날짜의 편지 — 있으면 테이프로 붙인 「바바의 편지」 쪽지를 둔다(PRD 3 예외 흐름 · 지난 편지는 여기서 연다)
+  const letter = useLetters((s) => s.summaries?.find((l) => l.date === diary?.date) ?? null);
+  const letterBody = useLetters((s) => (diary == null ? undefined : s.letters[diary.date]));
+  useEffect(() => {
+    if (useLetters.getState().summaries == null) void useLetters.getState().refresh();
+  }, []);
+  // 미리보기 글 — 남겨 둔 편지가 없을 때만 부른다. 못 받으면 날짜와 서명만 남는다
+  const letterDate = letter?.date;
+  useEffect(() => {
+    if (letterDate == null || useLetters.getState().letters[letterDate] != null) return;
+    void fetchLetter(letterDate).then((result) => {
+      if (result.ok) useLetters.getState().keep(result.data);
+    });
+  }, [letterDate]);
 
   // 지워진 일기를 열고 있었다면 보관함으로 — 오류 화면을 만들지 않는다
   if (diary == null) return <Redirect href="/archive" />;
@@ -84,6 +102,14 @@ export default function DiaryDetail() {
           </Text>
         </View>
 
+        {letter != null ? (
+          <LetterPreviewCard
+            summary={letter}
+            letter={letterBody ?? null}
+            onPress={() => router.push(`/letter/${letter.date}?source=diary_detail`)}
+          />
+        ) : null}
+
         {card != null ? (
           // 일기 상세는 **읽는 곳**이라 행동 카드를 읽기 전용으로 둔다 — 해봤어요·되돌리기·
           // 느낀 점 편집은 쉼터에서 한다(`docs/PRODUCT.md` 「상류와 차이」).
@@ -125,6 +151,8 @@ export default function DiaryDetail() {
           onConfirm={() => {
             setConfirmDelete(false);
             remove(diary.id);
+            // 서버가 편지 · 고른 작은 일을 함께 지운다 — 기기에 남은 작은 일 알림도 지운다
+            forgetLetterOf(diary.date);
             // 확인을 지났으므로 그 자리에서 지운다 — 되돌리기 줄은 없앴다(2026-08-21)
             router.replace("/archive");
           }}

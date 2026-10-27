@@ -5,6 +5,7 @@ import {
   addNotificationResponseReceivedListener,
   cancelScheduledNotificationAsync,
   clearLastNotificationResponseAsync,
+  getAllScheduledNotificationsAsync,
   getLastNotificationResponseAsync,
   getPermissionsAsync,
   requestPermissionsAsync,
@@ -12,9 +13,11 @@ import {
   setNotificationChannelAsync,
   setNotificationHandler,
   type NotificationResponse,
+  type NotificationTriggerInput,
 } from "expo-notifications";
 import { Platform } from "react-native";
 
+import { clock } from "@/lib/clock";
 import { parseHHMM } from "@/lib/time";
 
 /**
@@ -38,19 +41,40 @@ export type ReminderKey = "retro" | "daily";
 export const REMINDER_KEYS: readonly ReminderKey[] = ["retro", "daily"];
 
 /**
+ * 알림이 **무엇을 부르는가** — 눌렀을 때 갈 곳을 고르는 이름이다(`data.reminder` 에 싣는다).
+ * 바바의 편지 둘(아침 편지 · 고른 작은 일)이 더해졌다(2026-10-27).
+ */
+export type ReminderKind = ReminderKey | "letter" | "letter_action";
+
+const REMINDER_KINDS: readonly string[] = ["retro", "daily", "letter", "letter_action"];
+
+/**
  * 더는 예약하지 않지만 **화해할 때마다 함께 지우는** 것 — 옛 버전이 기기에 남긴 예약이다.
  * 빼면 업데이트한 기기에서 영영 울린다. 주간 알림(일 21:00)은 끌 곳이 없어 뺐다(2026-10-12).
  */
 const RETIRED_KEYS = ["weekly"] as const;
 
-/** 매일 그 시각에 울린다 */
+/**
+ * 예약 하나. 매일 그 시각(`time`)이거나, 그 순간 한 번(`at`)이다.
+ *
+ * 회고 알림은 2026-10-27 부터 **하루씩**(`at`) 예약한다 — 안 본 편지가 있는 밤만 문구를 바꾸고
+ * 일기를 이미 쓴 밤은 건너뛰려면 날마다 따로 있어야 한다(`reminders.ts`).
+ */
 export type Reminder = {
-  key: ReminderKey;
-  /** `"HH:mm"` — 설정 store 가 드는 형태 그대로 받는다 */
-  time: string;
+  /** 식별자 꼬리 — 화해 한 번 안에서 겹치지 않는다(`retro.2026-10-28`) */
+  key: string;
+  kind: ReminderKind;
   title: string;
   body: string;
-};
+  /** 눌렀을 때 갈 곳을 고를 값(편지 날짜 등). 본문 · 이름을 싣지 않는다 */
+  data?: Record<string, string>;
+} & (
+  | {
+      /** `"HH:mm"` — 설정 store 가 드는 형태 그대로 받는다 */
+      time: string;
+    }
+  | { at: Date }
+);
 
 export type NotificationPermission = {
   granted: boolean;
@@ -76,7 +100,15 @@ const CHANNEL_NAME = "기록 알림";
  * 예약 식별자. **접두사로 우리 것을 가른다** — `cancelAllScheduledNotificationsAsync`
  * 는 다른 곳이 예약한 것까지 지우므로 쓰지 않는다.
  */
-const identifierOf = (key: string) => `momentory.reminder.${key}`;
+const PREFIX = "momentory.reminder.";
+const identifierOf = (key: string) => `${PREFIX}${key}`;
+
+/**
+ * **화해 밖의** 한 번짜리 예약 — 고른 작은 일 알림처럼 고른 순간에 예약하고 바꾸면 지운다.
+ * 화해(`applyReminders`)는 이 접두사를 건드리지 않는다 — 앱을 다시 켜면 그 예약을 다시 계산할
+ * 재료가 기기에 없어서, 화해가 지우면 다시 살릴 수 없다.
+ */
+const ONE_OFF_PREFIX = "momentory.once.";
 
 /**
  * **개발 빌드에서만** 사유를 남긴다. 사용자에게는 아무것도 보이지 않는다 —
@@ -169,41 +201,88 @@ export async function applyReminders(reminders: readonly Reminder[]): Promise<vo
   await configureNotifications();
 
   // **먼저 전부 지운다.** 같은 식별자로 다시 예약하는 것이 교체라는 보장이 없어,
-  // 시각을 고칠 때마다 옛 예약이 하나씩 쌓일 수 있다.
-  for (const key of [...REMINDER_KEYS, ...RETIRED_KEYS]) {
+  // 시각을 고칠 때마다 옛 예약이 하나씩 쌓일 수 있다. 하루씩 예약한 것(`retro.2026-10-28`)은
+  // 이름을 미리 알 수 없어 OS 에 남은 것 중 우리 접두사를 함께 지운다.
+  const known = [...REMINDER_KEYS, ...RETIRED_KEYS].map(identifierOf);
+  const scheduled = await scheduledIdentifiers();
+  const stale = scheduled.filter((id) => id.startsWith(PREFIX) && !known.includes(id));
+  for (const identifier of [...known, ...stale]) {
     try {
-      await cancelScheduledNotificationAsync(identifierOf(key));
+      await cancelScheduledNotificationAsync(identifier);
     } catch (error) {
-      warnInDev(`취소 실패(${key})`, error);
+      warnInDev(`취소 실패(${identifier})`, error);
     }
   }
 
   for (const reminder of reminders) {
+    await schedule(identifierOf(reminder.key), reminder);
+  }
+}
+
+const scheduledIdentifiers = async (): Promise<string[]> => {
+  try {
+    return (await getAllScheduledNotificationsAsync()).map((request) => request.identifier);
+  } catch (error) {
+    warnInDev("예약 목록을 읽지 못했다", error);
+    return [];
+  }
+};
+
+async function schedule(identifier: string, reminder: Reminder): Promise<void> {
+  let trigger: NotificationTriggerInput;
+  if ("at" in reminder) {
+    // 지난 순간으로 예약하면 OS 가 바로 띄우거나 던진다 — 건너뛴다
+    if (!(reminder.at.getTime() > clock.now().getTime())) return;
+    trigger = { type: SchedulableTriggerInputTypes.DATE, channelId: CHANNEL_ID, date: reminder.at };
+  } else {
     const { hour, minute } = parseHHMM(reminder.time);
     // 형태가 아닌 값으로 예약하면 네이티브가 던지거나 자정에 울린다 — 건너뛴다
     if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
       warnInDev(`시각을 읽지 못했다(${reminder.key}): ${reminder.time}`);
-      continue;
+      return;
     }
+    trigger = { type: SchedulableTriggerInputTypes.DAILY, channelId: CHANNEL_ID, hour, minute };
+  }
 
+  try {
+    await scheduleNotificationAsync({
+      identifier,
+      content: {
+        title: reminder.title,
+        body: reminder.body,
+        // 우리가 예약한 것임을 표시해 둔다 — 알림을 눌러 들어오는 경로가 이걸 본다
+        data: { ...reminder.data, reminder: reminder.kind },
+      },
+      trigger,
+    });
+  } catch (error) {
+    warnInDev(`예약 실패(${reminder.key})`, error);
+  }
+}
+
+/** 화해 밖의 한 번짜리 예약(위 `ONE_OFF_PREFIX`). 같은 `key` 의 옛 예약은 먼저 지운다 */
+export async function scheduleOneOff(reminder: Reminder & { at: Date }): Promise<void> {
+  await configureNotifications();
+  await cancelOneOff(reminder.key);
+  await schedule(`${ONE_OFF_PREFIX}${reminder.key}`, reminder);
+}
+
+export async function cancelOneOff(key: string): Promise<void> {
+  try {
+    await cancelScheduledNotificationAsync(`${ONE_OFF_PREFIX}${key}`);
+  } catch (error) {
+    warnInDev(`취소 실패(${key})`, error);
+  }
+}
+
+/** 로그아웃 — 남의 기기에 앞 사람의 작은 일이 울리지 않게 한 번짜리 예약을 다 지운다 */
+export async function cancelAllOneOffs(): Promise<void> {
+  const scheduled = await scheduledIdentifiers();
+  for (const identifier of scheduled.filter((id) => id.startsWith(ONE_OFF_PREFIX))) {
     try {
-      await scheduleNotificationAsync({
-        identifier: identifierOf(reminder.key),
-        content: {
-          title: reminder.title,
-          body: reminder.body,
-          // 우리가 예약한 것임을 표시해 둔다 — 알림을 눌러 들어오는 경로가 생길 때 쓴다
-          data: { reminder: reminder.key },
-        },
-        trigger: {
-          type: SchedulableTriggerInputTypes.DAILY,
-          channelId: CHANNEL_ID,
-          hour,
-          minute,
-        },
-      });
+      await cancelScheduledNotificationAsync(identifier);
     } catch (error) {
-      warnInDev(`예약 실패(${reminder.key})`, error);
+      warnInDev(`취소 실패(${identifier})`, error);
     }
   }
 }
@@ -218,18 +297,26 @@ export async function applyReminders(reminders: readonly Reminder[]): Promise<vo
  *
  * 우리가 예약한 알림만 본다 — 예약할 때 `data.reminder` 에 키를 실어 두었다. 던지지 않는다.
  */
-export function onReminderOpened(handler: (key: ReminderKey) => void): () => void {
+export function onReminderOpened(
+  handler: (kind: ReminderKind, data: Record<string, string>) => void,
+): () => void {
   const seen = new Set<string>();
   const handle = (response: NotificationResponse | null) => {
     if (response == null || response.actionIdentifier !== DEFAULT_ACTION_IDENTIFIER) return;
     const { request, date } = response.notification;
-    const key = request.content.data?.reminder;
-    if (typeof key !== "string" || !(REMINDER_KEYS as readonly string[]).includes(key)) return;
+    const data = request.content.data ?? {};
+    const kind = data.reminder;
+    if (typeof kind !== "string" || !REMINDER_KINDS.includes(kind)) return;
     const once = `${request.identifier}@${date}`;
     if (seen.has(once)) return;
     seen.add(once);
     void clearLastNotificationResponseAsync().catch(() => {});
-    handler(key as ReminderKey);
+    const strings = Object.fromEntries(
+      Object.entries(data).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ),
+    );
+    handler(kind as ReminderKind, strings);
   };
 
   void getLastNotificationResponseAsync()

@@ -2,7 +2,6 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { View } from "react-native";
 
 import { HomeV2Preview } from "../HomeV2Preview";
 import { claudeHomeScenarios } from "../scenarios";
@@ -30,9 +29,9 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
       } else {
         expect(screen.getByText(scenario.tasks[0]!.title)).toBeTruthy();
       }
-      // 기본 시나리오 — 날씨 데이터와 읽지 않은 알림은 없다
+      // 기본 시나리오 — 날씨 데이터와 새 편지는 없다
       expect(screen.queryByLabelText(/날씨/)).toBeNull();
-      expect(screen.getByRole("button", { name: "알림" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "바바의 편지" })).toBeTruthy();
     },
   );
 
@@ -54,14 +53,10 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
     expect(screen.getByText("오늘 일정을 모두 마쳤어요.")).toBeTruthy();
 
     await fireEvent.press(screen.getByRole("button", { name: "하루 돌아보기" }));
-    const measure = jest.spyOn(View.prototype, "measureInWindow").mockImplementation((callback) => {
-      callback(0, 24, 44, 44);
-    });
-    await fireEvent.press(screen.getByRole("button", { name: "알림" }));
-    measure.mockRestore();
+    await fireEvent.press(screen.getByRole("button", { name: "바바의 편지" }));
     expect(onMessage).toHaveBeenNthCalledWith(1, "회고 진입은 Lab Mock 액션입니다.");
-    expect(screen.getByTestId("inbox-popover-ready")).toBeTruthy();
-    expect(onMessage).toHaveBeenCalledTimes(1);
+    expect(onMessage).toHaveBeenNthCalledWith(2, "바바의 편지는 Lab에 연결하지 않았습니다.");
+    expect(onMessage).toHaveBeenCalledTimes(2);
   });
 
   it("운영 모듈(store · API · 라우터 · 계측)을 import 하지 않는다", () => {

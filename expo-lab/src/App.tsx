@@ -15,9 +15,9 @@ import {
 
 import { claudeHomeColor as c, claudeHomeFont as font } from "./claude-home/tokens";
 import {
-  inboxScenarios,
+  letterScenarios,
   weatherScenarios,
-  type InboxScenarioId,
+  type LetterScenarioId,
   type WeatherScenarioId,
 } from "./claude-home/validationScenarios";
 import { CapturePhone, CurrentHomePhone, devices, VariantPhone } from "./catalog/PhonePreview";
@@ -47,7 +47,7 @@ type LabRoute = {
   variantId: string;
   scenarioId: string;
   weatherId: WeatherScenarioId;
-  inboxId: InboxScenarioId;
+  letterId: LetterScenarioId;
   fontScale: 1 | 1.3 | 1.5;
   deviceWidth: number;
 };
@@ -113,7 +113,7 @@ function readRoute(): LabRoute {
     variantId: "claude-v2",
     scenarioId: "5d",
     weatherId: "none",
-    inboxId: "empty",
+    letterId: "none",
     fontScale: 1,
     deviceWidth: 390,
   };
@@ -133,8 +133,8 @@ function readRoute(): LabRoute {
   const deviceWidth = devices.find((item) => item.width === requestedWidth)?.width ?? 390;
   const weatherId =
     weatherScenarios.find((item) => item.id === search.get("weather"))?.id ?? fallback.weatherId;
-  const inboxId =
-    inboxScenarios.find((item) => item.id === search.get("inbox"))?.id ?? fallback.inboxId;
+  const letterId =
+    letterScenarios.find((item) => item.id === search.get("letter"))?.id ?? fallback.letterId;
   const type = search.get("type");
   const fontScale = type === "1.5" ? 1.5 : type === "large" ? 1.3 : 1;
   return {
@@ -147,7 +147,7 @@ function readRoute(): LabRoute {
     variantId: variant?.id ?? "",
     scenarioId,
     weatherId,
-    inboxId,
+    letterId,
     fontScale,
     deviceWidth,
   };
@@ -169,7 +169,7 @@ function routeHash(route: LabRoute): string {
   ) {
     if (route.variantId === "app-v2") {
       params.set("weather", route.weatherId);
-      params.set("inbox", route.inboxId);
+      params.set("letter", route.letterId);
     }
     params.set(
       "type",
@@ -448,14 +448,14 @@ function Compare({
                         />
                       ))}
                     </View>
-                    <Text style={styles.controlLabel}>운영 홈 알림 Mock</Text>
+                    <Text style={styles.controlLabel}>운영 홈 편지 Mock</Text>
                     <View style={styles.chipRow}>
-                      {inboxScenarios.map((item) => (
+                      {letterScenarios.map((item) => (
                         <Choice
                           key={item.id}
                           label={item.label}
-                          selected={item.id === route.inboxId}
-                          onPress={() => onNavigate({ inboxId: item.id })}
+                          selected={item.id === route.letterId}
+                          onPress={() => onNavigate({ letterId: item.id })}
                         />
                       ))}
                     </View>
@@ -577,11 +577,11 @@ function Compare({
             {variant ? (
               <View style={styles.phoneSpace}>
                 <VariantPhone
-                  key={`${screen.id}-${variant.id}-${route.scenarioId}-${route.inboxId}`}
+                  key={`${screen.id}-${variant.id}-${route.scenarioId}-${route.letterId}`}
                   variant={variant}
                   scenarioId={route.scenarioId}
                   weatherId={route.weatherId}
-                  inboxId={route.inboxId}
+                  letterId={route.letterId}
                   fontScale={route.fontScale}
                   device={device}
                   scale={scale}

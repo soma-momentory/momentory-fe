@@ -11,11 +11,14 @@ type Props = {
   nickname: string;
   recordedDays: number;
   notifyValue: string;
+  /** 바바의 편지 아침 알림 줄(2026-10-27). 없으면 줄을 그리지 않는다(Lab) */
+  letterValue?: string;
   settingsNote?: string;
   calendarOn: boolean;
   withdrawing: boolean;
   withdrawError: string | null;
   onOpenNotificationSettings: () => void;
+  onOpenLetterSettings?: () => void;
   onOpenCalendarLink: () => void;
   onOpenProfile: () => void;
   onOpenInquiry: () => void;
@@ -33,11 +36,13 @@ export function MyMainView({
   nickname,
   recordedDays,
   notifyValue,
+  letterValue,
   settingsNote,
   calendarOn,
   withdrawing,
   withdrawError,
   onOpenNotificationSettings,
+  onOpenLetterSettings,
   onOpenCalendarLink,
   onOpenProfile,
   onOpenInquiry,
@@ -126,6 +131,16 @@ export function MyMainView({
           tone="settings"
           onPress={onOpenNotificationSettings}
         />
+        {letterValue != null ? (
+          <SettingRow
+            title="바바의 편지 알림"
+            icon="mail"
+            value={letterValue}
+            tone="settings"
+            onPress={onOpenLetterSettings}
+            divided
+          />
+        ) : null}
         <SettingRow
           title="캘린더 연동"
           icon="calendar"

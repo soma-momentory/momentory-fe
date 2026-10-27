@@ -238,6 +238,9 @@ app/retro/{_layout, confirm, talk, draft, done}.tsx
                   ← `intro`(C1)·`emotion`(C3) 은 **없다**: v2 는 시작 감정을 묻지 않고
                     일기 작성부터 연다. talk 하나가 세 국면(일기 작성 → 분기점 →
                     감정 탐색)을 다 그린다 — 무엇을 그릴지는 서버의 `phase` 가 정한다
+app/letter/{_layout, index, [date], time}.tsx
+                  = 바바의 편지(2026-10-27) — 편지함 · 편지(좌우 넘기기) · 처음 일기 뒤 편지 시각.
+                    데이터는 `features/letter/` · 서버 `/api/v1/letters` · 홈 상단 편지 아이콘이 옛 알림함 자리다
 app/diary/{_layout, [id]/index}.tsx = A3 · A3-c
                   ← `[id]/edit`(A4)은 2026-08-20 에 지웠다(DESIGN.md N2 · PRODUCT.md #24·26)
 app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, treasures, body-release, records}.tsx
