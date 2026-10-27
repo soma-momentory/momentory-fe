@@ -71,7 +71,6 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | voice_permission_result       | 마이크 권한 팝업의 응답                                          | granted                                                                                                   |
 | voice_input_failed            | 음성 인식 실패 (아래)                                            | code: no_speech/network/unavailable/other                                                                 |
 | reminder_opened               | 예약한 알림을 눌러 앱을 엶                                       | reminder: retro/daily/weekly/letter/letter_action                                                         |
-| retrospect_branch_selected    | 고정 분기 선택 제출                                              | branch: diary/explore                                                                                     |
 | retrospect_completed          | done=true이면서 phase=complete인 정상 응답                       | retrospect_id                                                                                             |
 | retrospect_request_failed     | 시작/턴 API 실패 또는 응답 검증 실패                             | operation: start/turn, 고정 code                                                                          |
 | wish_card_created             | 정상 완료 응답에 실제 wishCardId가 있음                          | retrospect_id, wish_card_id                                                                               |
@@ -105,7 +104,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | inquiry_submitted             | 마이 「문의하기」에서 문의를 보냄                                | category: bug/suggestion/account/etc                                                                      |
 | letter_entry_shown            | 홈에서 편지 목록을 받아 편지 아이콘의 점을 정함                  | has_unread                                                                                                |
 | letter_opened                 | 바바의 편지를 엶(연 날짜 한 통만 · 넘겨 본 편지는 안 셈)         | source: notification/home_icon/diary_detail · status: ready/fallback/quiet · wait_ms · days_after: 0/1/2+ |
-| letter_action_chosen          | 편지의 작은 일과 「언제」를 고름                                 | position · source: catalog/fallback/wish_card · when: schedule/lunch/commute/bedtime/none · changed       |
+| letter_action_chosen          | 편지의 작은 일과 「언제」를 고름                                 | position · source: catalog/fallback · when: schedule/lunch/commute/bedtime/none · changed                 |
 | letter_time_chosen            | 처음 일기 저장 뒤 편지 시각을 고름                               | time: 7:30/8:30/10:00/custom · notify                                                                     |
 | letter_notification_scheduled | 편지 알림을 새로 예약                                            | kind: morning/action/unread_night                                                                         |
 | report_week_selected          | 다른 주 선택                                                     | week_start                                                                                                |
@@ -136,8 +135,8 @@ iOS 의 inactive(알림 센터 등)는 끊지 않는다. 화면을 켜 둔 채 �
 think_ms 는 질문이 화면에 선 때부터 첫 입력(첫 글자 또는 선택지 탭)까지, compose_ms 는 첫 입력부터
 보내기까지, wait_ms 는 보낸 뒤 답이 오기까지다. 모두 전면 시계로 잰다. 생각이 길면 질문이 어렵고
 쓰기가 길면 할 말이 많다 — 합치면 둘을 가를 수 없어 나눈다. input_chars 는 보낸 글자 수이고
-선택지는 0 이다. 내용은 보내지 않는다. phase 는 사용자가 답하던 단계(diary_chat, await_branch,
-emotion_exploration, other)이고, turn_no 는 그 회고에서 성공한 턴의 순번이다. retrospect_exited 의
+선택지는 0 이다. 내용은 보내지 않는다. phase 는 사용자가 답하던 단계(diary_chat,
+await_branch(2026-10-27 부터 사건 고르기), emotion_exploration, other)이고, turn_no 는 그 회고에서 성공한 턴의 순번이다. retrospect_exited 의
 turn_no 는 나가기 전까지 성공한 턴 수다. voice_used 는 그 턴에서 음성 입력을 한 번이라도 켰는지다
 (2026-09-29 · 선택지 턴은 늘 false).
 ⚠ 위기 안내 단계(safety_hold)는 **이름으로 보내지 않는다.** 정신 건강 상태를 추정할 수 있는 민감
