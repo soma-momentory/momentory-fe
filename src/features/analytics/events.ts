@@ -218,7 +218,6 @@ export const events = {
   voice_permission_result: { granted: bool },
   voice_input_failed: { code: choice("no_speech", "network", "unavailable", "other") },
   reminder_opened: { reminder: reminderKey },
-  retrospect_branch_selected: { branch: choice("diary", "explore") },
   retrospect_completed: { retrospect_id: id },
   retrospect_request_failed: {
     operation: choice("start", "turn"),
@@ -285,7 +284,7 @@ export const events = {
   },
   letter_action_chosen: {
     position: count,
-    source: choice("catalog", "fallback", "wish_card"),
+    source: choice("catalog", "fallback"),
     when: choice("schedule", "lunch", "commute", "bedtime", "none"),
     changed: bool,
   },

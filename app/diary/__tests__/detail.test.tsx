@@ -172,6 +172,30 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     expect(r.getByText("7월 28일")).toBeTruthy();
   });
 
+  it("오늘 일기의 카드는 비어 있는 작은 행동을 다음 날 편지로 예고한다", async () => {
+    useDiary.setState(() => ({
+      actionCards: [
+        {
+          id: "c-27",
+          diaryId: ID,
+          situation: "면접 연습을 시작할 때",
+          emotions: [],
+          needs: [],
+          desiredState: null,
+          sentiment: "uncomfortable" as const,
+          targetAction: null,
+          done: false,
+          doneAt: null,
+          reflection: null,
+          createdAt: "2026-07-27T21:00:00",
+        },
+      ],
+    }));
+    const r = await render(<DiaryDetail />);
+
+    expect(r.getByText("내일 아침 바바가 골라 올게요")).toBeTruthy();
+  });
+
   it("지워진 일기를 열면 보관함으로 되돌린다", async () => {
     useDiary.getState().remove(ID);
     await render(<DiaryDetail />);

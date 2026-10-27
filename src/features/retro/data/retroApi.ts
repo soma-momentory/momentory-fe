@@ -77,7 +77,6 @@ export type Reply = {
 
 /** phase 값 — 화면 분기용 */
 export const PHASE_DIARY_CHAT = "diary_chat";
-export const PHASE_AWAIT_BRANCH = "await_branch";
 export const PHASE_EMOTION_EXPLORATION = "emotion_exploration";
 export const PHASE_COMPLETE = "complete";
 /** 어뷰징 종료 phase — 되돌릴 수 없다(나가는 길만) */
@@ -105,7 +104,7 @@ export type StartInput = {
 
 export type StartResponse = { sessionId: number; reply: Reply };
 
-/** 자유 텍스트이거나 선택지 번호들(분기점 1개, 감정·바람 최대 2개). */
+/** 자유 텍스트이거나 선택지 번호들(감정·바람 최대 2개). */
 export type TurnInput = {
   content?: string;
   optionIds?: string[];

@@ -315,6 +315,39 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     expect(r.getByText(/15일에 만들어진 바람카드가 없어요\./)).toBeTruthy();
   });
 
+  it("작은 행동을 아직 안 고른 오늘 카드는 예고 문구를 두고, 하단 줄째로 숨긴다", async () => {
+    useDiary.setState({ actionCards: [{ ...seedOneCard(), targetAction: null }] });
+    const r = await render(<RestCards />);
+
+    expect(r.getByText("내일 아침 바바가 골라 올게요")).toBeTruthy();
+    // 누를 대상이 없다 — 상태 줄과 「했어요」를 함께 숨긴다
+    expect(r.queryByText("아직 하지 않았어요")).toBeNull();
+    expect(r.queryByText("했어요")).toBeNull();
+  });
+
+  it("지난 카드의 빈 작은 행동은 예고하지 않는다 — 「내일 아침」이 틀린 말이 된다", async () => {
+    useDiary.setState({
+      actionCards: [{ ...seedOneCard(), targetAction: null, createdAt: "2026-07-20" }],
+    });
+    const r = await render(<RestCards />);
+
+    // 감정 · 바람 같은 다른 빈 칸도 같은 말이라 여럿이다 — 작은 행동 칸이 그중 하나다
+    expect(r.getAllByText("아직 정하지 않음")).toHaveLength(4);
+    expect(r.queryByText("내일 아침 바바가 골라 올게요")).toBeNull();
+    expect(r.queryByText("했어요")).toBeNull();
+  });
+
+  it("작은 행동 없이 이미 해 본 예전 카드는 「수행 취소」가 남는다", async () => {
+    useDiary.setState({
+      actionCards: [
+        { ...seedOneCard(), targetAction: null, done: true, doneAt: "2026-07-27T09:00:00" },
+      ],
+    });
+    const r = await render(<RestCards />);
+
+    expect(r.getByText("수행 취소")).toBeTruthy();
+  });
+
   it("왼쪽은 상태, 오른쪽은 행동 버튼이다 — 체크박스를 두지 않는다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({ ...c, done: false })),

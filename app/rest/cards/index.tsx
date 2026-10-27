@@ -163,6 +163,7 @@ export default function RestCards() {
                 card={card}
                 date={formatKoreanDateShort(selected)}
                 dateNote={selected === today ? "오늘" : undefined}
+                madeToday={selected === today}
                 onToggleDone={() => (card.done ? undoDone(card.id) : markDone(card.id))}
                 onSetReflection={(t) => {
                   // 쉼터는 저장 버튼에서 한 번에 커밋한다 — 로컬 반영 뒤 곧장 서버로

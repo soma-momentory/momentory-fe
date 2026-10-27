@@ -11,7 +11,7 @@ import { DiaryNotebookHeader, NotebookBackground } from "@/components/diary/Diar
 import { iosVariant, label as labelColor, space } from "@/design/ds";
 import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
-import { useDay, visibleSchedules } from "@/features/home/model/day";
+import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { fetchLetter } from "@/features/letter/data/letterApi";
 import { forgetLetterOf, useLetters } from "@/features/letter/model/letter";
 import { LetterPreviewCard } from "@/features/letter/ui/LetterPreviewCard";
@@ -23,6 +23,7 @@ export default function DiaryDetail() {
   const diary = useDiary((s) => s.diaries.find((d) => d.id === id));
   const card = useDiary((s) => actionCardOf(s.actionCards, id ?? ""));
   const remove = useDiary((s) => s.remove);
+  const { date: today } = useTodayContext();
   /**
    * 그날 일정 — **그 날짜의 줄만** 골라 온다(`app-flow.md` §2.3). 지금 일정
    * store 는 서버에서 **오늘 하루치**만 받아 두므로, 지난 일기를 열면 고를 줄이
@@ -113,7 +114,12 @@ export default function DiaryDetail() {
         {card != null ? (
           // 일기 상세는 **읽는 곳**이라 행동 카드를 읽기 전용으로 둔다 — 해봤어요·되돌리기·
           // 느낀 점 편집은 쉼터에서 한다(`docs/PRODUCT.md` 「상류와 차이」).
-          <ActionCardSection card={card} diaryDate={diary.date} readOnly />
+          <ActionCardSection
+            card={card}
+            diaryDate={diary.date}
+            madeToday={diary.date === today}
+            readOnly
+          />
         ) : null}
 
         {/* 그날 일정 — 「이 일기의 행동 카드」와 **같은 제목 스타일**(label1/neutral, 왼쪽 살짝

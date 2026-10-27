@@ -15,7 +15,7 @@ import { authedRequest } from "@/lib/http";
  * 실패 사유를 나누지 않는다 — 화면은 무엇이 틀렸든 한 줄만 보여 준다(`RULES.md` 4).
  */
 export type LetterStatus = "READY" | "FALLBACK" | "QUIET";
-export type LetterActionSource = "CATALOG" | "FALLBACK" | "WISH_CARD";
+export type LetterActionSource = "CATALOG" | "FALLBACK";
 
 export type LetterAction = {
   position: number;
@@ -65,7 +65,7 @@ const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{
 const idOf = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? String(v) : null);
 const textOrNull = (v: unknown) => (typeof v === "string" && v.trim().length > 0 ? v : null);
 const STATUSES: readonly string[] = ["READY", "FALLBACK", "QUIET"];
-const SOURCES: readonly string[] = ["CATALOG", "FALLBACK", "WISH_CARD"];
+const SOURCES: readonly string[] = ["CATALOG", "FALLBACK"];
 
 export const toSummary = (v: unknown): LetterSummary | null => {
   if (!isObject(v)) return null;

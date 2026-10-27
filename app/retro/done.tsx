@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
+import { ACTION_FROM_LETTER } from "@/components/diary/WishCardFields";
 import { Button, Card, Screen, Text } from "@/components/ds";
 import { label as labelColor, layout, space } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
@@ -135,7 +136,7 @@ export default function RetroDone() {
                 작은 행동
               </Text>
               <Text variant="body1" color={labelColor.strong}>
-                {wishCard.smallAction ?? "아직 정하지 않음"}
+                {wishCard.smallAction ?? ACTION_FROM_LETTER}
               </Text>
             </View>
           </Card>

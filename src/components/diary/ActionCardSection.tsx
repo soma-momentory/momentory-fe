@@ -30,6 +30,8 @@ type Props = {
   card: ActionCard;
   /** 카드가 만들어진 회고의 날짜 — 「7월 27일 회고에서 만들어졌어요」 */
   diaryDate: string;
+  /** 오늘 만든 카드인가 — 비어 있는 「작은 행동」에 예고 문구를 둔다(`WishCardFields`) */
+  madeToday?: boolean;
   onMarkDone?: (cardId: string) => void;
   /** 되돌리기는 **묻고 나서** 실행된다 — 확인은 화면이 그린다 */
   onRequestUndo?: (cardId: string) => void;
@@ -48,6 +50,7 @@ type Props = {
 export function ActionCardSection({
   card,
   diaryDate,
+  madeToday = false,
   onMarkDone,
   onRequestUndo,
   onSetReflection,
@@ -72,6 +75,7 @@ export function ActionCardSection({
           smallAction={card.targetAction}
           positive={card.sentiment === "positive"}
           compact={readOnly}
+          madeToday={madeToday}
         />
 
         {card.done ? (
