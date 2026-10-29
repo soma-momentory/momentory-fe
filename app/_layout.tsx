@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+
+import { RouteStatusBar } from "@/components/RouteStatusBar";
 
 import { background, motion } from "@/design/ds";
 import { AppProviders } from "@/lib/providers";
@@ -11,8 +12,7 @@ import { AppProviders } from "@/lib/providers";
 export default function RootLayout() {
   return (
     <AppProviders>
-      {/* 배경이 크림이라 상태바 글자는 항상 어둡다 (다크모드에서도 반전 없음) */}
-      <StatusBar style="dark" />
+      <RouteStatusBar />
       <Stack
         screenOptions={{
           headerShown: false,
