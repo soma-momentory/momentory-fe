@@ -1,3 +1,13 @@
+import {
+  BubbleComparisonPreview,
+  bubbleComparisonScenarios,
+} from "../retro/BubbleComparisonPreview";
+import { bubbleStyles } from "../retro/PreviewBubble";
+import {
+  RetroDiaryPreview,
+  retroConfirmScenarios,
+  retroTalkScenarios,
+} from "../retro/RetroDiaryPreview";
 import type { ReactNode } from "react";
 import type { StudioDesign } from "../../../src/design/studioDesign";
 
@@ -31,6 +41,62 @@ export type LabVariant = {
 
 /** Add independent RN variants by screen id; keep API/fixtures in their Lab adapters. */
 export const labVariants: readonly LabVariant[] = [
+  {
+    id: "diary-stickers",
+    screenId: "retro-confirm",
+    label: "다이어리 스티커 · 일정 확인",
+    scenarios: retroConfirmScenarios,
+    render: ({ scenarioId, onMessage, fontScale }) => (
+      <RetroDiaryPreview
+        screen="confirm"
+        scenarioId={scenarioId}
+        onMessage={onMessage}
+        fontScale={fontScale}
+      />
+    ),
+  },
+  {
+    id: "diary-stickers",
+    screenId: "retro-talk",
+    label: "다이어리 스티커 · 바바와 대화",
+    scenarios: retroTalkScenarios,
+    render: ({ scenarioId, onMessage, fontScale }) => (
+      <RetroDiaryPreview
+        screen="talk"
+        scenarioId={scenarioId}
+        onMessage={onMessage}
+        fontScale={fontScale}
+      />
+    ),
+  },
+
+  {
+    id: "diary-bubble-comparison",
+    screenId: "retro-talk",
+    label: "말풍선 4종 · 한눈에 비교",
+    scenarios: bubbleComparisonScenarios,
+    render: ({ scenarioId, fontScale }) => (
+      <BubbleComparisonPreview scenarioId={scenarioId} fontScale={fontScale} />
+    ),
+  },
+  ...bubbleStyles
+    .filter((style) => style.id !== "current")
+    .map((style) => ({
+      id: `diary-bubble-${style.id}`,
+      screenId: "retro-talk" as const,
+      label: style.label,
+      scenarios: retroTalkScenarios,
+      render: ({ scenarioId, onMessage, fontScale }: Parameters<LabVariant["render"]>[0]) => (
+        <RetroDiaryPreview
+          screen="talk"
+          bubbleStyle={style.id}
+          scenarioId={scenarioId}
+          onMessage={onMessage}
+          fontScale={fontScale}
+        />
+      ),
+    })),
+
   ...homeVariants.map((variant) => ({
     id: variant.id,
     screenId: "home-main" as const,

@@ -569,7 +569,14 @@ function Compare({
             <Text style={styles.panelTitle}>{variant?.label ?? "등록된 시안 없음"}</Text>
             <Text style={styles.panelNote}>
               {variant
-                ? ["app-v2", "app-rest", "app-archive", "app-my", "app-report"].includes(variant.id)
+                ? [
+                    "app-v2",
+                    "app-rest",
+                    "app-archive",
+                    "app-my",
+                    "app-report",
+                    "diary-stickers",
+                  ].includes(variant.id)
                   ? "운영 앱과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
                   : "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"
                 : "이 화면의 새 시안은 아직 없습니다. 시안이 등록되면 기존 캡처와 나란히 비교합니다."}

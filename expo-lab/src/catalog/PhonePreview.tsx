@@ -1,3 +1,5 @@
+import { RetroDiaryBackground } from "../../../src/features/retro/ui/RetroDiaryBackground";
+import { label } from "../../../src/design/ds";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Line, Path, Rect } from "react-native-svg";
 
@@ -63,27 +65,30 @@ export function CapturePhone({
   );
 }
 
-function PreviewStatusBar({ width }: { width: number }) {
+function PreviewStatusBar({ width, inverse = false }: { width: number; inverse?: boolean }) {
+  const ink = inverse ? label.onFill : c.statusInk;
   return (
-    <View style={styles.statusBar}>
-      <Svg pointerEvents="none" width={width} height={62} style={StyleSheet.absoluteFill}>
-        {Array.from({ length: Math.ceil(width / 22) + 1 }, (_, index) => (
-          <Line
-            key={`v${index}`}
-            x1={index * 22}
-            y1={0}
-            x2={index * 22}
-            y2={62}
-            stroke={c.grid}
-            strokeWidth={1}
-          />
-        ))}
-        {[0, 22, 44].map((y) => (
-          <Line key={`h${y}`} x1={0} y1={y} x2={width} y2={y} stroke={c.grid} strokeWidth={1} />
-        ))}
-      </Svg>
-      <Text style={styles.statusTime}>9:41</Text>
-      <Svg width={74} height={20} viewBox="0 0 74 20" fill={c.statusInk}>
+    <View style={[styles.statusBar, inverse ? { backgroundColor: "transparent" } : null]}>
+      {!inverse ? (
+        <Svg pointerEvents="none" width={width} height={62} style={StyleSheet.absoluteFill}>
+          {Array.from({ length: Math.ceil(width / 22) + 1 }, (_, index) => (
+            <Line
+              key={`v${index}`}
+              x1={index * 22}
+              y1={0}
+              x2={index * 22}
+              y2={62}
+              stroke={c.grid}
+              strokeWidth={1}
+            />
+          ))}
+          {[0, 22, 44].map((y) => (
+            <Line key={`h${y}`} x1={0} y1={y} x2={width} y2={y} stroke={c.grid} strokeWidth={1} />
+          ))}
+        </Svg>
+      ) : null}
+      <Text style={[styles.statusTime, { color: ink }]}>9:41</Text>
+      <Svg width={74} height={20} viewBox="0 0 74 20" fill={ink}>
         <Rect x={0} y={13} width={3} height={5} rx={1} />
         <Rect x={4} y={10} width={3} height={8} rx={1} />
         <Rect x={8} y={7} width={3} height={11} rx={1} />
@@ -96,7 +101,7 @@ function PreviewStatusBar({ width }: { width: number }) {
           height={13}
           rx={3}
           fill="none"
-          stroke={c.statusInk}
+          stroke={ink}
           strokeWidth={1.5}
         />
         <Rect x={55} y={6} width={14} height={9} rx={1} />
@@ -127,10 +132,14 @@ export function VariantPhone({
   scale?: number;
   onMessage: (message: string) => void;
 }) {
+  const diaryBackground =
+    (variant.screenId === "retro-talk" || variant.screenId === "retro-confirm") &&
+    variant.id !== "diary-bubble-comparison";
   return (
     <ScaledPhone width={device.width + 20} height={device.height + 20} scale={scale}>
       <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
-        <PreviewStatusBar width={device.width} />
+        {diaryBackground ? <RetroDiaryBackground /> : null}
+        <PreviewStatusBar width={device.width} inverse={diaryBackground} />
         {variant.render({ scenarioId, weatherId, letterId, fontScale, onMessage, scale, design })}
       </View>
     </ScaledPhone>
