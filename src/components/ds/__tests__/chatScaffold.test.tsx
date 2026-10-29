@@ -1,5 +1,5 @@
 import { act, fireEvent, render } from "@testing-library/react-native";
-import { Keyboard, ScrollView } from "react-native";
+import { Keyboard, Platform, ScrollView } from "react-native";
 
 import { ChatScaffold } from "../ChatScaffold";
 import { Text } from "../Text";
@@ -166,6 +166,50 @@ describe("ChatScaffold", () => {
 
       addListener.mockRestore();
       raf.mockRestore();
+    });
+
+    it("작은 그림에서 큰 그림으로 바뀌면 이전 측정값이 남아 있어도 새 높이만큼 비운다", async () => {
+      const scene = (height: number) => (
+        <ChatScaffold
+          dock={<Text variant="body2">독</Text>}
+          companion={<Text variant="body2">바바</Text>}
+          companionHeight={height}
+          companionLift={78}
+        >
+          <Text variant="body2">질문</Text>
+        </ChatScaffold>
+      );
+      const r = await render(scene(92));
+      await fireEvent(r.getByTestId("ds-chat-layer"), "layout", layoutOf(700));
+      await fireEvent(r.getByTestId("ds-chat-dock"), "layout", layoutOf(52, 648));
+      await fireEvent(r.getByTestId("ds-chat-companion"), "layout", layoutOf(92));
+      expect(r.getByTestId("ds-chat-clearance")).toHaveStyle({ height: 118 });
+
+      // 키보드를 내린 직후: 작은 그림의 onLayout 값이 남아 있어도 앉은 바바의 높이를 쓴다.
+      await r.rerender(scene(260));
+      expect(r.getByTestId("ds-chat-clearance")).toHaveStyle({ height: 286 });
+    });
+
+    it("Web에서 독의 y 위치가 갱신되지 않아도 키보드를 내린 뒤 그림 위를 비운다", async () => {
+      const platform = jest.replaceProperty(Platform, "OS", "web");
+      try {
+        const r = await render(
+          <ChatScaffold
+            dock={<Text variant="body2">독</Text>}
+            companion={<Text variant="body2">바바</Text>}
+            companionHeight={260}
+            companionLift={78}
+          >
+            <Text variant="body2">질문</Text>
+          </ChatScaffold>,
+        );
+        await fireEvent(r.getByTestId("ds-chat-layer"), "layout", layoutOf(700));
+        // 모형 키보드가 열린 동안의 y가 남았다. 독 높이 60을 기준으로 바바를 비켜야 한다.
+        await fireEvent(r.getByTestId("ds-chat-dock"), "layout", layoutOf(60, 376));
+        expect(r.getByTestId("ds-chat-clearance")).toHaveStyle({ height: 278 });
+      } finally {
+        platform.restore();
+      }
     });
 
     it("그림이 없으면 비울 것도 없다", async () => {

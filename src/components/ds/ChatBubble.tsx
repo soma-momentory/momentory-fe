@@ -1,17 +1,28 @@
 import { useEffect, useState } from "react";
-import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
+import {
+  Animated,
+  Platform,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type ViewStyle,
+} from "react-native";
 
 import {
   bubbleRadius,
   fill,
   label as labelColor,
   primary,
+  retroDiary,
   radius,
   space,
   withAlpha,
 } from "@/design/ds";
 
-import { Text } from "./Text";
+import Svg, { Path } from "react-native-svg";
+
+import { Text, useEffectiveFontScale } from "./Text";
+import { chatSentenceLines } from "./chatSentenceLines";
 
 /**
  * 대화 말풍선 — `DESIGN.md` §4 + `Onboarding.dc.html` 「대화 문법」.
@@ -21,7 +32,7 @@ import { Text } from "./Text";
  * | 질문 | 왼쪽   | `fill.alternative`(6%) | `16 16 16 4`  | 288     | Body 1 Reading  |
  * | 답변 | 오른쪽 | `primary` 22% 틴트     | `16 16 4 16`  | 260     | Body 1          |
  *
- * **꼬리·아바타·화자 이름이 없다.** 정렬과 면 색이 화자를 말한다 — 옛
+ * 기본형은 **꼬리·아바타·화자 이름이 없다.** 정렬과 면 색이 화자를 말한다 — 옛
  * `BabaBubble`+`Avatar` 조합과 다른 점이 이것이다.
  *
  * ## 지난 턴은 흐려지되 색은 그대로다
@@ -33,6 +44,7 @@ import { Text } from "./Text";
  * ⚠ 시안(`.dc.html`)은 0.55 / 0.70 을 쓰고 프레임마다 0.55·0.7 이 섞여 있다.
  * **`DESIGN.md` 값을 따랐다** — 값이 어긋나면 `DESIGN.md` 가 이긴다(`EXPORT_MANIFEST` §1).
  *
+ * 회고의 `appearance="diary"`는 불투명한 단색 면과 둥근 삼각 꼬리로 스티커를 표현한다.
  * 온보딩과 일기가 **같은 것을 쓴다**(`EXPORT_MANIFEST` §4 — 시안에선 두 파일에
  * 각각 인라인이었다). 스펙이 같은 것을 두 번 만들지 않는다.
  */
@@ -42,34 +54,115 @@ type Props = {
   variant?: "question" | "answer";
   /** 지난 턴 — 투명도만 내린다 */
   past?: boolean;
+  appearance?: "default" | "diary";
   style?: ViewStyle;
 };
 
 /** `DESIGN.md` 「온보딩」 — 지난 질문 0.48 · 지난 답변 0.62 */
 const PAST_OPACITY = { question: 0.48, answer: 0.62 } as const;
 
-export function ChatBubble({ children, variant = "question", past = false, style }: Props) {
+export function ChatBubble({
+  children,
+  variant = "question",
+  past = false,
+  appearance = "default",
+  style,
+}: Props) {
   const question = variant === "question";
+  const { width: windowWidth } = useWindowDimensions();
+  const fontScale = useEffectiveFontScale();
+  const diary = appearance === "diary";
+  const displayed = diary ? chatSentenceLines(children) : children;
+  const layoutKey = JSON.stringify([displayed, variant, windowWidth, fontScale, style?.maxWidth]);
+  const [measurement, setMeasurement] = useState<{
+    key: string;
+    width: number;
+    text: string;
+  } | null>(null);
+  const fitted = diary && measurement?.key === layoutKey ? measurement : null;
+  const fit = (lineWidth: number, text = displayed) => {
+    if (Number.isFinite(lineWidth) && lineWidth > 0) {
+      setMeasurement({
+        key: layoutKey,
+        // 글줄의 소수점 반올림 때문에 마지막 글자가 다시 접히지 않도록 1dp를 더 둔다.
+        width: Math.min(
+          question ? retroDiary.bubbleMaxWidth : retroDiary.answerMaxWidth,
+          Math.max(retroDiary.radius * 2, Math.ceil(lineWidth) + space.lg * 2 + 1),
+        ),
+        text,
+      });
+    }
+  };
 
   return (
     <View
+      testID={diary ? "diary-chat-bubble" : undefined}
+      onLayout={
+        fitted
+          ? (event) => {
+              // Lab의 기기 폭처럼 부모만 좁아져도 넘치지 않게 새 폭에서 다시 잰다.
+              if (event.nativeEvent.layout.width + 1 < fitted.width) setMeasurement(null);
+            }
+          : undefined
+      }
       style={[
         styles.base,
         question ? styles.question : styles.answer,
+        appearance === "diary" ? (question ? styles.diaryQuestion : styles.diaryAnswer) : null,
         past ? { opacity: PAST_OPACITY[variant] } : null,
+        fitted ? { width: fitted.width, maxWidth: "100%" } : null,
         style,
       ]}
     >
+      {appearance === "diary" ? <StickerTail question={question} /> : null}
       <Text
+        key={diary ? layoutKey : undefined}
         variant={question ? "body1Reading" : "body1"}
-        color={labelColor.normal}
+        style={appearance === "diary" ? styles.diaryText : undefined}
+        color={appearance === "diary" && !question ? retroDiary.onGreen : labelColor.normal}
+        onTextLayout={
+          diary && Platform.OS !== "web" && fitted == null
+            ? (event) => {
+                const lines = event.nativeEvent.lines;
+                if (lines.length === 0) return;
+                // 실제로 접힌 줄을 고정해 폭 보정이 재줄바꿈·재측정을 반복하지 않게 한다.
+                fit(
+                  Math.max(...lines.map((line) => line.width)),
+                  lines.map((line) => line.text.trimEnd()).join("\n"),
+                );
+              }
+            : undefined
+        }
+        onLayout={
+          diary && Platform.OS === "web" && fitted == null
+            ? (event) => {
+                // React Native Web은 nativeEvent에 DOM target을 제공한다.
+                const nativeEvent = event.nativeEvent as typeof event.nativeEvent & {
+                  target?: unknown;
+                };
+                const width = webLineWidth(nativeEvent.target);
+                if (width != null) fit(width);
+              }
+            : undefined
+        }
         // 낭독기는 정렬을 못 읽는다 — 누가 한 말인지 이름으로 준다
         accessibilityLabel={`${question ? "질문" : "내 답변"}: ${children}`}
       >
-        {children}
+        {fitted?.text ?? displayed}
       </Text>
     </View>
   );
+}
+
+/** Web 미리보기에서도 글줄을 잰다. 축소된 기기 프레임의 배율을 제외한 너비다. */
+function webLineWidth(target: unknown): number | undefined {
+  const node = target as HTMLElement | null;
+  if (typeof node?.getBoundingClientRect !== "function" || !node.offsetWidth) return;
+  const scale = node.getBoundingClientRect().width / node.offsetWidth;
+  if (scale <= 0) return;
+  const range = node.ownerDocument.createRange();
+  range.selectNodeContents(node);
+  return Math.max(0, ...Array.from(range.getClientRects(), (rect) => rect.width / scale));
 }
 
 /** 점 하나가 밝아졌다 어두워지는 데 걸리는 시간 · 점 사이의 시차 */
@@ -93,7 +186,13 @@ const DOT_DIM = 0.28;
  *
  * ⚠ 점의 움직임은 **정보가 아니라 생동감**이다 — 낭독기에는 한 줄로만 말한다.
  */
-export function TypingBubble({ style }: { style?: ViewStyle }) {
+export function TypingBubble({
+  style,
+  appearance = "default",
+}: {
+  style?: ViewStyle;
+  appearance?: "default" | "diary";
+}) {
   // 값은 한 번 만들어 계속 쓴다 (`ScheduleList` 와 같은 방식)
   const [dots] = useState(() => [0, 1, 2].map(() => new Animated.Value(DOT_DIM)));
 
@@ -115,10 +214,17 @@ export function TypingBubble({ style }: { style?: ViewStyle }) {
 
   return (
     <View
-      style={[styles.base, styles.question, styles.typing, style]}
+      style={[
+        styles.base,
+        styles.question,
+        styles.typing,
+        appearance === "diary" ? styles.diaryQuestion : null,
+        style,
+      ]}
       accessible
       accessibilityLabel="답장을 쓰는 중"
     >
+      {appearance === "diary" ? <StickerTail question /> : null}
       {dots.map((v, i) => (
         <Animated.View key={i} style={[styles.dot, { opacity: v }]} />
       ))}
@@ -126,7 +232,53 @@ export function TypingBubble({ style }: { style?: ViewStyle }) {
   );
 }
 
+/** A compact triangular tail with a softly rounded tip, matching its sticker. */
+function StickerTail({ question }: { question: boolean }) {
+  return (
+    <Svg
+      pointerEvents="none"
+      focusable={false}
+      width={30}
+      height={22}
+      viewBox="0 0 30 22"
+      style={[styles.tail, question ? styles.tailLeft : styles.tailRight]}
+    >
+      <Path
+        d="M 4 0 H 30 L 8 19 Q 4 22 4 17 Z"
+        fill={question ? retroDiary.question : retroDiary.answer}
+      />
+    </Svg>
+  );
+}
+
+const DIARY_CORNERS = {
+  borderTopLeftRadius: retroDiary.radius,
+  borderTopRightRadius: retroDiary.radius,
+  borderBottomLeftRadius: retroDiary.radius,
+  borderBottomRightRadius: retroDiary.radius,
+};
+
 const styles = StyleSheet.create({
+  diaryQuestion: {
+    flexDirection: "row",
+    maxWidth: retroDiary.bubbleMaxWidth,
+    backgroundColor: retroDiary.question,
+    ...DIARY_CORNERS,
+    paddingVertical: space.md,
+    marginBottom: space.sm,
+  },
+  diaryAnswer: {
+    flexDirection: "row",
+    maxWidth: retroDiary.answerMaxWidth,
+    backgroundColor: retroDiary.answer,
+    ...DIARY_CORNERS,
+    paddingVertical: space.md,
+    marginBottom: space.sm,
+  },
+  diaryText: { flexShrink: 1 },
+  tail: { position: "absolute", bottom: -12 },
+  tailLeft: { left: 16 },
+  tailRight: { right: 16, transform: [{ scaleX: -1 }] },
   base: { borderRadius: 0 },
   question: {
     alignSelf: "flex-start",

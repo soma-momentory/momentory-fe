@@ -86,6 +86,8 @@ export type ButtonSize = "large" | "medium" | "small";
 
 type Props = Omit<PressableProps, "style" | "children"> & {
   label: string;
+  /** 화면에서 더 큰 라벨이 필요한 경우에도 공용 타이포 단을 쓴다. */
+  labelVariant?: TextToken;
   variant?: ButtonVariant;
   size?: ButtonSize;
   /** 라벨 왼쪽 아이콘 */
@@ -105,6 +107,7 @@ const PRESS_SCALE = 0.97;
 
 export function Button({
   label,
+  labelVariant,
   variant = "solid",
   size: sizeName = "large",
   leading,
@@ -190,7 +193,7 @@ export function Button({
         <>
           {leading}
           <Text
-            variant={labelToken(variant, sizeName)}
+            variant={labelVariant ?? labelToken(variant, sizeName)}
             color={disabled ? labelColor.disabled : v.labelColor}
           >
             {label}

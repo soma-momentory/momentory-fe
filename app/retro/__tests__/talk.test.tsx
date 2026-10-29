@@ -1,4 +1,5 @@
 import { render, fireEvent, act, waitFor, within } from "@testing-library/react-native";
+import { Keyboard } from "react-native";
 
 import RetroTalk from "../talk";
 
@@ -67,6 +68,23 @@ beforeEach(() => {
 });
 
 describe("시작 — 감정 없이 마운트하면 서버가 첫 질문을 준다", () => {
+  it("대화 영역을 누르면 키보드를 내리고 작성 중인 답변은 유지한다", async () => {
+    const dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
+    try {
+      const r = await render(<RetroTalk />);
+      await waitFor(() => expect(r.getByLabelText("답변")).toBeTruthy());
+      await fireEvent.changeText(r.getByLabelText("답변"), "오늘 즐거웠어요");
+
+      await fireEvent(r.getByTestId("ds-chat-scroll"), "touchStart");
+
+      expect(dismiss).toHaveBeenCalledTimes(1);
+      expect(r.getByLabelText("답변").props.value).toBe("오늘 즐거웠어요");
+      expect(mockTurn).not.toHaveBeenCalled();
+    } finally {
+      dismiss.mockRestore();
+    }
+  });
+
   it("마운트하면 시작 요청을 보낸다 — v2 는 감정을 싣지 않는다", async () => {
     await render(<RetroTalk />);
 

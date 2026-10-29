@@ -1,13 +1,12 @@
+import { RetroDiaryBackground } from "@/features/retro/ui/RetroDiaryBackground";
+import { label } from "@/design/ds";
 import { Redirect, router } from "expo-router";
-import { StyleSheet } from "react-native";
 
-import { DayScheduleList } from "@/components/archive/DayScheduleList";
-import { Button, Card, ChatBubble, ChatScaffold, Text } from "@/components/ds";
-import { label as labelColor, space } from "@/design/ds";
+import { Button, ChatBubble, ChatScaffold } from "@/components/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
-import { formatKoreanDate } from "@/lib/day";
+import { RetroScheduleSticker } from "@/features/retro/ui/RetroScheduleSticker";
 
 /**
  * `C2` · 오늘 일정 확인 — 대화의 첫 턴이다.
@@ -45,30 +44,30 @@ export default function RetroConfirm() {
   return (
     <ChatScaffold
       leading="close"
+      leadingColor={label.onFill}
+      grid={false}
+      backdrop={<RetroDiaryBackground />}
       onLeadingPress={() => router.replace("/home")}
-      dock={<Button label="다음" fill raised onPress={() => router.push("/retro/talk")} />}
+      dock={
+        <Button
+          label="다음"
+          labelVariant="headline1"
+          fill
+          onPress={() => router.push("/retro/talk")}
+        />
+      }
     >
-      <ChatBubble>오늘 있었던 일을 잠깐 떠올려봐요.</ChatBubble>
+      <ChatBubble appearance="diary">오늘 있었던 일을 잠깐 떠올려봐요.</ChatBubble>
 
       {/* 말풍선과 같은 쪽에 서는 카드 — 대화의 일부라 왼쪽에 붙고 폭을 다 쓰지 않는다.
           오늘 적어둔 일정이 없으면 빈 화면 대신 한 마디 건넨다 — 일정이 없어도 회고는 이어진다 */}
       {shown.length > 0 ? (
-        <Card padding="loose" style={styles.card}>
-          <Text variant="label2" color={labelColor.neutral}>
-            {formatKoreanDate(today)}
-          </Text>
-          {/* 완료 점을 앞에 — 채운 점 = 완료 · 빈 점 = 미완료. 회고 시작에서 오늘 무엇을
-              했고 무엇이 남았는지 한눈에 보이게 한다(요청 2026-08-25) */}
-          <DayScheduleList schedules={shown} showStatusDot />
-        </Card>
+        <RetroScheduleSticker date={today} schedules={shown} />
       ) : (
-        <ChatBubble>오늘은 따로 적어둔 일정이 없네요. 그래도 오늘 하루를 같이 돌아봐요.</ChatBubble>
+        <ChatBubble appearance="diary">
+          오늘은 따로 적어둔 일정이 없네요. 그래도 오늘 하루를 같이 돌아봐요.
+        </ChatBubble>
       )}
     </ChatScaffold>
   );
 }
-
-const styles = StyleSheet.create({
-  // 시안 288 — 대화 폭(296)과 나란히 선다. 자기 내용만큼만 차지한다
-  card: { alignSelf: "flex-start", maxWidth: 288, gap: space.xl },
-});

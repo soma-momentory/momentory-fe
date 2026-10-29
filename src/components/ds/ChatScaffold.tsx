@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -41,10 +41,15 @@ type Props = {
   /** `arrow-left` 뒤로 · `close` 닫기. 없으면 상단바를 두지 않는다 */
   leading?: "arrow-left" | "close";
   onLeadingPress?: () => void;
+  leadingColor?: string;
+  surface?: ComponentProps<typeof Screen>["surface"];
+  grid?: boolean;
   /** 우상단 텍스트 버튼 */
   trailing?: ReactNode;
   /** 대화 영역 — 말풍선과 그 아래 붙는 것(칩·카드·그리드) */
   children: ReactNode;
+  /** 대화 영역을 누르면 입력을 접는 등의 동작. 스크롤은 가로채지 않는다. */
+  onConversationPress?: () => void;
   /** 하단 독 — 입력·헬퍼·CTA */
   dock?: ReactNode;
   /**
@@ -55,6 +60,8 @@ type Props = {
    * 키보드·독에 덮일 뿐이다.
    */
   companion?: ReactNode;
+  /** 크기가 정해진 그림은 높이를 직접 줘 전환 직후에도 대화가 그림 위에 놓이게 한다. */
+  companionHeight?: number;
   /**
    * 그림을 층 바닥에서 **얼마나 띄워 앉히나** — 입력창 높이만큼 주면 그림이 입력창 **위에** 앉는다.
    * 독 높이를 재서 따라가지 않고 고정값을 받는다: 선택지가 떠 독이 커질 때 그림이 들썩이면 안 된다.
@@ -85,10 +92,15 @@ type Props = {
 export function ChatScaffold({
   leading,
   onLeadingPress,
+  leadingColor,
+  surface,
+  grid,
   trailing,
   children,
+  onConversationPress,
   dock,
   companion,
+  companionHeight: knownCompanionHeight,
   companionLift = 0,
   companionLeft = 0,
   companionRaised,
@@ -111,12 +123,17 @@ export function ChatScaffold({
    */
   const [layerHeight, setLayerHeight] = useState(0);
   const [dockTop, setDockTop] = useState(0);
-  const [companionHeight, setCompanionHeight] = useState(0);
+  const [dockHeight, setDockHeight] = useState(0);
+  const [measuredCompanionHeight, setCompanionHeight] = useState(0);
+  const companionHeight = knownCompanionHeight ?? measuredCompanionHeight;
   /** 키보드가 올라와 있나 — 앉은 그림과 고개 내민 그림(`companionRaised`)을 이걸로 바꿔 든다 */
   const [keyboardShown, setKeyboardShown] = useState(false);
   const [raisedHeight, setRaisedHeight] = useState(0);
   const raised = companionRaised != null && dock != null && keyboardShown;
-  const dockFromBottom = dock != null ? layerHeight - dockTop : 0;
+  // Web의 onLayout은 위치만 바뀌면 갱신되지 않을 수 있다. 키보드 모형이 접힌 뒤에도
+  // 이전 y를 쓰지 않도록, 네이티브 회피 패딩이 없는 Web에서는 독 자체의 높이를 쓴다.
+  const dockFromBottom =
+    dock != null ? (Platform.OS === "web" ? dockHeight : layerHeight - dockTop) : 0;
   const clearance = raised
     ? raisedHeight
     : companion != null && layerHeight > 0
@@ -172,9 +189,14 @@ export function ChatScaffold({
   }, []);
 
   return (
-    <Screen backdrop={backdrop}>
+    <Screen backdrop={backdrop} surface={surface} grid={grid}>
       {leading != null || trailing != null ? (
-        <TopNavigation leading={leading} onLeadingPress={onLeadingPress} trailing={trailing} />
+        <TopNavigation
+          leading={leading}
+          leadingColor={leadingColor}
+          onLeadingPress={onLeadingPress}
+          trailing={trailing}
+        />
       ) : null}
 
       {/*
@@ -212,6 +234,8 @@ export function ChatScaffold({
           ref={scroll}
           // 슬라이더가 이 스크롤을 잠그는지 테스트가 여기로 확인한다(`__tests__/slider`)
           testID="ds-chat-scroll"
+          onTouchStart={onConversationPress}
+          onPointerDown={onConversationPress}
           style={styles.fill}
           contentContainerStyle={[styles.conversation, raised ? styles.conversationOnPeek : null]}
           showsVerticalScrollIndicator={false}
@@ -235,9 +259,11 @@ export function ChatScaffold({
           <View
             testID="ds-chat-dock"
             style={styles.dock}
-            onLayout={(e) => setDockTop(e.nativeEvent.layout.y)}
+            onLayout={(e) => {
+              setDockTop(e.nativeEvent.layout.y);
+              setDockHeight(e.nativeEvent.layout.height);
+            }}
           >
-            {dock}
             {raised ? (
               <View
                 testID="ds-chat-companion-raised"
@@ -253,6 +279,8 @@ export function ChatScaffold({
                 {companionRaised}
               </View>
             ) : null}
+            {/* 입력창을 나중에 그려 바바의 몸통·앞발이 입력창 뒤로 들어가게 한다. */}
+            {dock}
           </View>
         ) : null}
       </KeyboardAvoidingView>
@@ -266,7 +294,7 @@ const styles = StyleSheet.create({
   // `companionLeft` 만큼 옮겨 앉는다
   companion: { position: "absolute" },
   hidden: { opacity: 0 },
-  // 독의 윗변에 아랫변을 대고 가운데 선다 — 독 뒤가 아니라 **앞에** 그려져 앞발이 입력창 위에 걸친다
+  // 독의 윗변에 아랫변을 대고 서며, 겹치는 몸통·앞발은 나중에 그려지는 입력창 뒤에 놓인다.
   raised: { position: "absolute", bottom: "100%", left: 0, right: 0, alignItems: "center" },
   // 대화는 아래 정렬 — 적을 때도 바닥에 붙어 있고 위가 빈다
   conversation: {
