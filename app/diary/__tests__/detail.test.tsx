@@ -39,6 +39,17 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     expect(r.queryByText(/회고를 마친 당시의 대화를 바탕으로/)).toBeNull();
   });
 
+  it("저장된 일기의 맥락별 문단을 그대로 표시한다", async () => {
+    const body = "회의가 길었다. 집중하느라 피곤했다.\n\n저녁에는 산책을 했다. 기분이 나아졌다.";
+    useDiary.setState((st) => ({
+      diaries: st.diaries.map((d) => (d.id === ID ? { ...d, body } : d)),
+    }));
+
+    const r = await render(<DiaryDetail />);
+
+    expect(r.getByText(body, { exact: true })).toBeTruthy();
+  });
+
   it("감정이 여럿이면 전부 보여준다 — 회고 직후 화면과 같은 줄이다", async () => {
     // 「우울했는데 라면 먹고 기분 좋아졌어」 — 앞의 감정만 세우면 뒤가 없던 일이 된다.
     useDiary.setState((st) => ({

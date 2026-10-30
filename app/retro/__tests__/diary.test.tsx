@@ -83,11 +83,11 @@ describe("일기 확인 — 기본은 읽기다", () => {
     expect(getByText("오늘은 따로 적어둔 일정이 없어요")).toBeTruthy();
   });
 
-  it("본문은 문단을 나누지 않고 한 덩어리로 읽는다 — 고치기로 들어가면 원문 그대로다", async () => {
+  it("맥락별 문단을 읽기와 고치기에서 그대로 보여준다", async () => {
     seedCompleted({ ...SEED_DIARY, diary: "회의가 길었다.\n\n저녁엔 라면을 먹었다." }, SEED_WISH);
     const r = await render(<RetroDraft />);
 
-    expect(r.getByText("회의가 길었다. 저녁엔 라면을 먹었다.")).toBeTruthy();
+    expect(r.getByText("회의가 길었다.\n\n저녁엔 라면을 먹었다.", { exact: true })).toBeTruthy();
 
     await fireEvent.press(r.getByText("직접 고치기"));
     expect(r.getByLabelText("일기 본문").props.value).toBe(
@@ -194,6 +194,18 @@ describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
     expect(card?.targetAction).toBe(SEED_WISH.smallAction);
   });
 
+  it("생성된 문단을 고치지 않으면 그대로 저장하고 서버 본문을 덮어쓰지 않는다", async () => {
+    const body =
+      "회의가 길었다. 집중하느라 피곤했다.\n\n저녁엔 라면을 먹었다. 든든했다. 집에서 쉬었다.";
+    seedCompleted({ ...SEED_DIARY, diary: body }, SEED_WISH);
+    useRetro.setState({ sessionId: 42 });
+
+    await save();
+
+    expect(useDiary.getState().diaries[0]?.body).toBe(body);
+    expect(mockedRequest).not.toHaveBeenCalled();
+  });
+
   it("서버 회고 세션 id 를 일기에 남긴다", async () => {
     useRetro.setState({ sessionId: 42 });
     await save();
@@ -209,12 +221,12 @@ describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
 
   it("본문을 고쳐 저장하면 그 회고의 일기 본문을 서버로 보낸다", async () => {
     useRetro.setState({ sessionId: 42 });
-    await save("내가 다시 쓴 오늘.");
+    await save("내가 다시 쓴 오늘.\n\n저녁에는 산책을 했다.");
 
     expect(mockedRequest).toHaveBeenCalledWith(
       "PUT",
       "/api/v1/diaries/by-retrospect/42",
-      { original: "내가 다시 쓴 오늘." },
+      { original: "내가 다시 쓴 오늘.\n\n저녁에는 산책을 했다." },
       expect.any(Object),
     );
   });

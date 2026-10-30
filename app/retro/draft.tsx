@@ -22,7 +22,6 @@ import { useActiveClock } from "@/features/analytics/activeClock";
 import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
 import { updateDiaryBody } from "@/features/diary/data/diaryApi";
 import { type EmotionId } from "@/features/emotion/model/emotion";
-import { asOneParagraph } from "@/features/diary/model/body";
 import { useDiary } from "@/features/diary/model/diary";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
@@ -254,7 +253,7 @@ export default function RetroDraft() {
                   variant={iosVariant("body1ReadingHand", "body1ReadingHandLg")}
                   color={labelColor.normal}
                 >
-                  {asOneParagraph(body)}
+                  {body}
                 </Text>
               )}
             </MemoPaper>
