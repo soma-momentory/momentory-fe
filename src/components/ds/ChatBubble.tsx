@@ -22,7 +22,6 @@ import {
 import Svg, { Path } from "react-native-svg";
 
 import { Text, useEffectiveFontScale } from "./Text";
-import { chatSentenceLines } from "./chatSentenceLines";
 
 /**
  * 대화 말풍선 — `DESIGN.md` §4 + `Onboarding.dc.html` 「대화 문법」.
@@ -72,15 +71,13 @@ export function ChatBubble({
   const { width: windowWidth } = useWindowDimensions();
   const fontScale = useEffectiveFontScale();
   const diary = appearance === "diary";
-  const displayed = diary ? chatSentenceLines(children) : children;
-  const layoutKey = JSON.stringify([displayed, variant, windowWidth, fontScale, style?.maxWidth]);
+  const layoutKey = JSON.stringify([children, variant, windowWidth, fontScale, style?.maxWidth]);
   const [measurement, setMeasurement] = useState<{
     key: string;
     width: number;
-    text: string;
   } | null>(null);
   const fitted = diary && measurement?.key === layoutKey ? measurement : null;
-  const fit = (lineWidth: number, text = displayed) => {
+  const fit = (lineWidth: number) => {
     if (Number.isFinite(lineWidth) && lineWidth > 0) {
       setMeasurement({
         key: layoutKey,
@@ -89,7 +86,6 @@ export function ChatBubble({
           question ? retroDiary.bubbleMaxWidth : retroDiary.answerMaxWidth,
           Math.max(retroDiary.radius * 2, Math.ceil(lineWidth) + space.lg * 2 + 1),
         ),
-        text,
       });
     }
   };
@@ -125,11 +121,8 @@ export function ChatBubble({
             ? (event) => {
                 const lines = event.nativeEvent.lines;
                 if (lines.length === 0) return;
-                // 실제로 접힌 줄을 고정해 폭 보정이 재줄바꿈·재측정을 반복하지 않게 한다.
-                fit(
-                  Math.max(...lines.map((line) => line.width)),
-                  lines.map((line) => line.text.trimEnd()).join("\n"),
-                );
+                // 폭만 맞춘다. 화면 폭에 따른 자동 접힘을 원문의 줄바꿈으로 바꾸지 않는다.
+                fit(Math.max(...lines.map((line) => line.width)));
               }
             : undefined
         }
@@ -148,7 +141,7 @@ export function ChatBubble({
         // 낭독기는 정렬을 못 읽는다 — 누가 한 말인지 이름으로 준다
         accessibilityLabel={`${question ? "질문" : "내 답변"}: ${children}`}
       >
-        {fitted?.text ?? displayed}
+        {children}
       </Text>
     </View>
   );

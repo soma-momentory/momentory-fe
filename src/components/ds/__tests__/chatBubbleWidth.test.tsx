@@ -19,9 +19,7 @@ it("자동 줄바꿈 뒤 최대 폭이 남지 않고 가장 긴 글줄에 맞춰
 
   // 가장 긴 줄 220.2를 올림한 221 + 좌우 16씩 + 반올림 보정 1.
   expect(bubble()).toHaveStyle({ width: 254 });
-  expect(message().props.children).toBe(
-    "뜻밖의 소리였네요.\n오늘 하루 중 가장 기억에 남는 다른 순간은\n언제인가요?",
-  );
+  expect(message().props.children).toBe(original);
   expect(message().props.onTextLayout).toBeUndefined();
 });
 
