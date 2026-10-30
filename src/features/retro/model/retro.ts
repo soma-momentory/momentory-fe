@@ -59,11 +59,24 @@ const EMPTY = {
   wishCard: null,
 } as const;
 
-/** 텍스트가 있으면 바바 버블로 쌓는다 — 선택지 응답도 안내 문장은 버블이다 */
-const withBabaBubble = (turns: Turn[], reply: Reply): Turn[] =>
-  reply.text == null || reply.text.length === 0
-    ? turns
-    : [...turns, { id: `t${++seq}`, who: "baba" as const, text: reply.text }];
+/** 응답 원문은 유지하고, 마지막 공감·일기 정리 안내와 감정 탐색 안내·질문을 두 버블로 표시한다. */
+const withBabaBubble = (turns: Turn[], reply: Reply, previousPhase?: string): Turn[] => {
+  if (reply.text == null || reply.text.length === 0) return turns;
+  let messages = [reply.text];
+  if (
+    previousPhase === "diary_chat" &&
+    (reply.phase === "emotion_exploration" || reply.phase === "await_branch")
+  ) {
+    const diaryNotice = "\n오늘 이야기는 일기로 정리해뒀어요.";
+    const boundary = reply.text.indexOf(diaryNotice);
+    if (boundary > 0) {
+      const end = boundary + diaryNotice.length;
+      const guidance = reply.text.slice(end).trimStart();
+      if (guidance) messages = [reply.text.slice(0, end), guidance];
+    }
+  }
+  return [...turns, ...messages.map((text) => ({ id: `t${++seq}`, who: "baba" as const, text }))];
+};
 
 export const useRetro = create<RetroStore>((set) => ({
   ...EMPTY,
@@ -86,7 +99,7 @@ export const useRetro = create<RetroStore>((set) => ({
   applyReply: (reply) =>
     set((s) => ({
       lastReply: reply,
-      turns: withBabaBubble(s.turns, reply),
+      turns: withBabaBubble(s.turns, reply, s.lastReply?.phase),
       // 완료 응답에만 실린다 — 아니면 그대로 둔다
       diary: reply.diary ?? s.diary,
       wishCard: reply.wishCard ?? s.wishCard,

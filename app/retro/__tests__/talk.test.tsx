@@ -68,6 +68,50 @@ beforeEach(() => {
 });
 
 describe("시작 — 감정 없이 마운트하면 서버가 첫 질문을 준다", () => {
+  it.each(["emotion_exploration", "await_branch"])(
+    "일상 대화에서 %s로 넘어갈 때 일기 정리 안내까지 위 말풍선에 넣는다",
+    async (phase) => {
+      const r = await render(<RetroTalk />);
+      await waitFor(() => expect(r.getByLabelText("답변")).toBeTruthy());
+      const empathy = "반가운 만남이었군요. 함께해서 기쁘셨겠어요.";
+      const notice = "오늘 이야기는 일기로 정리해뒀어요.";
+      const guidance = "그때 마음을 조금만 더 들여다볼게요.\n지금 어떤 감정이 드시나요?";
+      const text = `${empathy}\n${notice} ${guidance}`;
+      await act(() => useRetro.getState().applyReply(reply({ phase, text })));
+
+      expect(r.getByLabelText(`질문: ${empathy}\n${notice}`)).toBeTruthy();
+      expect(r.getByLabelText(`질문: ${guidance}`)).toBeTruthy();
+      expect(r.queryByLabelText(`질문: ${text}`)).toBeNull();
+      expect(useRetro.getState().lastReply?.text).toBe(text);
+      const turns = useRetro.getState().turns;
+      expect(new Set(turns.map((turn) => turn.id)).size).toBe(turns.length);
+    },
+  );
+
+  it("일기 정리 안내 뒤에 감정 탐색 내용이 없으면 빈 말풍선을 만들지 않는다", async () => {
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(r.getByLabelText("답변")).toBeTruthy());
+    const text = "이야기를 들려주셔서 고마워요.\n오늘 이야기는 일기로 정리해뒀어요.";
+    await act(() => useRetro.getState().applyReply(reply({ phase: "emotion_exploration", text })));
+
+    expect(r.getByLabelText(`질문: ${text}`)).toBeTruthy();
+    expect(useRetro.getState().turns).toHaveLength(2);
+  });
+
+  it("평소의 바바 문단과 사용자 문단은 여러 말풍선으로 나누지 않는다", async () => {
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(r.getByLabelText("답변")).toBeTruthy());
+    const baba = "친구를 만났군요. 반가우셨겠어요.\n조금 더 들려주세요.";
+    const me = "친구를 만났어요. 반가웠어요.\n또 만나고 싶어요.";
+    await act(() => {
+      useRetro.getState().applyReply(reply({ text: baba }));
+      useRetro.getState().addMyTurn(me);
+    });
+    expect(r.getByLabelText(`질문: ${baba}`)).toBeTruthy();
+    expect(r.getByLabelText(`내 답변: ${me}`)).toBeTruthy();
+    expect(useRetro.getState().turns).toHaveLength(3);
+  });
+
   it("대화 영역을 누르면 키보드를 내리고 작성 중인 답변은 유지한다", async () => {
     const dismiss = jest.spyOn(Keyboard, "dismiss").mockImplementation(() => {});
     try {
