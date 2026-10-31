@@ -44,6 +44,11 @@ describe("DiaryResponse → Diary", () => {
     expect(d?.babaViewBasis).toBeNull();
   });
 
+  it("문장 줄바꿈과 맥락 사이 빈 줄을 변환하지 않는다", () => {
+    const original = "발표를 마쳤다.\n뿌듯했다.\n\n저녁에는 산책했다.\n마음이 편안했다.";
+    expect(toDiary({ ...raw, original })?.body).toBe(original);
+  });
+
   it("createdAt 을 KST 날짜로 접는다 — UTC 앞자르기가 아니다", () => {
     // 2026-08-13T20:00Z 는 KST 로 8/14 05:00(4시 넘음) — UTC 날짜(8/13)와 다른 날이다
     const d = toDiary({ ...raw, createdAt: "2026-08-13T20:00:00Z" });

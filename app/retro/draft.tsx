@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -11,12 +10,15 @@ import {
 } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
-import { DayScheduleList } from "@/components/archive/DayScheduleList";
-import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
-import { MemoPaper, MemoTape } from "@/components/diary/DiaryMemo";
+import {
+  DiaryPaperBackground,
+  DiaryPaperEntry,
+  DiaryScheduleMemo,
+} from "@/components/diary/DiaryPaper";
+import { WeatherCredit } from "@/components/diary/WeatherCredit";
 import { Button, Screen, Text, TopNavigation } from "@/components/ds";
-import { iosVariant, label as labelColor, layout, space, text } from "@/design/ds";
-import { diaryMemo } from "@/design/ds/diaryMemo";
+import { label as labelColor, layout, space } from "@/design/ds";
+import { diaryPaper } from "@/design/ds/diaryPaper";
 import { track } from "@/features/analytics";
 import { useActiveClock } from "@/features/analytics/activeClock";
 import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
@@ -27,12 +29,11 @@ import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { useSettings } from "@/features/my/model/settings";
 import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
-import { formatKoreanDateShort } from "@/lib/day";
 
 /**
  * `C6` · 완성된 일기 확인
  *
- * `DESIGN.md` 「일기」 4번: 「정리 중 → **일기 확인(제목 없음, 날짜·감정 +
+ * `DESIGN.md` 「일기」 4번: 「정리 중 → **일기 확인(날짜·감정 사진 +
  * 본문 + 그날 일정)** → `일기 저장하기` / `직접 고치기`」
  *
  * ## 여기서 대화 문법이 끝난다
@@ -74,7 +75,7 @@ export default function RetroDraft() {
   const [body, setBody] = useState<string>(diary?.diary ?? "");
   const [editing, setEditing] = useState(false);
   const scroll = useRef<ScrollView>(null);
-  const shownSchedules = visibleSchedules(schedules);
+  const shownSchedules = visibleSchedules(schedules).filter((schedule) => schedule.date === today);
 
   // 스크롤이 끝에 닿았는가 — 닿기 전에는 버튼 위를 흐리게 덮어 글이 이어진다는 걸 보인다
   const [atEnd, setAtEnd] = useState(true);
@@ -183,18 +184,14 @@ export default function RetroDraft() {
   };
 
   return (
-    <Screen>
+    <Screen grid={false} backdrop={<DiaryPaperBackground />}>
       {/* 고치는 중에는 뒤로가기가 읽기로 되돌린다(시안 ④-c 「뒤로가기로 나가고」) */}
       <TopNavigation
         leading={editing ? "arrow-left" : "close"}
         onLeadingPress={() => (editing ? finishEdit() : router.replace("/home"))}
+        trailing={weather ? <WeatherCredit /> : undefined}
       />
 
-      {/*
-        ⚠ 날씨 한 줄이 사라졌다 (2026-08-21) — 「맑음」은 샘플 값이었고 공급처가
-        없다(`features/home/model/day.ts` 의 `useTodayContext`). 지어낸 날씨를
-        적어 두면 그게 그날의 기록으로 남는다.
-      */}
       <KeyboardAvoidingView
         style={styles.keyboard}
         behavior="padding"
@@ -221,18 +218,7 @@ export default function RetroDraft() {
               syncEnd();
             }}
           >
-            {/* 일기 한 장 — 날짜는 종이가 아니라 테이프에 적는다(사용자 시안 2026-10-07).
-                감정은 오른쪽 위에 칩 없이 손글씨로. 본문은 문단을 나누지 않고 한 덩어리로 읽는다 */}
-            <MemoPaper tone="diary" style={styles.diary}>
-              <MemoTape
-                tone="diary"
-                label={`${formatKoreanDateShort(today)}의 일기`}
-                seed={1}
-                style={styles.dateTape}
-              />
-              <View style={styles.emotions}>
-                <DiaryEmotionRow emotions={emotions} align="flex-end" marker="pebble" hand />
-              </View>
+            <DiaryPaperEntry date={today} emotions={emotions}>
               {editing ? (
                 <>
                   <TextInput
@@ -249,34 +235,12 @@ export default function RetroDraft() {
                   </Text>
                 </>
               ) : (
-                <Text
-                  variant={iosVariant("body1ReadingHand", "body1ReadingHandLg")}
-                  color={labelColor.normal}
-                >
+                <Text variant="body1ReadingHand" style={diaryPaper.body} color={labelColor.normal}>
                   {body}
                 </Text>
               )}
-            </MemoPaper>
-
-            {/* 그날 일정 한 장 — 일기 아래 이어 붙인 연노랑 메모. 제목은 가운데 녹색 테이프에,
-                줄은 일기와 같은 손글씨로. 완료 점(채운=완료·빈=미완료)은 그대로다.
-                ⚠ 일정이 없어도 메모를 숨기지 않고 한 줄만 적는다 — 두 장 구성이 늘 같다(2026-10-07) */}
-            <MemoPaper tone="schedule" style={styles.schedule}>
-              <View style={styles.scheduleTapeSlot} pointerEvents="none">
-                <MemoTape tone="schedule" label="오늘 일정" seed={2} style={styles.centered} />
-              </View>
-              {shownSchedules.length > 0 ? (
-                <DayScheduleList
-                  schedules={shownSchedules}
-                  showStatusDot
-                  itemVariant="body1ReadingHand"
-                />
-              ) : (
-                <Text variant="body1ReadingHand" color={labelColor.neutral}>
-                  오늘은 따로 적어둔 일정이 없어요
-                </Text>
-              )}
-            </MemoPaper>
+            </DiaryPaperEntry>
+            <DiaryScheduleMemo schedules={shownSchedules} />
           </ScrollView>
 
           {/* 버튼 뒤로 본문이 이어진다는 표시 — 끝까지 내리면 걷힌다 */}
@@ -284,8 +248,8 @@ export default function RetroDraft() {
             <Svg style={styles.fade} pointerEvents="none" accessible={false}>
               <Defs>
                 <LinearGradient id="draftFade" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0" stopColor={diaryMemo.fade} stopOpacity={0} />
-                  <Stop offset="1" stopColor={diaryMemo.fade} stopOpacity={1} />
+                  <Stop offset="0" stopColor={diaryPaper.paper} stopOpacity={0} />
+                  <Stop offset="1" stopColor={diaryPaper.paper} stopOpacity={1} />
                 </LinearGradient>
               </Defs>
               <Rect width="100%" height="100%" fill="url(#draftFade)" />
@@ -317,48 +281,10 @@ export default function RetroDraft() {
 const styles = StyleSheet.create({
   keyboard: { flex: 1, minHeight: 0 },
   scrollArea: { flex: 1, minHeight: 0 },
-  stack: { flex: 1, marginHorizontal: -space.xl },
-  stackContent: {
-    gap: space.xl,
-    paddingHorizontal: space.xl,
-    // 위로 반쯤 걸친 날짜 테이프가 잘리지 않게
-    paddingTop: space.xl2,
-    paddingBottom: space.xl2,
-  },
+  stack: { flex: 1 },
+  stackContent: { paddingBottom: space.xl2 },
   fade: { position: "absolute", left: -space.xl, right: -space.xl, bottom: 0, height: 36 },
-
-  diary: { paddingTop: space.md, paddingHorizontal: 22, paddingBottom: space.xl3 - 2 },
-  // 테이프는 종이 위 가장자리에 반쯤 걸쳐 왼쪽 위에 붙는다
-  dateTape: { position: "absolute", top: -20, left: 14 },
-  // 감정은 오른쪽 위 — 왼쪽의 날짜 테이프 아래로 번지지 않게 폭을 반으로 묶는다.
-  // 감정이 없어도 한 줄을 비워 본문이 테이프 밑에 깔리지 않는다
-  emotions: {
-    alignSelf: "flex-end",
-    maxWidth: "50%",
-    minHeight: text.label1Hand.lineHeight,
-    marginBottom: space.sm,
-  },
-  schedule: {
-    alignSelf: "flex-end",
-    width: "72%",
-    paddingTop: 30,
-    paddingHorizontal: 18,
-    paddingBottom: 18,
-    transform: [{ rotate: diaryMemo.scheduleTilt }],
-  },
-  // 녹색 테이프는 일정 메모 위 가장자리 **가운데**에 반쯤 걸친다
-  scheduleTapeSlot: { position: "absolute", top: -18, left: 0, right: 0 },
-  // 테이프는 기본이 왼쪽 붙음(alignSelf)이라 여기서 가운데로 돌린다
-  centered: { alignSelf: "center" },
-
-  // 읽는 본문과 **같은 손글씨·같은 크기**로 — 고치기로 들어가도 본문 크기가 바뀌지 않는다.
-  // 안드로이드는 `body1ReadingHandLg`(18/30), iOS 는 한 단 내린 `body1ReadingHand`(16/26)다
-  input: {
-    // 읽기와 **같은 단**이어야 한다 — 위 주석. iOS 는 한 단 내린 `body1ReadingHand` 다
-    ...(Platform.OS === "ios" ? text.body1ReadingHand : text.body1ReadingHandLg),
-    color: labelColor.normal,
-    padding: 0,
-  },
+  input: { ...diaryPaper.body, color: labelColor.normal, padding: 0 },
   counter: { textAlign: "right", fontVariant: ["tabular-nums"] },
 
   // 주 버튼과 보조 버튼 사이 — 같은 짝을 쓰는 화면이 전부 같은 값이다(`layout.dockActionGap`)

@@ -1,4 +1,5 @@
 import { RetroDiaryBackground } from "../../../src/features/retro/ui/RetroDiaryBackground";
+import { DiaryPaperBackground } from "../../../src/components/diary/DiaryPaper";
 import { label } from "../../../src/design/ds";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Line, Path, Rect } from "react-native-svg";
@@ -65,11 +66,19 @@ export function CapturePhone({
   );
 }
 
-function PreviewStatusBar({ width, inverse = false }: { width: number; inverse?: boolean }) {
+function PreviewStatusBar({
+  width,
+  inverse = false,
+  paper = false,
+}: {
+  width: number;
+  inverse?: boolean;
+  paper?: boolean;
+}) {
   const ink = inverse ? label.onFill : c.statusInk;
   return (
-    <View style={[styles.statusBar, inverse ? { backgroundColor: "transparent" } : null]}>
-      {!inverse ? (
+    <View style={[styles.statusBar, inverse || paper ? { backgroundColor: "transparent" } : null]}>
+      {!inverse && !paper ? (
         <Svg pointerEvents="none" width={width} height={62} style={StyleSheet.absoluteFill}>
           {Array.from({ length: Math.ceil(width / 22) + 1 }, (_, index) => (
             <Line
@@ -139,7 +148,12 @@ export function VariantPhone({
     <ScaledPhone width={device.width + 20} height={device.height + 20} scale={scale}>
       <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
         {diaryBackground ? <RetroDiaryBackground /> : null}
-        <PreviewStatusBar width={device.width} inverse={diaryBackground} />
+        {variant.id === "app-diary-paper" ? <DiaryPaperBackground /> : null}
+        <PreviewStatusBar
+          width={device.width}
+          inverse={diaryBackground}
+          paper={variant.id === "app-diary-paper"}
+        />
         {variant.render({ scenarioId, weatherId, letterId, fontScale, onMessage, scale, design })}
       </View>
     </ScaledPhone>

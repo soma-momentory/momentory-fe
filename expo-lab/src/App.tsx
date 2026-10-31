@@ -165,7 +165,9 @@ function routeHash(route: LabRoute): string {
   if (route.page === "compare" && route.variantId) params.set("scenario", route.scenarioId);
   if (
     route.page === "compare" &&
-    ["app-v2", "app-rest", "app-archive", "app-my", "app-report"].includes(route.variantId)
+    ["app-v2", "app-rest", "app-archive", "app-my", "app-report", "app-diary-paper"].includes(
+      route.variantId,
+    )
   ) {
     if (route.variantId === "app-v2") {
       params.set("weather", route.weatherId);
@@ -352,7 +354,9 @@ function Compare({
   const variants = variantsFor(screen.id);
   const variant = variants.find((item) => item.id === route.variantId) ?? variants[0];
   const sharedVariant = variants.find((item) =>
-    ["app-v2", "app-rest", "app-archive", "app-my", "app-report"].includes(item.id),
+    ["app-v2", "app-rest", "app-archive", "app-my", "app-report", "app-diary-paper"].includes(
+      item.id,
+    ),
   );
   const device = devices.find((item) => item.width === route.deviceWidth) ?? devices[1];
   const sideBySide = viewportWidth >= 960;
@@ -433,7 +437,8 @@ function Compare({
             variant?.id === "app-rest" ||
             variant?.id === "app-archive" ||
             variant?.id === "app-my" ||
-            variant?.id === "app-report" ? (
+            variant?.id === "app-report" ||
+            variant?.id === "app-diary-paper" ? (
               <>
                 {variant?.id === "app-v2" ? (
                   <>
@@ -576,6 +581,7 @@ function Compare({
                     "app-my",
                     "app-report",
                     "diary-stickers",
+                    "app-diary-paper",
                   ].includes(variant.id)
                   ? "운영 앱과 같은 React Native UI · Lab Mock 데이터 · API 미연결"
                   : "React Native 시안 UI · Lab Mock 데이터 · 운영 앱 미적용"

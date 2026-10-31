@@ -7,6 +7,12 @@
  */
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
+/** 사진 일기의 날짜 — "2026-10-30" → "2026. 10. 30 (금)". */
+export function formatDiaryDate(iso: string) {
+  const [year, month, day] = iso.split("-");
+  return `${year}. ${month}. ${day} (${koreanWeekday(iso)})`;
+}
+
 /** `"2026-07-27"` → `"7월 27일 월요일"` — 홈 상단 한 줄 */
 export function formatKoreanDate(iso: string) {
   const [y = "0", m = "1", d = "1"] = iso.split("-");

@@ -58,6 +58,86 @@ beforeEach(() => {
 
 const toast = () => useToast.getState().current;
 
+describe("보관함 본문 저장", () => {
+  it("서버 저장이 성공한 뒤 본문만 바꾸며 줄바꿈을 보존한다", async () => {
+    const before = diary("42");
+    useDiary.setState({ diaries: [before], actionCards: [card("7", "42")] });
+    const body = "일을 마쳤다.\n뿌듯했다.\n\n산책했다.";
+    expect(await useDiary.getState().saveBody("42", body)).toBe("saved");
+    expect(mockedRequest).toHaveBeenCalledWith(
+      "PUT",
+      "/api/v1/diaries/by-retrospect/10",
+      { original: body },
+      expect.any(Object),
+    );
+    expect(useDiary.getState().diaries[0]).toMatchObject({
+      ...before,
+      body,
+      authoredBy: "user",
+      editedAt: expect.any(String),
+    });
+    expect(useDiary.getState().actionCards).toEqual([card("7", "42")]);
+  });
+
+  it.each(["network", "unauthenticated"] as const)(
+    "%s 실패 시 기존 본문을 유지한다",
+    async (code) => {
+      const before = diary("42");
+      useDiary.setState({ diaries: [before] });
+      mockedRequest.mockResolvedValue({ ok: false, error: { code } });
+      expect(await useDiary.getState().saveBody("42", "고친 글")).toBe("failed");
+      expect(useDiary.getState().diaries[0]).toEqual(before);
+    },
+  );
+
+  it.each([" \n ", "가".repeat(501)])(
+    "비어 있거나 상한을 넘긴 본문은 보내지 않는다",
+    async (body) => {
+      useDiary.setState({ diaries: [diary("42")] });
+      expect(await useDiary.getState().saveBody("42", body)).toBe("failed");
+      expect(mockedRequest).not.toHaveBeenCalled();
+    },
+  );
+
+  it("로그아웃 뒤 같은 id의 새 일기를 이전 저장 응답으로 덮지 않는다", async () => {
+    let resolve!: (r: { ok: true; data: null }) => void;
+    mockedRequest.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    useDiary.setState({ diaries: [diary("42")] });
+    const saving = useDiary.getState().saveBody("42", "이전 사용자의 글");
+    useDiary.getState().reset();
+    useDiary.setState({ diaries: [{ ...diary("42"), body: "새 사용자의 글" }] });
+    resolve({ ok: true, data: null });
+    expect(await saving).toBe("stale");
+    expect(useDiary.getState().diaries[0]!.body).toBe("새 사용자의 글");
+  });
+
+  it("저장 중 삭제된 일기를 되살리지 않는다", async () => {
+    let resolve!: (r: { ok: true; data: null }) => void;
+    mockedRequest.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    useDiary.setState({ diaries: [diary("42")] });
+    const saving = useDiary.getState().saveBody("42", "고친 글");
+    useDiary.setState({ diaries: [] });
+    resolve({ ok: true, data: null });
+    expect(await saving).toBe("stale");
+    expect(useDiary.getState().diaries).toEqual([]);
+  });
+
+  it("서버에 없는 로컬 일기는 로컬에서 수정한다", async () => {
+    useDiary.setState({ diaries: [{ ...diary("d-local-1"), retrospectId: null }] });
+    expect(await useDiary.getState().saveBody("d-local-1", "고친 글")).toBe("saved");
+    expect(mockedRequest).not.toHaveBeenCalled();
+    expect(useDiary.getState().diaries[0]!.body).toBe("고친 글");
+  });
+});
+
 /**
  * ⚠ **되돌리기가 없다**(2026-08-21). 예전에는 6초 창 동안 서버 삭제를 미뤘는데,
  * 앞에 확인 모달이 있어 같은 것을 두 번 묻는 셈이었다. 지금은 **그 자리에서 보낸다**.

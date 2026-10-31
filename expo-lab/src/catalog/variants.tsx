@@ -20,6 +20,7 @@ import type { CaptureId } from "./captures";
 import { MyMainPreview, myMainScenarios } from "../my/MyMainPreview";
 import { ReportPreview, reportScenarios } from "../report/ReportPreview";
 import { RestHubPreview, restHubScenarios } from "../rest/RestHubPreview";
+import { DiaryPaperPreview, diaryPaperScenarios } from "../diary/DiaryPaperPreview";
 
 export type VariantScenario = { id: string; label: string };
 export type LabVariant = {
@@ -41,6 +42,21 @@ export type LabVariant = {
 
 /** Add independent RN variants by screen id; keep API/fixtures in their Lab adapters. */
 export const labVariants: readonly LabVariant[] = [
+  ...(["retro-draft", "diary-detail"] as const).map((screenId) => ({
+    id: "app-diary-paper",
+    screenId,
+    label: "사진·조약돌 일기 · 공유 UI",
+    scenarios: diaryPaperScenarios,
+    render: ({ scenarioId, fontScale, onMessage }: Parameters<LabVariant["render"]>[0]) => (
+      <DiaryPaperPreview
+        key={`${screenId}-${scenarioId}`}
+        screen={screenId === "retro-draft" ? "draft" : "detail"}
+        scenarioId={scenarioId}
+        fontScale={fontScale}
+        onMessage={onMessage}
+      />
+    ),
+  })),
   {
     id: "diary-stickers",
     screenId: "retro-confirm",
