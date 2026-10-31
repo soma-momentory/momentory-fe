@@ -6,7 +6,7 @@ import {
   DiaryPaperEntry,
   DiaryScheduleMemo,
 } from "../../../src/components/diary/DiaryPaper";
-import { Button, Screen, Text, TopNavigation } from "../../../src/components/ds";
+import { Button, IconButton, Screen, Text, TopNavigation } from "../../../src/components/ds";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
 import { label, layout, space } from "../../../src/design/ds";
 import { diaryPaper } from "../../../src/design/ds/diaryPaper";
@@ -63,8 +63,10 @@ export function DiaryPaperPreview({
 }) {
   const [editing, setEditing] = useState(false);
   const [body, setBody] = useState(scenarioId === "long" ? [BODY, BODY, BODY].join("\n\n") : BODY);
+  const [savedBody, setSavedBody] = useState(body);
   const [inputHeight, setInputHeight] = useState(diaryPaper.body.lineHeight * 8);
   const cancelEdit = () => {
+    if (screen === "detail") setBody(savedBody);
     setEditing(false);
   };
   const emotions = EMOTIONS[scenarioId] ?? EMOTIONS.proud!;
@@ -95,6 +97,24 @@ export function DiaryPaperPreview({
           leading={screen === "detail" || editing ? "arrow-left" : "close"}
           onLeadingPress={() =>
             editing ? cancelEdit() : onMessage("미리보기에서 돌아가기를 눌렀어요.")
+          }
+          trailing={
+            screen === "detail" && !editing ? (
+              <View style={styles.topActions}>
+                <IconButton
+                  name="pencil"
+                  accessibilityLabel="일기 수정"
+                  size={20}
+                  onPress={() => setEditing(true)}
+                />
+                <IconButton
+                  name="trash"
+                  accessibilityLabel="일기 삭제"
+                  size={20}
+                  onPress={() => onMessage("일기 삭제 미리보기예요. 실제로 삭제하지 않아요.")}
+                />
+              </View>
+            ) : undefined
           }
         />
         <ScrollView
@@ -133,16 +153,21 @@ export function DiaryPaperPreview({
             />
           ) : null}
         </ScrollView>
-        {screen === "draft" ? (
+        {screen === "draft" || editing ? (
           <View style={styles.dock}>
             <Button
-              label={editing ? "수정 완료" : "일기 저장하기"}
+              label={
+                editing ? (screen === "detail" ? "수정 저장하기" : "수정 완료") : "일기 저장하기"
+              }
               fill
               raised
               disabled={editing && !body.trim()}
               onPress={() => {
                 if (editing) {
+                  setSavedBody(body);
                   setEditing(false);
+                  if (screen === "detail")
+                    onMessage("일기 수정 미리보기예요. 실제로 저장하지 않아요.");
                 } else onMessage("일기 저장 미리보기예요. 실제로 저장하지 않아요.");
               }}
             />
@@ -156,6 +181,11 @@ export function DiaryPaperPreview({
                 />
               </View>
             ) : null}
+            {screen === "detail" && editing ? (
+              <View style={styles.secondary}>
+                <Button label="취소" variant="text" size="small" onPress={cancelEdit} />
+              </View>
+            ) : null}
           </View>
         ) : null}
       </Screen>
@@ -164,6 +194,7 @@ export function DiaryPaperPreview({
 }
 
 const styles = StyleSheet.create({
+  topActions: { flexDirection: "row", alignItems: "center" },
   scroll: { flex: 1, minHeight: 0 },
   content: { paddingBottom: space.xl2 },
   input: { ...diaryPaper.body, color: label.normal, padding: 0 },

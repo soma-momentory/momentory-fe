@@ -9,6 +9,7 @@ import {
   monthsBackFrom,
   putActionCardCompletion,
   serverRefusedWrite,
+  updateDiaryBody,
 } from "@/features/diary/data/diaryApi";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 import { clock } from "@/lib/clock";
@@ -16,6 +17,7 @@ import { clock } from "@/lib/clock";
 import { notifyDeleteResult } from "./deleteToast";
 import { actionCardOf } from "./selectors";
 import type { ActionCard, Diary } from "./types";
+import { DIARY_BODY_MAX_LENGTH } from "./types";
 
 /**
  * 서버에서 뒤로 훑는 달 수 — 요청 수의 상한이다. 새 앱은 이 창 안에 기록이 다
@@ -51,7 +53,8 @@ const ARCHIVE_MONTHS = 12;
  * - **「해봤어요」·되돌리기·느낀 점**(`PUT /action-cards/{id}/completion`) — 옵티미스틱하게
  *   먼저 바꾸고 서버가 **거부할 때만** 되돌린다(`serverRefusedWrite`).
  * - **C6 직접 고치기**(`PUT /diaries/by-retrospect/{id}`)는 draft 화면이 `data/diaryApi` 로
- *   직접 보낸다(이 store 밖). 저장 뒤 편집(`A4`)은 없다 — 고칠 기회는 저장 전 하나다.
+ *   직접 보낸다(이 store 밖). 보관함 본문 수정은 `saveBody`가 같은 API를 이용하며,
+ *   서버가 저장한 뒤 로컬 본문을 반영한다.
  *
  * 쓰기가 옵티미스틱이라 `load()` 는 **한 번만** 돈다 — 다시 받으면 아직 서버에 닿지
  * 못한 변경이 덮인다(아래).
@@ -117,6 +120,8 @@ type DiaryStore = {
    * 바바의 문장·행동 카드·그날의 기록은 건드리지 않는다.
    */
   edit: (id: string, input: { body: string; emotions: EmotionId[] }) => void;
+  /** 보관함 본문 수정. 실패하면 기존 본문을 유지하며, 세션이 바뀐 응답은 무시한다. */
+  saveBody: (id: string, body: string) => Promise<"saved" | "failed" | "stale">;
   /**
    * 「이 회고 삭제」 — 일기와 **그 일기의 행동 카드를 함께** 지운다(1:1 · `diaryId`).
    * 회고 세션은 남긴다(상류 스냅샷과의 차이 · `docs/PRODUCT.md`). 카드 삭제가 실패하면
@@ -334,6 +339,27 @@ export const useDiary = create<DiaryStore>((set, get) => ({
           : d,
       ),
     })),
+
+  saveBody: async (id, body) => {
+    const diary = get().diaries.find((d) => d.id === id);
+    if (diary == null || !body.trim() || body.length > DIARY_BODY_MAX_LENGTH) return "failed";
+    const still = sameSession();
+    if (diary.retrospectId != null) {
+      try {
+        const result = await updateDiaryBody(diary.retrospectId, body);
+        if (!still()) return "stale";
+        if (!result.ok) return "failed";
+      } catch {
+        return still() ? "failed" : "stale";
+      }
+    } else if (isServerId(id)) {
+      return "failed";
+    }
+    const current = get().diaries.find((d) => d.id === id);
+    if (current == null || current.retrospectId !== diary.retrospectId) return "stale";
+    get().edit(id, { body, emotions: current.emotions });
+    return "saved";
+  },
 
   remove: (id) => {
     const kept = get().diaries.find((d) => d.id === id);

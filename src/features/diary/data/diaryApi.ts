@@ -4,9 +4,8 @@ import { captureAnalytics } from "@/features/analytics";
  *
  * 조회: `GET /api/v1/diaries?year=&month=` · `GET /api/v1/action-cards?year=&month=`.
  * 쓰기: `DELETE /api/v1/diaries/{id}`(일기만 삭제) · `PUT /api/v1/action-cards/{id}/completion`
- * (「해봤어요」·되돌리기·느낀 점) · `PUT /api/v1/diaries/by-retrospect/{id}`(C6 직접 고치기 —
- * 본문만). store·화면은 이 경계를 지나 옵티미스틱하게 쓴다. **저장 뒤 편집(`A4`)은 없다** —
- * 고칠 기회는 저장 전(C6) 하나다.
+ * (「해봤어요」·되돌리기·느낀 점) · `PUT /api/v1/diaries/by-retrospect/{id}`(C6와 보관함의 본문 수정).
+ * 보관함 본문 수정은 서버의 저장 성공을 기다린 뒤 로컬에 반영한다.
  *
  * 삭제는 **일기 id** 로 보낸다 — 회고를 막 끝낸 일기도 완료 턴 응답이 그 일기의 서버 id 를
  * 실어 주므로(`retro/data/retroApi.ts` 의 `ReplyDiary.diaryId`), store 가 저장 때부터 서버 id 를
@@ -423,7 +422,7 @@ export const deleteActionCard = async (
 export const isServerId = (id: string): boolean => /^\d+$/.test(id);
 
 /**
- * 회고 완료 화면(C6)의 직접 고치기 — 그 회고의 일기 **본문만** 서버에 갱신한다.
+ * 회고 완료 화면(C6)과 보관함 상세의 고치기 — 그 회고의 일기 **본문만** 서버에 갱신한다.
  *
  * 클라이언트는 일기 id 가 아니라 회고 세션 id(`retrospectId`)를 들고 있어 그 열쇠로 보낸다
  * (서버가 완료 때 만든 일기를 그 id 로 찾는다). 바바의 문장·감정은 건드리지 않는다.

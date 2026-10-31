@@ -1,9 +1,10 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, act } from "@testing-library/react-native";
 import { Redirect, router } from "expo-router";
 
 import DiaryDetail from "../[id]/index";
 
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
+import { authedRequest } from "@/lib/http";
 import { fetchLetter } from "@/features/letter/data/letterApi";
 import { keepWords, useLetters } from "@/features/letter/model/letter";
 import { seedDiaries } from "@/testing/fixtures";
@@ -22,12 +23,17 @@ jest.mock("@/features/letter/data/letterApi", () => ({
   fetchLetters: jest.fn(async () => ({ ok: true, data: [] })),
   fetchLetter: jest.fn(async () => ({ ok: false })),
 }));
+jest.mock("@/lib/http", () => ({
+  authedRequest: jest.fn(async () => ({ ok: true, data: null })),
+}));
 
 beforeEach(() => {
   mockParams = { id: ID };
   useLetters.setState({ userId: 7, summaries: [], letters: {} });
   seedDiaries();
   jest.clearAllMocks();
+  jest.mocked(authedRequest).mockReset();
+  jest.mocked(authedRequest).mockResolvedValue({ ok: true, data: null });
 });
 
 describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
@@ -86,14 +92,12 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     expect(r.queryByText(/\d+회 실행|연속|일째/)).toBeNull();
   });
 
-  it("상단 오른쪽은 쓰레기통 하나다 — ⋮ 메뉴도 수정하기도 없다", async () => {
-    // ⚠ `A4`(일기 수정)는 **기능이 아니다**(2026-08-20). 상세에서 할 일은 삭제뿐이라
-    // ⋮ 메뉴를 없애고 쓰레기통 아이콘 하나로 줄였다.
+  it("상단에서 본문 수정과 삭제를 바로 연다", async () => {
     const r = await render(<DiaryDetail />);
 
     expect(r.getByLabelText("일기 삭제")).toBeTruthy();
     expect(r.queryByLabelText("더보기")).toBeNull();
-    expect(r.queryByText("수정하기")).toBeNull();
+    expect(r.getByRole("button", { name: "일기 수정" })).toBeTruthy();
   });
 
   it("쓰레기통을 누르면 곧바로 삭제 확인이 뜬다 — 무엇이 사라지는지 먼저 말한다", async () => {
@@ -221,6 +225,106 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
 // (A3-c 「해본 뒤」의 조작 — 해봤어요·되돌리기·느낀점 — 은 상세에서 제거됨(2026-08-20 ·
 //  읽기 전용). 그 동작은 쉼터(R2) 테스트와 store 테스트(diaryWrite.test)에 남아 있다.
 //  A3-b 「바바가 함께 본 오늘」 면도 상세에서 뺐고 컴포넌트째 지웠다.)
+
+describe("보관함 일기 본문 수정", () => {
+  const original = () => useDiary.getState().diaries.find((d) => d.id === ID)!;
+  beforeEach(() => {
+    useDiary.setState((s) => ({
+      diaries: s.diaries.map((d) => (d.id === ID ? { ...d, retrospectId: "10" } : d)),
+    }));
+  });
+
+  it("줄바꿈을 유지해 저장하고 감정·날짜·바람 카드는 그대로 둔다", async () => {
+    const before = original();
+    const cards = useDiary.getState().actionCards;
+    const body = "오늘 일을 마쳤다.\n뿌듯했다.\n\n저녁에는 산책했다.";
+    const r = await render(<DiaryDetail />);
+    await fireEvent.press(r.getByRole("button", { name: "일기 수정" }));
+    expect(r.getByLabelText("일기 본문").props.value).toBe(before.body);
+    await fireEvent.changeText(r.getByLabelText("일기 본문"), body);
+    await fireEvent.press(r.getByText("수정 저장하기"));
+    expect(authedRequest).toHaveBeenCalledWith(
+      "PUT",
+      "/api/v1/diaries/by-retrospect/10",
+      { original: body },
+      expect.any(Object),
+    );
+    expect(original()).toMatchObject({
+      body,
+      emotions: before.emotions,
+      date: before.date,
+      authoredBy: "user",
+    });
+    expect(useDiary.getState().actionCards).toEqual(cards);
+    expect(r.queryByLabelText("일기 본문")).toBeNull();
+    expect(r.getByText(body, { exact: true })).toBeTruthy();
+  });
+
+  it("취소하면 저장 요청 없이 원래 본문으로 돌아간다", async () => {
+    const before = original().body;
+    const r = await render(<DiaryDetail />);
+    await fireEvent.press(r.getByRole("button", { name: "일기 수정" }));
+    await fireEvent.changeText(r.getByLabelText("일기 본문"), "취소할 글");
+    await fireEvent.press(r.getByText("취소"));
+    expect(original().body).toBe(before);
+    expect(authedRequest).not.toHaveBeenCalled();
+    await fireEvent.press(r.getByRole("button", { name: "일기 수정" }));
+    expect(r.getByLabelText("일기 본문").props.value).toBe(before);
+  });
+
+  it("편집 중 뒤로가기는 저장 없이 읽기로 돌아간다", async () => {
+    const r = await render(<DiaryDetail />);
+    await fireEvent.press(r.getByRole("button", { name: "일기 수정" }));
+    await fireEvent.changeText(r.getByLabelText("일기 본문"), "버릴 글");
+    await fireEvent.press(r.getByLabelText("뒤로"));
+    expect(r.queryByLabelText("일기 본문")).toBeNull();
+    expect(router.back).not.toHaveBeenCalled();
+    expect(authedRequest).not.toHaveBeenCalled();
+  });
+
+  it("공백뿐인 본문은 저장할 수 없고 입력 상한은 500자다", async () => {
+    const r = await render(<DiaryDetail />);
+    await fireEvent.press(r.getByRole("button", { name: "일기 수정" }));
+    expect(r.getByLabelText("일기 본문").props.maxLength).toBe(500);
+    await fireEvent.changeText(r.getByLabelText("일기 본문"), " \n ");
+    await fireEvent.press(r.getByText("수정 저장하기"));
+    expect(authedRequest).not.toHaveBeenCalled();
+  });
+
+  it("실패하면 입력과 기존 본문을 보존하고 다시 저장할 수 있다", async () => {
+    const before = original().body;
+    jest.mocked(authedRequest).mockResolvedValueOnce({ ok: false, error: { code: "network" } });
+    const r = await render(<DiaryDetail />);
+    await fireEvent.press(r.getByRole("button", { name: "일기 수정" }));
+    await fireEvent.changeText(r.getByLabelText("일기 본문"), "다시 저장할 글");
+    await fireEvent.press(r.getByText("수정 저장하기"));
+    expect(r.getByRole("alert")).toBeTruthy();
+    expect(r.getByLabelText("일기 본문").props.value).toBe("다시 저장할 글");
+    expect(original().body).toBe(before);
+    await fireEvent.press(r.getByText("수정 저장하기"));
+    expect(original().body).toBe("다시 저장할 글");
+    expect(r.queryByRole("alert")).toBeNull();
+  });
+
+  it("저장을 기다릴 때 입력·취소·중복 저장을 막는다", async () => {
+    let resolve!: (r: { ok: true; data: null }) => void;
+    jest.mocked(authedRequest).mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    const r = await render(<DiaryDetail />);
+    await fireEvent.press(r.getByRole("button", { name: "일기 수정" }));
+    await fireEvent.changeText(r.getByLabelText("일기 본문"), "저장할 글");
+    await fireEvent.press(r.getByText("수정 저장하기"));
+    expect(r.getByLabelText("일기 본문").props.editable).toBe(false);
+    await fireEvent.press(r.getByText("저장 중…"));
+    await fireEvent.press(r.getByText("취소"));
+    expect(authedRequest).toHaveBeenCalledTimes(1);
+    await act(async () => resolve({ ok: true, data: null }));
+    expect(r.queryByLabelText("일기 본문")).toBeNull();
+  });
+});
 
 describe("A3 · 바바의 편지 칸(2026-10-27)", () => {
   const date = () => useDiary.getState().diaries.find((d) => d.id === ID)!.date;
