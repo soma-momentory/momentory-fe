@@ -39,8 +39,8 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
     expect(r.queryByText(/회고를 마친 당시의 대화를 바탕으로/)).toBeNull();
   });
 
-  it("저장된 일기의 맥락별 문단을 그대로 표시한다", async () => {
-    const body = "회의가 길었다. 집중하느라 피곤했다.\n\n저녁에는 산책을 했다. 기분이 나아졌다.";
+  it("저장된 일기의 문장 줄바꿈과 맥락 사이 빈 줄을 그대로 표시한다", async () => {
+    const body = "회의가 길었다.\n집중하느라 피곤했다.\n\n저녁에는 산책을 했다.\n기분이 나아졌다.";
     useDiary.setState((st) => ({
       diaries: st.diaries.map((d) => (d.id === ID ? { ...d, body } : d)),
     }));
@@ -58,8 +58,8 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
 
     const r = await render(<DiaryDetail />);
 
-    expect(r.getByText("우울함")).toBeTruthy();
-    expect(r.getByText("행복함")).toBeTruthy();
+    expect(r.getByRole("button", { name: "우울함 감정 스티커" })).toBeTruthy();
+    expect(r.getByRole("button", { name: "행복함 감정 스티커" })).toBeTruthy();
   });
 
   it("행동 카드가 일기 아래에 붙는다 — 따로 목록을 만들지 않는다", async () => {

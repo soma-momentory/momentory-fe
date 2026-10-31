@@ -60,10 +60,10 @@ beforeEach(() => {
 
 describe("일기 확인 — 기본은 읽기다", () => {
   it("제목 없이 날짜 + 감정 + 본문을 보여준다", async () => {
-    const { getByText } = await render(<RetroDraft />);
+    const { getByText, getByRole } = await render(<RetroDraft />);
 
-    expect(getByText("7월 27일의 일기")).toBeTruthy();
-    expect(getByText("우울함")).toBeTruthy();
+    expect(getByText("2026. 07. 27 (월)")).toBeTruthy();
+    expect(getByRole("button", { name: "우울함 감정 스티커" })).toBeTruthy();
     expect(getByText(SEED_DIARY.diary)).toBeTruthy();
   });
 
@@ -83,15 +83,25 @@ describe("일기 확인 — 기본은 읽기다", () => {
     expect(getByText("오늘은 따로 적어둔 일정이 없어요")).toBeTruthy();
   });
 
-  it("맥락별 문단을 읽기와 고치기에서 그대로 보여준다", async () => {
-    seedCompleted({ ...SEED_DIARY, diary: "회의가 길었다.\n\n저녁엔 라면을 먹었다." }, SEED_WISH);
+  it("문장마다 줄바꿈하고 맥락 사이 빈 줄을 읽기와 고치기에서 그대로 보여준다", async () => {
+    seedCompleted(
+      {
+        ...SEED_DIARY,
+        diary: "회의가 길었다.\n집중하느라 피곤했다.\n\n저녁엔 라면을 먹었다.\n든든했다.",
+      },
+      SEED_WISH,
+    );
     const r = await render(<RetroDraft />);
 
-    expect(r.getByText("회의가 길었다.\n\n저녁엔 라면을 먹었다.", { exact: true })).toBeTruthy();
+    expect(
+      r.getByText("회의가 길었다.\n집중하느라 피곤했다.\n\n저녁엔 라면을 먹었다.\n든든했다.", {
+        exact: true,
+      }),
+    ).toBeTruthy();
 
     await fireEvent.press(r.getByText("직접 고치기"));
     expect(r.getByLabelText("일기 본문").props.value).toBe(
-      "회의가 길었다.\n\n저녁엔 라면을 먹었다.",
+      "회의가 길었다.\n집중하느라 피곤했다.\n\n저녁엔 라면을 먹었다.\n든든했다.",
     );
   });
 
@@ -149,16 +159,16 @@ describe("일기 확인 — 기본은 읽기다", () => {
     // 「우울했는데 라면 먹고 기분 좋아졌어」 — 앞의 감정만 보이면 뒤가 없던 일이 된다.
     seedCompleted({ ...SEED_DIARY, emotions: ["depressed", "happy"] }, SEED_WISH);
 
-    const { getByText } = await render(<RetroDraft />);
+    const { getByRole } = await render(<RetroDraft />);
 
-    expect(getByText("우울함")).toBeTruthy();
-    expect(getByText("행복함")).toBeTruthy();
+    expect(getByRole("button", { name: "우울함 감정 스티커" })).toBeTruthy();
+    expect(getByRole("button", { name: "행복함 감정 스티커" })).toBeTruthy();
   });
 
   it("감정을 보이고 [+] 더하기를 두지 않는다", async () => {
-    const { getByText, queryByText } = await render(<RetroDraft />);
+    const { getByRole, queryByText } = await render(<RetroDraft />);
 
-    expect(getByText("우울함")).toBeTruthy();
+    expect(getByRole("button", { name: "우울함 감정 스티커" })).toBeTruthy();
     expect(queryByText("+")).toBeNull();
   });
 });
@@ -194,9 +204,9 @@ describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
     expect(card?.targetAction).toBe(SEED_WISH.smallAction);
   });
 
-  it("생성된 문단을 고치지 않으면 그대로 저장하고 서버 본문을 덮어쓰지 않는다", async () => {
+  it("문장 줄바꿈과 맥락 사이 빈 줄을 그대로 저장하고 서버 본문을 덮어쓰지 않는다", async () => {
     const body =
-      "회의가 길었다. 집중하느라 피곤했다.\n\n저녁엔 라면을 먹었다. 든든했다. 집에서 쉬었다.";
+      "회의가 길었다.\n집중하느라 피곤했다.\n\n저녁엔 라면을 먹었다.\n든든했다.\n집에서 쉬었다.";
     seedCompleted({ ...SEED_DIARY, diary: body }, SEED_WISH);
     useRetro.setState({ sessionId: 42 });
 
