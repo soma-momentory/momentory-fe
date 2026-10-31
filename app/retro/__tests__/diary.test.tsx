@@ -345,10 +345,10 @@ describe("감정 탐색 없이 — 바람 카드도 없다", () => {
 });
 
 describe("완료 — 허브로 만들지 않는다", () => {
-  it("바람 카드가 있으면 그림 · 두 줄 · 카드 · 버튼 둘이다", async () => {
-    const { getByText, getByTestId } = await render(<RetroDone />);
+  it("바람 카드가 있으면 그림 없이 두 줄 · 카드 · 버튼 둘이다", async () => {
+    const { getByText, queryByTestId } = await render(<RetroDone />);
 
-    expect(getByTestId("retro-onsen", { includeHiddenElements: true })).toBeTruthy();
+    expect(queryByTestId("retro-onsen", { includeHiddenElements: true })).toBeNull();
 
     expect(getByText("오늘의 일기를 저장했어요.")).toBeTruthy();
     expect(getByText("오늘 이야기에서 마음을 하나 챙겨봤어요.")).toBeTruthy();
@@ -378,13 +378,12 @@ describe("완료 — 허브로 만들지 않는다", () => {
     expect(queryByText("바람카드 보기")).toBeNull();
   });
 
-  it("온천 카피바라 그림은 장식이다 — 눌리지 않고 낭독기에도 없다", async () => {
+  it("카드가 없는 완료 화면에도 온천 카피바라 그림을 두지 않는다", async () => {
     seedCompleted(SEED_DIARY, null);
-    const { getByTestId } = await render(<RetroDone />);
+    const { queryByTestId, getByText } = await render(<RetroDone />);
 
-    const face = getByTestId("retro-onsen", { includeHiddenElements: true });
-    expect(face.props.accessible).toBe(false);
-    expect(face.props.accessibilityElementsHidden).toBe(true);
+    expect(queryByTestId("retro-onsen", { includeHiddenElements: true })).toBeNull();
+    expect(getByText("쉼터로 가기")).toBeTruthy();
   });
 
   it("점수·연속 일수·배지·축하 연출을 쓰지 않는다", async () => {
