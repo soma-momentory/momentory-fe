@@ -131,3 +131,5 @@ export {
 /** 묶음 하나로 들고 다닐 때 — `import ds from "@/design/ds"` */
 export const ds = { ...color, ...metrics, ...typography } as const;
 export default ds;
+
+export { retroDiary } from "./retroDiary";

@@ -24,6 +24,7 @@ type Props = {
   /** `arrow-left` 뒤로 · `close` 닫기. 없으면 좌측을 비운다 */
   leading?: Extract<IconName, "arrow-left" | "close">;
   onLeadingPress?: () => void;
+  leadingColor?: string;
   /** 하위 화면만. 탭 루트에서는 넘기지 않는다 */
   title?: string;
   /** 제목을 **손글씨(교보 2025)**로 — 기본은 고딕 `headline1` 이다 */
@@ -35,6 +36,7 @@ type Props = {
 export function TopNavigation({
   leading,
   onLeadingPress,
+  leadingColor,
   title,
   titleHand = false,
   trailing,
@@ -45,6 +47,7 @@ export function TopNavigation({
         {leading != null ? (
           <IconButton
             name={leading}
+            color={leadingColor}
             accessibilityLabel={leading === "close" ? "닫기" : "뒤로"}
             onPress={onLeadingPress}
             style={styles.leadingButton}

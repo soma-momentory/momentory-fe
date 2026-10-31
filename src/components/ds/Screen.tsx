@@ -35,7 +35,7 @@ import { GridBackground } from "./GridBackground";
 type Props = {
   children: ReactNode;
   /** 기본 `normal`. 구분 영역이 필요한 화면만 `alternative` */
-  surface?: "normal" | "alternative";
+  surface?: "normal" | "alternative" | "transparent";
   /** 좌우 20 패딩. 탭바·하단 바처럼 전체 폭이 필요하면 `false` */
   padded?: boolean;
   /** 격자를 끈다 — 시안에서 격자가 없는 면(시트 내부 등) */
@@ -81,7 +81,12 @@ export function Screen({
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: background[surface] }]}>
+    <View
+      style={[
+        styles.root,
+        { backgroundColor: surface === "transparent" ? "transparent" : background[surface] },
+      ]}
+    >
       {grid ? <GridBackground /> : null}
       {backdrop != null ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">

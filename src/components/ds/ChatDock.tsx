@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type Ref } from "react";
 import { Animated, Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import {
@@ -9,6 +9,7 @@ import {
   label as labelColor,
   layout,
   primary,
+  retroDiary,
   radius,
   size,
   space,
@@ -32,11 +33,11 @@ import { useVoiceInput, type VoiceEvent } from "./voiceInput";
  * `DESIGN.md` §7 「전송/확인 — 값이 비면 비활성」. 빈 턴을 보내면 서버가
  * 되물을 말이 없다. **공백만 적은 것도 빈 것으로 본다.**
  *
- * ## 보내기는 44 다
+ * ## 보내기의 누름 영역은 44다
  *
  * 시안의 원 버튼은 40 인데 **44 로 올렸다** — `metrics.layout.minTouch` 가
  * 44 이고(`ds.test` 가 고정한다), 대화 중 가장 자주 눌리는 버튼을 최소 히트
- * 영역 아래로 내릴 이유가 없다. 알약 높이가 4 커지는 것이 대가다.
+ * 영역 아래로 내릴 이유가 없다. 다이어리 버전은 원만 40으로 줄이고 사방 2의 누름 여백을 둔다.
  *
  * ## 마이크는 보내기 왼쪽이다 (2026-09-29)
  *
@@ -65,6 +66,11 @@ type Props = {
   disabled?: boolean;
   /** 음성 입력의 상태 변화 — 화면이 계측에 쓴다 */
   onVoice?: (event: VoiceEvent) => void;
+  /** 회고의 테두리 없는 단색 메모 입력창. */
+  appearance?: "default" | "diary";
+  /** 미리보기 등에서 입력 포커스와 키보드 상태를 연결한다. */
+  onFocus?: () => void;
+  inputRef?: Ref<TextInput>;
 };
 
 export function ChatDock({
@@ -75,23 +81,51 @@ export function ChatDock({
   accessibilityLabel = "답변",
   disabled = false,
   onVoice,
+  appearance = "default",
+  onFocus,
+  inputRef,
 }: Props) {
   const [focused, setFocused] = useState(false);
+  const [inputHeight, setInputHeight] = useState<number>(layout.minTouch);
+  const diaryWeb = appearance === "diary" && Platform.OS === "web";
   const voice = useVoiceInput({ value, onChangeText, onEvent: onVoice });
   const ready = value.trim().length > 0 && !disabled;
 
   return (
-    <View style={[styles.dock, focused ? styles.docked : null]}>
+    <View
+      style={[
+        styles.dock,
+        focused ? styles.docked : null,
+        appearance === "diary" ? styles.diaryDock : null,
+      ]}
+    >
       <TextInput
+        ref={inputRef}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={labelColor.assistive}
+        placeholderTextColor={
+          appearance === "diary" ? retroDiary.inputPlaceholder : labelColor.assistive
+        }
         accessibilityLabel={accessibilityLabel}
         multiline
-        onFocus={() => setFocused(true)}
+        numberOfLines={diaryWeb ? 1 : undefined}
+        onContentSizeChange={
+          diaryWeb
+            ? (event) =>
+                setInputHeight(Math.max(layout.minTouch, event.nativeEvent.contentSize.height))
+            : undefined
+        }
+        onFocus={() => {
+          setFocused(true);
+          onFocus?.();
+        }}
         onBlur={() => setFocused(false)}
-        style={styles.input}
+        style={[
+          styles.input,
+          appearance === "diary" ? styles.diaryInput : null,
+          diaryWeb ? { height: value.length === 0 ? layout.minTouch : inputHeight } : null,
+        ]}
         // 여러 줄 입력이라 return 은 줄바꿈이다 — 보내기는 버튼이 한다
         blurOnSubmit={false}
       />
@@ -106,22 +140,44 @@ export function ChatDock({
         {voice.listening ? (
           <ListeningPulse />
         ) : (
-          <Icon name="mic" size={20} color={labelColor.neutral} />
+          <Icon
+            name="mic"
+            size={20}
+            color={appearance === "diary" ? retroDiary.inputText : labelColor.neutral}
+          />
         )}
       </Pressable>
 
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="보내기"
+        hitSlop={appearance === "diary" ? space.xs2 : undefined}
         accessibilityState={{ disabled: !ready }}
         disabled={!ready}
         onPress={() => {
           voice.cancel();
           onSend();
         }}
-        style={[styles.send, ready ? styles.sendReady : styles.sendIdle]}
+        style={[
+          styles.send,
+          appearance === "diary" ? styles.diarySendSize : null,
+          ready ? styles.sendReady : styles.sendIdle,
+          appearance === "diary" ? (ready ? styles.diarySendReady : styles.diarySendIdle) : null,
+        ]}
       >
-        <Icon name="send" size={20} color={ready ? labelColor.onFill : labelColor.disabled} />
+        <Icon
+          name="send"
+          size={20}
+          color={
+            appearance === "diary"
+              ? ready
+                ? retroDiary.onGreen
+                : retroDiary.sendIcon
+              : ready
+                ? labelColor.onFill
+                : labelColor.disabled
+          }
+        />
       </Pressable>
     </View>
   );
@@ -252,6 +308,25 @@ const styles = StyleSheet.create({
   },
   // 포커스는 테두리 색으로만 말한다 — 면을 바꾸면 글자 대비가 함께 흔들린다
   docked: { borderColor: primary.normal },
+  diaryDock: {
+    backgroundColor: retroDiary.input,
+    borderWidth: 0,
+    borderRadius: retroDiary.inputRadius,
+    boxShadow: "none",
+    elevation: 0,
+    shadowOpacity: 0,
+    padding: retroDiary.inputPadding,
+    paddingLeft: space.lg,
+    gap: space.xs,
+  },
+  diaryInput: { color: retroDiary.inputText, outlineWidth: 0, outlineStyle: "solid" },
+  diarySendIdle: { backgroundColor: retroDiary.sendIdle },
+  diarySendReady: { backgroundColor: retroDiary.sendReady },
+  diarySendSize: {
+    width: retroDiary.sendDiameter,
+    height: retroDiary.sendDiameter,
+    margin: space.xs2,
+  },
   input: {
     flex: 1,
     minWidth: 0,
