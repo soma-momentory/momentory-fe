@@ -15,6 +15,7 @@ description: Expo Lab 에서 넘어온 디자인 작업을 앱 코드에 반영�
 4. **값 반영** — `npm run design:apply-tokens -- <파일>`(diff) → `--write`, `npm run design:apply -- <파일>` → `--write`. 거절된 키는 원래 정의(계산식 · 원본 토큰)를 찾아 손으로 고친다.
 5. **구조 차이** — 참고 이미지 · 메모를 근거로 화면 코드를 고친다. `CLAUDE.md` 규칙(DESIGN.md 우선 · hex 는 `src/design/ds` 에만 · 선택 상태를 색만으로 표시 금지 · 오류는 한 줄 · 숫자 압박 금지)이 시안보다 우선이다. 부딪히면 고치지 말고 묻는다.
 6. **정본 갱신** — 토큰 값이 바뀌면 `docs/DESIGN.md` 도 고친다. 대비 보정 자리를 건드리면 `PLAN.md` A-5 표도.
+   6-1. **검수 스킬** — 새 화면 · 문구가 바뀌었으면 `momentory-ux-writing`, 색 · 글자 · 간격 · 배치가 바뀌었으면 `momentory-design-audit` 를 바뀐 범위에만 돌린다(HANDOFF.md 「함께 돌리는 검수 스킬」).
 7. **검사** — `typecheck` · `lint` · `format:check` · `test`(대비 테스트 포함). 대비가 깨지면 후보를 들고 되묻는다.
 8. **Lab 확인** — `npm run lab:web`(포트 8085), 바뀐 화면을 A(승인본)로 열어 참고 이미지와 겹쳐 확인하고 스크린샷을 남긴다.
 9. **PR** — 템플릿대로, 값 전 → 후 표 · Lab 확인 주소 · 전후 스크린샷. **머지는 사용자 승인 뒤에만.**
