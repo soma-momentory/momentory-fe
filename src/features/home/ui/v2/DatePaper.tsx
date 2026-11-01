@@ -9,7 +9,7 @@ import { formatKoreanDateShort, koreanWeekday } from "@/lib/day";
  * 홈 v2 머리의 **날짜 · 요일 종이 조각 두 장**(시안 `DateHeader`).
  *
  * 찢은 종이 모양은 다각형 하나이고 장식이다 — 글자만 읽힌다. 날짜와 요일은 옛 홈처럼 두 줄로
- * 나눠 쓰고(`lib/day.ts`), 서체는 Gaegu 굵게(HD-3).
+ * 나눠 쓰고(`lib/day.ts`), 서체는 교보손글씨(2026-11-01).
  */
 /** Keep the same 28pt overlap with the hero gap while both paper scraps grow with text. */
 export function datePaperExtraFor(fontScale: number) {

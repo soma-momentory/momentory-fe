@@ -269,17 +269,19 @@ describe("홈 v2 — 이번 주 감정 도크(WK-1 · D2 · DN-1)", () => {
     expect(r.queryByTestId("week-dock-picked")).toBeNull();
   });
 
-  it("오늘은 형광과 굵기로 — 색만으로 말하지 않는다", async () => {
+  it("오늘은 교보손글씨의 형광과 밑줄로 구분한다", async () => {
     const r = await show();
     const day = (label: string) =>
       flatten(
         within(r.getByRole("button", { name: `${label}요일 · 기록 없음` })).getByText(label).props
           .style,
       );
-    expect(day("수").fontFamily).toBe("Gaegu-Bold");
+    expect(day("수").fontFamily).toBe("KyoboHandwriting2025lyb");
     expect(day("수").backgroundColor).toBeDefined();
-    expect(day("목").fontFamily).toBe("Gaegu-Regular");
+    expect(day("수").textDecorationLine).toBe("underline");
+    expect(day("목").fontFamily).toBe("KyoboHandwriting2025lyb");
     expect(day("목").backgroundColor).toBeUndefined();
+    expect(day("목").textDecorationLine).toBeUndefined();
   });
 });
 

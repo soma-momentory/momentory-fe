@@ -109,7 +109,7 @@ function useAppFonts() {
     "Pretendard-Bold": require("../../assets/fonts/Pretendard-Bold.otf"),
     // **앱 전체의 서체** — `ds/typography.ts` 의 `fontFamily` 다섯 이름이 모두 이 파일이다
     KyoboHandwriting2025lyb: require("../../assets/fonts/KyoboHandwriting2025lyb.ttf"),
-    // **홈 v2 전용** 손글씨(HD-3 · `ds/homeV2.ts` 의 `homeV2.font`) — 굵기마다 파일 하나
+    // 기존 Lab 시안 호환용 서체. 운영 화면은 로그인 외 교보손글씨로 통일한다.
     "Gaegu-Regular": require("../../assets/fonts/Gaegu-Regular.ttf"),
     "Gaegu-Bold": require("../../assets/fonts/Gaegu-Bold.ttf"),
   });
