@@ -29,13 +29,6 @@ const PHOTO_BACKGROUNDS: Record<RestContentId, string> = {
   bodyRelease: homeV2.color.greenSoft,
 };
 
-const ROTATIONS: Record<RestContentId, string> = {
-  sensePond: "-1.5deg",
-  worryBox: "1.2deg",
-  treasureBox: "1deg",
-  bodyRelease: "-1.2deg",
-};
-
 export function RestContentGrid({ items, onOpen }: Props) {
   const largeText = useEffectiveFontScale() > 1.2;
   const rows: RestContent[][] = [];
@@ -47,8 +40,7 @@ export function RestContentGrid({ items, onOpen }: Props) {
         <View key={index} style={styles.row}>
           {row.map((item) => {
             const card = (
-              <View style={[styles.polaroid, { transform: [{ rotate: ROTATIONS[item.id] }] }]}>
-                <View style={styles.tape} />
+              <View style={styles.polaroid}>
                 <View style={[styles.photo, { backgroundColor: PHOTO_BACKGROUNDS[item.id] }]}>
                   <Image
                     source={PHOTOS[item.id]}
@@ -123,15 +115,6 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
-  },
-  tape: {
-    position: "absolute",
-    top: -9,
-    left: "34%",
-    width: 52,
-    height: 17,
-    backgroundColor: colors.tapeStripe,
-    zIndex: 1,
   },
   photo: { height: 106, overflow: "hidden" },
   photoImage: { width: "100%", height: "100%" },

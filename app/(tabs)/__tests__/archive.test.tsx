@@ -49,6 +49,13 @@ beforeEach(() => {
 });
 
 describe("A1 · 보관함 달력", () => {
+  it("날짜 테이프가 달력 안에 붙고 이전 달로 이동하면 함께 바뀐다", async () => {
+    const r = await render(<Archive />);
+    expect(within(r.getByTestId("studio-archive-calendar")).getByText("2026년 7월")).toBeTruthy();
+    await fireEvent.press(r.getByLabelText("이전 달"));
+    expect(within(r.getByTestId("studio-archive-calendar")).getByText("2026년 6월")).toBeTruthy();
+  });
+
   it("보는 방법은 「달력」과 「목록」이다 — 「캘린더」·「리스트」라고 쓰지 않는다", async () => {
     // 외부 캘린더 앱과 구분한다 (A1.md) — 시안의 「캘린더/리스트」를 따르지 않는다.
     // 세그먼트가 아이콘 스위처로 바뀌면서 그 말은 낭독기 이름에서 산다

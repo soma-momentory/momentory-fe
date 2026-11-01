@@ -4,6 +4,7 @@ import { PixelRatio } from "react-native";
 import { text } from "@/design/ds";
 import type { Schedule } from "@/features/home/model/types";
 import { ROW_PITCH, rowPitchFor, ScheduleList } from "@/features/home/ui/ScheduleList";
+import { DesignViewportContext } from "@/components/ds/DesignViewport";
 
 /**
  * 일정 목록의 **행 기하** — 한 칸(`pitch`)은 잰 값 하나다
@@ -29,7 +30,7 @@ const schedules: Schedule[] = Array.from({ length: 6 }, (_, i) => ({
   hidden: false,
 }));
 
-const setup = async (extra: Partial<Parameters<typeof ScheduleList>[0]> = {}) => {
+const setup = async (extra: Partial<Parameters<typeof ScheduleList>[0]> = {}, designScale = 1) => {
   const props = {
     schedules,
     onToggleDone: jest.fn(),
@@ -39,7 +40,11 @@ const setup = async (extra: Partial<Parameters<typeof ScheduleList>[0]> = {}) =>
     onRowPitch: jest.fn(),
     ...extra,
   };
-  const r = await render(<ScheduleList {...props} />);
+  const r = await render(
+    <DesignViewportContext.Provider value={{ scale: designScale, active: designScale !== 1 }}>
+      <ScheduleList {...props} />
+    </DesignViewportContext.Provider>,
+  );
   const top = (i: number) => flatten(r.getByTestId(`schedule-row-s${i}`).props.style).top;
   const translate = (i: number) =>
     (
@@ -76,6 +81,14 @@ afterEach(() => {
 });
 
 describe("ScheduleList 행 기하 — 한 칸은 잰 값 하나", () => {
+  it("좁은 화면에서도 손가락이 이동한 실제 행 수대로 순서를 바꾼다", async () => {
+    const scale = 360 / 390;
+    const { props, grab, moveTo, release } = await setup({ appearance: "paper" }, scale);
+    await grab(0);
+    await moveTo(0, 48 * 1.6 * scale);
+    await release(0);
+    expect(props.onReorder).toHaveBeenCalledWith("s0", 2);
+  });
   it("배율 1 에서는 예전과 같은 44 다 — 운영 홈의 배치가 그대로다", async () => {
     const { top, listHeight, measureFirst, props } = await setup();
     expect(ROW_PITCH).toBe(44);

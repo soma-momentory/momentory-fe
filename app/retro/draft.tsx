@@ -240,7 +240,7 @@ export default function RetroDraft() {
                 </Text>
               )}
             </DiaryPaperEntry>
-            <DiaryScheduleMemo schedules={shownSchedules} />
+            {!editing ? <DiaryScheduleMemo schedules={shownSchedules} /> : null}
           </ScrollView>
 
           {/* 버튼 뒤로 본문이 이어진다는 표시 — 끝까지 내리면 걷힌다 */}

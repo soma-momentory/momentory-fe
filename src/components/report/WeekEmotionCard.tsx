@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Text } from "@/components/ds";
-import { useEffectiveFontScale } from "@/components/ds/Text";
 import { space } from "@/design/ds";
 import { reportPaper } from "@/design/ds/reportPaper";
 import type { WeeklyReport } from "@/features/report/model/weeklyReport";
@@ -21,27 +21,28 @@ type Props = {
 };
 
 export function WeekEmotionCard({ report, thisWeek, writtenDates }: Props) {
-  const fontScale = useEffectiveFontScale();
   const [selected, setSelected] = useState<string | null>(null);
   // 다른 주로 넘기면 고른 날이 그 주에 없다 — 찾지 못하면 아무것도 적지 않는다
   const picked = report.days.find((d) => d.date === selected) ?? null;
 
   return (
     <View style={styles.card}>
-      <View pointerEvents="none" style={styles.tape} />
+      <View pointerEvents="none" style={styles.tape}>
+        <MaskingTape color={reportPaper.tape} />
+      </View>
       <View testID="week-emotion-head" style={styles.head}>
         <View style={styles.headLine}>
           <Text
             variant="body1Reading"
             color={reportPaper.strong}
-            style={[styles.title, { lineHeight: 24 * fontScale }]}
+            style={[styles.title, { lineHeight: 24 }]}
           >
             요일별
           </Text>
           <Text
             variant="label2"
             color={reportPaper.muted}
-            style={[styles.caption, { lineHeight: 20 * fontScale }]}
+            style={[styles.caption, { lineHeight: 20 }]}
           >
             {thisWeek ? "이번 주 감정들" : "이 주 감정들"}
           </Text>
@@ -77,7 +78,6 @@ const styles = StyleSheet.create({
     left: "38%",
     width: 84,
     height: 22,
-    backgroundColor: reportPaper.tape,
     opacity: 0.85,
     transform: [{ rotate: "-2deg" }],
   },

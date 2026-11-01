@@ -1,46 +1,36 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import Svg, { Rect } from "react-native-svg";
+import Svg, { Path } from "react-native-svg";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Text, useEffectiveFontScale } from "@/components/ds/Text";
 import { homeV2 } from "@/design/ds";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
-import { formatKoreanTime } from "@/lib/time";
 
 import { Baba } from "./Baba";
+import { Rug } from "./Rug";
+import { ScallopedSticker } from "./ScallopedSticker";
 import type { HomeWeatherView } from "./types";
 import { WeatherSticker } from "./WeatherSticker";
 import { weatherStickerForKey } from "./weatherStickers";
 
-/**
- * 홈 v2 의 **히어로 카드** — 말풍선 · 리마인더 · 바바 · 「하루 돌아보기」(시안 `HeroCard` · HD-6).
- *
- * ## 문안 (계획 §2.2)
- *
- * - 말풍선 「오늘 하루는 / 어땠어요?」 — v2
- * - 리마인더는 **설정 시각으로 만든다** — 「{밤 9:30}엔 제가 / 먼저 말 걸어요」. v2 시안은 「밤 9:30」을
- *   하드코딩했지만 운영은 `formatKoreanTime` 을 지난다. 하드 줄바꿈은 **시각 뒤에만** 둔다
- * - 알림을 끄면 「편할 때 언제든 돌아볼 수 있어요」(`12.md`) — 줄바꿈은 글자 폭에 맡긴다
- * - 「하루 돌아보기 ›」 — 화면의 **유일한 주 CTA**. `›` 는 장식이라 접근성 이름은 「하루 돌아보기」다
- *
- * ## 날씨 자리 (P4)
- *
- * `weather` 가 `null` 이면 **스티커 자리를 그리지 않는다** — 빈 틀도 문구도 없다(HW-4 와 같은 모양).
- * 운영 홈은 P4의 `WeatherSticker`를 재사용한다. 그림이 없는 조건과 기온은 함께 숨긴다.
- */
+/** 홈 v2 히어로 — 말풍선 · 날씨 스티커 · 바바 · 일기 작성하기. */
 type Props = {
   design?: StudioDesign;
-  retroReminderTime: string | null;
   weather: HomeWeatherView | null;
   onStartReflection: () => void;
   onOpenWeatherInfo: () => void;
 };
 
-/** 녹색 체크무늬 테이프 한 장 — 시안의 92 × 24 */
-const TAPE = { width: 92, height: 24, cell: 6, pitch: 12 } as const;
+/** 녹색 체크무늬 테이프 — 사용자 요청으로 104 × 28로 확대 */
+const TAPE = { width: 104, height: 28 } as const;
+const BABA_RIGHT = 16;
+const RUG_WIDTH = 184;
+
+const BUBBLE_OUTLINE =
+  "M28 22 C55 12 77 0 106 5 C129 9 153 9 178 13 C210 14 219 34 216 58 C214 78 198 90 199 106 C201 119 207 132 215 139 C193 129 179 119 169 109 C145 104 134 112 108 111 C78 110 50 106 29 103 C10 100 5 79 4 62 C2 47 11 35 28 22 Z";
 
 export function HeroCard({
   design = approvedDesign,
-  retroReminderTime,
   weather,
   onStartReflection,
   onOpenWeatherInfo,
@@ -48,10 +38,6 @@ export function HeroCard({
   const fontScale = useEffectiveFontScale();
   const scale = fontScale;
   const extra = Math.max(0, scale - 1);
-  const note =
-    retroReminderTime != null
-      ? `${formatKoreanTime(retroReminderTime)}엔 제가\n먼저 말 걸어요`
-      : "편할 때 언제든 돌아볼 수 있어요";
   const visibleWeather = weather != null && weatherStickerForKey(weather.stickerKey) != null;
 
   return (
@@ -60,7 +46,8 @@ export function HeroCard({
       style={[
         styles.hero,
         {
-          paddingTop: 128 + 60 * extra,
+          // 글씨가 커지면 말풍선 아래의 버튼 자리도 함께 확보한다.
+          paddingTop: 162 + 163 * extra,
           backgroundColor: design["home.hero.backgroundColor"],
           borderRadius: design["home.hero.borderRadius"],
         },
@@ -72,27 +59,7 @@ export function HeroCard({
         importantForAccessibility="no-hide-descendants"
         style={styles.tape}
       >
-        <Svg width={TAPE.width} height={TAPE.height}>
-          <Rect width={TAPE.width} height={TAPE.height} fill={homeV2.color.tapeBase} />
-          {Array.from({ length: TAPE.width / TAPE.pitch + 1 }, (_, i) => (
-            <Rect
-              key={`c${i}`}
-              x={i * TAPE.pitch}
-              width={TAPE.cell}
-              height={TAPE.height}
-              fill={homeV2.color.tapeStripe}
-            />
-          ))}
-          {[0, TAPE.pitch].map((y) => (
-            <Rect
-              key={`r${y}`}
-              y={y}
-              width={TAPE.width}
-              height={TAPE.cell}
-              fill={homeV2.color.tapeStripe}
-            />
-          ))}
-        </Svg>
+        <MaskingTape color={homeV2.color.tapeBase} stripeColor={homeV2.color.tapeStripe} />
       </View>
 
       <View
@@ -100,20 +67,42 @@ export function HeroCard({
         style={[
           styles.bubble,
           {
-            minWidth: 150 + 150 * extra,
-            backgroundColor: design["home.bubble.backgroundColor"],
+            minWidth: 188 + 120 * extra,
             borderRadius: design["home.bubble.borderRadius"],
             paddingHorizontal: design["home.bubble.paddingHorizontal"],
           },
         ]}
       >
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.bubblePaper}
+        >
+          <Svg width="100%" height="100%" viewBox="-4 -4 228 148" preserveAspectRatio="none">
+            <Path
+              d={BUBBLE_OUTLINE}
+              transform="translate(0 3)"
+              fill={homeV2.color.shadow}
+              opacity={0.09}
+            />
+            <Path
+              d={BUBBLE_OUTLINE}
+              fill={design["home.bubble.backgroundColor"]}
+              stroke={homeV2.color.bubbleBorder}
+              strokeWidth={1.8}
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </Svg>
+        </View>
         <Text
           testID="studio-home-bubble-text"
           style={[
             styles.bubbleText,
             {
               fontSize: design["home.bubbleText.fontSize"],
-              lineHeight: (design["home.bubbleText.fontSize"] + 4) * scale,
+              lineHeight: design["home.bubbleText.fontSize"] + 4,
               fontFamily: design["home.bubbleText.fontFamily"],
               textAlign: design["home.bubbleText.textAlign"] as "left" | "center" | "right",
               letterSpacing: design["home.bubbleText.letterSpacing"],
@@ -123,30 +112,23 @@ export function HeroCard({
         >
           {"오늘 하루는\n어땠어요?"}
         </Text>
-        <View
-          style={[styles.bubbleTail, { backgroundColor: design["home.bubble.backgroundColor"] }]}
-        />
       </View>
 
       {visibleWeather ? (
         <View testID="home-v2-weather" style={styles.weather}>
           <WeatherSticker weather={weather} onPress={onOpenWeatherInfo} />
-          {weather.temperatureC != null ? (
-            <Text style={styles.weatherTemperature} color={homeV2.color.ink}>
-              {weather.temperatureC}℃
-            </Text>
-          ) : null}
         </View>
       ) : null}
 
-      <Text
-        style={[styles.note, { lineHeight: homeV2.type.note.lineHeight * scale }]}
-        color={homeV2.color.muted}
+      <View
+        testID="home-v2-rug"
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={styles.ground}
       >
-        {note}
-      </Text>
-
-      <View pointerEvents="none" style={styles.ground} />
+        <Rug />
+      </View>
       <View testID="studio-home-baba" style={styles.baba}>
         <Baba />
       </View>
@@ -154,21 +136,28 @@ export function HeroCard({
       <Pressable
         testID="studio-home-cta"
         accessibilityRole="button"
-        accessibilityLabel="하루 돌아보기"
+        accessibilityLabel="일기 작성하기"
         onPress={onStartReflection}
         style={[
           styles.cta,
           {
-            backgroundColor: design["home.cta.backgroundColor"],
             paddingHorizontal: design["home.cta.paddingHorizontal"],
           },
         ]}
       >
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={StyleSheet.absoluteFill}
+        >
+          <ScallopedSticker color={design["home.cta.backgroundColor"]} />
+        </View>
         <Text
-          style={[styles.ctaText, { lineHeight: homeV2.type.cta.lineHeight * scale }]}
+          style={[styles.ctaText, { lineHeight: homeV2.type.cta.lineHeight }]}
           color={homeV2.color.white}
         >
-          하루 돌아보기 ›
+          일기 작성하기
         </Text>
       </Pressable>
     </View>
@@ -185,8 +174,8 @@ const styles = StyleSheet.create({
   },
   tape: {
     position: "absolute",
-    left: 140,
-    top: -12,
+    left: 134,
+    top: -14,
     width: TAPE.width,
     height: TAPE.height,
     transform: [{ rotate: homeV2.tilt.tape }],
@@ -195,60 +184,40 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 18,
     top: 24,
-    paddingVertical: 12,
+    paddingTop: 22,
+    paddingBottom: 26,
     paddingHorizontal: 18,
     borderRadius: 22,
-    backgroundColor: homeV2.color.white,
     transform: [{ rotate: homeV2.tilt.bubble }],
     zIndex: 2,
-    boxShadow: homeV2.shadow.bubble,
   },
-  bubbleText: { fontFamily: homeV2.font.bold, ...homeV2.type.bubble },
-  weather: { position: "absolute", top: 20, right: 14, alignItems: "center", zIndex: 3 },
-  weatherTemperature: { fontFamily: homeV2.font.bold, fontSize: 18, lineHeight: 22, marginTop: 2 },
-  bubbleTail: {
-    position: "absolute",
-    right: 28,
-    bottom: -8,
-    width: 16,
-    height: 16,
-    backgroundColor: homeV2.color.white,
-    transform: [{ rotate: "45deg" }],
+  bubbleText: {
+    fontFamily: homeV2.font.bold,
+    ...homeV2.type.bubble,
+    transform: [{ translateY: 2 }],
   },
-  note: {
-    marginLeft: 26,
-    maxWidth: 160,
-    fontFamily: homeV2.font.regular,
-    ...homeV2.type.note,
-    transform: [{ rotate: homeV2.tilt.note }],
-  },
+  weather: { position: "absolute", top: -13, right: 14, alignItems: "center", zIndex: 3 },
+  bubblePaper: { ...StyleSheet.absoluteFill, bottom: -22 },
   ground: {
     position: "absolute",
-    right: 12,
-    bottom: 12,
-    width: 170,
-    height: 40,
-    borderRadius: 24,
-    backgroundColor: homeV2.color.heroGround,
+    right: BABA_RIGHT + (homeV2.size.baba.width - RUG_WIDTH) / 2,
+    bottom: 5,
+    width: RUG_WIDTH,
+    height: 62,
     transform: [{ rotate: homeV2.tilt.ground }],
   },
-  baba: { position: "absolute", right: 16, bottom: -24, zIndex: 1 },
+  baba: { position: "absolute", right: BABA_RIGHT, bottom: -22, zIndex: 1 },
   cta: {
     alignSelf: "flex-start",
     marginLeft: 18,
-    marginTop: 26,
-    marginBottom: 20,
+    marginTop: 10,
+    marginBottom: 44,
     minHeight: homeV2.size.cta.height,
     paddingHorizontal: 20,
-    borderTopLeftRadius: 34,
-    borderTopRightRadius: 28,
-    borderBottomRightRadius: 36,
-    borderBottomLeftRadius: 26,
-    backgroundColor: homeV2.color.green,
+    minWidth: 164,
     justifyContent: "center",
+    alignItems: "center",
     zIndex: 2,
-    borderWidth: 3,
-    borderColor: homeV2.color.paper,
   },
-  ctaText: { fontFamily: homeV2.font.bold, ...homeV2.type.cta },
+  ctaText: { fontFamily: homeV2.font.bold, ...homeV2.type.cta, textAlign: "center" },
 });

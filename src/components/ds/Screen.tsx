@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { background, layout } from "@/design/ds";
+import { background, layout, space } from "@/design/ds";
 
 import { GridBackground } from "./GridBackground";
+import { DesignViewport } from "./DesignViewport";
 
 /**
  * 화면 바닥 — 배경 + 격자 + Safe Area + **좌우 패딩 20**.
@@ -34,6 +35,10 @@ import { GridBackground } from "./GridBackground";
  */
 type Props = {
   children: ReactNode;
+  /** Match the approved 390pt composition on different phone widths. */
+  proportional?: boolean;
+  /** Extra space below the system safe area, in design points. */
+  topGap?: number;
   /** 기본 `normal`. 구분 영역이 필요한 화면만 `alternative` */
   surface?: "normal" | "alternative" | "transparent";
   /** 좌우 20 패딩. 탭바·하단 바처럼 전체 폭이 필요하면 `false` */
@@ -59,12 +64,27 @@ export function useScreenBottomInset() {
 }
 
 export function Screen({
+  proportional = false,
+  topGap = proportional ? space.md : 0,
+  ...props
+}: Props) {
+  return proportional ? (
+    <DesignViewport>
+      <ScreenBody {...props} topGap={topGap} />
+    </DesignViewport>
+  ) : (
+    <ScreenBody {...props} topGap={topGap} />
+  );
+}
+
+function ScreenBody({
   children,
   surface = "normal",
   padded = true,
   grid = true,
   edges = ["top", "bottom"],
   backdrop,
+  topGap = 0,
 }: Props) {
   const insets = useSafeAreaInsets();
   const bottomInset = useScreenBottomInset();
@@ -74,7 +94,7 @@ export function Screen({
   // 20 이 사라지거나 인셋이 무시된다
   const side = padded ? layout.screenPadding : 0;
   const safe = {
-    paddingTop: on("top") ? insets.top : 0,
+    paddingTop: (on("top") ? insets.top : 0) + topGap,
     paddingBottom: on("bottom") ? bottomInset : 0,
     paddingLeft: side + (on("left") ? insets.left : 0),
     paddingRight: side + (on("right") ? insets.right : 0),

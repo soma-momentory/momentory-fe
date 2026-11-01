@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Image,
   StyleSheet,
@@ -7,8 +7,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import Svg, { Defs, LinearGradient, Path, Pattern, Rect, Stop } from "react-native-svg";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Text } from "@/components/ds";
 import { space } from "@/design/ds";
 import { diaryMemo } from "@/design/ds/diaryMemo";
@@ -79,80 +79,26 @@ export function MemoPaper({
   );
 }
 
-/**
- * 제목을 적은 테이프 한 조각. 양 끝은 손으로 뜯은 듯 들쭉날쭉하고, 위쪽에 광택 · 결 방향의
- * 가는 섬유가 있다. **불투명 · 그림자 없음 · 주름 없음**(시안에서 하나씩 뺐다).
- *
- * 폭은 글자가 정한다 — 글자를 먼저 깔고, 잰 크기로 테이프 면을 뒤에 그린다.
- */
+/** 제목 폭에 맞는 단색 테이프. 홈에서 정한 뜯긴 윤곽을 공유한다. */
 export function MemoTape({
   tone,
   label,
-  seed = 1,
   style,
 }: {
   tone: Tone;
   label: string;
-  /** 찢긴 모양을 고르는 수 — 같은 화면의 두 테이프가 똑같이 찢기지 않게 */
+  /** 기존 호출부와의 호환용. 윤곽은 공통 모양으로 통일한다. */
   seed?: number;
   style?: StyleProp<ViewStyle>;
 }) {
-  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
-  // 그라디언트·패턴 id 가 한 화면의 두 테이프 사이에서 겹치지 않게
-  const id = useId().replace(/[^a-zA-Z0-9]/g, "");
-  const onLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (size?.width !== width || size?.height !== height) setSize({ width, height });
-  };
-
   return (
-    <View style={[styles.tape, style]} onLayout={onLayout}>
-      {size != null ? (
-        <Svg
-          width={size.width}
-          height={size.height}
-          style={StyleSheet.absoluteFill}
-          accessible={false}
-          pointerEvents="none"
-        >
-          <Defs>
-            <LinearGradient id={`sheen${id}`} x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={diaryMemo.tapeSheen} stopOpacity={0.34} />
-              <Stop offset="0.22" stopColor={diaryMemo.tapeSheen} stopOpacity={0.1} />
-              <Stop offset="0.52" stopColor={diaryMemo.tapeSheen} stopOpacity={0} />
-              <Stop offset="1" stopColor={diaryMemo.tapeShade} stopOpacity={0.07} />
-            </LinearGradient>
-            <Pattern id={`fiber${id}`} width={3} height={4} patternUnits="userSpaceOnUse">
-              <Rect width={1} height={4} fill={diaryMemo.tapeSheen} opacity={0.08} />
-            </Pattern>
-          </Defs>
-          <Path d={tornPath(size.width, size.height, seed)} fill={diaryMemo[tone].tape} />
-          <Path d={tornPath(size.width, size.height, seed)} fill={`url(#sheen${id})`} />
-          <Path d={tornPath(size.width, size.height, seed)} fill={`url(#fiber${id})`} />
-        </Svg>
-      ) : null}
-      <Text variant="tapeHand" color={diaryMemo[tone].tapeInk} numberOfLines={1}>
+    <View style={[styles.tape, style]}>
+      <MaskingTape color={diaryMemo[tone].tape} />
+      <Text variant="tapeHand" color={diaryMemo[tone].tapeInk}>
         {label}
       </Text>
     </View>
   );
-}
-
-/** 위아래 변은 곧고 양 끝만 잘게 들쭉날쭉한 띠. 같은 `seed` 면 늘 같은 모양이다 */
-function tornPath(width: number, height: number, seed: number): string {
-  let x = seed * 9973;
-  const next = () => (x = (x * 9301 + 49297) % 233280) / 233280;
-  const steps = 11;
-  const depth = diaryMemo.tornDepth;
-  const left: string[] = [];
-  const right: string[] = [];
-  for (let i = 0; i <= steps; i++) {
-    left.push(`${(next() * depth).toFixed(1)} ${((i / steps) * height).toFixed(1)}`);
-  }
-  for (let i = steps; i >= 0; i--) {
-    right.push(`${(width - next() * depth).toFixed(1)} ${((i / steps) * height).toFixed(1)}`);
-  }
-  return `M ${left.join(" L ")} L ${right.join(" L ")} Z`;
 }
 
 const styles = StyleSheet.create({
