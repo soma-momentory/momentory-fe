@@ -55,6 +55,7 @@ export function ColorInput({
           <input
             type="color"
             aria-label={`${label} 색 고르기`}
+            title="팔레트에서 색을 골라요"
             value={toHex6(parsed)}
             onChange={(event) => fromPicker(event.currentTarget.value)}
             style={{ width: 28, height: 24, padding: 0, border: "none", background: "none" }}
@@ -114,6 +115,7 @@ export function NumberInput({
       <Row style={{ flexWrap: "nowrap" }}>
         <PanelButton
           label="−"
+          hint={`${stepSize}만큼 줄여요`}
           accessibilityLabel={`${label} 줄이기`}
           onPress={() => commit(value - stepSize)}
         />
@@ -130,6 +132,7 @@ export function NumberInput({
         />
         <PanelButton
           label="+"
+          hint={`${stepSize}만큼 늘려요`}
           accessibilityLabel={`${label} 늘리기`}
           onPress={() => commit(value + stepSize)}
         />
@@ -189,6 +192,7 @@ export function ChoiceInput({
         <PanelButton
           key={option.value}
           label={option.label}
+          hint={`「${option.label}」로 바꿔요`}
           selected={option.value === value}
           onPress={() => onChange(option.value)}
         />
