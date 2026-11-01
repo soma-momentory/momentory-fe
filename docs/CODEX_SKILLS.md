@@ -17,7 +17,7 @@
 
 ## Claude Code 사본
 
-같은 14개 스킬을 `.claude/skills/` 에도 둔다(2026-11-01). Claude Code 는 `.agents/skills/` 를 읽지 않기 때문이다. Codex 사본과의 차이는 넷뿐이다:
+같은 15개 스킬을 `.claude/skills/` 에도 둔다(2026-11-01 · 15번째 `momentory-lab-handoff` 는 2026-11-02). Claude Code 는 `.agents/skills/` 를 읽지 않기 때문이다. Codex 사본과의 차이는 넷뿐이다:
 
 - `agents/openai.yaml`(Codex 전용)은 없다.
 - 위에서 자동 선택을 끈 외부 스킬 5개(`ux-writing` · `expo-design-system` · `vercel-react-native-skills` · `diagnose-activation` · `diagnose-retention`)는 `SKILL.md` frontmatter 에 `disable-model-invocation: true` 를 둔다 — Codex 의 `allow_implicit_invocation: false` 와 같은 뜻이다.
@@ -78,6 +78,7 @@ Expo Lab은 `npm run lab:web`으로 띄우고 기본 8081에서 `http://localhos
 | `momentory-ai-quality-eval` | 설치, AI 회고·편지 합성 사례 평가     | 실제 일기·감정 데이터 외부 전송 금지                                                                                                                                                                   |
 | `momentory-analytics-audit` | 설치, 이벤트 계측·개인정보 감사       | MCP 미연결 시 정적 확인만                                                                                                                                                                              |
 | `momentory-pr-review`       | 설치, 변경 diff 중심 회귀 리뷰        | 리뷰 요청만으로 수정·게시하지 않음                                                                                                                                                                     |
+| `momentory-lab-handoff`     | 이 저장소(2026-11-02), Lab 시안 반영  | 정본 `expo-lab/HANDOFF.md` · 넘긴 파일에 없는 변경은 끼우지 않음 · 머지는 사용자 승인 뒤                                                                                                               |
 
 각 전용 `SKILL.md`는 **트리거, 검수 범위, 검사 근거, 결과 형식, 실행 비용, 수정 승인 조건**을 명시한다. 공식 스킬은 원문을 유지하고 `AGENTS.md`의 프로젝트 경계를 따른다. Amplitude 원문의 차트 작성·세션 리플레이 제안은 현재 환경에서 실행하지 않는다. `docs/ANALYTICS.md`에 따르면 자동 리플레이는 사용하지 않는다. 작은 변경은 변경 영역만, 전체 앱 감사는 명시적 요청 때만 검사한다. 외부 조회·전송·유료 실행·게시에는 범위와 비용을 밝히고 별도 명시적 허가를 받는다.
 
