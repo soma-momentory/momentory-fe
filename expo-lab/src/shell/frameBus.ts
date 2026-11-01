@@ -109,7 +109,8 @@ export class FrameBus {
     current.timer = setTimeout(() => {
       if (this.pending.get(frameId) !== current) return;
       this.pending.delete(frameId);
-      this.post(frameId, { type: "lab:navigate", pathname: current.target });
+      // 경유 화면 위에 얹는다 — replace 면 뒤 화면(홈 등)이 사라져 시트 뒤가 비어 보인다
+      this.post(frameId, { type: "lab:navigate", pathname: current.target, mode: "push" });
     }, delayMs);
   }
 

@@ -16,10 +16,9 @@ import type { ShellState } from "./hashState";
 import { findRoute, resolveHref, shellRoutes, type ShellRoute } from "./routes";
 
 /**
- * 셸이 프레임에 싣는 설정. `textScale` 은 아직 공유 계약에 없다 — 프레임(갈래 A)이 읽기 시작하면
- * 계약으로 옮긴다. 1 이면 싣지 않는다(설정 문자열이 바뀌면 프레임이 다시 뜨므로).
+ * 셸이 프레임에 싣는 설정. `textScale` 은 1 이면 싣지 않는다(설정 문자열이 바뀌면 프레임이 다시 뜨므로).
  */
-export type ShellFrameConfig = LabFrameConfig & { textScale?: number };
+export type ShellFrameConfig = LabFrameConfig;
 
 export type FrameRole = "solo" | "approved" | "draft" | "cell";
 

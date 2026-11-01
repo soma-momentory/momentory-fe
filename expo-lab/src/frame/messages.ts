@@ -18,10 +18,11 @@ export function postToShell(message: FrameToShellMessage): void {
 
 export function parseShellMessage(data: unknown): ShellToFrameMessage | null {
   if (typeof data !== "object" || data === null) return null;
-  const { type, pathname } = data as { type?: unknown; pathname?: unknown };
+  const { type, pathname, mode } = data as { type?: unknown; pathname?: unknown; mode?: unknown };
   switch (type) {
     case "lab:navigate":
-      return typeof pathname === "string" && pathname.startsWith("/") ? { type, pathname } : null;
+      if (typeof pathname !== "string" || !pathname.startsWith("/")) return null;
+      return mode === "push" ? { type, pathname, mode } : { type, pathname };
     case "lab:reload":
     case "lab:resetData":
       return { type };
@@ -31,7 +32,7 @@ export function parseShellMessage(data: unknown): ShellToFrameMessage | null {
 }
 
 export type ShellMessageHandlers = {
-  navigate: (pathname: string) => void;
+  navigate: (pathname: string, mode: "replace" | "push") => void;
   reload: () => void;
   resetData: () => void;
 };
@@ -42,7 +43,7 @@ export function dispatchShellMessage(
 ): void {
   switch (message.type) {
     case "lab:navigate":
-      handlers.navigate(message.pathname);
+      handlers.navigate(message.pathname, message.mode ?? "replace");
       return;
     case "lab:reload":
       handlers.reload();

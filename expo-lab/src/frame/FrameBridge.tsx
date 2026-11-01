@@ -8,6 +8,8 @@
 import { router, usePathname } from "expo-router";
 import { useEffect, useRef, type PropsWithChildren } from "react";
 
+import { PreviewFontScaleContext } from "@/components/ds/Text";
+
 import { resetFakeData } from "../fake-server";
 import type { LabFrameConfig } from "../lab-contract";
 
@@ -37,11 +39,19 @@ export function FrameBridge({ children }: PropsWithChildren) {
     const config = getFrameConfig();
     if (config == null) return;
     return listenToShell({
-      navigate: (next) => router.replace(next as never),
+      navigate: (next, mode) =>
+        mode === "push" ? router.push(next as never) : router.replace(next as never),
       reload: () => window.location.reload(),
       resetData: () => resetFrame(config),
     });
   }, []);
 
-  return children;
+  // 글씨 배율 모의 — 앱이 Lab 용으로 열어 둔 `PreviewFontScaleContext` 를 쓴다(1 이면 끼우지 않는다)
+  const textScale = getFrameConfig()?.textScale;
+  if (typeof textScale !== "number" || textScale === 1) return children;
+  return (
+    <PreviewFontScaleContext.Provider value={textScale}>
+      {children}
+    </PreviewFontScaleContext.Provider>
+  );
 }

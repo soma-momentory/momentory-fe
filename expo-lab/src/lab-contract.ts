@@ -40,6 +40,11 @@ export type LabFrameConfig = {
    * 끄면 실제 서버처럼 하루 1회 제한(일기 409 · 회고 ALREADY_RETROSPECTED_TODAY).
    */
   repeatToday?: boolean;
+  /**
+   * 글씨 배율 모의(1 · 1.3 · 1.5). 프레임이 앱의 `PreviewFontScaleContext`(`src/components/ds/Text.tsx`)로
+   * 넘긴다 — 1.5 는 앱 상한(`maxFontScale` 1.3)을 넘겨 배치를 점검하는 값이다. 실제 OS 설정을 대신하지 않는다
+   */
+  textScale?: number;
 };
 
 export type LabPlatform = "ios" | "android";
@@ -92,7 +97,11 @@ export type FrameToShellMessage =
 
 /** 셸 → 프레임 메시지 */
 export type ShellToFrameMessage =
-  | { type: "lab:navigate"; pathname: string }
+  /**
+   * 주소를 옮긴다. 기본은 `replace`. 홈 위 시트(`/home/schedule/*`)처럼 **뒤 화면 위에 얹혀야** 하는
+   * 목적지는 `push` — replace 면 뒤의 홈이 사라져 빈 배경이 된다
+   */
+  | { type: "lab:navigate"; pathname: string; mode?: "replace" | "push" }
   | { type: "lab:reload" }
   /** 이 프레임의 가짜 DB 를 데이터 세트 초기값으로 되돌리고 다시 불러온다 */
   | { type: "lab:resetData" };

@@ -179,7 +179,11 @@ export function ShellApp() {
           if (
             options.remount ||
             !fromVia ||
-            !frameBus.post(spec.frameId, { type: "lab:navigate", pathname: target })
+            !frameBus.post(spec.frameId, {
+              type: "lab:navigate",
+              pathname: target,
+              ...(via ? { mode: "push" as const } : {}),
+            })
           ) {
             toBump.push(spec.frameId);
           }

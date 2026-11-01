@@ -23,7 +23,7 @@ Expo Lab 의 「운영판 v2」 변형이 같은 파일을 그린다.
   `LAYERS` 배열이 이 표와 같은 순서다. 아홉 장 합계 약 155KB.
 - **출처**: Claude Design `design-imports/claude-home/홈화면 시안 3개 검토/Baba.dc.html`
   (v2 시안 `홈화면 시안 v2.dc.html` 이 부르는 컴포넌트). Lab 사본 `expo-lab/assets/claude-home/baba/` 를
-  그대로 복사했다 — Lab 원본은 「시안 원본」 변형이 계속 쓰므로 지우지 않는다.
+  그대로 복사했다. Lab 사본과 「시안 원본」 변형은 2026-11-02 Expo Lab 전 화면 전환 때 지웠다(이 폴더가 이제 유일한 사본이다).
 - ⚠ **`base-ears-front.webp` 는 옮기지 않았다.** 원본 `Baba.dc.html` 에서 이 장은 **모자
   (`hat-beanie-2.webp`) 를 씌울 때만** 그 위에 다시 얹는 귀다(`<sc-if value="{{ beanie2 }}">` 안).
   홈 v2 는 모자를 쓰지 않으므로 쓰지 않는다. 모자가 들어오면 그때 함께 승격한다.
