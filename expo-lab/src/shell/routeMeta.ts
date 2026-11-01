@@ -104,12 +104,20 @@ export const routeSections: readonly RouteSection[] = [
       {
         path: "/reading",
         title: "답 정리",
-        hint: "앞 단계 답이 있어야 머문다 — 바로 열면 /name 으로 간다. 질문 1(/mood)부터 흐름으로 오면 약 5초 동안 보인다",
+        hint: "답을 읽는 약 5초짜리 화면 — 막대가 다 차면 스스로 /name 으로 넘어간다. 다시 보려면 조건 패널의 「폰 화면 새로 불러오기」",
       },
       { path: "/name", title: "이름" },
-      { path: "/about", title: "나이 · 성별" },
+      {
+        path: "/about",
+        title: "나이 · 성별",
+        hint: "이름 단계(/name)에서 쓴 이름이 첫 문장에 들어간다 — 바로 열면 「님」만 남는다. /name 부터 흐름으로 오면 보인다",
+      },
       { path: "/calendar", title: "캘린더 연결" },
-      { path: "/notify", title: "알림" },
+      {
+        path: "/notify",
+        title: "알림",
+        hint: "알림 미리보기에 이름 단계(/name)에서 쓴 이름이 들어간다 — 바로 열면 「님」만 남는다. /name 부터 흐름으로 오면 보인다",
+      },
       { path: "/research", title: "연구 그래프" },
       { path: "/now", title: "지금 첫 회고" },
     ],
@@ -153,13 +161,23 @@ export const routeSections: readonly RouteSection[] = [
         path: "/retro/confirm",
         title: "오늘 일정 확인",
         specId: "C2",
-        hint: "오늘 일기가 이미 있으면 /retro/talk 로 넘어간다 — 「하루 넘기기」로 새 날에서 연다",
+        // 오늘 일정은 홈이 받아 둔다 — 바로 열면 「적어둔 일정이 없네요」로 보인다
+        openVia: { path: "/home", afterRequest: "/api/v1/schedules" },
+        hint: "홈을 먼저 열어 오늘 일정을 받은 뒤 옮긴다 · 오늘 일기가 이미 있으면 /retro/talk 로 넘어간다 — 「하루 넘기기」로 새 날에서 연다",
       },
-      { path: "/retro/talk", title: "회고 대화", specId: "C4" },
+      {
+        path: "/retro/talk",
+        title: "회고 대화",
+        specId: "C4",
+        // 첫 인사가 닉네임 · 오늘 일정을 부른다 — 바로 열면 둘 다 빠진 인사가 된다
+        openVia: { path: "/home", afterRequest: "/api/v1/schedules" },
+        hint: "홈을 먼저 열어 닉네임 · 오늘 일정을 받은 뒤 옮긴다(첫 인사가 둘을 부른다)",
+      },
       {
         path: "/retro/write",
         title: "직접 쓰기",
-        hint: "오늘 일기가 이미 있으면 /retro/talk 로 넘어간다 — 「하루 넘기기」로 새 날에서 연다",
+        openVia: { path: "/home", afterRequest: "/api/v1/schedules" },
+        hint: "홈을 먼저 열어 오늘 일정을 받은 뒤 옮긴다 · 오늘 일기가 이미 있으면 /retro/talk 로 넘어간다 — 「하루 넘기기」로 새 날에서 연다",
       },
       {
         path: "/retro/draft",
@@ -179,13 +197,21 @@ export const routeSections: readonly RouteSection[] = [
     id: "letter",
     title: "편지",
     routes: [
-      { path: "/letter", title: "편지함" },
+      {
+        path: "/letter",
+        title: "편지함",
+        // 편지마다 그날 일기 첫 줄이 붙는다 — 일기는 탭 묶음이 받아 두므로 홈을 거친다
+        openVia: { path: "/home", afterRequest: "/api/v1/action-cards" },
+        hint: "홈을 먼저 열어 일기를 받은 뒤 옮긴다(편지마다 그날 일기 첫 줄이 붙는다)",
+      },
       { path: "/letter/[date]", title: "바바의 편지" },
       {
         path: "/letter/time",
         title: "편지 받을 시각",
         query: { next: "done" },
-        hint: "처음 일기를 저장한 직후 한 번 나오는 화면",
+        // 지금 고른 편지 시각(서버 프로필)으로 시작한다 — 바로 열면 프로필이 오기 전이라 기본값이다
+        openVia: { path: "/home", afterRequest: "/api/v1/schedules" },
+        hint: "처음 일기를 저장한 직후 한 번 나오는 화면 — 홈을 먼저 열어 지금 편지 시각을 받은 뒤 옮긴다",
       },
     ],
   },
@@ -206,7 +232,14 @@ export const routeSections: readonly RouteSection[] = [
     id: "rest",
     title: "쉼터 콘텐츠",
     routes: [
-      { path: "/rest/cards", title: "날짜별 바람카드", specId: "R2" },
+      {
+        path: "/rest/cards",
+        title: "날짜별 바람카드",
+        specId: "R2",
+        // 바람카드는 탭 묶음이 받아 둔다 — 바로 열면 빈 목록이다
+        openVia: { path: "/rest", afterRequest: "/api/v1/action-cards" },
+        hint: "쉼터를 먼저 열어 바람카드를 받은 뒤 옮긴다",
+      },
       { path: "/rest/sense-pond", title: "감각연못" },
       { path: "/rest/worry-box", title: "걱정상자" },
       { path: "/rest/worries", title: "맡겨둔 걱정" },
@@ -221,11 +254,36 @@ export const routeSections: readonly RouteSection[] = [
     title: "마이 세부",
     routes: [
       { path: "/my/profile", title: "기본 정보", specId: "M2" },
-      { path: "/my/nickname", title: "닉네임 수정" },
-      { path: "/my/age", title: "나이 수정" },
-      { path: "/my/gender", title: "성별 수정" },
-      { path: "/my/interests", title: "관심 분야 수정" },
-      { path: "/my/rest", title: "쉬는 방법 수정" },
+      {
+        path: "/my/nickname",
+        title: "닉네임 수정",
+        openVia: { path: "/my/profile", afterRequest: "/api/v1/onboarding/options" },
+        hint: "기본 정보를 먼저 열어 프로필 · 선택지를 받은 뒤 옮긴다(바로 열면 지금 값이 비어 보인다)",
+      },
+      {
+        path: "/my/age",
+        title: "나이 수정",
+        openVia: { path: "/my/profile", afterRequest: "/api/v1/onboarding/options" },
+        hint: "기본 정보를 먼저 열어 프로필 · 선택지를 받은 뒤 옮긴다(바로 열면 지금 값이 비어 보인다)",
+      },
+      {
+        path: "/my/gender",
+        title: "성별 수정",
+        openVia: { path: "/my/profile", afterRequest: "/api/v1/onboarding/options" },
+        hint: "기본 정보를 먼저 열어 프로필 · 선택지를 받은 뒤 옮긴다(바로 열면 지금 값이 비어 보인다)",
+      },
+      {
+        path: "/my/interests",
+        title: "관심 분야 수정",
+        openVia: { path: "/my/profile", afterRequest: "/api/v1/onboarding/options" },
+        hint: "기본 정보를 먼저 열어 프로필 · 선택지를 받은 뒤 옮긴다(바로 열면 지금 값이 비어 보인다)",
+      },
+      {
+        path: "/my/rest",
+        title: "쉬는 방법 수정",
+        openVia: { path: "/my/profile", afterRequest: "/api/v1/onboarding/options" },
+        hint: "기본 정보를 먼저 열어 프로필 · 선택지를 받은 뒤 옮긴다(바로 열면 지금 값이 비어 보인다)",
+      },
       { path: "/my/inquiry", title: "문의하기" },
     ],
   },

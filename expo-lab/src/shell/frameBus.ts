@@ -7,6 +7,7 @@
 import { useSyncExternalStore } from "react";
 
 import type { FrameToShellMessage, ShellToFrameMessage } from "../lab-contract";
+import { apiPrefix } from "./screenStates";
 
 export type FrameRuntime = {
   element: HTMLIFrameElement | null;
@@ -46,6 +47,11 @@ export class FrameBus {
   private routeListeners = new Set<RouteListener>();
   private pending = new Map<string, PendingNavigation>();
   private seq = 0;
+  /**
+   * 화면(주소 · 검색 조건 뺌)마다 그 화면에 서 있는 동안 부른 서버 주소 접두사 — 「불러오기 실패」가
+   * 실패시킬 주소를 고른다(`screenStates.ts`). 요청 기록(`requests`)과 달리 잘라 내지 않는다
+   */
+  private paths = new Map<string, Set<string>>();
   requests: RequestEntry[] = [];
   version = 0;
 
@@ -129,6 +135,26 @@ export class FrameBus {
       .map(([frameId]) => frameId);
   }
 
+  /** 주소가 `matches` 에 맞는 화면들에서 부른 서버 주소 접두사(중복 없음) */
+  pathsFor(matches: (pathname: string) => boolean): string[] {
+    const found = new Set<string>();
+    for (const [pathname, prefixes] of this.paths) {
+      if (matches(pathname)) prefixes.forEach((prefix) => found.add(prefix));
+    }
+    return [...found];
+  }
+
+  private notePath(frameId: string, path: string) {
+    // 두 단계 열기의 경유 화면이 부른 것은 목적지 몫이 아니다
+    if (this.pending.has(frameId)) return;
+    const pathname = this.get(frameId).pathname?.split(/[?#]/)[0];
+    const prefix = apiPrefix(path);
+    if (!pathname || !prefix) return;
+    const set = this.paths.get(pathname) ?? new Set<string>();
+    set.add(prefix);
+    this.paths.set(pathname, set);
+  }
+
   clearRequests() {
     this.requests = [];
     this.emit();
@@ -161,6 +187,7 @@ export class FrameBus {
         ) {
           this.flushNavigate(message.frameId, SETTLE_MS);
         }
+        this.notePath(message.frameId, message.path);
         this.seq += 1;
         this.requests = [
           { ...message, id: this.seq, at: Date.now() },

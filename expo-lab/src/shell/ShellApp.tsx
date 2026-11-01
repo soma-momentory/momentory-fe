@@ -2,7 +2,8 @@
  * Expo Lab 셸 — 앱의 **모든 화면을 실제 앱 코드로** 띄우는 작업대.
  *
  *   왼쪽: 라우트 목록(앱 순서 · 접히는 묶음) · 가운데: 도구줄(설명 · 확대 · 돋보기) +
- *   한 화면 / A·B 비교 / 전체 화면 / 매트릭스 · 오른쪽: 조작(… · 서버 요청 기록) · 디자인 편집
+ *   한 화면 / A·B 비교 / 전체 화면 / 매트릭스 / 상태별(`StatesView`) · 오른쪽: 조작(… · 서버 요청 기록) ·
+ *   디자인 편집 · 참고 시안(`src/reference/` — 겹치는 층은 주인공 프레임의 화면 상자 안 · `FrameReference.tsx`)
  *
  * 양옆 패널은 접힌다(머리줄 「목록」「패널」 · 패널 안 «/× · 해시 `nav=0` `side=0`). 창이
  * `NARROW_WIDTH` 보다 좁으면(브라우저 확대 등) 둘 다 저절로 접히고, 같은 버튼이 무대 위에 뜨는
@@ -29,9 +30,17 @@ import {
 import { DesignEditorPanel } from "../design-editor/DesignEditorPanel";
 import { resetFakeData, sampleParams } from "../fake-server";
 import { encodeFrameConfig, type LabPlatform, type SampleParams } from "../lab-contract";
+import { findDevice } from "../lab-devices";
+import { handleReferenceShortcut, ReferencePanel, useReferencesFor } from "../reference";
 import { chromeGeometry } from "./device/geometry";
 import { ControlsPanel, type ControlActions } from "./ControlsPanel";
 import { notifyDraftsChanged, useDraftInfo, type DraftInfo } from "./draftInfo";
+import {
+  FrameReference,
+  handoffReferencesFor,
+  referenceScopeOf,
+  SideReferenceFrame,
+} from "./FrameReference";
 import { frameBus, useFrameBus } from "./frameBus";
 import { framesFor, peekFrameFor, PEEK_FRAME_ID, type FrameSpec } from "./frameSpecs";
 import { GridView } from "./GridView";
@@ -52,7 +61,16 @@ import { LENS_POWER, LENS_SIZE, MagnifierLayer, type MagnifierTarget } from "./M
 import { findRoute, matchPathname, shellRoutes, type ShellRoute } from "./routes";
 import { RouteTree } from "./RouteTree";
 import { StageToolbar } from "./StageToolbar";
-import { FRAME_GAP, MIN_CELL_WIDTH, STAGE_PAD_BOTTOM, STAGE_PAD_X, fitScale } from "./stageFit";
+import { LOADING_LATENCY_MS } from "./screenStates";
+import { StatePicker, StatesView } from "./StatesView";
+import {
+  FRAME_GAP,
+  MIN_CELL_WIDTH,
+  STAGE_PAD_BOTTOM,
+  STAGE_PAD_X,
+  fitRow,
+  fitScale,
+} from "./stageFit";
 import { shellColor, shellFont } from "./theme";
 import { setClock, shiftDays } from "./time";
 
@@ -74,11 +92,17 @@ const AB_CAPTION = 46;
 const SIDE_TABS = [
   ["controls", "화면 조건", "조건 바꾸기"],
   ["design", "디자인 편집", "디자인 편집"],
+  ["reference", "참고 시안", "참고 시안"],
 ] as const satisfies readonly (readonly [SidePanel, string, string])[];
 const SIDE_TAB_TITLE: Record<SidePanel, string> = {
   controls: "기기 · 테스트 데이터 · 시각 · 서버 응답 · 글씨 크기를 바꿔요",
   design: "시안을 만들고 색 · 글자 · 화면 값을 고쳐요 — 시안을 건 폰 화면(B)에만 적용돼요",
+  reference:
+    "피그마 · Claude Design 에서 뽑은 화면 그림을 앱 위에 겹쳐 어긋난 곳을 찾아요 — R 키로 보이기 · 숨기기",
 };
+
+/** 칸마다 차갑게 여는 레이아웃 — 셸이 주소를 옮기지 않고, 칸 안의 이동을 따라가지 않는다 */
+const isWall = (layout: LayoutId) => layout === "grid" || layout === "states";
 
 const shellRouteCount = shellRoutes.length;
 
@@ -222,7 +246,7 @@ export function ShellApp() {
         ...peekFrameFor(next, cachedSampleParams, Date.now()),
       ];
       const toBump: string[] = [];
-      if (options.navigate && next.layout !== "grid") {
+      if (options.navigate && !isWall(next.layout)) {
         for (const spec of nextSpecs) {
           if (spec.frameId === options.except) continue;
           const current = frameBus.get(spec.frameId).pathname;
@@ -276,7 +300,7 @@ export function ShellApp() {
     const timers = new Map<string, ReturnType<typeof setTimeout>>();
     const settle = (frameId: string) => {
       const s = stateRef.current;
-      if (s.layout === "grid") return;
+      if (isWall(s.layout)) return;
       const ids = specsRef.current.map((spec) => spec.frameId);
       // 숨긴 승인본은 따라가기만 한다 — 그 프레임의 주소로 다른 프레임을 옮기지 않는다
       if (!ids.includes(frameId) || frameId === PEEK_FRAME_ID) return;
@@ -341,7 +365,7 @@ export function ShellApp() {
     if (layout === state.layout) return;
     const primary = frameBus.get(primaryFrameId(state.layout, specs)).pathname;
     const target =
-      state.layout !== "grid" && primary && matchPathname(primary)?.path === state.route
+      !isWall(state.layout) && primary && matchPathname(primary)?.path === state.route
         ? primary
         : undefined;
     goTo({ ...state, layout }, { history: "push", navigate: true, target, force: true });
@@ -353,9 +377,44 @@ export function ShellApp() {
       { history: "push", navigate: true, force: true },
     );
 
+  // 「상태별로 보기」 칸을 누름 — 그 칸의 데이터 · 지연 · 실패 주소 그대로 한 화면
+  const openFromState = (spec: FrameSpec) =>
+    goTo(
+      {
+        ...state,
+        layout: "single",
+        dataset: spec.config.datasetId as ShellState["dataset"],
+        signedIn: spec.config.signedIn ?? state.signedIn,
+        latencyMs: spec.config.latencyMs ?? 0,
+        failPaths: [...(spec.config.failPaths ?? [])],
+      },
+      { history: "push", navigate: true, force: true },
+    );
+
   const route = findRoute(state.route);
   const frameKey = (spec: FrameSpec) => `${configKey(spec)}#${nonces[spec.frameId] ?? 0}`;
   const draftInfo = useDraftInfo(state.draft);
+
+  // ── 참고 시안 ─────────────────────────────────────────────
+  // 겹치기 · 나란히 놓기는 주인공 프레임 하나에만(한 화면 = 그 폰 · A/B = 시안을 건 B)
+  const showsReference = state.layout === "single" || state.layout === "ab";
+  const primaryId = primaryFrameId(state.layout, specs);
+  const primarySpec = showsReference ? specs.find((spec) => spec.frameId === primaryId) : undefined;
+  const primaryScope = primarySpec
+    ? referenceScopeOf(state.route, primarySpec)
+    : { route: state.route, draftId: state.draft };
+  const primaryReference = useReferencesFor(primaryScope);
+  const sideReference =
+    primarySpec && primaryReference.reference?.view.mode === "side" ? primaryReference : null;
+  const handoffDevice = findDevice(state.device);
+  const getReferences = useMemo(
+    () =>
+      handoffReferencesFor(
+        { draftId: state.draft, platform: handoffDevice.platform, deviceId: handoffDevice.id },
+        handoffDevice,
+      ),
+    [state.draft, handoffDevice],
+  );
 
   // ── 확대 ────────────────────────────────────────────────
   // 기기 줄 위에 이미 쓰인 높이(안내 · A/B 설명) — 배율과 무관하므로 그린 뒤 재서 맞춤에 쓴다
@@ -368,15 +427,18 @@ export function ShellApp() {
     if (top != null && top !== rowTop) setRowTop(top);
   });
   const captionReserve = state.layout === "ab" ? AB_CAPTION : 0;
-  const fitted = fitScale(
-    state.layout,
-    area,
-    rowTop + captionReserve,
-    specs.map((spec) => {
-      const g = chromeGeometry(spec.device, Boolean(spec.device.skin));
-      return { width: g.outerWidth, height: g.outerHeight };
-    }),
-  );
+  const phoneSizes = specs.map((spec) => {
+    const g = chromeGeometry(spec.device, Boolean(spec.device.skin));
+    return { width: g.outerWidth, height: g.outerHeight };
+  });
+  // 「옆에 나란히 놓기」면 같은 기기 하나를 더 세운다 — 한 줄에 같이 맞춘다
+  const fitted =
+    sideReference && primarySpec
+      ? fitRow(area, rowTop + captionReserve, [
+          ...phoneSizes,
+          phoneSizes[specs.indexOf(primarySpec)]!,
+        ])
+      : fitScale(state.layout, area, rowTop + captionReserve, phoneSizes);
   const scale = state.zoom === "fit" ? fitted : state.zoom;
   const setZoom = (zoom: Zoom) => goTo({ ...state, zoom }, { history: "replace" });
   const stepBy = (direction: 1 | -1) => setZoom(stepZoom(scale, direction));
@@ -452,6 +514,11 @@ export function ShellApp() {
         return;
       }
       if (event.altKey) return;
+      // R — 참고 시안 보이기 · 숨기기(누르고 있어도 한 번만)
+      if (!event.repeat && handleReferenceShortcut(event)) {
+        event.preventDefault();
+        return;
+      }
       if (event.key === "z" || event.key === "Z") {
         if (!event.repeat) setLensHeld(true);
       } else if (event.key === "`" || event.key === "o" || event.key === "O") {
@@ -600,6 +667,13 @@ export function ShellApp() {
               scale={frameScale}
               realMs={realMs}
               startPath={frameBus.get(spec.frameId).pathname}
+              // 1분 늦는 「불러오는 중」이면 경유 화면도 늦어 목적지에 못 간다 — 바로 연다
+              skipVia={(spec.config.latencyMs ?? 0) >= LOADING_LATENCY_MS}
+              screenOverlay={
+                spec === primarySpec ? (
+                  <FrameReference scope={primaryScope} device={spec.device} />
+                ) : undefined
+              }
             />
           </div>
           {isB && !draftInfo && !overlayDiff ? (
@@ -894,7 +968,7 @@ export function ShellApp() {
         <div style={{ flex: 1, minHeight: 0 }}>
           <RouteTree
             current={state.route}
-            frameIds={state.layout === "grid" ? [] : specs.map((spec) => spec.frameId)}
+            frameIds={isWall(state.layout) ? [] : specs.map((spec) => spec.frameId)}
             onSelect={(next) => {
               if (narrow) setDrawer(null);
               selectRoute(next);
@@ -933,6 +1007,19 @@ export function ShellApp() {
             if (!on) setLensHeld(false);
           }}
         >
+          {state.layout === "single" && route ? (
+            <StatePicker
+              route={route}
+              state={state}
+              onPick={(config) =>
+                set({
+                  dataset: config.dataset,
+                  latencyMs: config.latencyMs,
+                  failPaths: config.failPaths,
+                })
+              }
+            />
+          ) : null}
           {state.layout === "single" ? (
             <SingleDraftBar
               draftInfo={draftInfo}
@@ -957,6 +1044,20 @@ export function ShellApp() {
                 nonces={nonces}
                 onOpen={openFromGrid}
               />
+            ) : state.layout === "states" && route ? (
+              <div style={{ padding: `12px ${STAGE_PAD_X}px ${STAGE_PAD_BOTTOM}px` }}>
+                <div ref={rowRef} />
+                <StatesView
+                  route={route}
+                  specs={specs}
+                  scale={scale}
+                  realMs={realMs}
+                  nonces={nonces}
+                  stageWidth={area.width - STAGE_PAD_X * 2}
+                  onOpen={openFromState}
+                  onReload={(frameId) => bump([frameId])}
+                />
+              </div>
             ) : (
               <div style={{ padding: `12px ${STAGE_PAD_X}px ${STAGE_PAD_BOTTOM}px` }}>
                 {state.layout === "ab" ? (
@@ -1004,6 +1105,47 @@ export function ShellApp() {
                   }}
                 >
                   {specs.map((spec) => renderFrame(spec, scale))}
+                  {sideReference && primarySpec ? (
+                    <figure
+                      data-testid="reference-side-cell"
+                      style={{
+                        margin: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 6,
+                        flex: "none",
+                      }}
+                    >
+                      <figcaption
+                        title={`참고 시안 「${sideReference.reference?.name ?? ""}」`}
+                        style={{
+                          width: "100%",
+                          textAlign: "center",
+                          ...(state.layout === "ab" ? { minHeight: AB_CAPTION - 6 } : {}),
+                        }}
+                      >
+                        <span
+                          style={{
+                            ...ellipsis,
+                            fontSize: state.layout === "ab" ? 14 : 12,
+                            fontWeight: 700,
+                            color: shellColor.draft,
+                          }}
+                        >
+                          참고 시안 「{sideReference.reference?.name}」
+                        </span>
+                      </figcaption>
+                      <SideReferenceFrame
+                        reference={sideReference.reference}
+                        url={sideReference.url}
+                        device={primarySpec.device}
+                        scale={scale}
+                        now={state.now}
+                        realMs={realMs}
+                      />
+                    </figure>
+                  ) : null}
                 </div>
               </div>
             )}
@@ -1116,6 +1258,13 @@ export function ShellApp() {
         >
           {state.panel === "controls" ? (
             <ControlsPanel state={state} realMs={realMs} actions={actions} />
+          ) : state.panel === "reference" ? (
+            <ReferencePanel
+              route={state.route}
+              draftId={primarySpec?.config.designDraftId ?? state.draft}
+              platform={state.platform}
+              deviceId={state.device}
+            />
           ) : (
             <DesignEditorPanel
               activeDraftId={state.draft}
@@ -1131,6 +1280,12 @@ export function ShellApp() {
               }}
               frames={editorFrames}
               currentRoute={primaryPath}
+              labContext={{
+                platform: state.platform,
+                deviceId: state.device,
+                datasetId: state.dataset,
+              }}
+              getReferences={getReferences}
             />
           )}
         </div>
