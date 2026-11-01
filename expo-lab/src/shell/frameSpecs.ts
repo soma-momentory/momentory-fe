@@ -5,6 +5,7 @@
  * 프레임 id 는 **안정적이어야 한다** — 가짜 DB 가 `frameId:datasetId` 로 localStorage 에
  * 남으므로, 같은 자리의 프레임은 다시 불러와도 같은 데이터를 이어 쓴다.
  */
+import { datasets } from "../fake-server";
 import {
   DATASET_IDS,
   type DatasetId,
@@ -79,6 +80,35 @@ function buildSpec(
   };
 }
 
+/** 한 화면에 시안이 걸렸을 때 그 아래 숨겨 두는 승인본 프레임 — 「원래대로 잠깐 보기」 */
+export const PEEK_FRAME_ID = "solo-base";
+
+/**
+ * 「원래대로 잠깐 보기」 용 승인본 프레임(시안 없음 · 같은 라우트 · 같은 데이터 · 같은 기기).
+ * 한 화면 + 시안이 있을 때만 띄운다(성능). 주소는 셸이 `solo` 를 따라 옮긴다
+ */
+export function peekFrameFor(
+  state: ShellState,
+  sample: SampleParamsFor,
+  realMs: number,
+): FrameSpec[] {
+  if (state.layout !== "single" || !state.draft) return [];
+  const route = findRoute(state.route) ?? shellRoutes[0]!;
+  return [
+    buildSpec(
+      state,
+      { frameId: PEEK_FRAME_ID, route, designDraftId: null },
+      "지금 앱",
+      "approved",
+      sample,
+      realMs,
+    ),
+  ];
+}
+
+/** 데이터 세트 id → 사람이 읽는 이름(「신규 사용자」 …) */
+export const datasetLabel = (id: string) => datasets.find((item) => item.id === id)?.label ?? id;
+
 export function framesFor(state: ShellState, sample: SampleParamsFor, realMs: number): FrameSpec[] {
   const route = findRoute(state.route) ?? shellRoutes[0]!;
   const build = (o: Overrides, label: string, role: FrameRole) =>
@@ -89,7 +119,7 @@ export function framesFor(state: ShellState, sample: SampleParamsFor, realMs: nu
       return [build({ frameId: "solo", route }, "", state.draft ? "draft" : "solo")];
     case "ab":
       return [
-        build({ frameId: "A", route, designDraftId: null }, "A · 승인본", "approved"),
+        build({ frameId: "A", route, designDraftId: null }, "A · 지금 앱", "approved"),
         build({ frameId: "B", route, designDraftId: state.draft }, "B · 시안", "draft"),
       ];
     case "matrix":
@@ -99,7 +129,7 @@ export function framesFor(state: ShellState, sample: SampleParamsFor, realMs: nu
         );
       }
       return DATASET_IDS.map((dataset) =>
-        build({ frameId: `m-${dataset}`, route, dataset }, dataset, "cell"),
+        build({ frameId: `m-${dataset}`, route, dataset }, datasetLabel(dataset), "cell"),
       );
     case "grid":
       return shellRoutes.map((item) =>

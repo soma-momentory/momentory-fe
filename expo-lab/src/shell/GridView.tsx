@@ -16,6 +16,8 @@ import { LabFrame } from "./LabFrame";
 import { shellColor } from "./theme";
 
 const MAX_BOOTING = 4;
+const MIN_LABEL_WIDTH = 110;
+const ellipsis = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } as const;
 const BOOT_TIMEOUT_MS = 6000;
 
 class BootQueue {
@@ -129,7 +131,13 @@ function GridCell({
   return (
     <div
       data-testid={`grid-cell-${spec.route.path}`}
-      style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        alignItems: "center",
+        flex: "none",
+      }}
     >
       <div
         ref={holder}
@@ -164,9 +172,18 @@ function GridCell({
           }}
         />
       </div>
-      <div style={{ fontSize: 12, color: shellColor.ink, textAlign: "center", maxWidth: 160 }}>
-        {spec.route.title}
-        <div style={{ color: shellColor.faint, fontSize: 11 }}>{spec.route.path}</div>
+      {/* 이름은 칸 폭 안에서 말줄임 — 글자마다 줄바꿈되지 않게 칸에 최소 폭을 둔다 */}
+      <div
+        title={`${spec.route.title} — ${spec.route.path}`}
+        style={{
+          fontSize: 12,
+          color: shellColor.ink,
+          textAlign: "center",
+          width: Math.max(g.outerWidth * scale, MIN_LABEL_WIDTH),
+        }}
+      >
+        <div style={ellipsis}>{spec.route.title}</div>
+        <div style={{ ...ellipsis, color: shellColor.faint, fontSize: 11 }}>{spec.route.path}</div>
       </div>
     </div>
   );

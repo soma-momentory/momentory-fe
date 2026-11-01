@@ -1,8 +1,12 @@
 /**
  * Expo Lab 셸 — 앱의 **모든 화면을 실제 앱 코드로** 띄우는 작업대.
  *
- *   왼쪽: 라우트 목록(앱 순서) · 가운데: 한 화면 / A·B 비교 / 전체 화면 / 매트릭스 ·
- *   오른쪽: 조작(기기 · 데이터 · 시각 · 서버 · 보기) · 디자인 편집 · 요청 기록
+ *   왼쪽: 라우트 목록(앱 순서 · 접히는 묶음) · 가운데: 도구줄(설명 · 확대 · 돋보기) +
+ *   한 화면 / A·B 비교 / 전체 화면 / 매트릭스 · 오른쪽: 조작(… · 서버 요청 기록) · 디자인 편집
+ *
+ * 양옆 패널은 접힌다(머리줄 「목록」「패널」 · 패널 안 «/× · 해시 `nav=0` `side=0`). 창이
+ * `NARROW_WIDTH` 보다 좁으면(브라우저 확대 등) 둘 다 저절로 접히고, 같은 버튼이 무대 위에 뜨는
+ * 서랍으로 연다 — 무대는 `MIN_STAGE_WIDTH` 아래로 줄지 않는다.
  *
  * 프레임 = `<iframe name={encodeFrameConfig(config)}>` 안의 실제 앱(갈래 A). 셸은 설정을 iframe 이름에
  * 싣고, 주소는 `lab:navigate` 로만 옮긴다. 상태는 전부 URL 해시(`hashState.ts`)에 남는다.
@@ -27,27 +31,63 @@ import { resetFakeData, sampleParams } from "../fake-server";
 import { encodeFrameConfig, type LabPlatform, type SampleParams } from "../lab-contract";
 import { chromeGeometry } from "./device/geometry";
 import { ControlsPanel, type ControlActions } from "./ControlsPanel";
+import { notifyDraftsChanged, useDraftInfo, type DraftInfo } from "./draftInfo";
 import { frameBus, useFrameBus } from "./frameBus";
-import { framesFor, type FrameSpec } from "./frameSpecs";
+import { framesFor, peekFrameFor, PEEK_FRAME_ID, type FrameSpec } from "./frameSpecs";
 import { GridView } from "./GridView";
 import {
   LAYOUTS,
   parseHash,
   serializeHash,
+  stepZoom,
   withPlatform,
   withRoute,
   type LayoutId,
   type ShellState,
+  type SidePanel,
+  type Zoom,
 } from "./hashState";
 import { LabFrame } from "./LabFrame";
-import { RequestLog } from "./RequestLog";
-import { findRoute, matchPathname, type ShellRoute } from "./routes";
+import { LENS_POWER, LENS_SIZE, MagnifierLayer, type MagnifierTarget } from "./Magnifier";
+import { findRoute, matchPathname, shellRoutes, type ShellRoute } from "./routes";
 import { RouteTree } from "./RouteTree";
+import { StageToolbar } from "./StageToolbar";
+import { FRAME_GAP, MIN_CELL_WIDTH, STAGE_PAD_BOTTOM, STAGE_PAD_X, fitScale } from "./stageFit";
 import { shellColor, shellFont } from "./theme";
 import { setClock, shiftDays } from "./time";
 
 /** 프레임 주소가 이만큼 그대로면 「지금 화면」으로 본다 */
 const ROUTE_SETTLE_MS = 400;
+
+/** 이보다 좁은 창(CSS px)에서는 양옆 패널이 저절로 접혀 서랍이 된다 */
+export const NARROW_WIDTH = 1180;
+/** 무대는 이보다 좁아지지 않는다 */
+const MIN_STAGE_WIDTH = 360;
+const NAV_WIDTH = 250;
+const SIDE_WIDTH = 340;
+/** 접힌 패널 자리의 막대 폭 */
+const RAIL_WIDTH = 44;
+const HEADER_HEIGHT = 52;
+/** A/B 기기 위 이름 두 줄(이름 + 바꾼 값)의 높이 */
+const AB_CAPTION = 46;
+
+const SIDE_TABS = [
+  ["controls", "화면 조건", "조건 바꾸기"],
+  ["design", "디자인 편집", "디자인 편집"],
+] as const satisfies readonly (readonly [SidePanel, string, string])[];
+const SIDE_TAB_TITLE: Record<SidePanel, string> = {
+  controls: "기기 · 테스트 데이터 · 시각 · 서버 응답 · 글씨 크기를 바꿔요",
+  design: "시안을 만들고 색 · 글자 · 화면 값을 고쳐요 — 시안을 건 폰 화면(B)에만 적용돼요",
+};
+
+const shellRouteCount = shellRoutes.length;
+
+const ellipsis = {
+  display: "block",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+} as const;
 
 const configKey = (spec: FrameSpec) => encodeFrameConfig(spec.config);
 
@@ -87,6 +127,16 @@ function useRealClock(): number {
   return ms;
 }
 
+function useWindowWidth(): number {
+  const [width, setWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return width;
+}
+
 function useElementSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [size, setSize] = useState({ width: 1000, height: 800 });
@@ -110,18 +160,25 @@ export function ShellApp() {
   const realMs = useRealClock();
   const [nonces, setNonces] = useState<Record<string, number>>({});
   const [syncNav, setSyncNav] = useState(true);
-  const [stageRef, stage] = useElementSize<HTMLDivElement>();
+  const [scrollRef, area] = useElementSize<HTMLDivElement>();
+  const narrow = useWindowWidth() < NARROW_WIDTH;
+  /** 좁은 창에서 열린 서랍 — 해시에 남기지 않는다 */
+  const [openDrawer, setDrawer] = useState<"nav" | "side" | null>(null);
+  const drawer = narrow ? openDrawer : null;
   useFrameBus();
 
   const specs = useMemo(() => framesFor(state, cachedSampleParams, realMs), [state, realMs]);
+  /** 한 화면 + 시안이면 그 아래 숨긴 승인본(「원래대로 잠깐 보기」) — 그리지 않는 곳에서는 specs 와 함께 다룬다 */
+  const peekSpecs = useMemo(() => peekFrameFor(state, cachedSampleParams, realMs), [state, realMs]);
+  const allSpecs = useMemo(() => [...specs, ...peekSpecs], [specs, peekSpecs]);
 
   // 프레임 메시지 처리(이벤트)가 최신 값을 읽는 자리 — 그리기가 끝난 뒤 맞춘다
   const stateRef = useRef(state);
-  const specsRef = useRef(specs);
+  const specsRef = useRef(allSpecs);
   const syncRef = useRef(syncNav);
   useLayoutEffect(() => {
     stateRef.current = state;
-    specsRef.current = specs;
+    specsRef.current = allSpecs;
     syncRef.current = syncNav;
   });
 
@@ -160,7 +217,10 @@ export function ShellApp() {
       },
     ) => {
       const before = new Map(specsRef.current.map((spec) => [spec.frameId, configKey(spec)]));
-      const nextSpecs = framesFor(next, cachedSampleParams, Date.now());
+      const nextSpecs = [
+        ...framesFor(next, cachedSampleParams, Date.now()),
+        ...peekFrameFor(next, cachedSampleParams, Date.now()),
+      ];
       const toBump: string[] = [];
       if (options.navigate && next.layout !== "grid") {
         for (const spec of nextSpecs) {
@@ -218,7 +278,15 @@ export function ShellApp() {
       const s = stateRef.current;
       if (s.layout === "grid") return;
       const ids = specsRef.current.map((spec) => spec.frameId);
-      if (!ids.includes(frameId)) return;
+      // 숨긴 승인본은 따라가기만 한다 — 그 프레임의 주소로 다른 프레임을 옮기지 않는다
+      if (!ids.includes(frameId) || frameId === PEEK_FRAME_ID) return;
+      if (frameId === "solo" && ids.includes(PEEK_FRAME_ID)) {
+        const pathname = frameBus.get(frameId).pathname;
+        if (pathname && frameBus.get(PEEK_FRAME_ID).pathname !== pathname) {
+          frameBus.setPathname(PEEK_FRAME_ID, pathname);
+          frameBus.post(PEEK_FRAME_ID, { type: "lab:navigate", pathname });
+        }
+      }
       if (!syncRef.current && frameId !== primaryFrameId(s.layout, specsRef.current)) return;
       const pathname = frameBus.get(frameId).pathname;
       const route = pathname ? matchPathname(pathname) : undefined;
@@ -252,7 +320,7 @@ export function ShellApp() {
     setClock: (hhmm) => set({ now: setClock(state.now, hhmm, Date.now()) }),
     resetData: () => {
       const toBump: string[] = [];
-      for (const spec of specs) {
+      for (const spec of allSpecs) {
         if (!frameBus.post(spec.frameId, { type: "lab:resetData" })) {
           // 프레임이 아직 말을 못 들으면 셸이 직접 비운다(같은 출처 localStorage)
           resetFakeData(spec.config);
@@ -261,7 +329,7 @@ export function ShellApp() {
       }
       bump(toBump);
     },
-    reload: () => bump(specs.map((spec) => spec.frameId)),
+    reload: () => bump(allSpecs.map((spec) => spec.frameId)),
     restartDiary: (path) =>
       goTo(withRoute(state, path), { history: "push", navigate: true, force: true, remount: true }),
   };
@@ -287,13 +355,140 @@ export function ShellApp() {
 
   const route = findRoute(state.route);
   const frameKey = (spec: FrameSpec) => `${configKey(spec)}#${nonces[spec.frameId] ?? 0}`;
+  const draftInfo = useDraftInfo(state.draft);
 
-  const fitScale = (spec: FrameSpec, columns: number) => {
-    if (state.zoom !== "fit") return state.zoom;
-    const g = chromeGeometry(spec.device, Boolean(spec.device.skin));
-    const width = (stage.width - 48 * columns) / columns;
-    return Math.max(0.2, Math.min(1, (stage.height - 90) / g.outerHeight, width / g.outerWidth));
+  // ── 확대 ────────────────────────────────────────────────
+  // 기기 줄 위에 이미 쓰인 높이(안내 · A/B 설명) — 배율과 무관하므로 그린 뒤 재서 맞춤에 쓴다
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [rowTop, setRowTop] = useState(12);
+  // 매 그리기 뒤에 잰다 — 값이 같으면 다시 그리지 않으므로 돌고 돌지 않는다
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const top = rowRef.current?.offsetTop;
+    if (top != null && top !== rowTop) setRowTop(top);
+  });
+  const captionReserve = state.layout === "ab" ? AB_CAPTION : 0;
+  const fitted = fitScale(
+    state.layout,
+    area,
+    rowTop + captionReserve,
+    specs.map((spec) => {
+      const g = chromeGeometry(spec.device, Boolean(spec.device.skin));
+      return { width: g.outerWidth, height: g.outerHeight };
+    }),
+  );
+  const scale = state.zoom === "fit" ? fitted : state.zoom;
+  const setZoom = (zoom: Zoom) => goTo({ ...state, zoom }, { history: "replace" });
+  const stepBy = (direction: 1 | -1) => setZoom(stepZoom(scale, direction));
+
+  // ── 패널 ────────────────────────────────────────────────
+  const navDocked = !narrow && state.navOpen;
+  const sideDocked = !narrow && state.sideOpen;
+  const navVisible = navDocked || drawer === "nav";
+  const sideVisible = sideDocked || drawer === "side";
+  const toggleNav = () => {
+    if (narrow) setDrawer((current) => (current === "nav" ? null : "nav"));
+    else goTo({ ...state, navOpen: !state.navOpen }, { history: "replace" });
   };
+  const openSide = (panel: SidePanel = state.panel) => {
+    if (narrow) setDrawer("side");
+    goTo({ ...state, panel, sideOpen: narrow ? state.sideOpen : true }, { history: "replace" });
+  };
+  const closeSide = () => {
+    if (narrow) setDrawer(null);
+    else goTo({ ...state, sideOpen: false }, { history: "replace" });
+  };
+  const toggleSide = () => (sideVisible ? closeSide() : openSide());
+  const closeNav = () => {
+    if (narrow) setDrawer(null);
+    else goTo({ ...state, navOpen: false }, { history: "replace" });
+  };
+
+  // A/B 「시안 만들기」 — 시안은 편집기가 만든다. 셸은 디자인 편집 탭을 열고 이름 칸에 커서를 둔다
+  const startDraft = () => {
+    openSide("design");
+    setTimeout(() => {
+      const input = document.querySelector<HTMLInputElement>('input[aria-label="시안 이름"]');
+      input?.scrollIntoView({ block: "center" });
+      input?.focus();
+    }, 150);
+  };
+
+  // ── 돋보기 ──────────────────────────────────────────────
+  const [lensOn, setLensOn] = useState(false);
+  const [lensHeld, setLensHeld] = useState(false);
+  const [lensPower, setLensPower] = useState<number>(LENS_POWER.initial);
+  const [lensSize, setLensSize] = useState<number>(LENS_SIZE.initial);
+  const lensActive = lensOn || lensHeld;
+
+  // ── 원래대로 잠깐 보기(한 화면 + 시안) ───────────────────────
+  const [peeking, setPeeking] = useState(false);
+  const peekSpec = peekSpecs[0];
+  const peekOn = peeking && peekSpec != null;
+
+  // 단축키 — 셸에 포커스가 있을 때만(입력칸 · 프레임 안이면 그대로 둔다)
+  const canPeek = peekSpec != null;
+  const keyRef = useRef({ stepBy, setZoom, lensActive, drawer, canPeek });
+  useLayoutEffect(() => {
+    keyRef.current = { stepBy, setZoom, lensActive, drawer, canPeek };
+  });
+  useEffect(() => {
+    const typing = (target: EventTarget | null) => {
+      const element = target as HTMLElement | null;
+      if (!element || !element.tagName) return false;
+      return (
+        /^(INPUT|TEXTAREA|SELECT)$/.test(element.tagName) || element.isContentEditable === true
+      );
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (typing(event.target)) return;
+      const k = keyRef.current;
+      if (event.ctrlKey || event.metaKey) {
+        if (event.key === "=" || event.key === "+") k.stepBy(1);
+        else if (event.key === "-" || event.key === "_") k.stepBy(-1);
+        else if (event.key === "0") k.setZoom("fit");
+        else return;
+        event.preventDefault();
+        return;
+      }
+      if (event.altKey) return;
+      if (event.key === "z" || event.key === "Z") {
+        if (!event.repeat) setLensHeld(true);
+      } else if (event.key === "`" || event.key === "o" || event.key === "O") {
+        if (k.canPeek && !event.repeat) setPeeking(true);
+      } else if (event.key === "[" && k.lensActive) {
+        setLensPower((p) => Math.max(LENS_POWER.min, p - LENS_POWER.step));
+      } else if (event.key === "]" && k.lensActive) {
+        setLensPower((p) => Math.min(LENS_POWER.max, p + LENS_POWER.step));
+      } else if (event.key === "Escape") {
+        if (k.lensActive) {
+          setLensOn(false);
+          setLensHeld(false);
+        } else if (k.drawer) setDrawer(null);
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "z" || event.key === "Z") setLensHeld(false);
+      if (event.key === "`" || event.key === "o" || event.key === "O") setPeeking(false);
+    };
+    const onBlur = () => {
+      setLensHeld(false);
+      setPeeking(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, []);
+
+  // ── A/B 차이 보기 ────────────────────────────────────────
+  const [diff, setDiff] = useState(false);
+  const [diffOpacity, setDiffOpacity] = useState(0.5);
+  const overlayDiff = state.layout === "ab" && diff;
 
   const editorFrames = specs.map((spec) => ({
     frameId: spec.frameId,
@@ -303,33 +498,169 @@ export function ShellApp() {
   const primaryPath =
     frameBus.get(primaryFrameId(state.layout, specs)).pathname?.split("?")[0] ?? state.route;
 
-  const renderFrame = (spec: FrameSpec, scale: number) => (
-    <figure
-      key={spec.frameId}
-      data-testid={`frame-cell-${spec.frameId}`}
-      style={{ margin: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
-    >
-      {spec.label ? (
-        <figcaption
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: spec.role === "draft" ? shellColor.draft : shellColor.ink,
-          }}
-        >
-          {spec.label}
-          {spec.role === "draft" && !spec.config.designDraftId ? " (시안 없음)" : ""}
-        </figcaption>
-      ) : null}
-      <LabFrame
-        key={frameKey(spec)}
-        spec={spec}
-        scale={scale}
-        realMs={realMs}
-        startPath={frameBus.get(spec.frameId).pathname}
-      />
-    </figure>
-  );
+  const frameLabel = (spec: FrameSpec) => {
+    if (spec.role !== "draft" || state.layout !== "ab") return spec.label;
+    return draftInfo ? `B · 시안 「${draftInfo.name}」` : "B · 시안 없음";
+  };
+
+  const renderFrame = (spec: FrameSpec, frameScale: number) => {
+    const g = chromeGeometry(spec.device, Boolean(spec.device.skin));
+    const width = Math.max(g.outerWidth * frameScale, MIN_CELL_WIDTH);
+    const isB = state.layout === "ab" && spec.frameId === "B";
+    const isA = state.layout === "ab" && spec.frameId === "A";
+    const label = frameLabel(spec);
+    return (
+      <figure
+        key={spec.frameId}
+        data-testid={`frame-cell-${spec.frameId}`}
+        style={{
+          margin: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 6,
+          width,
+          flex: "none",
+          ...(isB && overlayDiff
+            ? {
+                position: "absolute",
+                left: 0,
+                top: 0,
+                opacity: diffOpacity,
+                pointerEvents: "none",
+              }
+            : {}),
+        }}
+      >
+        {label ? (
+          <figcaption
+            data-testid={`frame-label-${spec.frameId}`}
+            title={label}
+            style={{
+              width: "100%",
+              textAlign: "center",
+              visibility: isB && overlayDiff ? "hidden" : "visible",
+              ...(state.layout === "ab" ? { minHeight: AB_CAPTION - 6 } : {}),
+            }}
+          >
+            <span
+              style={{
+                ...ellipsis,
+                fontSize: state.layout === "ab" ? 14 : 12,
+                fontWeight: 700,
+                color: spec.role === "draft" ? shellColor.draft : shellColor.ink,
+              }}
+            >
+              {label}
+            </span>
+            {isA ? (
+              <span style={{ ...ellipsis, fontSize: 11, color: shellColor.muted }}>
+                운영 중인 값 그대로
+              </span>
+            ) : null}
+            {isB ? (
+              <span
+                data-testid="draft-change-count"
+                style={{ ...ellipsis, fontSize: 11, color: shellColor.muted }}
+              >
+                {draftInfo ? `바꾼 값 ${draftInfo.changes}개` : "시안을 고르면 여기에 적용돼요"}
+              </span>
+            ) : null}
+          </figcaption>
+        ) : null}
+        <div style={{ position: "relative" }}>
+          {/* 한 화면 + 시안 — 같은 자리 아래에 승인본을 숨겨 두고, 누르는 동안 위 시안을 감춘다 */}
+          {spec.frameId === "solo" && peekSpec ? (
+            <div
+              data-testid="peek-frame"
+              aria-hidden={!peekOn}
+              style={{ position: "absolute", left: 0, top: 0, zIndex: 0 }}
+            >
+              <LabFrame
+                key={frameKey(peekSpec)}
+                spec={peekSpec}
+                scale={frameScale}
+                realMs={realMs}
+                startPath={
+                  frameBus.get(PEEK_FRAME_ID).pathname ?? frameBus.get(spec.frameId).pathname
+                }
+              />
+            </div>
+          ) : null}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              visibility: spec.frameId === "solo" && peekOn ? "hidden" : "visible",
+            }}
+          >
+            <LabFrame
+              key={frameKey(spec)}
+              spec={spec}
+              scale={frameScale}
+              realMs={realMs}
+              startPath={frameBus.get(spec.frameId).pathname}
+            />
+          </div>
+          {isB && !draftInfo && !overlayDiff ? (
+            <div
+              data-testid="ab-no-draft"
+              // 흐린 막은 누르기를 통과시킨다 — 시안이 없어도 B 를 눌러 보거나 디자인 편집의
+              // 「요소 선택」으로 고를 수 있어야 한다. 막는 것은 위쪽 안내 카드 한 장뿐이다
+              style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 2,
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "center",
+                padding: `${Math.max(56, 90 * frameScale)}px 12px 12px`,
+                borderRadius: (spec.device.cornerRadius + 15) * frameScale,
+                background: "rgba(252, 252, 250, 0.55)",
+                pointerEvents: "none",
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: 260,
+                  padding: "14px 16px",
+                  borderRadius: 12,
+                  background: shellColor.panel,
+                  boxShadow: "0 6px 20px rgba(0, 0, 0, 0.16)",
+                  textAlign: "center",
+                  wordBreak: "keep-all",
+                  pointerEvents: "auto",
+                }}
+              >
+                <p style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>
+                  아직 시안이 없어서 A와 똑같아요
+                </p>
+                <p style={{ margin: "0 0 14px", fontSize: 12, color: shellColor.muted }}>
+                  디자인 편집에서 시안을 만들고 값을 고치면 B에만 바로 적용돼요.
+                </p>
+                <button
+                  type="button"
+                  onClick={startDraft}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 8,
+                    border: 0,
+                    background: shellColor.accent,
+                    color: shellColor.onAccent,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  시안 만들기
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </figure>
+    );
+  };
 
   const tab = (active: boolean): CSSProperties => ({
     padding: "6px 12px",
@@ -340,17 +671,76 @@ export function ShellApp() {
     fontWeight: active ? 700 : 500,
     background: active ? shellColor.accent : "transparent",
     color: active ? shellColor.onAccent : shellColor.ink,
+    whiteSpace: "nowrap",
   });
+
+  const headerToggle = (pressed: boolean): CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    padding: "5px 10px",
+    borderRadius: 8,
+    border: `1px solid ${pressed ? shellColor.accent : shellColor.border}`,
+    background: pressed ? shellColor.accentSoft : shellColor.panel,
+    color: shellColor.ink,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    flex: "none",
+  });
+
+  const railButton: CSSProperties = {
+    width: 38,
+    padding: "8px 0",
+    borderRadius: 8,
+    border: `1px solid ${shellColor.border}`,
+    background: shellColor.panel,
+    color: shellColor.ink,
+    fontSize: 11,
+    fontWeight: 600,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
+
+  const closeButton: CSSProperties = {
+    flex: "none",
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    border: 0,
+    background: "transparent",
+    color: shellColor.muted,
+    fontSize: 16,
+    cursor: "pointer",
+  };
+
+  const drawerStyle = (side: "left" | "right"): CSSProperties => ({
+    position: "fixed",
+    top: HEADER_HEIGHT,
+    bottom: 0,
+    [side]: 0,
+    width: side === "left" ? `min(${NAV_WIDTH + 30}px, 86vw)` : `min(${SIDE_WIDTH + 20}px, 92vw)`,
+    zIndex: 40,
+    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.22)",
+  });
+
+  const magnifierTargets: MagnifierTarget[] = specs.map((spec) => ({
+    frameId: spec.frameId,
+    label: spec.label || spec.route.title,
+    device: spec.device,
+  }));
 
   return (
     <div
       data-testid="lab-shell"
+      data-narrow={narrow ? "1" : "0"}
       style={{
         width: "100vw",
         height: "100vh",
         display: "grid",
-        gridTemplateColumns: "250px minmax(0, 1fr) 340px",
-        gridTemplateRows: "52px minmax(0, 1fr)",
+        gridTemplateColumns: `${navDocked ? `${NAV_WIDTH}px` : `${RAIL_WIDTH}px`} minmax(${MIN_STAGE_WIDTH}px, 1fr) ${sideDocked ? `${SIDE_WIDTH}px` : `${RAIL_WIDTH}px`}`,
+        gridTemplateRows: `${HEADER_HEIGHT}px minmax(0, 1fr)`,
         background: shellColor.page,
         fontFamily: shellFont,
         color: shellColor.ink,
@@ -359,24 +749,43 @@ export function ShellApp() {
       <header
         style={{
           gridColumn: "1 / -1",
+          gridRow: 1,
           display: "flex",
           alignItems: "center",
-          gap: 16,
-          padding: "0 16px",
+          gap: 12,
+          padding: "0 12px",
+          minWidth: 0,
           background: shellColor.panel,
           borderBottom: `1px solid ${shellColor.border}`,
         }}
       >
-        <strong style={{ fontSize: 14 }}>
-          MOMENTORY <span style={{ color: shellColor.muted, fontWeight: 500 }}>Expo Lab</span>
-        </strong>
-        <div role="tablist" aria-label="레이아웃" style={{ display: "flex", gap: 4 }}>
+        <button
+          type="button"
+          aria-pressed={navVisible}
+          title={navVisible ? "왼쪽 화면 목록을 접어요" : "왼쪽에 화면 목록을 펼쳐요"}
+          onClick={toggleNav}
+          style={headerToggle(navVisible)}
+        >
+          <span aria-hidden>☰ </span>목록 보기
+        </button>
+        {/* 좁은 창에서는 이름을 빼서 탭 자리를 둔다 */}
+        {narrow ? null : (
+          <strong style={{ fontSize: 14, whiteSpace: "nowrap", flex: "none" }}>
+            MOMENTORY <span style={{ color: shellColor.muted, fontWeight: 500 }}>Expo Lab</span>
+          </strong>
+        )}
+        <div
+          role="tablist"
+          aria-label="보는 방식"
+          style={{ display: "flex", gap: 2, flex: "0 1 auto", minWidth: 0, overflowX: "auto" }}
+        >
           {LAYOUTS.map((layout) => (
             <button
               key={layout.id}
               type="button"
               role="tab"
               aria-selected={state.layout === layout.id}
+              title={layout.description}
               onClick={() => setLayout(layout.id)}
               style={tab(state.layout === layout.id)}
             >
@@ -384,122 +793,317 @@ export function ShellApp() {
             </button>
           ))}
         </div>
-        <span style={{ flex: 1, fontSize: 13, color: shellColor.muted }} data-testid="shell-title">
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            fontSize: 13,
+            color: shellColor.muted,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+          data-testid="shell-title"
+        >
           {route ? `${route.sectionTitle} · ${route.title}` : state.route}
           {state.draft ? (
-            <span style={{ marginLeft: 8, color: shellColor.draft }}>시안 {state.draft}</span>
+            <span style={{ marginLeft: 8, color: shellColor.draft }}>
+              시안 {draftInfo?.name ?? state.draft}
+            </span>
           ) : null}
         </span>
-        {state.layout !== "grid" ? (
-          <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={syncNav}
-              onChange={(event) => setSyncNav(event.target.checked)}
-            />
-            프레임 같이 움직이기
-          </label>
-        ) : null}
+        <button
+          type="button"
+          aria-pressed={sideVisible}
+          title={
+            sideVisible
+              ? "오른쪽 칸(화면 조건 · 디자인 편집)을 닫아요"
+              : "오른쪽 칸(화면 조건 · 디자인 편집)을 열어요"
+          }
+          onClick={toggleSide}
+          style={headerToggle(sideVisible)}
+        >
+          편집 칸 보기<span aria-hidden> ▤</span>
+        </button>
       </header>
 
+      {/* 왼쪽 — 붙어 있거나(넓은 창) 서랍(좁은 창)이거나 접힌 막대 */}
+      {!navDocked ? (
+        <div
+          data-testid="nav-rail"
+          style={{
+            gridColumn: 1,
+            gridRow: 2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 6,
+            paddingTop: 10,
+            background: shellColor.panel,
+            borderRight: `1px solid ${shellColor.border}`,
+          }}
+        >
+          <button
+            type="button"
+            title="왼쪽에 화면 목록을 펼쳐요"
+            onClick={toggleNav}
+            style={railButton}
+          >
+            <span aria-hidden>»</span>
+            <br />
+            목록
+            <br />
+            열기
+          </button>
+        </div>
+      ) : null}
       <aside
+        data-testid="nav-panel"
+        aria-label="화면 목록 패널"
         style={{
           background: shellColor.panel,
           borderRight: `1px solid ${shellColor.border}`,
           minHeight: 0,
+          minWidth: 0,
+          flexDirection: "column",
+          display: navVisible ? "flex" : "none",
+          ...(navDocked ? { gridColumn: 1, gridRow: 2 } : drawerStyle("left")),
         }}
       >
-        <RouteTree
-          current={state.route}
-          frameIds={state.layout === "grid" ? [] : specs.map((spec) => spec.frameId)}
-          onSelect={selectRoute}
-        />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "6px 6px 0 14px",
+          }}
+        >
+          <span style={{ fontSize: 11, color: shellColor.muted, whiteSpace: "nowrap" }}>
+            화면 {shellRouteCount}개
+          </span>
+          <button
+            type="button"
+            aria-label="목록 접기"
+            title="목록 접기"
+            onClick={closeNav}
+            style={closeButton}
+          >
+            «
+          </button>
+        </div>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <RouteTree
+            current={state.route}
+            frameIds={state.layout === "grid" ? [] : specs.map((spec) => spec.frameId)}
+            onSelect={(next) => {
+              if (narrow) setDrawer(null);
+              selectRoute(next);
+            }}
+          />
+        </div>
       </aside>
 
       <main
-        ref={stageRef}
         data-testid="stage"
         data-layout={state.layout}
-        style={{ minHeight: 0, minWidth: 0, overflow: "auto", background: shellColor.stage }}
+        style={{
+          gridColumn: 2,
+          gridRow: 2,
+          minHeight: 0,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          background: shellColor.stage,
+        }}
       >
-        {state.layout === "grid" ? (
-          <GridView
-            specs={specs}
-            scale={state.zoom === "fit" ? 0.3 : state.zoom}
-            realMs={realMs}
-            nonces={nonces}
-            onOpen={openFromGrid}
-          />
-        ) : (
-          <div style={{ padding: "12px 24px 24px" }}>
-            {route?.hint ? (
-              <p
-                data-testid="route-hint"
-                style={{
-                  margin: "0 auto 12px",
-                  maxWidth: 720,
-                  fontSize: 12,
-                  color: shellColor.muted,
-                  textAlign: "center",
-                }}
-              >
-                {route.hint}
-              </p>
-            ) : null}
-            <div
-              style={{
-                display: "flex",
-                flexWrap: state.layout === "matrix" ? "wrap" : "nowrap",
-                gap: 32,
-                justifyContent: "center",
-                alignItems: "flex-start",
-              }}
-            >
-              {specs.map((spec) =>
-                renderFrame(
-                  spec,
-                  state.layout === "matrix"
-                    ? state.zoom === "fit"
-                      ? 0.45
-                      : state.zoom
-                    : fitScale(spec, specs.length),
-                ),
-              )}
-            </div>
+        <StageToolbar
+          layout={state.layout}
+          matrix={state.matrix}
+          zoom={state.zoom}
+          effectiveScale={scale}
+          syncNav={syncNav}
+          magnifier={lensActive}
+          magnifierPower={lensPower}
+          onZoom={setZoom}
+          onStep={stepBy}
+          onMatrix={(matrix) => set({ matrix })}
+          onSyncNav={setSyncNav}
+          onMagnifier={(on) => {
+            setLensOn(on);
+            if (!on) setLensHeld(false);
+          }}
+        >
+          {state.layout === "single" ? (
+            <SingleDraftBar
+              draftInfo={draftInfo}
+              peeking={peekOn}
+              canPeek={canPeek}
+              onPeek={setPeeking}
+              onStartDraft={startDraft}
+            />
+          ) : null}
+        </StageToolbar>
+        <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+          <div
+            ref={scrollRef}
+            data-testid="stage-scroll"
+            style={{ position: "absolute", inset: 0, overflow: "auto" }}
+          >
+            {state.layout === "grid" ? (
+              <GridView
+                specs={specs}
+                scale={scale}
+                realMs={realMs}
+                nonces={nonces}
+                onOpen={openFromGrid}
+              />
+            ) : (
+              <div style={{ padding: `12px ${STAGE_PAD_X}px ${STAGE_PAD_BOTTOM}px` }}>
+                {state.layout === "ab" ? (
+                  <AbBanner
+                    draftInfo={draftInfo}
+                    diff={diff}
+                    diffOpacity={diffOpacity}
+                    onDiff={setDiff}
+                    onDiffOpacity={setDiffOpacity}
+                    onStartDraft={startDraft}
+                  />
+                ) : null}
+                {route?.hint ? (
+                  <p
+                    data-testid="route-hint"
+                    style={{
+                      margin: "0 auto 12px",
+                      maxWidth: 720,
+                      fontSize: 12,
+                      color: shellColor.muted,
+                      textAlign: "center",
+                      wordBreak: "keep-all",
+                    }}
+                  >
+                    {route.hint}
+                  </p>
+                ) : null}
+                <div
+                  ref={rowRef}
+                  data-testid="frame-row"
+                  style={{
+                    position: "relative",
+                    display: "flex",
+                    flexWrap: state.layout === "matrix" ? "wrap" : "nowrap",
+                    gap: FRAME_GAP,
+                    justifyContent: "center",
+                    alignItems: "flex-start",
+                    // A/B 는 두 대를 한 덩어리로 가운데(차이 보기에서 B 를 A 위에 겹친다) ·
+                    // 한 화면은 크게 키우면 옆으로 스크롤 · 매트릭스는 무대 폭 안에서 줄을 바꾼다
+                    ...(state.layout === "ab"
+                      ? { width: "max-content", margin: "0 auto" }
+                      : state.layout === "single"
+                        ? { minWidth: "max-content" }
+                        : {}),
+                  }}
+                >
+                  {specs.map((spec) => renderFrame(spec, scale))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+          {lensActive ? (
+            <MagnifierLayer
+              targets={magnifierTargets}
+              partnerOf={(frameId) =>
+                state.layout === "ab"
+                  ? frameId === "A"
+                    ? "B"
+                    : frameId === "B"
+                      ? "A"
+                      : null
+                  : null
+              }
+              power={lensPower}
+              size={lensSize}
+              onPower={setLensPower}
+              onSize={setLensSize}
+            />
+          ) : null}
+        </div>
       </main>
 
+      {/* 오른쪽 — 붙어 있거나(넓은 창) 서랍(좁은 창)이거나 접힌 막대 */}
+      {!sideDocked ? (
+        <div
+          data-testid="side-rail"
+          style={{
+            gridColumn: 3,
+            gridRow: 2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 6,
+            paddingTop: 10,
+            background: shellColor.panel,
+            borderLeft: `1px solid ${shellColor.border}`,
+          }}
+        >
+          {SIDE_TABS.map(([id, label, short]) => (
+            <button
+              key={id}
+              type="button"
+              aria-label={`${label} 열기`}
+              title={`「${label}」 열기 — ${SIDE_TAB_TITLE[id]}`}
+              onClick={() => openSide(id)}
+              style={railButton}
+            >
+              {short.split(" ").map((word, index) => (
+                <span key={word} style={{ display: "block" }}>
+                  {word}
+                </span>
+              ))}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <aside
+        data-testid="side-panel"
+        aria-label="오른쪽 패널"
         style={{
           background: shellColor.panel,
           borderLeft: `1px solid ${shellColor.border}`,
           minHeight: 0,
-          display: "flex",
+          minWidth: 0,
           flexDirection: "column",
+          display: sideVisible ? "flex" : "none",
+          ...(sideDocked ? { gridColumn: 3, gridRow: 2 } : drawerStyle("right")),
         }}
       >
-        <div role="tablist" aria-label="패널" style={{ display: "flex", gap: 4, padding: 8 }}>
-          {(
-            [
-              ["controls", "조작"],
-              ["design", "디자인 편집"],
-              ["log", `요청 ${frameBus.requests.length}`],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={state.panel === id}
-              onClick={() => goTo({ ...state, panel: id }, { history: "replace" })}
-              style={tab(state.panel === id)}
-            >
-              {label}
-            </button>
-          ))}
+        <div style={{ display: "flex", gap: 4, padding: 8, alignItems: "center" }}>
+          <div role="tablist" aria-label="패널" style={{ display: "flex", gap: 4, flex: 1 }}>
+            {SIDE_TABS.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={state.panel === id}
+                title={SIDE_TAB_TITLE[id]}
+                onClick={() => goTo({ ...state, panel: id }, { history: "replace" })}
+                style={tab(state.panel === id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            aria-label="패널 닫기"
+            title="패널 닫기"
+            onClick={closeSide}
+            style={closeButton}
+          >
+            ×
+          </button>
         </div>
-        {/* 디자인 편집기는 높이가 고정된 자리에서 스스로 스크롤한다 — 바깥은 넘치지 않게 둔다 */}
+        {/* 디자인 편집기는 높이가 고정된 자리에서 스스로 스크롤한다 — 바깥은 넘치지 않게 둔다.
+            패널을 닫아도 편집기는 붙어 있다(고치던 상태를 잃지 않게) */}
         <div
           data-testid={`side-panel-${state.panel}`}
           style={{
@@ -512,26 +1116,242 @@ export function ShellApp() {
         >
           {state.panel === "controls" ? (
             <ControlsPanel state={state} realMs={realMs} actions={actions} />
-          ) : state.panel === "design" ? (
+          ) : (
             <DesignEditorPanel
               activeDraftId={state.draft}
               onActiveDraftChange={(draft) => set({ draft })}
               // 시안 내용이 바뀌었다 — 그 시안을 건 프레임(A/B 면 B)만 다시 불러온다
-              onDraftChanged={(draftId) =>
+              onDraftChanged={(draftId) => {
+                notifyDraftsChanged();
                 bump(
                   specs
                     .filter((spec) => spec.config.designDraftId === draftId)
                     .map((spec) => spec.frameId),
-                )
-              }
+                );
+              }}
               frames={editorFrames}
               currentRoute={primaryPath}
             />
-          ) : (
-            <RequestLog />
           )}
         </div>
       </aside>
+
+      {drawer ? (
+        <div
+          data-testid="drawer-backdrop"
+          aria-hidden
+          onClick={() => setDrawer(null)}
+          style={{
+            position: "fixed",
+            inset: `${HEADER_HEIGHT}px 0 0 0`,
+            background: "rgba(0, 0, 0, 0.18)",
+            zIndex: 35,
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function SingleDraftBar({
+  draftInfo,
+  peeking,
+  canPeek,
+  onPeek,
+  onStartDraft,
+}: {
+  draftInfo: DraftInfo | null;
+  peeking: boolean;
+  canPeek: boolean;
+  onPeek: (value: boolean) => void;
+  onStartDraft: () => void;
+}) {
+  const smallButton = (primary: boolean): CSSProperties => ({
+    flex: "none",
+    padding: "4px 10px",
+    borderRadius: 7,
+    border: `1px solid ${primary ? shellColor.accent : shellColor.draft}`,
+    background: primary ? shellColor.accent : peeking ? shellColor.draft : shellColor.draftSoft,
+    color: primary || peeking ? shellColor.onAccent : shellColor.draft,
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    userSelect: "none",
+    touchAction: "none",
+  });
+  return (
+    <div
+      data-testid="single-draft-bar"
+      style={{
+        flexBasis: "100%",
+        display: "flex",
+        gap: 10,
+        alignItems: "center",
+        minWidth: 0,
+        fontSize: 12,
+      }}
+    >
+      {draftInfo ? (
+        <>
+          <span
+            style={{
+              ...ellipsis,
+              minWidth: 0,
+              flex: "0 1 auto",
+              color: shellColor.draft,
+              fontWeight: 600,
+            }}
+          >
+            {peeking
+              ? "지금 앱을 보는 중 — 떼면 시안으로 돌아가요"
+              : `시안 「${draftInfo.name}」 적용 중 · 바꾼 값 ${draftInfo.changes}개`}
+          </span>
+          <button
+            type="button"
+            aria-pressed={peeking}
+            disabled={!canPeek}
+            title="누르고 있는 동안 같은 화면을 지금 앱 그대로 보여 줘요 — ` 또는 O 키를 누르고 있어도 돼요"
+            onPointerDown={(event) => {
+              event.currentTarget.setPointerCapture(event.pointerId);
+              onPeek(true);
+            }}
+            onPointerUp={() => onPeek(false)}
+            onPointerCancel={() => onPeek(false)}
+            onLostPointerCapture={() => onPeek(false)}
+            style={smallButton(false)}
+          >
+            원래대로 잠깐 보기
+          </button>
+          <span style={{ ...ellipsis, minWidth: 0, color: shellColor.faint }}>
+            누르고 있는 동안 · ` 또는 O 키
+          </span>
+        </>
+      ) : (
+        <>
+          <span style={{ ...ellipsis, minWidth: 0, color: shellColor.muted }}>
+            시안 없음 — 지금 앱 그대로
+          </span>
+          <button type="button" onClick={onStartDraft} style={smallButton(true)}>
+            시안 만들기
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function AbBanner({
+  draftInfo,
+  diff,
+  diffOpacity,
+  onDiff,
+  onDiffOpacity,
+  onStartDraft,
+}: {
+  draftInfo: DraftInfo | null;
+  diff: boolean;
+  diffOpacity: number;
+  onDiff: (value: boolean) => void;
+  onDiffOpacity: (value: number) => void;
+  onStartDraft: () => void;
+}) {
+  return (
+    <div
+      data-testid="ab-banner"
+      style={{
+        margin: "0 auto 14px",
+        maxWidth: 820,
+        padding: "10px 14px",
+        borderRadius: 10,
+        background: shellColor.panel,
+        border: `1px solid ${shellColor.border}`,
+        display: "grid",
+        gap: 6,
+        fontSize: 13,
+        wordBreak: "keep-all",
+      }}
+    >
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ flex: "1 1 260px", minWidth: 0 }}>
+          <b>A</b>는 지금 앱, <b style={{ color: shellColor.draft }}>B</b>는 디자인 편집에서 고친
+          시안이에요. 같은 화면 · 같은 데이터로 나란히 보여 줘요.
+        </span>
+        <label
+          title="B를 A 위에 겹쳐 반투명으로 보여 줘요 — 어긋난 자리가 겹쳐 보여요"
+          style={{
+            display: "flex",
+            gap: 4,
+            alignItems: "center",
+            fontSize: 12,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={diff}
+            onChange={(event) => onDiff(event.target.checked)}
+          />
+          겹쳐서 차이 보기
+        </label>
+        {diff ? (
+          <label
+            style={{
+              display: "flex",
+              gap: 6,
+              alignItems: "center",
+              fontSize: 12,
+              whiteSpace: "nowrap",
+            }}
+          >
+            A
+            <input
+              type="range"
+              aria-label="B 겹침 정도"
+              min={0}
+              max={1}
+              step={0.05}
+              value={diffOpacity}
+              onChange={(event) => onDiffOpacity(Number(event.target.value))}
+              style={{ width: 120 }}
+            />
+            B
+          </label>
+        ) : null}
+      </div>
+      {draftInfo && draftInfo.changes === 0 ? (
+        <div data-testid="ab-empty-draft" style={{ fontSize: 12, color: shellColor.draft }}>
+          시안 「{draftInfo.name}」에 아직 바꾼 값이 없어요 — 오른쪽 디자인 편집에서 값을 고치면
+          B에만 바로 적용돼요.
+        </div>
+      ) : null}
+      {!draftInfo ? (
+        <div style={{ fontSize: 12, color: shellColor.muted }}>
+          지금은 시안이 없어 두 화면이 같아요.{" "}
+          <button
+            type="button"
+            onClick={onStartDraft}
+            style={{
+              padding: 0,
+              border: 0,
+              background: "transparent",
+              color: shellColor.accent,
+              fontSize: 12,
+              fontWeight: 700,
+              textDecoration: "underline",
+              cursor: "pointer",
+            }}
+          >
+            디자인 편집 열기
+          </button>
+        </div>
+      ) : null}
+      {diff ? (
+        <div style={{ fontSize: 12, color: shellColor.muted }}>
+          B를 A 위에 겹쳤어요 — 막대를 A 쪽으로 밀면 A가, B 쪽으로 밀면 B가 진해져요. 겹친 동안 B는
+          눌리지 않아요.
+        </div>
+      ) : null}
     </div>
   );
 }
