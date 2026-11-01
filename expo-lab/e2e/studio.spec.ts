@@ -103,8 +103,8 @@ test("renders five shared views with matching scenarios in A and B", async ({ pa
   await page.goto("/#studio/home-main");
   const sidebar = page.getByTestId("studio-sidebar");
   await sidebar.getByRole("button", { name: /일정 10개/ }).click();
-  await expect(page.getByTestId("studio-preview-A")).toContainText("하루 돌아보기");
-  await expect(page.getByTestId("studio-preview-B")).toContainText("하루 돌아보기");
+  await expect(page.getByTestId("studio-preview-A")).toContainText("일기 작성하기");
+  await expect(page.getByTestId("studio-preview-B")).toContainText("일기 작성하기");
   await page.getByRole("button", { name: "375pt" }).click();
   await page.getByRole("button", { name: "글씨 1.5×" }).click();
   await expectPanelSnapshot(page, "home-375-large-type.png", 353, 752);

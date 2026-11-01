@@ -18,6 +18,7 @@ export const devices = [
   { label: "iPhone 16e", width: 390, height: 844 },
   { label: "원본 402", width: 402, height: 874 },
   { label: "iPhone 16 Plus", width: 430, height: 932 },
+  { label: "Galaxy S25", width: 360, height: 780 },
 ] as const;
 export type PreviewDevice = (typeof devices)[number];
 
