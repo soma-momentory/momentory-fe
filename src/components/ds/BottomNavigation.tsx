@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     paddingBottom: layout.tabBarPaddingBottom,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: background.elevated,
+    backgroundColor: background.tabBar,
     ...hairline.alternative,
     // 위쪽 선만 남긴다 — 사방 테두리는 탭바를 카드처럼 보이게 한다
     borderBottomWidth: 0,

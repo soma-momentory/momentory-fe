@@ -1,11 +1,11 @@
 import { useState } from "react";
+import { PreviewTabScreen as Screen } from "../backgrounds/PreviewTabScreen";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import {
   BottomNavigation,
   BottomSheet,
   EmotionSticker,
-  Screen,
   TabPaperBackground,
   Text,
   type CalendarMark,
@@ -138,7 +138,7 @@ export function ArchivePreview({
           padded={false}
           edges={[]}
           grid={false}
-          backdrop={<TabPaperBackground />}
+          backdrop={<TabPaperBackground tab="보관함" />}
         >
           <View style={styles.body}>
             <ArchiveView
@@ -208,6 +208,6 @@ export function ArchivePreview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.elevated },
+  underTab: { height: layout.minBottomInset, backgroundColor: background.tabBar },
   option: { padding: 16 },
 });

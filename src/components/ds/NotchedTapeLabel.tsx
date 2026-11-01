@@ -11,11 +11,13 @@ export function NotchedTapeLabel({
   style,
   fontScale,
   testID,
+  color = homeV2.color.weekday,
 }: {
   children: string;
   style?: StyleProp<ViewStyle>;
   fontScale?: number;
   testID?: string;
+  color?: string;
 }) {
   const effectiveScale = useEffectiveFontScale();
   const scale = fontScale ?? effectiveScale;
@@ -28,7 +30,7 @@ export function NotchedTapeLabel({
         style,
       ]}
     >
-      <MaskingTape color={homeV2.color.weekday} edge="notched" />
+      <MaskingTape color={color} edge="notched" />
       <Text style={styles.text} color={homeV2.color.ink}>
         {children}
       </Text>

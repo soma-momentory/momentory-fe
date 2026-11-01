@@ -152,6 +152,7 @@ export const editableComponents: readonly EditableComponent[] = [
     label: "쉼터 제목",
     properties: [
       color("rest.heading.backgroundColor", "종이 색"),
+      color("rest.heading.color", "글자 색"),
       number("rest.heading.fontSize", "글씨 크기", 22, 40),
     ],
   },

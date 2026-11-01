@@ -73,7 +73,11 @@ export function ReportView({
               {thisWeek ? "이번 주" : "이 주"}
             </Text>
           </View>
-          <NotchedTapeLabel testID="report-date-tape" style={styles.rangePaper}>
+          <NotchedTapeLabel
+            testID="report-date-tape"
+            color={reportPaper.dateTape}
+            style={styles.rangePaper}
+          >
             {range}
           </NotchedTapeLabel>
         </View>

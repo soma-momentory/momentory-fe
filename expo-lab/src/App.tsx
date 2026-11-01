@@ -39,9 +39,14 @@ const Studio = lazy(() => import("./studio/Studio").then((module) => ({ default:
 const StateComparison = lazy(() =>
   import("./studio/StateComparison").then((module) => ({ default: module.StateComparison })),
 );
+const BackgroundComparison = lazy(() =>
+  import("./backgrounds/BackgroundComparison").then((module) => ({
+    default: module.BackgroundComparison,
+  })),
+);
 
 type LabRoute = {
-  page: "atlas" | "compare" | "studio";
+  page: StudioMode;
   groupId: string;
   screenId: CaptureId;
   variantId: string;
@@ -138,7 +143,14 @@ function readRoute(): LabRoute {
   const type = search.get("type");
   const fontScale = type === "1.5" ? 1.5 : type === "large" ? 1.3 : 1;
   return {
-    page: parts[0] === "atlas" ? "atlas" : parts[0] === "compare" ? "compare" : "studio",
+    page:
+      parts[0] === "backgrounds"
+        ? "backgrounds"
+        : parts[0] === "atlas"
+          ? "atlas"
+          : parts[0] === "compare"
+            ? "compare"
+            : "studio",
     groupId:
       parts[0] === "atlas" && screenGroups.some((item) => item.id === parts[1])
         ? (parts[1] ?? "")
@@ -155,11 +167,13 @@ function readRoute(): LabRoute {
 
 function routeHash(route: LabRoute): string {
   const path =
-    route.page === "atlas"
-      ? `atlas${route.groupId ? `/${route.groupId}` : ""}`
-      : route.page === "studio"
-        ? `studio/${route.screenId}`
-        : `compare/${route.screenId}${route.variantId ? `/${route.variantId}` : ""}`;
+    route.page === "backgrounds"
+      ? "backgrounds"
+      : route.page === "atlas"
+        ? `atlas${route.groupId ? `/${route.groupId}` : ""}`
+        : route.page === "studio"
+          ? `studio/${route.screenId}`
+          : `compare/${route.screenId}${route.variantId ? `/${route.variantId}` : ""}`;
   const params = new URLSearchParams();
   params.set("device", String(route.deviceWidth));
   if (route.page === "compare" && route.variantId) params.set("scenario", route.scenarioId);
@@ -730,6 +744,16 @@ function LabApp() {
           }
         >
           <Studio initialScreen={route.screenId} />
+        </Suspense>
+      ) : route.page === "backgrounds" ? (
+        <Suspense
+          fallback={
+            <View style={styles.loading}>
+              <Text style={styles.meta}>배경 비교를 불러오는 중…</Text>
+            </View>
+          }
+        >
+          <BackgroundComparison />
         </Suspense>
       ) : route.page === "atlas" ? (
         <FlatList

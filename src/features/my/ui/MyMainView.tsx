@@ -76,7 +76,7 @@ export function MyMainView({
           style={styles.profileTapeSlot}
         >
           <View testID="my-profile-tape" style={styles.profileTape}>
-            <MaskingTape color={paper.title} />
+            <MaskingTape color={paper.profileTape} />
           </View>
         </View>
         <View style={styles.profileTop}>

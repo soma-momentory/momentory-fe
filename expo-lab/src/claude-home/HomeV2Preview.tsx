@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 
 import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
-import { Screen } from "../../../src/components/ds/Screen";
+import { PreviewTabScreen as Screen } from "../backgrounds/PreviewTabScreen";
 import { TabPaperBackground } from "../../../src/components/ds/TabPaperBackground";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
 import { background, layout } from "../../../src/design/ds";
@@ -165,7 +165,7 @@ export function HomeV2Preview({
                 padded={false}
                 edges={[]}
                 grid={false}
-                backdrop={<TabPaperBackground />}
+                backdrop={<TabPaperBackground tab="홈" />}
               >
                 <View style={styles.body}>{body}</View>
                 <BottomNavigation
@@ -234,5 +234,5 @@ export function HomeV2Preview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.elevated },
+  underTab: { height: layout.minBottomInset, backgroundColor: background.tabBar },
 });

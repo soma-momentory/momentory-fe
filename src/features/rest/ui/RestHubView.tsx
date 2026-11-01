@@ -40,6 +40,7 @@ export function RestHubView({
           style={[
             styles.heading,
             {
+              color: design["rest.heading.color"],
               fontSize: design["rest.heading.fontSize"],
               lineHeight: design["rest.heading.fontSize"] + 6,
             },

@@ -12,6 +12,13 @@ import type { CatalogScreen } from "./screens";
 import { captureThumbnails } from "./thumbnails";
 import type { LabVariant } from "./variants";
 import type { StudioDesign } from "../../../src/design/studioDesign";
+import { tabBackgroundByTab, type TabBackgroundTab } from "../../../src/design/tabBackgrounds";
+import { Image as BackgroundImage } from "expo-image";
+import {
+  PreviewBackgroundContext,
+  previewBackgrounds,
+  type PreviewBackgroundId,
+} from "../backgrounds/backgrounds";
 
 export const devices = [
   { label: "iPhone 13 mini", width: 375, height: 812 },
@@ -21,6 +28,14 @@ export const devices = [
   { label: "Galaxy S25", width: 360, height: 780 },
 ] as const;
 export type PreviewDevice = (typeof devices)[number];
+
+const variantTabs: Readonly<Record<string, TabBackgroundTab>> = {
+  "app-v2": "홈",
+  "app-rest": "쉼터",
+  "app-archive": "보관함",
+  "app-report": "리포트",
+  "app-my": "마이",
+};
 
 function ScaledPhone({
   width,
@@ -122,6 +137,7 @@ function PreviewStatusBar({
 }
 
 export function VariantPhone({
+  backgroundId,
   design,
   variant,
   scenarioId,
@@ -132,6 +148,7 @@ export function VariantPhone({
   scale = 1,
   onMessage,
 }: {
+  backgroundId?: PreviewBackgroundId;
   design?: StudioDesign;
   variant: LabVariant;
   scenarioId: string;
@@ -142,20 +159,35 @@ export function VariantPhone({
   scale?: number;
   onMessage: (message: string) => void;
 }) {
+  const tab = variantTabs[variant.id];
+  const effectiveBackgroundId = backgroundId ?? (tab ? tabBackgroundByTab[tab] : undefined);
+  const backdrop = previewBackgrounds.find((item) => item.id === effectiveBackgroundId);
   const diaryBackground =
     (variant.screenId === "retro-talk" || variant.screenId === "retro-confirm") &&
     variant.id !== "diary-bubble-comparison";
   return (
     <ScaledPhone width={device.width + 20} height={device.height + 20} scale={scale}>
       <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
+        {backdrop?.source ? (
+          <BackgroundImage
+            testID={`preview-background-${backdrop.id}`}
+            source={backdrop.source}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            pointerEvents="none"
+            accessible={false}
+          />
+        ) : null}
         {diaryBackground ? <RetroDiaryBackground /> : null}
         {variant.id === "app-diary-paper" ? <DiaryPaperBackground /> : null}
         <PreviewStatusBar
           width={device.width}
           inverse={diaryBackground}
-          paper={variant.id === "app-diary-paper"}
+          paper={variant.id === "app-diary-paper" || !!backdrop?.source}
         />
-        {variant.render({ scenarioId, weatherId, letterId, fontScale, onMessage, scale, design })}
+        <PreviewBackgroundContext.Provider value={effectiveBackgroundId ?? null}>
+          {variant.render({ scenarioId, weatherId, letterId, fontScale, onMessage, scale, design })}
+        </PreviewBackgroundContext.Provider>
       </View>
     </ScaledPhone>
   );
