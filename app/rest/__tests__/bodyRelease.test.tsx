@@ -53,6 +53,12 @@ afterEach(() => {
 /** 장면은 낭독기에서 숨긴다 — 포즈를 보려면 숨긴 것까지 봐야 한다 */
 const HIDDEN = { includeHiddenElements: true } as const;
 
+/**
+ * 네 부위를 끝까지 흘리는 테스트(60초 · 200ms 씩 300번 넘게 렌더)는 기본 15초를 넘길 수 있다 —
+ * 전체 스위트를 병렬로 돌리면 실제로 넘겼고, 끊긴 테스트가 뒤 테스트의 계측까지 흐렸다
+ */
+const FULL_RUN_TIMEOUT = 60_000;
+
 const pass = async (ms: number) => {
   for (let t = 0; t < ms; t += 200) {
     await act(async () => {
@@ -105,34 +111,38 @@ describe("몸에 힘 빼기", () => {
     expect(r.getByTestId("body-release-pose-shoulders", HIDDEN)).toBeTruthy();
   });
 
-  it("네 부위가 끝나면 정적 뒤에야 「마치기」가 서고, 누르면 쉼터 탭으로 간다", async () => {
-    const r = await render(<BodyReleaseScreen />);
-    await fireEvent.press(r.getByText("따라 해보기"));
+  it(
+    "네 부위가 끝나면 정적 뒤에야 「마치기」가 서고, 누르면 쉼터 탭으로 간다",
+    async () => {
+      const r = await render(<BodyReleaseScreen />);
+      await fireEvent.press(r.getByText("따라 해보기"));
 
-    await pass(60_400);
-    // 끝의 한마디는 제목 아래 함께 서고, 「마치기」는 잠시 뒤에 붙는다
-    expect(r.getByText("천천히 몸의 힘을 풀어봤어요")).toBeTruthy();
-    expect(r.getByText("지금 몸이 어떻게 느껴지는지 잠시 느껴보세요")).toBeTruthy();
-    expect(r.queryByText("마치기")).toBeNull();
-    expect(r.getByTestId("body-release-pose-calm", HIDDEN)).toBeTruthy();
-    // 끝났다는 표시 — 다 찬 링이 퍼져 사라지고 빛 알갱이가 떠오른다
-    expect(r.getByTestId("body-release-motes", HIDDEN)).toBeTruthy();
+      await pass(60_400);
+      // 끝의 한마디는 제목 아래 함께 서고, 「마치기」는 잠시 뒤에 붙는다
+      expect(r.getByText("천천히 몸의 힘을 풀어봤어요")).toBeTruthy();
+      expect(r.getByText("지금 몸이 어떻게 느껴지는지 잠시 느껴보세요")).toBeTruthy();
+      expect(r.queryByText("마치기")).toBeNull();
+      expect(r.getByTestId("body-release-pose-calm", HIDDEN)).toBeTruthy();
+      // 끝났다는 표시 — 다 찬 링이 퍼져 사라지고 빛 알갱이가 떠오른다
+      expect(r.getByTestId("body-release-motes", HIDDEN)).toBeTruthy();
 
-    await pass(bodyReleaseMotion.doneHold);
+      await pass(bodyReleaseMotion.doneHold);
 
-    // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
-    await fireEvent.press(r.getByText("마치기"));
-    expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
-    // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
-    expect(r.queryAllByRole("button", { name: "마치기" })).toHaveLength(0);
-    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
-    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
-    // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
-    expect(addRestRecord).not.toHaveBeenCalled();
-    expect(router.replace).not.toHaveBeenCalled();
-    await fireEvent.press(r.getByRole("button", { name: "마치기" }));
-    expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
-  });
+      // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
+      await fireEvent.press(r.getByText("마치기"));
+      expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
+      // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
+      expect(r.queryAllByRole("button", { name: "마치기" })).toHaveLength(0);
+      await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+      await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
+      // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
+      expect(addRestRecord).not.toHaveBeenCalled();
+      expect(router.replace).not.toHaveBeenCalled();
+      await fireEvent.press(r.getByRole("button", { name: "마치기" }));
+      expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
+    },
+    FULL_RUN_TIMEOUT,
+  );
 
   describe("계측", () => {
     const sent = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
@@ -166,17 +176,21 @@ describe("몸에 힘 빼기", () => {
       ]);
     });
 
-    it("네 부위를 다 하면 끝까지 간 것이고, 떠나도 이탈은 없다", async () => {
-      const r = await render(<BodyReleaseScreen />);
-      await fireEvent.press(r.getByText("따라 해보기"));
-      await pass(60_400);
-      await act(async () => {
-        r.unmount();
-      });
+    it(
+      "네 부위를 다 하면 끝까지 간 것이고, 떠나도 이탈은 없다",
+      async () => {
+        const r = await render(<BodyReleaseScreen />);
+        await fireEvent.press(r.getByText("따라 해보기"));
+        await pass(60_400);
+        await act(async () => {
+          r.unmount();
+        });
 
-      const names = sent().map(([name]) => name);
-      expect(names).toContain("rest_content_completed");
-      expect(names).not.toContain("rest_content_exited");
-    });
+        const names = sent().map(([name]) => name);
+        expect(names).toContain("rest_content_completed");
+        expect(names).not.toContain("rest_content_exited");
+      },
+      FULL_RUN_TIMEOUT,
+    );
   });
 });
