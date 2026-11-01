@@ -456,7 +456,7 @@ CI 와 로컬 검증의 정본은 [`docs/CONTRIBUTING.md` 「품질 게이트」
 
 ## 검수 스킬 — `.claude/skills/`
 
-Codex(`.agents/skills/` · [`AGENTS.md`](AGENTS.md))와 **같은 15개를 사본으로** 둔다 — 출처·차이는
+Codex(`.agents/skills/` · [`AGENTS.md`](AGENTS.md))와 **같은 16개를 사본으로** 둔다 — 출처·차이는
 [`docs/CODEX_SKILLS.md`](docs/CODEX_SKILLS.md). 고치면 두 사본을 함께 고친다.
 **주 스킬 하나를 먼저 고른다** — 문구 `momentory-ux-writing` · 시각·서체·간격 `momentory-design-audit` ·
 동작·상태·반응형 `momentory-screen-qa` · diff 리뷰 `momentory-pr-review`. 감사 요청만으로 제품 코드를 고치지 않는다.
