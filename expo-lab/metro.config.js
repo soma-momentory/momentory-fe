@@ -22,4 +22,8 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return (upstream ?? context.resolveRequest)(context, moduleName, platform);
 };
 
-module.exports = config;
+// 「AI에게 맡기기」 — 개발 서버에 로컬 전용 `/__lab/agent/*` 를 단다(`server/index.js` 머리말).
+// 미리보기 서버(작업 공간마다 하나)는 MOMENTORY_LAB_AGENT=off 로 떠서 여기를 건너뛴다.
+const { withLabAgent } = require("./server");
+
+module.exports = withLabAgent(config);
