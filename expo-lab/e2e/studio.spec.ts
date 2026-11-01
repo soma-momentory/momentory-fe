@@ -220,4 +220,47 @@ test.describe("프레임 안의 실제 앱", () => {
       .poll(async () => Object.values((await storedDrafts(page))[0]?.tokens ?? {}))
       .toEqual([PICKED]);
   });
+
+  test("탭 배경 바꿔 보기 — 쉼터 배경을 바꾸면 B 만 바뀌고, 모든 탭에 같은 배경을 고르면 AI에게 넘기기에 실린다", async ({
+    page,
+  }) => {
+    const panel = await openPanel(page, "#/screens?route=/rest&layout=ab&panel=design");
+    await panel.getByRole("button", { name: "새 시안 만들기" }).click();
+    const section = panel.getByTestId("design-editor-screen-tab-bg");
+    await expect(section).toContainText("쉼터 탭 배경 · 지금 화면");
+    await expect(section).toContainText("앱에 넣기");
+    const frameA = page.frameLocator('[data-testid="lab-frame-A"]');
+    const frameB = page.frameLocator('[data-testid="lab-frame-B"]');
+    const texture = (id: string) => `[data-testid="tab-paper-texture-${id}"]`;
+    await expect(frameB.locator(texture("soft-olive"))).toBeAttached({ timeout: 60_000 });
+
+    await section.getByRole("button", { name: "쉼터 탭 배경 따뜻한 아이보리" }).click();
+    await expect
+      .poll(async () => (await storedDrafts(page))[0]?.studio)
+      .toEqual({ "tabBackground.쉼터": "warm-ivory" });
+    await expect(frameB.locator(texture("warm-ivory"))).toBeAttached({ timeout: 60_000 });
+    await expect(frameA.locator(texture("soft-olive"))).toBeAttached();
+
+    await section.getByRole("button", { name: "모든 탭 배경 부드러운 올리브" }).click();
+    await expect
+      .poll(async () => (await storedDrafts(page))[0]?.studio)
+      .toEqual({
+        "tabBackground.홈": "soft-olive",
+        "tabBackground.보관함": "soft-olive",
+        "tabBackground.리포트": "soft-olive",
+        "tabBackground.마이": "soft-olive",
+      });
+
+    await panel.getByRole("button", { name: "코드 반영 · AI에게 넘기기" }).click();
+    await expect(panel.getByTestId("design-editor-handoff-summary")).toContainText("탭 배경 4");
+    const download = page.waitForEvent("download");
+    await panel.getByTestId("design-editor-handoff").click();
+    const handoff = JSON.parse(await readFile((await (await download).path())!, "utf8"));
+    expect(handoff.studio).toContainEqual({
+      key: "tabBackground.홈",
+      label: "홈 탭 배경",
+      before: "warm-ivory",
+      after: "soft-olive",
+    });
+  });
 });

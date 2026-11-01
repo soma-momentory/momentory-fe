@@ -7,6 +7,7 @@
  * - 시안(여러 벌 · 이름): 만들기 · 복제 · 이름 바꾸기 · 지우기 · 고르기(`onActiveDraftChange`)
  * - **이 화면에 쓰인 값**(기본): 프레임에 보이는 요소의 계산된 값과 같은 토큰만 묶음별로(`screenUsage.ts`)
  * - **화면에서 눌러 고르기**(시안이 있으면 켜져 있다): B 의 요소를 누르면 그 요소 카드(`ElementCard`)
+ * - **탭 배경 바꿔 보기**: 탭 다섯 칸의 종이 배경(`TabBackgroundEditor` · 탭 화면이면 「이 화면에 쓰인 값」에도)
  * - 바꾼 목록 · 내보내기 · 코드 반영
  * - 고급: 모든 공통 값(`src/design/ds` 의 편집 가능한 잎 전부) · 화면별 값(Studio 등록표 다섯 화면)
  *
@@ -70,6 +71,15 @@ import {
   studioScreenForRoute,
   validValue,
 } from "./studioRegistry";
+import { TabBackgroundEditor } from "./TabBackgroundEditor";
+import {
+  approvedTabBackgroundFor,
+  isTabBackgroundKey,
+  tabBackgroundLabel,
+  tabBackgroundName,
+  tabBackgroundValueError,
+  tabForRoute,
+} from "./tabBackgrounds";
 import { loadStudioApproved, loadTokenModules } from "./tokenModules";
 import { TokenEditor } from "./TokenEditor";
 import {
@@ -118,7 +128,7 @@ export const DRAFT_CHANGE_DEBOUNCE_MS = 300;
 /** 같은 키를 이 시간 안에 다시 고치면 되돌리기 한 칸으로 묶는다(숫자 칸을 칠 때) */
 const COALESCE_MS = 800;
 
-type Tab = "screen" | "changes" | "file" | "tokens" | "studio";
+type Tab = "screen" | "tabBg" | "changes" | "file" | "tokens" | "studio";
 
 const storage = (): Storage | null => {
   try {
@@ -374,6 +384,12 @@ export function DesignEditorPanel({
       ),
     [content, approvedStudio, replaceContent],
   );
+  /** 탭 배경 — `studio` 의 `tabBackground.<탭>` 키를 통째로 받는다(「모든 탭에 같은 배경」이 한 번의 편집) */
+  const setTabBackgroundStudio = useCallback(
+    (studio: Record<string, string | number>) =>
+      replaceContent({ ...content, studio }, { key: "s:tabBackground" }),
+    [content, replaceContent],
+  );
   const revertStudio = useCallback(
     (key: string) => {
       const studio = { ...content.studio };
@@ -485,6 +501,7 @@ export function DesignEditorPanel({
         return canonical;
       },
       studio: (key, value) => {
+        if (isTabBackgroundKey(key)) return tabBackgroundValueError(key, value);
         const property = findStudioProperty(key);
         if (!property) return "등록되지 않은 Studio 속성이다";
         return validValue(property, value) ? null : "허용되지 않는 값이다";
@@ -651,9 +668,12 @@ export function DesignEditorPanel({
 
   // ── 바꾼 목록 ──────────────────────────────────────────────
   const tokenChanges = Object.entries(content.tokens).sort(([a], [b]) => a.localeCompare(b));
-  const studioChanges = Object.entries(content.studio).sort(([a], [b]) => a.localeCompare(b));
+  const allStudioChanges = Object.entries(content.studio).sort(([a], [b]) => a.localeCompare(b));
+  const studioChanges = allStudioChanges.filter(([key]) => !isTabBackgroundKey(key));
+  const tabBgChanges = allStudioChanges.filter(([key]) => isTabBackgroundKey(key));
   const unmappable = tokenChanges.filter(([key]) => !catalog.byKey.get(key)?.editable);
-  const changeCount = tokenChanges.length + studioChanges.length;
+  const changeCount = tokenChanges.length + allStudioChanges.length;
+  const currentTabName = tabForRoute(currentRoute);
   const hasApprovedFrame = frames.some((frame) => !frame.isDraft);
   const currentStep = workflowStep(!!active, changeCount, tab);
   const advanced = advancedOpen || tab === "tokens" || tab === "studio";
@@ -763,6 +783,15 @@ export function DesignEditorPanel({
               label="시안 파일 열기"
               hint="전에 저장한 시안 파일을 새 시안으로 열어요"
               onPress={() => importFile("new")}
+            />
+            <PanelButton
+              label="탭 배경 바꿔 보기"
+              hint="새 시안을 만들고 탭 다섯 칸(홈 · 쉼터 · 보관함 · 리포트 · 마이)의 종이 배경 고르기를 열어요"
+              onPress={() => {
+                create(EMPTY);
+                setTab("tabBg");
+              }}
+              testID="design-editor-open-tab-bg"
             />
           </Row>
           {drafts.length ? (
@@ -903,6 +932,12 @@ export function DesignEditorPanel({
                     "지금 B 화면에 보이는 요소가 실제로 쓰는 값만 모아 보여요",
                   ],
                   [
+                    "tabBg",
+                    "탭 배경 바꿔 보기",
+                    "홈 · 쉼터 · 보관함 · 리포트 · 마이",
+                    "탭 다섯 칸의 종이 배경을 골라 B 화면에서 봐요 — 모든 탭에 같은 배경도 한 번에",
+                  ],
+                  [
                     "changes",
                     `바꾼 값 ${changeCount}`,
                     undefined,
@@ -965,6 +1000,18 @@ export function DesignEditorPanel({
 
           {tab === "screen" ? (
             <View style={{ gap: 10 }}>
+              {/* 탭 화면이면 배경(화면에서 가장 넓은 면)을 맨 위에 — 지금 탭 한 줄 + 한꺼번에 바꾸기 */}
+              {currentTabName ? (
+                <Section title="탭 배경 바꿔 보기" testID="design-editor-screen-tab-bg">
+                  <TabBackgroundEditor
+                    studio={content.studio}
+                    currentTab={currentTabName}
+                    compact
+                    onChange={setTabBackgroundStudio}
+                    onOpenAll={() => setTab("tabBg")}
+                  />
+                </Section>
+              ) : null}
               <ScreenUsage
                 items={usage}
                 catalog={catalog}
@@ -1001,6 +1048,15 @@ export function DesignEditorPanel({
                 {routeNoteField}
               </Section>
             </View>
+          ) : null}
+          {tab === "tabBg" ? (
+            <Section title="탭 배경 바꿔 보기" testID="design-editor-tab-bg">
+              <TabBackgroundEditor
+                studio={content.studio}
+                currentTab={currentTabName}
+                onChange={setTabBackgroundStudio}
+              />
+            </Section>
           ) : null}
           {tab === "tokens" ? (
             <TokenEditor
@@ -1078,6 +1134,26 @@ export function DesignEditorPanel({
                   />
                 </Row>
               ))}
+              {tabBgChanges.map(([key, value]) => (
+                <Row key={key} style={{ justifyContent: "space-between" }}>
+                  <View style={{ flexShrink: 1, gap: 2 }}>
+                    <Text style={styles.label}>탭 배경 · {tabBackgroundLabel(key) ?? key}</Text>
+                    <Text style={styles.keyText} selectable>
+                      {key}
+                    </Text>
+                    <Text style={styles.hint}>
+                      A {tabBackgroundName(approvedTabBackgroundFor(key))} → B{" "}
+                      {tabBackgroundName(value)}
+                    </Text>
+                  </View>
+                  <PanelButton
+                    label="되돌리기"
+                    hint="이 탭 배경만 지금 앱(A) 배경으로 되돌려요"
+                    accessibilityLabel={`${key} 되돌리기`}
+                    onPress={() => revertStudio(key)}
+                  />
+                </Row>
+              ))}
               {unmappable.length ? (
                 <Text style={styles.error}>
                   코드로 옮길 수 없는 값 {unmappable.length}개 — 내보내도 반영 명령이 거부해요:{" "}
@@ -1124,8 +1200,8 @@ export function DesignEditorPanel({
               />
               {routeNoteField}
               <Text style={styles.hint} testID="design-editor-handoff-summary">
-                넘길 것 — 공통 값 {tokenChanges.length} · 화면별 값 {studioChanges.length} · 화면{" "}
-                {handoffRoutes(notes).length}개
+                넘길 것 — 공통 값 {tokenChanges.length} · 화면별 값 {studioChanges.length} · 탭 배경{" "}
+                {tabBgChanges.length} · 화면 {handoffRoutes(notes).length}개
                 {handoffRoutes(notes).length ? ` (${handoffRoutes(notes).join(", ")})` : ""}
               </Text>
               <PanelButton
@@ -1192,7 +1268,9 @@ export function DesignEditorPanel({
                       "npm run design:apply-tokens -- <파일.json> --write",
                     ].join("\n")}
                   </Text>
-                  <Text style={styles.label}>화면별 값 (studioApproved.json)</Text>
+                  <Text style={styles.label}>
+                    화면별 값 (studioApproved.json) · 탭 배경 (tabBackgrounds.ts)
+                  </Text>
                   <Text style={styles.mono} selectable>
                     {[
                       "npm run design:apply -- <파일.json>",
