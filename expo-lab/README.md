@@ -16,11 +16,11 @@ npm run lab:web              # 포트 8085 고정(expo-lab/package.json) — 앱
 
 ```
 셸(최상위 창 · src/shell/ShellApp.tsx)
- ├ 왼쪽   화면 목록 — app/ 에서 생성 · 앱 순서의 접히는 묶음 · 검색 · 프레임이 지금 선 화면에 배지
- ├ 가운데 도구줄(레이아웃 설명 · 확대 · 돋보기) + 한 화면 / A·B 비교 / 모든 화면 / 기기 · 데이터별 / 상태별
+ ├ 왼쪽   「＋ 새 화면 만들기」 · 「새 화면 (작업 중)」 + 화면 목록 — app/ 에서 생성 · 앱 순서의 접히는 묶음 · 검색 · 배지
+ ├ 가운데 도구줄(레이아웃 설명 · 확대 · 돋보기 · 키보드 올리기) + 한 화면 / A·B 비교 / 모든 화면 / 기기 · 데이터별 / 상태별
  │        └ 실제 기기 외형(DeviceFrame) 안에 <iframe name={encodeFrameConfig(config)} src="/<라우트>">
  │          + 화면 위 참고 시안 층(ReferenceOverlay · 상태바 뒤)
- └ 오른쪽 화면 조건(+ 맨 아래 서버 요청 기록) · 디자인 편집(DesignEditorPanel) · 참고 시안(ReferencePanel)
+ └ 오른쪽 화면 조건(+ 맨 아래 서버 요청 기록) · 디자인 편집(DesignEditorPanel) · 참고 시안(ReferencePanel) · AI에게 맡기기(AgentPanel)
 프레임(iframe 안) = 실제 앱(expo-router 전체) + 가짜 서버 + 시안 적용 — 갈래 A·B·D
 ```
 
@@ -32,7 +32,7 @@ npm run lab:web              # 포트 8085 고정(expo-lab/package.json) — 앱
 | D       | 디자인 시안 편집 · 적용                           | `src/design-editor/`                                 |
 | 공유    | 프레임 설정 · 셸↔프레임 메시지 · 시안 모양 (계약) | `src/lab-contract.ts` — 바꾸면 네 갈래를 같이 고친다 |
 
-셸은 프레임에 **설정을 iframe 이름으로** 싣고(`LabFrameConfig` — 데이터 세트 · 플랫폼 · 기기 · 고정 시각 · 시안 · 로그인 · 지연 · 실패 주소 · 오늘 다시 쓰기), **주소는 `lab:navigate` 로만** 옮긴다. 프레임은 `lab:ready` · `lab:route` · `lab:statusBar` · `lab:request` 를 보낸다(`src/shell/frameBus.ts` 가 단일 통로). 설정이 바뀌면 프레임이 새로 뜨되 **지금 서 있던 주소에서** 다시 시작한다 — 흐름 도중에 데이터 세트나 날짜를 바꿔도 제자리다. 프레임이 아직 준비 전이면(갈래 A 가 없을 때도) 메시지 대신 새로 띄운다.
+셸은 프레임에 **설정을 iframe 이름으로** 싣고(`LabFrameConfig` — 데이터 세트 · 플랫폼 · 기기 · 고정 시각 · 시안 · 로그인 · 지연 · 실패 주소 · 오늘 다시 쓰기 · 다른 서버면 셸 출처), **주소는 `lab:navigate` 로만** 옮긴다(키보드는 `lab:keyboard`). 프레임은 `lab:ready` · `lab:route` · `lab:statusBar` · `lab:request` · `lab:keyboardState` 를 보낸다(`src/shell/frameBus.ts` 가 단일 통로). 설정이 바뀌면 프레임이 새로 뜨되 **지금 서 있던 주소에서** 다시 시작한다 — 흐름 도중에 데이터 세트나 날짜를 바꿔도 제자리다. 프레임이 아직 준비 전이면(갈래 A 가 없을 때도) 메시지 대신 새로 띄운다.
 
 ### 상태는 URL 해시에
 
@@ -42,7 +42,7 @@ npm run lab:web              # 포트 8085 고정(expo-lab/package.json) — 앱
          &zoom=1.5&nav=0&side=0
 ```
 
-새로고침 · 뒤로/앞으로 · 주소 공유가 같은 화면을 다시 연다. 기본값은 적지 않는다. 형식은 `src/shell/hashState.ts`. 레이아웃은 `single` · `ab` · `grid` · `matrix` · `states`, 오른쪽 탭은 `panel=design`(기본) · `controls` · `reference`.
+새로고침 · 뒤로/앞으로 · 주소 공유가 같은 화면을 다시 연다. 기본값은 적지 않는다. 형식은 `src/shell/hashState.ts`. 레이아웃은 `single` · `ab` · `grid` · `matrix` · `states`, 오른쪽 탭은 `panel=design`(기본) · `controls` · `reference` · `agent` · `new-screen`(「AI에게 맡기기」 탭 안의 새 화면 칸). 「AI 수정 결과」 미리보기는 해시에 남기지 않는다(새로고침하면 시안 보기로 돌아온다).
 
 ### 레이아웃 (위 탭 · 탭에 마우스를 올리면 한 문장 설명 · 도구줄 왼쪽에도 같은 문장)
 
@@ -83,6 +83,29 @@ npm run lab:web              # 포트 8085 고정(expo-lab/package.json) — 앱
 - **옆에 나란히 놓기**는 같은 기기 외형(상태바 · 가림 없이)에 시안 그림만 세운 칸을 하나 더한다(`reference-side-cell`) — 맞춤 배율은 칸 수를 하나 더해 한 줄로 맞춘다(`fitRow`).
 - 어느 시안이 보일지는 지금 셸 라우트(패턴) · 그 프레임의 디자인 시안 · 플랫폼 · 기기로 고른다(`useReferencesFor`).
 - 디자인 편집의 **「AI에게 넘기기」** 파일에 화면마다 그 시안 그림이 `{ name, dataUrl, align }` 로 실린다(`handoffReferencesFor` — `align.scale` 은 그림 1px 이 기기 화면에서 몇 CSS px 인지, `offsetX`·`offsetY` 는 그 뒤 더한 CSS px). 편집기에는 `labContext`(플랫폼 · 기기 · 데이터 세트)도 셸이 넘긴다.
+
+### AI에게 맡기기 (오른쪽 「AI에게 맡기기」 탭 · `src/agent/` · 서버 `server/`)
+
+지금 보는 화면을 이 PC 에 로그인된 Claude Code · Codex 에게 고치게 한다. 탭을 여는 것만으로는 아무것도 생기지 않고, 처음 「AI에게 수정 맡기기」를 누를 때 서버가 그 화면용 작업 공간(저장소 바깥 git worktree + `lab/…` 브랜치 + 수정 결과 화면)을 만든다. 규칙은 [HANDOFF.md](HANDOFF.md) 「Lab 에서 바로 맡길 때」.
+
+- **지시 칸은 미리 채워져 있다** — `[화면] 제목 (스펙 ID) · 라우트` · `[파일] app/…`(`routes.generated.ts`) · `[환경] 기기 (플랫폼) · 데이터 이름` · `[시안] 「이름」 바꾼 값 N개 · 참고 시안 이미지 있음/없음` · `지시: `. 화면을 바꾸면 머리말이 따라가고, 다른 탭을 보고 와도 적던 지시는 남는다(패널을 붙여 둔다).
+- **시안이 걸려 있으면** 디자인 편집기의 「AI에게 넘기기」와 같은 파일(`momentory-lab-handoff@1`)을 셸이 만들어 함께 보낸다(`src/shell/agentHandoff.ts` — 편집기의 시안 · 메모를 읽기만 · 지금 화면의 참고 시안 그림 포함).
+- **「수정 결과 보기」** → A/B 의 **B 자리**에 작업 공간의 미리보기 서버를 띄운다(아래 「미리보기」). 다른 화면의 작업은 「다른 작업 N개」에서 열고, 「그 작업 보기」는 그 화면으로 옮긴다.
+- 서버 API(`/__lab/agent/*`)는 이 개발 서버에만 달린다 — 미리보기 서버(`MOMENTORY_LAB_AGENT=off`)에는 없다.
+
+### 새 화면 만들기 (왼쪽 목록 맨 위 「＋ 새 화면 만들기」)
+
+누르면 오른쪽에 「새 화면 만들기」 칸(해시 `panel=new-screen` · 탭은 「AI에게 맡기기」가 눌린다 · 「← 이 화면 고치기로」로 돌아간다)이 열린다 — 화면 이름 · 영문 이름 · 들어갈 곳 · 어떤 화면인지 · (선택) 그림. 보내면 `kind: "new-screen"` 작업 공간이 생기고, 왼쪽 목록 맨 위 **「새 화면 (작업 중)」** 묶음에 이름과 상태(「AI가 고치는 중」 …)로 올라온다(`GET /__lab/agent/workspaces` · 10초마다, 작업 중이면 2.5초마다 다시 읽는다 · `src/shell/AgentNav.tsx`). 줄을 누르면 그 작업 공간의 미리보기 서버에서 `newRoutes[0]`(없으면 첫 화면)을 **한 화면**으로 연다 — 미리보기가 꺼져 있으면 켜고(「수정 결과 화면을 켜는 중…」) 준비되면 저절로 연다. 새 화면은 이 서버의 `app/` 에 아직 없으므로 A/B 의 A 에는 없다.
+
+### 미리보기 — AI 수정 결과 (B · 한 화면)
+
+- A/B 에서 B 는 `<iframe src="<미리보기 주소>/<라우트>">` 이고 이름(설정)은 A 와 같다 — 다만 시안은 걸지 않는다(시안은 이 서버의 localStorage 에 있고, 결과는 이미 코드다). 머리는 **「B · AI 수정 결과 (작업 이름)」** + **「시안 보기로 돌아가기」**. 한 화면에서도 같은 폰에 띄우고, 도구줄 한 줄에 「AI 수정 결과 (이름) 보는 중」 · 「지금 앱과 나란히 보기」 · 「지금 앱으로 돌아가기」가 뜬다.
+- **다른 출처**: 미리보기는 다른 포트라 다른 출처다. 셸은 설정에 `shellOrigin`(자기 `location.origin`)을 싣고, 프레임(`src/frame/messages.ts`)은 그 출처로만 보내고 **부모 창이 그 출처에서 보낸 것만** 믿는다(없으면 자기 출처 — 같은 서버 프레임은 예전 그대로). 셸(`frameBus`)은 같은 출처면 예전처럼, 다른 출처면 **그 frameId 로 붙은 iframe 의 창이 보낸 것만** 받고, 보낼 때는 iframe `src` 의 출처로 보낸다. ⚠ 이 규칙은 **미리보기 쪽 Lab 코드에도 있어야** 한다 — 작업 공간의 기준 브랜치에 이 변경이 없으면 B 가 셸에 말하지 못한다(B 는 보이지만 목록 배지 · 함께 이동 · 요청 기록이 따라오지 않는다).
+- 다른 출처 문서는 셸이 읽을 수 없어 **돋보기 · 눌러 고르기(디자인 편집의 요소 선택)는 B 에 쓸 수 없다** — 도구줄에 「AI 수정 결과 화면은 다른 서버라 돋보기 · 눌러 고르기를 쓸 수 없어요」 한 줄. 돋보기는 A 에만 렌즈를 띄우고, 편집기에는 B 를 문서 없는 프레임으로 넘긴다. 참고 시안 겹치기 · 겹쳐서 차이 보기는 셸이 그리는 것이라 그대로 된다.
+
+### 키보드 올리기 · 내리기 (가운데 도구줄)
+
+입력칸을 누르면 프레임의 화면 키보드(`src/frame/keyboard/`)가 저절로 올라온다. 도구줄의 **「키보드 올리기 / 내리기」**는 입력 없이 키보드 올린 모습을 볼 때 쓴다 — 한 화면은 그 폰, A/B 는 두 폰 함께 `lab:keyboard {open}` 을 보낸다. 눌림 상태(`aria-pressed`)는 프레임이 알린 `lab:keyboardState {open, height}` 를 따르고(입력칸을 눌러 올라와도 눌린다), 프레임을 다시 띄우면 내려간 것으로 돌린다. 셸이 연 키보드는 포커스가 빠져도 내려가지 않는다 — 이 단추나 앱의 `Keyboard.dismiss()` 로 내린다.
 
 ### 패널 접기 · 좁은 창
 
@@ -137,18 +160,21 @@ node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest
 
 표 하나(`src/lab-devices.ts`)를 셸(외형)과 프레임(앱이 받는 안전 영역)이 같이 쓴다. **추정으로 그리지 않는다** — 줄마다 `source` 에 출처를 적었다.
 
-| 기기           | 크기    | 안전 영역 위/아래 | 상태바 | 모서리 | 가림                    | 출처                                                          |
-| -------------- | ------- | ----------------- | ------ | ------ | ----------------------- | ------------------------------------------------------------- |
-| iPhone SE 3    | 375×667 | 20 / 0            | 20     | 0      | 없음 · 홈 버튼          | useyourloaf                                                   |
-| iPhone 13 mini | 375×812 | 50 / 34           | 44     | 44     | 노치 174×35 (환산 근사) | useyourloaf · ScreenCorners · 노치 실물 26.8×5.35mm 환산      |
-| iPhone 16e     | 390×844 | 47 / 34           | 47     | 47.33  | 노치 162×32 (환산 근사) | 〃                                                            |
-| iPhone 16      | 393×852 | 59 / 34           | 54     | 55     | 섬 126×37.33 @ y11      | useyourloaf · ScreenCorners · Apple Design Resources          |
-| iPhone 16 Pro  | 402×874 | 62 / 34           | 54     | 62     | 섬 @ y14 (도출)         | 〃 — 섬 위치는 안전 영역 62 에서 도출                         |
-| iPhone 16 Plus | 430×932 | 59 / 34           | 54     | 55     | 섬 @ y11                | 〃                                                            |
-| Pixel 8        | 412×915 | 50.29 / 24        | 50.29  | 33.5   | 펀치홀 ⌀27.62 @ y11.24  | Android SDK devices.xml · 스킨 · **Pixel_8 AVD dumpsys 실측** |
+| 기기           | 크기    | 안전 영역 위/아래 | 상태바 | 모서리 | 가림                    | 출처                                                                                                 |
+| -------------- | ------- | ----------------- | ------ | ------ | ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| iPhone SE 3    | 375×667 | 20 / 0            | 20     | 0      | 없음 · 홈 버튼          | useyourloaf                                                                                          |
+| iPhone 13 mini | 375×812 | 50 / 34           | 44     | 44     | 노치 174×35 (환산 근사) | useyourloaf · ScreenCorners · 노치 실물 26.8×5.35mm 환산                                             |
+| iPhone 16e     | 390×844 | 47 / 34           | 47     | 47.33  | 노치 162×32 (환산 근사) | 〃                                                                                                   |
+| iPhone 16      | 393×852 | 59 / 34           | 54     | 55     | 섬 126×37.33 @ y11      | useyourloaf · ScreenCorners · Apple Design Resources                                                 |
+| iPhone 16 Pro  | 402×874 | 62 / 34           | 54     | 62     | 섬 @ y14 (도출)         | 〃 — 섬 위치는 안전 영역 62 에서 도출                                                                |
+| iPhone 16 Plus | 430×932 | 59 / 34           | 54     | 55     | 섬 @ y11                | 〃                                                                                                   |
+| Pixel 8        | 412×915 | 50.29 / 24        | 50.29  | 33.5   | 펀치홀 ⌀27.62 @ y11.24  | Android SDK devices.xml · 스킨 · **Pixel_8 AVD dumpsys 실측**                                        |
+| Galaxy S24     | 360×780 | 34.33 / 15        | 34.33  | 36     | 펀치홀 ⌀17.9 @ y9.19    | windowinsets.info 실기기 실측(SM-S921N · One UI 8.5) · 480dpi 펌웨어 · 펀치홀은 Galaxy Emulator Skin |
+| Galaxy A35     | 384×832 | 35.91 / 14.93     | 35.91  | 40.18  | 펀치홀 ⌀23.47 @ y8.18   | windowinsets.info 실기기 실측(SM-A356N · One UI 8.5) · 450dpi 펌웨어                                 |
+| Galaxy A55     | 384×832 | 31.64 / 14.93     | 31.64  | 41.96  | 펀치홀 ⌀23.47 @ y8.18   | windowinsets.info 실기기 실측(SM-A556S · One UI 8.5) · 450dpi 펌웨어                                 |
 
-- **Galaxy S24 는 뺐다** — 기본 화면 배율 · 펀치홀 · 상태바를 로컬 자료로 확인할 수 없다.
-- **Android**: 로컬 SDK 의 공식 에뮬레이터 스킨(`skins/pixel_8` 의 `back.webp` · `mask.webp` · `layout`)을 `npm run lab:skins` 가 `expo-lab/public/device-skins/` 로 복사한다(gitignore — SDK 파일은 담지 않는다). 화면은 스킨 `layout` 의 자리에 놓고, 모서리 · 펀치홀은 `mask.webp` 를 CSS mask 로 뒤집어 깎는다. 스킨이 없으면 같은 수치의 SVG 외형. 상태바 132px · 제스처 막대 63px · 펀치홀 `cutoutSpec` 은 AVD(Android 16 · 제스처 탐색)를 띄워 `dumpsys window` 로 읽었고, 시계 · 아이콘 · 제스처 손잡이(108×3.81dp · 아래 9.9dp) 자리는 그 화면 캡처에서 쟀다.
+- **Galaxy 세 대는 제스처 탐색 값이다** — One UI 기본은 3버튼(아래 48dp)이지만 셸이 아직 3버튼 막대를 그리지 못한다. 제스처 손잡이 모양은 Pixel 값을 같이 쓰고, 상태바 시각 · 아이콘은 Pixel 실측 배치를 상태바 높이 비율로 줄여 그린다(근사 · One UI 글자는 재지 않았다). 출처 전문은 `src/lab-devices.ts` 머리말. Android 기본 기기는 그대로 Pixel 8 이다.
+- **Android 스킨**: 로컬 SDK 의 공식 에뮬레이터 스킨(`skins/pixel_8` 의 `back.webp` · `mask.webp` · `layout`)과, 사용자가 받아 둔 삼성 Galaxy Emulator Skin(`LAB_SKINS_DIR` · `back.png` · `mask.png` — 삼성 계정 로그인 뒤 내려받는다)을 `npm run lab:skins` 가 `expo-lab/public/device-skins/` 로 복사한다(gitignore — SDK · 삼성 파일은 담지 않는다). 그림 이름은 `skinFile(skin, "back" | "mask")`. 화면은 스킨 `layout` 의 자리에 놓고, 모서리 · 펀치홀은 mask 를 CSS mask 로 뒤집어 깎는다. 삼성 스킨은 배경 그림 둘레의 브랜드 카드를 빼고 `bodyCrop`(몸통)만 그린다 — 겉 크기 = crop × 배율, 화면 자리 = (display − crop) × 배율. 스킨이 없으면 같은 수치의 SVG 외형(펀치홀 · 제스처 손잡이). 상태바 132px · 제스처 막대 63px · 펀치홀 `cutoutSpec` 은 AVD(Android 16 · 제스처 탐색)를 띄워 `dumpsys window` 로 읽었고, 시계 · 아이콘 · 제스처 손잡이(108×3.81dp · 아래 9.9dp) 자리는 그 화면 캡처에서 쟀다.
 - **iOS**: 공식 외형 자산이 없어 SVG/CSS 로 그린다 — 정확한 화면 크기 · 화면 모서리 · 섬/노치 · 옆 버튼 · 홈 인디케이터(134×5 · 아래 8) · SE 는 홈 버튼과 각진 화면.
 - 상태바(시각은 프레임의 가상 시각 · 12시간제 · 앞자리 0 없음) · 가림 · 하단 막대는 iframe **위에** 그리고 누르기는 통과한다. 글자색은 프레임의 `lab:statusBar` 를 따른다(기본 어두운 글자).
 
@@ -161,9 +187,11 @@ npm run typecheck:expo-lab && npm run lint && npm run format:check
 npx jest expo-lab
 npx playwright test expo-lab/e2e/shell.spec.ts expo-lab/e2e/layout-matrix.spec.ts   # 기본 포트 8085
 LAB_FRAMES=1 npx playwright test expo-lab/e2e                        # 실제 앱 프레임까지 보는 검사
+# 「AI 수정 결과」(다른 출처 B) 검사는 두 번째 Lab 이 떠 있을 때만 돈다(LAB_PREVIEW_URL · 기본 포트 +1)
+(cd expo-lab && MOMENTORY_LAB_AGENT=off npx expo start --web --port 8086)
 ```
 
-`shell.spec.ts` · `layout-matrix.spec.ts` 의 셸 검사(목록 · 해시 왕복 · 뒤로/앞으로 · 프리셋 · 가상 시각 · 기기 크기 · 전체 화면 지연 부팅 · 상태별로 보기 칸 · 참고 시안 겹치기 · 나란히 놓기 · R)는 셸만으로 통과한다. 프레임 안 실제 앱이 필요한 검사(현재 화면 배지 · 요청 기록 · 가로 넘침 · 실패 칸이 찾은 주소 · 마이 세부의 지금 닉네임)는 `LAB_FRAMES=1` 일 때만 돈다.
+`agent.spec.ts` 는 `/__lab/agent/*` 를 가짜로 답한다 — AI 를 실제로 돌리지 않는다(POST 는 막는다). `shell.spec.ts` · `layout-matrix.spec.ts` 의 셸 검사(목록 · 해시 왕복 · 뒤로/앞으로 · 프리셋 · 가상 시각 · 기기 크기 · 전체 화면 지연 부팅 · 상태별로 보기 칸 · 참고 시안 겹치기 · 나란히 놓기 · R)는 셸만으로 통과한다. 프레임 안 실제 앱이 필요한 검사(현재 화면 배지 · 요청 기록 · 가로 넘침 · 실패 칸이 찾은 주소 · 마이 세부의 지금 닉네임)는 `LAB_FRAMES=1` 일 때만 돈다.
 
 ## 디자인 편집기
 
