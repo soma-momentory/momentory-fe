@@ -4,7 +4,8 @@
  *
  * - iOS(Face ID): 검은 유리 테두리 12 + 금속 테두리 3. 겉 모서리 = 화면 모서리 + 15 (동심원)
  * - iPhone SE: 위·아래 이마/턱 104 · 옆 24 · 홈 버튼. 화면 모서리 없음
- * - Android 스킨: SDK `skins/<name>/layout` 의 px 값을 화면 폭에 맞춰 줄인 것
+ * - Android 스킨: 스킨 `layout` 의 px 값을 화면 폭에 맞춰 줄인 것. `bodyCrop` 이 있으면(삼성 스킨 — 몸통 둘레에
+ *   브랜드 카드가 있다) 그 영역만 외형이다: 겉 크기 = crop × 배율, 화면 자리 = (display − crop) × 배율
  * - Android 스킨 없음: 테두리 10 + 2 의 SVG 외형
  * 옆 버튼이 몸통 밖으로 3 튀어나오므로 좌우에 4 여유를 둔다.
  */
@@ -27,6 +28,14 @@ export type ChromeGeometry = {
   screenY: number;
   /** 스킨 이미지 배율(px → 기기 단위). 스킨이 아니면 1 */
   skinScale: number;
+  /**
+   * 스킨 배경 그림을 놓을 자리(기기 단위) — 외형 상자 왼쪽 위 기준. `bodyCrop` 이면 음수로 밀어
+   * 몸통만 보이게 한다(바깥은 상자가 잘라 낸다). 스킨이 아니면 0 · 0 · 외형 크기
+   */
+  skinX: number;
+  skinY: number;
+  skinWidth: number;
+  skinHeight: number;
 };
 
 const BUTTON_ROOM = 4;
@@ -36,18 +45,23 @@ export function chromeGeometry(device: LabDevice, skinAvailable: boolean): Chrom
   if (device.platform === "android" && device.skin && skinAvailable) {
     const s = device.skin;
     const scale = w / s.displayWidth;
+    const crop = s.bodyCrop ?? { x: 0, y: 0, width: s.frameWidth, height: s.frameHeight };
     return {
       kind: "android-skin",
-      outerWidth: s.frameWidth * scale,
-      outerHeight: s.frameHeight * scale,
+      outerWidth: crop.width * scale,
+      outerHeight: crop.height * scale,
       bodyX: 0,
       bodyY: 0,
-      bodyWidth: s.frameWidth * scale,
-      bodyHeight: s.frameHeight * scale,
+      bodyWidth: crop.width * scale,
+      bodyHeight: crop.height * scale,
       bodyRadius: 0,
-      screenX: s.displayX * scale,
-      screenY: s.displayY * scale,
+      screenX: (s.displayX - crop.x) * scale,
+      screenY: (s.displayY - crop.y) * scale,
       skinScale: scale,
+      skinX: -crop.x * scale,
+      skinY: -crop.y * scale,
+      skinWidth: s.frameWidth * scale,
+      skinHeight: s.frameHeight * scale,
     };
   }
   if (device.bottomBar === "home-button") {
@@ -64,7 +78,7 @@ export function chromeGeometry(device: LabDevice, skinAvailable: boolean): Chrom
       bodyRadius: 64,
       screenX: BUTTON_ROOM + side,
       screenY: top,
-      skinScale: 1,
+      ...noSkin(w + side * 2 + BUTTON_ROOM * 2, h + top * 2),
     };
   }
   const bezel = device.platform === "ios" ? 15 : 12;
@@ -79,9 +93,17 @@ export function chromeGeometry(device: LabDevice, skinAvailable: boolean): Chrom
     bodyRadius: device.cornerRadius + bezel,
     screenX: BUTTON_ROOM + bezel,
     screenY: bezel,
-    skinScale: 1,
+    ...noSkin(w + bezel * 2 + BUTTON_ROOM * 2, h + bezel * 2),
   };
 }
+
+const noSkin = (width: number, height: number) => ({
+  skinScale: 1,
+  skinX: 0,
+  skinY: 0,
+  skinWidth: width,
+  skinHeight: height,
+});
 
 /** 옆 버튼 — 몸통 높이에 대한 비율(위치 · 길이). 실물 사진의 배치를 따른 근사 */
 export type SideButton = { side: "left" | "right"; top: number; length: number };

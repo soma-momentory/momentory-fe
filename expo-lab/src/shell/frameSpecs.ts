@@ -35,7 +35,44 @@ export type FrameSpec = {
   href: string;
   /** 「상태별로 보기」 칸이면 그 상태 */
   screenState?: ScreenStateId;
+  /**
+   * 다른 서버에서 띄운다 — 「AI 수정 결과」 미리보기의 주소(예: `http://localhost:8103`). 없으면 셸과 같은 서버.
+   * 다른 출처라 셸이 `contentDocument` 를 못 읽는다(돋보기 · 눌러 고르기를 못 쓴다)
+   */
+  origin?: string;
+  /** 처음 열 주소를 이것으로 — 새 화면 미리보기처럼 이 서버의 라우트 목록에 없는 주소 */
+  startPath?: string;
+  /** 미리보기면 그 작업 공간(머리 이름 · 「시안 보기로 돌아가기」) */
+  preview?: FramePreview;
 };
+
+/** 「AI 수정 결과 보기」 — 작업 공간의 미리보기 서버를 B(또는 한 화면)에 띄운다 */
+export type FramePreview = {
+  url: string;
+  workspaceId: string;
+  title: string;
+  /** 새 화면이면 그 화면 주소(`newRoutes[0]`) — 이 서버에는 없는 라우트다 */
+  route: string | null;
+};
+
+/**
+ * 미리보기를 건 프레임 — 다른 서버에서 같은 설정으로 띄운다. 시안은 걸지 않는다(시안은 이 서버의
+ * localStorage 에 있고, 미리보기는 AI 가 이미 코드로 옮긴 결과다). `shellOrigin` 을 실어 프레임이 셸에 말하게 한다
+ */
+export function withPreview(
+  spec: FrameSpec,
+  preview: FramePreview,
+  shellOrigin: string,
+): FrameSpec {
+  const origin = preview.url.replace(/\/+$/, "");
+  return {
+    ...spec,
+    origin,
+    preview,
+    ...(preview.route ? { startPath: preview.route } : {}),
+    config: { ...spec.config, designDraftId: null, shellOrigin },
+  };
+}
 
 export type SampleParamsFor = (datasetId: string, now?: string | null) => SampleParams;
 
