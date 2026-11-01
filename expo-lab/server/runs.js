@@ -191,6 +191,10 @@ class AgentRun {
           ? fromSummary
           : parseBlocks(this.texts.join("\n\n"));
     }
+    this.blocks = {
+      commitMessage: stripAttribution(this.blocks.commitMessage),
+      prBody: stripAttribution(this.blocks.prBody),
+    };
     this.log.end(`# --- ${this.status} (exit ${code}) ---\n`);
     this.emitRun();
     this.resolveFinished?.(this.snapshot());
@@ -240,4 +244,26 @@ class AgentRun {
   }
 }
 
-module.exports = { AgentRun };
+/**
+ * 커밋 메시지 · PR 본문에서 생성 도구 · 공저자 표기를 걷어 낸다(사용자 규칙 — 「기여자 · 세션 표기 넣지 않기」).
+ * 프롬프트로도 막지만, 모델이 습관처럼 붙이는 일이 실제로 있었다(2026-11-02 첫 실행).
+ * @param {string | null} text
+ * @returns {string | null}
+ */
+function stripAttribution(text) {
+  if (text == null) return text;
+  const kept = text
+    .split(/\r?\n/)
+    .filter(
+      (line) =>
+        !/^\s*Co-Authored-By:/i.test(line) &&
+        !/Generated with \[?(Claude Code|Codex)/i.test(line) &&
+        !/^\s*🤖/u.test(line) &&
+        !/claude\.ai\/code\/session/i.test(line),
+    )
+    .join("\n")
+    .trimEnd();
+  return kept.length ? kept : null;
+}
+
+module.exports = { AgentRun, stripAttribution };

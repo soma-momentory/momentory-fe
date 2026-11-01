@@ -423,10 +423,11 @@ function createLabAgent(options) {
       if (snapshot.summary) patch.lastSummary = snapshot.summary.slice(0, 4000);
       if (snapshot.blocks.commitMessage || snapshot.blocks.prBody) patch.blocks = snapshot.blocks;
       store.update(meta.id, patch);
+      // 미리보기는 AI 실행이 **끝난 뒤** 띄운다 — 실행 중에 Metro 첫 번들이 겹치면 PC 부하로 에이전트가 돌리는
+      // jest 의 애니메이션 · 타이머 테스트가 흔들려(「Unable to locate attached view」) 없는 실패를 보고했다(2026-11-02 실측).
+      // 이미 떠 있으면 그대로 둔다(파일 감시가 바뀐 코드를 다시 묶는다). 실패해도 결과는 그대로다.
+      ensurePreview(meta).catch(() => {});
     });
-
-    // 미리보기는 첫 실행과 함께 띄운다 — 실패해도 실행은 계속한다
-    ensurePreview(meta).catch(() => {});
     return run;
   }
 
