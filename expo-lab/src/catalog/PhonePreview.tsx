@@ -1,15 +1,16 @@
+/**
+ * 옛 Studio(`src/studio/Studio.tsx` · `StateComparison.tsx`)가 쓰는 시안 폰만 남겼다 — 캡처 폰은
+ * 「전 화면」 셸이 실제 앱 프레임으로 바꾸면서 지웠다(2026-11-02). Studio 가 라이브 프레임으로
+ * 옮겨지면 이 폴더째 지운다.
+ */
 import { RetroDiaryBackground } from "../../../src/features/retro/ui/RetroDiaryBackground";
 import { DiaryPaperBackground } from "../../../src/components/diary/DiaryPaper";
 import { label } from "../../../src/design/ds";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Svg, { Line, Path, Rect } from "react-native-svg";
 
 import { claudeHomeColor as c } from "../claude-home/tokens";
-import { CurrentHomeMockPreview } from "../current-home/MockPreview";
 import type { LetterScenarioId, WeatherScenarioId } from "../claude-home/validationScenarios";
-import { captureAssets } from "./captures";
-import type { CatalogScreen } from "./screens";
-import { captureThumbnails } from "./thumbnails";
 import type { LabVariant } from "./variants";
 import type { StudioDesign } from "../../../src/design/studioDesign";
 
@@ -38,31 +39,6 @@ function ScaledPhone({
         {children}
       </View>
     </View>
-  );
-}
-
-export function CapturePhone({
-  screen,
-  device,
-  scale = 1,
-  thumbnail = false,
-}: {
-  screen: CatalogScreen;
-  device: PreviewDevice;
-  scale?: number;
-  thumbnail?: boolean;
-}) {
-  return (
-    <ScaledPhone width={device.width + 14} height={device.height + 14} scale={scale}>
-      <View style={[styles.capturePhone, { width: device.width + 14, height: device.height + 14 }]}>
-        <Image
-          accessibilityLabel={`${screen.title} 실제 앱 화면 캡처`}
-          source={thumbnail ? captureThumbnails[screen.id] : captureAssets[screen.id]}
-          resizeMode="stretch"
-          style={{ width: device.width, height: device.height }}
-        />
-      </View>
-    </ScaledPhone>
   );
 }
 
@@ -160,39 +136,7 @@ export function VariantPhone({
   );
 }
 
-export function CurrentHomePhone({
-  scenarioId,
-  device,
-  scale = 1,
-  onMessage,
-}: {
-  scenarioId: string;
-  device: PreviewDevice;
-  scale?: number;
-  onMessage: (message: string) => void;
-}) {
-  return (
-    <ScaledPhone width={device.width + 20} height={device.height + 20} scale={scale}>
-      <View style={[styles.variantPhone, { width: device.width + 20, height: device.height + 20 }]}>
-        <PreviewStatusBar width={device.width} />
-        <CurrentHomeMockPreview scenarioId={scenarioId} onMessage={onMessage} scale={scale} />
-      </View>
-    </ScaledPhone>
-  );
-}
-
 const styles = StyleSheet.create({
-  capturePhone: {
-    borderRadius: 42,
-    borderWidth: 7,
-    borderColor: c.bezel,
-    backgroundColor: c.paper,
-    overflow: "hidden",
-    shadowColor: c.shadow,
-    shadowOpacity: 0.16,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-  },
   variantPhone: {
     borderRadius: 44,
     borderWidth: 10,

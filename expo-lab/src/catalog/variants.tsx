@@ -16,7 +16,6 @@ import { ClaudeHomeMockPreview } from "../claude-home/MockPreview";
 import { claudeHomeScenarios } from "../claude-home/scenarios";
 import { homeVariants } from "../claude-home/variants";
 import type { LetterScenarioId, WeatherScenarioId } from "../claude-home/validationScenarios";
-import type { CaptureId } from "./captures";
 import { MyMainPreview, myMainScenarios } from "../my/MyMainPreview";
 import { ReportPreview, reportScenarios } from "../report/ReportPreview";
 import { RestHubPreview, restHubScenarios } from "../rest/RestHubPreview";
@@ -25,7 +24,7 @@ import { DiaryPaperPreview, diaryPaperScenarios } from "../diary/DiaryPaperPrevi
 export type VariantScenario = { id: string; label: string };
 export type LabVariant = {
   id: string;
-  screenId: CaptureId;
+  screenId: string;
   label: string;
   scenarios: readonly VariantScenario[];
   /** `scale` — 가상 폰의 축소 배율. 메뉴처럼 화면 좌표를 쓰는 어댑터가 되돌릴 때 쓴다 */
@@ -209,5 +208,5 @@ export const labVariants: readonly LabVariant[] = [
   },
 ];
 
-export const variantsFor = (screenId: CaptureId) =>
+export const variantsFor = (screenId: string) =>
   labVariants.filter((variant) => variant.screenId === screenId);
