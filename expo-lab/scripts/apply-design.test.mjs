@@ -41,6 +41,33 @@ test("design apply previews changes, writes only on request, and rejects unknown
     "#123456",
   );
 
+  // 디자인 편집기(version 2) — studio 는 바뀐 키만, tokens 는 apply-tokens 몫
+  await writeFile(
+    input,
+    JSON.stringify({
+      version: 2,
+      kind: "momentory-design-draft",
+      name: "editor",
+      tokens: { "primary.heavy": "#335544" },
+      studio: { "home.hero.borderRadius": 24 },
+    }),
+  );
+  const v2 = spawnSync(process.execPath, [copiedScript, input, "--write"], { encoding: "utf8" });
+  assert.equal(v2.status, 0, v2.stderr);
+  assert.match(v2.stdout, /home\.hero\.borderRadius: 16 -> 24/);
+  assert.match(v2.stdout, /DS 토큰 1개/);
+  const afterV2 = JSON.parse(await readFile(copiedApproved, "utf8"));
+  assert.equal(afterV2["home.hero.borderRadius"], 24);
+  assert.equal(afterV2["rest.wishPaper.backgroundColor"], "#123456", "적지 않은 키는 그대로");
+
+  await writeFile(
+    input,
+    JSON.stringify({ version: 2, name: "bad", tokens: {}, studio: { "nope.key": 1 } }),
+  );
+  const badV2 = spawnSync(process.execPath, [copiedScript, input], { encoding: "utf8" });
+  assert.equal(badV2.status, 1);
+  assert.match(badV2.stderr, /Unknown or missing design keys/);
+
   design["unsupported.node.width"] = 99;
   await writeFile(input, JSON.stringify({ version: 1, name: "invalid", design }));
   const invalid = spawnSync(process.execPath, [copiedScript, input, "--write"], {
