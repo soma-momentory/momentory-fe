@@ -1,6 +1,6 @@
 import { track } from "@/features/analytics";
-import { router } from "expo-router";
-import { useMemo } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo } from "react";
 
 import { TabScreen } from "@/components/ds";
 import { RestRecommendSheet } from "@/components/rest/RestRecommendSheet";
@@ -41,17 +41,22 @@ import { formatKoreanDateShort } from "@/lib/day";
  * ## 일기를 쓴 날에는 쉼 하나를 권한다 (2026-10-12)
  *
  * 오늘 쓴 일기가 있고 오늘 아직 매듭짓지 않았으면, 들어오고 0.6초 뒤에 **추천 시트**가 올라온다
- * (`useRestRecommendation` · `RestRecommendSheet`). 일기를 막 마치고 왔든 나중에 왔든 같다.
- * 세 번 연달아 닫은 사람에게는 시트 대신 그 칸에 「오늘 추천」 한 줄만 붙인다(`note` 자리).
+ * (`useRestRecommendation` · `RestRecommendSheet`). 일기 완료 경로로 들어오면 날짜·닫은 횟수와
+ * 관계없이 매번 연다. 일반 탭 진입에서 세 번 연달아 닫은 사람에게는 「오늘 추천」만 붙인다.
  */
 export default function Rest() {
+  const { afterDiary } = useLocalSearchParams<{ afterDiary?: string }>();
   const cards = useDiary((s) => s.actionCards);
 
   const all = useMemo(() => datedCards(cards), [cards]);
   const latest = latestCardDay(all);
   const { date: today } = useTodayContext();
   const hasToday = cardOn(all, today) != null;
-  const recommend = useRestRecommendation(today, restRecommendMotion.delay);
+  const recommend = useRestRecommendation(today, restRecommendMotion.delay, afterDiary === "1");
+  useEffect(() => {
+    // 이번 완료 진입에만 적용한다. 이후 일반 탭 진입까지 반복 표시하지 않는다.
+    if (afterDiary === "1" && recommend.sheet != null) router.setParams({ afterDiary: "" });
+  }, [afterDiary, recommend.sheet]);
   const recommended =
     recommend.sheet != null ? REST_CONTENTS.find((c) => c.id === recommend.sheet?.content) : null;
   const hinted = recommend.hint?.content;

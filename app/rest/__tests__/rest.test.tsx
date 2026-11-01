@@ -8,6 +8,7 @@ import RestCards from "../cards/index";
 import { restRecommendMotion } from "@/design/ds";
 import { track } from "@/features/analytics";
 import { useDiary } from "@/features/diary/model/diary";
+import { emotionName } from "@/features/emotion/model/emotion";
 import { useProfile } from "@/features/my/model/settings";
 import {
   readRecommendationMemory,
@@ -15,6 +16,7 @@ import {
 } from "@/features/rest/data/recommendMemory";
 import { datedCards } from "@/features/rest/model/cards";
 import { useToast } from "@/lib/toast";
+import * as http from "@/lib/http";
 import { seedDiaries } from "@/testing/fixtures";
 
 /**
@@ -29,7 +31,12 @@ import { seedDiaries } from "@/testing/fixtures";
 let mockParams: Record<string, string> = { date: "2026-07-27" };
 
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  router: {
+    push: jest.fn(),
+    back: jest.fn(),
+    replace: jest.fn(),
+    setParams: jest.fn((params: Record<string, string>) => Object.assign(mockParams, params)),
+  },
   useLocalSearchParams: () => mockParams,
   Stack: jest.fn(() => null),
   Redirect: jest.fn(() => null),
@@ -171,6 +178,74 @@ describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
       .mocked(track)
       .mock.calls.filter(([n]) => n === name)
       .map(([, props]) => props);
+
+  it.each([
+    ["2026-07-27", 0],
+    ["2026-07-27", 3],
+    ["2026-07-26", 3],
+  ])(
+    "일기 완료 진입은 이전 추천 기록(%s, %i회)과 관계없이 매번 표시한다",
+    async (day, dismissStreak) => {
+      await writeRecommendationMemory({ day: String(day), dismissStreak: Number(dismissStreak) });
+      mockParams.afterDiary = "1";
+      const r = await render(<Rest />);
+      await waitForSheet();
+      expect(r.getByText("오늘 일기의 「불안함」을 보고 골랐어요")).toBeTruthy();
+      expect(router.setParams).toHaveBeenCalledWith({ afterDiary: "" });
+
+      await fireEvent.press(r.getByText("다른 쉼터 둘러보기"));
+      await r.unmount();
+      const ordinary = await render(<Rest />);
+      await waitForSheet();
+      expect(ordinary.queryByText("오늘 일기의 「불안함」을 보고 골랐어요")).toBeNull();
+      await ordinary.unmount();
+
+      mockParams.afterDiary = "1";
+      const afterNextDiary = await render(<Rest />);
+      await waitForSheet();
+      expect(afterNextDiary.getByText("오늘 일기의 「불안함」을 보고 골랐어요")).toBeTruthy();
+    },
+  );
+
+  it.each([
+    [1, "happy", "treasure_box"],
+    [4, "tired", "body_release"],
+    [5, "stuck", "worry_box"],
+    [8, "depressed", "sense_pond"],
+  ] as const)(
+    "직접 일기에 고른 감정 %i로 저장 직후 쉼을 추천한다",
+    async (emotion, key, content) => {
+      useDiary.getState().reset();
+      const request = jest.spyOn(http, "authedRequest").mockResolvedValueOnce({
+        ok: true,
+        data: {
+          id: 81,
+          original: "직접 남긴 오늘 이야기",
+          primaryEmotion: key,
+          emotions: [key],
+          createdAt: "2026-07-27T12:00:00Z",
+        },
+      });
+      try {
+        expect(await useDiary.getState().write("직접 남긴 오늘 이야기", emotion)).toEqual({
+          status: "saved",
+          id: "81",
+        });
+        expect(request).toHaveBeenCalledWith(
+          "POST",
+          "/api/v1/diaries",
+          { original: "직접 남긴 오늘 이야기", emotion: key },
+          expect.any(Object),
+        );
+      } finally {
+        request.mockRestore();
+      }
+      const r = await render(<Rest />);
+      await waitForSheet();
+      expect(r.getByText(`오늘 일기의 「${emotionName(emotion)}」을 보고 골랐어요`)).toBeTruthy();
+      expect(sent("rest_recommendation_shown")).toEqual([{ content, basis: "emotion" }]);
+    },
+  );
 
   it("들어오고 잠깐 뒤에 시트가 올라온다 — 고른 이유 · 장면 · 하자는 말 · 효용 · 알약 셋", async () => {
     const r = await render(<Rest />);

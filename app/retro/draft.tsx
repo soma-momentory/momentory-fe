@@ -179,7 +179,7 @@ export default function RetroDraft() {
     // `/rest` 가 아니라 `/(tabs)/rest` 다 — 온보딩 그룹의 같은 경로로 새지 않게(`C7` 과 같은 주소).
     // 회고 한 벌은 여기까지가 수명이다 — 다음 회고에 앞 대화가 섞이지 않게
     setLeaving(true);
-    router.replace(askLetterTime ? "/letter/time?next=rest" : "/(tabs)/rest");
+    router.replace(askLetterTime ? "/letter/time?next=rest" : "/(tabs)/rest?afterDiary=1");
     resetRetro();
   };
 

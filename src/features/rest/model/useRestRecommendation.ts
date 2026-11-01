@@ -30,7 +30,8 @@ const CONTENT_NAME: Record<RestContentId, RestContentName> = {
  *
  * 오늘 쓴 일기가 있고, 오늘 아직 추천을 매듭짓지 않았으면 `delayMs` 뒤에 시트를 연다. 일기를 막 마치고
  * 왔든, 바람카드를 보고 나중에 왔든, 일기를 쓴 날 따로 들어왔든 같은 규칙이다 — 일기 화면이 추천을
- * 계산해 넘기지 않는다. 해 보거나 닫으면 그날은 다시 묻지 않는다.
+ * 계산해 넘기지 않는다. 일반 진입은 해 보거나 닫으면 그날은 다시 묻지 않는다.
+ * 일기 완료에서 들어온 진입(`afterDiary`)은 날짜·닫은 횟수와 관계없이 매번 시트를 연다.
  *
  * 세 번 연달아 닫은 사람에게는 시트를 띄우지 않고 `hint`(격자 칸의 「오늘 추천」)만 준다. 그 칸이나
  * 시트에서 한 번 해 보면 다시 시트로 돌아간다. 위기 안내가 나온 날은 대화가 그날을 미리 매듭짓는다
@@ -38,7 +39,7 @@ const CONTENT_NAME: Record<RestContentId, RestContentName> = {
  *
  * 기억을 못 읽으면(`null`) **띄우지 않는다** — 권하지 않는 쪽이 먼저다.
  */
-export function useRestRecommendation(today: string, delayMs: number) {
+export function useRestRecommendation(today: string, delayMs: number, afterDiary = false) {
   const todayDiary = useDiary((s) => s.diaries.find((d) => d.date === today) ?? null);
   const restMethods = useProfile((s) => s.restMethods);
   const [memory, setMemory] = useState<RecommendationMemory | null>(null);
@@ -60,8 +61,9 @@ export function useRestRecommendation(today: string, delayMs: number) {
     };
   }, []);
 
-  const resting = memory != null && memory.dismissStreak >= RECOMMEND_DISMISS_LIMIT;
-  const due = memory != null && !resting && memory.day !== today;
+  const resting = !afterDiary && memory != null && memory.dismissStreak >= RECOMMEND_DISMISS_LIMIT;
+  // 일기 완료에서 들어온 이번 진입은 날짜·닫은 횟수와 관계없이 추천한다.
+  const due = afterDiary || (memory != null && !resting && memory.day !== today);
 
   useEffect(() => {
     if (!due || open || pick == null) return;
@@ -87,7 +89,7 @@ export function useRestRecommendation(today: string, delayMs: number) {
     /** 지금 열린 시트의 추천 — 없으면 시트가 닫혀 있다 */
     sheet: open ? pick : null,
     /** 세 번 연달아 닫은 뒤 격자 칸에만 붙이는 추천 */
-    hint: resting ? pick : null,
+    hint: resting && !open ? pick : null,
     accept(form: "sheet" | "hint") {
       if (pick != null) {
         track("rest_recommendation_accepted", {

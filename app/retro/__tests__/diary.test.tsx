@@ -326,7 +326,7 @@ describe("감정 탐색 없이 — 바람 카드도 없다", () => {
     });
 
     // 온보딩 `/rest` 로 새지 않게 그룹까지 적는다 — 거기서 쉼 추천 시트가 올라온다
-    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest");
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest?afterDiary=1");
     expect(jest.mocked(router.replace)).not.toHaveBeenCalledWith("/retro/done");
     expect(useRetro.getState().diary).toBeNull();
     // 비운 뒤 다시 그려져도 대화로 되돌리지 않는다
@@ -405,14 +405,14 @@ describe("완료 — 허브로 만들지 않는다", () => {
     const { getByText, queryByText } = await render(<RetroDone />);
     expect(queryByText("홈으로 돌아가기")).toBeNull();
     await fireEvent.press(getByText("쉼터로 가기"));
-    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest");
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest?afterDiary=1");
   });
 
   it("카드가 없어도 쉼터로 간다", async () => {
     seedCompleted(SEED_DIARY, null);
     const { getByText } = await render(<RetroDone />);
     await fireEvent.press(getByText("쉼터로 가기"));
-    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest");
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest?afterDiary=1");
   });
 
   it("[바람카드 보기] 는 쉼터 바람카드(R2)로 간다", async () => {
