@@ -2,11 +2,12 @@ import { describe, expect, it } from "@jest/globals";
 import { decodeFrameConfig, encodeFrameConfig } from "../../lab-contract";
 import { findDevice, labDevices } from "../../lab-devices";
 import { chromeGeometry } from "../device/geometry";
-import { framesFor } from "../frameSpecs";
+import { framesFor, peekFrameFor, PEEK_FRAME_ID } from "../frameSpecs";
 import {
   DEFAULT_STATE,
   parseHash,
   serializeHash,
+  stepZoom,
   withPlatform,
   withRoute,
   type ShellState,
@@ -31,10 +32,12 @@ describe("해시 상태", () => {
       latencyMs: 5000,
       failPaths: ["/api/v1/reports", "/api/v1/diaries"],
       textScale: 1.3,
-      zoom: 0.75,
+      zoom: 1.5,
       draft: "draft-1",
       repeatToday: false,
-      panel: "log",
+      panel: "controls",
+      navOpen: false,
+      sideOpen: false,
     };
     const hash = serializeHash(state);
     expect(hash.startsWith("#/screens?route=/diary/%5Bid%5D")).toBe(true);
@@ -52,6 +55,24 @@ describe("해시 상태", () => {
       "#/screens?route=/nope&dataset=x&platform=android&device=iphone-16&layout=zzz&now=bad&zoom=9",
     );
     expect(state).toEqual({ ...DEFAULT_STATE, platform: "android", device: "pixel-8" });
+  });
+
+  it("옛 주소의 확대 값(0.1 ~ 2)도 그대로 읽고, 패널 접기가 없으면 둘 다 펼친 것으로", () => {
+    const state = parseHash("#/screens?route=/home&layout=ab&zoom=0.6");
+    expect(state).toMatchObject({ zoom: 0.6, navOpen: true, sideOpen: true });
+    expect(parseHash("#/screens?route=/home&zoom=2").zoom).toBe(2);
+    expect(parseHash("#/screens?route=/home&zoom=2.5").zoom).toBe("fit");
+    // 옛 「요청」 탭은 조작 패널로
+    expect(parseHash("#/screens?route=/home&panel=log").panel).toBe("controls");
+  });
+
+  it("−/+ 는 계단을 밟고, 맞춤 배율에서도 다음 칸으로 간다", () => {
+    expect(stepZoom(1, 1)).toBe(1.1);
+    expect(stepZoom(1, -1)).toBe(0.9);
+    expect(stepZoom(0.82, 1)).toBe(0.9);
+    expect(stepZoom(0.82, -1)).toBe(0.75);
+    expect(stepZoom(2, 1)).toBe(2);
+    expect(stepZoom(0.25, -1)).toBe(0.25);
   });
 
   it("라우트를 고르면 그 화면의 프리셋이 적용된다", () => {
@@ -154,6 +175,14 @@ describe("프레임 목록", () => {
       "many",
       "long-copy",
     ]);
+    // 칸 이름은 id 가 아니라 사람이 읽는 이름
+    expect(byDataset.map((f) => f.label)).toEqual([
+      "신규 사용자",
+      "빈 계정",
+      "보통",
+      "많음",
+      "긴 문구",
+    ]);
   });
 
   it("전체 화면 — 라우트마다 하나, 프리셋대로", () => {
@@ -164,6 +193,23 @@ describe("프레임 목록", () => {
     const mood = grid.find((f) => f.route.path === "/mood")!;
     expect(mood.config).toMatchObject({ signedIn: true, datasetId: "new-user" });
     expect(new Set(grid.map((f) => f.frameId)).size).toBe(grid.length);
+  });
+
+  it("한 화면 + 시안이면 그 아래 숨길 승인본(원래대로 잠깐 보기)을 하나 더 · 시안이 없으면 없다", () => {
+    expect(peekFrameFor(DEFAULT_STATE, noSample, REAL)).toEqual([]);
+    expect(peekFrameFor({ ...DEFAULT_STATE, layout: "ab", draft: "d1" }, noSample, REAL)).toEqual(
+      [],
+    );
+    const [peek] = peekFrameFor({ ...DEFAULT_STATE, draft: "d1" }, noSample, REAL);
+    const [solo] = framesFor({ ...DEFAULT_STATE, draft: "d1" }, noSample, REAL);
+    expect(peek!.frameId).toBe(PEEK_FRAME_ID);
+    expect(peek!.config.designDraftId).toBeNull();
+    expect(solo!.config.designDraftId).toBe("d1");
+    expect({ ...peek!.config, frameId: "x", designDraftId: null }).toEqual({
+      ...solo!.config,
+      frameId: "x",
+      designDraftId: null,
+    });
   });
 
   it("글씨 배율은 1 이 아닐 때만 싣는다", () => {

@@ -1,20 +1,17 @@
 /**
- * 오른쪽 조작 패널 — 기기 · 데이터 · 시각 · 서버 · 보기. 값은 전부 셸 상태(= URL 해시)이고,
+ * 오른쪽 조작 패널 — 기기 · 데이터 · 시각 · 서버 · 보기 · 서버 요청 기록. 값은 전부 셸 상태(= URL 해시)이고,
  * 프레임 설정에 들어가는 값이 바뀌면 프레임이 새 설정으로 다시 뜬다.
+ *
+ * 확대(맞춤 · 100% …)와 매트릭스 축은 여기 없다 — 가운데 무대 도구줄(`StageToolbar`)이 하나뿐인 자리다.
  */
 import { useState, type CSSProperties, type ReactNode } from "react";
 
 import { datasets } from "../fake-server";
 import type { LabPlatform } from "../lab-contract";
 import { labDevices } from "../lab-devices";
-import {
-  LATENCIES,
-  MATRIX_AXES,
-  TEXT_SCALES,
-  type MatrixAxis,
-  type ShellState,
-  type Zoom,
-} from "./hashState";
+import { frameBus, useFrameBus } from "./frameBus";
+import { LATENCIES, TEXT_SCALES, type ShellState } from "./hashState";
+import { failedRequestCount, RequestLog } from "./RequestLog";
 import { RETRO_START_PATH, RETRO_WRITE_PATH } from "./routes";
 import { shellColor } from "./theme";
 import { describeVirtual, TIME_PRESETS } from "./time";
@@ -38,12 +35,15 @@ export const FAIL_PATH_OPTIONS = [
   "/api/v1/inquiries",
 ] as const;
 
-const ZOOMS: readonly { id: Zoom; label: string }[] = [
-  { id: "fit", label: "맞춤" },
-  { id: 0.5, label: "50%" },
-  { id: 0.75, label: "75%" },
-  { id: 1, label: "100%" },
-];
+const TEXT_SCALE_LABELS: Record<(typeof TEXT_SCALES)[number], { label: string; hint: string }> = {
+  0.85: { label: "작게 0.85×", hint: "iOS 가장 작은 글씨(≈0.82) · Android 작게(0.85) 근처" },
+  1: { label: "기본", hint: "기기 기본 글씨 크기" },
+  1.3: { label: "크게 1.3×", hint: "앱이 따라가는 가장 큰 배율(앱 상한)" },
+  1.5: {
+    label: "아주 크게 1.5× (앱 상한 넘김)",
+    hint: "앱 상한(1.3)을 넘겨 배치가 버티는지 보는 값",
+  },
+};
 
 export type ControlActions = {
   set: (patch: Partial<ShellState>) => void;
@@ -66,7 +66,7 @@ const button = (active = false): CSSProperties => ({
   cursor: "pointer",
 });
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+function Group({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
     <fieldset
       style={{
@@ -78,7 +78,10 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
         gap: 8,
       }}
     >
-      <legend style={{ fontSize: 11, color: shellColor.muted, padding: "0 4px", marginLeft: -4 }}>
+      <legend
+        title={hint}
+        style={{ fontSize: 11, color: shellColor.muted, padding: "0 4px", marginLeft: -4 }}
+      >
         {title}
       </legend>
       {children}
@@ -93,16 +96,18 @@ function Row({ children }: { children: ReactNode }) {
 function Toggle({
   label,
   description,
+  hint,
   checked,
   onChange,
 }: {
   label: string;
   description?: string;
+  hint?: string;
   checked: boolean;
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13 }}>
+    <label title={hint} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13 }}>
       <input
         type="checkbox"
         checked={checked}
@@ -130,7 +135,9 @@ export function ControlsPanel({
   realMs: number;
   actions: ControlActions;
 }) {
+  useFrameBus();
   const [customFail, setCustomFail] = useState("");
+  const failed = failedRequestCount();
   const devices = labDevices.filter((device) => device.platform === state.platform);
   const toggleFail = (path: string) =>
     actions.set({
@@ -141,7 +148,10 @@ export function ControlsPanel({
 
   return (
     <div data-testid="controls-panel" style={{ fontSize: 13, color: shellColor.ink }}>
-      <Group title="기기">
+      <Group
+        title="기기"
+        hint="폰 화면이 흉내 낼 기기 — 화면 크기 · 위아래 여백 · 겉모습이 바뀌어요"
+      >
         <Row>
           {(["ios", "android"] as const).map((platform) => (
             <button
@@ -167,26 +177,14 @@ export function ControlsPanel({
             </option>
           ))}
         </select>
-        {state.layout === "matrix" ? (
-          <Row>
-            {MATRIX_AXES.map((axis) => (
-              <button
-                key={axis.id}
-                type="button"
-                aria-pressed={state.matrix === axis.id}
-                onClick={() => actions.set({ matrix: axis.id as MatrixAxis })}
-                style={button(state.matrix === axis.id)}
-              >
-                {axis.label}
-              </button>
-            ))}
-          </Row>
-        ) : null}
       </Group>
 
-      <Group title="데이터">
+      <Group
+        title="테스트 데이터"
+        hint="폰 화면에 채울 기록의 양과 모양 — 실제 서버가 아니라 Lab 안의 가짜 서버가 줘요"
+      >
         <select
-          aria-label="데이터 세트"
+          aria-label="테스트 데이터"
           value={state.dataset}
           onChange={(event) =>
             actions.set({ dataset: event.target.value as ShellState["dataset"] })
@@ -201,12 +199,14 @@ export function ControlsPanel({
         </select>
         <Toggle
           label="로그인한 상태로 시작"
-          description="끄면 세션 없이 — 스플래시가 소개로 보낸다"
+          hint="폰 화면을 열 때 로그인된 상태로 열지 정해요"
+          description="끄면 로그인 전 상태로 — 첫 화면이 소개로 넘어가요"
           checked={state.signedIn}
           onChange={(signedIn) => actions.set({ signedIn })}
         />
         <Toggle
           label="오늘 다시 쓰기"
+          hint="하루에 일기 한 번만 쓸 수 있는 제한을 풀어 줘요"
           description="켜면 오늘 이미 썼어도 일기 쓰는 과정을 다시 할 수 있어요 · 끄면 실제 서버처럼 하루 1번"
           checked={state.repeatToday}
           onChange={(repeatToday) => actions.set({ repeatToday })}
@@ -214,6 +214,7 @@ export function ControlsPanel({
         <Row>
           <button
             type="button"
+            title="회고 확인 화면(/retro/confirm)을 새로 띄워 처음부터 해요"
             onClick={() => actions.restartDiary(RETRO_START_PATH)}
             style={button()}
           >
@@ -221,18 +222,24 @@ export function ControlsPanel({
           </button>
           <button
             type="button"
+            title="대화 없이 직접 쓰는 화면(/retro/write)을 새로 띄워요"
             onClick={() => actions.restartDiary(RETRO_WRITE_PATH)}
             style={button()}
           >
-            직접 쓰기로
+            직접 쓰기로 시작
           </button>
-          <button type="button" onClick={actions.resetData} style={button()}>
-            데이터 초기화
+          <button
+            type="button"
+            title="폰 화면마다 쌓인 기록(쓴 일기 · 일정 …)을 테스트 데이터 처음 값으로 되돌려요"
+            onClick={actions.resetData}
+            style={button()}
+          >
+            테스트 데이터 되돌리기
           </button>
         </Row>
       </Group>
 
-      <Group title="시각">
+      <Group title="시각" hint="앱이 보는 지금 시각 — 날짜가 바뀌는 04:00 경계를 시험할 때 써요">
         <div
           data-testid="virtual-clock"
           style={{
@@ -257,7 +264,7 @@ export function ControlsPanel({
             disabled={state.now == null}
             style={button()}
           >
-            지금으로
+            지금 시각으로
           </button>
         </Row>
         <Row>
@@ -274,23 +281,34 @@ export function ControlsPanel({
         </Row>
       </Group>
 
-      <Group title="가짜 서버">
+      <Group
+        title="서버 응답"
+        hint="폰 화면의 서버 요청은 실제 서버가 아니라 Lab 안의 가짜 서버가 받아요"
+      >
         <Row>
           {LATENCIES.map((latency) => (
             <button
               key={latency}
               type="button"
+              title={
+                latency === 0
+                  ? "서버가 바로 답해요"
+                  : `모든 응답을 ${latency / 1000}초 늦춰 불러오는 중 화면을 봐요`
+              }
               aria-pressed={state.latencyMs === latency}
               onClick={() => actions.set({ latencyMs: latency })}
               style={button(state.latencyMs === latency)}
             >
-              {latency === 0 ? "지연 없음" : `${latency / 1000}초 지연`}
+              {latency === 0 ? "바로 응답" : `${latency / 1000}초 늦게 응답`}
             </button>
           ))}
         </Row>
         <details>
-          <summary style={{ cursor: "pointer", fontSize: 12 }}>
-            실패시킬 주소 {state.failPaths.length ? `(${state.failPaths.length})` : ""}
+          <summary
+            title="고른 주소로 시작하는 요청은 500 오류로 답해요 — 오류 안내 화면을 볼 때 써요"
+            style={{ cursor: "pointer", fontSize: 12 }}
+          >
+            일부 요청 실패시키기 {state.failPaths.length ? `(${state.failPaths.length})` : ""}
           </summary>
           <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
             {[...new Set([...FAIL_PATH_OPTIONS, ...state.failPaths])].map((path) => (
@@ -322,47 +340,83 @@ export function ControlsPanel({
                 style={{ flex: 1, fontSize: 12, padding: 4 }}
               />
               <button type="submit" style={button()}>
-                더하기
+                주소 더하기
               </button>
             </form>
           </div>
         </details>
       </Group>
 
-      <Group title="보기">
+      <Group title="글씨 크기">
         <Row>
           {TEXT_SCALES.map((scale) => (
             <button
               key={scale}
               type="button"
+              title={TEXT_SCALE_LABELS[scale].hint}
               aria-pressed={state.textScale === scale}
               onClick={() => actions.set({ textScale: scale })}
               style={button(state.textScale === scale)}
             >
-              글씨 {scale}×
+              {TEXT_SCALE_LABELS[scale].label}
             </button>
           ))}
         </Row>
         <div style={{ fontSize: 11, color: shellColor.muted }}>
-          글씨 배율은 프레임 설정의 `textScale` 로 넘긴다 — 프레임이 읽어야 적용된다
+          OS 글자 크기 설정을 흉내 내 앱 글자 크기만 바꿔요(프레임이 바로 적용해요). 화면 전체를
+          크게 보려면 가운데 위 도구줄의 확대 · 돋보기를 써요.
         </div>
         <Row>
-          {ZOOMS.map((zoom) => (
-            <button
-              key={String(zoom.id)}
-              type="button"
-              aria-pressed={state.zoom === zoom.id}
-              onClick={() => actions.set({ zoom: zoom.id })}
-              style={button(state.zoom === zoom.id)}
-            >
-              {zoom.label}
-            </button>
-          ))}
-          <button type="button" onClick={actions.reload} style={button()}>
-            다시 불러오기
+          <button
+            type="button"
+            title="지금 보이는 폰 화면을 모두 새로 불러와요(쓴 기록은 그대로)"
+            onClick={actions.reload}
+            style={button()}
+          >
+            폰 화면 새로 불러오기
           </button>
         </Row>
       </Group>
+
+      <details
+        data-testid="request-log-section"
+        style={{ borderTop: `1px solid ${shellColor.border}` }}
+      >
+        <summary
+          style={{
+            cursor: "pointer",
+            padding: "10px 14px",
+            fontSize: 12,
+            color: shellColor.muted,
+          }}
+        >
+          서버 요청 기록 (개발용) · {frameBus.requests.length}
+          {failed ? (
+            <span
+              data-testid="request-log-failed"
+              title={`실패한 요청 ${failed}개`}
+              style={{
+                display: "inline-block",
+                marginLeft: 6,
+                minWidth: 16,
+                padding: "0 5px",
+                borderRadius: 8,
+                background: shellColor.danger,
+                color: shellColor.onAccent,
+                fontSize: 10,
+                fontWeight: 700,
+                textAlign: "center",
+              }}
+            >
+              {failed}
+            </span>
+          ) : null}
+        </summary>
+        <div style={{ padding: "0 14px", fontSize: 11, color: shellColor.muted }}>
+          화면이 비거나 오류가 날 때 어떤 데이터 요청이 실패했는지 봐요.
+        </div>
+        <RequestLog />
+      </details>
     </div>
   );
 }

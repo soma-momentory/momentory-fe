@@ -41,14 +41,17 @@ test("데이터 세트별 매트릭스 — 다섯 세트가 같은 기기 · 같
       deviceId: "pixel-8",
     });
   }
+  // 칸 이름은 id 가 아니라 데이터 세트 이름
+  await expect(page.getByTestId("frame-label-m-new-user")).toHaveText("신규 사용자");
+  await expect(page.getByTestId("frame-label-m-long-copy")).toHaveText("긴 문구");
 });
 
 test.describe("프레임 안 가로 넘침 (갈래 A 합친 뒤)", () => {
   test.skip(!process.env.LAB_FRAMES, "LAB_FRAMES=1 일 때만 — 프레임 부트스트랩이 있어야 한다");
 
   for (const route of ["/home", "/rest", "/archive", "/my", "/report"]) {
-    test(`${route} 는 모든 기기 · 세 글씨 배율에서 가로로 넘치지 않는다`, async ({ page }) => {
-      for (const scale of [1, 1.3, 1.5]) {
+    test(`${route} 는 모든 기기 · 네 글씨 배율에서 가로로 넘치지 않는다`, async ({ page }) => {
+      for (const scale of [0.85, 1, 1.3, 1.5]) {
         await page.goto(
           `/#/screens?route=${route}&dataset=long-copy&platform=ios&device=iphone-16&layout=matrix&matrix=devices&zoom=0.4&scale=${scale}`,
         );
