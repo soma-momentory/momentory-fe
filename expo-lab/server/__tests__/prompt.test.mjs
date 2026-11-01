@@ -61,7 +61,11 @@ test("화면 수정 프롬프트 — 스킬 호출 · 화면 맥락 · 첨부 ·
   assert.ok(prompt.includes("ask.py image"));
   assert.ok(prompt.includes("COMMIT_MESSAGE:"));
   assert.ok(prompt.includes("PR_BODY:"));
-  assert.ok(prompt.includes("Co-Authored-By 공저자 줄 · 「Generated with Claude Code」 같은 생성 도구 표기"));
+  assert.ok(
+    prompt.includes(
+      "Co-Authored-By 공저자 줄 · 「Generated with Claude Code」 같은 생성 도구 표기",
+    ),
+  );
   const start = prompt.indexOf(INSTRUCTION_START);
   const end = prompt.indexOf(INSTRUCTION_END);
   assert.ok(start >= 0 && end > start);
