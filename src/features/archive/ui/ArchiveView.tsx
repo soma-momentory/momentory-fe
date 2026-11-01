@@ -1,5 +1,7 @@
 import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
+import { NotchedTapeLabel } from "@/components/ds/NotchedTapeLabel";
 import { DayScheduleList } from "@/components/archive/DayScheduleList";
 import { DiaryPreviewCard } from "@/components/archive/DiaryPreviewCard";
 import { EmotionFilter } from "@/components/archive/EmotionFilter";
@@ -17,7 +19,6 @@ import {
 import {
   background,
   emotion,
-  homeV2,
   label as labelColor,
   layout,
   line,
@@ -95,11 +96,11 @@ export function ArchiveView({
             style={[
               styles.titleWrap,
               {
-                backgroundColor: design["archive.titleWrap.backgroundColor"],
                 paddingHorizontal: design["archive.titleWrap.paddingHorizontal"],
               },
             ]}
           >
+            <MaskingTape color={design["archive.titleWrap.backgroundColor"]} />
             <Text
               testID="studio-archive-title-text"
               variant="title3Hand"
@@ -108,6 +109,7 @@ export function ArchiveView({
                 styles.title,
                 {
                   fontSize: design["archive.title.fontSize"],
+                  lineHeight: design["archive.title.fontSize"] + 6,
                   fontFamily: design["archive.titleText.fontFamily"],
                 },
               ]}
@@ -115,13 +117,6 @@ export function ArchiveView({
               보관함
             </Text>
           </View>
-          {view === "calendar" ? (
-            <View style={styles.monthPaper}>
-              <Text variant="label1" style={styles.monthLabel}>
-                {formatKoreanMonth(month)}
-              </Text>
-            </View>
-          ) : null}
         </View>
         {view === "calendar" ? (
           <View style={styles.monthActions}>
@@ -158,11 +153,9 @@ export function ArchiveView({
               },
             ]}
           >
-            <View
-              style={styles.tape}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            />
+            <NotchedTapeLabel testID="archive-month-tape" style={styles.monthPaper}>
+              {formatKoreanMonth(month)}
+            </NotchedTapeLabel>
             <Calendar
               month={month}
               selectedDate={selectedDate}
@@ -307,33 +300,25 @@ const styles = StyleSheet.create({
   },
   titleWrap: {
     alignSelf: "flex-start",
-    backgroundColor: background.splash,
     transform: [{ rotate: "-3deg" }],
     paddingHorizontal: 18,
     paddingVertical: 3,
   },
   title: { fontSize: 34 },
   monthPaper: {
-    alignSelf: "flex-start",
-    marginLeft: 14,
-    marginTop: -4,
-    backgroundColor: homeV2.color.weekday,
-    paddingHorizontal: 14,
-    paddingVertical: 2,
+    position: "absolute",
+    right: 12,
+    top: -14,
+    zIndex: 2,
     transform: [{ rotate: "-1deg" }],
-  },
-  monthLabel: {
-    fontFamily: homeV2.font.bold,
-    fontSize: 18,
-    lineHeight: 22,
-    color: homeV2.color.ink,
   },
   monthActions: { flexDirection: "row", gap: 2 },
   scroll: { flex: 1, minHeight: 0 },
   content: { gap: 18, paddingBottom: 24 },
   calendarPaper: {
-    marginTop: 8,
+    marginTop: 16,
     padding: 10,
+    paddingTop: 20,
     borderRadius: 16,
     backgroundColor: background.elevated,
     shadowColor: labelColor.normal,
@@ -341,16 +326,6 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
-  },
-  tape: {
-    position: "absolute",
-    top: -9,
-    alignSelf: "center",
-    width: 90,
-    height: 20,
-    backgroundColor: withAlpha(background.splash, 0.7),
-    transform: [{ rotate: "-2deg" }],
-    zIndex: 1,
   },
   dayScene: { minHeight: 190 },
   dayPaper: {
