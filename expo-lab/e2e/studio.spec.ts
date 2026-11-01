@@ -10,7 +10,11 @@ async function expectPanelSnapshot(page: Page, name: string, width = 365, height
       Array.from(document.images, (image) => image.decode().catch(() => undefined)),
     );
   });
-  const box = await page.getByTestId("studio-preview-A").boundingBox();
+  const panel = page.getByTestId("studio-preview-A");
+  const label = await panel.getByText("A · 운영 기본 디자인", { exact: true }).boundingBox();
+  // A platform-dependent label height shifts every pixel of the phone below it.
+  expect(label?.height).toBe(18);
+  const box = await panel.boundingBox();
   expect(box).not.toBeNull();
   const screenshot = await page.screenshot({
     clip: { x: box!.x, y: box!.y, width, height },

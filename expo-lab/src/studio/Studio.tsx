@@ -762,7 +762,8 @@ const styles = StyleSheet.create({
   compare: { flexDirection: "row", alignItems: "flex-start", gap: 18 },
   compareStack: { flexDirection: "column" },
   previewPanel: { padding: 8, backgroundColor: c.white, borderRadius: 14, gap: 8 },
-  previewLabel: { color: c.ink, fontSize: 14, fontWeight: "700" },
+  // System-font metrics differ by OS; keep the phone's vertical origin identical.
+  previewLabel: { color: c.ink, fontSize: 14, lineHeight: 18, fontWeight: "700" },
   message: { color: c.green, fontSize: 12, textAlign: "center" },
   field: { gap: 3, paddingVertical: 3 },
   fieldLabel: { color: c.ink, fontSize: 12, fontWeight: "600" },

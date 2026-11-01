@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { background, layout } from "@/design/ds";
+import type { TabBackgroundTab } from "@/design/tabBackgrounds";
 
 import { BottomNavigation, type TabItem } from "./BottomNavigation";
 import { Screen } from "./Screen";
@@ -41,7 +42,7 @@ import { TabPaperBackground } from "./TabPaperBackground";
  * 탭은 쌓이는 화면이 아니다. `push` 로 오가면 뒤로가기가 탭 이동 이력을 되짚어
  * 홈에서 나가기까지 여러 번 눌러야 한다.
  */
-export type TabName = "홈" | "쉼터" | "보관함" | "리포트" | "마이";
+export type TabName = TabBackgroundTab;
 
 const ROUTES: Record<TabName, "/home" | "/rest" | "/archive" | "/report" | "/my"> = {
   홈: "/home",
@@ -81,7 +82,7 @@ export function TabScreen({ active, children, overlay }: Props) {
         padded={false}
         edges={["top"]}
         grid={false}
-        backdrop={<TabPaperBackground />}
+        backdrop={<TabPaperBackground tab={active} />}
       >
         <View style={styles.body}>{children}</View>
         <BottomNavigation items={TABS} active={active} onPress={go} />
@@ -103,5 +104,5 @@ function UnderTab() {
 const styles = StyleSheet.create({
   // 본문이 남은 높이를 다 쓰고, 탭바는 아래에 고정된다
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { backgroundColor: background.elevated },
+  underTab: { backgroundColor: background.tabBar },
 });

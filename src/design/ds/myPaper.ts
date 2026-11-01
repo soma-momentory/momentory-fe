@@ -1,6 +1,7 @@
 /** 05-my.dc.html의 마이 화면 전용 종이·테이프 장식 색. */
 export const myPaper = {
   title: "#E9D6BF",
+  profileTape: "#EDDDC8",
   profile: "#FBF6EA",
   settings: "#FFFDF7",
   support: "#F5F9EE",

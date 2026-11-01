@@ -14,6 +14,7 @@ export const reportPaper = {
   white: "#FFFFFF",
   date: "#E9D6BF",
   weekday: "#CDAE8A",
+  dateTape: "#C5A47F",
   tape: "#F6DE8A",
   line: "#E3D7C4",
   border: "#EDE4D4",

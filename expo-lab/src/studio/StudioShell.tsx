@@ -2,11 +2,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { claudeHomeColor as c } from "../claude-home/tokens";
 
-export type StudioMode = "studio" | "compare" | "atlas";
+export type StudioMode = "studio" | "compare" | "atlas" | "backgrounds";
 
 const modes: readonly { id: StudioMode; label: string }[] = [
   { id: "studio", label: "디자인 편집" },
   { id: "compare", label: "상태 비교" },
+  { id: "backgrounds", label: "배경 비교" },
   { id: "atlas", label: "전체 화면 Atlas" },
 ];
 

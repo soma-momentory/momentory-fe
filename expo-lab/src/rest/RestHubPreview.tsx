@@ -2,7 +2,7 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
-import { Screen } from "../../../src/components/ds/Screen";
+import { PreviewTabScreen as Screen } from "../backgrounds/PreviewTabScreen";
 import { TabPaperBackground } from "../../../src/components/ds/TabPaperBackground";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
 import { RestRecommendSheet } from "../../../src/components/rest/RestRecommendSheet";
@@ -71,7 +71,7 @@ export function RestHubPreview({
           padded={false}
           edges={[]}
           grid={false}
-          backdrop={<TabPaperBackground />}
+          backdrop={<TabPaperBackground tab="쉼터" />}
         >
           <View style={styles.body}>
             <RestHubView
@@ -108,5 +108,5 @@ export function RestHubPreview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.elevated },
+  underTab: { height: layout.minBottomInset, backgroundColor: background.tabBar },
 });
