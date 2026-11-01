@@ -40,7 +40,7 @@ export function AssetBrowser({
       </View>
       <TextInput
         accessibilityLabel="이미지 검색"
-        placeholder="파일명 또는 이름 검색"
+        placeholder="이미지 이름으로 찾기"
         value={query}
         onChangeText={setQuery}
         style={styles.search}
@@ -78,9 +78,9 @@ export function AssetBrowser({
           </Pressable>
         ))}
       </View>
-      {!visible.length ? <Text style={styles.filename}>일치하는 에셋이 없습니다.</Text> : null}
+      {!visible.length ? <Text style={styles.filename}>찾는 이미지가 없어요.</Text> : null}
       <Pressable accessibilityRole="button" onPress={() => onChange("rest-baba-sleep")}>
-        <Text style={styles.restore}>기본 이미지 복원</Text>
+        <Text style={styles.restore}>기본 이미지로 되돌리기</Text>
       </Pressable>
     </View>
   );

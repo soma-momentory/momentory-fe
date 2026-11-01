@@ -4,7 +4,16 @@ import { label, primary } from "../../../../src/design/ds/color";
 import { typeScale } from "../../../../src/design/ds/typography";
 import { contrastRatio, isColor, parseColor, sameColor } from "../colorMath";
 import { loadTokenModules } from "../tokenModules";
-import { buildTokenCatalog, canonicalTokenKey, tokenLabel, tokenValueError } from "../tokens";
+import {
+  buildTokenCatalog,
+  canonicalTokenKey,
+  GROUP_LABELS,
+  groupLabel,
+  groupOf,
+  OTHER_GROUP,
+  tokenLabel,
+  tokenValueError,
+} from "../tokens";
 
 const catalog = buildTokenCatalog(loadTokenModules());
 const entry = (key: string) => {
@@ -78,7 +87,19 @@ describe("토큰 목록", () => {
 
   it("한국어 이름표", () => {
     expect(tokenLabel(entry("label.normal"))).toBe("글자색 · 기본");
-    expect(tokenLabel(entry("text.body1.fontSize"))).toBe("글자 단(타이포) · 글씨 크기");
+    expect(tokenLabel(entry("text.body1.fontSize"))).toBe("글자 스타일 · body1 · 글씨 크기");
+    expect(tokenLabel(entry("homeV2.color.paper"))).toBe("홈 전용 · 색 · 종이");
+  });
+
+  it("모든 묶음에 한국어 이름이 있다 — export 이름이 패널에 새지 않는다", () => {
+    const missing = [...new Set(catalog.entries.map((item) => item.group))].filter(
+      (group) =>
+        !(group in GROUP_LABELS) &&
+        catalog.entries.some((item) => item.group === group && item.editable),
+    );
+    expect(missing).toEqual([]);
+    expect(groupOf({ group: "새로운묶음" })).toBe(OTHER_GROUP);
+    expect(groupLabel(OTHER_GROUP)).toBe("기타");
   });
 
   it("편집 가능 · 읽기 전용 수를 고정해 둔다(토큰이 늘면 숫자만 고친다)", () => {
