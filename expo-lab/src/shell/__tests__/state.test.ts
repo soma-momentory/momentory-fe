@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import { decodeFrameConfig, encodeFrameConfig } from "../../lab-contract";
-import { findDevice, labDevices } from "../../lab-devices";
+import { findDevice, labDevices, skinFile } from "../../lab-devices";
 import { chromeGeometry } from "../device/geometry";
 import { framesFor, peekFrameFor, PEEK_FRAME_ID } from "../frameSpecs";
 import {
@@ -236,6 +236,45 @@ describe("기기 외형", () => {
     expect(g.screenX).toBeCloseTo(49 * scale);
     expect(g.screenY).toBeCloseTo(55 * scale);
     expect(g.outerWidth).toBeCloseTo(1187 * scale);
+  });
+
+  it("Galaxy S24 삼성 스킨은 bodyCrop 만 외형이다 — 겉 크기 = crop × 배율 · 화면 자리 = (display − crop) × 배율", () => {
+    const device = findDevice("galaxy-s24");
+    const skin = device.skin!;
+    const crop = skin.bodyCrop!;
+    const g = chromeGeometry(device, true);
+    const scale = 360 / 1080;
+    expect(g.kind).toBe("android-skin");
+    expect(g.outerWidth).toBeCloseTo(crop.width * scale);
+    expect(g.outerHeight).toBeCloseTo(crop.height * scale);
+    expect(g.screenX).toBeCloseTo((skin.displayX - crop.x) * scale);
+    expect(g.screenY).toBeCloseTo((skin.displayY - crop.y) * scale);
+    // 배경 그림은 통째로 그리되 crop 만큼 밀어 몸통만 보인다
+    expect(g.skinX).toBeCloseTo(-crop.x * scale);
+    expect(g.skinY).toBeCloseTo(-crop.y * scale);
+    expect(g.skinWidth).toBeCloseTo(skin.frameWidth * scale);
+    // 화면이 외형 안에 다 들어간다
+    expect(g.screenX + device.width).toBeLessThanOrEqual(g.outerWidth);
+    expect(g.screenY + device.height).toBeLessThanOrEqual(g.outerHeight);
+    expect(skinFile(skin, "back")).toBe("back.png");
+    expect(skinFile(findDevice("pixel-8").skin!, "mask")).toBe("mask.webp");
+  });
+
+  it("스킨이 없는 Galaxy 는 같은 수치의 SVG 외형 — 펀치홀이 화면 가운데 · 상태바 안", () => {
+    for (const id of ["galaxy-s24", "galaxy-a35", "galaxy-a55"]) {
+      const device = findDevice(id);
+      const g = chromeGeometry(device, false);
+      expect(g.kind).toBe("android");
+      expect(g.bodyRadius).toBeCloseTo(device.cornerRadius + 12);
+      expect(device.cutout.kind).toBe("punch-hole");
+      if (device.cutout.kind !== "punch-hole") continue;
+      expect(device.cutout.centerX).toBeCloseTo(device.width / 2);
+      // A55 는 실측 펀치홀 아래(23 + 66px)가 상태바(89px)와 거의 같다 — 반올림 여유 0.1
+      expect(device.cutout.top + device.cutout.diameter).toBeLessThanOrEqual(
+        device.statusBarHeight + 0.1,
+      );
+      expect(device.bottomBar).toBe("gesture-bar");
+    }
   });
 
   it("스킨이 없으면 SVG 외형 · SE 는 홈 버튼 외형", () => {

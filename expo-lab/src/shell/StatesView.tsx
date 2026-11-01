@@ -11,7 +11,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { encodeFrameConfig } from "../lab-contract";
-import { useSkinAvailable } from "./device/DeviceFrame";
+import { skinKnownAvailable, useSkinAvailable } from "./device/DeviceFrame";
 import { chromeGeometry } from "./device/geometry";
 import { frameBus, useFrameBus } from "./frameBus";
 import { stateFrameId, withFailPaths, type FrameSpec } from "./frameSpecs";
@@ -264,7 +264,7 @@ export function StatesView({
     if (id === "loading" || id === "failure") {
       if (noRequests) return null;
       if (id === "failure" && failPaths == null) {
-        const g = chromeGeometry(spec.device, Boolean(spec.device.skin));
+        const g = chromeGeometry(spec.device, skinKnownAvailable(spec.device));
         return (
           <figure
             key={spec.frameId}
@@ -332,7 +332,7 @@ export function StatesView({
   const first = specs[0];
   const cellWidth = first
     ? Math.max(
-        chromeGeometry(first.device, Boolean(first.device.skin)).outerWidth * scale,
+        chromeGeometry(first.device, skinKnownAvailable(first.device)).outerWidth * scale,
         MIN_CELL_WIDTH,
       )
     : MIN_CELL_WIDTH;

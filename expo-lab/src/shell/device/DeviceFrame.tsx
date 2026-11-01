@@ -2,35 +2,45 @@
  * 실제 기기처럼 보이는 외형 — 화면 자리에 iframe(자식)을 놓고, 그 위에 상태바 · 가림 · 하단 막대를
  * 그린다. 화면 크기는 `device.width × device.height` 그대로이고, 확대는 바깥에서 `scale` 로 한다.
  *
- * Android 는 로컬 SDK 의 에뮬레이터 스킨(back.webp + mask.webp)이 있으면 그것으로 그린다 —
- * 화면 모서리 · 펀치홀은 스킨 mask 를 CSS mask 로 뒤집어 iframe 을 깎는다. 없으면 SVG 외형.
+ * Android 는 에뮬레이터 스킨(SDK `back.webp` + `mask.webp` · 삼성 `back.png` + `mask.png`)이 있으면 그것으로
+ * 그린다 — 화면 모서리 · 펀치홀은 스킨 mask 를 CSS mask 로 뒤집어 iframe 을 깎는다. 삼성 스킨은 배경 그림의
+ * `bodyCrop`(몸통)만 보인다. 없으면 같은 수치의 SVG 외형(펀치홀 · 제스처 손잡이는 `StatusBar.tsx`).
  */
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
-import type { LabDevice } from "../../lab-devices";
+import { skinFile, type DeviceSkin, type LabDevice } from "../../lab-devices";
 import { shellColor } from "../theme";
 import { chromeGeometry, sideButtons } from "./geometry";
 import { DeviceOverlays } from "./StatusBar";
 
-export const skinUrl = (name: string, file: "back.webp" | "mask.webp") =>
-  `/device-skins/${name}/${file}`;
+/** 복사된 스킨 그림 주소 — SDK 스킨은 `.webp`, 삼성 스킨은 받은 `.png` 그대로(`skinFile`) */
+export const skinUrl = (skin: DeviceSkin, part: "back" | "mask") =>
+  `/device-skins/${skin.name}/${skinFile(skin, part)}`;
 
 const skinCache = new Map<string, boolean>();
 
+/**
+ * 스킨 그림이 있다고 **이미 확인된** 기기인가 — 그리기 전 배치 계산(맞춤 배율)이 쓴다.
+ * 아직 모르면 false(SVG 외형 크기) — 확인되면 그 기기를 그리는 `DeviceFrame` 이 다시 그린다
+ */
+export const skinKnownAvailable = (device: LabDevice): boolean =>
+  device.skin ? (skinCache.get(device.skin.name) ?? false) : false;
+
 /** 스킨 이미지가 개발 서버에 있나 — `link-device-skins.mjs` 를 돌렸는지 */
 export function useSkinAvailable(device: LabDevice): boolean {
-  const name = device.skin?.name;
+  const skin = device.skin;
+  const name = skin?.name;
   const [available, setAvailable] = useState(() => (name ? (skinCache.get(name) ?? false) : false));
   useEffect(() => {
-    if (!name || skinCache.has(name)) return;
+    if (!skin || skinCache.has(skin.name)) return;
     const image = new Image();
     image.onload = () => {
-      skinCache.set(name, true);
+      skinCache.set(skin.name, true);
       setAvailable(true);
     };
-    image.onerror = () => skinCache.set(name, false);
-    image.src = skinUrl(name, "back.webp");
-  }, [name]);
+    image.onerror = () => skinCache.set(skin.name, false);
+    image.src = skinUrl(skin, "back");
+  }, [skin]);
   return available;
 }
 
@@ -75,7 +85,7 @@ export function DeviceFrame({
   };
   if (isSkin && device.skin) {
     // mask.webp 는 화면 **바깥**(모서리 · 펀치홀)이 불투명하다 — 꽉 찬 층에서 빼서 뒤집는다
-    const mask = `url(${skinUrl(device.skin.name, "mask.webp")}), linear-gradient(black, black)`;
+    const mask = `url(${skinUrl(device.skin, "mask")}), linear-gradient(black, black)`;
     Object.assign(screen, {
       maskImage: mask,
       WebkitMaskImage: mask,
@@ -103,18 +113,30 @@ export function DeviceFrame({
       >
         {isSkin && device.skin ? (
           <>
-            <img
-              src={skinUrl(device.skin.name, "back.webp")}
-              alt=""
-              draggable={false}
+            {/* 배경 그림 — `bodyCrop` 이면 몸통 영역만 보이게 밀고 바깥은 잘라 낸다 */}
+            <div
               style={{
                 position: "absolute",
                 inset: 0,
-                width: g.outerWidth,
-                height: g.outerHeight,
+                overflow: "hidden",
                 pointerEvents: "none",
               }}
-            />
+            >
+              <img
+                src={skinUrl(device.skin, "back")}
+                alt=""
+                draggable={false}
+                data-testid={testID ? `${testID}-skin` : undefined}
+                style={{
+                  position: "absolute",
+                  left: g.skinX,
+                  top: g.skinY,
+                  width: g.skinWidth,
+                  height: g.skinHeight,
+                  maxWidth: "none",
+                }}
+              />
+            </div>
             {/* 펀치홀 · 모서리 자리가 비어 보이지 않게 화면 뒤를 검게 */}
             <div
               style={{
