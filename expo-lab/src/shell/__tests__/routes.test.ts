@@ -57,9 +57,24 @@ describe("프리셋", () => {
   const preset = (p: string) => shellRoutes.find((route) => route.path === p)!.preset;
 
   it("로그인 전 화면은 세션 없이 new-user 로 연다", () => {
-    for (const p of ["/", "/login", "/intro/start", "/intro/report"]) {
+    for (const p of ["/login", "/intro/start", "/intro/report"]) {
       expect(preset(p)).toEqual({ signedIn: false, dataset: "new-user" });
     }
+  });
+
+  it("스플래시는 /users/me 를 실패시켜 붙잡아 둔다(바로 넘어가지 않게)", () => {
+    expect(preset("/")).toEqual({
+      signedIn: true,
+      dataset: "new-user",
+      failPaths: ["/api/v1/users/me"],
+    });
+  });
+
+  it("차갑게 열면 다른 곳으로 가는 화면은 경유 화면을 먼저 연다", () => {
+    const via = (p: string) => shellRoutes.find((route) => route.path === p)!.openVia?.path;
+    expect(via("/diary/[id]")).toBe("/archive");
+    expect(via("/home/schedule/[id]")).toBe("/home");
+    expect(via("/home")).toBeUndefined();
   });
 
   it("온보딩은 로그인한 new-user 로 연다", () => {

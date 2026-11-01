@@ -82,12 +82,22 @@ const HASH_PREFIX = "#/screens";
 const isDataset = (value: string | null): value is DatasetId =>
   value != null && (DATASET_IDS as readonly string[]).includes(value);
 
+const sameList = (a: readonly string[], b: readonly string[]) =>
+  a.length === b.length && a.every((item, i) => item === b[i]);
+
 /** 라우트를 고르면 그 화면의 프리셋(세션 · 데이터 세트)을 적용한다 */
 export function withRoute(state: ShellState, path: string): ShellState {
   const route = findRoute(path);
   if (!route) return state;
   const dataset = route.preset.dataset ?? (state.dataset === "new-user" ? "normal" : state.dataset);
-  return { ...state, route: route.path, signedIn: route.preset.signedIn, dataset };
+  // 화면이 붙잡으려고 건 실패 주소는 그 화면을 떠날 때 함께 거둔다(사용자가 바꿨으면 둔다)
+  const previous = findRoute(state.route)?.preset.failPaths;
+  const failPaths = route.preset.failPaths
+    ? [...route.preset.failPaths]
+    : previous && sameList(previous, state.failPaths)
+      ? []
+      : state.failPaths;
+  return { ...state, route: route.path, signedIn: route.preset.signedIn, dataset, failPaths };
 }
 
 /** 플랫폼을 바꾸면 기기도 그 플랫폼의 기본으로 */

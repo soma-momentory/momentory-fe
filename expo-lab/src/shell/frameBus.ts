@@ -28,10 +28,23 @@ const MAX_REQUESTS = 300;
 
 type RouteListener = (frameId: string, pathname: string) => void;
 
+/** 두 단계 열기에서 기다리는 이동 — 경유 화면이 `afterRequest` 응답을 받으면 목적지로 */
+type PendingNavigation = {
+  target: string;
+  afterRequest: string;
+  /** 그 응답이 끝내 안 오면(실패 주소 등) 준비 뒤 이만큼 기다렸다 옮긴다 */
+  fallbackMs: number;
+  timer?: ReturnType<typeof setTimeout>;
+};
+
+/** 응답이 스토어에 들어갈 틈 */
+const SETTLE_MS = 150;
+
 export class FrameBus {
   private frames = new Map<string, FrameRuntime>();
   private listeners = new Set<() => void>();
   private routeListeners = new Set<RouteListener>();
+  private pending = new Map<string, PendingNavigation>();
   private seq = 0;
   requests: RequestEntry[] = [];
   version = 0;
@@ -77,6 +90,29 @@ export class FrameBus {
     this.patch(frameId, { pathname });
   }
 
+  /** 프레임이 경유 화면에서 준비되면 `target` 으로 옮긴다(두 단계 열기) */
+  queueNavigate(frameId: string, pending: PendingNavigation) {
+    this.cancelNavigate(frameId);
+    this.pending.set(frameId, pending);
+  }
+
+  cancelNavigate(frameId: string) {
+    const current = this.pending.get(frameId);
+    if (current?.timer) clearTimeout(current.timer);
+    this.pending.delete(frameId);
+  }
+
+  private flushNavigate(frameId: string, delayMs: number) {
+    const current = this.pending.get(frameId);
+    if (!current) return;
+    if (current.timer) clearTimeout(current.timer);
+    current.timer = setTimeout(() => {
+      if (this.pending.get(frameId) !== current) return;
+      this.pending.delete(frameId);
+      this.post(frameId, { type: "lab:navigate", pathname: current.target });
+    }, delayMs);
+  }
+
   post(frameId: string, message: ShellToFrameMessage): boolean {
     const runtime = this.get(frameId);
     const target = runtime.element?.contentWindow;
@@ -100,17 +136,30 @@ export class FrameBus {
   handle(message: FrameToShellMessage) {
     switch (message.type) {
       case "lab:ready":
+      case "lab:route": {
+        const pending = this.pending.get(message.frameId);
+        if (pending && message.pathname !== pending.target.split("?")[0]) {
+          // 경유 중 — 셸이 아는 주소는 목적지 그대로 둔다(목록 · 같이 움직이기가 흔들리지 않게)
+          this.patch(message.frameId, { ready: true });
+          if (message.type === "lab:ready") this.flushNavigate(message.frameId, pending.fallbackMs);
+          return;
+        }
         this.patch(message.frameId, { ready: true, pathname: message.pathname });
         this.routeListeners.forEach((listener) => listener(message.frameId, message.pathname));
         return;
-      case "lab:route":
-        this.patch(message.frameId, { ready: true, pathname: message.pathname });
-        this.routeListeners.forEach((listener) => listener(message.frameId, message.pathname));
-        return;
+      }
       case "lab:statusBar":
         this.patch(message.frameId, { statusBar: message.style });
         return;
-      case "lab:request":
+      case "lab:request": {
+        const pending = this.pending.get(message.frameId);
+        if (
+          pending &&
+          this.get(message.frameId).ready &&
+          message.path.startsWith(pending.afterRequest)
+        ) {
+          this.flushNavigate(message.frameId, SETTLE_MS);
+        }
         this.seq += 1;
         this.requests = [
           { ...message, id: this.seq, at: Date.now() },
@@ -118,6 +167,7 @@ export class FrameBus {
         ];
         this.emit();
         return;
+      }
     }
   }
 

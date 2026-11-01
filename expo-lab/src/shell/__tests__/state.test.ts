@@ -65,6 +65,14 @@ describe("해시 상태", () => {
     });
   });
 
+  it("스플래시가 건 실패 주소는 떠날 때 거두고, 사용자가 고친 것은 둔다", () => {
+    const splash = withRoute(DEFAULT_STATE, "/");
+    expect(splash.failPaths).toEqual(["/api/v1/users/me"]);
+    expect(withRoute(splash, "/home").failPaths).toEqual([]);
+    const custom = { ...splash, failPaths: ["/api/v1/users/me", "/api/v1/reports"] };
+    expect(withRoute(custom, "/home").failPaths).toEqual(custom.failPaths);
+  });
+
   it("플랫폼을 바꾸면 그 플랫폼의 기본 기기", () => {
     expect(withPlatform(DEFAULT_STATE, "android").device).toBe("pixel-8");
   });

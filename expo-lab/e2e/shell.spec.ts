@@ -204,6 +204,29 @@ test.describe("실제 앱 프레임이 필요한 검사 (갈래 A·B 합친 뒤)
     ).toBeVisible();
   });
 
+  test("차갑게 열면 다른 곳으로 가는 일기 상세는 보관함을 거쳐 연다", async ({ page }) => {
+    await page.goto(
+      "/#/screens?route=/diary/%5Bid%5D&dataset=normal&platform=ios&device=iphone-16&layout=single",
+    );
+    await expect(page.getByTestId("lab-frame-solo")).toHaveAttribute("src", "/archive");
+    await expect(
+      page.locator('[data-route="/diary/[id]"]').getByTestId("route-badge-solo"),
+    ).toBeVisible({ timeout: 60_000 });
+    await expect(page).toHaveURL(/route=\/diary\//);
+  });
+
+  test("A/B 는 진입 가드의 잠깐 거치는 주소에 서로 끌려다니지 않는다", async ({ page }) => {
+    await page.goto(
+      "/#/screens?route=/report&dataset=normal&platform=ios&device=iphone-16&layout=ab",
+    );
+    await expect(page.getByTestId("route-badge-A")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("route-badge-B")).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(3000);
+    await expect(page.locator('[data-route="/report"]').getByTestId("route-badge-A")).toBeVisible();
+    await expect(page.locator('[data-route="/report"]').getByTestId("route-badge-B")).toBeVisible();
+    await expect(page).toHaveURL(/route=\/report/);
+  });
+
   test("가짜 서버 요청이 요청 기록에 쌓인다", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("tab", { name: /^요청/ }).click();

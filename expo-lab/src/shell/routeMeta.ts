@@ -7,6 +7,8 @@
  *
  * 순서 = 앱에서 만나는 순서. 묶음 안의 배열 순서가 그대로 왼쪽 목록 순서다.
  */
+import type { DatasetId } from "../lab-contract";
+
 export type RouteSectionId =
   | "entry"
   | "intro"
@@ -31,6 +33,14 @@ export type RouteMeta = {
   hint?: string;
   /** 바로 열 때 붙일 검색 조건(예: `?content=sense_pond`) */
   query?: Record<string, string>;
+  /**
+   * **두 단계로 연다** — 차갑게 열면 앱이 스스로 다른 곳으로 보내는 화면이다. 먼저 `path` 를 열고,
+   * 프레임이 `afterRequest` 응답을 받은 뒤(그 화면이 쓸 데이터가 스토어에 들어온 뒤)
+   * `lab:navigate` 로 목적지로 옮긴다(갈래 A 확인 · 2026-11-02)
+   */
+  openVia?: { path: string; afterRequest: string };
+  /** 묶음 프리셋을 이 화면만 바꾼다 */
+  presetOverride?: { signedIn?: boolean; dataset?: DatasetId; failPaths?: readonly string[] };
 };
 
 export type RouteSection = { id: RouteSectionId; title: string; routes: readonly RouteMeta[] };
@@ -44,7 +54,9 @@ export const routeSections: readonly RouteSection[] = [
         path: "/",
         title: "스플래시",
         specId: "S0",
-        hint: "0.8초 뒤 판정해 넘어간다 — 로그인 전이면 소개(/intro/start)",
+        // 스플래시는 0.8초 뒤 곧바로 넘어간다 — 붙잡아 두려고 로그인한 채 /users/me 를 실패시킨다
+        presetOverride: { signedIn: true, failPaths: ["/api/v1/users/me"] },
+        hint: "스플래시에 머물도록 /api/v1/users/me 를 실패시켜 「인터넷 연결을 기다리고 있어요」를 띄운다 — 조작 패널에서 실패 주소를 끄면 3초 안에 흐름대로 넘어간다",
       },
       {
         path: "/login",
@@ -89,7 +101,11 @@ export const routeSections: readonly RouteSection[] = [
       { path: "/day-end", title: "질문 3 · 하루의 끝" },
       { path: "/diary-history", title: "질문 4 · 일기 경험" },
       { path: "/goal", title: "목표" },
-      { path: "/reading", title: "답 정리", hint: "약 5초 뒤 이름(/name)으로 넘어간다" },
+      {
+        path: "/reading",
+        title: "답 정리",
+        hint: "앞 단계 답이 있어야 머문다 — 바로 열면 /name 으로 간다. 질문 1(/mood)부터 흐름으로 오면 약 5초 동안 보인다",
+      },
       { path: "/name", title: "이름" },
       { path: "/about", title: "나이 · 성별" },
       { path: "/calendar", title: "캘린더 연결" },
@@ -117,13 +133,15 @@ export const routeSections: readonly RouteSection[] = [
         path: "/home/schedule/new",
         title: "일정 추가",
         specId: "12-e",
-        hint: "홈 위에 뜨는 투명 시트 — 바로 열면 뒤가 비어 보인다. 홈에서 여는 편이 실제와 같다",
+        openVia: { path: "/home", afterRequest: "/api/v1/schedules" },
+        hint: "홈 위에 뜨는 투명 시트 — 홈을 먼저 열고 시트로 옮긴다",
       },
       {
         path: "/home/schedule/[id]",
         title: "일정 수정",
         specId: "12-c",
-        hint: "홈 위에 뜨는 투명 시트 · 일정 id 는 데이터 세트의 것을 쓴다",
+        openVia: { path: "/home", afterRequest: "/api/v1/schedules" },
+        hint: "홈 위에 뜨는 투명 시트 — 홈을 먼저 열고 데이터 세트의 일정 id 로 옮긴다",
       },
     ],
   },
@@ -147,7 +165,7 @@ export const routeSections: readonly RouteSection[] = [
         path: "/retro/draft",
         title: "완성된 일기",
         specId: "C6",
-        hint: "흐름으로만 닿는다 — 대화를 끝내야 열린다(없으면 /retro/talk 로 돌아간다)",
+        hint: "흐름으로만 닿는다 — 바로 열면 /retro/talk 로 간다. 회고를 끝까지 진행하면 열린다(가짜 서버 대본: 자유 입력 → 사건 고르기 → 감정 → 바람 → 완료)",
       },
       {
         path: "/retro/done",
@@ -179,7 +197,8 @@ export const routeSections: readonly RouteSection[] = [
         path: "/diary/[id]",
         title: "일기 상세",
         specId: "A3 · A3-c",
-        hint: "데이터 세트에 그 id 의 일기가 없으면 보관함으로 넘어간다",
+        openVia: { path: "/archive", afterRequest: "/api/v1/diaries" },
+        hint: "보관함을 먼저 열어 일기를 받은 뒤 데이터 세트의 최근 일기로 옮긴다(바로 열면 보관함으로 돌아간다)",
       },
     ],
   },

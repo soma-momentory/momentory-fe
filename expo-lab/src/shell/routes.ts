@@ -18,6 +18,8 @@ export type RoutePreset = {
   signedIn: boolean;
   /** 고정 데이터 세트. null 이면 사용자가 고른 것을 쓴다 */
   dataset: DatasetId | null;
+  /** 이 화면을 붙잡아 두려고 실패시킬 주소(예: 스플래시) */
+  failPaths?: readonly string[];
 };
 
 export type ShellRoute = GeneratedRoute &
@@ -49,7 +51,7 @@ const titled: ShellRoute[] = routeSections.flatMap((section) =>
         ...meta,
         section: section.id,
         sectionTitle: section.title,
-        preset: presetForSection(section.id),
+        preset: { ...presetForSection(section.id), ...meta.presetOverride },
       },
     ];
   }),

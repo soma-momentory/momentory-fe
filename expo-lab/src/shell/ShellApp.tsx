@@ -24,7 +24,7 @@ import {
 
 import { DesignEditorPanel } from "../design-editor/DesignEditorPanel";
 import { resetFakeData, sampleParams } from "../fake-server";
-import { encodeFrameConfig, type LabPlatform } from "../lab-contract";
+import { encodeFrameConfig, type LabPlatform, type SampleParams } from "../lab-contract";
 import { chromeGeometry } from "./device/geometry";
 import { ControlsPanel, type ControlActions } from "./ControlsPanel";
 import { frameBus, useFrameBus } from "./frameBus";
@@ -46,7 +46,25 @@ import { RouteTree } from "./RouteTree";
 import { shellColor, shellFont } from "./theme";
 import { setClock, shiftDays } from "./time";
 
+/** 프레임 주소가 이만큼 그대로면 「지금 화면」으로 본다 */
+const ROUTE_SETTLE_MS = 400;
+
 const configKey = (spec: FrameSpec) => encodeFrameConfig(spec.config);
+
+/**
+ * `sampleParams` 는 데이터 세트를 통째로 시드해서 고른다 — 전체 화면(57칸)이 매번 부르지 않게
+ * (데이터 세트 · 가상 시각 · 실제 날짜)마다 한 번만 부른다
+ */
+const sampleCache = new Map<string, SampleParams>();
+const cachedSampleParams = (datasetId: string, now?: string | null): SampleParams => {
+  const key = `${datasetId}|${now ?? new Date().toDateString()}`;
+  let value = sampleCache.get(key);
+  if (!value) {
+    value = sampleParams(datasetId, now);
+    sampleCache.set(key, value);
+  }
+  return value;
+};
 
 function useRealClock(): number {
   const [ms, setMs] = useState(() => Date.now());
@@ -95,7 +113,7 @@ export function ShellApp() {
   const [stageRef, stage] = useElementSize<HTMLDivElement>();
   useFrameBus();
 
-  const specs = useMemo(() => framesFor(state, sampleParams, realMs), [state, realMs]);
+  const specs = useMemo(() => framesFor(state, cachedSampleParams, realMs), [state, realMs]);
 
   // 프레임 메시지 처리(이벤트)가 최신 값을 읽는 자리 — 그리기가 끝난 뒤 맞춘다
   const stateRef = useRef(state);
@@ -142,7 +160,7 @@ export function ShellApp() {
       },
     ) => {
       const before = new Map(specsRef.current.map((spec) => [spec.frameId, configKey(spec)]));
-      const nextSpecs = framesFor(next, sampleParams, Date.now());
+      const nextSpecs = framesFor(next, cachedSampleParams, Date.now());
       const toBump: string[] = [];
       if (options.navigate && next.layout !== "grid") {
         for (const spec of nextSpecs) {
@@ -155,8 +173,12 @@ export function ShellApp() {
           frameBus.setPathname(spec.frameId, target);
           const alive = before.get(spec.frameId) === configKey(spec);
           if (!alive) continue; // 새로 붙는 프레임은 위 주소에서 시작한다
+          // 두 단계로 여는 화면은 경유 화면 위에서만 바로 옮긴다 — 아니면 새로 띄워 경유부터
+          const via = matchPathname(target)?.openVia;
+          const fromVia = !via || current?.split("?")[0] === via.path;
           if (
             options.remount ||
+            !fromVia ||
             !frameBus.post(spec.frameId, { type: "lab:navigate", pathname: target })
           ) {
             toBump.push(spec.frameId);
@@ -183,25 +205,38 @@ export function ShellApp() {
   // 프레임 메시지
   useEffect(() => frameBus.listen(window), []);
 
-  // 프레임 안에서 화면이 바뀌었다 → 목록의 현재 화면을 따라가고, 같이 움직이기면 다른 프레임도 옮긴다
-  useEffect(
-    () =>
-      frameBus.onRoute((frameId, pathname) => {
-        const s = stateRef.current;
-        if (s.layout === "grid") return;
-        const ids = specsRef.current.map((spec) => spec.frameId);
-        if (!ids.includes(frameId)) return;
-        if (!syncRef.current && frameId !== primaryFrameId(s.layout, specsRef.current)) return;
-        const route = matchPathname(pathname);
-        if (!route) return;
-        if (route.path === s.route && !syncRef.current) return;
-        goTo(
-          { ...s, route: route.path },
-          { history: "replace", navigate: syncRef.current, target: pathname, except: frameId },
-        );
-      }),
-    [goTo],
-  );
+  // 프레임 안에서 화면이 바뀌었다 → 목록의 현재 화면을 따라가고, 같이 움직이기면 다른 프레임도 옮긴다.
+  // 앱은 진입 가드 때문에 「/ → 목적지」처럼 잠깐 다른 주소를 거친다 — **마지막 주소**만 본다
+  // (바로 따라가면 A 의 「/」 가 B 를 「/」 로 보내고 B 가 다시 A 를 보내는 핑퐁이 된다)
+  useEffect(() => {
+    const timers = new Map<string, ReturnType<typeof setTimeout>>();
+    const settle = (frameId: string) => {
+      const s = stateRef.current;
+      if (s.layout === "grid") return;
+      const ids = specsRef.current.map((spec) => spec.frameId);
+      if (!ids.includes(frameId)) return;
+      if (!syncRef.current && frameId !== primaryFrameId(s.layout, specsRef.current)) return;
+      const pathname = frameBus.get(frameId).pathname;
+      const route = pathname ? matchPathname(pathname) : undefined;
+      if (!pathname || !route) return;
+      if (route.path === s.route && !syncRef.current) return;
+      goTo(
+        { ...s, route: route.path },
+        { history: "replace", navigate: syncRef.current, target: pathname, except: frameId },
+      );
+    };
+    const off = frameBus.onRoute((frameId) => {
+      clearTimeout(timers.get(frameId));
+      timers.set(
+        frameId,
+        setTimeout(() => settle(frameId), ROUTE_SETTLE_MS),
+      );
+    });
+    return () => {
+      off();
+      timers.forEach((timer) => clearTimeout(timer));
+    };
+  }, [goTo]);
 
   const set = (patch: Partial<ShellState>) => goTo({ ...state, ...patch }, { history: "push" });
 

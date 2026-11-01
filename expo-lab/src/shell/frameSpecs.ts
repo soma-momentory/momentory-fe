@@ -42,6 +42,7 @@ type Overrides = {
   device?: LabDevice;
   dataset?: DatasetId;
   signedIn?: boolean;
+  failPaths?: readonly string[];
   designDraftId?: string | null;
 };
 
@@ -64,7 +65,7 @@ function buildSpec(
     designDraftId: o.designDraftId === undefined ? state.draft : o.designDraftId,
     signedIn: o.signedIn ?? state.signedIn,
     latencyMs: state.latencyMs,
-    failPaths: state.failPaths,
+    failPaths: o.failPaths ?? state.failPaths,
     repeatToday: state.repeatToday,
     ...(state.textScale !== 1 ? { textScale: state.textScale } : {}),
   };
@@ -108,6 +109,7 @@ export function framesFor(state: ShellState, sample: SampleParamsFor, realMs: nu
             frameId: `g-${item.path}`,
             route: item,
             signedIn: item.preset.signedIn,
+            failPaths: item.preset.failPaths ?? state.failPaths,
             dataset:
               item.preset.dataset ?? (state.dataset === "new-user" ? "normal" : state.dataset),
           },
