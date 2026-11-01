@@ -15,7 +15,7 @@ const screen = (id: CaptureId, title: string, route: string, fixture = false): C
   fixture,
 });
 
-/** One-time migration of the Vite Lab's capture inventory; future variants attach by screen id. */
+/** Capture inventory migrated from the removed Vite Lab (2026-11-02); future variants attach by screen id. */
 export const screenGroups: readonly ScreenGroup[] = [
   {
     id: "entry",

@@ -4,7 +4,7 @@
 
 ## 대상 범위
 
-앱 / Vite Design Lab / Expo Web Design Lab 중 해당 범위를 적는다.
+앱 / Expo Web Design Lab 중 해당 범위를 적는다.
 
 ## 관련 문서와 코드
 

@@ -2,7 +2,7 @@
 
 {{projectContext}}
 
-`docs/CONTRIBUTING.md`의 작업 규칙과 해당 범위의 정본 문서를 기준으로 검토한다. 앱, Vite Design Lab, Expo Web Design Lab의 타입 검사와 테스트 결과를 각각 확인한다.
+`docs/CONTRIBUTING.md`의 작업 규칙과 해당 범위의 정본 문서를 기준으로 검토한다. 앱, Expo Web Design Lab의 타입 검사와 테스트 결과를 각각 확인한다.
 
 ## 요구사항
 

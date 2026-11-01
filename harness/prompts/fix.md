@@ -2,7 +2,7 @@
 
 {{projectContext}}
 
-`docs/CONTRIBUTING.md`의 작업 규칙을 우선한다. 수정 대상이 앱, Vite Design Lab, Expo Web Design Lab 중 어디인지 확인하고 해당 환경의 테스트만 필요한 범위에서 다시 실행한다. 기존 변경을 초기화하지 않는다.
+`docs/CONTRIBUTING.md`의 작업 규칙을 우선한다. 수정 대상이 앱, Expo Web Design Lab 중 어디인지 확인하고 해당 환경의 테스트만 필요한 범위에서 다시 실행한다. 기존 변경을 초기화하지 않는다.
 
 ## 요구사항
 
