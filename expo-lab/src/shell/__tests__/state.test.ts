@@ -34,6 +34,7 @@ describe("해시 상태", () => {
       zoom: 0.75,
       draft: "draft-1",
       repeatToday: false,
+      panel: "log",
     };
     const hash = serializeHash(state);
     expect(hash.startsWith("#/screens?route=/diary/%5Bid%5D")).toBe(true);

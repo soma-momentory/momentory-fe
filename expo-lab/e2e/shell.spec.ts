@@ -8,6 +8,9 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+/** 오른쪽 패널은 처음에 디자인 편집기다 — 조작 패널로 바꾼다 */
+const openControls = (page: Page) => page.getByRole("tab", { name: "조작" }).click();
+
 const frameConfig = async (page: Page, frameId: string) => {
   const name = await page.getByTestId(`lab-frame-${frameId}`).getAttribute("name");
   expect(name?.startsWith("momentory-lab:")).toBe(true);
@@ -28,6 +31,8 @@ test("기본 주소는 홈 한 화면이고 해시에 상태가 적힌다", asyn
     signedIn: true,
     repeatToday: true,
   });
+  // 첫 화면 오른쪽에 디자인 편집기가 보인다(갈래 D 의 studio.spec 이 여기서 시작한다)
+  await expect(page.getByTestId("design-editor-panel")).toBeVisible();
 });
 
 test("라우트 목록은 앱 순서로 묶이고 검색된다", async ({ page }) => {
@@ -87,7 +92,7 @@ test("뒤로/앞으로가 레이아웃과 화면을 되돌린다", async ({ page
 
 test("해시를 그대로 열면 같은 상태로 돌아온다", async ({ page }) => {
   await page.goto(
-    "/#/screens?route=/my/profile&dataset=many&platform=android&device=pixel-8&layout=single&now=2026-11-03T21:30:00%2B09:00&latency=1000&fail=/api/v1/reports&repeat=0",
+    "/#/screens?route=/my/profile&dataset=many&platform=android&device=pixel-8&layout=single&now=2026-11-03T21:30:00%2B09:00&latency=1000&fail=/api/v1/reports&repeat=0&panel=controls",
   );
   expect(await frameConfig(page, "solo")).toMatchObject({
     datasetId: "many",
@@ -118,6 +123,7 @@ test("하루 넘기기 · 되돌리기 · 지금으로 — 가상 날짜가 보�
   page,
 }) => {
   await page.goto("/");
+  await openControls(page);
   const clock = page.getByTestId("virtual-clock");
   await expect(clock).toContainText("실제 시각");
   await page.getByRole("button", { name: "하루 넘기기 (+1일)" }).click();
@@ -139,6 +145,8 @@ test("하루 넘기기 · 되돌리기 · 지금으로 — 가상 날짜가 보�
 
 test("「오늘 다시 쓰기」와 일기 쓰기 다시 시작", async ({ page }) => {
   await page.goto("/");
+  await openControls(page);
+  await expect(page).toHaveURL(/panel=controls/);
   await page.getByLabel("오늘 다시 쓰기").uncheck();
   await expect(page).toHaveURL(/repeat=0/);
   expect((await frameConfig(page, "solo")).repeatToday).toBe(false);

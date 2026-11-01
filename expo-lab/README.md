@@ -103,20 +103,11 @@ LAB_FRAMES=1 EXPO_LAB_PORT=8092 npx playwright test expo-lab/e2e   # 프레임(A
 
 `shell.spec.ts` · `layout-matrix.spec.ts` 의 셸 검사(목록 · 해시 왕복 · 뒤로/앞으로 · 프리셋 · 가상 시각 · 기기 크기 · 전체 화면 지연 부팅)는 셸만으로 통과한다. 프레임 안 실제 앱이 필요한 검사(현재 화면 배지 · 요청 기록 · 가로 넘침)는 `LAB_FRAMES=1` 일 때만 돈다.
 
-## 옛 Studio · 홈 비교 — 갈래 D 작업 중
+## 디자인 편집기
 
-`src/studio/`(Design Studio 2.0 · 상태 비교)와 화면별 Mock 어댑터(`src/claude-home` · `src/current-home` · `src/rest` · `src/archive` · `src/my` · `src/report` · `src/diary` · `src/retro`)는 셸 진입에서 빠졌다. 갈래 D 가 디자인 편집을 실제 프레임 위로 옮기고, 통합 때 이 폴더들과 남은 `src/catalog/`(Studio 가 쓰는 시안 폰 둘)를 지운다. 그때까지 아래 도구는 그대로다.
+오른쪽 패널에서 시안(여러 벌)을 만들고 DS 토큰 601개와 화면 속성 47개를 고치면 B(시안) 프레임의 모든 화면에 걸린다 — A 는 승인본. 「요소 선택」으로 B 화면의 요소를 눌러 속성이나 같은 값의 토큰을 찾는다. 「파일」에서 JSON 을 내보내 `npm run design:apply-tokens -- <파일>`(토큰 diff) · `npm run design:apply -- <파일>`(화면 속성)으로 검토한 뒤 `--write` 와 `npm run test` 로 반영한다. 자세한 것은 [STUDIO_VALIDATION.md](STUDIO_VALIDATION.md).
 
-운영 디자인 반영 — 브라우저 편집은 Git 파일을 바꾸지 않는다. 내보낸 JSON 으로 운영 변경을 준비할 때:
-
-```bash
-node expo-lab/scripts/apply-design.mjs path/to/export.json
-node expo-lab/scripts/apply-design.mjs path/to/export.json --write
-git diff -- src/design/studioApproved.json
-npm run typecheck && npm run test:visual
-```
-
-첫 명령은 Diff 만 출력하고 `--write` 만 `src/design/studioApproved.json` 을 갱신한다. 기록: [Studio 검증](STUDIO_VALIDATION.md) · [홈 UI 이전](HOME_UI_VALIDATION.md) · [시각 검증](VISUAL_VALIDATION.md) · [이미지 성능](PERFORMANCE_VALIDATION.md)(캡처 축소본 기록 — 캡처는 2026-11-02 에 지웠다).
+셸 연결: 패널은 첫 화면 오른쪽에 열려 있고(`panel=design` · 「조작」 탭으로 바꾸면 해시에 `panel=controls`), 높이가 고정된 자리에서 스스로 스크롤한다. 시안 내용이 바뀌면(`onDraftChanged`) 그 시안을 건 프레임(A/B 면 B)만 다시 불러온다. 옛 `#studio` · `#compare` · `#atlas` 주소와 화면별 Mock 어댑터(`src/claude-home` · `src/current-home` · `src/rest` · `src/archive` · `src/my` · `src/report` · `src/diary` · `src/retro`)는 셸 진입에서 빠졌다 — 통합 때 정리한다. 셸 레이아웃별 관측은 `node expo-lab/scripts/measure-shell.mjs http://127.0.0.1:8092`(옛 `measure-studio.mjs` 자리).
 
 ## 서체
 
@@ -124,4 +115,4 @@ npm run typecheck && npm run test:visual
 
 ## Vite Lab 삭제 (2026-11-02)
 
-옛 `design-lab/`(Vite + React DOM 캡처 뷰어)을 지웠다. 그 화면 목록 · 캡처를 넘겨받았던 `src/catalog/` 캡처와 `assets/current-app*/` 도 「전 화면」 셸이 실제 앱 프레임으로 대신하면서 지웠다 — 필요하면 삭제 직전 커밋(`2b3da32`)에서 꺼낸다.
+옛 `design-lab/`(Vite + React DOM 캡처 뷰어)을 지웠다. 그 화면 목록 · 캡처를 넘겨받았던 `src/catalog/` 와 `assets/current-app*/` 도 「전 화면」 셸이 실제 앱 프레임으로 대신하면서 지웠다 — 필요하면 삭제 직전 커밋(`2b3da32`)에서 꺼낸다.

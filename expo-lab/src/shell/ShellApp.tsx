@@ -46,8 +46,6 @@ import { RouteTree } from "./RouteTree";
 import { shellColor, shellFont } from "./theme";
 import { setClock, shiftDays } from "./time";
 
-type Panel = "controls" | "design" | "log";
-
 const configKey = (spec: FrameSpec) => encodeFrameConfig(spec.config);
 
 function useRealClock(): number {
@@ -93,7 +91,6 @@ export function ShellApp() {
   const [state, setState] = useState<ShellState>(() => parseHash(window.location.hash));
   const realMs = useRealClock();
   const [nonces, setNonces] = useState<Record<string, number>>({});
-  const [panel, setPanel] = useState<Panel>("controls");
   const [syncNav, setSyncNav] = useState(true);
   const [stageRef, stage] = useElementSize<HTMLDivElement>();
   useFrameBus();
@@ -455,21 +452,32 @@ export function ShellApp() {
               key={id}
               type="button"
               role="tab"
-              aria-selected={panel === id}
-              onClick={() => setPanel(id)}
-              style={tab(panel === id)}
+              aria-selected={state.panel === id}
+              onClick={() => goTo({ ...state, panel: id }, { history: "replace" })}
+              style={tab(state.panel === id)}
             >
               {label}
             </button>
           ))}
         </div>
-        <div style={{ overflowY: "auto", minHeight: 0, flex: 1 }}>
-          {panel === "controls" ? (
+        {/* 디자인 편집기는 높이가 고정된 자리에서 스스로 스크롤한다 — 바깥은 넘치지 않게 둔다 */}
+        <div
+          data-testid={`side-panel-${state.panel}`}
+          style={{
+            minHeight: 0,
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflowY: state.panel === "design" ? "hidden" : "auto",
+          }}
+        >
+          {state.panel === "controls" ? (
             <ControlsPanel state={state} realMs={realMs} actions={actions} />
-          ) : panel === "design" ? (
+          ) : state.panel === "design" ? (
             <DesignEditorPanel
               activeDraftId={state.draft}
               onActiveDraftChange={(draft) => set({ draft })}
+              // 시안 내용이 바뀌었다 — 그 시안을 건 프레임(A/B 면 B)만 다시 불러온다
               onDraftChanged={(draftId) =>
                 bump(
                   specs

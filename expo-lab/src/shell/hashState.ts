@@ -3,7 +3,7 @@
  *
  *   #/screens?route=/home&dataset=normal&platform=ios&device=iphone-16&layout=ab
  *            &now=2026-11-03T21:30:00%2B09:00&latency=1000&fail=/api/v1/reports&scale=1.3
- *            &zoom=0.6&draft=<시안 id>&repeat=0&signedIn=0&matrix=datasets
+ *            &zoom=0.6&draft=<시안 id>&repeat=0&signedIn=0&matrix=datasets&panel=controls
  *
  * 기본값과 같은 항목은 적지 않는다(주소를 짧게). 읽을 수 없는 값은 기본값으로 돌린다.
  */
@@ -30,6 +30,10 @@ export type TextScale = (typeof TEXT_SCALES)[number];
 
 export const LATENCIES = [0, 1000, 5000] as const;
 
+/** 오른쪽 패널 — 처음엔 디자인 편집기가 보인다 */
+export const SIDE_PANELS = ["design", "controls", "log"] as const;
+export type SidePanel = (typeof SIDE_PANELS)[number];
+
 export type Zoom = "fit" | number;
 
 export type ShellState = {
@@ -51,6 +55,8 @@ export type ShellState = {
   draft: string | null;
   /** 「오늘 다시 쓰기」 — 가짜 서버가 하루 1회 제한을 풀어 준다 */
   repeatToday: boolean;
+  /** 오른쪽 패널 탭 */
+  panel: SidePanel;
 };
 
 export const DEFAULT_STATE: ShellState = {
@@ -68,6 +74,7 @@ export const DEFAULT_STATE: ShellState = {
   zoom: "fit",
   draft: null,
   repeatToday: true,
+  panel: "design",
 };
 
 const HASH_PREFIX = "#/screens";
@@ -127,6 +134,7 @@ export function parseHash(hash: string): ShellState {
     zoom: zoomRaw && zoomNum >= 0.1 && zoomNum <= 2 ? zoomNum : "fit",
     draft: p.get("draft") || null,
     repeatToday: p.get("repeat") !== "0",
+    panel: SIDE_PANELS.find((item) => item === p.get("panel")) ?? d.panel,
   };
 }
 
@@ -147,6 +155,7 @@ export function serializeHash(state: ShellState): string {
   if (state.zoom !== "fit") p.set("zoom", String(state.zoom));
   if (state.draft) p.set("draft", state.draft);
   if (!state.repeatToday) p.set("repeat", "0");
+  if (state.panel !== d.panel) p.set("panel", state.panel);
   // 「/」 와 「,」 는 그대로 둬도 해시에서 안전하다 — 사람이 읽기 쉽게 되돌린다
   return `${HASH_PREFIX}?${p.toString().replace(/%2F/g, "/").replace(/%2C/g, ",")}`;
 }
