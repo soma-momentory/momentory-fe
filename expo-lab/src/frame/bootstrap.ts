@@ -3,6 +3,7 @@
  *
  * ```
  * a. 플랫폼 흉내      setFrameConfig — 앱 코드의 Platform 심 · 안전 영역 심이 이 값을 읽는다
+ *                    + 화면 크기(screen = 창) · 글씨 배율 · 화면 키보드(keyboard/ — 입력칸 포커스로 열린다)
  * b. 네트워크         바깥 요청 차단(Amplitude 는 200 {}) → installFakeServer → onFakeRequest 로 셸에 알림
  * c. 디자인 시안      applyDesignDraft — 토큰을 앱 모듈이 읽기 전에 덮는다
  * d. 세션            config.signedIn 을 SecureStore 심 저장소에 반영(설정마다 한 번)
@@ -25,6 +26,9 @@ import { browserStorage, setFrameConfig } from "./runtime";
 import { applySessionPolicy } from "./session";
 import { sessionStore } from "./storage";
 import { emulateFontScale } from "./fontScale";
+import { frameKeyboard } from "./keyboard";
+import { installKeyboardLayer } from "./keyboard/layer";
+import { emulateScreenAsWindow } from "./keyboard/screen";
 import { installFrameWebStyle } from "./webStyle";
 
 /* eslint-disable @typescript-eslint/no-require-imports -- 순서가 계약이다(머리말) */
@@ -35,10 +39,20 @@ export function startFrame(config: LabFrameConfig): void {
   installFrameWebStyle();
   // 글씨 배율 — OS 배율처럼(줄 높이 계산까지). 글자 크기는 FrameBridge 의 PreviewFontScaleContext
   const { Dimensions } = require("react-native") as typeof import("react-native");
+  // 폰의 화면 = 앱 창 — 웹의 screen(모니터 크기)을 창으로 돌린다(키보드 회피 계산이 읽는다).
+  // 글씨 배율보다 먼저 감싼다 — 배율 심이 이 결과 위에 fontScale 을 얹는다
+  emulateScreenAsWindow(Dimensions as unknown as Parameters<typeof emulateScreenAsWindow>[0]);
   emulateFontScale(
     Dimensions as unknown as Parameters<typeof emulateFontScale>[0],
     config.textScale,
   );
+  // 화면 키보드 — 앱의 첫 입력칸(autoFocus)보다 먼저 듣고 있어야 한다
+  if (document.body) installKeyboardLayer({ keyboard: frameKeyboard });
+  else {
+    document.addEventListener("DOMContentLoaded", () =>
+      installKeyboardLayer({ keyboard: frameKeyboard }),
+    );
+  }
 
   // b. 네트워크 — 차단 겹이 안쪽, 가짜 서버가 그 위. 가짜 서버가 응답할 때마다 셸에 알린다
   const origin = window.location.origin;
