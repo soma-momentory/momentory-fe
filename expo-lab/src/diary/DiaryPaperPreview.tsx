@@ -146,7 +146,7 @@ export function DiaryPaperPreview({
               </Text>
             )}
           </DiaryPaperEntry>
-          {schedules.length > 0 || screen === "draft" ? (
+          {!editing && (schedules.length > 0 || screen === "draft") ? (
             <DiaryScheduleMemo
               schedules={schedules}
               title={screen === "draft" ? "오늘 일정" : "그날 일정"}
