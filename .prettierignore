@@ -17,3 +17,20 @@ docs/spec/
 
 # 서버에서 받은 API 계약 — 서식은 scripts/sync-api.mjs 가 정한다 (docs/api/README.md).
 docs/api/openapi.json
+
+# 고정 커밋에서 복사한 외부 스킬 — 원문 서식과 출처를 유지한다 (docs/CODEX_SKILLS.md).
+# Codex 는 .agents/skills/, Claude Code 는 .claude/skills/ 의 같은 사본을 읽는다.
+.agents/skills/ux-writing/
+.agents/skills/expo-design-system/
+.agents/skills/vercel-react-native-skills/
+.agents/skills/playwright-cli/
+.agents/skills/diagnose-activation/
+.agents/skills/diagnose-retention/
+.agents/skills/craft-experiment-design/
+.claude/skills/ux-writing/
+.claude/skills/expo-design-system/
+.claude/skills/vercel-react-native-skills/
+.claude/skills/playwright-cli/
+.claude/skills/diagnose-activation/
+.claude/skills/diagnose-retention/
+.claude/skills/craft-experiment-design/
