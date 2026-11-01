@@ -15,6 +15,7 @@ import {
   RETRO_BABA_PEEK_HEIGHT,
   RETRO_BABA_PEEK_LEFT,
 } from "../../../src/features/retro/ui/RetroBabaPeek";
+import { RetroMethodChoices } from "../../../src/features/retro/ui/RetroMethodChoices";
 import { RetroScheduleSticker } from "../../../src/features/retro/ui/RetroScheduleSticker";
 import type { Schedule } from "../../../src/features/home/model/types";
 
@@ -96,11 +97,9 @@ export function RetroDiaryPreview({
           companionLeft={typing ? RETRO_BABA_PEEK_LEFT : RETRO_BABA_LEFT}
           dock={
             screen === "confirm" ? (
-              <Button
-                label="다음"
-                labelVariant="headline1"
-                fill
-                onPress={() => onMessage("회고 대화에서 바바와 이야기를 시작해요.")}
+              <RetroMethodChoices
+                onTalk={() => onMessage("AI 대화 화면으로 이어져요. 미리보기예요.")}
+                onWrite={() => onMessage("빈 일기장을 열어요. 미리보기예요.")}
               />
             ) : (
               <View
@@ -166,7 +165,7 @@ export function RetroDiaryPreview({
               </PreviewBubble>
               {scenarioId === "empty" ? (
                 <PreviewBubble bubbleStyle={bubbleStyle}>
-                  오늘은 따로 적어둔 일정이 없네요. 그래도 오늘 하루를 같이 돌아봐요.
+                  오늘은 따로 적어둔 일정이 없네요. 떠오르는 순간부터 남겨도 괜찮아요.
                 </PreviewBubble>
               ) : (
                 <RetroScheduleSticker date="2026-10-29" schedules={schedules} />

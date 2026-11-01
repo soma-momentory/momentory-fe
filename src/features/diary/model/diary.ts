@@ -10,6 +10,8 @@ import {
   putActionCardCompletion,
   serverRefusedWrite,
   updateDiaryBody,
+  updateWrittenDiaryBody,
+  writeDiary,
 } from "@/features/diary/data/diaryApi";
 import type { EmotionId } from "@/features/emotion/model/emotion";
 import { clock } from "@/lib/clock";
@@ -76,6 +78,12 @@ type DiaryStore = {
    * 못 받으면 가진 것을 그대로 두고 `loaded` 를 올리지 않아 다음에 다시 시도한다.
    */
   load: () => Promise<void>;
+  write: (
+    body: string,
+    emotion?: EmotionId | null,
+  ) => Promise<
+    { status: "saved"; id: string } | { status: "failed" | "already-written" | "stale" }
+  >;
   /**
    * `C6-b` 저장 — 일기 한 장과 (있으면) 행동 카드 한 장이 함께 남는다.
    *
@@ -233,6 +241,8 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     if (get().loaded) return Promise.resolve();
 
     const still = sameSession();
+    const knownDiaries = new Set(get().diaries.map((diary) => diary.id));
+    const knownCards = new Set(get().actionCards.map((card) => card.id));
     const months = monthsBackFrom(clock.today(), ARCHIVE_MONTHS);
     inFlight = loadArchive(months)
       .then((result) => {
@@ -240,10 +250,24 @@ export const useDiary = create<DiaryStore>((set, get) => ({
         if (!result.ok) return;
         // 조회하는 사이 로그아웃했다 — 앞 사람의 보관함을 새 세션에 붓지 않는다
         if (!still()) return;
-        set({
-          diaries: result.data.diaries,
-          actionCards: result.data.actionCards,
-          loaded: true,
+        set((state) => {
+          // 조회 응답보다 나중에 저장한 일기는 이전 스냅샷으로 덮지 않는다.
+          const added = state.diaries.filter((diary) => !knownDiaries.has(diary.id));
+          const addedIds = new Set(added.map((diary) => diary.id));
+          const fetched = result.data.diaries.filter((diary) => !addedIds.has(diary.id));
+          const addedCards = state.actionCards.filter((card) => !knownCards.has(card.id));
+          const addedCardIds = new Set(addedCards.map((card) => card.id));
+          return {
+            diaries: [...fetched, ...added].map((diary, index) => ({
+              ...diary,
+              ordinal: index + 1,
+            })),
+            actionCards: [
+              ...result.data.actionCards.filter((card) => !addedCardIds.has(card.id)),
+              ...addedCards,
+            ],
+            loaded: true,
+          };
         });
       })
       .finally(() => {
@@ -251,6 +275,25 @@ export const useDiary = create<DiaryStore>((set, get) => ({
       });
 
     return inFlight;
+  },
+
+  write: async (body, emotion = null) => {
+    if (!body.trim() || body.length > DIARY_BODY_MAX_LENGTH) return { status: "failed" };
+    const still = sameSession();
+    try {
+      const result = await writeDiary(body, emotion);
+      if (!still()) return { status: "stale" };
+      if (!result.ok) return { status: result.alreadyWritten ? "already-written" : "failed" };
+      set((state) => ({
+        diaries: [
+          ...state.diaries.filter((diary) => diary.id !== result.diary.id),
+          { ...result.diary, ordinal: state.diaries.length + 1 },
+        ],
+      }));
+      return { status: "saved", id: result.diary.id };
+    } catch {
+      return { status: still() ? "failed" : "stale" };
+    }
   },
 
   save: ({
@@ -344,16 +387,17 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     const diary = get().diaries.find((d) => d.id === id);
     if (diary == null || !body.trim() || body.length > DIARY_BODY_MAX_LENGTH) return "failed";
     const still = sameSession();
-    if (diary.retrospectId != null) {
+    if (diary.retrospectId != null || isServerId(id)) {
       try {
-        const result = await updateDiaryBody(diary.retrospectId, body);
+        const result =
+          diary.retrospectId != null
+            ? await updateDiaryBody(diary.retrospectId, body)
+            : await updateWrittenDiaryBody(id, body);
         if (!still()) return "stale";
         if (!result.ok) return "failed";
       } catch {
         return still() ? "failed" : "stale";
       }
-    } else if (isServerId(id)) {
-      return "failed";
     }
     const current = get().diaries.find((d) => d.id === id);
     if (current == null || current.retrospectId !== diary.retrospectId) return "stale";

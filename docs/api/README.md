@@ -151,3 +151,28 @@ access token 수명은 **30분**(`jwt.access-token-expiration: 30m`), refresh �
 
 ⚠ **`sync:api` 는 `/v3/api-docs` 를 그대로 받는다** — 그 경로가 `PUBLIC_PATHS` 라
 토큰 없이도 받아진다. 스냅샷 갱신에 로그인이 필요 없다는 뜻이다.
+
+## 직접 일기 쓰기 (2026-11-01 · 배포 전)
+
+- `POST /api/v1/diaries`: `{ "original": "직접 쓴 본문", "emotion": "happy" }` → 201 `DiaryResponse`.
+  인증된 사용자로 오늘(04:00 KST 경계) 일기를 생성한다. 본문은 공백 제외 한 글자 이상,
+  최대 500자다. `emotion`은 사진 자리에서 사용자가 고른 소문자 감정 키이며 선택하지 않으면 생략한다. AI 세션·감정 추론·바람카드·자동 편지는 생성하지 않는다.
+- `PUT /api/v1/diaries/{id}`: 같은 요청 → 200 `DiaryResponse`. 소유한 일기 본문만 수정한다.
+- 직접 쓴 일기 응답은 `retrospectId`를 생략한다. 클라이언트는 `authoredBy: "user"`로 읽는다.
+  기존 AI 일기는 `retrospectId`를 계속 포함하며 기존 회고 기준 수정 API도 유지한다.
+- 400 `INVALID_REQUEST`(본문 누락·500자 초과·파싱 실패), 401 `AUTHENTICATION_REQUIRED`,
+  생성 시 409 `ALREADY_RETROSPECTED_TODAY`, 수정 시 404 `DIARY_NOT_FOUND`를 반환한다.
+- BE V33 마이그레이션은 `diaries.retrospect_id`의 NOT NULL만 해제한다. 기존 FK·회고당 UNIQUE는 유지한다.
+  AI 완료와 직접 저장이 사용자 행 잠금을 공유해 동시 저장도 하루 한 장만 남긴다.
+
+OpenAPI 생성물은 이 기능이 반영된 서버에서 `npm run sync:api`로 반입한다.
+
+직접 작성 요청은 `DiaryCreateRequest`(본문·선택 감정), id 기반 본문 수정은 `DiaryWriteRequest`(본문만)를 사용한다.
+선택 감정은 기존 10종 키만 허용하며, 잘못된 키는 400 `INVALID_REQUEST` / `감정을 확인해주세요.`로 거절한다.
+선택한 감정은 `primaryEmotion`과 `emotions`에 함께 저장해 보관함 재조회 시 같은 사진을 표시한다.
+
+직접 작성·본문 수정 시 기존 채팅의 사건 추출기(G1)를 한 번 호출한다. DB 트랜잭션 밖에서 추출하고,
+본문·사용자 선택 감정·구조화 사건을 같은 트랜잭션에서 저장한다. 추출 실패나 사건 없는 글은 빈 사건 목록으로 저장한다.
+V34의 `diaries.events_json`에는 사건 이름·요약과 실제 본문에 근거가 있는 감정만 보관한다. 별도 채팅 세션은 만들지 않는다.
+편지의 욕구·행동 추천 입력에서 저장된 사건을 사용하며, 사진 감정이나 무감정 선택을 모델 추론으로 덮지 않는다.
+본문 수정은 사건도 교체해 이전 본문의 사건을 추천에 재사용하지 않는다. 직접 작성·수정의 앱 대기 제한은 40초다.

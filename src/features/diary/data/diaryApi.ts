@@ -114,7 +114,7 @@ const asId = (v: unknown): string | null => {
 };
 
 /**
- * `DiaryResponse` → `Diary`. 필수(id·retrospectId·original·createdAt·현재 감정)가
+ * `DiaryResponse` → `Diary`. 필수(id·original·createdAt)가
  * 어긋나면 `null`. `ordinal` 은 여기서 0 이고 창 전체를 모은 뒤 날짜순으로 매긴다.
  */
 export const toDiary = (v: unknown): Diary | null => {
@@ -123,7 +123,8 @@ export const toDiary = (v: unknown): Diary | null => {
   const retrospectId = asId(v.retrospectId);
   const body = asString(v.original);
   const createdAt = asString(v.createdAt);
-  if (id == null || retrospectId == null || body == null || createdAt == null) return null;
+  if (id == null || body == null || createdAt == null) return null;
+  if (v.retrospectId != null && retrospectId == null) return null;
 
   const date = kstDate(createdAt);
   if (date == null) return null;
@@ -150,7 +151,7 @@ export const toDiary = (v: unknown): Diary | null => {
     babaView: null,
     babaViewBasis: null,
     emotions,
-    authoredBy: "baba",
+    authoredBy: retrospectId == null ? "user" : "baba",
     editedAt: null,
     ordinal: 0,
     retrospectId,
@@ -358,6 +359,8 @@ export const serverRefusedWrite = (code: DiaryWriteFailure) =>
 
 /** 짧은 쓰기다 — 조회와 같은 타임아웃 */
 const WRITE_TIMEOUT_MS = 8_000;
+/** 직접 쓰기는 채팅과 같은 사건 추출 한 번을 기다린다(서버 모델 제한 30초). */
+const WRITTEN_DIARY_TIMEOUT_MS = 40_000;
 
 /** 일기 한 벌 삭제 — **일기만** 지운다(행동 카드·회고 세션은 남는다) */
 export const deleteDiary = async (
@@ -440,5 +443,51 @@ export const updateDiaryBody = async (
     { timeoutMs: WRITE_TIMEOUT_MS, signal: options?.signal },
   );
   if (result.ok) record("diary_updated", { retrospect_id: retrospectId });
+  return result.ok ? { ok: true } : { ok: false, code: mapWriteError(result.error) };
+};
+
+/** 직접 쓴 본문은 서버에 저장된 일기를 받아온 뒤 보관함에 넣는다. */
+export const writeDiary = async (
+  original: string,
+  emotion: EmotionId | null = null,
+): Promise<{ ok: true; diary: Diary } | { ok: false; alreadyWritten: boolean }> => {
+  const result = await authedRequest<unknown>(
+    "POST",
+    DIARIES_PATH,
+    {
+      original,
+      ...(emotion != null
+        ? { emotion: Object.entries(EMOTION_BY_KEY).find(([, id]) => id === emotion)?.[0] }
+        : {}),
+    },
+    {
+      timeoutMs: WRITTEN_DIARY_TIMEOUT_MS,
+    },
+  );
+  if (!result.ok) {
+    return {
+      ok: false,
+      alreadyWritten: result.error.code === "http" && result.error.status === 409,
+    };
+  }
+  const diary = toDiary(result.data);
+  return diary != null && diary.retrospectId == null
+    ? { ok: true, diary }
+    : { ok: false, alreadyWritten: false };
+};
+
+/** 대화 세션이 없는 직접 작성 일기는 일기 id로 수정한다. */
+export const updateWrittenDiaryBody = async (
+  id: string,
+  original: string,
+): Promise<DiaryWriteResult> => {
+  const result = await authedRequest<unknown>(
+    "PUT",
+    `${DIARIES_PATH}/${id}`,
+    { original },
+    {
+      timeoutMs: WRITTEN_DIARY_TIMEOUT_MS,
+    },
+  );
   return result.ok ? { ok: true } : { ok: false, code: mapWriteError(result.error) };
 };

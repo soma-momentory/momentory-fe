@@ -12,6 +12,7 @@ const routes: Record<string, ScreenName> = {
   "home/schedule/[id]": "schedule_detail",
   "retro/talk": "retro_talk",
   "retro/draft": "retro_draft",
+  "retro/write": "retro_write",
   "retro/confirm": "retro_confirm",
   "retro/done": "retro_done",
   "diary/[id]": "diary_detail",
