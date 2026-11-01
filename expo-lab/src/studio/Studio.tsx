@@ -234,7 +234,7 @@ export function Studio({ initialScreen = "home-main" }: { initialScreen?: string
     studioScreens.find((screen) => screen.id === initialScreen)?.id ?? "home-main",
   );
   const [scenarioId, setScenarioId] = useState("");
-  const [weatherId, setWeatherId] = useState<WeatherScenarioId>("none");
+  const [weatherId, setWeatherId] = useState<WeatherScenarioId>("sunny");
   const [letterId, setLetterId] = useState<LetterScenarioId>("none");
   const [fontScale, setFontScale] = useState<1 | 1.3 | 1.5>(1);
   const [deviceWidth, setDeviceWidth] = useState(390);

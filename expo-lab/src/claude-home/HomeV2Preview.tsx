@@ -3,6 +3,7 @@ import { Platform, StyleSheet, View } from "react-native";
 
 import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
 import { Screen } from "../../../src/components/ds/Screen";
+import { TabPaperBackground } from "../../../src/components/ds/TabPaperBackground";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
 import { background, layout } from "../../../src/design/ds";
 import type { Schedule } from "../../../src/features/home/model/types";
@@ -159,7 +160,13 @@ export function HomeV2Preview({
           }}
           renderFrame={(body, overlay) => (
             <>
-              <Screen padded={false} edges={[]}>
+              <Screen
+                proportional
+                padded={false}
+                edges={[]}
+                grid={false}
+                backdrop={<TabPaperBackground />}
+              >
                 <View style={styles.body}>{body}</View>
                 <BottomNavigation
                   items={TABS}

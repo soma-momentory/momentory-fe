@@ -7,7 +7,7 @@
   "home.bubbleText.fontSize": 25,
   "home.bubbleText.color": "#48291A",
   "home.bubbleText.fontFamily": "KyoboHandwriting2025lyb",
-  "home.bubbleText.textAlign": "left",
+  "home.bubbleText.textAlign": "center",
   "home.bubbleText.letterSpacing": 0,
   "home.cta.backgroundColor": "#5B7553",
   "home.cta.paddingHorizontal": 20,

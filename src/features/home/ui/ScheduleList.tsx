@@ -23,6 +23,7 @@ import {
 import type { Schedule } from "@/features/home/model/types";
 
 import { ScheduleItem, type ScheduleAppearance } from "./ScheduleItem";
+import { useDesignScale } from "@/components/ds/DesignViewport";
 
 /**
  * 홈의 일정 목록 — **꾹 눌러 끌어 순서를 바꾼다**
@@ -241,6 +242,7 @@ function DraggableRow({
   onEnd: () => void;
 }) {
   // 손가락이 쓰는 값 — **렌더는 건드리지 않는다.** 아래 handler 안에서만 읽는다
+  const designScale = useDesignScale();
   const gesture = useRef({
     active: false,
     timer: null as ReturnType<typeof setTimeout> | null,
@@ -272,7 +274,7 @@ function DraggableRow({
       if (Math.abs(dy) > SLOP) clearTimer();
       return;
     }
-    onMoveBy(dy);
+    onMoveBy(dy / designScale);
   };
 
   const onFinish = () => {

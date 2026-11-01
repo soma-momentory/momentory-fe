@@ -110,7 +110,7 @@ export const editableComponents: readonly EditableComponent[] = [
     parentId: "home.hero",
     testId: "studio-home-cta",
     kind: "card",
-    label: "하루 돌아보기 버튼",
+    label: "일기 작성하기 버튼",
     properties: [
       color("home.cta.backgroundColor"),
       number("home.cta.paddingHorizontal", "가로 여백", 12, 36),

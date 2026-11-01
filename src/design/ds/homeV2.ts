@@ -40,6 +40,8 @@ export const homeV2 = {
     /** 히어로 · 일정 목록 · 빈 일정 카드 면 */
     card,
     white: "#FFFFFF",
+    /** 말풍선 스티커 외곽의 따뜻한 회베이지 */
+    bubbleBorder: "#CEC2B0",
     /** 글자 — 종이 위 11.60 · 날짜 종이 9.23 · 요일 종이 6.23 */
     ink,
     /** 보조 글자(리마인더 · 셈 · 빈 일정 설명) — 카드 5.87 · 종이 5.53 */
@@ -48,14 +50,12 @@ export const homeV2 = {
     green: "#5B7553",
     /** 녹색 테이프 · 끝맺음 알갱이 같은 옅은 장식 */
     greenSoft: "#B9CBA8",
-    /** 오늘 요일 글자의 형광 — **밑줄과 함께** 오늘을 말한다(색만으로 말하지 않는다) */
+    /** 오늘 요일 글자의 형광 바탕 — 사용자 요청으로 밑줄은 표시하지 않는다 */
     today: "#F6DE8A",
     /** 날짜 종이 조각 */
     date: "#E9D6BF",
     /** 요일 종이 조각 */
     weekday: "#CDAE8A",
-    /** 날씨 스티커 테이프(P4 — 지금은 그리지 않는다) */
-    weatherTape: "#DEC4A0",
     /** 일정 줄 사이 · 놓일 자리 */
     separator: "#EFE7DA",
     /** 빈 일정 카드 테두리 */
@@ -78,9 +78,10 @@ export const homeV2 = {
     writtenMark: ink,
     /** 도크 · 떠 있는 면 — 모눈이 살짝 비친다 */
     dock: withAlpha(card, 0.92),
-    /** 바바 발밑 풀빛 그림자 */
-    heroGround: "rgba(169,190,140,.7)",
-    /** 히어로 위 녹색 체크무늬 테이프 */
+    /** 바바 아래 연노랑 단색 러그 — 2026-11-01 사용자 참고 이미지 */
+    rugYellow: "#F3E4A6",
+    rugEdge: "#B59C78",
+    /** 쉼터에서도 쓰는 체크 테이프 색 */
     tapeBase: "rgba(255,255,255,.5)",
     tapeStripe: "rgba(150,175,135,.45)",
   },
@@ -103,8 +104,8 @@ export const homeV2 = {
     count: { fontSize: 17, lineHeight: 24 },
     add: { fontSize: 18, lineHeight: 24 },
     task: { fontSize: 19, lineHeight: 25 },
-    emptyTitle: { fontSize: 22, lineHeight: 25 },
-    emptyBody: { fontSize: 18, lineHeight: 22 },
+    emptyTitle: { fontSize: 20, lineHeight: 24 },
+    emptyBody: { fontSize: 16, lineHeight: 22 },
     dockTitle: { fontSize: 17, lineHeight: 19 },
     dockDay: { fontSize: 14, lineHeight: 16 },
     dockPicked: { fontSize: 16, lineHeight: 20 },
@@ -114,13 +115,14 @@ export const homeV2 = {
     grid: 22,
     hero: { height: 270, radius: 16, marginTop: 34 },
     baba: { width: 170, height: 227 },
-    cta: { height: 50 },
+    cta: { height: 54 },
     /** 원형 체크 — 히트는 44 그대로(hitSlop) */
     check: 24,
     checkBorder: 1.75,
     list: { radius: 14, paddingX: 14 },
     dock: { height: 72, radius: 24, pebble: 28, gap: 12 },
     bell: { dot: 8 },
+    mail: { icon: 28 },
   },
   /** 종이 조각 · 스티커의 기울기 — 장식 */
   tilt: {
@@ -128,10 +130,9 @@ export const homeV2 = {
     weekday: "-1deg",
     bubble: "-2deg",
     note: "-4deg",
-    tape: "-2deg",
+    tape: "-1deg",
     add: "-3deg",
-    ground: "-3deg",
+    ground: "0deg",
     weather: "7deg",
-    weatherTape: "-4deg",
   },
 } as const;
