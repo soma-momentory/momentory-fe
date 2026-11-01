@@ -24,12 +24,14 @@ import { createGuardedFetch, guardBeacon } from "./network";
 import { browserStorage, setFrameConfig } from "./runtime";
 import { applySessionPolicy } from "./session";
 import { sessionStore } from "./storage";
+import { installFrameWebStyle } from "./webStyle";
 
 /* eslint-disable @typescript-eslint/no-require-imports -- 순서가 계약이다(머리말) */
 
 export function startFrame(config: LabFrameConfig): void {
-  // a. 플랫폼 · 기기
+  // a. 플랫폼 · 기기 — 웹에만 있는 브라우저 기본 모양(포커스 테두리)도 여기서 지운다
   setFrameConfig(config);
+  installFrameWebStyle();
 
   // b. 네트워크 — 차단 겹이 안쪽, 가짜 서버가 그 위. 가짜 서버가 응답할 때마다 셸에 알린다
   const origin = window.location.origin;
