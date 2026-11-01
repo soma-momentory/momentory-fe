@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(Bash|apply_patch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/guard.mjs\" --agent=codex",
+            "timeout": 15,
+            "statusMessage": "저장소 규칙 확인"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^apply_patch$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/post-edit.mjs\" --agent=codex",
+            "timeout": 120,
+            "statusMessage": "서식 · 대비 · 라우트 확인"
+          }
+        ]
+      }
+    ]
+  }
+}
