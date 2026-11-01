@@ -3,7 +3,7 @@
  *
  * ```
  * a. 플랫폼 흉내      setFrameConfig — 앱 코드의 Platform 심 · 안전 영역 심이 이 값을 읽는다
- * b. 네트워크         바깥 요청 차단(Amplitude 는 200 {}) → installFakeServer → 요청 알림
+ * b. 네트워크         바깥 요청 차단(Amplitude 는 200 {}) → installFakeServer → onFakeRequest 로 셸에 알림
  * c. 디자인 시안      applyDesignDraft — 토큰을 앱 모듈이 읽기 전에 덮는다
  * d. 세션            config.signedIn 을 SecureStore 심 저장소에 반영(설정마다 한 번)
  * e. 시계            config.now 가 있으면 fixedClock
@@ -20,7 +20,7 @@ import { registerRootComponent } from "expo";
 import { encodeFrameConfig, type LabFrameConfig } from "../lab-contract";
 
 import { postToShell } from "./messages";
-import { createGuardedFetch, createReportingFetch, guardBeacon } from "./network";
+import { createGuardedFetch, guardBeacon } from "./network";
 import { browserStorage, setFrameConfig } from "./runtime";
 import { applySessionPolicy } from "./session";
 import { sessionStore } from "./storage";
@@ -31,14 +31,14 @@ export function startFrame(config: LabFrameConfig): void {
   // a. 플랫폼 · 기기
   setFrameConfig(config);
 
-  // b. 네트워크 — 차단 겹이 가장 안쪽, 가짜 서버가 그 위, 알림 겹이 가장 바깥
+  // b. 네트워크 — 차단 겹이 안쪽, 가짜 서버가 그 위. 가짜 서버가 응답할 때마다 셸에 알린다
   const origin = window.location.origin;
   window.fetch = createGuardedFetch(window.fetch.bind(window), origin);
   guardBeacon(origin);
   const fakeServer = require("../fake-server") as typeof import("../fake-server");
   fakeServer.installFakeServer(config);
-  window.fetch = createReportingFetch(window.fetch, (request) =>
-    postToShell({ type: "lab:request", frameId: config.frameId, ...request }),
+  fakeServer.onFakeRequest(({ frameId, method, path, status }) =>
+    postToShell({ type: "lab:request", frameId, method, path, status }),
   );
 
   // c. 디자인 시안

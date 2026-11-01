@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from "@jest/globals";
 
 import { LAB_API_BASE_URL } from "../../lab-contract";
-import { classifyRequest, createGuardedFetch, createReportingFetch } from "../network";
+import { classifyRequest, createGuardedFetch } from "../network";
 
 const ORIGIN = "http://localhost:8091";
 
@@ -39,31 +39,5 @@ describe("frame network guard", () => {
 
     expect(real).toHaveBeenCalledTimes(1);
     expect(log).toHaveBeenCalledTimes(2);
-  });
-
-  it("reports lab API requests with method, path and status", async () => {
-    const inner = jest.fn(async () => fakeResponse(201)) as unknown as typeof fetch;
-    const report = jest.fn();
-    const reporting = createReportingFetch(inner, report);
-
-    await reporting(`${LAB_API_BASE_URL}/api/v1/diaries?year=2026`, { method: "post" });
-    await reporting("/index.bundle");
-    expect(report).toHaveBeenCalledTimes(1);
-    expect(report).toHaveBeenCalledWith({
-      method: "POST",
-      path: "/api/v1/diaries?year=2026",
-      status: 201,
-    });
-  });
-
-  it("reports thrown requests as status 0 and rethrows", async () => {
-    const inner = jest.fn(async () => {
-      throw new TypeError("offline");
-    }) as unknown as typeof fetch;
-    const report = jest.fn();
-    await expect(
-      createReportingFetch(inner, report)(`${LAB_API_BASE_URL}/api/v1/letters`),
-    ).rejects.toThrow("offline");
-    expect(report).toHaveBeenCalledWith({ method: "GET", path: "/api/v1/letters", status: 0 });
   });
 });

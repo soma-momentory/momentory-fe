@@ -1,18 +1,16 @@
 /**
  * 프레임의 네트워크 경계 — **Lab 은 로컬 전용이다.** 앱이 밖으로 내보내는 요청은 여기서 멈춘다.
  *
- * `window.fetch` 를 두 겹으로 감싼다. 가짜 서버(`installFakeServer`)는 그 사이에 들어간다:
+ * `window.fetch` 의 가장 안쪽 겹이다 — 가짜 서버(`installFakeServer`)가 이 위를 감싼다:
  *
  * ```
- * 앱 → [reporter] → [가짜 서버] → [guard] → 진짜 fetch
+ * 앱 → [가짜 서버] → [guard] → 진짜 fetch
  * ```
  *
- * - **guard**(가장 안쪽 · 가짜 서버보다 먼저 깐다) — 같은 출처(번들·폰트·자산)만 진짜 네트워크로
- *   보낸다. Amplitude 는 200 `{}` 로 닫고, 그 밖의 다른 출처는 503 으로 닫는다. 가짜 서버가
- *   처리하지 않고 흘려보낸 `LAB_API_BASE_URL` 요청도 여기서 503 이 된다 — 앱은 그것을
- *   「서버에 닿지 못했다」로 읽는다(실제 오프라인과 같은 길).
- * - **reporter**(가장 바깥 · 가짜 서버 다음에 깐다) — `LAB_API_BASE_URL` 로 간 요청마다
- *   응답 상태를 셸에 알린다(`lab:request`). 가짜 서버가 훅을 주지 않아도 된다.
+ * 같은 출처(번들·폰트·자산)만 진짜 네트워크로 보낸다. Amplitude 는 200 `{}` 로 닫고, 그 밖의
+ * 다른 출처는 503 으로 닫는다. 가짜 서버가 처리하지 않고 흘려보낸 `LAB_API_BASE_URL` 요청도
+ * 여기서 503 이 된다 — 앱은 그것을 「서버에 닿지 못했다」로 읽는다(실제 오프라인과 같은 길).
+ * 셸에 알리는 `lab:request` 는 가짜 서버의 `onFakeRequest` 가 준다(`bootstrap.ts`).
  */
 import { LAB_API_BASE_URL } from "../lab-contract";
 
@@ -72,26 +70,6 @@ export function createGuardedFetch(real: Fetch, origin: string, log = console.wa
       default:
         log(`[lab-frame] 바깥 요청을 막았다: ${methodOf(input, init)} ${url}`);
         return Promise.resolve(json(503, { message: "lab: external request blocked" }));
-    }
-  };
-}
-
-export type RequestReport = { method: string; path: string; status: number };
-
-/** 가장 바깥 겹. 응답을 바꾸지 않고 상태만 알린다. 실패(throw)는 상태 0 으로 알린다 */
-export function createReportingFetch(inner: Fetch, report: (r: RequestReport) => void): Fetch {
-  return async (input, init) => {
-    const url = urlOf(input);
-    if (!url.startsWith(LAB_API_BASE_URL)) return inner(input, init);
-    const method = methodOf(input, init);
-    const path = url.slice(LAB_API_BASE_URL.length) || "/";
-    try {
-      const response = await inner(input, init);
-      report({ method, path, status: response.status });
-      return response;
-    } catch (error) {
-      report({ method, path, status: 0 });
-      throw error;
     }
   };
 }

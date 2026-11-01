@@ -6,7 +6,7 @@
  *   이름이 없을 때만(`?labFrame=1` 로 직접 연 창) 기본값 + 쿼리로 만든다.
  *
  * 쿼리 이름: `frameId` · `dataset` · `os`(ios|android — `platform` 도 읽지만 개발 서버가 그 이름을
- * 가로챈다, 아래) · `device` · `signedIn` · `now` · `draft` · `latency` · `fail`(쉼표로 여러 개).
+ * 가로챈다, 아래) · `device` · `signedIn` · `now` · `draft` · `latency` · `fail`(쉼표로 여러 개) · `repeat`(오늘 다시 쓰기 · 0|1).
  * 플랫폼만 주면 기기는 그 플랫폼의 기본 기기다. 기기를 주면 플랫폼은 기기를 따른다.
  *
  * 순수 함수다 — 테스트가 창 없이 부른다.
@@ -76,6 +76,9 @@ export function configFromQuery(search: string): LabFrameConfig {
 
   const latency = Number(params.get("latency"));
   if (params.has("latency") && Number.isFinite(latency) && latency >= 0) config.latencyMs = latency;
+
+  const repeat = readBoolean(params.get("repeat"));
+  if (repeat != null) config.repeatToday = repeat;
 
   const fail = params.get("fail");
   if (fail) config.failPaths = fail.split(",").filter(Boolean);
