@@ -2,11 +2,11 @@
  * 셸 레이아웃별 관측 — 준비 시각 · DOM 수 · 붙은 프레임 수. 옛 `measure-studio.mjs`(#studio · #atlas)
  * 자리다. 개발 서버의 실행 변동을 포함한 단일 회차 관측이라 속도 개선의 근거로 쓰지 않는다.
  *
- *   node expo-lab/scripts/measure-shell.mjs http://127.0.0.1:8092
+ *   node expo-lab/scripts/measure-shell.mjs http://127.0.0.1:8085
  */
 import { chromium } from "playwright";
 
-const baseURL = process.argv[2] ?? "http://127.0.0.1:8092";
+const baseURL = process.argv[2] ?? "http://127.0.0.1:8085";
 const layouts = ["single", "ab", "matrix", "grid"];
 const browser = await chromium.launch({ headless: true });
 try {

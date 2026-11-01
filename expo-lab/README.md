@@ -7,10 +7,10 @@
 ```bash
 npm ci
 npm run lab:skins            # (선택) Android 에뮬레이터 스킨을 로컬 SDK 에서 복사 — 없으면 SVG 외형
-npm run lab:web -- --port 8092
+npm run lab:web              # 포트 8085 고정(expo-lab/package.json) — 앱 개발 서버 8081 과 겹치지 않는다
 ```
 
-`http://localhost:8092/` 를 연다. ⚠ `CI=1` 로 띄우면 Expo 가 파일 감시를 끄므로 코드를 고쳐도 다시 묶지 않는다.
+`http://localhost:8085/` 를 연다. ⚠ `CI=1` 로 띄우면 Expo 가 파일 감시를 끄므로 코드를 고쳐도 다시 묶지 않는다.
 
 ## 구조 — 셸과 프레임 (2026-11-02 · 「전 화면」 네 갈래)
 
@@ -98,8 +98,8 @@ node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest
 ```bash
 npm run typecheck:expo-lab && npm run lint && npm run format:check
 npx jest expo-lab
-EXPO_LAB_PORT=8092 npx playwright test expo-lab/e2e/shell.spec.ts expo-lab/e2e/layout-matrix.spec.ts
-LAB_FRAMES=1 EXPO_LAB_PORT=8092 npx playwright test expo-lab/e2e   # 프레임(A)·가짜 서버(B)가 합쳐진 뒤
+npx playwright test expo-lab/e2e/shell.spec.ts expo-lab/e2e/layout-matrix.spec.ts   # 기본 포트 8085
+LAB_FRAMES=1 npx playwright test expo-lab/e2e                        # 실제 앱 프레임까지 보는 검사
 ```
 
 `shell.spec.ts` · `layout-matrix.spec.ts` 의 셸 검사(목록 · 해시 왕복 · 뒤로/앞으로 · 프리셋 · 가상 시각 · 기기 크기 · 전체 화면 지연 부팅)는 셸만으로 통과한다. 프레임 안 실제 앱이 필요한 검사(현재 화면 배지 · 요청 기록 · 가로 넘침)는 `LAB_FRAMES=1` 일 때만 돈다.
@@ -108,7 +108,7 @@ LAB_FRAMES=1 EXPO_LAB_PORT=8092 npx playwright test expo-lab/e2e   # 프레임(A
 
 오른쪽 패널에서 시안(여러 벌)을 만들고 DS 토큰 601개와 화면 속성 47개를 고치면 B(시안) 프레임의 모든 화면에 걸린다 — A 는 승인본. 「요소 선택」으로 B 화면의 요소를 눌러 속성이나 같은 값의 토큰을 찾는다. 「파일」에서 JSON 을 내보내 `npm run design:apply-tokens -- <파일>`(토큰 diff) · `npm run design:apply -- <파일>`(화면 속성)으로 검토한 뒤 `--write` 와 `npm run test` 로 반영한다. 자세한 것은 [STUDIO_VALIDATION.md](STUDIO_VALIDATION.md).
 
-셸 연결: 패널은 첫 화면 오른쪽에 열려 있고(`panel=design` · 「조작」 탭으로 바꾸면 해시에 `panel=controls`), 높이가 고정된 자리에서 스스로 스크롤한다. 시안 내용이 바뀌면(`onDraftChanged`) 그 시안을 건 프레임(A/B 면 B)만 다시 불러온다. 옛 `#studio` · `#compare` · `#atlas` 주소와 화면별 Mock 어댑터(`src/claude-home` · `src/current-home` · `src/rest` · `src/archive` · `src/my` · `src/report` · `src/diary` · `src/retro`)는 셸 진입에서 빠졌다 — 통합 때 정리한다. 셸 레이아웃별 관측은 `node expo-lab/scripts/measure-shell.mjs http://127.0.0.1:8092`(옛 `measure-studio.mjs` 자리).
+셸 연결: 패널은 첫 화면 오른쪽에 열려 있고(`panel=design` · 「조작」 탭으로 바꾸면 해시에 `panel=controls`), 높이가 고정된 자리에서 스스로 스크롤한다. 시안 내용이 바뀌면(`onDraftChanged`) 그 시안을 건 프레임(A/B 면 B)만 다시 불러온다. 옛 `#studio` · `#compare` · `#atlas` 주소와 화면별 Mock 어댑터(`src/claude-home` · `src/current-home` · `src/rest` · `src/archive` · `src/my` · `src/report` · `src/diary` · `src/retro`)는 셸 진입에서 빠졌다 — 통합 때 정리한다. 셸 레이아웃별 관측은 `node expo-lab/scripts/measure-shell.mjs http://127.0.0.1:8085`(옛 `measure-studio.mjs` 자리).
 
 ## 서체
 

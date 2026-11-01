@@ -4,7 +4,7 @@
  * ⚠ 프레임 안에 실제 앱이 뜨는 것(갈래 A 부트스트랩)과 가짜 서버(갈래 B)가 있어야 하는 검사는
  * `LAB_FRAMES=1` 일 때만 돈다 — A·B 가 합쳐지기 전에는 iframe 안이 「앱 프레임 준비 중」이다.
  *
- *   EXPO_LAB_PORT=8092 npx playwright test expo-lab/e2e/shell.spec.ts
+ *   npx playwright test expo-lab/e2e/shell.spec.ts
  */
 import { expect, test, type Page } from "@playwright/test";
 
