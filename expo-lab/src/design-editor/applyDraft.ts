@@ -5,6 +5,8 @@
  * - DS 토큰: `src/design/ds/*` 가 내보낸 객체를 **제자리에서** 바꾼다. 컴포넌트는 모듈이 올라올 때
  *   `StyleSheet.create` 로 값을 굳히므로, 그 전에 바꾸면 모든 화면이 시안 값으로 그려진다
  * - Studio 속성: `src/design/studioDesign.ts` 의 `approvedDesign`(JSON) 객체를 바꾼다 — 다섯 View 의 기본 prop
+ * - 탭 배경(`studio` 의 `tabBackground.<탭>`): `src/design/tabBackgrounds.ts` 의 `tabBackgroundByTab` 을 바꾼다.
+ *   앱(`TabPaperBackground`)은 그릴 때마다 그 객체를 읽는다(`tabBackgrounds.ts` 머리말)
  *
  * ⚠ 부트스트랩이 `Platform.OS` 를 기기 값으로 맞춘 **뒤에** 불러야 한다. 토큰 모듈은 이 함수 안에서야
  * 불러오므로(`tokenModules.ts`) 정적 import 순서는 상관없다 — `typography.ts` 가 그때 `typeScale` 을 잰다.
@@ -15,6 +17,12 @@
 import type { DesignDraft, LabFrameConfig } from "../lab-contract";
 import { findDraft, readDrafts } from "./drafts";
 import { findStudioProperty, validValue } from "./studioRegistry";
+import {
+  applyTabBackground,
+  isTabBackgroundKey,
+  loadTabBackgroundTargets,
+  type TabBackgroundTargets,
+} from "./tabBackgrounds";
 import { loadStudioApproved, loadTokenModules, type TokenModules } from "./tokenModules";
 import {
   buildTokenCatalog,
@@ -67,6 +75,8 @@ export function applyDraftToTargets(
   targets: {
     modules: TokenModules;
     studioApproved: Record<string, string | number>;
+    /** 탭 배경 — 없으면 `tabBackground.*` 키는 이유와 함께 건너뛴다 */
+    tabBackgrounds?: TabBackgroundTargets;
     catalog?: TokenCatalog;
   },
 ): DesignApplyReport {
@@ -95,6 +105,14 @@ export function applyDraftToTargets(
     else report.applied.push(key);
   }
   for (const [key, value] of Object.entries(draft.studio)) {
+    if (isTabBackgroundKey(key)) {
+      const failed = targets.tabBackgrounds
+        ? applyTabBackground(targets.tabBackgrounds, key, value)
+        : "탭 배경 객체를 받지 못했다";
+      if (failed) report.skipped.push({ kind: "studio", key, reason: failed });
+      else report.applied.push(key);
+      continue;
+    }
     const property = findStudioProperty(key);
     if (!property) {
       report.skipped.push({ kind: "studio", key, reason: "등록되지 않은 Studio 속성이다" });
@@ -132,6 +150,7 @@ export function applyDesignDraft(
       report = applyDraftToTargets(draft, {
         modules: loadTokenModules(),
         studioApproved: loadStudioApproved(),
+        tabBackgrounds: loadTabBackgroundTargets(),
       });
     }
   }

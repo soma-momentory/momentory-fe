@@ -7,6 +7,7 @@
  */
 import type { DesignDraft } from "../lab-contract";
 import { findStudioProperty } from "./studioRegistry";
+import { approvedTabBackgroundFor, tabBackgroundLabel } from "./tabBackgrounds";
 import { tokenLabel, type TokenCatalog, type TokenValue } from "./tokens";
 
 export const HANDOFF_FORMAT = "momentory-lab-handoff@1";
@@ -155,8 +156,9 @@ export async function buildHandoff({
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, after]) => ({
       key,
-      label: findStudioProperty(key)?.label ?? key,
-      before: approvedStudio[key] ?? null,
+      // 탭 배경(`tabBackground.<탭>`)도 여기 실린다 — 「쉼터 탭 배경」 · 배경 id 전후
+      label: findStudioProperty(key)?.label ?? tabBackgroundLabel(key) ?? key,
+      before: approvedStudio[key] ?? approvedTabBackgroundFor(key) ?? null,
       after,
     }));
   const screens: LabHandoff["screens"] = [];

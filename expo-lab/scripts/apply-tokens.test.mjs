@@ -176,3 +176,40 @@ test("두 파일에 같은 키가 있으면 모호하다고 거부한다", () =>
   assert.equal(changes.length, 0);
   assert.match(refused[0].reason, /두 파일/);
 });
+
+test("「AI에게 넘기기」 파일(momentory-lab-handoff@1)의 tokens 목록도 받는다", async () => {
+  const root = await tempRoot();
+  const file = path.join(root, "momentory-handoff-검토-20261102-2130.json");
+  await writeFile(
+    file,
+    JSON.stringify({
+      format: "momentory-lab-handoff@1",
+      createdAt: "2026-11-02T21:30:00+09:00",
+      draft: { id: "d1", name: "넘기기" },
+      request: "",
+      tokens: [
+        {
+          key: "primary.heavy",
+          label: "브랜드 초록 · 진하게",
+          before: "#56755F",
+          after: "#335544",
+        },
+      ],
+      studio: [
+        {
+          key: "tabBackground.쉼터",
+          label: "쉼터 탭 배경",
+          before: "soft-olive",
+          after: "warm-ivory",
+        },
+      ],
+      screens: [],
+      lab: { platform: "ios", deviceId: "iphone-16", datasetId: "normal" },
+    }),
+  );
+  const preview = run(root, [file]);
+  assert.equal(preview.status, 0, preview.stderr);
+  assert.match(preview.stdout, /^\+ {2}heavy: "#335544",$/m);
+  assert.match(preview.stdout, /시안 「넘기기」 — 토큰 1개 변경/);
+  assert.match(preview.stdout, /Studio 속성 1개/);
+});

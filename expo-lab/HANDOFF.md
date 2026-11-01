@@ -36,6 +36,13 @@ AI 는 **다운로드 폴더(`~/Downloads`)에서 가장 최근의 `momentory-ha
       "before": 16,
       "after": 22,
     },
+    // 탭 배경(「탭 배경 바꿔 보기」 · src/design/tabBackgrounds.ts 의 tabBackgroundByTab) — 값은 배경 id
+    {
+      "key": "tabBackground.쉼터",
+      "label": "쉼터 탭 배경",
+      "before": "soft-olive",
+      "after": "warm-ivory",
+    },
   ],
   "screens": [
     // 시안을 본 화면 · 참고 시안 이미지 · 화면별 메모
@@ -54,6 +61,12 @@ AI 는 **다운로드 폴더(`~/Downloads`)에서 가장 최근의 `momentory-ha
 ```
 
 `dataUrl` 은 크다 — 파일 전체를 출력하지 말고 필요한 필드만 읽는다. 참고 이미지는 임시 폴더에 풀어서 본다.
+
+두 반영 스크립트는 이 파일을 그대로 받는다(`design:apply-tokens` 는 `tokens`, `design:apply` 는 `studio`).
+`studio` 의 **`tabBackground.<탭>`**(홈 · 쉼터 · 보관함 · 리포트 · 마이)은 `design:apply` 가 `src/design/tabBackgrounds.ts` 의
+`tabBackgroundByTab` 리터럴로 옮긴다 — 값은 같은 파일 `tabBackgroundAssets` 에 **이미 있는 배경 id** 만 받고, 모르는 id · 탭이
+하나라도 있으면 아무 파일도 쓰지 않는다. 새 배경 그림이 필요하다는 메모면 「이미지 넣기」 절차로 그림을 넣고
+`tabBackgroundAssets` 에 먼저 등록한 뒤 고른다.
 
 ## AI 의 절차
 
