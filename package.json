@@ -16,6 +16,8 @@
     "typecheck": "tsc --noEmit",
     "typecheck:expo-lab": "npm run typecheck --workspace momentory-expo-lab",
     "lab:web": "npm run web --workspace momentory-expo-lab --",
+    "lab:routes": "node expo-lab/scripts/gen-routes.mjs",
+    "lab:skins": "node expo-lab/scripts/link-device-skins.mjs",
     "design:apply": "node expo-lab/scripts/apply-design.mjs",
     "test:design-apply": "node --test expo-lab/scripts/apply-design.test.mjs",
     "test:visual": "playwright test",
