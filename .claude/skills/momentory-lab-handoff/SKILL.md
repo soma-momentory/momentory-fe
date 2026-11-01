@@ -1,6 +1,6 @@
 ---
 name: momentory-lab-handoff
-description: Expo Lab 디자인 편집기에서 「AI에게 넘기기」로 내보낸 시안 파일(momentory-handoff-*.json)을 앱 코드에 반영한다. "Lab 시안 반영해줘", "이 시안 코드로 옮겨줘", "핸드오프 파일 적용" 요청에 사용한다.
+description: Expo Lab 에서 넘어온 디자인 작업을 앱 코드에 반영한다 — 「AI에게 넘기기」 시안 파일(momentory-handoff-*.json) 반영, Lab 「AI에게 맡기기」 작업 공간에서의 화면 수정, 「새 화면 만들기」. "Lab 시안 반영해줘", "이 시안 코드로 옮겨줘", "새 화면 만들어줘(Lab)" 요청에 사용한다.
 ---
 
 # Lab 시안 반영
@@ -18,6 +18,10 @@ description: Expo Lab 디자인 편집기에서 「AI에게 넘기기」로 내�
 7. **검사** — `typecheck` · `lint` · `format:check` · `test`(대비 테스트 포함). 대비가 깨지면 후보를 들고 되묻는다.
 8. **Lab 확인** — `npm run lab:web`(포트 8085), 바뀐 화면을 A(승인본)로 열어 참고 이미지와 겹쳐 확인하고 스크린샷을 남긴다.
 9. **PR** — 템플릿대로, 값 전 → 후 표 · Lab 확인 주소 · 전후 스크린샷. **머지는 사용자 승인 뒤에만.**
+
+## Lab 작업 공간에서 돌 때 · 새 화면
+
+Lab 「AI에게 맡기기」로 불렸으면 HANDOFF.md 「Lab 에서 바로 맡길 때」를 따른다 — 질문 대신 요약 출력, 브랜치는 이미 있음, **커밋 · push · PR 하지 않고** `COMMIT_MESSAGE:` · `PR_BODY:` 블록을 끝에 낸다. 「새 화면 만들기」면 HANDOFF.md 「새 화면 만들기」 1~6(자리 · 공용 부품 · 가짜 서버 임시 응답 + 필요한 API 표 · `lab:routes` + routeMeta · PRODUCT.md/CLAUDE.md 한 줄 · 테스트)을 더한다.
 
 ## 예시
 
