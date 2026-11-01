@@ -7,6 +7,7 @@ import { background, layout } from "@/design/ds";
 
 import { BottomNavigation, type TabItem } from "./BottomNavigation";
 import { Screen } from "./Screen";
+import { TabPaperBackground } from "./TabPaperBackground";
 
 /**
  * 탭 다섯 칸이 공유하는 껍데기 — 배경·격자 + 본문 + 하단 탭.
@@ -67,8 +68,6 @@ type Props = {
 };
 
 export function TabScreen({ active, children, overlay }: Props) {
-  const insets = useSafeAreaInsets();
-
   const go = (tab: TabName) => {
     // 자기 탭을 누르면 아무 일도 없다 — 같은 화면을 다시 열지 않는다
     if (tab === active) return;
@@ -77,16 +76,27 @@ export function TabScreen({ active, children, overlay }: Props) {
 
   return (
     <>
-      <Screen padded={false} edges={["top"]}>
+      <Screen
+        proportional
+        padded={false}
+        edges={["top"]}
+        grid={false}
+        backdrop={<TabPaperBackground />}
+      >
         <View style={styles.body}>{children}</View>
         <BottomNavigation items={TABS} active={active} onPress={go} />
         {/* 홈 인디케이터·시스템 버튼 자리 — 탭바와 같은 면으로 이어 둔다 */}
-        <View
-          style={[styles.underTab, { height: Math.max(insets.bottom, layout.minBottomInset) }]}
-        />
+        <UnderTab />
       </Screen>
       {overlay}
     </>
+  );
+}
+
+function UnderTab() {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.underTab, { height: Math.max(insets.bottom, layout.minBottomInset) }]} />
   );
 }
 

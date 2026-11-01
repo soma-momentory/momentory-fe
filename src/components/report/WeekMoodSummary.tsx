@@ -1,7 +1,6 @@
 import { StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ds";
-import { useEffectiveFontScale } from "@/components/ds/Text";
 import { space } from "@/design/ds";
 import { reportPaper } from "@/design/ds/reportPaper";
 import { splitMoodMessage, type WeeklyReport } from "@/features/report/model/weeklyReport";
@@ -12,23 +11,18 @@ import { splitMoodMessage, type WeeklyReport } from "@/features/report/model/wee
  * 지난 주에 서버 문장이 「이번 주에는」이라고 시작할 수 있는 정책도 그대로 둔다.
  */
 export function WeekMoodSummary({ report }: { report: WeeklyReport }) {
-  const fontScale = useEffectiveFontScale();
   const { lead, follow } = splitMoodMessage(report.moodMessage);
   if (lead.length === 0) return null;
 
   return (
     <View style={styles.copy}>
-      <Text
-        variant="label1"
-        color={reportPaper.muted}
-        style={[styles.eyebrow, { lineHeight: 19 * fontScale }]}
-      >
+      <Text variant="label1" color={reportPaper.muted} style={[styles.eyebrow, { lineHeight: 19 }]}>
         바바의 한 주 정리
       </Text>
       <Text
         variant="body1ReadingHandLg"
         color={reportPaper.strong}
-        style={[styles.lead, { lineHeight: 25 * fontScale }]}
+        style={[styles.lead, { lineHeight: 25 }]}
       >
         {lead}
       </Text>
@@ -36,7 +30,7 @@ export function WeekMoodSummary({ report }: { report: WeeklyReport }) {
         <Text
           variant="body2Reading"
           color={reportPaper.muted}
-          style={[styles.follow, { lineHeight: 22 * fontScale }]}
+          style={[styles.follow, { lineHeight: 22 }]}
         >
           {follow}
         </Text>

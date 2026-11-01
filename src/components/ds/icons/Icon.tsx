@@ -7,7 +7,8 @@ import { ICON_PATHS, type IconName } from "./paths";
 export type { IconName };
 
 /**
- * Wanted 아이콘 하나. **24 그리드 · 크기 3단**(16 / 20 / 24 — `DESIGN.md` §10).
+ * Wanted 아이콘 하나. **24 그리드 · 기본 크기 3단**(16 / 20 / 24 — `DESIGN.md` §10).
+ * 홈 우편 아이콘은 사용자 요청으로 28을 쓴다.
  *
  * **이모지를 쓰지 않는다**(`RULES.md`). 없는 글리프를 만들어 내지도 않는다 —
  * 필요한 것이 세트에 없으면 **만들지 않는다** — 반입 자산은 지웠고(A-18) 세트가
@@ -19,8 +20,8 @@ export type { IconName };
  */
 type Props = {
   name: IconName;
-  /** 기본 24. `DESIGN.md` 가 정한 3단만 쓴다 */
-  size?: 16 | 20 | 24;
+  /** 기본 24. 홈 우편 아이콘은 28. */
+  size?: 16 | 20 | 24 | 28;
   /** `@/design/ds` 의 색 토큰. 기본은 본문색 */
   color?: string;
 };

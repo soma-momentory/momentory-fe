@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Text } from "@/components/ds";
 import { Baba } from "@/components/onboarding/OnboardingParts";
 import {
@@ -55,6 +56,7 @@ export function LetterPreviewCard({ summary, letter, onPress }: Props) {
           <>
             <View style={styles.tapeSlot} pointerEvents="none">
               <View style={styles.tape}>
+                <MaskingTape color={background.splash} />
                 <Text variant="tapeHand" color={labelColor.normal}>
                   바바의 편지
                 </Text>
@@ -109,7 +111,6 @@ const styles = StyleSheet.create({
   // 보관함 제목(「보관함」) 뒤 테이프와 같은 모양 — 찢긴 끝 · 광택 없는 베이지 단색 띠를 살짝 기울인다
   // (2026-10-27 사용자 요청 · 일기 확인 화면의 수채화 테이프는 너무 반짝였다)
   tape: {
-    backgroundColor: background.splash,
     transform: [{ rotate: "-3deg" }],
     paddingHorizontal: 18,
     paddingVertical: 3,
