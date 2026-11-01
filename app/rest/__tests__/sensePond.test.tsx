@@ -580,25 +580,35 @@ describe("감각연못 · 설명 카드", () => {
   const card = (r: Q) => r.queryByTestId("rest-guide-card");
   const INTRO = "연못처럼 잔잔하게, 지금 이 순간을 찾아봐요";
   const guide = REST_GUIDES.sense_pond;
+  const firstAct = guide.pages[0].example!.steps![0]!.act;
 
-  it("처음 들어오면 카드가 저절로 뜨고 「봤음」을 남긴다 — 소개 · 좋은 점 · 하는 법 셋을 말한다", async () => {
+  // 카드를 끝까지 넘겨 마지막 장의 버튼(`label`)으로 닫는다
+  const finish = async (r: Q, label: string) => {
+    for (let i = 1; i < guide.pages.length; i += 1)
+      await fireEvent.press(r.getByRole("button", { name: "다음" }));
+    await fireEvent.press(r.getByRole("button", { name: label }));
+  };
+
+  it("처음 들어오면 카드가 저절로 뜨고 「봤음」을 남긴다 — 세 장을 한 장씩 넘긴다", async () => {
     firstVisit();
     const r = await render(<SensePondScreen />);
 
     expect(card(r)).toBeTruthy();
-    for (const text of [
-      guide.tagline,
-      "이럴 때 좋아요",
-      guide.why,
-      "이렇게 해요",
-      ...guide.steps,
-    ]) {
-      expect(r.getByText(text)).toBeTruthy();
-    }
     expect(jest.mocked(markGuideSeen)).toHaveBeenCalledWith("sense_pond");
+    // 감각연못은 1장에만 예시 칸이 붙는다
+    expect(r.getByText(guide.pages[0].text)).toBeTruthy();
+    expect(r.getByText(firstAct)).toBeTruthy();
 
-    // 처음 뜬 카드는 「시작할게요」로 닫고, 저절로 뜬 것은 계측하지 않는다
-    await fireEvent.press(r.getByLabelText("시작할게요"));
+    await fireEvent.press(r.getByRole("button", { name: "다음" }));
+    expect(r.getByText(guide.pages[1].text)).toBeTruthy();
+    expect(r.queryByText(guide.pages[0].text)).toBeNull();
+    expect(r.queryByText(firstAct)).toBeNull();
+
+    await fireEvent.press(r.getByRole("button", { name: "다음" }));
+    expect(r.getByText(guide.pages[2].text)).toBeTruthy();
+
+    // 처음 뜬 카드는 마지막 장의 「시작할게요」로 닫고, 저절로 뜬 것은 계측하지 않는다
+    await fireEvent.press(r.getByRole("button", { name: "시작할게요" }));
     expect(card(r)).toBeNull();
     expect(jest.mocked(track).mock.calls.map(([name]) => name)).not.toContain("rest_guide_opened");
   });
@@ -612,7 +622,7 @@ describe("감각연못 · 설명 카드", () => {
     // 카드가 떠 있는 동안 뒤 장면은 낭독기에서 물러나 있다 — 숨은 것까지 본다
     expect(r.getByText(INTRO, HIDDEN)).toBeTruthy();
 
-    await fireEvent.press(r.getByLabelText("시작할게요"));
+    await finish(r, "시작할게요");
     await wait(pondMotion.introHold + 20);
     await swap();
     expect(r.queryByText(INTRO)).toBeNull();
@@ -628,8 +638,9 @@ describe("감각연못 · 설명 카드", () => {
     expect(card(r)).toBeTruthy();
     expect(jest.mocked(track)).toHaveBeenCalledWith("rest_guide_opened", { content: "sense_pond" });
 
-    // 다시 연 카드는 「알겠어요」로 닫는다
-    await fireEvent.press(r.getByLabelText("알겠어요"));
+    // 다시 연 카드는 첫 장부터 보이고, 마지막 장의 「알겠어요」로 닫는다
+    expect(r.getByText(guide.pages[0].text)).toBeTruthy();
+    await finish(r, "알겠어요");
     expect(card(r)).toBeNull();
   });
 });
