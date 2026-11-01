@@ -57,8 +57,11 @@ function recorder(env: KeyboardEnv) {
 describe("keyboard heights", () => {
   it("has a measured or sourced entry for every Lab device", () => {
     for (const device of labDevices) {
-      expect(MEASURED_KEYBOARD_DEVICE_IDS).toContain(device.id);
       const spec = keyboardSpecFor(device);
+      // 표에 없는 기기(예: 갤럭시)는 규칙으로 계산한다 — 그렇다고 출처에 밝혀야 한다
+      if (!MEASURED_KEYBOARD_DEVICE_IDS.includes(device.id as never)) {
+        expect(spec.source).toContain("확인하지 않았다");
+      }
       expect(spec.style).toBe(device.platform);
       expect(spec.total).toBeCloseTo(spec.suggestionBar + spec.keys + spec.bottomArea, 5);
       expect(spec.total).toBeGreaterThan(250);
