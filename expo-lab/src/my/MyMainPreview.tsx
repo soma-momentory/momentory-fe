@@ -2,6 +2,7 @@ import { StyleSheet, View } from "react-native";
 
 import { BottomNavigation } from "../../../src/components/ds/BottomNavigation";
 import { Screen } from "../../../src/components/ds/Screen";
+import { TabPaperBackground } from "../../../src/components/ds/TabPaperBackground";
 import { PreviewFontScaleContext } from "../../../src/components/ds/Text";
 import { background, layout } from "../../../src/design/ds";
 import { MyMainView } from "../../../src/features/my/ui/MyMainView";
@@ -45,7 +46,13 @@ export function MyMainPreview({
   return (
     <PreviewFontScaleContext.Provider value={fontScale}>
       <View style={styles.root}>
-        <Screen padded={false} edges={[]}>
+        <Screen
+          proportional
+          padded={false}
+          edges={[]}
+          grid={false}
+          backdrop={<TabPaperBackground />}
+        >
           <View style={styles.body}>
             <MyMainView
               design={design}

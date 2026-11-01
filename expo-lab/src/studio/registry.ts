@@ -280,15 +280,6 @@ export const editableComponents: readonly EditableComponent[] = [
     properties: [],
   },
   {
-    id: "my.title",
-    screenId: "my-main",
-    parentId: "my.root",
-    testId: "studio-my-title",
-    kind: "text",
-    label: "마이 제목",
-    properties: [color("my.title.backgroundColor", "종이 색")],
-  },
-  {
     id: "my.profileCard",
     screenId: "my-main",
     parentId: "my.root",
@@ -370,7 +361,11 @@ export const editableComponents: readonly EditableComponent[] = [
   },
 ];
 
-export const editableKeys = editableComponents.flatMap((component) => component.properties);
+export const editableKeys = [
+  ...editableComponents.flatMap((component) => component.properties),
+  // 삭제한 제목 색은 이전에 저장·내보낸 시안을 계속 읽을 수 있도록 검증만 유지한다.
+  color("my.title.backgroundColor"),
+];
 
 export function validValue(property: EditableProperty, value: unknown): boolean {
   if (property.kind === "asset") return isStudioAssetId(value);
