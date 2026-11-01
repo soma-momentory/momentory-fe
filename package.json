@@ -20,6 +20,8 @@
     "lab:skins": "node expo-lab/scripts/link-device-skins.mjs",
     "design:apply": "node expo-lab/scripts/apply-design.mjs",
     "test:design-apply": "node --test expo-lab/scripts/apply-design.test.mjs",
+    "design:apply-tokens": "node expo-lab/scripts/apply-tokens.mjs",
+    "test:design-apply-tokens": "node --test expo-lab/scripts/apply-tokens.test.mjs",
     "test:visual": "playwright test",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",

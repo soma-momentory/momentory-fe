@@ -2,7 +2,17 @@ import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { studioAssets, type StudioAssetId } from "../../../src/design/studioAssets";
-import { claudeHomeColor as c } from "../claude-home/tokens";
+import { palette } from "./ui";
+
+const c = {
+  ink: palette.ink,
+  muted: palette.muted,
+  paper: palette.sunken,
+  white: palette.panel,
+  taskBorder: palette.line,
+  green: palette.accent,
+  greenSoft: palette.accentSoft,
+};
 
 export function AssetBrowser({
   value,

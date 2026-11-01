@@ -1,0 +1,740 @@
+{
+  "$comment": "생성물 — node expo-lab/scripts/apply-tokens.mjs --source-map",
+  "entries": {
+    "bodyReleaseLayout.capybaraAspect": {
+      "file": "bodyRelease.ts",
+      "kind": "derived",
+      "expr": "480 / 600"
+    },
+    "bodyReleaseLayout.crest": {
+      "file": "bodyRelease.ts",
+      "kind": "derived",
+      "expr": "574 / 1024"
+    },
+    "bodyReleaseLayout.hillAspect": {
+      "file": "bodyRelease.ts",
+      "kind": "derived",
+      "expr": "598 / 1024"
+    },
+    "cardPadding.default": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "space.lg"
+    },
+    "chatChoiceSelected.label": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "primary.heavy"
+    },
+    "chatChoiceSelected.shadow": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "withAlpha(primary.heavy, 0.16)"
+    },
+    "diaryMemo.fade": {
+      "file": "diaryMemo.ts",
+      "kind": "derived",
+      "expr": "background.normal"
+    },
+    "diaryPaper.body.fontFamily": {
+      "file": "diaryPaper.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "diaryPaper.caption.fontFamily": {
+      "file": "diaryPaper.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "diaryPaper.date.fontFamily": {
+      "file": "diaryPaper.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "diaryPaper.memo.item.fontFamily": {
+      "file": "diaryPaper.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "diaryPaper.memo.title.fontFamily": {
+      "file": "diaryPaper.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "fill.alternative": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "`rgba(${WARM},0.06)`"
+    },
+    "fill.normal": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "`rgba(${WARM},0.10)`"
+    },
+    "fill.strong": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "`rgba(${WARM},0.18)`"
+    },
+    "fontFamily.bold": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "HAND"
+    },
+    "fontFamily.hand": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "HAND"
+    },
+    "fontFamily.medium": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "HAND"
+    },
+    "fontFamily.regular": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "HAND"
+    },
+    "fontFamily.semibold": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "HAND"
+    },
+    "gothic.bold.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "gothicFamily.bold"
+    },
+    "gothic.medium.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "gothicFamily.medium"
+    },
+    "gothic.regular.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "gothicFamily.regular"
+    },
+    "gothic.semibold.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "gothicFamily.semibold"
+    },
+    "grid.stroke": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "`rgba(${WARM},0.07)`"
+    },
+    "hairline.alternative.borderColor": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "line.alternative"
+    },
+    "hairline.alternative.borderWidth": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "StyleSheet.hairlineWidth"
+    },
+    "hairline.neutral.borderColor": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "line.neutral"
+    },
+    "hairline.neutral.borderWidth": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "StyleSheet.hairlineWidth"
+    },
+    "hairline.normal.borderColor": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "line.normal"
+    },
+    "hairline.normal.borderWidth": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "StyleSheet.hairlineWidth"
+    },
+    "homeV2.color.card": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "card"
+    },
+    "homeV2.color.dock": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "withAlpha(card, 0.92)"
+    },
+    "homeV2.color.ink": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "ink"
+    },
+    "homeV2.color.shadow": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "shadow"
+    },
+    "homeV2.color.writtenMark": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "ink"
+    },
+    "homeV2.font.bold": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "homeV2.font.regular": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "homeV2.shadow.bubble": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "`0px 4px 12px ${withAlpha(shadow, 0.1)}`"
+    },
+    "homeV2.shadow.dock": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "`0px 8px 24px ${withAlpha(shadow, 0.12)}`"
+    },
+    "homeV2.shadow.hero": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "`0px 6px 18px ${withAlpha(shadow, 0.08)}`"
+    },
+    "homeV2.shadow.sticker": {
+      "file": "homeV2.ts",
+      "kind": "derived",
+      "expr": "`0px 2px 6px ${withAlpha(shadow, 0.1)}`"
+    },
+    "layout.androidNavGap": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "androidNavGap"
+    },
+    "layout.dockActionGap": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "space.xs + space.xs2"
+    },
+    "layout.keyboardGap": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "space.md"
+    },
+    "letterPaper.highlight": {
+      "file": "letterPaper.ts",
+      "kind": "derived",
+      "expr": "withAlpha(secondary.normal, 0.5)"
+    },
+    "line.alternative": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "`rgba(${WARM},0.14)`"
+    },
+    "line.neutral": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "`rgba(${WARM},0.24)`"
+    },
+    "line.normal": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "`rgba(${WARM},0.34)`"
+    },
+    "notebook.paper": {
+      "file": "notebook.ts",
+      "kind": "derived",
+      "expr": "background.normal"
+    },
+    "pondLayout.capybaraAspect": {
+      "file": "pond.ts",
+      "kind": "derived",
+      "expr": "290 / 384"
+    },
+    "raised.card.boxShadow": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "`0px 3px 0px ${raisedShadow.card}`"
+    },
+    "raisedShadow.card": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "`rgba(${WARM},0.22)`"
+    },
+    "reportPaper.font.bold": {
+      "file": "reportPaper.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "reportPaper.font.regular": {
+      "file": "reportPaper.ts",
+      "kind": "derived",
+      "expr": "fontFamily.hand"
+    },
+    "restMood.mote": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "worryBox.mote"
+    },
+    "restMood.paper": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "worryBox.paper"
+    },
+    "restScene.veil": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "pond.veil"
+    },
+    "retroDiary.answer": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "USER_PAPER"
+    },
+    "retroDiary.characterWidth": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "BABA_WIDTH"
+    },
+    "retroDiary.input": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "withAlpha(BABA_PAPER, 0.9)"
+    },
+    "retroDiary.inputMinHeight": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "layout.minTouch + INPUT_PADDING * 2"
+    },
+    "retroDiary.inputPadding": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "INPUT_PADDING"
+    },
+    "retroDiary.inputPlaceholder": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "homeV2.color.muted"
+    },
+    "retroDiary.inputRadius": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "layout.minTouch / 2 + INPUT_PADDING"
+    },
+    "retroDiary.inputText": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "homeV2.color.ink"
+    },
+    "retroDiary.onGreen": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "homeV2.color.white"
+    },
+    "retroDiary.question": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "BABA_PAPER"
+    },
+    "retroDiary.sendIcon": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "homeV2.color.green"
+    },
+    "retroDiary.sendReady": {
+      "file": "retroDiary.ts",
+      "kind": "derived",
+      "expr": "homeV2.color.green"
+    },
+    "size.button.radius": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "radius.medium"
+    },
+    "size.card.radius": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "radius.large"
+    },
+    "size.chip.gap": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "space.sm"
+    },
+    "size.chip.radius": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "radius.full"
+    },
+    "size.sheet.radius": {
+      "file": "metrics.ts",
+      "kind": "derived",
+      "expr": "radius.xlarge"
+    },
+    "splashLoader.spoke": {
+      "file": "color.ts",
+      "kind": "derived",
+      "expr": "label.neutral"
+    },
+    "text.body1.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"medium\"]"
+    },
+    "text.body1.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 16
+    },
+    "text.body1.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 24
+    },
+    "text.body1Reading.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"regular\"]"
+    },
+    "text.body1Reading.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 16
+    },
+    "text.body1Reading.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 26
+    },
+    "text.body1ReadingHand.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"hand\"]"
+    },
+    "text.body1ReadingHand.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 16
+    },
+    "text.body1ReadingHand.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 26
+    },
+    "text.body1ReadingHandLg.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"hand\"]"
+    },
+    "text.body1ReadingHandLg.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 18
+    },
+    "text.body1ReadingHandLg.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 30
+    },
+    "text.body2.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"medium\"]"
+    },
+    "text.body2.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 15
+    },
+    "text.body2.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 22
+    },
+    "text.body2Reading.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"regular\"]"
+    },
+    "text.body2Reading.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 15
+    },
+    "text.body2Reading.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 24
+    },
+    "text.buttonLabel.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"semibold\"]"
+    },
+    "text.buttonLabel.fontSize": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "14 * BUTTON_BOOST"
+    },
+    "text.buttonLabel.lineHeight": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "20 * BUTTON_BOOST"
+    },
+    "text.buttonLabelSmall.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"semibold\"]"
+    },
+    "text.buttonLabelSmall.fontSize": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "13 * BUTTON_BOOST"
+    },
+    "text.buttonLabelSmall.lineHeight": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "18 * BUTTON_BOOST"
+    },
+    "text.caption1.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"medium\"]"
+    },
+    "text.caption1.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 12
+    },
+    "text.caption1.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 16
+    },
+    "text.caption2.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"semibold\"]"
+    },
+    "text.caption2.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 11
+    },
+    "text.caption2.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 14
+    },
+    "text.heading1.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"semibold\"]"
+    },
+    "text.heading1.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 22
+    },
+    "text.heading1.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 30
+    },
+    "text.headline1.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"semibold\"]"
+    },
+    "text.headline1.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 18
+    },
+    "text.headline1.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 26
+    },
+    "text.label1.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"semibold\"]"
+    },
+    "text.label1.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 14
+    },
+    "text.label1.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 20
+    },
+    "text.label1Hand.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"hand\"]"
+    },
+    "text.label1Hand.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 14
+    },
+    "text.label1Hand.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 20
+    },
+    "text.label2.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"semibold\"]"
+    },
+    "text.label2.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 13
+    },
+    "text.label2.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 18
+    },
+    "text.tapeHand.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"hand\"]"
+    },
+    "text.tapeHand.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 20
+    },
+    "text.tapeHand.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 28
+    },
+    "text.title1Hand.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"hand\"]"
+    },
+    "text.title1Hand.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 32
+    },
+    "text.title1Hand.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 42
+    },
+    "text.title2.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"bold\"]"
+    },
+    "text.title2.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 28
+    },
+    "text.title2.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 38
+    },
+    "text.title3.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"bold\"]"
+    },
+    "text.title3.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 24
+    },
+    "text.title3.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 32
+    },
+    "text.title3Hand.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"hand\"]"
+    },
+    "text.title3Hand.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 24
+    },
+    "text.title3Hand.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 32
+    },
+    "text.wordmarkHand.fontFamily": {
+      "file": "typography.ts",
+      "kind": "derived",
+      "expr": "fontFamily[\"hand\"]"
+    },
+    "text.wordmarkHand.fontSize": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 40
+    },
+    "text.wordmarkHand.lineHeight": {
+      "file": "typography.ts",
+      "kind": "typeScale",
+      "base": 52
+    },
+    "treasureBoxLayout.capybaraAspect": {
+      "file": "treasureBox.ts",
+      "kind": "derived",
+      "expr": "560 / 600"
+    },
+    "treasureBoxSize.chestAspect": {
+      "file": "treasureBox.ts",
+      "kind": "derived",
+      "expr": "480 / 460"
+    },
+    "treasureBoxSize.closedTop": {
+      "file": "treasureBox.ts",
+      "kind": "derived",
+      "expr": "353 / 480"
+    },
+    "treasureBoxSize.frontTop": {
+      "file": "treasureBox.ts",
+      "kind": "derived",
+      "expr": "195 / 480"
+    },
+    "worryBoxLayout.capybaraAspect.sit": {
+      "file": "worryBox.ts",
+      "kind": "derived",
+      "expr": "560 / 600"
+    },
+    "worryBoxLayout.capybaraAspect.walk": {
+      "file": "worryBox.ts",
+      "kind": "derived",
+      "expr": "560 / 830"
+    },
+    "worryBoxSize.boxAspect": {
+      "file": "worryBox.ts",
+      "kind": "derived",
+      "expr": "410 / 420"
+    },
+    "worryBoxSize.frontTop": {
+      "file": "worryBox.ts",
+      "kind": "derived",
+      "expr": "155 / 410"
+    }
+  }
+}

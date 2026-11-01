@@ -1,3 +1,8 @@
+/**
+ * Studio 속성 등록표 — 옛 Design Studio(`src/studio/registry.ts`)에서 옮겼다.
+ * 다섯 View(홈·쉼터·보관함·마이·리포트)가 `src/design/studioApproved.json` 에서 읽는 47개 키와,
+ * 각 키가 붙은 실제 RN `testID`. 화면 요소 선택은 testID 로 여기를 찾는다.
+ */
 import type { StudioDesignKey } from "../../../src/design/studioDesign";
 import { isStudioAssetId } from "../../../src/design/studioAssets";
 
@@ -380,4 +385,43 @@ export function validValue(property: EditableProperty, value: unknown): boolean 
     value >= (property.min ?? 0) &&
     value <= (property.max ?? 0)
   );
+}
+
+const propertyByKey = new Map(editableKeys.map((property) => [property.key as string, property]));
+
+/** Studio 속성 하나 — 등록되지 않은 키면 undefined */
+export const findStudioProperty = (key: string) => propertyByKey.get(key);
+
+/** testID → 등록 요소. 화면 요소 선택이 가장 가까운 testID 를 여기서 찾는다 */
+export const componentByTestId: ReadonlyMap<string, EditableComponent> = new Map(
+  editableComponents.map((component) => [component.testId, component]),
+);
+
+export function layerDepth(layer: EditableComponent): number {
+  let depth = 0;
+  let parentId = layer.parentId;
+  while (parentId) {
+    const parent = editableComponents.find((item) => item.id === parentId);
+    if (!parent) break;
+    depth += 1;
+    parentId = parent.parentId;
+  }
+  return depth;
+}
+
+/** Studio 화면 id ↔ 앱 라우트. 라우트 묶음 `(tabs)` 는 떼고 본다 */
+export const STUDIO_SCREENS = [
+  { id: "home-main", label: "홈", route: "/home" },
+  { id: "rest-hub", label: "쉼터", route: "/rest" },
+  { id: "archive", label: "보관함", route: "/archive" },
+  { id: "my-main", label: "마이", route: "/my" },
+  { id: "report", label: "리포트", route: "/report" },
+] as const;
+
+export function studioScreenForRoute(route: string): string | null {
+  const normalized = `/${(route.split("?")[0] ?? "")
+    .split("/")
+    .filter((part) => part && !/^\(.*\)$/.test(part))
+    .join("/")}`;
+  return STUDIO_SCREENS.find((screen) => screen.route === normalized)?.id ?? null;
 }
