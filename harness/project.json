@@ -14,7 +14,6 @@
     "docs/ARCHITECTURE.md",
     "docs/TASKS.md",
     "docs/EXPO_WEB_DESIGN_LAB_PLAN.md",
-    "design-lab/README.md",
     "expo-lab/README.md"
   ],
   "navigationDoc": "docs/HARNESS_NAV.md",
@@ -25,11 +24,6 @@
       "name": "app-typecheck",
       "command": "npm",
       "args": ["run", "typecheck"]
-    },
-    {
-      "name": "vite-lab-typecheck",
-      "command": "npm",
-      "args": ["run", "typecheck:lab"]
     },
     {
       "name": "expo-lab-typecheck",
@@ -56,7 +50,6 @@
     "harness/",
     "docs/CONTRIBUTING.md",
     "CLAUDE.md",
-    "design-lab/CLAUDE.md",
     "docs/spec/",
     "docs/api/openapi.json",
     "tasks/TASK_TEMPLATE.md",
@@ -68,8 +61,6 @@
   "dependencyFiles": [
     "package.json",
     "package-lock.json",
-    "design-lab/package.json",
-    "design-lab/package-lock.json",
     "expo-lab/package.json"
   ],
   "ai": {
@@ -77,12 +68,10 @@
       "command": "claude",
       "allowedTools": [
         "Bash(npm run typecheck)",
-        "Bash(npm run typecheck:lab)",
         "Bash(npm run typecheck:expo-lab)",
         "Bash(npm run lint)",
         "Bash(npm run format:check)",
         "Bash(npm run test -- --ci)",
-        "Bash(npm run build --prefix design-lab)",
         "Bash(git status*)",
         "Bash(git diff*)",
         "Bash(git log*)"

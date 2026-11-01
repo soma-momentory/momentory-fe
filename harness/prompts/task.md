@@ -2,7 +2,7 @@
 
 {{projectContext}}
 
-`docs/CONTRIBUTING.md`를 작업 규칙의 정본으로 먼저 읽는다. 요구사항의 대상이 앱, Vite Design Lab, Expo Web Design Lab 중 어디인지 명시하고 `docs/HARNESS_NAV.md`에서 해당 시작 코드와 검증 명령을 찾는다. 다른 저장소나 상류 폴더를 전제하지 않는다.
+`docs/CONTRIBUTING.md`를 작업 규칙의 정본으로 먼저 읽는다. 요구사항의 대상이 앱, Expo Web Design Lab 중 어디인지 명시하고 `docs/HARNESS_NAV.md`에서 해당 시작 코드와 검증 명령을 찾는다. 다른 저장소나 상류 폴더를 전제하지 않는다.
 
 ## 요구사항
 

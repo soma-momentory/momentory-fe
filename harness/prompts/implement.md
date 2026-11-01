@@ -2,7 +2,7 @@
 
 {{projectContext}}
 
-`docs/CONTRIBUTING.md`의 작업 규칙을 우선한다. Task에 지정된 앱 또는 Lab 범위만 수정하고, Expo·React Native 코드와 Vite 웹 코드의 환경 차이를 확인한다. 기존 Lab 결과물과 변경 중인 파일을 임의로 초기화하거나 덮어쓰지 않는다.
+`docs/CONTRIBUTING.md`의 작업 규칙을 우선한다. Task에 지정된 앱 또는 Lab 범위만 수정하고, React Native 네이티브와 Expo Web의 환경 차이를 확인한다. 기존 Lab 결과물과 변경 중인 파일을 임의로 초기화하거나 덮어쓰지 않는다.
 
 ## 요구사항
 

@@ -1,4 +1,4 @@
-/** Byte-identical copies of the 38 iPhone 13 mini captures in design-lab/public/app-captures. */
+/** The 38 iPhone 13 mini captures, originally from the removed Vite Lab (design-lab/, deleted 2026-11-02). */
 export const captureAssets = {
   splash: require("../../assets/current-app/splash.png"),
   login: require("../../assets/current-app/login.png"),

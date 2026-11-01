@@ -131,19 +131,17 @@ fix: 아웃박스 재생에 멱등 키를 더한다
 | 순서 | 명령                         | 무엇을 잡나                                      |
 | ---- | ---------------------------- | ------------------------------------------------ |
 | 1    | `npm ci`                     | 앱·Expo Web Lab lockfile 과 동일한 트리          |
-| 2    | `npm ci --prefix design-lab` | 별도 Vite Lab lockfile 과 동일한 트리            |
-| 3    | `npm run typecheck`          | 기존 앱 타입 오류                                |
-| 4    | `npm run typecheck:lab`      | Vite Lab 타입 오류                               |
-| 5    | `npm run typecheck:expo-lab` | Expo Web Lab 타입 오류                           |
-| 6    | `npm run lint`               | 규칙 위반 — **경고도 실패** (`--max-warnings 0`) |
-| 7    | `npm run format:check`       | Prettier 서식                                    |
-| 8    | `npm run test -- --ci`       | 화면 규칙·store·라우팅 테스트                    |
-| 9    | 시크릿 추적 검사             | `.env`·키 파일이 이력에 들어갔는지               |
+| 2    | `npm run typecheck`          | 기존 앱 타입 오류                                |
+| 3    | `npm run typecheck:expo-lab` | Expo Web Lab 타입 오류                           |
+| 4    | `npm run lint`               | 규칙 위반 — **경고도 실패** (`--max-warnings 0`) |
+| 5    | `npm run format:check`       | Prettier 서식                                    |
+| 6    | `npm run test -- --ci`       | 화면 규칙·store·라우팅 테스트                    |
+| 7    | 시크릿 추적 검사             | `.env`·키 파일이 이력에 들어갔는지               |
 
 로컬에서 PR 전에 같은 것을 돌린다:
 
 ```bash
-npm run typecheck && npm run typecheck:lab && npm run typecheck:expo-lab
+npm run typecheck && npm run typecheck:expo-lab
 npm run lint && npm run format:check && npm test
 ```
 

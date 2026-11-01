@@ -14,7 +14,6 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
-    "typecheck:lab": "npm run typecheck --prefix design-lab",
     "typecheck:expo-lab": "npm run typecheck --workspace momentory-expo-lab",
     "lab:web": "npm run web --workspace momentory-expo-lab --",
     "design:apply": "node expo-lab/scripts/apply-design.mjs",

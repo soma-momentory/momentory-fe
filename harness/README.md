@@ -41,6 +41,6 @@ node harness/parallel.mjs restart <parallel-run-id>
 
 `restart`는 `FAILED`·`STOPPED` Worker와 실행 가능해진 후속 Task만 **새 브랜치와 worktree의 새 시도**로 실행한다. `WAITING`과 `HUMAN_REVIEW_REQUIRED`를 새 시도로 자동 반복하지 않는다. 선행 Worker가 `resume`으로 `DONE`이 되어 풀린 후속 Task는 `PENDING`으로 남고, 별도 `restart`에서 실행한다. 이전 시도와 로그는 보존한다. 중단 시 Core에 SIGTERM을 보내 정리할 시간을 주고 15초 뒤에도 남아 있으면 프로세스 그룹을 강제 종료한다.
 
-M1은 각 새 worktree에서 잠금 파일이 있는 루트와 `design-lab/`에 `npm ci`를 실행한 뒤 Core의 기존 `node harness/run.mjs` 진입점을 그대로 호출한다. 재개는 같은 worktree에서 Core의 기존 `--resume <core-run-id>`를 호출한다. 각 Worker가 의존성을 따로 설치하므로 첫 실행에는 레지스트리 접근·디스크 공간·설치 시간이 필요하다. 각 Task는 같은 시작 커밋을 기준으로 하므로 선행 Task의 파일 변경을 후속 Task에 자동 전달하지 않는다. 브랜치 통합·충돌 해결·Push·PR·Merge는 하지 않는다. 종료 후 허용 파일 범위를 검사하며, Worker 실행 중 보호 파일을 쓰는 행위를 실시간으로 막는 격리는 제공하지 않는다.
+M1은 각 새 worktree에서 루트에 `npm ci`를 실행한 뒤 Core의 기존 `node harness/run.mjs` 진입점을 그대로 호출한다. 재개는 같은 worktree에서 Core의 기존 `--resume <core-run-id>`를 호출한다. 각 Worker가 의존성을 따로 설치하므로 첫 실행에는 레지스트리 접근·디스크 공간·설치 시간이 필요하다. 각 Task는 같은 시작 커밋을 기준으로 하므로 선행 Task의 파일 변경을 후속 Task에 자동 전달하지 않는다. 브랜치 통합·충돌 해결·Push·PR·Merge는 하지 않는다. 종료 후 허용 파일 범위를 검사하며, Worker 실행 중 보호 파일을 쓰는 행위를 실시간으로 막는 격리는 제공하지 않는다.
 
 회귀 검사: `node --test harness/tests/*.test.mjs`. Parallel 테스트는 임시 Git 저장소에 실제 worktree와 Node Worker 프로세스를 1개·2개·4개 띄우고 테스트용 Core 진입점으로도 4개를 동시에 실행해 의존성 설치, DAG, 실패 격리, 중단·재시작을 확인한다. AI 서비스에 연결한 Core 전체 루프는 별도의 실사용 검증이 필요하다.

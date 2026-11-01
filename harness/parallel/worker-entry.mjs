@@ -33,7 +33,7 @@ const resume = process.argv[2] === '--resume';
 const coreArgs = resume
   ? ['harness/run.mjs', '--resume', process.argv[3]]
   : ['harness/run.mjs', process.argv[2]];
-for (const dir of [root, path.join(root, 'design-lab')]) {
+for (const dir of [root]) {
   if (
     !fs.existsSync(path.join(dir, 'package-lock.json')) ||
     fs.existsSync(path.join(dir, 'node_modules'))

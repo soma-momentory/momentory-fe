@@ -20,7 +20,7 @@ HTML은 402 × 874 px 화면을 표현한다. 현재 운영 캡처는 비교 대
 - 네 HTML이 참조하는 `support.js`, `image-slot.js`, `Baba.dc.html`, `PaperTabBar.dc.html`, `_ds/` 스타일 및 런타임, `assets/baba/` 캐릭터 레이어는 같은 반입 경로에 이미 있다. 원본 export의 대응 파일과 SHA-256이 같아 다시 복사하지 않았다.
 - 쉼터 HTML의 `uploads/baba-sleep.png`는 새 이미지라 같은 경로에 한 번 등록했다. 원본 및 반입 파일 SHA-256은 `f5ea87d526a247ffe723c1f01d2d7e56e17c7acac1731e1a244baf6b7676cf35`다.
 - 쉼터 HTML의 `uploads/worries.png`, `uploads/treasures.png`, `uploads/rest-records.png`는 각각 저장소의 `expo-lab/assets/current-app/` 파일과 SHA-256이 같다. 세 PNG의 사본은 만들지 않았다. [미리보기 서버](<../../design-imports/claude-home/홈화면 시안 3개 검토/preview-references.py>)가 이 세 요청만 기존 운영 캡처 경로로 연결한다.
-- `docs/redesign/current-screens/`, `design-lab/public/app-captures/`, `expo-lab/assets/current-app-thumbnails/`는 각기 기존 화면·축소 캡처 용도다. 새 원본의 저장 위치로 사용하지 않는다.
+- `docs/redesign/current-screens/`, `expo-lab/assets/current-app/`, `expo-lab/assets/current-app-thumbnails/`는 각기 기존 화면·축소 캡처 용도다. 새 원본의 저장 위치로 사용하지 않는다.
 
 ## 로컬에서 열기
 
