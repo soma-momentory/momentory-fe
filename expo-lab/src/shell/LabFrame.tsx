@@ -5,7 +5,7 @@
  * **처음 주소는 붙을 때 한 번만 정한다** — 그 뒤 주소는 프레임 안의 앱이 움직인다(셸은
  * `lab:navigate` 로만 옮긴다). 설정이 바뀌면 부모가 key 를 바꿔 새로 붙인다.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { encodeFrameConfig } from "../lab-contract";
 import { DeviceFrame } from "./device/DeviceFrame";
@@ -19,19 +19,28 @@ export function LabFrame({
   scale,
   realMs,
   startPath,
+  screenOverlay,
+  skipVia = false,
 }: {
   spec: FrameSpec;
   scale: number;
   realMs: number;
   /** 붙을 때 열 주소. 없으면 spec.href */
   startPath?: string | null;
+  /** 화면 위에 얹는 층(참고 시안) — `DeviceFrame` 의 같은 이름 */
+  screenOverlay?: ReactNode;
+  /**
+   * 두 단계 열기(`openVia`)를 건너뛰고 목적지를 바로 연다 — 「불러오는 중」 칸처럼 서버가 오래
+   * 늦으면 경유 화면의 응답도 늦어 목적지에 영영 못 가기 때문이다
+   */
+  skipVia?: boolean;
 }) {
   useFrameBus();
   const runtime = frameBus.get(spec.frameId);
   // 차갑게 열면 앱이 다른 곳으로 보내는 화면은 경유 화면을 먼저 열고 목적지로 옮긴다
   const [boot] = useState(() => {
     const target = startPath ?? spec.href;
-    const via = matchPathname(target)?.openVia;
+    const via = skipVia ? undefined : matchPathname(target)?.openVia;
     return { target, via, src: via ? via.path : target };
   });
   const src = boot.src;
@@ -61,6 +70,7 @@ export function LabFrame({
       clock={statusBarClock(spec.config.now, realMs)}
       statusBarStyle={runtime.statusBar}
       testID={`device-${spec.frameId}`}
+      screenOverlay={screenOverlay}
     >
       <iframe
         ref={ref}

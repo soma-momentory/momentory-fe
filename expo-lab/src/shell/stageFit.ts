@@ -15,6 +15,8 @@ export const STAGE_PAD_BOTTOM = 24;
 export const FRAME_GAP = 32;
 /** 매트릭스 칸 이름 줄 높이(이름 + 간격) */
 export const CELL_CAPTION = 26;
+/** 「상태별로 보기」 칸 이름 두 줄(상태 + 무엇을 바꿨나) */
+export const STATE_CAPTION = 44;
 /** 칸 이름이 글자마다 줄바꿈되지 않게 — 칸은 이보다 좁아지지 않고 이름은 말줄임 */
 export const MIN_CELL_WIDTH = 120;
 
@@ -45,10 +47,9 @@ export function fitScale(
   if (width <= 0 || height <= 0) return FIT_MIN;
 
   if (layout === "single") return clamp(Math.min(width / maxW, height / maxH), FIT_MIN, FIT_MAX);
-  if (layout === "ab") {
-    return clamp(Math.min((width - FRAME_GAP) / 2 / maxW, height / maxH), FIT_MIN, FIT_MAX);
-  }
-  // 매트릭스 — 줄 수를 1 부터 n 까지 바꿔 보며 가장 크게 들어가는 배치를 고른다
+  if (layout === "ab") return fitRow(area, top, phones);
+  const caption = layout === "states" ? STATE_CAPTION : CELL_CAPTION;
+  // 매트릭스 · 상태별 — 줄 수를 1 부터 n 까지 바꿔 보며 가장 크게 들어가는 배치를 고른다
   const n = phones.length;
   let best = FIT_MIN;
   for (let rows = 1; rows <= n; rows += 1) {
@@ -56,8 +57,22 @@ export function fitScale(
     // 칸은 MIN_CELL_WIDTH 보다 좁아지지 않는다 — 그 폭으로도 한 줄에 못 들어가면 이 배치는 안 된다
     if (cols * MIN_CELL_WIDTH + (cols - 1) * FRAME_GAP > width && rows < n) continue;
     const byWidth = (width - (cols - 1) * FRAME_GAP) / (cols * maxW);
-    const byHeight = (height - rows * CELL_CAPTION - (rows - 1) * FRAME_GAP) / (rows * maxH);
+    const byHeight = (height - rows * caption - (rows - 1) * FRAME_GAP) / (rows * maxH);
     best = Math.max(best, Math.min(byWidth, byHeight));
   }
   return clamp(best, FIT_MIN, FIT_MAX);
+}
+
+/**
+ * 기기 n 대를 한 줄로 나란히 — A/B(두 대), 그리고 참고 시안 「옆에 나란히 놓기」가 칸을 하나 더할 때
+ */
+export function fitRow(area: Size, top: number, phones: readonly Size[]): number {
+  if (!phones.length) return FIT_MIN;
+  const maxW = Math.max(...phones.map((phone) => phone.width));
+  const maxH = Math.max(...phones.map((phone) => phone.height));
+  const n = phones.length;
+  const width = area.width - STAGE_PAD_X * 2 - 2;
+  const height = area.height - top - STAGE_PAD_BOTTOM - 2;
+  if (width <= 0 || height <= 0) return FIT_MIN;
+  return clamp(Math.min((width - (n - 1) * FRAME_GAP) / n / maxW, height / maxH), FIT_MIN, FIT_MAX);
 }

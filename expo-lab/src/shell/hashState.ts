@@ -34,6 +34,12 @@ export const LAYOUTS = [
     label: "기기 · 데이터별로 보기",
     description: "같은 화면을 기기별(또는 테스트 데이터별)로 한꺼번에 봐요",
   },
+  {
+    id: "states",
+    label: "상태별로 보기",
+    description:
+      "같은 화면을 빈 계정 · 보통 · 많음 · 긴 문구 · 불러오는 중 · 불러오기 실패로 한꺼번에 봐요",
+  },
 ] as const;
 export type LayoutId = (typeof LAYOUTS)[number]["id"];
 
@@ -50,10 +56,10 @@ export type TextScale = (typeof TEXT_SCALES)[number];
 export const LATENCIES = [0, 1000, 5000] as const;
 
 /**
- * 오른쪽 패널 — 처음엔 디자인 편집기가 보인다. 옛 「요청」 탭(`panel=log`)은 조작 패널 맨 아래
+ * 오른쪽 패널 — 처음엔 디자인 편집기가 보인다. `reference` 는 참고 시안(`src/reference/`). 옛 「요청」 탭(`panel=log`)은 조작 패널 맨 아래
  * 「서버 요청 기록」으로 옮겼다 — 옛 주소는 조작 패널로 연다
  */
-export const SIDE_PANELS = ["design", "controls"] as const;
+export const SIDE_PANELS = ["design", "controls", "reference"] as const;
 export type SidePanel = (typeof SIDE_PANELS)[number];
 
 /** 「맞춤」 또는 배율(0.1 ~ 2) */
