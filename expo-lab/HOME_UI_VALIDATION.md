@@ -26,8 +26,8 @@
    - **운영판에만 있는 것** — 일정 ⋮ 메뉴 · 꾹 눌러 끌기 · 5개 접기 「N개 더 보기」 · 「오늘 일정을 모두 마쳤어요.」
 4. 결과는 이 절 아래에 날짜와 함께 적는다 — 디자인 최종 검수(DN-1 시각)는 P3 전환 전에 한다
 
-**서체**: Lab 과 앱이 같은 `assets/fonts/Gaegu-*.ttf` 를 같은 이름으로 쓴다(DN-4). Gaegu 두 굵기가 다르게 그려지는지
-(웹 · 가능하면 Android dev client — Android 는 `fontWeight` 를 무시한다)를 함께 본다.
+**서체**: Lab 과 앱이 같은 `assets/fonts/KyoboHandwriting2025lyb.ttf` 를 같은 이름으로 쓴다(2026-11-01 · 옛 Gaegu 두 파일은 지웠다).
+교보손글씨는 굵기가 하나라 굵기 차이는 보지 않는다.
 
 **자동 검증**: `src/claude-home/__tests__/homeV2Preview.test.tsx` — 두 변형이 등록돼 있다 · 5a~5f 가 공유 뷰를 Mock 으로
 그린다 · 도크 일곱 칸 · 날씨/점 없음 · 어댑터가 운영 store · API · 라우터 · 계측을 import 하지 않는다.

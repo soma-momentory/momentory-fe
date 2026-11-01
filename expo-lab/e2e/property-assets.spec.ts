@@ -66,8 +66,8 @@ test("edits text and card properties on the shared views", async ({ page }) => {
     .getByRole("textbox", { name: "글씨 크기" })
     .fill("30");
   await expect(text).toHaveCSS("font-size", "30px");
-  await page.getByTestId("studio-properties").getByRole("button", { name: "가에구 보통" }).click();
-  await expect(text).toHaveCSS("font-family", "Gaegu-Regular");
+  await page.getByTestId("studio-properties").getByRole("button", { name: "교보 손글씨" }).click();
+  await expect(text).toHaveCSS("font-family", "KyoboHandwriting2025lyb");
   await page.getByTestId("studio-properties").getByRole("button", { name: "가운데" }).click();
   await expect(text).toHaveCSS("text-align", "center");
   await page

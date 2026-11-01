@@ -23,8 +23,9 @@ export const claudeHomeColor = {
   shadow: "#48291A",
 } as const;
 
-/** 앱 `assets/fonts/Gaegu-*.ttf` 를 `App.tsx` 가 이 이름으로 등록한다 — 앱 `homeV2.font` 와 같은 이름 */
+/** 앱 `assets/fonts/KyoboHandwriting2025lyb.ttf` 를 `App.tsx` 가 이 이름으로 등록한다 — 앱 `homeV2.font` 와 같은 이름.
+ * 교보손글씨는 굵기가 하나라 두 이름이 같은 파일이다(2026-11-01 · Gaegu 삭제) */
 export const claudeHomeFont = {
-  regular: "Gaegu-Regular",
-  bold: "Gaegu-Bold",
+  regular: "KyoboHandwriting2025lyb",
+  bold: "KyoboHandwriting2025lyb",
 } as const;

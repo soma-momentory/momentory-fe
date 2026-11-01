@@ -38,11 +38,7 @@ const asset = (key: StudioDesignKey, label = "이미지"): EditableProperty => (
   label,
   kind: "asset",
 });
-const fonts = [
-  { value: "Gaegu-Regular", label: "가에구 보통" },
-  { value: "Gaegu-Bold", label: "가에구 굵게" },
-  { value: "KyoboHandwriting2025lyb", label: "교보 손글씨" },
-] as const;
+const fonts = [{ value: "KyoboHandwriting2025lyb", label: "교보 손글씨" }] as const;
 const alignments = [
   { value: "left", label: "왼쪽" },
   { value: "center", label: "가운데" },
