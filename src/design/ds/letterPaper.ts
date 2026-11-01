@@ -25,8 +25,7 @@ export const letterPaper = {
    */
   note: {
     tilt: "-1.2deg",
-    polaroid: "#FFFFFF",
-    polaroidTilt: "2.5deg",
+    portraitTilt: "2.5deg",
     dogEar: 22,
     dogEarFill: "#E6D2AC",
   },
