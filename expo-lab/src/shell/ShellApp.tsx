@@ -605,19 +605,33 @@ export function ShellApp() {
           {isB && !draftInfo && !overlayDiff ? (
             <div
               data-testid="ab-no-draft"
+              // 흐린 막은 누르기를 통과시킨다 — 시안이 없어도 B 를 눌러 보거나 디자인 편집의
+              // 「요소 선택」으로 고를 수 있어야 한다. 막는 것은 위쪽 안내 카드 한 장뿐이다
               style={{
                 position: "absolute",
                 inset: 0,
                 zIndex: 2,
                 display: "flex",
-                alignItems: "center",
+                alignItems: "flex-start",
                 justifyContent: "center",
-                padding: 16,
+                padding: `${Math.max(56, 90 * frameScale)}px 12px 12px`,
                 borderRadius: (spec.device.cornerRadius + 15) * frameScale,
-                background: "rgba(252, 252, 250, 0.84)",
+                background: "rgba(252, 252, 250, 0.55)",
+                pointerEvents: "none",
               }}
             >
-              <div style={{ maxWidth: 260, textAlign: "center", wordBreak: "keep-all" }}>
+              <div
+                style={{
+                  maxWidth: 260,
+                  padding: "14px 16px",
+                  borderRadius: 12,
+                  background: shellColor.panel,
+                  boxShadow: "0 6px 20px rgba(0, 0, 0, 0.16)",
+                  textAlign: "center",
+                  wordBreak: "keep-all",
+                  pointerEvents: "auto",
+                }}
+              >
                 <p style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>
                   아직 시안이 없어서 A와 똑같아요
                 </p>
