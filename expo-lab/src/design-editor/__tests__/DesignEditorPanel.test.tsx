@@ -19,8 +19,12 @@ function Harness({ onDraftChanged }: { onDraftChanged: (id: string) => void }) {
 }
 
 describe("DesignEditorPanel", () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
 
   it("시안을 만들고 토큰을 고치면 모아서 한 번 알린다 · 되돌리기 · 바뀐 것 목록", async () => {
     const onDraftChanged = jest.fn<(id: string) => void>();
