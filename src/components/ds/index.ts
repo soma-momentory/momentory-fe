@@ -30,8 +30,10 @@
  * 재사용한다** — 시안에선 두 파일에 각각 인라인이었다(`EXPORT_MANIFEST` §4).
  */
 export { Text } from "./Text";
+export { MaskingTape } from "./MaskingTape";
 export { Screen, useScreenBottomInset } from "./Screen";
 export { GridBackground } from "./GridBackground";
+export { TabPaperBackground } from "./TabPaperBackground";
 export { Button, type ButtonSize, type ButtonVariant } from "./Button";
 export { IconButton } from "./IconButton";
 export { SocialButton, SOCIAL_BUTTON_SIZE, type SocialProvider } from "./SocialButton";

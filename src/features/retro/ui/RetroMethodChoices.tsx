@@ -20,6 +20,7 @@ export function RetroMethodChoices({
         어떤 방식으로 돌아볼까요?
       </Text>
       <Method
+        emphasized
         title="AI와 대화하기"
         description="바바와 이야기하며 오늘을 정리해요"
         onPress={onTalk}
@@ -47,29 +48,36 @@ export function RetroMethodChoices({
 }
 
 function Method({
+  emphasized = false,
   title,
   description,
   onPress,
   icon,
 }: {
+  emphasized?: boolean;
   title: string;
   description: string;
   onPress: () => void;
   icon: ReactNode;
 }) {
+  const textColor = emphasized ? retroDiary.paper : retroDiary.babaInk;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityHint={description}
       onPress={onPress}
-      style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.choice,
+        emphasized && styles.talkChoice,
+        pressed && styles.pressed,
+      ]}
     >
       <View style={styles.copy}>
-        <Text variant="headline1" color={retroDiary.babaInk}>
+        <Text variant="headline1" color={textColor}>
           {title}
         </Text>
-        <Text variant="label1" color={retroDiary.babaInk}>
+        <Text variant="label1" color={textColor}>
           {description}
         </Text>
       </View>
@@ -90,6 +98,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.large,
     backgroundColor: retroDiary.question,
   },
+  talkChoice: { backgroundColor: retroDiary.methodTalk },
   copy: { flex: 1, gap: space.xs },
   iconSlot: {
     width: retroDiary.methodIconSize,

@@ -186,7 +186,7 @@ function DiaryDetailEntry({ id }: { id: string }) {
               </Text>
             )}
           </DiaryPaperEntry>
-          {daySchedules.length > 0 ? (
+          {!editing && daySchedules.length > 0 ? (
             <DiaryScheduleMemo schedules={daySchedules} title="그날 일정" />
           ) : null}
 

@@ -105,15 +105,17 @@ describe("홈 v2 — 표시 전용", () => {
 describe("홈 v2 — 큰 글씨 날짜", () => {
   it("날짜와 요일 종이가 글씨 배율에 맞춰 늘어난다", async () => {
     const normal = await render(<DatePaper today={TODAY} />);
-    const normalDate = flatten(normal.getByText("10월 14일").parent?.props.style).height as number;
-    const normalWeekday = flatten(normal.getByText("수요일").parent?.props.style).height as number;
+    const normalDate = flatten(normal.getByText("10월 14일").parent?.props.style)
+      .minHeight as number;
+    const normalWeekday = flatten(normal.getByText("수요일").parent?.props.style)
+      .minHeight as number;
     await normal.unmount();
 
     const large = await render(<DatePaper today={TODAY} fontScale={1.3} />);
-    expect(flatten(large.getByText("10월 14일").parent?.props.style).height).toBeGreaterThan(
+    expect(flatten(large.getByText("10월 14일").parent?.props.style).minHeight).toBeGreaterThan(
       normalDate,
     );
-    expect(flatten(large.getByText("수요일").parent?.props.style).height).toBeGreaterThan(
+    expect(flatten(large.getByText("수요일").parent?.props.style).minHeight).toBeGreaterThan(
       normalWeekday,
     );
   });
@@ -125,7 +127,7 @@ describe("홈 v2 — 큰 글씨 날짜", () => {
 });
 
 describe("홈 v2 — 큰 글씨 배치", () => {
-  it("안내문과 CTA는 줄 수에 따라 카드 높이를 늘리고, 일정 머리글은 필요한 경우 접힌다", async () => {
+  it("큰 글씨에서도 말풍선과 CTA 간격을 확보하고, 일정 머리글은 필요한 경우 접힌다", async () => {
     const screen = await render(
       <PreviewFontScaleContext.Provider value={1.5}>
         <HomeV2View
@@ -136,16 +138,12 @@ describe("홈 v2 — 큰 글씨 배치", () => {
         />
       </PreviewFontScaleContext.Provider>,
     );
-    const note = screen.getByText("밤 9:30엔 제가\n먼저 말 걸어요");
-    const noteStyle = flatten(note.props.style);
     const bubbleStyle = flatten(screen.getByText("오늘 하루는\n어땠어요?").props.style);
-    const heroStyle = flatten(note.parent?.props.style);
-    const ctaStyle = flatten(screen.getByRole("button", { name: "하루 돌아보기" }).props.style);
+    const heroStyle = flatten(screen.getByTestId("studio-home-hero").props.style);
+    const ctaStyle = flatten(screen.getByRole("button", { name: "일기 작성하기" }).props.style);
     const headingStyle = flatten(screen.getByText("오늘 일정").parent?.parent?.props.style);
 
-    expect(noteStyle.lineHeight).toBe(homeV2.type.note.lineHeight * 1.5);
     expect(bubbleStyle.lineHeight).toBe(homeV2.type.bubble.lineHeight * 1.5);
-    expect(noteStyle.position).toBeUndefined();
     expect(heroStyle.minHeight).toBe(homeV2.size.hero.height);
     expect(heroStyle.height).toBeUndefined();
     expect(heroStyle.paddingTop).toBeGreaterThan(128);
@@ -156,19 +154,13 @@ describe("홈 v2 — 큰 글씨 배치", () => {
 });
 
 describe("홈 v2 — 히어로 문안(계획 §2.2)", () => {
-  it.each([
-    ["21:30", "밤 9:30엔 제가\n먼저 말 걸어요"],
-    ["07:00", "아침 7:00엔 제가\n먼저 말 걸어요"],
-  ])("리마인더는 설정 시각으로 만든다 — %s → 하드코딩이 아니다", async (time, expected) => {
-    const r = await show(baseModel({ retroReminderTime: time }));
-    expect(r.getByText(expected)).toBeTruthy();
-  });
-
-  it("알림을 끄면 「편할 때 언제든 / 돌아볼 수 있어요」", async () => {
-    const r = await show(baseModel({ retroReminderTime: null }));
-    expect(r.getByText("편할 때 언제든 돌아볼 수 있어요")).toBeTruthy();
-    expect(r.queryByText(/먼저 말 걸어요/)).toBeNull();
-  });
+  it.each(["21:30", "07:00", null])(
+    "알림 설정(%s)과 관계없이 안내 문구를 표시하지 않는다",
+    async (time) => {
+      const r = await show(baseModel({ retroReminderTime: time }));
+      expect(r.queryByText(/먼저 말 걸어요|편할 때 언제든/)).toBeNull();
+    },
+  );
 
   it("말풍선은 「오늘 하루는 / 어땠어요?」", async () => {
     const r = await show();
@@ -182,12 +174,12 @@ describe("홈 v2 — 히어로 문안(계획 §2.2)", () => {
     expect(r.queryByText(/날씨|맑음|℃/)).toBeNull();
   });
 
-  it("주 버튼은 「하루 돌아보기」 하나다 — ›는 장식이라 이름에 없다", async () => {
+  it("주 버튼은 화살표 없이 「일기 작성하기」 하나다", async () => {
     const a = actions();
     const r = await show(baseModel(), a);
-    const ctas = r.getAllByRole("button", { name: /돌아보기/ });
+    const ctas = r.getAllByRole("button", { name: /일기 작성하기/ });
     expect(ctas).toHaveLength(1);
-    expect(ctas[0]?.props.accessibilityLabel).toBe("하루 돌아보기");
+    expect(ctas[0]?.props.accessibilityLabel).toBe("일기 작성하기");
     await fireEvent.press(ctas[0]!);
     expect(a.onStartReflection).toHaveBeenCalledTimes(1);
   });
@@ -269,7 +261,7 @@ describe("홈 v2 — 이번 주 감정 도크(WK-1 · D2 · DN-1)", () => {
     expect(r.queryByTestId("week-dock-picked")).toBeNull();
   });
 
-  it("오늘은 교보손글씨의 형광과 밑줄로 구분한다", async () => {
+  it("오늘은 형광 바탕으로 구분하고 밑줄은 표시하지 않는다", async () => {
     const r = await show();
     const day = (label: string) =>
       flatten(
@@ -278,7 +270,7 @@ describe("홈 v2 — 이번 주 감정 도크(WK-1 · D2 · DN-1)", () => {
       );
     expect(day("수").fontFamily).toBe("KyoboHandwriting2025lyb");
     expect(day("수").backgroundColor).toBeDefined();
-    expect(day("수").textDecorationLine).toBe("underline");
+    expect(day("수").textDecorationLine).toBeUndefined();
     expect(day("목").fontFamily).toBe("KyoboHandwriting2025lyb");
     expect(day("목").backgroundColor).toBeUndefined();
     expect(day("목").textDecorationLine).toBeUndefined();
@@ -392,18 +384,33 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     const a = actions();
     const r = await show(baseModel({ schedules: [] }), a);
     expect(r.getByText("오늘은 일정이 없어요")).toBeTruthy();
-    const emptyBody = r.getByText("여유로운 하루예요.\n하고 싶은 일 하나 적어둘까요?");
-    expect(emptyBody.props.accessibilityLabel).toBe(
-      "여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?",
-    );
-    expect(emptyBody.props.numberOfLines).toBeUndefined();
+    expect(r.getByText("여유로운 하루예요.\n하고 싶은 일 하나 적어둘까요?")).toBeTruthy();
     expect(r.getByText("0개")).toBeTruthy();
     expect(r.queryByText("오늘 하루를 차곡차곡 담아볼까요?")).toBeNull();
-    expect(r.getByRole("button", { name: "하루 돌아보기" })).toBeTruthy();
+    expect(r.getByRole("button", { name: "일기 작성하기" })).toBeTruthy();
     expect(r.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
 
     await fireEvent.press(r.getByRole("button", { name: "일정 추가" }));
     expect(a.onAddSchedule).toHaveBeenCalledTimes(1);
+  });
+
+  it("빈 카드는 남는 공간을 채우고, 내용이 커지면 전체 스크롤로 전환한다", async () => {
+    const r = await show(baseModel({ schedules: [] }));
+    await fireEvent(r.getByTestId("home-v2-root"), "layout", {
+      nativeEvent: { layout: { width: 390, height: 800 } },
+    });
+    await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
+      nativeEvent: { layout: { width: 390, height: 400 } },
+    });
+    expect(r.getByTestId("home-v2-list-scroll")).toBeTruthy();
+    expect(flatten(r.getByTestId("home-v2-empty-card").props.style).flex).toBe(1);
+
+    await fireEvent(r.getByText("오늘은 일정이 없어요").parent!, "layout", {
+      nativeEvent: { layout: { width: 300, height: 320 } },
+    });
+    expect(r.getByTestId("home-v2-body-scroll")).toBeTruthy();
+    expect(flatten(r.getByTestId("home-v2-empty-card").props.style).flex).toBeUndefined();
+    expect(r.getByTestId("week-dock")).toBeTruthy();
   });
 
   it("끄는 동안 목록 스크롤이 잠긴다 — 바깥은 처음부터 스크롤하지 않는다", async () => {

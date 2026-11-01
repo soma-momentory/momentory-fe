@@ -72,20 +72,18 @@ test("edits text and card properties on the shared views", async ({ page }) => {
   await expect(text).toHaveCSS("text-align", "center");
   await page
     .getByTestId("studio-layer-tree")
-    .getByRole("button", { name: "하루 돌아보기 버튼 레이어" })
+    .getByRole("button", { name: "일기 작성하기 버튼 레이어" })
     .click();
   await page
     .getByTestId("studio-properties")
     .getByRole("textbox", { name: "배경색" })
     .fill(claudeHomeColor.today);
-  await expect(page.getByTestId("studio-preview-B").getByTestId("studio-home-cta")).toHaveCSS(
-    "background-color",
-    "rgb(246, 222, 138)",
-  );
-  await expect(page.getByTestId("studio-preview-A").getByTestId("studio-home-cta")).toHaveCSS(
-    "background-color",
-    "rgb(91, 117, 83)",
-  );
+  await expect(
+    page.getByTestId("studio-preview-B").getByTestId("home-v2-cta-shape"),
+  ).toHaveAttribute("fill", claudeHomeColor.today);
+  await expect(
+    page.getByTestId("studio-preview-A").getByTestId("home-v2-cta-shape"),
+  ).toHaveAttribute("fill", claudeHomeColor.green);
 });
 
 test("keeps history through mode changes and manages named drafts", async ({ page }) => {

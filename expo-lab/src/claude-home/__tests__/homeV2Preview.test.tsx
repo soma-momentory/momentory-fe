@@ -19,8 +19,8 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
     "claude-home 변형이 공유 뷰를 Mock 으로 렌더한다 — 시나리오 $id",
     async (scenario) => {
       const screen = await render(<HomeV2Preview scenarioId={scenario.id} onMessage={() => {}} />);
-      expect(screen.getByRole("button", { name: "하루 돌아보기" })).toBeTruthy();
-      expect(screen.getByText("밤 9:30엔 제가\n먼저 말 걸어요")).toBeTruthy();
+      expect(screen.getByRole("button", { name: "일기 작성하기" })).toBeTruthy();
+      expect(screen.queryByText(/먼저 말 걸어요/)).toBeNull();
       // 도크는 시나리오와 상관없이 늘 일곱 칸이다(WK-1)
       expect(screen.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
       if (scenario.tasks.length === 0) {
@@ -52,7 +52,7 @@ describe("Expo Lab — claude-home 운영판 v2 변형", () => {
     ).toBe(true);
     expect(screen.getByText("오늘 일정을 모두 마쳤어요.")).toBeTruthy();
 
-    await fireEvent.press(screen.getByRole("button", { name: "하루 돌아보기" }));
+    await fireEvent.press(screen.getByRole("button", { name: "일기 작성하기" }));
     await fireEvent.press(screen.getByRole("button", { name: "바바의 편지" }));
     expect(onMessage).toHaveBeenNthCalledWith(1, "회고 진입은 Lab Mock 액션입니다.");
     expect(onMessage).toHaveBeenNthCalledWith(2, "바바의 편지는 Lab에 연결하지 않았습니다.");

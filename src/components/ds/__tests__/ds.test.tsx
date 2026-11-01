@@ -376,6 +376,19 @@ describe("BottomNavigation", () => {
   });
 });
 
+describe("Text 큰 글씨", () => {
+  it("스타일 배열의 행간도 글자와 같은 비율로 늘려 테이프 밖으로 넘치지 않는다", async () => {
+    const r = await render(
+      <PreviewFontScaleContext.Provider value={1.5}>
+        <Text style={[{ fontSize: 20 }, { lineHeight: 30 }]}>테이프 제목</Text>
+      </PreviewFontScaleContext.Provider>,
+    );
+    const style = flatten(r.getByText("테이프 제목").props.style);
+    expect(style.fontSize).toBe(30);
+    expect(style.lineHeight).toBe(45);
+  });
+});
+
 describe("TextField", () => {
   it("카운터는 상한이 있을 때만 — 오류 문구를 띄우지 않는다", async () => {
     const { getByText } = await render(

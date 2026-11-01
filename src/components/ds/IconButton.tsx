@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View, type PressableProps, type ViewStyle } from
 import { interaction, label as labelColor, layout, overlay, radius } from "@/design/ds";
 
 import { Icon, type IconName } from "./icons/Icon";
+import { useDesignScale } from "./DesignViewport";
 
 /**
  * 아이콘만 있는 버튼 — 알림 종 · 전송 · ⋮ · 월 이동(`DESIGN.md` §10).
@@ -17,7 +18,7 @@ type Props = Omit<PressableProps, "style" | "children" | "accessibilityLabel"> &
   name: IconName;
   /** 낭독기가 읽을 이름 — 「닫기」·「알림」처럼 **행동**을 적는다 */
   accessibilityLabel: string;
-  size?: 16 | 20 | 24;
+  size?: 16 | 20 | 24 | 28;
   color?: string;
   disabled?: boolean;
   style?: ViewStyle;
@@ -34,8 +35,11 @@ export function IconButton({
   style,
   ...rest
 }: Props) {
+  const designScale = useDesignScale();
+  const extraTouch = Math.max(0, (layout.minTouch / designScale - layout.minTouch) / 2);
   return (
     <Pressable
+      hitSlop={extraTouch}
       {...rest}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}

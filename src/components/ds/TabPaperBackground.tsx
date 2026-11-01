@@ -5,19 +5,19 @@ import Svg, { Line } from "react-native-svg";
 import { homeV2 } from "@/design/ds";
 
 /**
- * 홈 v2 의 **모눈 종이** — 22px 칸(시안 `PaperGrid`). 장식이라 낭독기에서 숨고 손짓을 받지 않는다.
+ * 다섯 탭이 공유하는 **홈 모눈 종이** — 22px 칸(시안 `PaperGrid`). 장식이라 낭독기에서 숨고 손짓을 받지 않는다.
  *
- * 바닥 면(`paper`)과 선을 함께 그린다. `TabScreen` 이 깔아 둔 그라디언트 위를 **body 안에서 덮는다**
- * (계획 §2.6 — 새 prop 없이 먼저 시도하는 안). 탭바 뒤까지 잇는 일은 P3 에서 실기기로 보고 고른다.
+ * 바닥 면(`paper`)과 선을 함께 그린다. 모든 탭과 미리보기의 Screen backdrop으로 한 번만 깔아
+ * 시스템 안전 영역과 상단 여백에서도 종이 색·격자 간격·시작점이 끊기지 않게 한다.
  * 크기는 스스로 잰다 — 부르는 쪽이 화면 크기를 넘기지 않는다.
  */
-export function HomePaperGrid() {
+export function TabPaperBackground() {
   const [box, setBox] = useState({ width: 0, height: 0 });
   const step = homeV2.size.grid;
 
   return (
     <View
-      testID="home-v2-grid"
+      testID="tab-paper-background"
       pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"

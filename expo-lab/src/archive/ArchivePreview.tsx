@@ -6,6 +6,7 @@ import {
   BottomSheet,
   EmotionSticker,
   Screen,
+  TabPaperBackground,
   Text,
   type CalendarMark,
 } from "../../../src/components/ds";
@@ -132,7 +133,13 @@ export function ArchivePreview({
   return (
     <PreviewFontScaleContext.Provider value={fontScale}>
       <View style={styles.root}>
-        <Screen padded={false} edges={[]}>
+        <Screen
+          proportional
+          padded={false}
+          edges={[]}
+          grid={false}
+          backdrop={<TabPaperBackground />}
+        >
           <View style={styles.body}>
             <ArchiveView
               design={design}
@@ -201,6 +208,6 @@ export function ArchivePreview({
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { height: layout.minBottomInset, backgroundColor: background.alternative },
+  underTab: { height: layout.minBottomInset, backgroundColor: background.elevated },
   option: { padding: 16 },
 });

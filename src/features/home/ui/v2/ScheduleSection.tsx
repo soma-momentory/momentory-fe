@@ -1,13 +1,12 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Text, useEffectiveFontScale } from "@/components/ds/Text";
+import { MaskingTape } from "@/components/ds/MaskingTape";
+import { Text } from "@/components/ds/Text";
 import { homeV2 } from "@/design/ds";
 import { remainingLabel } from "@/features/home/model/presentation";
 import type { Schedule } from "@/features/home/model/types";
 
 import { ScheduleList } from "../ScheduleList";
-
-const EMPTY_BODY = ["여유로운 하루예요.", "하고 싶은 일 하나 적어둘까요?"] as const;
 
 /**
  * 홈 v2 의 **오늘 일정** — 머리(고정)와 목록(스크롤)을 따로 낸다(계획 §2.1).
@@ -25,20 +24,18 @@ export function ScheduleSectionHeader({
   empty: boolean;
   onAdd: () => void;
 }) {
-  const fontScale = useEffectiveFontScale();
-  const scale = fontScale;
   return (
     <View style={styles.header}>
       <View style={styles.heading}>
         <Text
-          style={[styles.title, { lineHeight: homeV2.type.sectionTitle.lineHeight * scale }]}
+          style={[styles.title, { lineHeight: homeV2.type.sectionTitle.lineHeight }]}
           color={homeV2.color.ink}
         >
           오늘 일정
         </Text>
         {/* 남은 수 — 다 마치면 「모두 완료」(S13). 일정이 없으면 「0개」(v2) */}
         <Text
-          style={[styles.count, { lineHeight: homeV2.type.count.lineHeight * scale }]}
+          style={[styles.count, { lineHeight: homeV2.type.count.lineHeight }]}
           color={homeV2.color.muted}
         >
           {empty ? "0개" : remainingLabel(schedules)}
@@ -51,8 +48,16 @@ export function ScheduleSectionHeader({
         hitSlop={ADD_HIT_SLOP}
         style={styles.add}
       >
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={StyleSheet.absoluteFill}
+        >
+          <MaskingTape color={homeV2.color.date} />
+        </View>
         <Text
-          style={[styles.addText, { lineHeight: homeV2.type.add.lineHeight * scale }]}
+          style={[styles.addText, { lineHeight: homeV2.type.add.lineHeight }]}
           color={homeV2.color.ink}
         >
           + 추가
@@ -62,9 +67,15 @@ export function ScheduleSectionHeader({
   );
 }
 
+const EMPTY_PADDING = 24;
+const EMPTY_BORDER = 1.5;
+const EMPTY_TOP_GAP = 10;
+
 type BodyProps = {
   /** 접기까지 끝낸 줄 */
   rows: Schedule[];
+  fillEmpty?: boolean;
+  onEmptyHeight?: (height: number) => void;
   empty: boolean;
   /** 접혀 남은 줄 수 — 0 이면 「더 보기」가 없다 */
   hiddenCount: number;
@@ -80,6 +91,8 @@ type BodyProps = {
 
 export function ScheduleSection({
   rows,
+  fillEmpty = false,
+  onEmptyHeight,
   empty,
   hiddenCount,
   allDone,
@@ -91,25 +104,35 @@ export function ScheduleSection({
   onDragStateChange,
   onRowPitch,
 }: BodyProps) {
-  const fontScale = useEffectiveFontScale();
-  const scale = fontScale;
-  // 빈 상태 전용 레이아웃을 만들지 않는다 — 같은 자리에 빈 카드 한 장(S18). 머리 · 히어로 · 도크는 그대로다
+  // 빈 카드는 도크 위의 남는 공간을 채운다. 작은 화면에서는 자연 높이로 스크롤한다.
   if (empty) {
     return (
-      <View style={styles.empty}>
-        <Text
-          style={[styles.emptyTitle, { lineHeight: homeV2.type.emptyTitle.lineHeight * scale }]}
-          color={homeV2.color.ink}
+      <View testID="home-v2-empty-card" style={[styles.empty, fillEmpty && styles.emptyFill]}>
+        <View
+          style={styles.emptyContent}
+          onLayout={(event) =>
+            onEmptyHeight?.(
+              event.nativeEvent.layout.height +
+                EMPTY_PADDING * 2 +
+                EMPTY_BORDER * 2 +
+                EMPTY_TOP_GAP,
+            )
+          }
         >
-          오늘은 일정이 없어요
-        </Text>
-        <Text
-          style={[styles.emptyBody, { lineHeight: homeV2.type.emptyBody.lineHeight * scale }]}
-          color={homeV2.color.muted}
-          accessibilityLabel={EMPTY_BODY.join(" ")}
-        >
-          {EMPTY_BODY.join("\n")}
-        </Text>
+          <Text
+            style={[styles.emptyTitle, { lineHeight: homeV2.type.emptyTitle.lineHeight }]}
+            color={homeV2.color.ink}
+          >
+            오늘은 일정이 없어요
+          </Text>
+          <Text
+            style={[styles.emptyBody, { lineHeight: homeV2.type.emptyBody.lineHeight }]}
+            color={homeV2.color.muted}
+            accessibilityLabel="여유로운 하루예요. 하고 싶은 일 하나 적어둘까요?"
+          >
+            {"여유로운 하루예요.\n하고 싶은 일 하나 적어둘까요?"}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -177,11 +200,9 @@ const styles = StyleSheet.create({
   count: { fontFamily: homeV2.font.regular, ...homeV2.type.count },
   add: {
     flexShrink: 0,
-    backgroundColor: homeV2.color.card,
     paddingHorizontal: 12,
     paddingVertical: 2,
     transform: [{ rotate: homeV2.tilt.add }],
-    boxShadow: homeV2.shadow.sticker,
   },
   addText: { fontFamily: homeV2.font.bold, ...homeV2.type.add },
   card: {
@@ -193,27 +214,27 @@ const styles = StyleSheet.create({
   more: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingTop: 4 },
   moreText: { fontFamily: homeV2.font.bold, ...homeV2.type.add },
   done: { fontFamily: homeV2.font.regular, ...homeV2.type.count, paddingTop: 10 },
+  emptyFill: { flex: 1 },
   empty: {
-    marginTop: 10,
+    marginTop: EMPTY_TOP_GAP,
     borderRadius: homeV2.size.list.radius,
     backgroundColor: homeV2.color.card,
-    borderWidth: 1.5,
+    borderWidth: EMPTY_BORDER,
     borderColor: homeV2.color.emptyBorder,
     paddingHorizontal: 20,
-    paddingTop: 26,
-    paddingBottom: 24,
+    paddingVertical: EMPTY_PADDING,
     alignItems: "center",
-    gap: 6,
+    justifyContent: "center",
+  },
+  emptyContent: { alignSelf: "stretch", gap: 6 },
+  emptyBody: {
+    fontFamily: homeV2.font.regular,
+    ...homeV2.type.emptyBody,
+    textAlign: "center",
   },
   emptyTitle: {
     fontFamily: homeV2.font.bold,
     ...homeV2.type.emptyTitle,
-    alignSelf: "stretch",
-    textAlign: "center",
-  },
-  emptyBody: {
-    fontFamily: homeV2.font.regular,
-    ...homeV2.type.emptyBody,
     alignSelf: "stretch",
     textAlign: "center",
   },

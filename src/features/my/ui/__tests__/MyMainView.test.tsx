@@ -28,7 +28,6 @@ describe("MyMainView", () => {
     );
 
     for (const text of [
-      "마이",
       "모멘토리",
       "모멘토리와 함께한 기록",
       "일기 쓴 날",
@@ -46,6 +45,7 @@ describe("MyMainView", () => {
     ]) {
       expect(screen.getByText(text)).toBeTruthy();
     }
+    expect(screen.queryByText("마이")).toBeNull();
     expect(screen.getByTestId("my-profile-card")).toBeTruthy();
     // 장식용 바바는 화면에 그리되 낭독기 탐색에서는 숨긴다.
     expect(screen.queryByTestId("home-v2-baba")).toBeNull();
