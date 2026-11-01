@@ -2,6 +2,7 @@ import { Redirect, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
+  BackHandler,
   KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
@@ -14,12 +15,13 @@ import {
   DiaryPaperEntry,
   DiaryScheduleMemo,
 } from "@/components/diary/DiaryPaper";
-import { Button, Screen, Text, TopNavigation } from "@/components/ds";
+import { BottomSheet, Button, ChoiceGrid, Screen, Text, TopNavigation } from "@/components/ds";
 import { label, layout, space, status } from "@/design/ds";
 import { diaryPaper } from "@/design/ds/diaryPaper";
 import { useDiary } from "@/features/diary/model/diary";
 import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
+import { EMOTIONS, isEmotionId, type EmotionId } from "@/features/emotion/model/emotion";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { showToast } from "@/lib/toast";
 
@@ -30,6 +32,9 @@ export default function RetroWrite() {
   const write = useDiary((state) => state.write);
   const schedules = useDay((state) => state.schedules);
   const [body, setBody] = useState("");
+  const [emotion, setEmotion] = useState<EmotionId | null>(null);
+  const [emotionChosen, setEmotionChosen] = useState(false);
+  const [choosingEmotion, setChoosingEmotion] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inputHeight, setInputHeight] = useState(diaryPaper.body.lineHeight * 6);
@@ -41,6 +46,14 @@ export default function RetroWrite() {
     },
     [],
   );
+  useEffect(() => {
+    if (!choosingEmotion) return;
+    const listener = BackHandler.addEventListener("hardwareBackPress", () => {
+      setChoosingEmotion(false);
+      return true;
+    });
+    return () => listener.remove();
+  }, [choosingEmotion]);
 
   const save = async () => {
     if (savingRef.current || !body.trim()) return;
@@ -48,7 +61,7 @@ export default function RetroWrite() {
     setSaving(true);
     setError(null);
     const ticket = ++attempt.current;
-    const result = await write(body);
+    const result = await write(body, emotion);
     if (ticket !== attempt.current) return;
     if (result.status === "saved") {
       Keyboard.dismiss();
@@ -90,7 +103,16 @@ export default function RetroWrite() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <DiaryPaperEntry date={today} emotions={[]}>
+            <DiaryPaperEntry
+              date={today}
+              emotions={emotion == null ? [] : [emotion]}
+              emotionChosen={emotionChosen}
+              onEmotionPress={() => {
+                if (savingRef.current) return;
+                Keyboard.dismiss();
+                setChoosingEmotion(true);
+              }}
+            >
               <TextInput
                 accessibilityLabel="일기 본문"
                 placeholder="오늘 어떤 일이 있었나요? 떠오르는 대로 적어보세요."
@@ -132,6 +154,34 @@ export default function RetroWrite() {
           </View>
         </KeyboardAvoidingView>
       </Screen>
+      {choosingEmotion ? (
+        <BottomSheet
+          title="오늘 어떤 감정이었나요?"
+          closable
+          onDismiss={() => setChoosingEmotion(false)}
+        >
+          <ChoiceGrid
+            items={EMOTIONS.map((item) => ({ id: String(item.id), label: item.name }))}
+            selected={emotion == null ? null : String(emotion)}
+            onSelect={(id) => {
+              const next = Number(id);
+              if (!isEmotionId(next)) return;
+              setEmotion(next);
+              setEmotionChosen(true);
+              setChoosingEmotion(false);
+            }}
+          />
+          <Button
+            label="선택 안 함"
+            variant="text"
+            onPress={() => {
+              setEmotion(null);
+              setEmotionChosen(true);
+              setChoosingEmotion(false);
+            }}
+          />
+        </BottomSheet>
+      ) : null}
     </>
   );
 }

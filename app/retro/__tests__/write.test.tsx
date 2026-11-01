@@ -1,4 +1,4 @@
-import { act, fireEvent, render } from "@testing-library/react-native";
+import { act, fireEvent, render, within } from "@testing-library/react-native";
 import { Redirect, router } from "expo-router";
 
 import RetroWrite from "../write";
@@ -95,4 +95,56 @@ it("저장 응답 전에 화면이 닫히면 뒤늦게 다른 화면으로 이�
     resolve({ ok: true, data: saved });
   });
   expect(router.replace).not.toHaveBeenCalled();
+});
+
+it("점선 사진 자리를 눌러 감정을 고르고 사진을 다시 눌러 바꿀 수 있다", async () => {
+  const screen = await render(<RetroWrite />);
+  expect(screen.queryByTestId("diary-emotion-photo")).toBeNull();
+  await fireEvent.changeText(screen.getByLabelText("일기 본문"), body);
+  await fireEvent.press(screen.getByRole("button", { name: "감정 선택" }));
+  expect(screen.getByText("오늘 어떤 감정이었나요?")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "행복함" }));
+  expect(screen.getByLabelText("행복함의 카피바라 사진")).toBeTruthy();
+  expect(screen.queryByText("오늘 어떤 감정이었나요?")).toBeNull();
+  expect(screen.getByLabelText("일기 본문").props.value).toBe(body);
+  await fireEvent.press(screen.getByRole("button", { name: "감정 바꾸기, 행복함" }));
+  await fireEvent.press(screen.getByRole("button", { name: "피곤함" }));
+  expect(screen.getByLabelText("피곤함의 카피바라 사진")).toBeTruthy();
+  request.mockResolvedValueOnce({
+    ok: true,
+    data: { ...saved, primaryEmotion: "tired", emotions: ["tired"] },
+  });
+  await fireEvent.press(screen.getByRole("button", { name: "일기 저장하기" }));
+  expect(request).toHaveBeenCalledWith(
+    "POST",
+    "/api/v1/diaries",
+    { original: body, emotion: "tired" },
+    expect.any(Object),
+  );
+  expect(useDiary.getState().diaries[0]?.emotions).toEqual([4]);
+});
+
+it("선택창을 닫으면 점선 안내를 유지하고 선택 안 함은 무감정 사진을 저장한다", async () => {
+  const screen = await render(<RetroWrite />);
+  await fireEvent.press(screen.getByRole("button", { name: "감정 선택" }));
+  await fireEvent.press(
+    within(screen.getByTestId("ds-bottom-sheet")).getByRole("button", { name: "닫기" }),
+  );
+  expect(screen.getByRole("button", { name: "감정 선택" })).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "감정 선택" }));
+  await fireEvent.press(screen.getByRole("button", { name: "뿌듯함" }));
+  await fireEvent.press(screen.getByRole("button", { name: "감정 바꾸기, 뿌듯함" }));
+  await fireEvent.press(screen.getByRole("button", { name: "선택 안 함" }));
+  expect(screen.getByRole("button", { name: "감정 바꾸기, 무감정" })).toBeTruthy();
+  expect(screen.getByLabelText("무감정의 카피바라 사진")).toBeTruthy();
+  await fireEvent.changeText(screen.getByLabelText("일기 본문"), body);
+  request.mockResolvedValueOnce({ ok: true, data: saved });
+  await fireEvent.press(screen.getByRole("button", { name: "일기 저장하기" }));
+  expect(request).toHaveBeenCalledWith(
+    "POST",
+    "/api/v1/diaries",
+    { original: body },
+    expect.any(Object),
+  );
+  expect(useDiary.getState().diaries[0]?.emotions).toEqual([]);
 });
