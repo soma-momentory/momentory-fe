@@ -2,16 +2,17 @@ import { RetroDiaryBackground } from "@/features/retro/ui/RetroDiaryBackground";
 import { label } from "@/design/ds";
 import { Redirect, router } from "expo-router";
 
-import { Button, ChatBubble, ChatScaffold } from "@/components/ds";
+import { ChatBubble, ChatScaffold } from "@/components/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { RetroScheduleSticker } from "@/features/retro/ui/RetroScheduleSticker";
+import { RetroMethodChoices } from "@/features/retro/ui/RetroMethodChoices";
 
 /**
- * `C2` · 오늘 일정 확인 — 대화의 첫 턴이다.
+ * `C2` · 오늘 일정 확인과 작성 방식 선택.
  *
- * `DESIGN.md` 「일기」 1번: **「일정 확인(읽기 전용, 완료만 초록 체크) → `다음`」**.
+ * 일정을 떠올린 뒤 AI 대화 또는 직접 일기 쓰기로 간다(2026-11-01 · 사용자 요청).
  *
  * ## 읽기 전용이 된 것이 이 화면의 가장 큰 변화다
  *
@@ -49,11 +50,9 @@ export default function RetroConfirm() {
       backdrop={<RetroDiaryBackground />}
       onLeadingPress={() => router.replace("/home")}
       dock={
-        <Button
-          label="다음"
-          labelVariant="headline1"
-          fill
-          onPress={() => router.push("/retro/talk")}
+        <RetroMethodChoices
+          onTalk={() => router.push("/retro/talk")}
+          onWrite={() => router.push("/retro/write")}
         />
       }
     >
@@ -65,7 +64,7 @@ export default function RetroConfirm() {
         <RetroScheduleSticker date={today} schedules={shown} />
       ) : (
         <ChatBubble appearance="diary">
-          오늘은 따로 적어둔 일정이 없네요. 그래도 오늘 하루를 같이 돌아봐요.
+          오늘은 따로 적어둔 일정이 없네요. 떠오르는 순간부터 남겨도 괜찮아요.
         </ChatBubble>
       )}
     </ChatScaffold>

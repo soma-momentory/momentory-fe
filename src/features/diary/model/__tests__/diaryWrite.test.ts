@@ -335,3 +335,78 @@ describe("옵티미스틱 완료", () => {
     expect(calls("PUT")).toHaveLength(0);
   });
 });
+
+describe("직접 쓴 일기 저장", () => {
+  const serverDiary = {
+    id: 81,
+    original: "내가 쓴 글\n둘째 줄",
+    emotions: [],
+    createdAt: "2026-07-27T12:00:00Z",
+  };
+
+  it("서버가 저장한 뒤 보관함에 넣고 대화와 카드를 만들지 않는다", async () => {
+    mockedRequest.mockResolvedValue({ ok: true, data: serverDiary });
+    expect(await useDiary.getState().write(serverDiary.original)).toEqual({
+      status: "saved",
+      id: "81",
+    });
+    expect(mockedRequest).toHaveBeenCalledWith(
+      "POST",
+      "/api/v1/diaries",
+      { original: serverDiary.original },
+      expect.any(Object),
+    );
+    expect(useDiary.getState().diaries[0]).toMatchObject({
+      id: "81",
+      body: serverDiary.original,
+      retrospectId: null,
+      authoredBy: "user",
+      emotions: [],
+    });
+    expect(useDiary.getState().actionCards).toEqual([]);
+  });
+
+  it.each([" \n ", "가".repeat(501)])("빈 글이나 상한을 넘은 글은 보내지 않는다", async (body) => {
+    expect(await useDiary.getState().write(body)).toEqual({ status: "failed" });
+    expect(mockedRequest).not.toHaveBeenCalled();
+  });
+
+  it("저장 실패와 이미 쓴 날을 구분하고 보관함에는 넣지 않는다", async () => {
+    mockedRequest.mockResolvedValueOnce({ ok: false, error: { code: "network" } });
+    expect(await useDiary.getState().write("쓴 글")).toEqual({ status: "failed" });
+    mockedRequest.mockResolvedValueOnce({
+      ok: false,
+      error: { code: "http", status: 409, body: null },
+    });
+    expect(await useDiary.getState().write("쓴 글")).toEqual({ status: "already-written" });
+    expect(useDiary.getState().diaries).toEqual([]);
+  });
+
+  it("저장을 기다리다 로그아웃하면 다음 사용자의 보관함에 넣지 않는다", async () => {
+    let resolve!: (result: Awaited<ReturnType<typeof authedRequest>>) => void;
+    mockedRequest.mockReturnValueOnce(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    const saving = useDiary.getState().write("쓴 글");
+    useDiary.getState().reset();
+    resolve({ ok: true, data: serverDiary });
+    expect(await saving).toEqual({ status: "stale" });
+    expect(useDiary.getState().diaries).toEqual([]);
+  });
+
+  it("직접 쓴 서버 일기는 id로 수정하고 실패하면 기존 본문을 지킨다", async () => {
+    useDiary.setState({ diaries: [{ ...diary("81"), retrospectId: null, authoredBy: "user" }] });
+    expect(await useDiary.getState().saveBody("81", "고친 글")).toBe("saved");
+    expect(mockedRequest).toHaveBeenCalledWith(
+      "PUT",
+      "/api/v1/diaries/81",
+      { original: "고친 글" },
+      expect.any(Object),
+    );
+    mockedRequest.mockResolvedValueOnce({ ok: false, error: { code: "network" } });
+    expect(await useDiary.getState().saveBody("81", "저장 못한 글")).toBe("failed");
+    expect(useDiary.getState().diaries[0]?.body).toBe("고친 글");
+  });
+});

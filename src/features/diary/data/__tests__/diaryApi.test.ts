@@ -101,6 +101,13 @@ describe("DiaryResponse → Diary", () => {
     expect(d?.weather).toBeNull();
   });
 
+  it("직접 쓴 일기는 회고 id 없이도 사용자 본문으로 읽는다", () => {
+    expect(
+      toDiary({ ...raw, retrospectId: undefined, primaryEmotion: undefined, emotions: [] }),
+    ).toMatchObject({ id: "12", retrospectId: null, authoredBy: "user", emotions: [] });
+    expect(toDiary({ ...raw, retrospectId: {} })).toBeNull();
+  });
+
   it("필수가 어긋나면 null — 그 줄만 버린다", () => {
     expect(toDiary({ ...raw, original: 123 })).toBeNull();
     expect(toDiary({ ...raw, createdAt: "not-a-date" })).toBeNull();

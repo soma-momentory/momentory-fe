@@ -86,12 +86,26 @@ describe("C2 · 오늘 일정 확인 — 읽기 전용이다", () => {
     expect(queryByText(/%/)).toBeNull();
   });
 
-  it("[다음] 이 바로 대화로 간다 — v2 는 감정을 먼저 고르지 않는다", async () => {
+  it("AI와 대화하기를 고르면 기존 대화로 간다", async () => {
     const { getByText } = await render(<RetroConfirm />);
 
-    await fireEvent.press(getByText("다음"));
+    await fireEvent.press(getByText("AI와 대화하기"));
 
     expect(jest.mocked(router.push)).toHaveBeenCalledWith("/retro/talk");
+  });
+
+  it("직접 일기 쓰기를 고르면 빈 일기장을 연다", async () => {
+    const { getByRole } = await render(<RetroConfirm />);
+    await fireEvent.press(getByRole("button", { name: "직접 일기 쓰기" }));
+    expect(router.push).toHaveBeenCalledWith("/retro/write");
+    expect(router.push).not.toHaveBeenCalledWith("/retro/talk");
+  });
+
+  it("일정이 없어도 두 작성 방식을 모두 고를 수 있다", async () => {
+    useDay.setState({ schedules: [] });
+    const { getByRole } = await render(<RetroConfirm />);
+    expect(getByRole("button", { name: "AI와 대화하기" })).toBeTruthy();
+    expect(getByRole("button", { name: "직접 일기 쓰기" })).toBeTruthy();
   });
 
   it("나가는 길은 닫기 하나다 — 회고는 한 줄이다", async () => {

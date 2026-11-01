@@ -135,6 +135,7 @@ const screen = choice(
   "schedule_detail",
   "retro_talk",
   "retro_draft",
+  "retro_write",
   "retro_confirm",
   "retro_done",
   "diary_detail",

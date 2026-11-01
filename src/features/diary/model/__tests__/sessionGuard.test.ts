@@ -1,5 +1,5 @@
 import { SESSION_KEY } from "@/features/auth/model/auth";
-import { deleteDiary, loadArchive } from "@/features/diary/data/diaryApi";
+import { deleteDiary, loadArchive, writeDiary } from "@/features/diary/data/diaryApi";
 import { useDiary } from "@/features/diary/model/diary";
 import type { ActionCard, Diary } from "@/features/diary/model/types";
 import { useToast } from "@/lib/toast";
@@ -19,6 +19,7 @@ import { testDiaryData } from "@/testing/fixtures";
 jest.mock("@/features/diary/data/diaryApi", () => ({
   ...jest.requireActual("@/features/diary/data/diaryApi"),
   loadArchive: jest.fn(),
+  writeDiary: jest.fn(),
   deleteDiary: jest.fn(),
   putActionCardCompletion: jest.fn(() => Promise.resolve({ ok: true })),
 }));
@@ -74,6 +75,21 @@ beforeEach(() => {
 });
 
 describe("조회 중 로그아웃", () => {
+  it("조회가 시작된 뒤 직접 저장한 일기를 오래된 응답이 지우지 않는다", async () => {
+    const call = pending<Awaited<ReturnType<typeof loadArchive>>>();
+    archive.mockReturnValue(call.promise);
+    const loading = useDiary.getState().load();
+    jest.mocked(writeDiary).mockResolvedValue({
+      ok: true,
+      diary: { ...diary("112"), retrospectId: null, authoredBy: "user" },
+    });
+    expect(await useDiary.getState().write("직접 쓴 글")).toEqual({ status: "saved", id: "112" });
+    call.release({ ok: true, data: { diaries: [diary("101")], actionCards: [] } });
+    await loading;
+    expect(useDiary.getState().diaries.map((item) => item.id)).toEqual(["101", "112"]);
+    expect(useDiary.getState().loaded).toBe(true);
+  });
+
   it("앞사람의 보관함을 새 세션에 붓지 않는다", async () => {
     const call = pending<Awaited<ReturnType<typeof loadArchive>>>();
     archive.mockReturnValue(call.promise);
