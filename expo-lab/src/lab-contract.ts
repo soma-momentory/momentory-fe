@@ -34,6 +34,12 @@ export type LabFrameConfig = {
   latencyMs?: number;
   /** 실패시킬 엔드포인트 접두사 목록(예: ["/api/v1/reports"]) — 그 요청은 500 */
   failPaths?: readonly string[];
+  /**
+   * 「오늘 다시 쓰기」 — 켜면(기본) 오늘 이미 썼어도 회고 시작·직접 쓰기를 막지 않는다(409 없음).
+   * 새로 쓴 일기는 오늘 일기를 **덮어쓴다**(회고면 딸린 바람카드도) — 하루에 일기 하나라는 앱의 가정은 지킨다.
+   * 끄면 실제 서버처럼 하루 1회 제한(일기 409 · 회고 ALREADY_RETROSPECTED_TODAY).
+   */
+  repeatToday?: boolean;
 };
 
 export type LabPlatform = "ios" | "android";
@@ -59,6 +65,7 @@ export const DEFAULT_FRAME_CONFIG: LabFrameConfig = {
   signedIn: true,
   latencyMs: 0,
   failPaths: [],
+  repeatToday: true,
 };
 
 export const encodeFrameConfig = (config: LabFrameConfig): string =>
