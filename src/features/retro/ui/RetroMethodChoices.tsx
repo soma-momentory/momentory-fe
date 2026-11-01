@@ -1,6 +1,8 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import type { ReactNode } from "react";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ds";
+import { Icon } from "@/components/ds/icons/Icon";
 import { label, radius, space } from "@/design/ds";
 import { retroDiary } from "@/design/ds/retroDiary";
 
@@ -21,11 +23,24 @@ export function RetroMethodChoices({
         title="AI와 대화하기"
         description="바바와 이야기하며 오늘을 정리해요"
         onPress={onTalk}
+        icon={
+          <View
+            style={styles.face}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Image
+              source={require("../../../../assets/retro/baba-diary.png")}
+              style={styles.faceImage}
+            />
+          </View>
+        }
       />
       <Method
         title="직접 일기 쓰기"
         description="떠오르는 이야기를 내 문장으로 남겨요"
         onPress={onWrite}
+        icon={<Icon name="pencil" size={24} color={retroDiary.babaInk} />}
       />
     </View>
   );
@@ -35,10 +50,12 @@ function Method({
   title,
   description,
   onPress,
+  icon,
 }: {
   title: string;
   description: string;
   onPress: () => void;
+  icon: ReactNode;
 }) {
   return (
     <Pressable
@@ -56,9 +73,9 @@ function Method({
           {description}
         </Text>
       </View>
-      <Text variant="headline1" color={retroDiary.babaInk} accessible={false}>
-        ›
-      </Text>
+      <View style={styles.iconSlot} pointerEvents="none" accessible={false}>
+        {icon}
+      </View>
     </Pressable>
   );
 }
@@ -74,5 +91,26 @@ const styles = StyleSheet.create({
     backgroundColor: retroDiary.question,
   },
   copy: { flex: 1, gap: space.xs },
+  iconSlot: {
+    width: retroDiary.methodIconSize,
+    height: retroDiary.methodIconSize,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  face: {
+    width: retroDiary.methodIconSize,
+    height: retroDiary.methodIconSize,
+    borderRadius: radius.full,
+    overflow: "hidden",
+  },
+  faceImage: {
+    position: "absolute",
+    width: (1200 * retroDiary.methodIconSize) / retroDiary.methodFaceCrop.width,
+    height: (1600 * retroDiary.methodIconSize) / retroDiary.methodFaceCrop.width,
+    left:
+      (-retroDiary.methodFaceCrop.x * retroDiary.methodIconSize) / retroDiary.methodFaceCrop.width,
+    top:
+      (-retroDiary.methodFaceCrop.y * retroDiary.methodIconSize) / retroDiary.methodFaceCrop.width,
+  },
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
 });

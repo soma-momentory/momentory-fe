@@ -37,4 +37,6 @@ export const retroDiary = {
   peekWidth: 126,
   peekDrop: 12,
   scheduleWidth: 288,
+  methodIconSize: 44,
+  methodFaceCrop: { x: 200, y: 140, width: 880 },
 } as const;
