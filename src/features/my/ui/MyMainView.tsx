@@ -1,10 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Icon, Text, type IconName } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
 import { myPaper as paper } from "@/design/ds/myPaper";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
-import { Baba } from "@/features/home/ui/v2/Baba";
 
 type Props = {
   design?: StudioDesign;
@@ -58,15 +58,6 @@ export function MyMainView({
       showsVerticalScrollIndicator={false}
     >
       <View
-        testID="studio-my-title"
-        style={[styles.titleTape, { backgroundColor: design["my.title.backgroundColor"] }]}
-      >
-        <Text variant="title1Hand" color={labelColor.normal}>
-          마이
-        </Text>
-      </View>
-
-      <View
         testID="my-profile-card"
         style={[
           styles.profileCard,
@@ -78,18 +69,28 @@ export function MyMainView({
           },
         ]}
       >
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.profileTapeSlot}
+        >
+          <View testID="my-profile-tape" style={styles.profileTape}>
+            <MaskingTape color={paper.profileTape} />
+          </View>
+        </View>
         <View style={styles.profileTop}>
           <View style={styles.profileCopy}>
             <View style={styles.nicknameRow}>
               <Text
                 testID="studio-my-nickname"
-                variant="title3Hand"
+                variant="title1Hand"
                 color={design["my.nickname.color"]}
                 style={[styles.nickname, { fontFamily: design["my.nickname.fontFamily"] }]}
               >
                 {nickname}
               </Text>
-              <Text variant="title3Hand" color={labelColor.strong}>
+              <Text variant="title1Hand" color={labelColor.strong}>
                 님
               </Text>
             </View>
@@ -104,9 +105,11 @@ export function MyMainView({
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            <View style={styles.babaScaled}>
-              <Baba />
-            </View>
+            <Image
+              source={require("../../../../assets/home/v2/baba-composite.png")}
+              resizeMode="contain"
+              style={styles.babaFace}
+            />
           </View>
         </View>
         <View style={styles.profileRule} />
@@ -216,7 +219,9 @@ function Group({
         </Text>
       </View>
       <View style={[styles.groupCard, GROUP_PAPER[tone]]}>
-        <View pointerEvents="none" style={[styles.tape, TAPES[tone]]} />
+        <View pointerEvents="none" style={[styles.tape, TAPES[tone]]}>
+          <MaskingTape color={TAPE_COLORS[tone]} />
+        </View>
         {children}
       </View>
       {note != null ? (
@@ -289,22 +294,20 @@ const HIGHLIGHTS = {
   account: { backgroundColor: paper.accountTape },
 } as const;
 
+const TAPE_COLORS = {
+  settings: paper.settingsDot,
+  support: paper.supportTape,
+  account: paper.accountTape,
+} as const;
+
 const TAPES = {
-  settings: { backgroundColor: paper.settingsDot, transform: [{ rotate: "-4deg" }] },
-  support: { backgroundColor: paper.supportTape, transform: [{ rotate: "3deg" }] },
-  account: { backgroundColor: paper.accountTape, transform: [{ rotate: "-2deg" }] },
+  settings: { transform: [{ rotate: "-4deg" }] },
+  support: { transform: [{ rotate: "3deg" }] },
+  account: { transform: [{ rotate: "-2deg" }] },
 } as const;
 
 const styles = StyleSheet.create({
-  body: { gap: 18, paddingTop: space.xs, paddingBottom: space.xl },
-  titleTape: {
-    alignSelf: "flex-start",
-    backgroundColor: paper.title,
-    paddingHorizontal: 14,
-    paddingVertical: 2,
-    borderRadius: 4,
-    transform: [{ rotate: "-3deg" }],
-  },
+  body: { gap: 18, paddingTop: space.lg, paddingBottom: space.xl },
   profileCard: {
     backgroundColor: paper.profile,
     borderColor: paper.rule,
@@ -319,12 +322,32 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     elevation: 3,
   },
+  profileTapeSlot: {
+    position: "absolute",
+    top: -15,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  profileTape: {
+    width: 100,
+    height: 30,
+  },
   profileTop: { flexDirection: "row", alignItems: "center", gap: 6 },
   profileCopy: { flex: 1, minWidth: 0, gap: 4 },
   nicknameRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 4 },
   nickname: { flexShrink: 1 },
-  babaFrame: { width: 72, height: 92, overflow: "hidden" },
-  babaScaled: { position: "absolute", left: -49, top: -67, transform: [{ scale: 0.4 }] },
+  babaFrame: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    overflow: "hidden",
+    marginRight: 8,
+    backgroundColor: paper.title,
+    borderWidth: 1,
+    borderColor: paper.rule,
+  },
+  babaFace: { position: "absolute", width: 80, height: 110, left: -7, top: 6 },
   profileRule: { marginTop: 12, borderTopWidth: 1, borderColor: paper.rule, borderStyle: "dashed" },
   profileStat: {
     flexDirection: "row",

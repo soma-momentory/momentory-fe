@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Icon, Text, type IconName } from "@/components/ds";
-import { useEffectiveFontScale } from "@/components/ds/Text";
 import { interaction, space } from "@/design/ds";
 import { reportPaper } from "@/design/ds/reportPaper";
 import type { WeeklyReport } from "@/features/report/model/weeklyReport";
@@ -67,18 +67,22 @@ export const weekCounts = (report: WeeklyReport): WeekCount[] => [
 ];
 
 export function WeekCountList({ report }: { report: WeeklyReport }) {
-  const fontScale = useEffectiveFontScale();
   return (
     <View style={styles.grid}>
       {weekCounts(report).map((c, index) => (
         <View key={c.label} style={[styles.tile, index % 2 === 0 ? styles.left : styles.right]}>
-          <View style={[styles.tape, index % 2 === 0 ? styles.tapeGold : styles.tapePink]} />
+          <View
+            pointerEvents="none"
+            style={[styles.tape, index % 2 === 0 ? styles.tapeGold : styles.tapePink]}
+          >
+            <MaskingTape color={index % 2 === 0 ? reportPaper.tape : reportPaper.date} />
+          </View>
           <View style={styles.labelRow}>
             <Icon name={c.icon} size={16} color={interaction.inactive} />
             <Text
               variant="body2"
               color={reportPaper.muted}
-              style={[styles.label, { lineHeight: 22 * fontScale }]}
+              style={[styles.label, { lineHeight: 22 }]}
             >
               {c.label}
             </Text>
@@ -88,7 +92,7 @@ export function WeekCountList({ report }: { report: WeeklyReport }) {
               <Text
                 variant="caption1"
                 color={reportPaper.muted}
-                style={[styles.prefix, { lineHeight: 18 * fontScale }]}
+                style={[styles.prefix, { lineHeight: 18 }]}
               >
                 {c.prefix}
               </Text>
@@ -96,7 +100,7 @@ export function WeekCountList({ report }: { report: WeeklyReport }) {
             <Text
               variant="headline1"
               color={reportPaper.strong}
-              style={[styles.value, { lineHeight: 26 * fontScale }]}
+              style={[styles.value, { lineHeight: 26 }]}
             >
               {c.value}
             </Text>
@@ -126,8 +130,8 @@ const styles = StyleSheet.create({
   left: { transform: [{ rotate: "-2deg" }] },
   right: { transform: [{ rotate: "1.5deg" }] },
   tape: { position: "absolute", top: -8, left: "38%", width: 42, height: 16 },
-  tapeGold: { backgroundColor: reportPaper.tape, opacity: 0.85 },
-  tapePink: { backgroundColor: reportPaper.date, opacity: 0.9 },
+  tapeGold: { opacity: 0.85 },
+  tapePink: { opacity: 0.9 },
   labelRow: { flexDirection: "row", alignItems: "center", gap: space.xs },
   label: { flexShrink: 1, fontFamily: reportPaper.font.regular, fontSize: 17, lineHeight: 22 },
   values: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: space.xs },

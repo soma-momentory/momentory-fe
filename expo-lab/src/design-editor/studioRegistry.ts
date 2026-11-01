@@ -111,7 +111,7 @@ export const editableComponents: readonly EditableComponent[] = [
     parentId: "home.hero",
     testId: "studio-home-cta",
     kind: "card",
-    label: "하루 돌아보기 버튼",
+    label: "일기 작성하기 버튼",
     properties: [
       color("home.cta.backgroundColor"),
       number("home.cta.paddingHorizontal", "가로 여백", 12, 36),
@@ -153,6 +153,7 @@ export const editableComponents: readonly EditableComponent[] = [
     label: "쉼터 제목",
     properties: [
       color("rest.heading.backgroundColor", "종이 색"),
+      color("rest.heading.color", "글자 색"),
       number("rest.heading.fontSize", "글씨 크기", 22, 40),
     ],
   },
@@ -281,15 +282,6 @@ export const editableComponents: readonly EditableComponent[] = [
     properties: [],
   },
   {
-    id: "my.title",
-    screenId: "my-main",
-    parentId: "my.root",
-    testId: "studio-my-title",
-    kind: "text",
-    label: "마이 제목",
-    properties: [color("my.title.backgroundColor", "종이 색")],
-  },
-  {
     id: "my.profileCard",
     screenId: "my-main",
     parentId: "my.root",
@@ -371,7 +363,11 @@ export const editableComponents: readonly EditableComponent[] = [
   },
 ];
 
-export const editableKeys = editableComponents.flatMap((component) => component.properties);
+export const editableKeys = [
+  ...editableComponents.flatMap((component) => component.properties),
+  // 삭제한 제목 색은 이전에 저장·내보낸 시안을 계속 읽을 수 있도록 검증만 유지한다.
+  color("my.title.backgroundColor"),
+];
 
 export function validValue(property: EditableProperty, value: unknown): boolean {
   if (property.kind === "asset") return isStudioAssetId(value);

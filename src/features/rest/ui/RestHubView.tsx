@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { ScrollView, StyleSheet, View } from "react-native";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Text } from "@/components/ds";
 import { RestCardPressable } from "@/components/rest/RestCardPressable";
 import { RestContentGrid } from "@/components/rest/RestContentGrid";
@@ -32,17 +33,16 @@ export function RestHubView({
       style={styles.root}
       contentContainerStyle={styles.content}
     >
-      <View
-        testID="studio-rest-heading"
-        style={[styles.headingPaper, { backgroundColor: design["rest.heading.backgroundColor"] }]}
-      >
+      <View testID="studio-rest-heading" style={styles.headingPaper}>
+        <MaskingTape color={design["rest.heading.backgroundColor"]} />
         <Text
           variant="title3Hand"
           style={[
             styles.heading,
             {
+              color: design["rest.heading.color"],
               fontSize: design["rest.heading.fontSize"],
-              lineHeight: design["rest.heading.fontSize"] + 4,
+              lineHeight: design["rest.heading.fontSize"] + 6,
             },
           ]}
         >
@@ -66,7 +66,6 @@ export function RestHubView({
             },
           ]}
         >
-          <View style={styles.wishTape} />
           <View testID="studio-rest-wish-copy" style={styles.wishCopy}>
             <Text variant="caption1" style={styles.wishEyebrow}>
               바람카드
@@ -113,7 +112,6 @@ export function RestHubView({
             <Text variant="caption2" style={styles.wishPhotoCaption}>
               쉬는 중
             </Text>
-            <View style={styles.photoTape} />
           </View>
         </View>
       </RestCardPressable>
@@ -136,12 +134,11 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: layout.screenPadding, paddingBottom: 30 },
   headingPaper: {
     alignSelf: "flex-start",
-    backgroundColor: colors.date,
-    paddingHorizontal: 16,
-    paddingVertical: 2,
+    paddingHorizontal: 18,
+    paddingVertical: 3,
     transform: [{ rotate: "-3deg" }],
   },
-  heading: { fontFamily: font.bold, fontSize: 30, lineHeight: 34, color: colors.ink },
+  heading: { fontFamily: font.bold, fontSize: 34, lineHeight: 40, color: colors.ink },
   wishPressable: { marginTop: 20, marginRight: 4 },
   wishPaper: {
     minHeight: 110,
@@ -153,16 +150,7 @@ const styles = StyleSheet.create({
     paddingRight: 126,
   },
   wishPaperLong: { paddingTop: 116, paddingRight: 16 },
-  wishTape: {
-    position: "absolute",
-    left: -8,
-    top: -9,
-    width: 56,
-    height: 18,
-    backgroundColor: colors.today,
-    opacity: 0.85,
-    transform: [{ rotate: "-14deg" }],
-  },
+
   wishCopy: { gap: 2 },
   wishEyebrow: { fontFamily: font.regular, fontSize: 15, lineHeight: 18, color: colors.muted },
   wishSummary: { fontFamily: font.bold, fontSize: 20, lineHeight: 24, color: colors.ink },
@@ -175,7 +163,6 @@ const styles = StyleSheet.create({
     height: 126,
     backgroundColor: colors.white,
     padding: 6,
-    transform: [{ rotate: "3deg" }],
     shadowColor: colors.shadow,
     shadowOpacity: 0.16,
     shadowRadius: 5,
@@ -185,15 +172,7 @@ const styles = StyleSheet.create({
   wishPhotoImage: { flex: 1, backgroundColor: colors.greenSoft },
   wishBaba: { width: "100%", height: "100%" },
   wishPhotoCaption: { fontFamily: font.regular, color: colors.muted, textAlign: "center" },
-  photoTape: {
-    position: "absolute",
-    left: 30,
-    top: -8,
-    width: 50,
-    height: 16,
-    backgroundColor: colors.tapeStripe,
-    transform: [{ rotate: "-6deg" }],
-  },
+
   section: { paddingTop: 18, gap: 14 },
   sectionTitle: { fontFamily: font.bold, color: colors.ink, alignSelf: "flex-start" },
 });

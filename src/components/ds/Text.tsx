@@ -2,6 +2,8 @@ import { createContext, useContext } from "react";
 import { StyleSheet, Text as RNText, useWindowDimensions, type TextProps } from "react-native";
 
 import { label as labelColor, maxFontScale, text, type TextToken } from "@/design/ds";
+import { typeScale } from "@/design/ds/typography";
+import { DesignViewportContext } from "./DesignViewport";
 
 /**
  * Momentory DS — 글자.
@@ -36,41 +38,50 @@ type Props = TextProps & {
 /** Lab Web의 큰 글씨 레이아웃 검사에만 사용한다. 운영에서는 기기 배율을 그대로 따른다. */
 export const PreviewFontScaleContext = createContext<number | null>(null);
 
-export function useEffectiveFontScale() {
+export function useEffectiveFontScale(limit?: number) {
   const { fontScale } = useWindowDimensions();
   const previewScale = useContext(PreviewFontScaleContext);
-  const nativeScale = Math.min(fontScale, maxFontScale);
+  const { active } = useContext(DesignViewportContext);
+  const nativeScale = Math.min(fontScale, limit ?? (active ? 1.5 : maxFontScale));
   return previewScale == null ? nativeScale : Math.max(nativeScale, previewScale);
 }
 
 export function Text({
   variant = "body1",
   color = labelColor.normal,
-  maxFontSizeMultiplier = maxFontScale,
+  maxFontSizeMultiplier,
   style,
   ...rest
 }: Props) {
   const previewScale = useContext(PreviewFontScaleContext);
+  const { active } = useContext(DesignViewportContext);
+  // The approved web preview used the 1.12 DS type scale. In a proportional
+  // viewport every OS uses that same type size; the canvas handles device width.
+  const token = active
+    ? {
+        ...text[variant],
+        fontSize: Math.round((text[variant].fontSize / typeScale) * 1.12),
+        lineHeight: Math.round((text[variant].lineHeight / typeScale) * 1.12),
+      }
+    : text[variant];
   const flat =
-    previewScale == null || previewScale === 1 ? null : StyleSheet.flatten([text[variant], style]);
-  // 홈 v2의 일부 텍스트는 화면 높이를 계산하면서 lineHeight도 이미 조정한다.
-  const lastStyle = Array.isArray(style) ? style[style.length - 1] : null;
-  const lineHeightHandled =
-    lastStyle != null && typeof lastStyle === "object" && "lineHeight" in lastStyle;
+    previewScale == null || previewScale === 1 ? null : StyleSheet.flatten([token, style]);
+  // Native Text scales both fontSize and lineHeight with the system setting.
+  // Web previews emulate that once; callers keep their line heights unscaled.
   const scaled =
     previewScale == null || previewScale === 1
       ? undefined
       : {
           ...(typeof flat?.fontSize === "number" ? { fontSize: flat.fontSize * previewScale } : {}),
-          ...(!lineHeightHandled && typeof flat?.lineHeight === "number"
+          ...(typeof flat?.lineHeight === "number"
             ? { lineHeight: flat.lineHeight * previewScale }
             : {}),
         };
   return (
     <RNText
-      maxFontSizeMultiplier={maxFontSizeMultiplier}
+      maxFontSizeMultiplier={maxFontSizeMultiplier ?? (active ? 1.5 : maxFontScale)}
       {...rest}
-      style={[text[variant], { color }, style, scaled]}
+      style={[token, active && { includeFontPadding: false }, { color }, style, scaled]}
     />
   );
 }

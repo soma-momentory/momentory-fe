@@ -77,7 +77,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     expect(getByText("월요일")).toBeTruthy();
   });
 
-  it("하루 돌아보기는 화면의 유일한 주 버튼이다", async () => {
+  it("일기 작성하기는 화면의 유일한 주 버튼이다", async () => {
     // 오늘 일기가 없는 날 — 샘플에는 오늘 일기가 있어 걷어 낸다
     useDiary.setState({
       diaries: useDiary.getState().diaries.filter((d) => d.date !== "2026-07-27"),
@@ -86,7 +86,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
 
     expect(getByText("오늘 하루는\n어땠어요?")).toBeTruthy();
     // 인사 화면(`C1`)이 사라져 **곧바로 일정 확인**으로 간다(`DESIGN.md` 「일기」 1)
-    await fireEvent.press(getByRole("button", { name: "하루 돌아보기" }));
+    await fireEvent.press(getByRole("button", { name: "일기 작성하기" }));
     expect(router.push).toHaveBeenCalledWith("/retro/confirm");
     // 홈에서 회고로 들어간 길을 남긴다 — 조회만으로는 어디서 왔는지 모른다
     const { track } = jest.requireMock("@/features/analytics") as { track: jest.Mock };
@@ -103,14 +103,14 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     useDiary.setState({ diaries: [{ ...sample!, date: "2026-07-27" }] });
     const { getByRole } = await render(<Home />);
 
-    await fireEvent.press(getByRole("button", { name: "하루 돌아보기" }));
+    await fireEvent.press(getByRole("button", { name: "일기 작성하기" }));
     expect(router.push).toHaveBeenCalledWith("/retro/talk");
   });
 
-  it("알림을 켠 사람에게만 정한 시각을 말한다", async () => {
-    const { getByText } = await render(<Home />);
+  it("알림을 켜도 홈 안내 문구를 표시하지 않는다", async () => {
+    const { queryByText } = await render(<Home />);
 
-    expect(getByText("밤 9:30엔 제가\n먼저 말 걸어요")).toBeTruthy();
+    expect(queryByText(/먼저 말 걸어요/)).toBeNull();
   });
 
   it("인증되지 않은 상태의 편지 아이콘은 아무것도 열지 않는다", async () => {
@@ -178,7 +178,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     });
     const r = await render(<Home />);
     expect(r.getByRole("button", { name: "날씨: 맑음 22도" })).toBeTruthy();
-    expect(r.getByText("22℃")).toBeTruthy();
+    expect(r.queryByText("22℃")).toBeNull();
     await fireEvent.press(r.getByRole("button", { name: "날씨: 맑음 22도" }));
     expect(r.getByText(/MET Norway 예보 · .*밤 9:31 갱신/)).toBeTruthy();
 
@@ -462,7 +462,7 @@ describe("운영 홈 v2 배치", () => {
       }),
     );
     const r = await render(<Home />);
-    expect(r.getByTestId("home-v2-grid", { includeHiddenElements: true })).toBeTruthy();
+    expect(r.getByTestId("tab-paper-background", { includeHiddenElements: true })).toBeTruthy();
     expect(r.getByTestId("week-dock")).toBeTruthy();
     expect(r.getByTestId("home-v2-list-scroll")).toBeTruthy();
     expect(r.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
@@ -496,7 +496,7 @@ describe("12-b · 일정이 없는 경우", () => {
     expect(getByText("오늘 일정")).toBeTruthy();
     expect(getByText("+ 추가")).toBeTruthy();
     // 일정이 없어도 회고는 열린다 (12-b.md)
-    expect(getByRole("button", { name: "하루 돌아보기" })).toBeTruthy();
+    expect(getByRole("button", { name: "일기 작성하기" })).toBeTruthy();
   });
 
   it("목록 슬롯의 줄만 초대 문구로 바뀐다", async () => {

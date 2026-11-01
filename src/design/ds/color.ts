@@ -47,6 +47,8 @@ export const background = {
   normal: "#F7F4ED",
   alternative: "#F7F1E7",
   elevated: "#FFFDF8",
+  /** 하단 네비게이션과 안전 영역 — 종이 배경이 비치는 60% 크림 면. */
+  tabBar: "rgba(255,253,248,0.60)",
   /**
    * 스플래시 면 — 앱 아이콘(`assets/icon.png`) 바탕과 같은 베이지(2026-10-06 · 사용자 요청).
    * 네이티브 스플래시(`app.config.ts`)와 `S0` 가 이 한 색을 써야 얼굴이 그대로 이어진다.

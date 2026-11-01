@@ -4,9 +4,11 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { background, layout } from "@/design/ds";
+import type { TabBackgroundTab } from "@/design/tabBackgrounds";
 
 import { BottomNavigation, type TabItem } from "./BottomNavigation";
 import { Screen } from "./Screen";
+import { TabPaperBackground } from "./TabPaperBackground";
 
 /**
  * 탭 다섯 칸이 공유하는 껍데기 — 배경·격자 + 본문 + 하단 탭.
@@ -40,7 +42,7 @@ import { Screen } from "./Screen";
  * 탭은 쌓이는 화면이 아니다. `push` 로 오가면 뒤로가기가 탭 이동 이력을 되짚어
  * 홈에서 나가기까지 여러 번 눌러야 한다.
  */
-export type TabName = "홈" | "쉼터" | "보관함" | "리포트" | "마이";
+export type TabName = TabBackgroundTab;
 
 const ROUTES: Record<TabName, "/home" | "/rest" | "/archive" | "/report" | "/my"> = {
   홈: "/home",
@@ -67,8 +69,6 @@ type Props = {
 };
 
 export function TabScreen({ active, children, overlay }: Props) {
-  const insets = useSafeAreaInsets();
-
   const go = (tab: TabName) => {
     // 자기 탭을 누르면 아무 일도 없다 — 같은 화면을 다시 열지 않는다
     if (tab === active) return;
@@ -77,21 +77,32 @@ export function TabScreen({ active, children, overlay }: Props) {
 
   return (
     <>
-      <Screen padded={false} edges={["top"]}>
+      <Screen
+        proportional
+        padded={false}
+        edges={["top"]}
+        grid={false}
+        backdrop={<TabPaperBackground tab={active} />}
+      >
         <View style={styles.body}>{children}</View>
         <BottomNavigation items={TABS} active={active} onPress={go} />
         {/* 홈 인디케이터·시스템 버튼 자리 — 탭바와 같은 면으로 이어 둔다 */}
-        <View
-          style={[styles.underTab, { height: Math.max(insets.bottom, layout.minBottomInset) }]}
-        />
+        <UnderTab />
       </Screen>
       {overlay}
     </>
   );
 }
 
+function UnderTab() {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.underTab, { height: Math.max(insets.bottom, layout.minBottomInset) }]} />
+  );
+}
+
 const styles = StyleSheet.create({
   // 본문이 남은 높이를 다 쓰고, 탭바는 아래에 고정된다
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
-  underTab: { backgroundColor: background.elevated },
+  underTab: { backgroundColor: background.tabBar },
 });

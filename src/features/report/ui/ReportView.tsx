@@ -1,8 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import Svg, { Defs, Path, Pattern, Rect } from "react-native-svg";
 
+import { MaskingTape } from "@/components/ds/MaskingTape";
+import { NotchedTapeLabel } from "@/components/ds/NotchedTapeLabel";
 import { Button, Card, Icon, Spinner, Text } from "@/components/ds";
-import { useEffectiveFontScale } from "@/components/ds/Text";
 import { WeekCountList } from "@/components/report/WeekCountList";
 import { WeekEmotionCard } from "@/components/report/WeekEmotionCard";
 import { WeekMoodSummary } from "@/components/report/WeekMoodSummary";
@@ -35,18 +35,8 @@ export function ReportView({
   onOpenWeekPicker,
   onOpenArchive,
 }: Props) {
-  const fontScale = useEffectiveFontScale();
-
   return (
     <View testID="studio-report-root" style={styles.root}>
-      <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <Pattern id="report-paper-grid" width={22} height={22} patternUnits="userSpaceOnUse">
-            <Path d="M 22 0 L 0 0 0 22" fill="none" stroke={reportPaper.grid} strokeWidth={1} />
-          </Pattern>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#report-paper-grid)" />
-      </Svg>
       {/* 주 선택 동작은 기존 주 목록을 그대로 연다. 시안의 이전/다음 주 버튼은 추가하지 않는다. */}
       <Pressable
         accessibilityRole="button"
@@ -60,12 +50,12 @@ export function ReportView({
             style={[
               styles.weekTitlePaper,
               {
-                backgroundColor: design["report.weekTitlePaper.backgroundColor"],
                 paddingHorizontal: design["report.weekTitlePaper.paddingHorizontal"],
                 borderRadius: design["report.weekTitlePaper.borderRadius"],
               },
             ]}
           >
+            <MaskingTape color={design["report.weekTitlePaper.backgroundColor"]} />
             <Text
               testID="studio-report-week-text"
               variant="title3Hand"
@@ -74,7 +64,7 @@ export function ReportView({
                 styles.weekTitle,
                 {
                   fontSize: design["report.weekTitle.fontSize"],
-                  lineHeight: Math.max(36, design["report.weekTitle.fontSize"] + 6) * fontScale,
+                  lineHeight: Math.max(36, design["report.weekTitle.fontSize"] + 6),
                   fontFamily: design["report.weekTitle.fontFamily"],
                   letterSpacing: design["report.weekTitle.letterSpacing"],
                 },
@@ -83,15 +73,13 @@ export function ReportView({
               {thisWeek ? "이번 주" : "이 주"}
             </Text>
           </View>
-          <View style={styles.rangePaper}>
-            <Text
-              variant="label1"
-              color={reportPaper.ink}
-              style={[styles.range, { lineHeight: 22 * fontScale }]}
-            >
-              {range}
-            </Text>
-          </View>
+          <NotchedTapeLabel
+            testID="report-date-tape"
+            color={reportPaper.dateTape}
+            style={styles.rangePaper}
+          >
+            {range}
+          </NotchedTapeLabel>
         </View>
         <View style={styles.pickerIcon}>
           <Icon name="calendar" size={20} color={reportPaper.ink} />
@@ -137,7 +125,7 @@ export function ReportView({
               <Text
                 variant="label1"
                 color={labelColor.neutral}
-                style={[styles.sectionLabel, { lineHeight: 26 * fontScale }]}
+                style={[styles.sectionLabel, { lineHeight: 26 }]}
               >
                 {thisWeek ? "이번 주 기록" : "이 주 기록"}
               </Text>
@@ -164,7 +152,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 0,
     marginHorizontal: -layout.screenPadding,
-    backgroundColor: reportPaper.paper,
   },
   weekNav: {
     flexDirection: "row",
@@ -173,27 +160,20 @@ const styles = StyleSheet.create({
     gap: space.sm,
     minHeight: layout.minTouch,
     marginHorizontal: layout.screenPadding,
-    marginTop: space.xs,
     marginBottom: 30,
   },
-  weekTitleGroup: { alignItems: "flex-start", paddingBottom: 19 },
+  weekTitleGroup: { flex: 1, minWidth: 0, alignItems: "flex-start", paddingBottom: 19 },
   weekTitlePaper: {
-    paddingHorizontal: 14,
-    paddingTop: 4,
-    paddingBottom: 8,
-    backgroundColor: reportPaper.date,
+    paddingHorizontal: 18,
+    paddingVertical: 3,
     transform: [{ rotate: "-3deg" }],
   },
-  weekTitle: { fontFamily: reportPaper.font.bold, fontSize: 30, lineHeight: 36 },
+  weekTitle: { fontFamily: reportPaper.font.bold, fontSize: 34, lineHeight: 40 },
   rangePaper: {
     marginTop: -4,
     marginLeft: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 1,
-    backgroundColor: reportPaper.weekday,
     transform: [{ rotate: "-1deg" }],
   },
-  range: { fontFamily: reportPaper.font.bold, fontSize: 16, lineHeight: 22 },
   pickerIcon: {
     width: layout.minTouch,
     height: layout.minTouch,

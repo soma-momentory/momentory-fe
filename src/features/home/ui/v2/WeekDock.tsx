@@ -3,7 +3,7 @@ import { Image, Pressable, StyleSheet, View } from "react-native";
 
 import { EmotionPebble } from "@/components/ds/EmotionPebble";
 import { SelectLift } from "@/components/ds/SelectLift";
-import { Text, useEffectiveFontScale } from "@/components/ds/Text";
+import { Text } from "@/components/ds/Text";
 import { homeV2 } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
 import type { WeekDay } from "@/features/report/model/report";
@@ -51,8 +51,6 @@ export function dockDayName(day: WeekDay) {
 }
 
 export function WeekDock({ days, today }: Props) {
-  const fontScale = useEffectiveFontScale();
-  const scale = fontScale;
   const [picked, setPicked] = useState<string | null>(null);
   const day = days.find((d) => d.date === picked) ?? null;
 
@@ -68,7 +66,7 @@ export function WeekDock({ days, today }: Props) {
 
       <View testID="week-dock" style={styles.dock}>
         <Text
-          style={[styles.title, { lineHeight: homeV2.type.dockTitle.lineHeight * scale }]}
+          style={[styles.title, { lineHeight: homeV2.type.dockTitle.lineHeight }]}
           color={homeV2.color.ink}
         >
           {"이번 주\n감정"}
@@ -134,7 +132,8 @@ function WrittenPebble() {
 
 const styles = StyleSheet.create({
   dock: {
-    height: homeV2.size.dock.height,
+    minHeight: homeV2.size.dock.height,
+    paddingVertical: 10,
     borderRadius: homeV2.size.dock.radius,
     backgroundColor: homeV2.color.dock,
     flexDirection: "row",
@@ -174,11 +173,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 10,
   },
-  // 단일 손글씨에서 오늘은 형광 바탕과 밑줄로 구분한다.
+  // 오늘은 형광 바탕으로 구분하며 밑줄은 표시하지 않는다.
   todayName: {
     fontFamily: homeV2.font.bold,
     backgroundColor: homeV2.color.today,
-    textDecorationLine: "underline",
   },
   picked: {
     alignSelf: "center",

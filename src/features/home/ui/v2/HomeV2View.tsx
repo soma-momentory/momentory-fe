@@ -15,7 +15,6 @@ import { PAPER_ROW_PITCH } from "../ScheduleList";
 
 import { DatePaper, datePaperExtraFor } from "./DatePaper";
 import { HeroCard } from "./HeroCard";
-import { HomePaperGrid } from "./HomePaperGrid";
 import { ScheduleSection, ScheduleSectionHeader } from "./ScheduleSection";
 import type { HomeV2ViewProps } from "./types";
 import { WeekDock } from "./WeekDock";
@@ -54,8 +53,9 @@ export function HomeV2View({
   const [menu, setMenu] = useState<{ id: string; top: number; anchorTop: number } | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const fontScale = useEffectiveFontScale();
-  const sizes = useRef({ root: 0, fixed: 0, pitch: PAPER_ROW_PITCH, empty: 0 });
+  const fontScale = useEffectiveFontScale(1.5);
+  const sizes = useRef({ root: 0, fixed: 0, pitch: PAPER_ROW_PITCH, empty: 0, dock: DOCK_SPACE });
+  const [dockSpace, setDockSpace] = useState(DOCK_SPACE);
   const [mode, setMode] = useState<HomeLayoutMode>("listOnly");
 
   const shown = visibleSchedules(model.schedules);
@@ -65,7 +65,7 @@ export function HomeV2View({
   const allDone = !empty && shown.every((schedule) => schedule.done);
   const target = model.schedules.find((schedule) => schedule.id === menu?.id) ?? null;
   const refreshMode = useCallback(() => {
-    const { root, fixed, pitch, empty: measuredEmpty } = sizes.current;
+    const { root, fixed, pitch, empty: measuredEmpty, dock } = sizes.current;
     if (root === 0 || fixed === 0) return;
     const rowPitch = empty
       ? PAPER_ROW_PITCH + Math.max(0, Math.round(homeV2.type.task.lineHeight * (fontScale - 1)))
@@ -73,7 +73,7 @@ export function HomeV2View({
     // Schedule count, check state and fold state do not affect this decision.
     setMode((previous) =>
       homeLayoutMode({
-        availableHeight: root - fixed - DOCK_SPACE,
+        availableHeight: root - fixed - dock,
         rowPitch,
         emptyHeight: empty ? measuredEmpty : 0,
         previous,
@@ -142,6 +142,7 @@ export function HomeV2View({
         <View>
           <IconButton
             name="mail"
+            size={homeV2.size.mail.icon}
             accessibilityLabel={unread ? "바바의 편지, 새 편지 있음" : "바바의 편지"}
             color={homeV2.color.ink}
             onPress={actions.onOpenLetter}
@@ -154,7 +155,6 @@ export function HomeV2View({
       <View style={styles.heroWrap}>
         <HeroCard
           design={design}
-          retroReminderTime={model.retroReminderTime}
           weather={model.weather}
           onStartReflection={actions.onStartReflection}
           onOpenWeatherInfo={actions.onOpenWeatherInfo}
@@ -172,17 +172,14 @@ export function HomeV2View({
   );
 
   const list = (
-    <View
-      onLayout={
-        empty
-          ? (event) => {
-              sizes.current.empty = event.nativeEvent.layout.height;
-              refreshMode();
-            }
-          : undefined
-      }
-    >
+    <View style={empty && mode === "listOnly" ? styles.emptyFill : undefined}>
       <ScheduleSection
+        fillEmpty={empty && mode === "listOnly"}
+        onEmptyHeight={(height) => {
+          if (sizes.current.empty === height) return;
+          sizes.current.empty = height;
+          refreshMode();
+        }}
         rows={rows}
         empty={empty}
         hiddenCount={folded ? shown.length - MAX_VISIBLE_SCHEDULES : 0}
@@ -217,15 +214,13 @@ export function HomeV2View({
         refreshMode();
       }}
     >
-      <HomePaperGrid />
-
       {mode === "listOnly" ? (
         <>
           {fixed}
           <ScrollView
             testID="home-v2-list-scroll"
             style={styles.list}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[styles.listContent, empty && styles.emptyContent]}
             showsVerticalScrollIndicator={false}
             scrollEnabled={!dragging}
           >
@@ -245,7 +240,16 @@ export function HomeV2View({
         </ScrollView>
       )}
 
-      <View style={styles.dock}>
+      <View
+        style={styles.dock}
+        onLayout={({ nativeEvent: { layout } }) => {
+          const next = layout.height + DOCK_GAP * 2;
+          if (sizes.current.dock === next) return;
+          sizes.current.dock = next;
+          setDockSpace(next);
+          refreshMode();
+        }}
+      >
         <WeekDock days={model.week} today={model.today} />
       </View>
     </View>
@@ -259,7 +263,7 @@ export function HomeV2View({
           top={menu.top}
           anchorTop={menu.anchorTop}
           // ⋮ 메뉴가 도크를 덮지 않게 — 호출자의 탭바 여백 위에 도크 자리를 더한다
-          bottomInset={menuBottomInset + DOCK_SPACE}
+          bottomInset={menuBottomInset + dockSpace}
           onDismiss={() => setMenu(null)}
         />
       ) : null}
@@ -317,9 +321,11 @@ const styles = StyleSheet.create({
   heroWrap: { marginHorizontal: space.lg },
   inset: { paddingHorizontal: space.xl },
   list: { flex: 1, minHeight: 0 },
-  // 마지막 줄이 도크 뒤에 숨지 않게 — 도크 자리만큼 아래를 비운다
-  listContent: { paddingHorizontal: space.xl, paddingBottom: DOCK_SPACE },
-  wholeContent: { paddingBottom: DOCK_SPACE },
+  emptyContent: { flexGrow: 1 },
+  emptyFill: { flex: 1 },
+  // The dock has its own flex row, so scrolling content cannot pass underneath it.
+  listContent: { paddingHorizontal: space.xl },
+  wholeContent: { paddingBottom: 0 },
   wholeList: { paddingHorizontal: space.xl },
-  dock: { position: "absolute", left: space.lg, right: space.lg, bottom: DOCK_GAP },
+  dock: { marginHorizontal: space.lg, marginVertical: DOCK_GAP },
 });

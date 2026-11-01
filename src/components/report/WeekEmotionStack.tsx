@@ -2,7 +2,6 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { DiaryEmotionRow } from "@/components/diary/DiaryEmotionRow";
 import { EmotionPebble, Text, WeekEmptyDot } from "@/components/ds";
-import { useEffectiveFontScale } from "@/components/ds/Text";
 import { label as labelColor, space } from "@/design/ds";
 import { reportPaper } from "@/design/ds/reportPaper";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
@@ -28,7 +27,6 @@ type Props = {
 };
 
 export function WeekEmotionStack({ days, writtenDates, selected, onSelect }: Props) {
-  const fontScale = useEffectiveFontScale();
   return (
     <View style={styles.row}>
       {days.map((day) => {
@@ -55,11 +53,7 @@ export function WeekEmotionStack({ days, writtenDates, selected, onSelect }: Pro
             <Text
               variant="label2"
               color={reportPaper.ink}
-              style={[
-                styles.weekday,
-                isSelected && styles.selectedWeekday,
-                { lineHeight: 20 * fontScale },
-              ]}
+              style={[styles.weekday, isSelected && styles.selectedWeekday, { lineHeight: 20 }]}
             >
               {weekday}
             </Text>
@@ -73,7 +67,7 @@ export function WeekEmotionStack({ days, writtenDates, selected, onSelect }: Pro
             <Text
               variant="label2"
               color={reportPaper.strong}
-              style={[styles.mood, { lineHeight: 17 * fontScale }]}
+              style={[styles.mood, { lineHeight: 17 }]}
             >
               {mood}
             </Text>
