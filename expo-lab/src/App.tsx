@@ -614,10 +614,8 @@ function Compare({
 }
 
 function LabApp() {
-  // 앱과 같은 파일 · 같은 이름(assets/fonts/README.md 「Gaegu」 · 결정 DN-4) — 시안 원본 변형도 이 이름을 쓴다
+  // 앱과 같은 파일 · 같은 이름 — 시안 원본 변형도 이 이름을 쓴다(2026-11-01 교보손글씨 통일)
   const [fontsLoaded, fontError] = useFonts({
-    "Gaegu-Regular": require("../../assets/fonts/Gaegu-Regular.ttf"),
-    "Gaegu-Bold": require("../../assets/fonts/Gaegu-Bold.ttf"),
     KyoboHandwriting2025lyb: require("../../assets/fonts/KyoboHandwriting2025lyb.ttf"),
   });
   const [route, setRoute] = useState(readRoute);

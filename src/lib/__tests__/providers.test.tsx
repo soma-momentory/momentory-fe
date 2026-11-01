@@ -57,6 +57,8 @@ describe("AppProviders", () => {
     // 로그인용 고딕 등록도 유지한다.
     expect(Object.keys(table)).toEqual(expect.arrayContaining(["Pretendard-Regular"]));
     expect(Object.keys(table)).toEqual(expect.arrayContaining(["KyoboHandwriting2025lyb"]));
+    // Gaegu 는 2026-11-01 교보손글씨 통일 때 지웠다 — 다시 등록되지 않는다.
+    expect(Object.keys(table).filter((name) => name.startsWith("Gaegu"))).toEqual([]);
   });
 
   it("폰트를 기다리는 동안은 아무것도 그리지 않는다", async () => {

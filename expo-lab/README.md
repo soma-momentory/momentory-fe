@@ -54,11 +54,10 @@ npm run typecheck && npm run test:visual
 
 캡처 다섯 장(`schedule-edit`, `retro-talk`, `retro-draft`, `diary-detail`, `report`)은 실제 앱에 예시 데이터를 넣어 찍은 이미지이며 배지로 구분한다. 캡처는 정지 이미지로서 로그인·API·키보드·OS 권한 동작을 제공하지 않는다.
 
-## 서체 — 앱과 같은 Gaegu 파일 (2026-10-15)
+## 서체 — 앱과 같은 교보손글씨 파일 (2026-11-01)
 
-Lab 은 `@expo-google-fonts/gaegu` 를 더 이상 쓰지 않는다(결정 DN-4). `src/App.tsx` 가 앱의 `assets/fonts/Gaegu-Regular.ttf` ·
-`Gaegu-Bold.ttf` 를 **앱과 같은 이름**(`"Gaegu-Regular"` · `"Gaegu-Bold"`)으로 등록하고, 시안 원본(`claude-home/tokens.ts`)도 그 이름을 쓴다.
-파일은 그 의존성 0.4.1 의 400 · 700 파일을 이름만 바꾼 것이라(sha256 은 `assets/fonts/README.md`) 시안 원본의 굵기와 시각은 그대로다.
+`src/App.tsx` 가 앱의 `assets/fonts/KyoboHandwriting2025lyb.ttf` 를 **앱과 같은 이름**으로 등록하고, 시안 원본(`claude-home/tokens.ts`)도 그 이름을 쓴다.
+2026-10-15 부터 쓰던 Gaegu 두 파일은 앱의 교보손글씨 통일과 함께 지웠다 — Studio 의 서체 선택지도 교보손글씨 하나다.
 
 ## 운영 홈 UI 시나리오 (P1)
 

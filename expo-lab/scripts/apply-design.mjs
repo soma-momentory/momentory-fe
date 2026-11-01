@@ -11,7 +11,7 @@ const assetIds = new Set([
   "rest-records",
   "rest-treasures",
 ]);
-const fontFamilies = new Set(["Gaegu-Regular", "Gaegu-Bold", "KyoboHandwriting2025lyb"]);
+const fontFamilies = new Set(["KyoboHandwriting2025lyb"]);
 const alignments = new Set(["left", "center", "right"]);
 const ranges = {
   "home.hero.borderRadius": [0, 40],
