@@ -6,8 +6,8 @@
  *
  * 규칙 둘:
  * - **심 안에서 부르는 같은 이름은 진짜 모듈로 간다** — 심이 진짜를 감싸 되내보낼 수 있게.
- * - `react-native` 는 **루트 `app/`·`src/` 의 파일이 부를 때만** `Platform` 흉내 심으로 간다.
- *   라이브러리는 웹 `Platform` 을 계속 본다(`shims/react-native.ts`).
+ * - `react-native` 는 **루트 `app/`·`src/` 의 파일이 부를 때만** `Platform` · `Keyboard` ·
+ *   `KeyboardAvoidingView` 흉내 심으로 간다. 라이브러리는 웹의 것을 계속 본다(`shims/react-native.ts`).
  */
 const path = require("path");
 
@@ -31,6 +31,18 @@ const WEB_SHIMS = {
   "react-native-safe-area-context": "safe-area-context.tsx",
 };
 
+/**
+ * `react-native` 의 내보내기 이름 → 심 파일. **앱 코드(`app/`·`src/`)가 부를 때만** 바뀐다.
+ * - `Platform` — 프레임이 흉내 내는 OS(`shims/platform.ts`)
+ * - `Keyboard` · `KeyboardAvoidingView` — 프레임의 화면 키보드(`shims/keyboard.ts` ·
+ *   `shims/keyboard-avoiding-view.tsx` · `keyboard/`). 라이브러리는 웹의 것을 그대로 본다
+ */
+const APP_EXPORT_SHIMS = {
+  Platform: "platform.ts",
+  Keyboard: "keyboard.ts",
+  KeyboardAvoidingView: "keyboard-avoiding-view.tsx",
+};
+
 /** @param {string} file */
 const normalize = (file) => path.normalize(file).toLowerCase();
 
@@ -49,9 +61,12 @@ function labShimFor(origin, moduleName) {
   if (shim) return path.join(shimDir, shim);
   if (!appDirKeys.some((dir) => from.startsWith(dir))) return null;
   // 웹 Babel 프리셋(babel-plugin-react-native-web)이 `import { Platform } from "react-native"` 를
-  // 이 경로의 기본 내보내기로 바꿔 쓴다 — 앱 코드의 거의 모든 `Platform` 이 이 길로 온다
-  if (/^react-native-web\/dist\/(cjs\/)?exports\/Platform(\/index(\.js)?)?$/.test(moduleName)) {
-    return path.join(shimDir, "platform.ts");
+  // 이 경로의 기본 내보내기로 바꿔 쓴다 — 앱 코드의 거의 모든 `Platform` · `Keyboard` 가 이 길로 온다
+  const split = /^react-native-web\/dist\/(?:cjs\/)?exports\/(\w+)(?:\/index(?:\.js)?)?$/.exec(
+    moduleName,
+  );
+  if (split && Object.prototype.hasOwnProperty.call(APP_EXPORT_SHIMS, split[1])) {
+    return path.join(shimDir, /** @type {Record<string, string>} */ (APP_EXPORT_SHIMS)[split[1]]);
   }
   if (moduleName === "react-native" || moduleName === "react-native-web") {
     return path.join(shimDir, "react-native.ts");
@@ -59,4 +74,4 @@ function labShimFor(origin, moduleName) {
   return null;
 }
 
-module.exports = { WEB_SHIMS, labShimFor, shimDir, repoRoot };
+module.exports = { WEB_SHIMS, APP_EXPORT_SHIMS, labShimFor, shimDir, repoRoot };
