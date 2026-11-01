@@ -174,8 +174,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 10,
   },
-  // 오늘 — 형광 바탕 **과 굵기**(색만으로 말하지 않는다)
-  todayName: { fontFamily: homeV2.font.bold, backgroundColor: homeV2.color.today },
+  // 단일 손글씨에서 오늘은 형광 바탕과 밑줄로 구분한다.
+  todayName: {
+    fontFamily: homeV2.font.bold,
+    backgroundColor: homeV2.color.today,
+    textDecorationLine: "underline",
+  },
   picked: {
     alignSelf: "center",
     marginBottom: 8,

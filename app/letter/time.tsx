@@ -54,7 +54,7 @@ export default function LetterTime() {
         notify: enabled,
       });
     }
-    router.replace(next === "done" ? "/retro/done" : "/(tabs)/rest");
+    router.replace(next === "done" ? "/retro/done" : "/(tabs)/rest?afterDiary=1");
   };
 
   return (

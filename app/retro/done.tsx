@@ -54,7 +54,7 @@ export default function RetroDone() {
   /** 나가는 길은 둘 뿐이고 **둘 다 회고를 닫고** 나간다 */
   const leave = (to: "/(tabs)/rest" | "/rest/cards") => {
     resetRetro();
-    router.replace(to);
+    router.replace(to === "/(tabs)/rest" ? "/(tabs)/rest?afterDiary=1" : to);
   };
 
   return (

@@ -1,7 +1,8 @@
 /**
  * Momentory DS — **홈 v2 전용** 색 · 서체 · 크기 (2026-10-15 · 계획 `docs/redesign/HOME_V2_ROLLOUT_PLAN.md` §2.6).
  *
- * 홈 v2 는 Claude Design `홈화면 시안 v2.dc.html` 의 **모눈 종이 · 손글씨(Gaegu) · 종이 조각**을 쓴다.
+ * 홈 v2 는 Claude Design 시안의 모눈 종이·손글씨·종이 조각을 쓴다.
+ * 서체는 2026-11-01 사용자 요청으로 교보손글씨로 통일하고, 초기 Gaegu 시안의 색·크기는 유지한다.
  * 결정 HD-3 — 이 결은 **홈 한 화면만의 것**이고 글로벌 DS(`color.ts` · `typography.ts`)는 그대로다.
  * 그래서 `pond.ts` · `notebook.ts` · `diaryMemo.ts` 처럼 화면 전용 묶음 하나로 둔다.
  * `features/home/ui/v2/` 밖에서 쓰지 않는다.
@@ -19,12 +20,12 @@
  *
  * 되돌리면 `__tests__/contrast.test.ts` 「홈 v2」 묶음이 깨진다.
  *
- * ## 서체 — Gaegu 두 굵기 (`assets/fonts/README.md`)
+ * ## 서체 — 로그인 외 앱 전체와 같은 교보손글씨 (2026-11-01)
  *
- * 굵기는 `fontWeight` 가 아니라 **파일 이름**으로 고른다(Android 는 `fontWeight` 가 안 먹는다).
- * 이름은 `src/lib/providers.tsx` 의 `useFonts` 키와 같다 — Expo Lab 도 같은 파일 · 같은 이름이다.
+ * regular·bold는 같은 단일 파일을 가리킨다. 크기·색·배치로 위계를 유지한다.
  */
 import { withAlpha } from "./color";
+import { fontFamily } from "./typography";
 
 const ink = "#48291A";
 const card = "#FBF8F1";
@@ -47,7 +48,7 @@ export const homeV2 = {
     green: "#5B7553",
     /** 녹색 테이프 · 끝맺음 알갱이 같은 옅은 장식 */
     greenSoft: "#B9CBA8",
-    /** 오늘 요일 글자의 형광 — **굵기와 함께** 오늘을 말한다(색만으로 말하지 않는다) */
+    /** 오늘 요일 글자의 형광 — **밑줄과 함께** 오늘을 말한다(색만으로 말하지 않는다) */
     today: "#F6DE8A",
     /** 날짜 종이 조각 */
     date: "#E9D6BF",
@@ -90,7 +91,7 @@ export const homeV2 = {
     sticker: `0px 2px 6px ${withAlpha(shadow, 0.1)}`,
     dock: `0px 8px 24px ${withAlpha(shadow, 0.12)}`,
   },
-  font: { regular: "Gaegu-Regular", bold: "Gaegu-Bold" },
+  font: { regular: fontFamily.hand, bold: fontFamily.hand },
   /** v2 의 px 값 — **최소 14**(`DESIGN.md` 손글씨 최소 크기) · 배율 상한은 `maxFontScale` */
   type: {
     date: { fontSize: 36, lineHeight: 42 },

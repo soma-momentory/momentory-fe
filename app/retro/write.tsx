@@ -23,6 +23,7 @@ import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { EMOTIONS, isEmotionId, type EmotionId } from "@/features/emotion/model/emotion";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
+import { useSettings } from "@/features/my/model/settings";
 import { showToast } from "@/lib/toast";
 
 /** 오늘의 일정을 옆에 두고 빈 일기장에 직접 쓴다. AI 세션은 시작하지 않는다. */
@@ -66,7 +67,8 @@ export default function RetroWrite() {
     if (result.status === "saved") {
       Keyboard.dismiss();
       showToast("일기를 저장했어요.", "positive");
-      router.replace(`/diary/${result.id}`);
+      const askLetterTime = useSettings.getState().letterChosen === false;
+      router.replace(askLetterTime ? "/letter/time?next=rest" : "/(tabs)/rest?afterDiary=1");
       return;
     }
     savingRef.current = false;
@@ -79,7 +81,7 @@ export default function RetroWrite() {
     );
   };
 
-  // 다른 진입점에서도 하루 한 장 규칙을 지킨다. 저장 직후에는 상세로 이동하는 흐름을 유지한다.
+  // 다른 진입점에서도 하루 한 장 규칙을 지킨다. 저장 직후에는 쉼터로 이동하는 흐름을 유지한다.
   if (wroteToday && !saving) return <Redirect href="/retro/talk" />;
 
   return (

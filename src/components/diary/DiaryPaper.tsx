@@ -1,6 +1,5 @@
 import { useId, useState, type ReactNode } from "react";
 import { Image, Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { EmotionPebble, Text } from "@/components/ds";
 import { useEffectiveFontScale } from "@/components/ds/Text";
@@ -217,27 +216,8 @@ export function DiaryScheduleMemo({
   title?: string;
   emptyText?: string;
 }) {
-  const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   return (
     <View style={styles.memo} testID="diary-schedule-memo">
-      <Svg
-        width="100%"
-        height="100%"
-        style={StyleSheet.absoluteFill}
-        aria-hidden
-        pointerEvents="none"
-      >
-        <Defs>
-          <LinearGradient id={id} x1="0" y1="0" x2="0.08" y2="1">
-            <Stop offset="0" stopColor={paper.memo.top} />
-            <Stop offset="0.6" stopColor={paper.memo.middle} />
-            <Stop offset="1" stopColor={paper.memo.bottom} />
-          </LinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill={`url(#${id})`} />
-        <Rect width="100%" height={17} fill={paper.memo.adhesive} opacity={0.03} />
-        <Rect width="100%" height={1} fill={paper.memo.highlight} opacity={0.7} />
-      </Svg>
       <Text variant="headline1" style={styles.memoTitle} accessibilityRole="header">
         {title}
       </Text>
@@ -304,7 +284,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: paper.memo.paddingHorizontal,
     paddingBottom: paper.memo.paddingBottom,
     transform: [{ rotate: paper.memo.tilt }],
-    backgroundColor: paper.memo.middle,
+    backgroundColor: paper.memo.paper,
     boxShadow: `1px 2px 3px ${paper.memo.shadow}`,
   },
   memoTitle: { ...paper.memo.title, marginBottom: 9 },

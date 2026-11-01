@@ -206,13 +206,6 @@ export function ArchiveView({
                 </View>
               ) : null}
             </View>
-            <Image
-              source={require("../../../../assets/home/capybara-idle.png")}
-              style={styles.baba}
-              resizeMode="contain"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            />
           </View>
         </ScrollView>
       ) : (
@@ -267,6 +260,20 @@ export function ArchiveView({
       )}
 
       <View style={styles.summaryDock}>
+        {view === "calendar" ? (
+          <View
+            style={styles.baba}
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Image
+              source={require("../../../../assets/archive/baba-star.png")}
+              style={styles.babaImage}
+              resizeMode="contain"
+            />
+          </View>
+        ) : null}
         <Text variant="label1" color={labelColor.normal} style={styles.summaryTitle}>
           {"이번 달\n기록"}
         </Text>
@@ -360,7 +367,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  baba: { position: "absolute", width: 96, height: 140, right: -8, bottom: -8 },
+  // 스크롤과 분리해 첫 진입부터 월 기록 요약 위에 보이게 한다. PNG의 투명 아랫여백만 겹친다.
+  baba: {
+    position: "absolute",
+    width: 96,
+    height: 140,
+    right: -4,
+    bottom: "100%",
+    marginBottom: -16,
+  },
+  babaImage: { width: "100%", height: "100%" },
   emptyDay: { padding: space.md },
   emptyText: { textAlign: "center" },
   scheduleSection: {

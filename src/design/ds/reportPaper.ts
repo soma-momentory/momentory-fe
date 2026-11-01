@@ -1,3 +1,5 @@
+import { fontFamily } from "./typography";
+
 /**
  * 리포트 HTML 시안 `04-report.dc.html`의 종이·잉크·테이프 색.
  * 홈 v2와 같은 원본 팔레트를 쓰지만 리포트 전용 이름으로 둔다.
@@ -16,5 +18,5 @@ export const reportPaper = {
   line: "#E3D7C4",
   border: "#EDE4D4",
   shadow: "#48291A",
-  font: { regular: "Gaegu-Regular", bold: "Gaegu-Bold" },
+  font: { regular: fontFamily.hand, bold: fontFamily.hand },
 } as const;

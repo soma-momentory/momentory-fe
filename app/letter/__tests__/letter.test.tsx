@@ -331,7 +331,7 @@ describe("편지 시각 고르기(4-8)", () => {
     });
 
     expect(saveLetterTime).toHaveBeenCalledWith("07:30", false);
-    expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
+    expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest?afterDiary=1");
   });
 });
 

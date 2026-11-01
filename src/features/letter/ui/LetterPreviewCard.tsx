@@ -24,7 +24,7 @@ import { letterPaperStyle, Lined } from "@/features/letter/ui/LetterPaper";
  * 처음엔 바람 카드처럼 「제목 + 편지지 카드」였는데, 바로 아래 바람 카드와 같은 「칸」으로 보여 묻혔다.
  * 그래서 노트에 붙여 둔 물건처럼 살짝 기울이고, 테이프에 「바바의 편지」를 써서 제목 줄을 대신한다.
  * 테이프는 보관함 제목 뒤 테이프와 같은 베이지 단색 띠다.
- * 안에는 바바 폴라로이드 · 첫 줄(인용이 있으면 인용, 없으면 관점의 첫 문장) 두 줄 · 서명.
+ * 안에는 배경이 투명한 바바 · 첫 줄(인용이 있으면 인용, 없으면 관점의 첫 문장) 두 줄 · 서명.
  * 안 읽은 새 편지는 빨간 점 대신 **오른쪽 위 귀가 접혀** 있다. 편지 내용을 아직 못 받았으면 서명만 그린다.
  */
 type Props = {
@@ -61,7 +61,7 @@ export function LetterPreviewCard({ summary, letter, onPress }: Props) {
               </View>
             </View>
             <View style={styles.row}>
-              <View style={[styles.polaroid, { transform: [{ rotate: note.polaroidTilt }] }]}>
+              <View style={[styles.portrait, { transform: [{ rotate: note.portraitTilt }] }]}>
                 <Baba size={44} />
               </View>
               <View style={styles.text}>
@@ -115,12 +115,9 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   row: { flexDirection: "row", gap: space.md, alignItems: "flex-start" },
-  polaroid: {
-    backgroundColor: letterPaper.note.polaroid,
+  portrait: {
     padding: space.xs,
     paddingBottom: space.md,
-    borderWidth: 1,
-    borderColor: line.alternative,
   },
   text: { flex: 1, gap: space.xs },
   sign: { alignSelf: "flex-end" },

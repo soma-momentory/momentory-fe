@@ -37,8 +37,8 @@ describe("AppProviders", () => {
     expect(getByText("모멘토리")).toBeTruthy();
   });
 
-  it("홈 v2 의 Gaegu 두 굵기를 파일 이름 그대로 등록한다 — homeV2.font 와 같은 키", async () => {
-    // Android 는 fontWeight 로 굵기를 고르지 않는다 — 굵기마다 이름 하나(규칙 5)
+  it("홈도 공통 교보손글씨를 등록된 이름으로 사용한다", async () => {
+    // 단일 파일을 regular·bold 별칭으로 함께 사용한다.
     mockFonts(true);
     await render(
       <AppProviders>
@@ -50,8 +50,12 @@ describe("AppProviders", () => {
     expect(Object.keys(table)).toEqual(
       expect.arrayContaining([homeV2.font.regular, homeV2.font.bold]),
     );
-    expect(homeV2.font).toEqual({ regular: "Gaegu-Regular", bold: "Gaegu-Bold" });
-    // 글로벌 서체는 그대로다(HD-3)
+    expect(homeV2.font).toEqual({
+      regular: "KyoboHandwriting2025lyb",
+      bold: "KyoboHandwriting2025lyb",
+    });
+    // 로그인용 고딕 등록도 유지한다.
+    expect(Object.keys(table)).toEqual(expect.arrayContaining(["Pretendard-Regular"]));
     expect(Object.keys(table)).toEqual(expect.arrayContaining(["KyoboHandwriting2025lyb"]));
   });
 
