@@ -57,9 +57,10 @@ export const LATENCIES = [0, 1000, 5000] as const;
 
 /**
  * 오른쪽 패널 — 처음엔 디자인 편집기가 보인다. `reference` 는 참고 시안(`src/reference/`). 옛 「요청」 탭(`panel=log`)은 조작 패널 맨 아래
- * 「서버 요청 기록」으로 옮겼다 — 옛 주소는 조작 패널로 연다
+ * 「서버 요청 기록」으로 옮겼다 — 옛 주소는 조작 패널로 연다.
+ * `agent` 는 「AI에게 맡기기」(`src/agent/`), `new-screen` 은 그 안의 「새 화면 만들기」(탭은 「AI에게 맡기기」가 눌린다)
  */
-export const SIDE_PANELS = ["design", "controls", "reference"] as const;
+export const SIDE_PANELS = ["design", "controls", "reference", "agent", "new-screen"] as const;
 export type SidePanel = (typeof SIDE_PANELS)[number];
 
 /** 「맞춤」 또는 배율(0.1 ~ 2) */

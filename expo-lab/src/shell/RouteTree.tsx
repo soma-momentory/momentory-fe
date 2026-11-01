@@ -6,7 +6,7 @@
  * localStorage 에 남는다(해시에는 넣지 않는다). 지금 화면의 묶음은 저절로 펼친다.
  * 검색어가 있으면 접힘을 무시하고 일치하는 화면이 있는 묶음만 펼쳐 보인다.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { datasetLabel } from "./frameSpecs";
 import { frameBus, useFrameBus } from "./frameBus";
@@ -51,7 +51,10 @@ export function RouteTree({
   current,
   frameIds,
   onSelect,
+  top,
 }: {
+  /** 목록 맨 위(검색 아래)에 얹는 것 — 「＋ 새 화면 만들기」 · 「새 화면 (작업 중)」 */
+  top?: ReactNode;
   current: string;
   /** 배지를 달 프레임(지금 레이아웃의 것) */
   frameIds: readonly string[];
@@ -127,6 +130,7 @@ export function RouteTree({
         </button>
       </div>
       <div style={{ overflowY: "auto", padding: "0 8px 16px" }}>
+        {top}
         {shellSections.map((section) => {
           const routes = section.routes.filter(
             (route) =>
