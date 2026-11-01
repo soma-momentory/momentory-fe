@@ -13,6 +13,8 @@ export const retroDiary = {
   answer: USER_PAPER,
   babaSkin: "#EAAE7C",
   babaInk: "#48291A",
+  /** 일기 방식 선택 — 사용자 확정 스크린샷의 갈색(sRGB) */
+  methodTalk: "#7D634C",
   paper: "#FFFDF8",
   input: withAlpha(BABA_PAPER, 0.9),
   inputText: homeV2.color.ink,

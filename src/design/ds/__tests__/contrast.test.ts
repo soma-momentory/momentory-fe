@@ -6,6 +6,7 @@ import {
   label,
   primary,
   retroRug,
+  retroDiary,
   status,
   withAlpha,
   restScene,
@@ -191,5 +192,11 @@ describe("홈 v2 — 종이 위 글자와 체크", () => {
 
   it("홈 v2 — CTA 흰 글자 4.5", () => {
     expect(contrast(v2.white, v2.green)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("일기 방식 선택", () => {
+  it("AI 대화 버튼의 아이보리 글씨는 확정된 갈색 바탕에서 4.5 이상이다", () => {
+    expect(contrast(retroDiary.paper, retroDiary.methodTalk)).toBeGreaterThanOrEqual(4.5);
   });
 });
