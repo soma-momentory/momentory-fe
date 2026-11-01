@@ -1,6 +1,3 @@
-import { withAlpha } from "./color";
-import { diaryMemo } from "./diaryMemo";
-
 /**
  * Momentory DS — 쉼터 **장면 위 부품**의 크기와 짙기 (2026-10-05).
  * 색은 `color.ts` 의 `restScene`. 쓰는 곳은 `components/rest/scene/` 하나다.
@@ -80,22 +77,29 @@ export const restMoodMotion = {
 } as const;
 
 /**
- * 쉼터 설명 카드 소제목(「이럴 때 좋아요」 · 「이렇게 해요」) 뒤의 **줄무늬 테이프** (2026-10-12 · 사용자
- * 레퍼런스). 글자 아래쪽 절반쯤에 연두 띠가 깔리고 그 위로 흰 빗금이 옅게 지나간다 — 소제목이 본문과
- * 같은 크기로 묻혀 굵게 했더니, 사용자가 손으로 붙인 테이프처럼 귀엽게 하자고 했다.
- *
- * 띠는 일기 확인의 「오늘 일정」 테이프와 같은 연두다(`diaryMemo.schedule.tape`). 기울이지 않는다 —
- * 카드가 반듯해서(같은 날 · 비스듬한 쪽지를 걷어냈다).
+ * 쉼터 **설명 카드**의 크기 (2026-11-01 · 사용자가 고른 세 장 시안). 카드 · 버튼 · 말풍선은 쉼터
+ * 장면 안의 빈티지 결이 아니라 앱 공통 틀이다 — 흰 면(`background.elevated`) · 모달 반경 · 회고의
+ * 바바 말풍선(`retroDiary.question`) · 공용 `Button`. 쉼터만 따로 노는 모양이라는 평가를 받고 바꿨다.
+ * 2026-10-12 판의 줄무늬 테이프 소제목(`restGuideTape`)은 소제목이 없어지며 지웠다.
  */
-export const restGuideTape = {
-  color: diaryMemo.schedule.tape,
-  /** 흰 빗금 — 테이프 광택과 같은 흰빛을 옅게 */
-  stripe: withAlpha(diaryMemo.tapeSheen, 0.45),
-  /** 빗금 한 칸의 너비(dp)와 그 안의 흰 줄 굵기 — 45° 로 눕는다 */
-  stripeGap: 7,
-  stripeWidth: 2.5,
-  /** 글자 양옆으로 삐져나오는 만큼(dp) */
-  bleed: 6,
-  /** 글자 위쪽에서 비워 두는 비율 — 아래 절반 남짓만 덮는다 */
-  top: 0.38,
+export const restGuideSize = {
+  /**
+   * 카드 뒤 막 — 앱 공통 막(`overlay.dimmer` 32%)과 같은 색을 훨씬 짙게. 뒤 장면의 소개 글자가
+   * 비쳐 카드에 집중이 안 된다는 팀원 피드백(2026-11-01) — 60% 로도 글자가 읽혀 82% 로 올렸다.
+   * 장면은 윤곽만 남는다. 흐림(blur)은 네이티브 모듈(expo-blur)이 없어 쓰지 않았다
+   */
+  dim: "rgba(48,38,28,0.82)",
+  /** 말풍선 아래 서는 정면 바바(홈과 같은 그림)의 폭 */
+  baba: 84,
+  /** 말풍선 아래 꼬리 — 밑변 폭 · 높이 */
+  tail: { width: 20, height: 10 },
+  /** 예시 칸의 그림 한 칸과 그 안의 그림 */
+  tile: 64,
+  tileArt: 50,
+  /** 고르는 길 카드의 그림 자리(걱정상자 2장) — 두 카드가 같은 크기 */
+  choiceArt: { width: 80, height: 44 },
+  /** 적는 쉼터의 예시 줄 끝에 서는 상자 · 보물함 */
+  target: 54,
+  /** 장 표시 점 */
+  dot: 6,
 } as const;
