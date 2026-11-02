@@ -472,7 +472,7 @@ Codex(`.agents/skills/` · [`AGENTS.md`](AGENTS.md))와 **같은 16개를 사본
 `npm run lab:web` → `http://localhost:8085/`. **실제 앱 코드(`app/` 전 라우트 · 로그인 전부터)**를 웹 iframe 안에서
 가짜 서버 데이터로 띄운다 — 캡처 · Mock 이 아니다. 기기 외형(iOS · Pixel · Galaxy) · 화면 상태(보통 · 많음 · 불러오는 중 · 실패 …) ·
 나란히 비교(A/B — B 만 다른 상태 · AI 수정 결과) · 키보드 · 「AI에게 맡기기」(화면별 작업 공간에서 Claude · Codex 가 고치고,
-커밋 · PR 은 사람이 버튼으로)까지.
+커밋 · PR 은 사람이 버튼으로 · 「시안 개수」 2~3 이면 시안을 차례로 만들어 「시안 비교」에서 하나를 골라 확정)까지.
 앱 코드는 Lab 을 위해 바뀌지 않는다(앱 → Lab import 금지). 정본 [`expo-lab/README.md`](expo-lab/README.md) ·
 AI 작업 규칙 [`expo-lab/HANDOFF.md`](expo-lab/HANDOFF.md) · 스킬 `momentory-lab-handoff` · `momentory-lab-verify`.
 ⚠ 웹 흉내라 키보드 · 제스처 · 서체 렌더 · 네이티브 애니메이션은 기기와 다르다 — 마지막 확인은 기기에서.
