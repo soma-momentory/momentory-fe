@@ -196,7 +196,11 @@ test("레이아웃 탭과 도구줄이 무엇을 하는지 말한다", async ({ 
     .getByRole("tablist", { name: "보는 방식" })
     .getByRole("tab")
     .allTextContents();
-  expect(tabs).toEqual(["한 화면", "나란히 비교 (A/B)", "모든 화면", "기기별로 보기"]);
+  expect(tabs).toEqual(["한 화면", "나란히 비교 (A/B)", "모든 화면", "기기별로 보기", "시안 비교"]);
+  await expect(page.getByRole("tab", { name: "시안 비교" })).toHaveAttribute(
+    "title",
+    /시안 여러 개를 지금 앱과 한 줄에/,
+  );
   await expect(page.getByRole("tab", { name: "기기별로 보기" })).toHaveAttribute(
     "title",
     /모든 기기/,

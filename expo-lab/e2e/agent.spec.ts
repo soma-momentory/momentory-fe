@@ -258,3 +258,285 @@ test.describe("프레임과 말하기 (실제 앱 프레임)", () => {
     await expect(page.getByTestId("frame-label-B")).toHaveAttribute("title", "B · 지금 앱");
   });
 });
+
+// ── 시안 여러 개 → 시안 비교 → 최종 A/B → 확정 ─────────────────────────────
+// 시안의 수정 결과 화면은 같은 Lab 을 **다른 출처**(localhost ↔ 127.0.0.1)로 띄운다 — 두 번째 Lab 없이도 실제 앱이 뜬다.
+const VARIANT_URL = `http://localhost:${SHELL_PORT}`;
+
+type Recorded = { method: string; path: string; body: unknown };
+
+const member = (index: number, patch: Record<string, unknown> = {}) =>
+  workspace({
+    id: `home-s${index}`,
+    title: `홈 · 시안 ${index}`,
+    branch: `lab/home-s${index}-test`,
+    changedCount: 1,
+    status: "edited",
+    lastRun: { status: "done", agent: "claude", error: null },
+    group: { id: "g1", index, total: 3, createdAt: "2026-11-02T12:00:00.000Z" },
+    queued: false,
+    summaryLine: `방향: 시안 ${index} 의 방향`,
+    preview: { status: "ready", port: 8100 + index, url: VARIANT_URL, ready: true, error: null },
+    ...patch,
+  });
+
+/**
+ * 시안 묶음을 가진 가짜 서버 — 읽기에 더해 시안 · 미리보기 켜기 · 검사 · 저장 · 검토 요청 · 나머지 버리기를 **기록만** 하고 답한다.
+ * AI 도 git 도 돌지 않는다. 미리보기 켜기를 받으면 그 시안의 화면을 준비된 것으로 바꾼다.
+ */
+async function fakeVariantServer(
+  page: Page,
+  initial: Record<string, unknown>[],
+  extra: { queue?: unknown[]; activeRun?: unknown } = {},
+) {
+  const calls: Recorded[] = [];
+  let list = initial.map((w) => ({ ...w }));
+  const find = (id: string) => list.find((w) => w.id === id);
+  await page.route("**/__lab/agent/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = `${url.pathname.replace("/__lab/agent", "")}${url.search}`;
+    const method = request.method();
+    if (method !== "GET") calls.push({ method, path, body: request.postDataJSON() ?? null });
+    const status = {
+      available: { claude: true, codex: false, gh: true },
+      versions: { claude: "test", codex: null, gh: "test" },
+      git: { branch: "main", dirty: false, dirtyFiles: [] },
+      baseBranch: "main",
+      activeRun: extra.activeRun ?? null,
+      queue: extra.queue ?? [],
+      maxVariants: 3,
+      maxPreviews: 4,
+      workspaces: list,
+    };
+    if (method === "GET" && path === "/status") return route.fulfill({ json: status });
+    if (method === "GET" && path === "/workspaces")
+      return route.fulfill({ json: { workspaces: list } });
+    if (method === "POST" && path === "/variants")
+      return route.fulfill({
+        status: 202,
+        json: { group: { id: "g9", total: 3, route: "/home" }, workspaces: [] },
+      });
+    const m = /^\/workspaces\/([^/?]+)(?:\/([a-z]+))?/.exec(path);
+    const ws = m ? find(m[1]!) : undefined;
+    if (method === "POST" && ws && m?.[2] === "preview") {
+      Object.assign(ws, {
+        preview: { status: "ready", port: 8109, url: VARIANT_URL, ready: true, error: null },
+      });
+      return route.fulfill({ json: ws.preview });
+    }
+    if (method === "POST" && ws && m?.[2] === "check")
+      return route.fulfill({
+        status: 202,
+        json: {
+          check: { status: "pass", message: "PASS", findings: null, startedAt: 0, endedAt: 1 },
+        },
+      });
+    if (method === "POST" && ws && m?.[2] === "commit") {
+      Object.assign(ws, { status: "committed", changedCount: 0, commitCount: 1 });
+      return route.fulfill({
+        json: { commit: { sha: "abc1234", subject: "feat: 홈 시안 1" }, workspace: ws },
+      });
+    }
+    if (method === "POST" && ws && m?.[2] === "pr") {
+      Object.assign(ws, {
+        status: "pr",
+        pr: { number: 77, url: "https://github.com/x/y/pull/77" },
+      });
+      return route.fulfill({ json: { pr: ws.pr, pushedOnly: false, workspace: ws } });
+    }
+    if (method === "DELETE" && path.startsWith("/variants/g1?keep=")) {
+      const keep = url.searchParams.get("keep");
+      const removed = list.filter((w) => w.id !== keep && w.group).map((w) => String(w.id));
+      list = list.filter((w) => !removed.includes(String(w.id)));
+      return route.fulfill({ json: { kept: keep, removed } });
+    }
+    if (method === "GET" && ws && !m?.[2])
+      return route.fulfill({
+        json: {
+          workspace: ws,
+          changes: {
+            files: [{ status: "M", path: "app/(tabs)/home.tsx" }],
+            fileCount: Number(ws.changedCount ?? 0),
+            diffStat: "",
+            commits: [],
+            newRoutes: [],
+            newAssets: [],
+          },
+          run: null,
+          history: [],
+          blocks: {
+            commitMessage: "feat: 홈 카드를 시안 1 로 고친다",
+            prBody: "## 변경 목적\n시안 1",
+          },
+          check: null,
+          baseOptions: ["main"],
+        },
+      });
+    if (method !== "GET")
+      return route.fulfill({ status: 409, json: { error: "테스트에서는 실행하지 않아요" } });
+    return route.fulfill({ status: 404, json: { error: "없는 경로예요" } });
+  });
+  // 브라우저 대화 상자(confirm · alert)는 쓰지 않는다 — 뜨면 실패
+  page.on("dialog", (dialog) => {
+    throw new Error(`브라우저 대화 상자가 떴다: ${dialog.message()}`);
+  });
+  return calls;
+}
+
+test("「시안 개수」 — 3 을 고르면 같은 지시를 시안 3개로(POST /variants · count 3)", async ({
+  page,
+}) => {
+  const calls = await fakeVariantServer(page, []);
+  await page.goto("/#/screens?route=/home&panel=agent");
+  const counts = page.getByRole("group", { name: "시안 개수" });
+  await expect(counts).toContainText("시안 개수");
+  await expect(counts.getByRole("button", { name: "1개" })).toHaveAttribute("aria-pressed", "true");
+  await counts.getByRole("button", { name: "3개" }).click();
+  await expect(page.getByText("같은 지시로 방향이 다른 시안 3개를 따로 만들어요")).toBeVisible();
+  const input = page.getByRole("textbox", { name: "AI 에게 할 말" });
+  await input.click();
+  await input.press("End");
+  await input.pressSequentially("카드를 더 눈에 띄게");
+  await page.getByRole("button", { name: "시안 3개 만들기 맡기기" }).click();
+  await expect.poll(() => calls.filter((c) => c.path === "/variants").length).toBe(1);
+  const sent = calls.find((c) => c.path === "/variants")!.body as Record<string, unknown>;
+  expect(sent.count).toBe(3);
+  expect(sent.target).toMatchObject({ kind: "edit", route: "/home" });
+  expect(String(sent.instruction)).toContain("지시: 카드를 더 눈에 띄게");
+  expect(calls.some((c) => c.path === "/run")).toBe(false);
+});
+
+test("시안 비교 — 기존 + 시안 3대 · 이름 · 상태 · 꺼진 화면은 켠다 · 「이 시안 고르기」 → 최종 A/B · 다른 시안 다시 보기", async ({
+  page,
+}) => {
+  const calls = await fakeVariantServer(page, [
+    member(1),
+    member(2, { preview: { status: "stopped", port: null, url: null, ready: false, error: null } }),
+    member(3, {
+      status: "working",
+      lastRun: { status: "running", agent: "claude", error: null },
+      summaryLine: null,
+      preview: null,
+    }),
+  ]);
+  await page.goto("/#/screens?route=/home&layout=variants&group=g1");
+  await expect(page.getByRole("tab", { name: "시안 비교" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByTestId("frame-label-V0")).toHaveAttribute("title", "기존 · 지금 앱");
+  for (const i of [1, 2, 3])
+    await expect(page.getByTestId(`frame-label-V${i}`)).toHaveAttribute("title", `시안 ${i}`);
+  await expect(page.getByTestId("frame-state-V0")).toHaveText("화면 상태: 보통");
+  await expect(page.getByTestId("frame-state-V1")).toHaveText("준비됨 · 방향: 시안 1 의 방향");
+  await expect(page.getByTestId("frame-state-V3")).toHaveText("만드는 중");
+  await expect(page.getByTestId("variant-placeholder-V3")).toHaveText(
+    "AI가 이 시안을 만드는 중이에요",
+  );
+  await expect(page.getByTestId("variants-progress")).toHaveText(
+    "시안 1 다 만듦 · 시안 2 다 만듦 · 시안 3 만드는 중",
+  );
+  await expect(page.getByTestId("cross-origin-note")).toHaveText(
+    "시안 화면은 다른 서버라 돋보기는 「기존」에만 써요",
+  );
+  // 기존은 이 서버, 시안은 그 작업 공간의 수정 결과 화면(다른 출처) — 같은 화면 · 같은 상태
+  await expect(page.getByTestId("lab-frame-V0")).toHaveAttribute("src", "/home");
+  await expect(page.getByTestId("lab-frame-V1")).toHaveAttribute("src", `${VARIANT_URL}/home`);
+  expect(await frameConfig(page, "V1")).toMatchObject({
+    datasetId: "normal",
+    shellOrigin: new URL(page.url()).origin,
+  });
+  // 꺼져 있던 시안 2 는 열자마자 켠다 → 준비되면 폰이 붙는다
+  await expect
+    .poll(() => calls.some((c) => c.method === "POST" && c.path === "/workspaces/home-s2/preview"))
+    .toBe(true);
+  expect(calls.some((c) => c.path === "/workspaces/home-s1/preview")).toBe(false);
+  await expect(page.getByTestId("lab-frame-V2")).toHaveAttribute("src", `${VARIANT_URL}/home`, {
+    timeout: 15_000,
+  });
+  await expect(page.getByTestId("variant-pick-3")).toBeDisabled();
+  await expect(page.getByText("모두 함께 이동")).toBeVisible();
+
+  await page.getByTestId("variant-pick-1").click();
+  await expect(page).toHaveURL(/layout=ab/);
+  await expect(page).toHaveURL(/group=g1/);
+  await expect(page.getByTestId("frame-label-B")).toHaveAttribute(
+    "title",
+    "B · 시안 1 (AI 수정 결과)",
+  );
+  await expect(page.getByTestId("lab-frame-B")).toHaveAttribute("src", `${VARIANT_URL}/home`);
+  await expect(page.getByTestId("ab-banner-text")).toContainText("고른 「시안 1」(시안 3개 중)");
+  await page.getByRole("button", { name: "← 다른 시안 다시 보기" }).click();
+  await expect(page).toHaveURL(/layout=variants/);
+  await expect(page.getByTestId("frame-label-V3")).toBeVisible();
+});
+
+test("최종 A/B — 「이 시안으로 확정」이 검사 · 저장 · 검토 요청을 차례로 · 「나머지 시안 버리기」는 줄 안 확인 뒤에만", async ({
+  page,
+}) => {
+  const calls = await fakeVariantServer(page, [member(1), member(2), member(3)]);
+  await page.goto("/#/screens?route=/home&layout=variants&group=g1");
+  await page.getByTestId("variant-pick-1").click();
+  await expect(page.getByTestId("variant-decision")).toBeVisible();
+  // 확정 전에는 나머지를 버릴 수 없다
+  await expect(page.getByRole("button", { name: "나머지 시안 버리기" })).toHaveCount(0);
+  await page.getByRole("button", { name: "이 시안으로 확정" }).click();
+  await expect(page.getByRole("textbox", { name: "저장 메시지" })).toHaveValue(
+    "feat: 홈 카드를 시안 1 로 고친다",
+  );
+  await expect(page.getByRole("textbox", { name: "검토 요청 제목" })).toHaveValue(
+    "feat: 홈 카드를 시안 1 로 고친다",
+  );
+  await page.getByRole("button", { name: "저장하고 검토 요청 올리기" }).click();
+  await expect(page.getByTestId("variant-confirmed")).toContainText("확정했어요 — 시안 1");
+  await expect(page.getByTestId("variant-confirmed")).toContainText("검토 요청 #77 열기");
+  const steps = calls.filter((c) => c.method === "POST").map((c) => c.path);
+  expect(steps).toEqual([
+    "/workspaces/home-s1/check",
+    "/workspaces/home-s1/commit",
+    "/workspaces/home-s1/pr",
+  ]);
+  expect(calls.find((c) => c.path.endsWith("/commit"))!.body).toEqual({
+    message: "feat: 홈 카드를 시안 1 로 고친다",
+  });
+  expect(calls.find((c) => c.path.endsWith("/pr"))!.body).toMatchObject({
+    title: "feat: 홈 카드를 시안 1 로 고친다",
+    base: "main",
+  });
+  expect(calls.some((c) => c.path.includes("merge"))).toBe(false);
+
+  await page.getByRole("button", { name: "나머지 시안 버리기" }).click();
+  const confirm = page.getByTestId("variant-discard-confirm");
+  await expect(confirm).toContainText("시안 2 · 시안 3의 작업 공간과 수정 결과 화면이 사라져요");
+  expect(calls.some((c) => c.method === "DELETE")).toBe(false);
+  await confirm.getByRole("button", { name: "그만두기" }).click();
+  expect(calls.some((c) => c.method === "DELETE")).toBe(false);
+  await page.getByRole("button", { name: "나머지 시안 버리기" }).click();
+  await page.getByTestId("variant-discard-confirm").getByRole("button", { name: "버리기" }).click();
+  await expect(page.getByText("나머지 시안을 버렸어요")).toBeVisible();
+  const deletes = calls.filter((c) => c.method === "DELETE");
+  expect(deletes.map((c) => c.path)).toEqual(["/variants/g1?keep=home-s1"]);
+});
+
+test.describe("시안 비교 (실제 앱 프레임)", () => {
+  test.skip(!process.env.LAB_FRAMES, "LAB_FRAMES=1 일 때만 — 프레임 안에 실제 앱이 떠야 한다");
+
+  test("다른 출처의 시안 폰도 셸에 말한다 — 준비 · 모두 함께 이동(목록 배지)", async ({ page }) => {
+    await fakeVariantServer(page, [member(1), member(2)]);
+    await page.goto("/#/screens?route=/home&layout=variants&group=g1");
+    for (const id of ["V0", "V1", "V2"])
+      await expect(page.getByTestId(`lab-frame-${id}`)).toHaveAttribute("data-ready", "1", {
+        timeout: 90_000,
+      });
+    const tree = page.getByTestId("route-tree");
+    await tree.locator('[data-route="/report"]').click();
+    const row = tree.locator('[data-route="/report"]');
+    await expect(row.getByTestId("route-badge-V0")).toHaveText("기존", { timeout: 30_000 });
+    // data-ready = 다른 출처 시안 폰의 lab:ready 가 셸에 닿았다. 목록에서 고르면 셋 다 /report 로 —
+    // 폰이 셋이면 배지는 첫 하나 + 「+2」
+    await expect(row.getByTestId("route-badge-more")).toHaveText("+2", { timeout: 30_000 });
+    await expect(row.getByTestId("route-badge-more")).toHaveAttribute("title", /시안1 · 시안2/);
+    await expect(page.getByTestId("lab-frame-V1")).toHaveAttribute("src", `${VARIANT_URL}/home`);
+  });
+});
