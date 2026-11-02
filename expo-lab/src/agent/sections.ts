@@ -14,7 +14,7 @@ export const NEW_SCREEN_SECTIONS = [
 
 export type NewScreenSectionId = (typeof NEW_SCREEN_SECTIONS)[number]["id"];
 
-/** 영문 이름(주소에 쓰인다) 다듬기 — 서버도 같은 규칙으로 한 번 더 다듬는다. */
+/** 주소에 쓸 영문 이름 다듬기 — 서버도 같은 규칙으로 한 번 더 다듬는다. */
 export const toSlug = (value: string) =>
   value
     .toLowerCase()

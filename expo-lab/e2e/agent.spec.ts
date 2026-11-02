@@ -163,7 +163,11 @@ test("「＋ 새 화면 만들기」 — 오른쪽에 새 화면 칸을 열고, 
   await expect(page).toHaveURL(/panel=new-screen/);
   await expect(page.getByTestId("side-panel-new-screen")).toBeVisible();
   await expect(page.getByRole("textbox", { name: "화면 이름" })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "영문 이름" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "주소에 쓸 영문 이름" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "주소에 쓸 영문 이름" })).toHaveAttribute(
+    "placeholder",
+    "예: sleep-log",
+  );
   // 「새 화면 만들기」에 있는 동안 탭 줄은 「AI에게 맡기기」가 눌려 있다
   await expect(page.getByRole("tab", { name: "AI에게 맡기기" })).toHaveAttribute(
     "aria-selected",

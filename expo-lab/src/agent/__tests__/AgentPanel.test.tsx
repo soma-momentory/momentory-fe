@@ -422,7 +422,7 @@ describe("AgentPanel", () => {
 });
 
 describe("NewScreenForm", () => {
-  it("이름 · 영문 이름 · 설명을 채워야 보낼 수 있고, 보내면 new-screen 으로 run", async () => {
+  it("이름 · 주소에 쓸 영문 이름 · 설명을 채워야 보낼 수 있고, 보내면 new-screen 으로 run", async () => {
     const { client } = makeClient(baseStatus());
     client.run.mockImplementation(() =>
       ok({
@@ -440,7 +440,7 @@ describe("NewScreenForm", () => {
         "잠 기록",
       );
       typeInto(
-        container.querySelector<HTMLInputElement>('input[aria-label="영문 이름"]')!,
+        container.querySelector<HTMLInputElement>('input[aria-label="주소에 쓸 영문 이름"]')!,
         "Sleep Log",
       );
       typeInto(
