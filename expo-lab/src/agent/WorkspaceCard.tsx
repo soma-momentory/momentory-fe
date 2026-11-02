@@ -26,6 +26,7 @@ import { boxStyle, Btn, inputStyle, Note, smallStyle, Title } from "./ui";
 
 export const STATUS_LABEL: Record<WorkspaceStatus, string> = {
   working: "AI가 고치는 중",
+  queued: "AI 차례 기다리는 중",
   checking: "저장 전 검사 중",
   edited: "수정됨 · 저장 전",
   committed: "저장됨 · 검토 요청 전",

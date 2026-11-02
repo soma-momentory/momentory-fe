@@ -12,3 +12,5 @@ export { createAgentClient, defaultAgentClient, type AgentClient } from "./clien
 export { useAgentStatus } from "./useAgentStatus";
 export { NEW_SCREEN_SECTIONS } from "./sections";
 export type * from "./types";
+export { VariantDecision } from "./VariantDecision";
+export { VariantGroupCard } from "./VariantGroupCard";

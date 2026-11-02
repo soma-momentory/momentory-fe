@@ -5,7 +5,8 @@
 
 export type AgentId = "claude" | "codex";
 
-export type WorkspaceStatus = "working" | "checking" | "edited" | "committed" | "pr" | "fresh";
+export type WorkspaceStatus =
+  "working" | "queued" | "checking" | "edited" | "committed" | "pr" | "fresh";
 
 export type RunStatus = "running" | "done" | "failed" | "stopped";
 
@@ -47,9 +48,27 @@ export type WorkspaceSummary = {
   pr: { number: number | null; url: string } | null;
   broken: string | null;
   session: { agent: AgentId } | null;
-  lastRun: { status: RunStatus; agent: AgentId; error: string | null } | null;
+  /** 줄에서 시작하지 못했거나 멈춰서 거둔 시안은 실행 없이 `failed` + 이유(agent 없음) */
+  lastRun: { status: RunStatus; agent: AgentId | null; error: string | null } | null;
   check: CheckState | null;
   preview: PreviewState | null;
+  /** 「시안 여러 개」 묶음의 한 자리 — 아니면 null */
+  group: VariantGroup | null;
+  /** 시안 줄에서 차례를 기다리는 중 */
+  queued: boolean;
+  /** 마지막 요약의 첫 줄 — 시안이면 「방향: …」 */
+  summaryLine: string | null;
+};
+
+/** 같은 화면 · 같은 지시로 만든 시안 N개가 나눠 갖는 묶음 */
+export type VariantGroup = { id: string; index: number; total: number; createdAt: string };
+
+/** 시안 줄에 선 것(맨 앞이 다음 차례) */
+export type QueueEntry = {
+  workspaceId: string;
+  groupId: string;
+  index: number | null;
+  title: string;
 };
 
 export type ActiveRun = { workspaceId: string; title: string; agent: AgentId; startedAt: number };
@@ -60,6 +79,9 @@ export type AgentStatus = {
   git: { branch: string | null; dirty: boolean; dirtyFiles: string[] };
   baseBranch: string;
   activeRun: ActiveRun | null;
+  queue: QueueEntry[];
+  maxVariants: number;
+  maxPreviews: number;
   workspaces: WorkspaceSummary[];
 };
 
@@ -142,6 +164,8 @@ export type NewScreenTarget = {
   parentSection?: string | null;
   description?: string;
 };
+
+export type VariantsRequest = RunRequest & { target: EditTarget; count: number };
 
 export type RunRequest = {
   agent: AgentId;

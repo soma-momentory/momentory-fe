@@ -42,6 +42,9 @@ const baseStatus = (patch: Partial<AgentStatus> = {}): AgentStatus => ({
   git: { branch: "main", dirty: false, dirtyFiles: [] },
   baseBranch: "main",
   activeRun: null,
+  queue: [],
+  maxVariants: 3,
+  maxPreviews: 4,
   workspaces: [],
   ...patch,
 });
@@ -69,6 +72,9 @@ const ws = (patch: Partial<WorkspaceSummary> = {}): WorkspaceSummary => ({
   lastRun: { status: "done", agent: "claude", error: null },
   check: null,
   preview: { status: "ready", port: 8100, url: "http://localhost:8100", ready: true, error: null },
+  group: null,
+  queued: false,
+  summaryLine: null,
   ...patch,
 });
 
@@ -134,6 +140,11 @@ function makeClient(status: AgentStatus, detail?: WorkspaceDetail) {
       ok({ workspace: ws({ status: "working" }), run: { ...doneRun, status: "running" as const } }),
     ),
     stop: jest.fn(() => ok({ run: null })),
+    variants: jest.fn(() =>
+      ok({ group: { id: "g1", total: 2, route: "/(tabs)/home" }, workspaces: [] }),
+    ),
+    stopVariants: jest.fn(() => ok({ stopped: "tabs-home-s2", cancelled: ["tabs-home-s3"] })),
+    discardOtherVariants: jest.fn(() => ok({ kept: "tabs-home-s2", removed: [] })),
     startCheck: jest.fn(() =>
       ok({
         check: {
@@ -452,5 +463,99 @@ describe("NewScreenForm", () => {
         },
       }),
     );
+  });
+});
+
+describe("시안 여러 개", () => {
+  const member = (index: number, patch: Partial<WorkspaceSummary> = {}) =>
+    ws({
+      id: `tabs-home-s${index}`,
+      title: `홈 · 시안 ${index}`,
+      group: { id: "g1", index, total: 3, createdAt: "2026-11-02T12:00:00.000Z" },
+      ...patch,
+    });
+
+  it("시안 개수 2 를 고르면 같은 지시를 variants(count 2) 로 보낸다", async () => {
+    const { client } = makeClient(baseStatus());
+    await act(async () => root.render(<AgentPanel screen={screenInfo} client={client} />));
+    await settle();
+    const group = container.querySelector('[role="group"][aria-label="시안 개수"]');
+    expect(group?.textContent).toContain("시안 개수");
+    expect(button("1개").getAttribute("aria-pressed")).toBe("true");
+    await click(button("2개"));
+    expect(text()).toContain("같은 지시로 방향이 다른 시안 2개를 따로 만들어요");
+    const textarea = container.querySelector<HTMLTextAreaElement>(
+      'textarea[aria-label="AI 에게 할 말"]',
+    )!;
+    await act(async () => typeInto(textarea, `${textarea.value}카드를 더 눈에 띄게`));
+    await click(button("시안 2개 만들기 맡기기"));
+    expect(client.run).not.toHaveBeenCalled();
+    expect(client.variants).toHaveBeenCalledWith(
+      expect.objectContaining({
+        count: 2,
+        agent: "claude",
+        target: expect.objectContaining({ kind: "edit", route: "/(tabs)/home" }),
+        instruction: expect.stringContaining("지시: 카드를 더 눈에 띄게"),
+      }),
+    );
+  });
+
+  it("묶음 카드 — 진행 한 줄 · 시안 비교로 보기 · 멈추기 · 줄이 있으면 다른 지시를 막는다", async () => {
+    const members = [
+      member(1, { status: "edited", summaryLine: "방향: 정석" }),
+      member(2, {
+        status: "working",
+        lastRun: { status: "running", agent: "claude", error: null },
+      }),
+      member(3, { status: "queued", queued: true, lastRun: null, changedCount: 0 }),
+    ];
+    const { client } = makeClient(
+      baseStatus({
+        workspaces: members,
+        activeRun: {
+          workspaceId: "tabs-home-s2",
+          title: "홈 · 시안 2",
+          agent: "claude",
+          startedAt: 0,
+        },
+        queue: [{ workspaceId: "tabs-home-s3", groupId: "g1", index: 3, title: "홈 · 시안 3" }],
+      }),
+    );
+    const onOpenVariants = jest.fn();
+    await act(async () =>
+      root.render(
+        <AgentPanel screen={screenInfo} client={client} onOpenVariants={onOpenVariants} />,
+      ),
+    );
+    await settle();
+    expect(container.querySelector('[data-testid="variant-progress"]')?.textContent).toBe(
+      "시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 대기 중",
+    );
+    expect(text()).toContain("방향: 정석");
+    // 시안은 이 화면의 「이어서 맡기기」 작업 공간이 아니다
+    expect(text()).toContain("지시를 보내면 이 화면용 작업 공간을 만들어요");
+    expect(text()).toContain("시안을 차례로 만드는 중이에요(다음: 홈 · 시안 3)");
+    expect(button("AI에게 수정 맡기기").disabled).toBe(true);
+    await click(button("시안 비교로 보기"));
+    expect(onOpenVariants).toHaveBeenCalledWith("g1");
+    await click(button("시안 만들기 멈추기"));
+    expect(client.stopVariants).toHaveBeenCalledWith("g1");
+  });
+
+  it("다른 화면의 시안은 「다른 작업」에 묶음 한 줄로", async () => {
+    const elsewhere = [1, 2, 3].map((i) =>
+      member(i, {
+        id: `my-s${i}`,
+        route: "/my",
+        title: `마이 · 시안 ${i}`,
+        group: { id: "g2", index: i, total: 3, createdAt: "2026-11-02T12:00:00.000Z" },
+      }),
+    );
+    const { client } = makeClient(baseStatus({ workspaces: elsewhere }));
+    await act(async () => root.render(<AgentPanel screen={screenInfo} client={client} />));
+    await settle();
+    expect(text()).toContain("다른 작업 1개");
+    expect(text()).toContain("마이 · 시안 3개");
+    expect(text()).not.toContain("마이 · 시안 2 ");
   });
 });
