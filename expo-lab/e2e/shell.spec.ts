@@ -347,9 +347,15 @@ test("기기 크기 그대로의 iframe 이 외형 안에 놓이고, 상태바 �
     const box = await frame.boundingBox();
     expect(box?.width).toBeCloseTo(width, 0);
     expect(box?.height).toBeCloseTo(height, 0);
-    const bar = await page.getByTestId("device-status-bar").boundingBox();
-    expect(bar?.height).toBeCloseTo(statusBar, 0);
-    expect(bar?.y).toBeCloseTo(box!.y, 0);
+    const bar = page.getByTestId("device-status-bar");
+    expect((await bar.boundingBox())?.height).toBeCloseTo(statusBar, 0);
+    // 해시만 바꿔 기기를 갈아 끼우는 동안 두 상자를 따로 재면 앞 기기의 외형과 섞일 수 있다 — 자리 맞춤은 기다려 본다
+    await expect
+      .poll(async () => {
+        const [f, b] = [await frame.boundingBox(), await bar.boundingBox()];
+        return f && b ? Math.round(b.y - f.y) : null;
+      })
+      .toBe(0);
   }
 });
 
