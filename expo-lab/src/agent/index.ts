@@ -1,8 +1,8 @@
 /** 「AI에게 맡기기」 — 셸이 쓰는 것. 서버는 `expo-lab/server/`(Metro 미들웨어 `/__lab/agent/*`). */
 export {
   AgentPanel,
-  buildInstructionHeader,
-  instructionBody,
+  buildInstructionContext,
+  composeInstruction,
   type AgentPanelProps,
   type AgentScreen,
 } from "./AgentPanel";

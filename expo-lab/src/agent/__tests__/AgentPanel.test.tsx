@@ -6,8 +6,8 @@ import { act, type ReactNode } from "react";
 
 import {
   AgentPanel,
-  buildInstructionHeader,
-  instructionBody,
+  buildInstructionContext,
+  composeInstruction,
   type AgentScreen,
 } from "../AgentPanel";
 import type { AgentClient, RunEvents } from "../client";
@@ -33,7 +33,7 @@ const screenInfo: AgentScreen = {
   file: "app/(tabs)/home.tsx",
   specId: "12",
   device: { label: "iPhone 16", platform: "ios" },
-  datasetLabel: "보통",
+  datasetLabel: "기록 보통",
 };
 
 const baseStatus = (patch: Partial<AgentStatus> = {}): AgentStatus => ({
@@ -242,19 +242,18 @@ async function click(el: HTMLElement) {
   await settle();
 }
 
-describe("머리말", () => {
-  it("화면 · 파일 · 환경을 채우고 「지시: 」 로 끝난다", () => {
-    const header = buildInstructionHeader(screenInfo);
-    expect(header).toBe(
-      [
-        "[화면] 홈 (12) · /(tabs)/home",
-        "[파일] app/(tabs)/home.tsx",
-        "[환경] iPhone 16 (ios) · 데이터 보통",
-        "지시: ",
-      ].join("\n"),
+describe("함께 보내는 정보", () => {
+  it("화면 · 파일 · 환경 세 줄 — 보낼 때는 그 뒤에 「지시: 」 + 적은 말을 잇는다", () => {
+    const context = [
+      "[화면] 홈 (12) · /(tabs)/home",
+      "[파일] app/(tabs)/home.tsx",
+      "[환경] iPhone 16 (ios) · 데이터: 기록 보통",
+    ];
+    expect(buildInstructionContext(screenInfo)).toEqual(context);
+    expect(composeInstruction(screenInfo, "  카드 간격 넓혀줘 \n")).toBe(
+      [...context, "지시: 카드 간격 넓혀줘"].join("\n"),
     );
-    expect(instructionBody(`${header}카드 간격 넓혀줘`)).toBe("카드 간격 넓혀줘");
-    expect(instructionBody(header)).toBe("");
+    expect(composeInstruction(screenInfo, "")).toBe([...context, "지시: "].join("\n"));
   });
 });
 
@@ -267,26 +266,40 @@ describe("AgentPanel", () => {
     await settle();
     expect(text()).toContain("지시를 보내면 이 화면용 작업 공간을 만들어요");
     expect(text()).toContain("이 PC 에 로그인된 Claude Code · Codex 로 실행해요");
+    // 함께 보내는 정보는 읽기만 하는 칸 · 지시 칸은 비어 있다
+    const context = container.querySelector('[data-testid="agent-context"]');
+    expect(context?.textContent).toContain("AI에게 함께 보내는 정보");
+    expect(context?.textContent).toContain("[화면] 홈 (12) · /(tabs)/home");
+    expect(context?.querySelector("textarea, input")).toBeNull();
     const textarea = container.querySelector<HTMLTextAreaElement>(
-      'textarea[aria-label="AI 에게 할 말"]',
+      'textarea[aria-label="무엇을 바꿀까요?"]',
     );
-    expect(textarea?.value.endsWith("지시: ")).toBe(true);
-    expect(textarea?.value).not.toContain("[시안]");
+    expect(textarea?.value).toBe("");
+    expect(textarea?.placeholder).toContain("예:");
+    expect(text()).not.toContain("[시안]");
     // Codex 는 이 PC 에 없다 → 고를 수 없다
     expect(button("Codex").disabled).toBe(true);
-    // 할 말도 그림도 없으면 보낼 수 없다
+    // 할 말도 그림도 없으면 보낼 수 없다 — 한 줄로 알린다
+    expect(button("AI에게 수정 맡기기").disabled).toBe(true);
+    expect(text()).toContain("「무엇을 바꿀까요?」에 할 말을 적거나 그림을 붙여요");
+    // 빈칸 · 줄바꿈만으로는 여전히 못 보낸다
+    await act(async () => typeInto(textarea!, "  \n "));
     expect(button("AI에게 수정 맡기기").disabled).toBe(true);
 
-    await act(async () => typeInto(textarea!, `${textarea!.value}카드 간격을 넓혀줘`));
+    await act(async () => typeInto(textarea!, "카드 간격을 넓혀줘"));
+    expect(text()).not.toContain("에 할 말을 적거나 그림을 붙여요");
     await click(button("AI에게 수정 맡기기"));
     expect(client.run).toHaveBeenCalledWith(
       expect.objectContaining({
         agent: "claude",
         target: expect.objectContaining({ kind: "edit", route: "/(tabs)/home", specId: "12" }),
-        instruction: expect.stringContaining("지시: 카드 간격을 넓혀줘"),
+        // 서버에는 예전과 같은 모양 — 함께 보내는 정보 세 줄 + 「지시: 」 + 적은 말
+        instruction: composeInstruction(screenInfo, "카드 간격을 넓혀줘"),
         attachments: [],
       }),
     );
+    // 보내고 나면 지시 칸을 비운다
+    expect(textarea?.value).toBe("");
   });
 
   it("할 말도 그림도 없으면 「AI에게 수정 맡기기」를 누를 수 없다", async () => {
@@ -485,9 +498,9 @@ describe("시안 여러 개", () => {
     await click(button("2개"));
     expect(text()).toContain("같은 지시로 방향이 다른 시안 2개를 따로 만들어요");
     const textarea = container.querySelector<HTMLTextAreaElement>(
-      'textarea[aria-label="AI 에게 할 말"]',
+      'textarea[aria-label="무엇을 바꿀까요?"]',
     )!;
-    await act(async () => typeInto(textarea, `${textarea.value}카드를 더 눈에 띄게`));
+    await act(async () => typeInto(textarea, "카드를 더 눈에 띄게"));
     await click(button("시안 2개 만들기 맡기기"));
     expect(client.run).not.toHaveBeenCalled();
     expect(client.variants).toHaveBeenCalledWith(
@@ -495,7 +508,7 @@ describe("시안 여러 개", () => {
         count: 2,
         agent: "claude",
         target: expect.objectContaining({ kind: "edit", route: "/(tabs)/home" }),
-        instruction: expect.stringContaining("지시: 카드를 더 눈에 띄게"),
+        instruction: composeInstruction(screenInfo, "카드를 더 눈에 띄게"),
       }),
     );
   });

@@ -64,13 +64,18 @@ const NEW_SCREEN = workspace({
   preview: preview(false),
 });
 
-/** `/__lab/agent/*` 를 가짜로 — 읽기만 답하고, 실행 · 저장 같은 POST 는 막는다 */
+/**
+ * `/__lab/agent/*` 를 가짜로 — 읽기만 답하고, 실행 · 저장 같은 POST 는 막는다(409).
+ * 막은 POST 가 무엇을 보냈는지는 돌려준다(셸이 보낸 지시를 본다)
+ */
 async function fakeAgentServer(page: Page, workspaces: Record<string, unknown>[]) {
+  const calls: { method: string; path: string; body: unknown }[] = [];
   await page.route("**/__lab/agent/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname.replace("/__lab/agent", "");
     if (request.method() !== "GET") {
+      calls.push({ method: request.method(), path, body: request.postDataJSON() ?? null });
       return route.fulfill({ status: 409, json: { error: "테스트에서는 실행하지 않아요" } });
     }
     if (path === "/status") {
@@ -110,6 +115,7 @@ async function fakeAgentServer(page: Page, workspaces: Record<string, unknown>[]
     }
     return route.fulfill({ status: 404, json: { error: "없는 경로예요" } });
   });
+  return calls;
 }
 
 const frameConfig = async (page: Page, frameId: string) => {
@@ -117,33 +123,59 @@ const frameConfig = async (page: Page, frameId: string) => {
   return JSON.parse(name!.slice("momentory-lab:".length)) as Record<string, unknown>;
 };
 
-test("「AI에게 맡기기」 탭 — 지금 화면 · 파일 · 기기 · 데이터가 지시 칸에 미리 채워진다", async ({
+test("「AI에게 맡기기」 탭 — 함께 보내는 정보(화면 · 파일 · 기기 · 데이터)는 따로, 지시 칸은 비어 있다", async ({
   page,
 }) => {
-  await fakeAgentServer(page, []);
+  const calls = await fakeAgentServer(page, []);
   await page.goto("/#/screens?route=/home");
   await page.getByRole("tab", { name: "AI에게 맡기기" }).click();
   await expect(page).toHaveURL(/panel=agent/);
-  const input = page.getByRole("textbox", { name: "AI 에게 할 말" });
+  const context = page.getByTestId("agent-context");
+  await expect(context).toContainText("AI에게 함께 보내는 정보");
+  await expect(context).toContainText("[화면] 홈 (12 · 12-b) · /home");
+  await expect(context).toContainText("[파일] app/(tabs)/home.tsx");
+  await expect(context).toContainText("[환경] iPhone 16 (ios) · 데이터: 기록 보통");
+  await expect(context).not.toContainText("[시안]");
+  // 함께 보내는 정보는 고치는 칸이 아니다
+  await expect(context.getByRole("textbox")).toHaveCount(0);
+  const input = page.getByRole("textbox", { name: "무엇을 바꿀까요?" });
   await expect(input).toBeVisible();
-  const text = await input.inputValue();
-  expect(text).toContain("[화면] 홈 (12 · 12-b) · /home");
-  expect(text).toContain("[파일] app/(tabs)/home.tsx");
-  expect(text).toContain("[환경] iPhone 16 (ios) · 데이터 기록 보통");
-  expect(text).not.toContain("[시안]");
-  expect(text.trimEnd().endsWith("지시:")).toBe(true);
-  // 다른 화면을 고르면 머리말이 따라간다
+  await expect(input).toHaveValue("");
+  await expect(input).toHaveAttribute("placeholder", /^예: /);
+  // 할 말이 없으면 못 보낸다 — 한 줄로 알린다
+  const go = page.getByRole("button", { name: "AI에게 수정 맡기기" });
+  await expect(go).toBeDisabled();
+  await expect(page.getByTestId("agent-ask-hint")).toHaveText(
+    "「무엇을 바꿀까요?」에 할 말을 적거나 그림을 붙여요",
+  );
+  // 다른 화면을 고르면 함께 보내는 정보가 따라간다
   await page.getByTestId("route-tree").locator('[data-route="/rest"]').click();
-  await expect(input).toHaveValue(/\[화면\] 쉼터 \(R1\) · \/rest/);
+  await expect(context).toContainText("[화면] 쉼터 (R1) · /rest");
   // 다른 탭을 보고 와도 적던 지시가 남는다
-  // (지시 칸은 포커스 때 커서를 「지시: 」 뒤로 옮긴다 — 끝에 이어 쓴다)
-  await input.click();
-  await input.press("End");
-  await input.pressSequentially("카드 간격 넓혀줘");
-  await expect(input).toHaveValue(/지시: 카드 간격 넓혀줘$/);
+  await input.fill("카드 간격 넓혀줘");
   await page.getByRole("tab", { name: "화면 조건" }).click();
+  // 화면 상태를 바꾸면 함께 보내는 정보도 따라간다(적던 지시는 그대로)
+  await page.getByTestId("screen-state").selectOption({ label: "기록 많음" });
   await page.getByRole("tab", { name: "AI에게 맡기기" }).click();
-  await expect(input).toHaveValue(/지시: 카드 간격 넓혀줘$/);
+  await expect(input).toHaveValue("카드 간격 넓혀줘");
+  await expect(context).toContainText("· 데이터: 기록 많음");
+  await expect(page.getByTestId("agent-ask-hint")).toHaveCount(0);
+  // 보내면 서버에는 함께 보내는 정보 + 적은 말이 한 덩어리 `instruction` 으로 간다
+  await go.click();
+  await expect.poll(() => calls.filter((c) => c.path === "/run").length).toBe(1);
+  const sent = calls.find((c) => c.path === "/run")!.body as Record<string, unknown>;
+  expect(sent.target).toMatchObject({ kind: "edit", route: "/rest" });
+  expect(sent.instruction).toBe(
+    [
+      "[화면] 쉼터 (R1) · /rest",
+      "[파일] app/(tabs)/rest.tsx",
+      "[환경] iPhone 16 (ios) · 데이터: 기록 많음",
+      "지시: 카드 간격 넓혀줘",
+    ].join("\n"),
+  );
+  // 가짜 서버는 실행하지 않고(409) 한 줄로 알린다 — 적던 지시는 그대로 남는다
+  await expect(page.getByText("테스트에서는 실행하지 않아요")).toBeVisible();
+  await expect(input).toHaveValue("카드 간격 넓혀줘");
 });
 
 test("「＋ 새 화면 만들기」 — 오른쪽에 새 화면 칸을 열고, 작업 중인 새 화면이 목록 맨 위에 묶인다", async ({
@@ -174,7 +206,7 @@ test("「＋ 새 화면 만들기」 — 오른쪽에 새 화면 칸을 열고, 
     "true",
   );
   await page.getByRole("button", { name: "← 이 화면 고치기로" }).click();
-  await expect(page.getByRole("textbox", { name: "AI 에게 할 말" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "무엇을 바꿀까요?" })).toBeVisible();
 });
 
 test.describe("프레임과 말하기 (실제 앱 프레임)", () => {
@@ -398,16 +430,19 @@ test("「시안 개수」 — 3 을 고르면 같은 지시를 시안 3개로(PO
   await expect(counts.getByRole("button", { name: "1개" })).toHaveAttribute("aria-pressed", "true");
   await counts.getByRole("button", { name: "3개" }).click();
   await expect(page.getByText("같은 지시로 방향이 다른 시안 3개를 따로 만들어요")).toBeVisible();
-  const input = page.getByRole("textbox", { name: "AI 에게 할 말" });
-  await input.click();
-  await input.press("End");
-  await input.pressSequentially("카드를 더 눈에 띄게");
-  await page.getByRole("button", { name: "시안 3개 만들기 맡기기" }).click();
+  const go = page.getByRole("button", { name: "시안 3개 만들기 맡기기" });
+  // 시안도 할 말이 없으면 못 보낸다
+  await expect(go).toBeDisabled();
+  await expect(page.getByTestId("agent-ask-hint")).toBeVisible();
+  await page.getByRole("textbox", { name: "무엇을 바꿀까요?" }).fill("카드를 더 눈에 띄게");
+  await go.click();
   await expect.poll(() => calls.filter((c) => c.path === "/variants").length).toBe(1);
   const sent = calls.find((c) => c.path === "/variants")!.body as Record<string, unknown>;
   expect(sent.count).toBe(3);
   expect(sent.target).toMatchObject({ kind: "edit", route: "/home" });
-  expect(String(sent.instruction)).toContain("지시: 카드를 더 눈에 띄게");
+  expect(String(sent.instruction)).toMatch(
+    /^\[화면\] 홈 \(12 · 12-b\) · \/home\n\[파일\] app\/\(tabs\)\/home\.tsx\n\[환경\] .+\n지시: 카드를 더 눈에 띄게$/,
+  );
   expect(calls.some((c) => c.path === "/run")).toBe(false);
 });
 
