@@ -462,18 +462,19 @@ Codex(`.agents/skills/` · [`AGENTS.md`](AGENTS.md))와 **같은 16개를 사본
 동작·상태·반응형 `momentory-screen-qa` · diff 리뷰 `momentory-pr-review`. 감사 요청만으로 제품 코드를 고치지 않는다.
 외부 참고 스킬 다섯(`ux-writing` `expo-design-system` `vercel-react-native-skills` `diagnose-*`)은 이름으로 불러야만 돈다.
 
-> 🎨 **Lab 시안 → 코드 반영은 AI 가 한다** (2026-11-02 결정). 사람은 Expo Lab 에서 시안을 맞추고
-> 「AI에게 넘기기」로 파일(`momentory-handoff-*.json`)을 내보낸다. 받은 AI 는 `momentory-lab-handoff`
-> 스킬로 [`expo-lab/HANDOFF.md`](expo-lab/HANDOFF.md) 절차(요약·확인 → 값 반영 → 구조 차이 → DESIGN.md 갱신 →
-> 검사 → Lab 확인 → PR, **머지는 사용자 승인 뒤**)를 따른다.
+> 🎨 **Lab 에서 본 화면의 수정은 AI 에게 맡긴다** (2026-11-02 결정 · 같은 날 개정). 사람은 Expo Lab 에서 화면을 보고
+> 「AI에게 맡기기」에 지시를 적는다 — 원하는 모습은 참고 그림(피그마 · 캡처)으로 붙인다. AI 는 `momentory-lab-handoff`
+> 스킬로 [`expo-lab/HANDOFF.md`](expo-lab/HANDOFF.md) 절차(요약·확인 → 고치기 → DESIGN.md 갱신 →
+> 검사 → Lab 확인 → PR, **머지는 사용자 승인 뒤**)를 따른다. Lab 안의 디자인 편집 · 시안 · 「AI에게 넘기기」 파일은 지웠다.
 
 ## Expo Lab — 웹에서 실제 앱 전 화면을 보고 디자인한다 (2026-11-02)
 
 `npm run lab:web` → `http://localhost:8085/`. **실제 앱 코드(`app/` 전 라우트 · 로그인 전부터)**를 웹 iframe 안에서
-가짜 서버 데이터로 띄운다 — 캡처 · Mock 이 아니다. 기기 외형(iOS · Pixel · Galaxy) · 상태별로 보기 · 디자인 편집(시안) ·
-참고 시안 겹치기 · 키보드 · 「AI에게 맡기기」(화면별 작업 공간에서 Claude · Codex 가 고치고, 커밋 · PR 은 사람이 버튼으로)까지.
+가짜 서버 데이터로 띄운다 — 캡처 · Mock 이 아니다. 기기 외형(iOS · Pixel · Galaxy) · 화면 상태(보통 · 많음 · 불러오는 중 · 실패 …) ·
+나란히 비교(A/B — B 만 다른 상태 · AI 수정 결과) · 키보드 · 「AI에게 맡기기」(화면별 작업 공간에서 Claude · Codex 가 고치고,
+커밋 · PR 은 사람이 버튼으로)까지.
 앱 코드는 Lab 을 위해 바뀌지 않는다(앱 → Lab import 금지). 정본 [`expo-lab/README.md`](expo-lab/README.md) ·
-시안 → 코드 규칙 [`expo-lab/HANDOFF.md`](expo-lab/HANDOFF.md) · 스킬 `momentory-lab-handoff` · `momentory-lab-verify`.
+AI 작업 규칙 [`expo-lab/HANDOFF.md`](expo-lab/HANDOFF.md) · 스킬 `momentory-lab-handoff` · `momentory-lab-verify`.
 ⚠ 웹 흉내라 키보드 · 제스처 · 서체 렌더 · 네이티브 애니메이션은 기기와 다르다 — 마지막 확인은 기기에서.
 
 ## 명령
