@@ -45,7 +45,7 @@ export function fitScale(
   if (width <= 0 || height <= 0) return FIT_MIN;
 
   if (layout === "single") return clamp(Math.min(width / maxW, height / maxH), FIT_MIN, FIT_MAX);
-  if (layout === "ab") return fitRow(area, top, phones);
+  if (layout === "ab" || layout === "variants") return fitRow(area, top, phones);
   const caption = CELL_CAPTION;
   // 기기별 — 줄 수를 1 부터 n 까지 바꿔 보며 가장 크게 들어가는 배치를 고른다
   const n = phones.length;
@@ -61,7 +61,7 @@ export function fitScale(
   return clamp(best, FIT_MIN, FIT_MAX);
 }
 
-/** 기기 n 대를 한 줄로 나란히 — A/B(두 대) */
+/** 기기 n 대를 한 줄로 나란히 — A/B(두 대) · 시안 비교(기존 + 시안 최대 3) */
 export function fitRow(area: Size, top: number, phones: readonly Size[]): number {
   if (!phones.length) return FIT_MIN;
   const maxW = Math.max(...phones.map((phone) => phone.width));

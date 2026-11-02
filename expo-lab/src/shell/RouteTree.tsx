@@ -14,10 +14,25 @@ import { findRoute, matchPathname, shellSections, type ShellRoute } from "./rout
 import { shellColor } from "./theme";
 
 const frameLabel = (frameId: string) =>
-  frameId === "solo" ? "●" : frameId.startsWith("m-") ? frameId.slice(2) : frameId;
+  frameId === "solo"
+    ? "●"
+    : frameId.startsWith("m-")
+      ? frameId.slice(2)
+      : frameId === "V0"
+        ? "기존"
+        : /^V\d+$/.test(frameId)
+          ? `시안${frameId.slice(1)}`
+          : frameId;
 
+/** 배지 이름 — 기기별은 데이터 이름, 시안 비교는 「기존」 · 「시안 k」(`frameSpecs.variantSpecs` 의 V0 · Vk) */
 const frameTitle = (frameId: string) =>
-  frameId.startsWith("m-") ? datasetLabel(frameId.slice(2)) : frameId;
+  frameId.startsWith("m-")
+    ? datasetLabel(frameId.slice(2))
+    : frameId === "V0"
+      ? "기존"
+      : /^V\d+$/.test(frameId)
+        ? `시안${frameId.slice(1)}`
+        : frameId;
 
 export const ROUTE_SECTIONS_STORAGE_KEY = "momentory.lab.shell.openSections";
 
@@ -213,7 +228,10 @@ export function RouteTree({
                 >
                   {routes.map((route) => {
                     const selected = route.path === current;
-                    const badges = onRoute.get(route.path) ?? [];
+                    const all = onRoute.get(route.path) ?? [];
+                    // 폰이 셋 이상(시안 비교 · 기기별)이면 첫 배지와 「+N」 하나로 — 줄이 넘치지 않게
+                    const badges = all.length > 2 ? all.slice(0, 1) : all;
+                    const rest = all.slice(badges.length);
                     return (
                       <button
                         key={route.path}
@@ -260,12 +278,32 @@ export function RouteTree({
                               padding: "1px 5px",
                               borderRadius: 6,
                               color: shellColor.onAccent,
-                              background: frameId === "B" ? shellColor.notice : shellColor.accent,
+                              background:
+                                frameId === "B" || /^V[1-9]/.test(frameId)
+                                  ? shellColor.notice
+                                  : shellColor.accent,
                             }}
                           >
                             {frameLabel(frameId)}
                           </span>
                         ))}
+                        {rest.length > 0 ? (
+                          <span
+                            data-testid="route-badge-more"
+                            title={`폰 화면 ${rest.map(frameTitle).join(" · ")} 도 지금 이 화면이에요`}
+                            style={{
+                              flex: "none",
+                              fontSize: 10,
+                              padding: "1px 5px",
+                              borderRadius: 6,
+                              color: shellColor.onAccent,
+                              background: shellColor.notice,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            +{rest.length}
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}

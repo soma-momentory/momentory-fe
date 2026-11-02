@@ -90,7 +90,7 @@ export function StageToolbar({
         {description}
       </span>
 
-      {layout === "ab" || layout === "matrix" ? (
+      {layout === "ab" || layout === "matrix" || layout === "variants" ? (
         <label
           title="한 폰에서 화면을 옮기면 다른 폰도 같은 화면으로 따라가요"
           style={{
@@ -106,7 +106,11 @@ export function StageToolbar({
             checked={syncNav}
             onChange={(event) => onSyncNav(event.target.checked)}
           />
-          {layout === "ab" ? "두 화면 함께 이동" : "모든 폰 함께 이동"}
+          {layout === "ab"
+            ? "두 화면 함께 이동"
+            : layout === "variants"
+              ? "모두 함께 이동"
+              : "모든 폰 함께 이동"}
         </label>
       ) : null}
 

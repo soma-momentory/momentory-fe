@@ -5,6 +5,8 @@
  *            &now=2026-11-03T21:30:00%2B09:00&latency=1000&fail=/api/v1/reports&scale=1.3
  *            &zoom=1.5&repeat=0&signedIn=0&panel=agent&nav=0&side=0
  *            &bdata=many&blatency=60000&bfail=/api/v1/reports     ← A/B 의 「B 화면 상태」(없으면 A와 같게)
+ *            &layout=variants&group=g1abc                          ← 「시안 비교」 · 보는 시안 묶음(A/B 에서도 남아
+ *                                                                     「다른 시안 다시 보기」가 그 묶음으로 돌아간다)
  *
  * 기본값과 같은 항목은 적지 않는다(주소를 짧게). 읽을 수 없는 값은 기본값으로 돌린다 —
  * 지운 기능의 옛 주소도 그대로 열린다: `layout=states` → 한 화면, `matrix=datasets` → 기기별,
@@ -36,6 +38,12 @@ export const LAYOUTS = [
     id: "matrix",
     label: "기기별로 보기",
     description: "같은 화면을 표의 모든 기기에 한꺼번에 띄워요",
+  },
+  {
+    id: "variants",
+    label: "시안 비교",
+    description:
+      "AI가 만든 시안 여러 개를 지금 앱과 한 줄에 나란히 봐요 — 하나를 고르면 지금 앱과 A/B로 견줘요",
   },
 ] as const;
 export type LayoutId = (typeof LAYOUTS)[number]["id"];
@@ -109,6 +117,8 @@ export type ShellState = {
   navOpen: boolean;
   /** 오른쪽 패널을 붙여 둘지(넓은 창). 좁은 창에서는 늘 서랍이다 */
   sideOpen: boolean;
+  /** 「시안 비교」로 보는 시안 묶음 id — null 이면 이 화면의 가장 새 묶음 */
+  group: string | null;
 };
 
 export const DEFAULT_STATE: ShellState = {
@@ -128,9 +138,13 @@ export const DEFAULT_STATE: ShellState = {
   panel: "controls",
   navOpen: true,
   sideOpen: true,
+  group: null,
 };
 
 const HASH_PREFIX = "#/screens";
+
+/** 시안 묶음 id — 서버가 `g<시각 36진수>` 로 만든다. 다른 모양은 버린다 */
+const readGroup = (raw: string | null) => (raw && /^[A-Za-z0-9_-]{1,40}$/.test(raw) ? raw : null);
 
 const isDataset = (value: string | null): value is DatasetId =>
   value != null && (DATASET_IDS as readonly string[]).includes(value);
@@ -220,6 +234,7 @@ export function parseHash(hash: string): ShellState {
     panel: SIDE_PANELS.find((item) => item === p.get("panel")) ?? d.panel,
     navOpen: p.get("nav") !== "0",
     sideOpen: p.get("side") !== "0",
+    group: readGroup(p.get("group")),
   };
 }
 
@@ -246,6 +261,7 @@ export function serializeHash(state: ShellState): string {
   if (state.panel !== d.panel) p.set("panel", state.panel);
   if (!state.navOpen) p.set("nav", "0");
   if (!state.sideOpen) p.set("side", "0");
+  if (state.group) p.set("group", state.group);
   // 「/」 와 「,」 는 그대로 둬도 해시에서 안전하다 — 사람이 읽기 쉽게 되돌린다
   return `${HASH_PREFIX}?${p.toString().replace(/%2F/g, "/").replace(/%2C/g, ",")}`;
 }

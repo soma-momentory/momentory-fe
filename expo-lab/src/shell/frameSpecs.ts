@@ -5,6 +5,7 @@
  * 프레임 id 는 **안정적이어야 한다** — 가짜 DB 가 `frameId:datasetId` 로 localStorage 에
  * 남으므로, 같은 자리의 프레임은 다시 불러와도 같은 데이터를 이어 쓴다.
  */
+import { slotState, type VariantGroupView } from "../agent/variants";
 import { datasets } from "../fake-server";
 import type { DatasetId, LabFrameConfig, SampleParams } from "../lab-contract";
 import { findDevice, labDevices, type LabDevice } from "../lab-devices";
@@ -16,8 +17,8 @@ import { findRoute, resolveHref, shellRoutes, type ShellRoute } from "./routes";
  */
 export type ShellFrameConfig = LabFrameConfig;
 
-/** 한 화면 · A/B 의 A · B · 표의 한 칸 */
-export type FrameRole = "solo" | "a" | "b" | "cell";
+/** 한 화면 · A/B 의 A · B · 표의 한 칸 · 시안 비교의 시안 한 자리(기존은 `a`) */
+export type FrameRole = "solo" | "a" | "b" | "cell" | "variant";
 
 export type FrameSpec = {
   frameId: string;
@@ -37,6 +38,28 @@ export type FrameSpec = {
   startPath?: string;
   /** 미리보기면 그 작업 공간(머리 이름 · 「AI 결과 닫기」) */
   preview?: FramePreview;
+  /** 시안 비교의 시안 한 자리 — 머리 둘째 줄 · 「이 시안 고르기」 */
+  variant?: FrameVariant;
+  /**
+   * 화면을 띄울 수 없을 때 폰 자리에 보일 한 줄(만드는 중 · 대기 중 · 켜는 중 · 실패) — 있으면 iframe 을 붙이지 않는다.
+   * 시안의 수정 결과 화면이 아직 없는데 이 서버의 앱을 띄우면 「시안」이 지금 앱처럼 보이기 때문이다
+   */
+  placeholder?: string;
+};
+
+/** 시안 비교의 시안 한 자리 */
+export type FrameVariant = {
+  workspaceId: string;
+  groupId: string;
+  index: number;
+  total: number;
+  /** 머리 둘째 줄(「준비됨」 · 「만드는 중」 · 「실패」 …) */
+  label: string;
+  tone: "busy" | "ready" | "failed" | "idle";
+  /** 요약 첫 줄(「방향: …」) */
+  summaryLine: string | null;
+  /** 「다시 켜기」를 보일지(수정 결과 화면이 실패 · 꺼짐) */
+  canStart: boolean;
 };
 
 /** 「AI 수정 결과 보기」 — 작업 공간의 미리보기 서버를 B(또는 한 화면)에 띄운다 */
@@ -46,6 +69,8 @@ export type FramePreview = {
   title: string;
   /** 새 화면이면 그 화면 주소(`newRoutes[0]`) — 이 서버에는 없는 라우트다 */
   route: string | null;
+  /** 시안 비교에서 고른 시안이면 그 자리(최종 A/B 의 설명 · 「다른 시안 다시 보기」 · 「이 시안으로 확정」) */
+  variant?: { groupId: string; index: number; total: number };
 };
 
 /**
@@ -141,6 +166,9 @@ export function framesFor(state: ShellState, sample: SampleParamsFor, realMs: nu
         build({ frameId: "A", route }, "A · 지금 앱", "a"),
         build({ frameId: "B", route, ...bOverrides(state, route) }, "B · 지금 앱", "b"),
       ];
+    case "variants":
+      // 시안 자리는 서버의 작업 공간 목록이 있어야 안다 — `variantSpecs` 가 이 「기존」 뒤에 붙인다
+      return [build({ frameId: "V0", route }, "기존 · 지금 앱", "a")];
     case "matrix":
       return labDevices.map((device) =>
         build({ frameId: `m-${device.id}`, route, device }, device.label, "cell"),
@@ -161,4 +189,61 @@ export function framesFor(state: ShellState, sample: SampleParamsFor, realMs: nu
         ),
       );
   }
+}
+
+/**
+ * 「시안 비교」 — 기존(지금 앱 · `V0`) + 시안마다 한 대(`V<k>`). 같은 라우트 · 같은 기기 · 같은 화면 상태(A 의 것)이고,
+ * 시안은 그 작업 공간의 미리보기 서버(다른 출처 · `withPreview`)에서 뜬다. 화면을 띄울 수 없는 시안(만드는 중 · 대기 중 ·
+ * 켜는 중 · 실패)은 `placeholder` 한 줄만 둔다.
+ */
+export function variantSpecs(
+  state: ShellState,
+  group: VariantGroupView | null,
+  shellOrigin: string,
+  sample: SampleParamsFor,
+  realMs: number,
+): FrameSpec[] {
+  const base = framesFor({ ...state, layout: "variants" }, sample, realMs);
+  const route = base[0]?.route ?? findRoute(state.route) ?? shellRoutes[0]!;
+  if (!group) return base;
+  const slots = group.members.map((member): FrameSpec => {
+    const index = member.group?.index ?? 0;
+    const slot = slotState(member);
+    const spec = buildSpec(
+      state,
+      { frameId: `V${index}`, route },
+      `시안 ${index}`,
+      "variant",
+      sample,
+      realMs,
+    );
+    const variant: FrameVariant = {
+      workspaceId: member.id,
+      groupId: group.id,
+      index,
+      total: group.total,
+      label: slot.label,
+      tone: slot.tone,
+      summaryLine: member.summaryLine,
+      canStart: slot.canStart,
+    };
+    const url = member.preview?.url;
+    if (!slot.ready || !url)
+      return { ...spec, variant, placeholder: slot.note ?? "수정 결과 화면이 아직 없어요" };
+    return {
+      ...withPreview(
+        spec,
+        {
+          url,
+          workspaceId: member.id,
+          title: member.title,
+          route: null,
+          variant: { groupId: group.id, index, total: group.total },
+        },
+        shellOrigin,
+      ),
+      variant,
+    };
+  });
+  return [...base, ...slots];
 }

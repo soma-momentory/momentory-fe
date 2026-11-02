@@ -37,6 +37,7 @@ describe("해시 상태", () => {
       panel: "agent",
       navOpen: false,
       sideOpen: false,
+      group: "gmhxyz12",
     };
     const hash = serializeHash(state);
     expect(hash.startsWith("#/screens?route=/diary/%5Bid%5D")).toBe(true);

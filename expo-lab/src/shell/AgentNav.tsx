@@ -1,7 +1,8 @@
 /**
  * 왼쪽 화면 목록 맨 위 — 「＋ 새 화면 만들기」 단추와 「새 화면 (작업 중)」 묶음.
  *
- * 묶음은 `GET /__lab/agent/workspaces` 의 `kind: "new-screen"` 작업 공간이다(이 서버의 `app/` 에는 아직 없는
+ * 묶음은 `GET /__lab/agent/workspaces` 의 `kind: "new-screen"` 작업 공간이다(시안 묶음은 화면 고치기라 여기 없다 —
+ * 그 화면의 「AI에게 맡기기」 · 「시안 비교」에 묶음 하나로 있다)(이 서버의 `app/` 에는 아직 없는
  * 화면이라 라우트 목록에 없다). 누르면 그 작업 공간의 수정 결과 화면(미리보기 서버)에서 `newRoutes[0]`
  * (없으면 첫 화면)을 연다. 미리보기 서버가 아직 꺼져 있으면 켜고, 켜지는 동안은 「켜는 중」이다.
  *
@@ -25,21 +26,28 @@ const ellipsis = {
   whiteSpace: "nowrap",
 } as const;
 
-/** 새 화면 작업 공간 목록 — 실행 · 미리보기 켜는 중이면 자주, 아니면 가끔 다시 읽는다 */
-export function useNewScreenWorkspaces() {
+/**
+ * 작업 공간 목록(깨진 것 빼고) — 왼쪽 「새 화면 (작업 중)」 · 「시안 비교」가 같이 쓴다.
+ * 실행 · 시안 줄 · 미리보기 켜는 중이면 자주, 아니면 가끔 다시 읽는다
+ */
+export function useLabWorkspaces() {
   const [list, setList] = useState<WorkspaceSummary[]>([]);
   const refresh = useCallback(async () => {
     try {
       const res = await fetch(`${AGENT_API}/workspaces`, { cache: "no-store" });
       if (!res.ok) return setList([]);
       const data = (await res.json()) as { workspaces?: WorkspaceSummary[] };
-      setList((data.workspaces ?? []).filter((w) => w.kind === "new-screen" && !w.broken));
+      setList((data.workspaces ?? []).filter((w) => !w.broken));
     } catch {
       setList([]);
     }
   }, []);
   const busy = list.some(
-    (w) => w.status === "working" || w.status === "checking" || w.preview?.status === "starting",
+    (w) =>
+      w.status === "working" ||
+      w.status === "queued" ||
+      w.status === "checking" ||
+      w.preview?.status === "starting",
   );
   useEffect(() => {
     const first = setTimeout(() => void refresh(), 0);
