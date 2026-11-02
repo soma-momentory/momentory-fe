@@ -7,8 +7,8 @@
  * 그래서 `pond.ts` · `notebook.ts` · `diaryMemo.ts` 처럼 화면 전용 묶음 하나로 둔다.
  * `features/home/ui/v2/` 밖에서 쓰지 않는다.
  *
- * 값의 1차 근거는 Lab 번역(`expo-lab/src/claude-home/tokens.ts`)이다 — 운영 코드는 그 파일을
- * import 하지 않고, 쓰는 값만 여기로 옮겼다. 시안의 **목 감정 색(`mood`)은 옮기지 않는다** —
+ * 값의 1차 근거는 Lab 번역(`expo-lab/src/claude-home/tokens.ts` · 2026-11-02 삭제 — 그 전 커밋에 남는다)이다 —
+ * 운영 코드는 그 파일을 import 하지 않고, 쓰는 값만 여기로 옮겼다. 시안의 **목 감정 색(`mood`)은 옮기지 않는다** —
  * 도크는 실제 감정 조약돌(`EmotionPebble`)을 그린다(계획 §2.4).
  *
  * ## 대비 보정 둘 (`PLAN.md` A-5 선례)

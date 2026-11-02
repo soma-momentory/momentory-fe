@@ -1,6 +1,94 @@
-﻿# Momentory Design Studio 검증 기록
+# Momentory 디자인 편집기 — 사용법과 검증 기록
 
-## Expo Lab 3.0 검증 (2026-10-17)
+## 디자인 편집기 (Expo Lab 전 화면 · 2026-11-02)
+
+다섯 탭 화면만 고치던 Design Studio 를 **실제 앱 전 화면**으로 옮겼다. 셸이 실제 앱(`app/` 라우트 전체)을 프레임(같은 출처 iframe) 두 벌로 띄우고 — **A = 승인본**, **B = 시안** — 오른쪽에 편집 패널(`src/design-editor/DesignEditorPanel.tsx`)을 끼운다. 패널에서 고친 값은 B 프레임의 **모든 화면**에 걸린다.
+
+### 어떻게 걸리나
+
+1. 패널은 시안을 `localStorage["momentory.lab.designDrafts"]`(`DesignDraft[]` · `src/lab-contract.ts`)에 곧바로 쓰고, 편집을 ~300ms 모아 `onDraftChanged(id)` 를 부른다.
+2. 셸은 그때 B 프레임을 다시 불러온다. 프레임 부트스트랩은 `Platform.OS` 를 기기 값으로 맞춘 **뒤에**, 앱 모듈을 불러오기 **전에** `applyDesignDraft(config)` 를 부른다.
+3. `applyDesignDraft` 는 `config.designDraftId` 의 시안을 읽어 `src/design/ds/*` 가 내보낸 객체와 `src/design/studioDesign.ts` 의 `approvedDesign`(JSON) 객체를 **제자리에서** 바꾼다. 컴포넌트는 모듈이 올라올 때 `StyleSheet.create` 로 값을 굳히므로 그 전에 바꾸면 모든 화면이 시안 값으로 그려진다. 앱 코드는 바뀌지 않는다.
+4. 결과(적용한 키 · 건너뛴 키와 이유)는 프레임의 `window.__MOMENTORY_LAB_DESIGN__` 에 남고, 패널의 「바뀐 것 → 프레임 반영」이 읽는다.
+
+⚠ 토큰 모듈은 `applyDesignDraft` **안에서** `require` 한다(`tokenModules.ts`). `typography.ts` 가 모듈이 올라오는 순간 `Platform.OS` · 창 폭으로 `typeScale` 을 재기 때문에, 정적 import 로 두면 부트스트랩이 플랫폼을 맞추기 전에 재 버린다.
+
+### 무엇을 고칠 수 있나
+
+**토큰** — `src/design/ds` 17개 파일의 export 를 실행 중인 값에서 편 목록(`tokens.ts`). 2026-11-02 기준 **736개 중 편집 601 · 읽기 전용 135**.
+
+| 편집 가능                    | 수  | 입력                                                                     |
+| ---------------------------- | --- | ------------------------------------------------------------------------ |
+| 색(hex · `rgb()` · `rgba()`) | 173 | 피커 + 텍스트. 글자·면 토큰은 `contrast.test.ts` 짝의 대비를 함께 보인다 |
+| 숫자                         | 407 | 스테퍼 + 텍스트. `text.*` 크기·행간 38개는 **기준 pt**(아래)             |
+| 서체(`gothicFamily.*`)       | 4   | 앱이 로드하는 서체 이름만                                                |
+| 문자열(기울기 · 그림자 식 …) | 17  | 한 줄 텍스트                                                             |
+
+| 읽기 전용 이유                                                                                                                                                                                                                                                 | 수  |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| 계산·참조로 만든 잎 — `fill.*`·`line.*` 템플릿, `withAlpha(...)`, `size.button.radius = radius.medium`, `fontFamily.* = HAND`, `text.buttonLabel`(× `BUTTON_BOOST`) … 모듈이 올라올 때 한 번 계산된 사본이라 바꿔도 원본과 어긋나고, 코드로 옮길 리터럴이 없다 | 109 |
+| 배열 — 연출 좌표 `motes` · 그라디언트 `stops` · `walkPath` …                                                                                                                                                                                                   | 14  |
+| 함수 — `withAlpha` · `emotionTint` · `iosVariant` · `scaleFont` · 연못 계산 셋                                                                                                                                                                                 | 7   |
+| 모듈 최상위 원시값 — `scheduleDot` · `restRipple` · `selectedTint` · `typeScale` · `maxFontScale` (ES 모듈 바인딩은 밖에서 못 바꾼다)                                                                                                                          | 5   |
+| `Object.freeze` 된 객체 — 지금은 없다(생기면 자동으로 읽기 전용)                                                                                                                                                                                               | 0   |
+
+어느 잎이 「계산·참조」인지는 소스를 봐야 알기 때문에 `src/design-editor/tokenSourceMap.json`(생성물)이 든다. **리터럴이 아닌 잎만** 적으므로 토큰 **값**이 바뀌어도 낡지 않고, 계산식·참조가 생기거나 없어질 때만 다시 만든다 — `node expo-lab/scripts/apply-tokens.mjs --source-map`. 낡으면 `npm run test:design-apply-tokens` 가 실패하고, 낡은 채로 열면 어긋난 `text.*` 잎은 「소스 지도가 낡았다」로 읽기 전용이 된다.
+
+`text.*` 의 `fontSize` · `lineHeight` 는 소스의 `style("medium", 16, 24)` 인자(**기준 pt**)로 편집한다. 프레임은 그 기기의 `typeScale`(폭 보정 × iOS 1.2)을 곱해 넣는다 — 앱이 하는 셈과 같다.
+
+키는 export 이름부터의 경로다(`primary.heavy` · `label.normal` · `text.title2.fontSize` · `homeV2.color.paper`). 묶음 경로(`color.primary.heavy` · `metrics.space.lg` · `typography.title2.fontSize`)도 받아 정규 키로 바꾼다.
+
+**화면 속성(Studio)** — 옛 Design Studio 의 등록표 47개(`studioRegistry.ts`) — 홈·쉼터·보관함·마이·리포트 View 가 `studioApproved.json` 에서 읽는 값. 색은 6자리 hex, 숫자는 등록된 범위, 서체·정렬·자산은 선택지만 받는다. 지금 라우트가 그 다섯 화면이면 그 화면을 먼저 연다.
+
+### 패널
+
+| 칸        | 하는 일                                                                                                                                   |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 시안      | 여러 벌 · 이름(1–40자 · 겹치지 않게) · 만들기 · 복제 · 이름 바꾸기 · 두 번 눌러 지우기 · 고르기(`onActiveDraftChange`)                    |
+| 편집      | 되돌리기 · 다시 하기(Ctrl+Z · Ctrl+Shift+Z · Ctrl+Y — 같은 칸을 이어 치면 한 칸) · 모두 승인본으로 · **요소 선택**                        |
+| 토큰      | 검색(키·이름·값) · 형식 · 무리 · 바꾼 것만 · 읽기 전용(이유와 함께) · 60개씩 더 보기                                                      |
+| 화면 속성 | 다섯 화면 · 레이어 깊이 · 프로젝트 이미지 고르기. 고른 요소는 A·B 프레임 둘 다에서 테두리로 보인다                                        |
+| 바뀐 것   | 승인본 대비 목록 · 하나씩 되돌리기 · 코드로 못 옮길 키 경고 · 각 프레임의 반영 결과(적용 / 건너뜀과 이유)                                 |
+| 파일      | JSON 내보내기 · 새 시안으로 / 지금 시안에 가져오기 · 코드 반영 명령. 옛 Studio 의 v1 파일과 저장소(`momentory-design-studio-v1`)도 읽는다 |
+
+**요소 선택**을 켜면 B 프레임의 `contentDocument` 에 붙는다(`frameInspector.ts`). 올린 요소에 테두리를 그리고, 누르면 앱이 그 누름을 받지 않게 막은 뒤 — 가장 가까운 **등록된** `testID` 가 있으면 화면 속성의 그 요소를 열고, 없으면 그 요소의 계산된 글자색 · 면 · 선 · 글씨 크기 · 서체와 **같은 값의 토큰**을 보인다(「이 색은 `label.normal`」 — 어림짐작이라 같은 값이 여럿이면 모두 보인다). 누르면 토큰 칸이 그 키로 열린다.
+
+### 코드에 반영 — 사람이 검토한 diff 로만
+
+브라우저 편집은 저장소 파일을 바꾸지 않는다. 「파일」에서 내보낸 JSON(`{ version: 2, kind: "momentory-design-draft", name, tokens, studio }`)을 저장소 루트에서:
+
+```bash
+npm run design:apply-tokens -- path/to/export.json           # DS 토큰 — 통합 diff 만 출력
+npm run design:apply -- path/to/export.json                  # 화면 속성 — 변경 목록만 출력
+npm run design:apply-tokens -- path/to/export.json --write   # 검토 뒤 src/design/ds/*.ts 리터럴을 바꾼다
+npm run design:apply -- path/to/export.json --write          # src/design/studioApproved.json
+git diff -- src/design && npm run test                       # contrast.test.ts 가 대비 보정값을 지킨다
+```
+
+`apply-tokens.mjs` 는 TypeScript 파서로 ds 소스를 읽어 **키가 리터럴 하나로 정확히 떨어질 때만** 그 리터럴을 바꾼다(따옴표 · 줄 수 그대로). 계산식 · 참조 · 배열 · 최상위 값 · 두 파일에 같은 키 · 형식이 다른 값(색 자리에 색이 아닌 것) · 모르는 키가 **하나라도 있으면 아무 파일도 쓰지 않고** 키마다 이유를 낸다. 반영 뒤의 판정은 평소 게이트가 한다 — 특히 `src/design/ds/__tests__/contrast.test.ts`.
+
+### 검증 (2026-11-02)
+
+| 무엇                               | 결과                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Jest(`expo-lab/src/design-editor`) | 5 suite · 27 test — 토큰 목록 · `applyDesignDraft`(새 모듈 레지스트리 = 새 프레임: 적용 · 모르는 키 무시 · 틀린 값 거부 · 시안 없음 무변경 · freeze) · 시안 저장소 · 내보내기/가져오기(v1·v2) · 옛 저장소 이전 · 되돌리기 · 등록표 · 패널(300ms 묶음 알림 · 되돌리기)                                                                                                     |
+| `node --test`                      | `apply-tokens` 5개(분류 · 소스 지도 최신 · ds 파일 누락 · 임시 사본 `--write` · 거부 시 무변경 · 모호한 키) · `apply-design` 1개(v1 · v2)                                                                                                                                                                                                                                 |
+| 브라우저(포트 8093)                | 임시 하네스(커밋 안 함)에서 A·B iframe 이 각자 새 JS 문맥으로 실제 홈 v2 · 쉼터 View 를 그렸다. B 에만 `homeV2.color.paper` · `homeV2.color.green` · `home.hero.borderRadius` · `label.normal` · `text.title3Hand.fontSize` 가 걸리고 A 는 그대로였다(반영 결과 적용 4/2 · 건너뜀 0). 요소 선택이 등록 요소(「말풍선 문구」)와 미등록 요소(토큰 일치 표시)를 둘 다 골랐다 |
+| Playwright                         | `e2e/studio.spec.ts` 2개 — 패널만으로 되는 흐름(시안 · 토큰 · 화면 속성 · 저장소 · 되돌리기 · 내보내기/가져오기 · 틀린 값 거부 · 읽기 전용 이유). 셸이 첫 화면에 패널을 두지 않으면 건너뛴다                                                                                                                                                                              |
+
+### 한계
+
+- 요소 선택은 B(시안) 프레임만 붙는다. 토큰 일치는 계산된 값 비교라 같은 색의 토큰이 여럿이면 모두 나오고, 투명도를 섞어 그린 색은 못 찾는다.
+- 프레임은 시안이 바뀔 때마다 다시 불린다 — 화면 안의 조작 상태(스크롤 · 연 시트)는 셸이 라우트만 이어 준다.
+- 서체 교체는 `gothicFamily` 넷뿐이다. 앱 본문 서체(`fontFamily.* = HAND`)는 상수 참조라 코드에서 바꾼다.
+- `scheduleDot` · `restRipple` 같은 최상위 값은 편집할 수 없다 — 객체 안으로 옮기면 편집할 수 있게 된다(앱 코드 결정).
+- 대비 읽기 값은 `contrast.test.ts` 의 짝을 옮긴 것이다. 그 테스트에 짝이 늘면 `contrast.ts` 도 함께 늘린다.
+
+## 이전 기록 — Design Studio 2.0 · 3.0 (2026-11-02 에 지웠다)
+
+아래는 지운 Studio 모드(`#studio/<화면>` · `#compare/<화면>` · `#atlas`)의 기록이다. 속성 등록표 · 자산 고르기 · 되돌리기 · 요소 선택은 위의 디자인 편집기로 옮겼고, 시각 기준선 6장과 그 e2e 는 지웠다.
+
+### Expo Lab 3.0 검증 (2026-10-17)
 
 이 절은 아래의 2.0 기록에 이어지는 검증 결과다. `#studio/<화면>`, `#compare/<화면>`, `#atlas`는 통합 Shell의 디자인 편집·상태 비교·전체 화면 탭으로 연결된다. Atlas의 38개 기존 캡처는 정적 참고 자료로 표시하며, 5개 공유 RN 화면만 편집 링크를 제공한다. 비교 탭의 `Mock 상태 A/B`는 같은 디자인 설정 아래 서로 다른 데이터 상태를 보여주고, 디자인 편집 탭의 A/B는 같은 Mock 데이터 아래 운영 기본 디자인과 Draft를 보여준다.
 
@@ -27,15 +115,15 @@
 
 실행: 저장소 루트에서 `cd expo-lab` 후 `npx expo start --web --port 8089`. URL은 `http://localhost:8089/#studio/home-main`, `http://localhost:8089/#compare/rest-hub`, `http://localhost:8089/#atlas`다. Lab 시안을 Export한 뒤 루트에서 `npm run design:apply -- <내보낸 파일.json>`으로 Diff를 확인한다. 검토 후에만 `npm run design:apply -- <내보낸 파일.json> --write`를 실행하고 `src/design/studioApproved.json`의 Git diff와 앱 타입·테스트를 확인한다. 브라우저 편집은 운영 파일을 수정하지 않는다.
 
-### 성능 관측
+#### 성능 관측
 
 Windows Chromium 1440×1000, 동일 PC의 Expo 개발 서버, 단일 회차 관측이다. PR C(속성·에셋) 대비 PR D(비교·품질) 결과: Studio 준비 1420→1354ms, DOM 731→738, 이미지 32→32; Atlas 준비 2000→1949ms, DOM 218→258, 이미지 11→11. 이 수치는 개발 서버의 실행 변동을 포함하므로 속도 개선으로 해석하지 않는다. 배경색 1회 편집 시 MutationObserver 기록은 A 0→0건, B 5→5건으로 운영 기본 미리보기가 다시 쓰이지 않았다. Web export 메인 JS는 1,947,877→1,949,637B(+1,760B), Studio 지연 로드 청크는 22,726→24,013B(+1,287B), 새 상태 비교 지연 로드 청크는 4,880B다. D export는 자산 162개·총 58,608,977B였다. 출력 크기는 첫 화면 전송량이나 기기 메모리가 아니다. `node expo-lab/scripts/measure-studio.mjs http://127.0.0.1:8089`로 같은 관측을 반복할 수 있다.
 
 네이티브 iOS·Android 화면/접근성 글씨·실제 터치는 검증하지 않았다. Android JS 번들 생성은 통과했으며 설치·기동 검증과 별개다. 60조합 검사는 공유 화면 루트의 렌더링과 수평 `scrollWidth`를 확인한다. 모든 자식 요소의 시각적 잘림과 접근성을 보증하지 않는다.
 
-## Expo Lab 2.0 기록
+### Expo Lab 2.0 기록
 
-## 범위와 편집 등록표
+### 범위와 편집 등록표
 
 운영 View의 기본값은 `src/design/studioApproved.json`에 명시했다. Lab Draft는 View의 선택적 `design` prop으로만 주입하며 운영 어댑터는 기본값을 쓴다.
 
@@ -50,7 +138,7 @@ Windows Chromium 1440×1000, 동일 PC의 Expo 개발 서버, 단일 회차 관�
 
 색상은 6자리 HEX, 숫자는 등록된 범위로 검사한다. JSON 가져오기와 코드 적용 CLI는 미등록·누락·범위 밖 값을 거부한다. 변경 파일 생성은 브라우저에서 실행되지 않는다.
 
-## Phase별 확인
+### Phase별 확인
 
 | Phase         | 결과                                                                                                                                                                                                                                                                                       | 검증                                                                                                       |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
@@ -62,11 +150,11 @@ Windows Chromium 1440×1000, 동일 PC의 Expo 개발 서버, 단일 회차 관�
 
 Phase 6 최종 결과: 앱·Lab 타입, ESLint, Prettier, 기존 Vite Lab 빌드, Web export, Android JS export가 통과했다. Jest는 125개 suite·1,661개 테스트가 통과했고 Playwright는 4개 브라우저 테스트와 6개 시각 기준선이 통과했다. 전체 Jest에서 Playwright 파일은 별도 러너로 제외했다. 기존 `bodyRelease` 타이머 테스트가 전체 실행 부하에서 5초 제한을 넘겨 Jest 제한을 15초로 조정했고, 단독·전체 재실행에서 통과했다.
 
-## Web 성능 수치
+### Web 성능 수치
 
 2026-10-17 Windows Chromium·Expo Web export 단일 실행이다. 변경 전(Studio 정적 import) JS 진입 번들은 1,945,499B였다. Studio 비동기 분리 후 진입 번들은 1,930,838B(14,661B 감소)이고 Studio 청크는 16,697B다. Web export는 자산 162개, 총 56,629,211B를 포함한다. 이 자산 크기는 설치·출력 크기이며 첫 화면 전송량을 뜻하지 않는다. 개발 서버의 800×600px 초기 관측에서 아틀라스는 DOM 126개·이미지 4개, Studio 홈은 DOM 685개·이미지 32개, Studio 쉼터는 DOM 441개·이미지 10개였다. 500ms 대기 후 한 번 읽은 수치로 FPS·메모리·실기기 성능을 대표하지 않는다. 기존 아틀라스 축소본 도입의 전후 측정은 [기존 성능 기록](PERFORMANCE_VALIDATION.md)에 있다.
 
-## 검증 한계
+### 검증 한계
 
 - A/B는 같은 Mock 시나리오에서 시작하나, 각각의 터치 이후 내부 조작 상태는 독립적이다. `A 조작 초기화`/`B 조작 초기화`로 같은 출발 상태를 다시 만든다.
 - 1.5배 글씨는 Web 모의 배율이다. 네이티브 iOS·Android 접근성 글꼴과 실제 터치는 이 작업에서 검증하지 않았다.

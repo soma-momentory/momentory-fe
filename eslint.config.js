@@ -48,7 +48,7 @@ module.exports = [
   {
     // 토큰이 사는 곳 — 여기서만 hex 리터럴이 정상이다.
     // theme.ts 는 상류 생성물이고, tokens.mvp.ts 는 상류 반영 전까지의 오버라이드다.
-    files: ["src/design/**", "expo-lab/src/claude-home/tokens.ts", "app.config.ts"],
+    files: ["src/design/**", "app.config.ts"],
     rules: {
       "no-restricted-syntax": "off",
     },

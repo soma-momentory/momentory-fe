@@ -68,6 +68,23 @@ export function validateDesign(design, approved) {
   return Object.fromEntries(expected.map((key) => [key, design[key]]));
 }
 
+/**
+ * 내보낸 파일 → 전체 Studio 디자인.
+ * - version 1(옛 Design Studio): `design` 이 47개 키 전부다
+ * - version 2(디자인 편집기): `studio` 는 승인본과 **다른 키만** 든다 — 승인본 위에 얹는다.
+ *   같은 파일의 `tokens` 는 `apply-tokens.mjs` 몫이다
+ */
+export function designFromExport(exported, approved) {
+  if (typeof exported !== "object" || exported === null || typeof exported.name !== "string")
+    throw new Error("Unsupported Studio export");
+  if (exported.version === 1) return exported.design;
+  if (exported.version !== 2) throw new Error("Unsupported Studio export");
+  const studio = exported.studio ?? {};
+  if (typeof studio !== "object" || studio === null || Array.isArray(studio))
+    throw new Error("studio must be an object");
+  return { ...approved, ...studio };
+}
+
 async function main() {
   const [, , inputPath, option] = process.argv;
   if (!inputPath || (option && option !== "--write"))
@@ -76,12 +93,15 @@ async function main() {
   const exported = JSON.parse(
     (await readFile(path.resolve(inputPath), "utf8")).replace(/^\uFEFF/, ""),
   );
-  if (exported.version !== 1 || typeof exported.name !== "string")
-    throw new Error("Unsupported Studio export");
-  const next = validateDesign(exported.design, approved);
+  const next = validateDesign(designFromExport(exported, approved), approved);
   const changes = Object.keys(approved).filter((key) => approved[key] !== next[key]);
   for (const key of changes) process.stdout.write(`${key}: ${approved[key]} -> ${next[key]}\n`);
   process.stdout.write(`${changes.length} change(s)\n`);
+  const tokenCount = Object.keys(exported.tokens ?? {}).length;
+  if (tokenCount)
+    process.stdout.write(
+      `DS 토큰 ${tokenCount}개는 이 스크립트가 다루지 않는다 — node expo-lab/scripts/apply-tokens.mjs 로 반영한다\n`,
+    );
   if (option === "--write") {
     await writeFile(approvedPath, `${JSON.stringify(next, null, 2)}\n`);
     process.stdout.write(
