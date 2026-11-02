@@ -13,10 +13,10 @@
  *   GET    /__lab/agent/status                     CLI 유무 · 저장소 브랜치/더러움 · 작업 공간 목록
  *   GET    /__lab/agent/workspaces                 작업 공간 목록
  *   POST   /__lab/agent/workspaces                 작업 공간만 만들기 {kind:"edit",route,…} | {kind:"new-screen",slug,title,…}
- *   POST   /__lab/agent/run                        지시 {agent, target, instruction, handoff?, attachments?} — 없으면 만들고, 있으면 잇는다
+ *   POST   /__lab/agent/run                        지시 {agent, target, instruction, attachments?} — 없으면 만들고, 있으면 잇는다
  *   GET    /__lab/agent/workspaces/:id             상세(바뀐 파일 · 통계 · 저장된 수정 · 새 라우트 · 마지막 실행 · 블록)
  *   DELETE /__lab/agent/workspaces/:id             버리기(junction 먼저 끊고 worktree 제거)
- *   POST   /__lab/agent/workspaces/:id/run         같은 작업 공간에 이어서 지시 {agent, instruction, handoff?, attachments?}
+ *   POST   /__lab/agent/workspaces/:id/run         같은 작업 공간에 이어서 지시 {agent, instruction, attachments?}
  *   POST   /__lab/agent/workspaces/:id/stop        실행 중지(프로세스 트리째)
  *   GET    /__lab/agent/workspaces/:id/events      ?since=N — 폴링
  *   GET    /__lab/agent/workspaces/:id/stream      ?since=N — SSE(event: line · run)
@@ -45,7 +45,7 @@ const { AgentRun } = require("./runs");
 const { WorkspaceStore } = require("./workspaces");
 
 const PREFIX = "/__lab/agent";
-const BODY_LIMIT = 60 * 1024 * 1024; // 시안 파일(참고 이미지 포함 ~20MB) + 첨부 여러 장
+const BODY_LIMIT = 60 * 1024 * 1024; // 첨부 그림 여러 장(최대 12장)
 const HISTORY = 5;
 const MAX_ATTACHMENTS = 12;
 
@@ -315,12 +315,6 @@ function createLabAgent(options) {
 
   /** @param {any} body */
   function readExtras(body) {
-    const handoff = body.handoff ?? null;
-    if (
-      handoff != null &&
-      (typeof handoff !== "object" || handoff.format !== "momentory-lab-handoff@1")
-    )
-      throw new HttpError(400, "시안 파일 형식이 momentory-lab-handoff@1 이 아니에요");
     const attachments = Array.isArray(body.attachments) ? body.attachments : [];
     if (attachments.length > MAX_ATTACHMENTS)
       throw new HttpError(400, `그림은 ${MAX_ATTACHMENTS}장까지 붙일 수 있어요`);
@@ -332,7 +326,6 @@ function createLabAgent(options) {
         note: body.reference.note ?? "참고 시안 이미지",
       });
     return {
-      handoff,
       attachments,
       instruction: typeof body.instruction === "string" ? body.instruction : "",
     };
@@ -368,7 +361,6 @@ function createLabAgent(options) {
       agent,
       target: targetOf(meta),
       instruction: extras.instruction,
-      handoffPath: written.handoffPath,
       attachments: written.files,
       workspace: meta,
       resume: Boolean(resumeId),

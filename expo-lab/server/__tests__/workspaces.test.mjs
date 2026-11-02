@@ -101,7 +101,7 @@ test("새 화면 작업 공간 — new-<slug> · lab/new-<slug>-<시각>", async
   assert.equal((await store.ensure(fresh)).id, meta.id);
 });
 
-test("첨부 · 시안 — .lab-attachments/<실행>/ 에 원본 이름 그대로 · git 에서 빠진다 · dataUrl 은 파일로", async () => {
+test("첨부 — .lab-attachments/<실행>/ 에 원본 이름 그대로 · git 에서 빠진다", async () => {
   const meta = /** @type {any} */ (store.find(edit));
   const written = store.writeAttachments(meta, "r1", {
     attachments: [
@@ -115,12 +115,6 @@ test("첨부 · 시안 — .lab-attachments/<실행>/ 에 원본 이름 그대�
       { name: "../../evil.png", dataUrl: PNG_DATA_URL },
       { name: "not-image", dataUrl: "data:text/plain;base64,aGk=" },
     ],
-    handoff: {
-      format: "momentory-lab-handoff@1",
-      screens: [
-        { route: "/(tabs)/home", reference: { name: "home-v3.png", dataUrl: PNG_DATA_URL } },
-      ],
-    },
   });
   assert.equal(written.dir, path.join(meta.path, ".lab-attachments", "r1"));
   const names = written.files.map((f) => path.basename(f.path));
@@ -128,7 +122,6 @@ test("첨부 · 시안 — .lab-attachments/<실행>/ 에 원본 이름 그대�
     "바바 카드.png",
     "바바 카드-2.png",
     ".._.._evil.png".replace(/^[.]+/, ""),
-    "home-v3.png",
   ]);
   assert.ok(
     written.files.every((f) => path.dirname(f.path) === written.dir),
@@ -136,10 +129,7 @@ test("첨부 · 시안 — .lab-attachments/<실행>/ 에 원본 이름 그대�
   );
   assert.equal(written.files[0]?.purpose, "asset");
   assert.equal(written.files[1]?.purpose, "reference");
-  assert.ok(written.handoffPath?.endsWith("handoff.lab-json"));
-  const handoff = JSON.parse(fs.readFileSync(/** @type {string} */ (written.handoffPath), "utf8"));
-  assert.equal(handoff.screens[0].reference.dataUrl, undefined);
-  assert.equal(handoff.screens[0].reference.imagePath, written.files[3]?.path);
+  assert.ok(!("handoffPath" in written), "시안 파일은 더 쓰지 않는다");
   assert.equal(git(meta.path, ["status", "--porcelain", "-uall"]), "", "첨부는 git 에 안 올라간다");
 });
 

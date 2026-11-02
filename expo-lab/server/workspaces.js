@@ -6,7 +6,7 @@
  * 자리: 저장소 **바깥** 형제 폴더 `<저장소의 부모>/<저장소 이름>-lab-ws/<id>`.
  * 저장소 안에 두면 lint · prettier · jest 가 그 사본까지 훑는다(실제로 그랬다).
  * 같은 폴더에 `registry.json`(작업 공간 목록) · `.logs/`(실행 기록) · `.tmp/`(커밋 메시지 · PR 본문)가 산다.
- * 첨부 그림 · 시안 파일은 작업 공간 **안** `.lab-attachments/<실행>/` 에 쓰고 `info/exclude` 로 git 에서 뺀다.
+ * 첨부 그림은 작업 공간 **안** `.lab-attachments/<실행>/` 에 쓰고 `info/exclude` 로 git 에서 뺀다.
  *
  * node_modules 는 원본으로 **junction** 을 건다(새로 설치하지 않는다). 그래서 지울 때가 위험하다 —
  * junction 을 따라 들어가 지우면 **원본 node_modules 가 날아간다.** 버릴 때는 반드시
@@ -577,13 +577,11 @@ class WorkspaceStore {
   }
 
   /**
-   * 첨부 · 시안 파일을 작업 공간 안 `.lab-attachments/<실행>/` 에 쓴다(git 에서 빠진 자리).
-   * 첨부는 원본 파일 이름 그대로(겹치면 뒤에 번호). 시안의 참고 이미지는 파일로 풀고 JSON 에서 dataUrl 을
-   * 지워 `imagePath` 로 바꾼다 — 에이전트가 큰 base64 를 읽지 않게. 시안 JSON 은 확장자를 `.lab-json` 으로 해서
-   * 작업 공간의 `prettier --check .` 가 훑지 않게 한다.
+   * 첨부 그림을 작업 공간 안 `.lab-attachments/<실행>/` 에 쓴다(git 에서 빠진 자리).
+   * 원본 파일 이름 그대로(겹치면 뒤에 번호).
    * @param {WorkspaceMeta} meta @param {string} runId
-   * @param {{ handoff?: any; attachments?: readonly { name?: unknown; dataUrl?: unknown; purpose?: unknown; note?: unknown }[] }} input
-   * @returns {{ dir: string; handoffPath: string | null; files: AttachmentFile[] }}
+   * @param {{ attachments?: readonly { name?: unknown; dataUrl?: unknown; purpose?: unknown; note?: unknown }[] }} input
+   * @returns {{ dir: string; files: AttachmentFile[] }}
    */
   writeAttachments(meta, runId, input) {
     const dir = path.join(meta.path, ATTACH_DIR, runId);
@@ -616,28 +614,7 @@ class WorkspaceStore {
       });
     }
 
-    let handoffPath = null;
-    if (input.handoff) {
-      const copy = JSON.parse(JSON.stringify(input.handoff));
-      const screens = Array.isArray(copy.screens) ? copy.screens : [];
-      for (const screen of screens) {
-        const ref = screen?.reference;
-        const image = decodeImage(ref?.dataUrl);
-        if (!image) continue;
-        const full = write(ref.name ?? `reference-${routeSlug(String(screen.route ?? ""))}`, image);
-        delete ref.dataUrl;
-        ref.imagePath = full;
-        files.push({
-          path: full,
-          purpose: "reference",
-          note: `시안 참고 이미지 · ${String(screen.route ?? "")}`,
-        });
-      }
-      fs.mkdirSync(dir, { recursive: true });
-      handoffPath = path.join(dir, "handoff.lab-json");
-      fs.writeFileSync(handoffPath, JSON.stringify(copy, null, 2), "utf8");
-    }
-    return { dir, handoffPath, files };
+    return { dir, files };
   }
 }
 

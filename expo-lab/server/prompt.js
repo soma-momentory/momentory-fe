@@ -6,7 +6,7 @@
  * - 에이전트는 작업 공간(git worktree)에서 **고치고 검사까지만** 한다.
  *   커밋 · push · PR 은 사용자가 Lab 에서 버튼으로 한다 — 그래서 에이전트의 git 권한은 읽기뿐이다.
  * - 끝에 `COMMIT_MESSAGE:` · `PR_BODY:` 블록을 내게 한다 — Lab 이 그 둘을 고칠 수 있는 기본값으로 쓴다.
- * - 스킬 `momentory-lab-handoff` 를 부른다 — 화면 수정 · 시안 반영 · 새 화면 만들기가 다 그 절차다.
+ * - 스킬 `momentory-lab-handoff` 를 부른다 — 화면 수정 · 새 화면 만들기가 다 그 절차다.
  */
 const os = require("node:os");
 
@@ -68,7 +68,7 @@ const RULES = [
   "- **커밋 · push · PR 을 하지 않는다.** 사용자가 결과를 보고 Lab 에서 직접 누른다. git 은 status · diff · log 같은 읽기만 쓴다.",
   "- 절차 1 의 「확인받기」는 요약을 출력으로 남기는 것으로 대신한다 — 묻지 말고 진행한다.",
   "  단, 저장소 규칙(CLAUDE.md · docs/DESIGN.md)과 부딪히거나 값으로 안 되는 큰 구조 변경이면 고치지 말고 보고만 한다.",
-  "- 절차 2(브랜치) · 7(Lab 에서 다시 보기) · 8(PR)은 건너뛴다 — 사용자가 미리보기에서 본다.",
+  "- 절차 2(브랜치) · 6(Lab 에서 다시 보기) · 7(PR)은 건너뛴다 — 사용자가 미리보기에서 본다.",
   "- 앱에 넣기 이미지는 expo-lab/HANDOFF.md 「이미지 넣기」 절차를 따른다 · Lab 실행 중에는 이미지 생성 도구(ask.py image 등)를 쓰지 않고 필요한 그림은 보고에 적는다.",
   "- `.lab-attachments/` 는 Lab 이 넘긴 첨부 자리다(git 에 안 올라간다). 거기에 파일을 만들거나 고치지 않는다 — 앱에 넣을 그림은 assets/ 로 복사한다.",
   "- 명령은 셸 도구로 실행한다. 파일 삭제(rm) · git reset/checkout/stash 같은 되돌릴 수 없는 명령은 쓰지 않는다.",
@@ -115,7 +115,7 @@ const BLOCKS = [
   "- summary: 한 일 요약(사용자에게 보이는 한국어 몇 문장 — 절차 1 의 「확인받기」 요약을 여기 쓴다)",
   "- changedScreens: 바뀌거나 새로 생긴 화면의 라우트(예: /(tabs)/home · /rest/sleep-log)",
   "- commitMessage: `type: 한국어 문장형` 제목(docs/CONTRIBUTING.md 「커밋」 — 마침표 없이 50자 안팎) + 빈 줄 + 왜 바꿨는지 본문 · 검사 결과 수치. **Co-Authored-By 공저자 줄 · 「Generated with Claude Code」 같은 생성 도구 표기 · 세션 링크를 넣지 않는다**(사용자 규칙)",
-  "- prBody: .github/PULL_REQUEST_TEMPLATE.md 의 절을 그대로 채운 본문. 시안 값이 있으면 「주요 변경」에 전 → 후 표, 서버에 없는 데이터를 썼으면 「백엔드·스펙 영향」에 필요한 API 표. 끝에 「🤖 Generated with …」 같은 생성 도구 · 세션 표기를 붙이지 않는다",
+  "- prBody: .github/PULL_REQUEST_TEMPLATE.md 의 절을 그대로 채운 본문. 값을 바꿨으면 「주요 변경」에 전 → 후 표, 서버에 없는 데이터를 썼으면 「백엔드·스펙 영향」에 필요한 API 표. 끝에 「🤖 Generated with …」 같은 생성 도구 · 세션 표기를 붙이지 않는다",
   "- neededImages: 더 필요한 그림 {what, size, where} — 만들지 말고 여기 적는다",
   "- neededApis: 서버에 아직 없는 데이터 {method, path, request, response}",
   "- skipped: 하지 않은 요청 {request, reason} — 규칙과 부딪히거나 값으로 안 되는 큰 구조 변경",
@@ -167,7 +167,6 @@ const attachmentLine = (a) =>
  *   agent: AgentId;
  *   target: Target;
  *   instruction?: string;
- *   handoffPath?: string | null;
  *   attachments?: readonly AttachmentFile[];
  *   workspace: { path: string; branch: string; baseBranch: string };
  *   resume?: boolean;
@@ -187,11 +186,9 @@ function buildPrompt(input) {
     parts.push(
       `${skillCall(agent)} 새 화면을 만든다 — expo-lab/HANDOFF.md 「새 화면 만들기」 절차를 따른다.`,
     );
-  } else if (input.handoffPath) {
-    parts.push(`${skillCall(agent)} 아래 시안 파일을 이 화면에 반영한다.`);
   } else {
     parts.push(
-      `${skillCall(agent)} 아래 화면을 사용자 지시대로 고친다(시안 파일 없음 — 절차 4~6).`,
+      `${skillCall(agent)} 아래 화면을 사용자 지시대로 고친다 — expo-lab/HANDOFF.md 「Lab 에서 바로 맡길 때」.`,
     );
   }
 
@@ -233,17 +230,6 @@ function buildPrompt(input) {
     );
   }
 
-  if (input.handoffPath) {
-    parts.push(
-      [
-        "[시안 파일 — momentory-lab-handoff@1]",
-        `- 경로(절대): ${input.handoffPath}`,
-        "- JSON 이다. 확장자가 .lab-json 인 것은 저장소 검사(prettier)가 훑지 않게 하려는 것뿐이다.",
-        "- 참고 이미지의 dataUrl 은 지우고 파일로 풀어 두었다(screens[].reference.imagePath · 아래 [첨부] 줄).",
-      ].join("\n"),
-    );
-  }
-
   const attachments = input.attachments ?? [];
   if (attachments.length > 0)
     parts.push(
@@ -267,7 +253,7 @@ function buildPrompt(input) {
       instruction ||
         (target.kind === "new-screen"
           ? "(따로 적은 말 없음 — 설명대로 만든다)"
-          : "(따로 적은 말 없음 — 시안대로 반영한다)"),
+          : "(따로 적은 말 없음 — 첨부 그림이 있으면 그대로 맞춘다)"),
       END,
     ].join("\n"),
   );
