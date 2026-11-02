@@ -33,7 +33,6 @@ test("화면 수정 프롬프트 — 스킬 호출 · 화면 맥락 · 첨부 ·
     agent: "claude",
     target: edit,
     instruction: "카드 간격을 넓혀줘",
-    handoffPath: `${workspace.path}\\.lab-attachments\\r1\\handoff.lab-json`,
     attachments: [
       {
         path: `${workspace.path}\\.lab-attachments\\r1\\baba.png`,
@@ -45,7 +44,8 @@ test("화면 수정 프롬프트 — 스킬 호출 · 화면 맥락 · 첨부 ·
     workspace,
   });
   assert.match(prompt, /^\/momentory-lab-handoff /);
-  assert.ok(prompt.includes(`${workspace.path}\\.lab-attachments\\r1\\handoff.lab-json`));
+  assert.ok(!prompt.includes("handoff.lab-json"), "시안 파일은 더 넘기지 않는다");
+  assert.ok(prompt.includes("「Lab 에서 바로 맡길 때」"));
   assert.ok(prompt.includes("- 라우트: /(tabs)/home"));
   assert.ok(prompt.includes("- 파일: app/(tabs)/home.tsx"));
   assert.ok(prompt.includes("- 스펙 ID: 12"));

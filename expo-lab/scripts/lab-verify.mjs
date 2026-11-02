@@ -656,7 +656,6 @@ export function planShots({ selections, devices, datasets, textScales, now, samp
             platform: device.platform,
             deviceId: device.id,
             now,
-            designDraftId: null,
             signedIn: route.preset?.signedIn ?? true,
             latencyMs: 0,
             failPaths: [...(route.preset?.failPaths ?? [])],

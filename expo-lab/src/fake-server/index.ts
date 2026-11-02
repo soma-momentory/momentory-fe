@@ -337,8 +337,10 @@ export function sampleParams(datasetId: string, now?: string | null): SamplePara
   const today = dayOf(nowMs);
   const diary = [...db.diaries].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   const letter = [...db.letters].sort((a, b) => b.date.localeCompare(a.date))[0];
-  const schedule =
-    db.schedules.find((s) => s.date === today && !s.hidden) ?? db.schedules.find((s) => !s.hidden);
+  // 오늘 것만 — 일정 수정은 홈이 받은 **오늘** 목록에서 찾는다(다른 날 id 면 바로 닫힌다).
+  // 손으로 넣은 것(제목을 고칠 수 있는 것)을 먼저
+  const todays = db.schedules.filter((s) => s.date === today && !s.hidden);
+  const schedule = todays.find((s) => s.source === "MANUAL") ?? todays[0];
   return {
     ...(diary ? { diaryId: diary.id } : {}),
     ...(letter ? { letterDate: letter.date } : {}),

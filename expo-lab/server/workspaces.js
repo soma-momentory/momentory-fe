@@ -6,7 +6,7 @@
  * 자리: 저장소 **바깥** 형제 폴더 `<저장소의 부모>/<저장소 이름>-lab-ws/<id>`.
  * 저장소 안에 두면 lint · prettier · jest 가 그 사본까지 훑는다(실제로 그랬다).
  * 같은 폴더에 `registry.json`(작업 공간 목록) · `.logs/`(실행 기록) · `.tmp/`(커밋 메시지 · PR 본문)가 산다.
- * 첨부 그림 · 시안 파일은 작업 공간 **안** `.lab-attachments/<실행>/` 에 쓰고 `info/exclude` 로 git 에서 뺀다.
+ * 첨부 그림은 작업 공간 **안** `.lab-attachments/<실행>/` 에 쓰고 `info/exclude` 로 git 에서 뺀다.
  *
  * node_modules 는 원본으로 **junction** 을 건다(새로 설치하지 않는다). 그래서 지울 때가 위험하다 —
  * junction 을 따라 들어가 지우면 **원본 node_modules 가 날아간다.** 버릴 때는 반드시
@@ -34,7 +34,13 @@ const { branchName, routeSlug, routesFromAppFiles } = require("./prompt");
  *   blocks: { commitMessage: string | null; prBody: string | null };
  *   pr: { number: number | null; url: string } | null;
  *   broken?: string | null;
+ *   group?: VariantGroup | null;
  * }} WorkspaceMeta
+ */
+
+/**
+ * 「시안 여러 개」 묶음의 한 자리 — 같은 화면 · 같은 지시로 만든 시안 N개가 같은 `id` 를 나눠 갖는다.
+ * @typedef {{ id: string; index: number; total: number; createdAt: string }} VariantGroup
  */
 
 const ATTACH_DIR = ".lab-attachments";
@@ -47,6 +53,12 @@ const BASE_BRANCH = process.env.MOMENTORY_LAB_BASE || "main";
 
 /** 작업 공간 하나를 가리키는 열쇠 — 화면 수정은 라우트, 새 화면은 slug. @param {Target} target */
 const targetKey = (target) => (target.kind === "new-screen" ? `new:${target.slug}` : target.route);
+
+/**
+ * 시안 묶음의 한 자리 열쇠 — 라우트와 겹치지 않아서 같은 화면의 「이어서 맡기기」(라우트 열쇠)가 시안을 잡지 않는다.
+ * @param {VariantGroup} group
+ */
+const variantKey = (group) => `variant:${group.id}:${group.index}`;
 
 const IMAGE_TYPES = /** @type {Record<string, string>} */ ({
   png: "image/png",
@@ -87,6 +99,10 @@ function isInside(parent, child) {
   const rel = path.relative(path.resolve(parent), path.resolve(child));
   return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
 }
+
+/** worktree 지우기 시도 횟수 · 기다림(시도마다 늘린다) — 미리보기 서버가 파일을 놓기를 기다린다 */
+const REMOVE_ATTEMPTS = 4;
+const REMOVE_RETRY_MS = Number(process.env.MOMENTORY_LAB_REMOVE_RETRY_MS ?? 1500);
 
 /** @param {string} p */
 function lstatOrNull(p) {
@@ -279,12 +295,32 @@ class WorkspaceStore {
   }
 
   /**
-   * @param {Target} target @param {Date} now
+   * 시안 묶음의 한 자리를 만든다 — 같은 화면이어도 늘 새 작업 공간이다(`<라우트>-s<k>` · 제목 「<화면> · 시안 k」).
+   * @param {import("./prompt").EditTarget} target @param {VariantGroup} group @param {Date} [now]
    * @returns {Promise<WorkspaceMeta>}
    */
-  async create(target, now) {
+  async createVariant(target, group, now = new Date()) {
+    return this.create(target, now, group);
+  }
+
+  /** 같은 묶음의 시안들(자리 순서). @param {string} groupId */
+  groupMembers(groupId) {
+    return this.list()
+      .filter((m) => m.group?.id === groupId)
+      .sort((a, b) => (a.group?.index ?? 0) - (b.group?.index ?? 0));
+  }
+
+  /**
+   * @param {Target} target @param {Date} now @param {VariantGroup | null} [group]
+   * @returns {Promise<WorkspaceMeta>}
+   */
+  async create(target, now, group = null) {
     const slug =
-      target.kind === "new-screen" ? `new-${routeSlug(target.slug)}` : routeSlug(target.route);
+      target.kind === "new-screen"
+        ? `new-${routeSlug(target.slug)}`
+        : group
+          ? `${routeSlug(target.route)}-s${group.index}`
+          : routeSlug(target.route);
     const all = this.load();
     let id = slug;
     for (let n = 2; all[id] || fs.existsSync(path.join(this.wsRoot, id)); n += 1)
@@ -322,9 +358,12 @@ class WorkspaceStore {
     const meta = {
       id,
       kind: target.kind,
-      key: targetKey(target),
+      key: group ? variantKey(group) : targetKey(target),
       route: target.kind === "edit" ? target.route : null,
-      title: target.kind === "edit" ? (target.title ?? target.route) : target.title || target.slug,
+      title:
+        target.kind === "edit"
+          ? `${target.title ?? target.route}${group ? ` · 시안 ${group.index}` : ""}`
+          : target.title || target.slug,
       file: target.kind === "edit" ? (target.file ?? "") : "",
       specId: target.kind === "edit" ? (target.specId ?? null) : null,
       slug: target.kind === "new-screen" ? target.slug : null,
@@ -341,6 +380,7 @@ class WorkspaceStore {
       blocks: { commitMessage: null, prBody: null },
       pr: null,
       broken: null,
+      group,
     };
     const latest = this.load();
     latest[id] = meta;
@@ -397,12 +437,16 @@ class WorkspaceStore {
     if (fs.existsSync(meta.path)) {
       const unlinked = await unlinkJunction(path.join(meta.path, "node_modules"));
       if (!unlinked.ok) return keep(unlinked.message);
-      const removed = await git(
-        this.repoRoot,
-        ["worktree", "remove", "--force", meta.path],
-        120_000,
-      );
-      if (removed.code !== 0) return keep(`작업 공간을 지우지 못했어요: ${removed.stderr.trim()}`);
+      // 막 끈 미리보기 서버(Metro)가 Windows 에서 파일을 잠깐 더 쥐고 있으면 처음 지우기가
+      // 실패한다(2026-11-02 QA — 두 번째 시도에 지워졌다). 잠깐 기다렸다 몇 번 더 해 본다
+      let removed = await git(this.repoRoot, ["worktree", "remove", "--force", meta.path], 120_000);
+      for (let attempt = 1; removed.code !== 0 && attempt < REMOVE_ATTEMPTS; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, REMOVE_RETRY_MS * attempt));
+        if (!fs.existsSync(meta.path)) break;
+        removed = await git(this.repoRoot, ["worktree", "remove", "--force", meta.path], 120_000);
+      }
+      if (removed.code !== 0 && fs.existsSync(meta.path))
+        return keep(`작업 공간을 지우지 못했어요: ${removed.stderr.trim()}`);
     }
     await git(this.repoRoot, ["worktree", "prune"]);
 
@@ -577,13 +621,11 @@ class WorkspaceStore {
   }
 
   /**
-   * 첨부 · 시안 파일을 작업 공간 안 `.lab-attachments/<실행>/` 에 쓴다(git 에서 빠진 자리).
-   * 첨부는 원본 파일 이름 그대로(겹치면 뒤에 번호). 시안의 참고 이미지는 파일로 풀고 JSON 에서 dataUrl 을
-   * 지워 `imagePath` 로 바꾼다 — 에이전트가 큰 base64 를 읽지 않게. 시안 JSON 은 확장자를 `.lab-json` 으로 해서
-   * 작업 공간의 `prettier --check .` 가 훑지 않게 한다.
+   * 첨부 그림을 작업 공간 안 `.lab-attachments/<실행>/` 에 쓴다(git 에서 빠진 자리).
+   * 원본 파일 이름 그대로(겹치면 뒤에 번호).
    * @param {WorkspaceMeta} meta @param {string} runId
-   * @param {{ handoff?: any; attachments?: readonly { name?: unknown; dataUrl?: unknown; purpose?: unknown; note?: unknown }[] }} input
-   * @returns {{ dir: string; handoffPath: string | null; files: AttachmentFile[] }}
+   * @param {{ attachments?: readonly { name?: unknown; dataUrl?: unknown; purpose?: unknown; note?: unknown }[] }} input
+   * @returns {{ dir: string; files: AttachmentFile[] }}
    */
   writeAttachments(meta, runId, input) {
     const dir = path.join(meta.path, ATTACH_DIR, runId);
@@ -616,28 +658,7 @@ class WorkspaceStore {
       });
     }
 
-    let handoffPath = null;
-    if (input.handoff) {
-      const copy = JSON.parse(JSON.stringify(input.handoff));
-      const screens = Array.isArray(copy.screens) ? copy.screens : [];
-      for (const screen of screens) {
-        const ref = screen?.reference;
-        const image = decodeImage(ref?.dataUrl);
-        if (!image) continue;
-        const full = write(ref.name ?? `reference-${routeSlug(String(screen.route ?? ""))}`, image);
-        delete ref.dataUrl;
-        ref.imagePath = full;
-        files.push({
-          path: full,
-          purpose: "reference",
-          note: `시안 참고 이미지 · ${String(screen.route ?? "")}`,
-        });
-      }
-      fs.mkdirSync(dir, { recursive: true });
-      handoffPath = path.join(dir, "handoff.lab-json");
-      fs.writeFileSync(handoffPath, JSON.stringify(copy, null, 2), "utf8");
-    }
-    return { dir, handoffPath, files };
+    return { dir, files };
   }
 }
 
@@ -665,6 +686,7 @@ module.exports = {
   parsePorcelain,
   isInside,
   targetKey,
+  variantKey,
   decodeImage,
   safeFileName,
   prCreateArgs,

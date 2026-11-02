@@ -1,18 +1,20 @@
 /**
- * 오른쪽 조작 패널 — 기기 · 데이터 · 시각 · 서버 · 보기 · 서버 요청 기록. 값은 전부 셸 상태(= URL 해시)이고,
- * 프레임 설정에 들어가는 값이 바뀌면 프레임이 새 설정으로 다시 뜬다.
+ * 오른쪽 「화면 조건」 패널 — 화면 상태(+ A/B 의 B 화면 상태) · 기기 · 로그인 · 일기 · 시각 · 서버 응답(세부) ·
+ * 글씨 크기 · 서버 요청 기록. 값은 전부 셸 상태(= URL 해시)이고, 프레임 설정에 들어가는 값이 바뀌면
+ * 프레임이 새 설정으로 다시 뜬다. 데이터 양 · 불러오는 중 · 실패는 맨 위 「화면 상태」 하나로 고른다
+ * (`ScreenStatePicker.tsx`) — 아래 「서버 응답」은 그보다 세밀하게 바꿀 때만 쓴다.
  *
  * 확대(맞춤 · 100% …)와 매트릭스 축은 여기 없다 — 가운데 무대 도구줄(`StageToolbar`)이 하나뿐인 자리다.
  */
 import { useState, type CSSProperties, type ReactNode } from "react";
 
-import { datasets } from "../fake-server";
 import type { LabPlatform } from "../lab-contract";
 import { labDevices } from "../lab-devices";
 import { frameBus, useFrameBus } from "./frameBus";
 import { LATENCIES, TEXT_SCALES, type ShellState } from "./hashState";
 import { failedRequestCount, RequestLog } from "./RequestLog";
-import { RETRO_START_PATH, RETRO_WRITE_PATH } from "./routes";
+import { RETRO_START_PATH, RETRO_WRITE_PATH, type ShellRoute } from "./routes";
+import { ScreenStatePicker } from "./ScreenStatePicker";
 import { shellColor } from "./theme";
 import { describeVirtual, TIME_PRESETS } from "./time";
 
@@ -52,6 +54,8 @@ export type ControlActions = {
   setClock: (preset: string) => void;
   resetData: () => void;
   reload: () => void;
+  /** 「불러오는 중」을 처음부터 다시 — A 쪽(한 화면 · A, B 가 A와 같으면 B 도) 또는 B */
+  replay: (which: "a" | "b") => void;
   restartDiary: (path: string) => void;
 };
 
@@ -128,10 +132,16 @@ function Toggle({
 
 export function ControlsPanel({
   state,
+  route,
+  baseFrameId,
   realMs,
   actions,
 }: {
   state: ShellState;
+  /** 지금 화면 — 고를 수 있는 화면 상태 · 실패시킬 주소가 화면마다 다르다 */
+  route: ShellRoute | undefined;
+  /** 「이 화면이 서버에 요청하나」를 볼 프레임(한 화면 solo · A/B 의 A) */
+  baseFrameId: string;
   realMs: number;
   actions: ControlActions;
 }) {
@@ -148,6 +158,24 @@ export function ControlsPanel({
 
   return (
     <div data-testid="controls-panel" style={{ fontSize: 13, color: shellColor.ink }}>
+      {route ? (
+        <Group
+          title="화면 상태"
+          hint="폰 화면에 채울 기록의 양 · 불러오는 중 · 불러오기 실패 — 실제 서버가 아니라 Lab 안의 가짜 서버가 줘요"
+        >
+          <ScreenStatePicker
+            route={route}
+            config={state}
+            b={state.b}
+            showB={state.layout === "ab"}
+            baseFrameId={baseFrameId}
+            onPick={(config) => actions.set(config)}
+            onPickB={(b) => actions.set({ b })}
+            onReplay={actions.replay}
+          />
+        </Group>
+      ) : null}
+
       <Group
         title="기기"
         hint="폰 화면이 흉내 낼 기기 — 화면 크기 · 위아래 여백 · 겉모습이 바뀌어요"
@@ -179,24 +207,7 @@ export function ControlsPanel({
         </select>
       </Group>
 
-      <Group
-        title="테스트 데이터"
-        hint="폰 화면에 채울 기록의 양과 모양 — 실제 서버가 아니라 Lab 안의 가짜 서버가 줘요"
-      >
-        <select
-          aria-label="테스트 데이터"
-          value={state.dataset}
-          onChange={(event) =>
-            actions.set({ dataset: event.target.value as ShellState["dataset"] })
-          }
-          style={{ padding: 6, borderRadius: 7, border: `1px solid ${shellColor.border}` }}
-        >
-          {datasets.map((dataset) => (
-            <option key={dataset.id} value={dataset.id}>
-              {dataset.label} — {dataset.description}
-            </option>
-          ))}
-        </select>
+      <Group title="로그인 · 일기 쓰기" hint="폰 화면을 어떤 사용자 상태로 열지 정해요">
         <Toggle
           label="로그인한 상태로 시작"
           hint="폰 화면을 열 때 로그인된 상태로 열지 정해요"
@@ -230,11 +241,11 @@ export function ControlsPanel({
           </button>
           <button
             type="button"
-            title="폰 화면마다 쌓인 기록(쓴 일기 · 일정 …)을 테스트 데이터 처음 값으로 되돌려요"
+            title="폰 화면마다 쌓인 기록(쓴 일기 · 일정 …)을 화면 상태의 처음 값으로 되돌려요"
             onClick={actions.resetData}
             style={button()}
           >
-            테스트 데이터 되돌리기
+            쓴 기록 되돌리기
           </button>
         </Row>
       </Group>
@@ -245,7 +256,7 @@ export function ControlsPanel({
           style={{
             padding: "8px 10px",
             borderRadius: 8,
-            background: state.now ? shellColor.draftSoft : shellColor.accentSoft,
+            background: state.now ? shellColor.noticeSoft : shellColor.accentSoft,
             fontWeight: 600,
           }}
         >
@@ -282,8 +293,8 @@ export function ControlsPanel({
       </Group>
 
       <Group
-        title="서버 응답"
-        hint="폰 화면의 서버 요청은 실제 서버가 아니라 Lab 안의 가짜 서버가 받아요"
+        title="서버 응답 (세부)"
+        hint="위 「화면 상태」의 불러오는 중 · 불러오기 실패보다 세밀하게 바꿀 때 써요 — 바꾸면 화면 상태는 「직접 고른 조건」이 돼요"
       >
         <Row>
           {LATENCIES.map((latency) => (

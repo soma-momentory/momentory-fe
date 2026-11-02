@@ -1,6 +1,6 @@
 /**
- * 매트릭스 — 같은 라우트를 기기마다 · 데이터 세트마다. 셸만으로 확인되는 것(프레임 수 · 설정 ·
- * 기기 크기 · 외형)을 본다. 프레임 안의 가로 넘침 검사는 실제 앱이 떠야 하므로 `LAB_FRAMES=1` 에서만.
+ * 기기별로 보기(매트릭스) — 같은 라우트를 표의 기기마다. 데이터 세트별 축은 지웠다(화면 조건의
+ * 「화면 상태」로 바꾼다). 셸만으로 확인되는 것(프레임 수 · 설정 · 기기 크기 · 외형)을 본다. 프레임 안의 가로 넘침 검사는 실제 앱이 떠야 하므로 `LAB_FRAMES=1` 에서만.
  */
 import { expect, test } from "@playwright/test";
 
@@ -29,21 +29,22 @@ test("기기별 매트릭스 — 표의 모든 기기가 제 크기 · 제 외�
   }
 });
 
-test("데이터 세트별 매트릭스 — 다섯 세트가 같은 기기 · 같은 라우트로", async ({ page }) => {
+test("옛 데이터 세트별 주소(matrix=datasets)는 기기별로 · 화면 상태는 모든 기기에 함께", async ({
+  page,
+}) => {
   await page.goto(
-    "/#/screens?route=/archive&dataset=normal&platform=android&device=pixel-8&layout=matrix&matrix=datasets&zoom=0.4",
+    "/#/screens?route=/archive&dataset=many&platform=android&device=pixel-8&layout=matrix&matrix=datasets&zoom=0.4",
   );
-  for (const dataset of ["new-user", "empty", "normal", "many", "long-copy"]) {
-    const frame = page.getByTestId(`lab-frame-m-${dataset}`);
+  for (const device of labDevices) {
+    const frame = page.getByTestId(`lab-frame-m-${device.id}`);
     await expect(frame).toHaveAttribute("src", "/archive");
     expect(config(await frame.getAttribute("name"))).toMatchObject({
-      datasetId: dataset,
-      deviceId: "pixel-8",
+      datasetId: "many",
+      deviceId: device.id,
     });
   }
-  // 칸 이름은 id 가 아니라 데이터 세트 이름
-  await expect(page.getByTestId("frame-label-m-new-user")).toHaveText("신규 사용자");
-  await expect(page.getByTestId("frame-label-m-long-copy")).toHaveText("긴 문구");
+  await expect(page.getByTestId("lab-frame-m-new-user")).toHaveCount(0);
+  await expect(page).not.toHaveURL(/matrix=/);
 });
 
 test.describe("프레임 안 가로 넘침 (갈래 A 합친 뒤)", () => {

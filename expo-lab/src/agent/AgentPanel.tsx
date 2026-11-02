@@ -6,9 +6,13 @@
  * - AI 는 작업 공간에서 고치고 검사까지만 한다. 수정 저장(커밋) · 검토 요청 올리기(PR)는 사용자가 누른다.
  * - AI 실행은 Lab 전체에서 한 번에 하나다.
  *
- * 셸 연결: `<AgentPanel screen={…} draft={…} hasReference={…} buildHandoff={…} />` — README 「AI에게 맡기기」 참고.
+ * 셸 연결: `<AgentPanel screen={…} onOpenPreview={…} onOpenWorkspace={…} onOpenVariants={…} />` — README 「AI에게 맡기기」 참고.
+ * 참고 그림(피그마 · 시안 캡처)은 지시와 함께 첨부한다(`AttachmentPicker` — 참고용 · 앱에 넣기).
+ *
+ * 「시안 개수」를 2 · 3 으로 고르면 같은 지시로 서로 다른 방향의 시안을 작업 공간마다 하나씩 만든다 —
+ * 서버가 줄에 세워 차례로 돌리고(`POST /variants`), 결과는 「시안 비교」 레이아웃에서 나란히 본다(README 「시안 비교」).
  */
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import { shellColor } from "../shell/theme";
 import { AttachmentPicker, toPayload } from "./AttachmentPicker";
@@ -17,6 +21,8 @@ import { askNotificationPermission } from "./notify";
 import type { AgentId, Attachment, WorkspaceSummary } from "./types";
 import { boxStyle, Btn, Chip, inputStyle, Note, panelStyle, smallStyle } from "./ui";
 import { useAgentStatus } from "./useAgentStatus";
+import { VariantGroupCard } from "./VariantGroupCard";
+import { groupProgress, variantGroups, type VariantGroupView } from "./variants";
 import { AGENT_LABEL, statusText, WorkspaceCard } from "./WorkspaceCard";
 
 export type AgentScreen = {
@@ -30,33 +36,27 @@ export type AgentScreen = {
 
 export type AgentPanelProps = {
   screen: AgentScreen;
-  draft: { name: string; changeCount: number } | null;
-  hasReference: boolean;
-  /** 지금 시안을 `momentory-lab-handoff@1` 로 — 디자인 편집기의 「AI에게 넘기기」 내보내기와 같은 것 */
-  buildHandoff?: () => Promise<object | null>;
   client?: AgentClient;
   /** 「수정 결과 보기」를 셸이 B 자리에 띄우려면 받는다(없으면 새 탭) */
   onOpenPreview?: (url: string, workspace: WorkspaceSummary) => void;
   /** 다른 화면의 작업으로 가기(셸이 그 화면을 연다) */
   onOpenWorkspace?: (workspace: WorkspaceSummary) => void;
+  /** 「시안 비교로 보기」 — 셸이 그 묶음의 시안 비교 레이아웃을 연다 */
+  onOpenVariants?: (groupId: string) => void;
 };
+
+/** 한 번에 만들 수 있는 시안 개수(서버 `MAX_VARIANTS` 와 같다 — 상태가 오면 그 값) */
+export const MAX_VARIANT_COUNT = 3;
 
 export const INSTRUCTION_LABEL = "지시: ";
 
 /** 지시 칸에 미리 채우는 머리말 — 사용자가 고칠 수 있다. 커서는 마지막 「지시: 」 뒤. */
-export function buildInstructionHeader(
-  screen: AgentScreen,
-  draft: AgentPanelProps["draft"],
-  hasReference: boolean,
-) {
+export function buildInstructionHeader(screen: AgentScreen) {
   const spec = screen.specId ? ` (${screen.specId})` : "";
   return [
     `[화면] ${screen.title}${spec} · ${screen.route}`,
     `[파일] ${screen.file}`,
     `[환경] ${screen.device.label} (${screen.device.platform}) · 데이터 ${screen.datasetLabel}`,
-    draft
-      ? `[시안] 「${draft.name}」 바꾼 값 ${draft.changeCount}개 · 참고 시안 이미지 ${hasReference ? "있음" : "없음"}`
-      : `[시안] 없음 · 참고 시안 이미지 ${hasReference ? "있음" : "없음"}`,
     INSTRUCTION_LABEL,
   ].join("\n");
 }
@@ -69,21 +69,18 @@ export const instructionBody = (text: string) => {
 
 export function AgentPanel({
   screen,
-  draft,
-  hasReference,
-  buildHandoff,
   client = defaultAgentClient,
   onOpenPreview,
   onOpenWorkspace,
+  onOpenVariants,
 }: AgentPanelProps) {
   const { status, error: statusError, refresh } = useAgentStatus(client);
-  const header = useMemo(
-    () => buildInstructionHeader(screen, draft, hasReference),
-    [screen, draft, hasReference],
-  );
-  /** 사용자가 고친 글 — null 이면 머리말 그대로(시안 · 화면이 바뀌면 머리말이 따라간다) */
+  const header = useMemo(() => buildInstructionHeader(screen), [screen]);
+  /** 사용자가 고친 글 — null 이면 머리말 그대로(화면 · 기기 · 데이터가 바뀌면 머리말이 따라간다) */
   const [edited, setEdited] = useState<string | null>(null);
   const [picked, setPicked] = useState<AgentId>("claude");
+  /** 시안 개수 — 1 이면 지금처럼 이 화면의 작업 공간 하나 */
+  const [count, setCount] = useState(1);
   const [files, setFiles] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,46 +110,57 @@ export function AgentPanel({
       : picked;
   const setAgent = setPicked;
 
+  // 이 화면의 「이어서 맡기기」 작업 공간 — 시안 묶음의 자리는 따로다(아래 묶음 카드)
   const workspace =
-    status?.workspaces.find((w) => w.kind === "edit" && w.route === screen.route && !w.broken) ??
-    null;
-  const others = (status?.workspaces ?? []).filter((w) => w.id !== workspace?.id);
+    status?.workspaces.find(
+      (w) => w.kind === "edit" && w.route === screen.route && !w.broken && !w.group,
+    ) ?? null;
+  const groups = variantGroups(status?.workspaces ?? []);
+  const hereGroups = groups.filter((g) => g.route === screen.route);
+  const otherGroups = groups.filter((g) => g.route !== screen.route);
+  const others = (status?.workspaces ?? []).filter((w) => w.id !== workspace?.id && !w.group);
+  const otherCount = others.length + otherGroups.length;
+  const maxCount = status?.maxVariants ?? MAX_VARIANT_COUNT;
+  const queue = status?.queue ?? [];
   const active = status?.activeRun ?? null;
   const otherActive = active && active.workspaceId !== workspace?.id ? active : null;
+  /** 지금 도는 것이 이 화면의 시안이면 아래 묶음 카드에 이미 보인다 — 「그 작업 보기」가 필요 없다 */
+  const activeHere = hereGroups.some((g) => g.members.some((m) => m.id === active?.workspaceId));
   const busyHere = workspace?.status === "working" || workspace?.status === "checking";
-  const nothing = !instructionBody(text) && !draft && files.length === 0;
+  const nothing = !instructionBody(text) && files.length === 0;
   const unavailable = status ? !status.available[agent] : true;
 
   const disabledReason = !status
     ? null
     : !status.available.claude && !status.available.codex
       ? "이 PC 에서 Claude Code · Codex 를 찾지 못했어요"
-      : otherActive
-        ? `다른 화면(${otherActive.title})에서 AI가 작업 중이에요`
-        : workspace?.status === "working"
-          ? "AI 가 아직 고치는 중이에요"
-          : workspace?.status === "checking"
-            ? "저장 전 검사가 도는 중이에요"
-            : null;
+      : queue.length > 0
+        ? `시안을 차례로 만드는 중이에요(다음: ${queue[0]?.title ?? ""}) — 다 끝난 뒤에 지시해요`
+        : otherActive
+          ? `다른 화면(${otherActive.title})에서 AI가 작업 중이에요`
+          : count === 1 && workspace?.status === "working"
+            ? "AI 가 아직 고치는 중이에요"
+            : count === 1 && workspace?.status === "checking"
+              ? "저장 전 검사가 도는 중이에요"
+              : null;
 
   const send = async () => {
     setError(null);
     askNotificationPermission();
     setSending(true);
-    const handoff = draft && buildHandoff ? await buildHandoff().catch(() => null) : null;
-    const res = await client.run({
+    const body = {
       agent,
       target: {
-        kind: "edit",
+        kind: "edit" as const,
         route: screen.route,
         title: screen.title,
         file: screen.file,
         specId: screen.specId ?? null,
       },
       instruction: text,
-      handoff,
       attachments: toPayload(files),
-    });
+    };
+    const res = count > 1 ? await client.variants({ ...body, count }) : await client.run(body);
     setSending(false);
     if (!res.ok) return setError(res.error);
     setEdited(null);
@@ -171,6 +179,8 @@ export function AgentPanel({
     setOpenOther(otherActive.workspaceId);
     if (othersRef.current) othersRef.current.open = true;
     const ws = status?.workspaces.find((w) => w.id === otherActive.workspaceId);
+    // 시안이면 「다른 작업」의 그 묶음 줄을 편다
+    if (ws?.group) setOpenOther(ws.group.id);
     if (ws) onOpenWorkspace?.(ws);
   };
 
@@ -223,10 +233,39 @@ export function AgentPanel({
             setEdited(e.target.value);
           }}
         />
-        {!draft ? (
-          <Note>시안이 없으면 적은 말대로만 고쳐요 — 예: 카드 간격도 시안처럼 넓혀줘</Note>
-        ) : null}
+        <Note>
+          디자인을 바꿀 때는 원하는 모습의 그림(피그마 · 캡처)을 붙이면 그대로 맞춰요 — 예: 카드
+          간격을 그림처럼 넓혀줘
+        </Note>
         <AttachmentPicker value={files} onChange={setFiles} disabled={sending} />
+
+        <div
+          style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}
+          role="group"
+          aria-label="시안 개수"
+        >
+          <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>시안 개수</span>
+          {Array.from({ length: maxCount }, (_, i) => i + 1).map((n) => (
+            <Chip
+              key={n}
+              selected={count === n}
+              onClick={() => setCount(n)}
+              title={
+                n === 1
+                  ? "지금처럼 이 화면의 작업 공간 하나에서 고쳐요"
+                  : `같은 지시로 서로 다른 방향의 시안 ${n}개를 따로 만들어요`
+              }
+            >
+              {n}개
+            </Chip>
+          ))}
+        </div>
+        {count > 1 ? (
+          <Note>
+            같은 지시로 방향이 다른 시안 {count}개를 따로 만들어요. 한 번에 하나씩 차례로 만들고,
+            결과는 「시안 비교」에서 지금 앱과 나란히 봐요.
+          </Note>
+        ) : null}
 
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <Btn
@@ -234,12 +273,20 @@ export function AgentPanel({
             disabled={sending || unavailable || Boolean(disabledReason) || busyHere || nothing}
             onClick={() => void send()}
             title={
-              workspace
-                ? "같은 작업 공간 · 같은 AI 대화에서 이어서 고쳐요"
-                : "이 화면용 작업 공간을 만들고 AI 에게 고치게 해요"
+              count > 1
+                ? `시안마다 작업 공간을 하나씩 만들고 AI 가 차례로 만들어요(${count}개)`
+                : workspace
+                  ? "같은 작업 공간 · 같은 AI 대화에서 이어서 고쳐요"
+                  : "이 화면용 작업 공간을 만들고 AI 에게 고치게 해요"
             }
           >
-            {sending ? "보내는 중…" : workspace ? "이어서 맡기기" : "AI에게 수정 맡기기"}
+            {sending
+              ? "보내는 중…"
+              : count > 1
+                ? `시안 ${count}개 만들기 맡기기`
+                : workspace
+                  ? "이어서 맡기기"
+                  : "AI에게 수정 맡기기"}
           </Btn>
           {nothing && !disabledReason ? (
             <span style={smallStyle}>「지시:」 뒤에 할 말을 적어요</span>
@@ -248,10 +295,12 @@ export function AgentPanel({
         {disabledReason ? (
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <Note>{disabledReason}</Note>
-            {otherActive ? <Btn onClick={goToActive}>그 작업 보기</Btn> : null}
+            {otherActive && !activeHere ? <Btn onClick={goToActive}>그 작업 보기</Btn> : null}
           </div>
         ) : null}
-        {!workspace ? <Note>지시를 보내면 이 화면용 작업 공간을 만들어요</Note> : null}
+        {!workspace && count === 1 ? (
+          <Note>지시를 보내면 이 화면용 작업 공간을 만들어요</Note>
+        ) : null}
         {!workspace && status?.git.dirty ? (
           <Note>
             작업 공간은 {status.baseBranch} 의 마지막 커밋에서 시작해요 — 이 PC 에서 아직 커밋하지
@@ -272,12 +321,42 @@ export function AgentPanel({
           onOpenPreview={onOpenPreview}
         />
       ) : null}
+      {hereGroups.map((group) => (
+        <VariantGroupCard
+          key={group.id}
+          client={client}
+          group={group}
+          status={status}
+          title={screen.title}
+          onChanged={() => void refresh()}
+          onOpenVariants={onOpenVariants}
+          onOpenPreview={onOpenPreview}
+        />
+      ))}
       <Note>코드는 작업 공간에서만 바뀌어요 — 결과는 「수정 결과 보기」에서 확인하세요.</Note>
 
-      {others.length > 0 ? (
+      {otherCount > 0 ? (
         <details ref={othersRef}>
-          <summary style={{ cursor: "pointer", fontSize: 12 }}>다른 작업 {others.length}개</summary>
+          <summary style={{ cursor: "pointer", fontSize: 12 }}>다른 작업 {otherCount}개</summary>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+            {otherGroups.map((group) => (
+              <OtherGroupRow
+                key={group.id}
+                group={group}
+                open={openOther === group.id}
+                onToggle={() => setOpenOther(openOther === group.id ? null : group.id)}
+              >
+                <VariantGroupCard
+                  client={client}
+                  group={group}
+                  status={status}
+                  title={groupTitle(group)}
+                  onChanged={() => void refresh()}
+                  onOpenVariants={onOpenVariants}
+                  onOpenPreview={onOpenPreview}
+                />
+              </OtherGroupRow>
+            ))}
             {others.map((w) => (
               <div key={w.id} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div
@@ -293,7 +372,7 @@ export function AgentPanel({
                     {w.title}{" "}
                     <span
                       style={{
-                        color: w.status === "working" ? shellColor.draft : shellColor.muted,
+                        color: w.status === "working" ? shellColor.notice : shellColor.muted,
                         fontSize: 12,
                       }}
                     >
@@ -320,6 +399,41 @@ export function AgentPanel({
           </div>
         </details>
       ) : null}
+    </div>
+  );
+}
+
+/** 묶음의 화면 이름 — 시안 제목(「홈 · 시안 1」)에서 뒤를 뗀다 */
+const groupTitle = (group: VariantGroupView) =>
+  (group.members[0]?.title ?? group.route ?? "").replace(/ · 시안 \d+$/, "");
+
+/** 「다른 작업」 안의 시안 묶음 한 줄 — 시안마다 줄을 늘어놓지 않고 묶음 하나로 */
+function OtherGroupRow({
+  group,
+  open,
+  onToggle,
+  children,
+}: {
+  group: VariantGroupView;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const busy = group.members.some((m) => m.status === "working" || m.queued);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div
+        style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between" }}
+      >
+        <span style={{ minWidth: 0 }}>
+          {groupTitle(group)} · 시안 {group.total}개{" "}
+          <span style={{ color: busy ? shellColor.notice : shellColor.muted, fontSize: 12 }}>
+            {groupProgress(group)}
+          </span>
+        </span>
+        <Btn onClick={onToggle}>{open ? "접기" : "펼치기"}</Btn>
+      </div>
+      {open ? children : null}
     </div>
   );
 }

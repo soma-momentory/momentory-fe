@@ -2,8 +2,8 @@
  * Expo Lab 셸 — 앱의 **모든 화면을 실제 앱 코드로** 띄우는 작업대.
  *
  *   왼쪽: 라우트 목록(앱 순서 · 접히는 묶음) · 가운데: 도구줄(설명 · 확대 · 돋보기) +
- *   한 화면 / A·B 비교 / 전체 화면 / 매트릭스 / 상태별(`StatesView`) · 오른쪽: 조작(… · 서버 요청 기록) ·
- *   디자인 편집 · 참고 시안(`src/reference/` — 겹치는 층은 주인공 프레임의 화면 상자 안 · `FrameReference.tsx`) ·
+ *   한 화면 / 나란히 비교(A/B) / 모든 화면 / 기기별 / 시안 비교(기존 + AI 시안 최대 3 — 하나를 고르면 최종 A/B) ·
+ *   오른쪽: 화면 조건(화면 상태 · B 화면 상태 … · 서버 요청 기록) ·
  *   AI에게 맡기기(`src/agent/` — 「수정 결과 보기」는 B(한 화면이면 그 폰)를 작업 공간의 미리보기 서버로 바꾼다)
  *   · 목록 맨 위 「＋ 새 화면 만들기」 · 「새 화면 (작업 중)」(`AgentNav.tsx`)
  *
@@ -15,7 +15,7 @@
  * 싣고, 주소는 `lab:navigate` 로만 옮긴다. 상태는 전부 URL 해시(`hashState.ts`)에 남는다.
  *
  * 프레임을 언제 다시 띄우나:
- * - 프레임 설정(데이터 세트 · 세션 · 시각 · 지연 · 실패 · 시안 · 기기 …)이 바뀌면 — key 가 설정
+ * - 프레임 설정(데이터 세트 · 세션 · 시각 · 지연 · 실패 · 기기 …)이 바뀌면 — key 가 설정
  *   문자열이라 새로 붙고, **지금 서 있던 주소**에서 다시 시작한다(흐름을 잃지 않게)
  * - 목록에서 화면을 고르면 — 준비된 프레임은 `lab:navigate`, 아직 준비 전이면 새로 붙인다
  */
@@ -27,32 +27,36 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 
-import { AgentPanel, defaultAgentClient, NewScreenForm, type WorkspaceSummary } from "../agent";
-import { DesignEditorPanel } from "../design-editor/DesignEditorPanel";
+import {
+  AgentPanel,
+  defaultAgentClient,
+  NewScreenForm,
+  VariantDecision,
+  type WorkspaceSummary,
+} from "../agent";
+import {
+  groupBusy,
+  groupProgress,
+  pickGroup,
+  shouldStartPreview,
+  variantGroups,
+  type VariantGroupView,
+} from "../agent/variants";
 import { resetFakeData, sampleParams } from "../fake-server";
 import { encodeFrameConfig, type LabPlatform, type SampleParams } from "../lab-contract";
 import { findDevice } from "../lab-devices";
-import { handleReferenceShortcut, ReferencePanel, useReferencesFor } from "../reference";
-import { buildAgentHandoff } from "./agentHandoff";
-import { newScreenPath, NewScreenNav, useNewScreenWorkspaces } from "./AgentNav";
+import { newScreenPath, NewScreenNav, useLabWorkspaces } from "./AgentNav";
 import { skinKnownAvailable } from "./device/DeviceFrame";
 import { chromeGeometry } from "./device/geometry";
 import { ControlsPanel, type ControlActions } from "./ControlsPanel";
-import { notifyDraftsChanged, useDraftInfo, type DraftInfo } from "./draftInfo";
-import {
-  FrameReference,
-  handoffReferencesFor,
-  referenceScopeOf,
-  SideReferenceFrame,
-} from "./FrameReference";
 import { frameBus, useFrameBus } from "./frameBus";
 import {
   datasetLabel,
   framesFor,
-  peekFrameFor,
-  PEEK_FRAME_ID,
+  variantSpecs,
   withPreview,
   type FramePreview,
   type FrameSpec,
@@ -68,6 +72,7 @@ import {
   type LayoutId,
   type ShellState,
   type SidePanel,
+  type StateConfig,
   type Zoom,
 } from "./hashState";
 import { LabFrame } from "./LabFrame";
@@ -75,16 +80,9 @@ import { LENS_POWER, LENS_SIZE, MagnifierLayer, type MagnifierTarget } from "./M
 import { findRoute, matchPathname, shellRoutes, type ShellRoute } from "./routes";
 import { RouteTree } from "./RouteTree";
 import { StageToolbar } from "./StageToolbar";
+import { stateLabel, useDetectedPaths } from "./ScreenStatePicker";
 import { LOADING_LATENCY_MS } from "./screenStates";
-import { StatePicker, StatesView } from "./StatesView";
-import {
-  FRAME_GAP,
-  MIN_CELL_WIDTH,
-  STAGE_PAD_BOTTOM,
-  STAGE_PAD_X,
-  fitRow,
-  fitScale,
-} from "./stageFit";
+import { FRAME_GAP, MIN_CELL_WIDTH, STAGE_PAD_BOTTOM, STAGE_PAD_X, fitScale } from "./stageFit";
 import { shellColor, shellFont } from "./theme";
 import { setClock, shiftDays } from "./time";
 
@@ -100,20 +98,17 @@ const SIDE_WIDTH = 340;
 /** 접힌 패널 자리의 막대 폭 */
 const RAIL_WIDTH = 44;
 const HEADER_HEIGHT = 52;
-/** A/B 기기 위 이름 두 줄(이름 + 바꾼 값)의 높이 */
+/** A/B 기기 위 이름 두 줄(이름 + 화면 상태)의 높이 */
 const AB_CAPTION = 46;
+/** 시안 비교에서 기기 아래 「이 시안 고르기」 줄의 높이(간격 포함) */
+const VARIANT_PICK = 38;
 
 const SIDE_TABS = [
   ["controls", "화면 조건", "조건 바꾸기"],
-  ["design", "디자인 편집", "디자인 편집"],
-  ["reference", "참고 시안", "참고 시안"],
   ["agent", "AI에게 맡기기", "AI 맡기기"],
 ] as const satisfies readonly (readonly [SidePanel, string, string])[];
 const SIDE_TAB_TITLE: Record<SidePanel, string> = {
-  controls: "기기 · 테스트 데이터 · 시각 · 서버 응답 · 글씨 크기를 바꿔요",
-  design: "시안을 만들고 색 · 글자 · 화면 값을 고쳐요 — 시안을 건 폰 화면(B)에만 적용돼요",
-  reference:
-    "피그마 · Claude Design 에서 뽑은 화면 그림을 앱 위에 겹쳐 어긋난 곳을 찾아요 — R 키로 보이기 · 숨기기",
+  controls: "화면 상태(보통 · 많음 · 불러오는 중 …) · 기기 · 시각 · 글씨 크기를 바꿔요",
   agent:
     "지금 보는 화면을 Claude Code · Codex 에게 고치게 해요 — 고친 결과는 B 자리에 띄워 지금 앱과 비교해요",
   "new-screen": "어떤 화면인지 적으면 AI 가 앱에 새 화면을 만들어요",
@@ -121,9 +116,9 @@ const SIDE_TAB_TITLE: Record<SidePanel, string> = {
 /** 탭 줄에서 이 패널일 때 눌려 보이는 탭 — 「새 화면 만들기」는 「AI에게 맡기기」 안에 있다 */
 const tabOf = (panel: SidePanel): SidePanel => (panel === "new-screen" ? "agent" : panel);
 
-/** 다른 서버(작업 공간)의 화면은 셸이 문서를 못 읽는다 — 돋보기 · 눌러 고르기가 빠지는 이유 */
-export const CROSS_ORIGIN_NOTE =
-  "AI 수정 결과 화면은 다른 서버라 돋보기 · 눌러 고르기를 쓸 수 없어요";
+/** 다른 서버(작업 공간)의 화면은 셸이 문서를 못 읽는다 — 돋보기가 빠지는 이유 */
+export const CROSS_ORIGIN_NOTE = "AI 수정 결과 화면은 다른 서버라 돋보기를 쓸 수 없어요";
+export const VARIANTS_CROSS_ORIGIN_NOTE = "시안 화면은 다른 서버라 돋보기는 「기존」에만 써요";
 
 /** 꺼진 미리보기를 켜고 기다리는 간격 · 횟수(2초 × 90 = 3분 — Metro 첫 묶기가 1분 남짓 걸린다) */
 const PREVIEW_WAIT_MS = 2000;
@@ -146,8 +141,19 @@ const applyPreview = (
   );
 };
 
+/** 레이아웃의 프레임 목록 — 시안 비교는 시안 묶음(서버의 작업 공간 목록)까지 있어야 그린다 */
+const specsFor = (
+  state: ShellState,
+  preview: FramePreview | null,
+  group: VariantGroupView | null,
+  realMs: number,
+): FrameSpec[] =>
+  state.layout === "variants"
+    ? variantSpecs(state, group, window.location.origin, cachedSampleParams, realMs)
+    : applyPreview(framesFor(state, cachedSampleParams, realMs), preview, state.layout);
+
 /** 칸마다 차갑게 여는 레이아웃 — 셸이 주소를 옮기지 않고, 칸 안의 이동을 따라가지 않는다 */
-const isWall = (layout: LayoutId) => layout === "grid" || layout === "states";
+const isWall = (layout: LayoutId) => layout === "grid";
 
 const shellRouteCount = shellRoutes.length;
 
@@ -239,29 +245,28 @@ export function ShellApp() {
   useFrameBus();
   /** 「AI 수정 결과 보기」 — 작업 공간의 미리보기 서버를 B(한 화면이면 그 폰)에. 해시에 남기지 않는다 */
   const [preview, setPreview] = useState<FramePreview | null>(null);
+  /** 작업 공간 목록 — 왼쪽 「새 화면 (작업 중)」 · 시안 비교의 시안 자리 */
+  const { workspaces: labWorkspaces, refresh: refreshWorkspaces } = useLabWorkspaces();
+  const groups = useMemo(() => variantGroups(labWorkspaces), [labWorkspaces]);
+  const group = pickGroup(groups, state.group, state.route);
 
   const specs = useMemo(
-    () => applyPreview(framesFor(state, cachedSampleParams, realMs), preview, state.layout),
-    [state, realMs, preview],
+    () => specsFor(state, preview, group, realMs),
+    [state, realMs, preview, group],
   );
-  /** 한 화면 + 시안이면 그 아래 숨긴 승인본(「원래대로 잠깐 보기」) — 그리지 않는 곳에서는 specs 와 함께 다룬다 */
-  const peekSpecs = useMemo(
-    () =>
-      preview && state.layout === "single" ? [] : peekFrameFor(state, cachedSampleParams, realMs),
-    [state, realMs, preview],
-  );
-  const allSpecs = useMemo(() => [...specs, ...peekSpecs], [specs, peekSpecs]);
 
   // 프레임 메시지 처리(이벤트)가 최신 값을 읽는 자리 — 그리기가 끝난 뒤 맞춘다
   const stateRef = useRef(state);
-  const specsRef = useRef(allSpecs);
+  const specsRef = useRef(specs);
   const syncRef = useRef(syncNav);
   const previewRef = useRef(preview);
+  const groupRef = useRef(group);
   useLayoutEffect(() => {
     stateRef.current = state;
-    specsRef.current = allSpecs;
+    specsRef.current = specs;
     syncRef.current = syncNav;
     previewRef.current = preview;
+    groupRef.current = group;
   });
 
   const writeHash = (next: ShellState, mode: "push" | "replace" | "none") => {
@@ -299,13 +304,7 @@ export function ShellApp() {
       },
     ) => {
       const before = new Map(specsRef.current.map((spec) => [spec.frameId, configKey(spec)]));
-      const nextPreview = previewRef.current;
-      const nextSpecs = [
-        ...applyPreview(framesFor(next, cachedSampleParams, Date.now()), nextPreview, next.layout),
-        ...(nextPreview && next.layout === "single"
-          ? []
-          : peekFrameFor(next, cachedSampleParams, Date.now())),
-      ];
+      const nextSpecs = specsFor(next, previewRef.current, groupRef.current, Date.now());
       const toBump: string[] = [];
       if (options.navigate && !isWall(next.layout)) {
         for (const spec of nextSpecs) {
@@ -363,15 +362,7 @@ export function ShellApp() {
       const s = stateRef.current;
       if (isWall(s.layout)) return;
       const ids = specsRef.current.map((spec) => spec.frameId);
-      // 숨긴 승인본은 따라가기만 한다 — 그 프레임의 주소로 다른 프레임을 옮기지 않는다
-      if (!ids.includes(frameId) || frameId === PEEK_FRAME_ID) return;
-      if (frameId === "solo" && ids.includes(PEEK_FRAME_ID)) {
-        const pathname = frameBus.get(frameId).pathname;
-        if (pathname && frameBus.get(PEEK_FRAME_ID).pathname !== pathname) {
-          frameBus.setPathname(PEEK_FRAME_ID, pathname);
-          frameBus.post(PEEK_FRAME_ID, { type: "lab:navigate", pathname });
-        }
-      }
+      if (!ids.includes(frameId)) return;
       if (!syncRef.current && frameId !== primaryFrameId(s.layout, specsRef.current)) return;
       const pathname = frameBus.get(frameId).pathname;
       const route = pathname ? matchPathname(pathname) : undefined;
@@ -405,7 +396,7 @@ export function ShellApp() {
     setClock: (hhmm) => set({ now: setClock(state.now, hhmm, Date.now()) }),
     resetData: () => {
       const toBump: string[] = [];
-      for (const spec of allSpecs) {
+      for (const spec of specs) {
         if (!frameBus.post(spec.frameId, { type: "lab:resetData" })) {
           // 프레임이 아직 말을 못 들으면 셸이 직접 비운다(같은 출처 localStorage)
           resetFakeData(spec.config);
@@ -414,7 +405,18 @@ export function ShellApp() {
       }
       bump(toBump);
     },
-    reload: () => bump(allSpecs.map((spec) => spec.frameId)),
+    reload: () => bump(specs.map((spec) => spec.frameId)),
+    // 「불러오는 중」 처음부터 — A 쪽은 B 가 A와 같으면 B 도 같이
+    replay: (which) =>
+      bump(
+        which === "b"
+          ? ["B"]
+          : state.layout === "ab"
+            ? state.b
+              ? ["A"]
+              : ["A", "B"]
+            : specs.map((spec) => spec.frameId),
+      ),
     restartDiary: (path) =>
       goTo(withRoute(state, path), { history: "push", navigate: true, force: true, remount: true }),
   };
@@ -429,7 +431,15 @@ export function ShellApp() {
       !isWall(state.layout) && primary && matchPathname(primary)?.path === state.route
         ? primary
         : undefined;
-    goTo({ ...state, layout }, { history: "push", navigate: true, target, force: true });
+    // 시안 비교는 보던 묶음(없으면 이 화면의 가장 새 묶음)을 주소에 적는다 — 안의 폰이 다른 화면으로 옮겨 가도 그 묶음이다
+    const nextGroup =
+      layout === "variants"
+        ? (state.group ?? pickGroup(groups, null, state.route)?.id ?? null)
+        : state.group;
+    goTo(
+      { ...state, layout, group: nextGroup },
+      { history: "push", navigate: true, target, force: true },
+    );
   };
 
   const openFromGrid = (path: string) =>
@@ -438,44 +448,13 @@ export function ShellApp() {
       { history: "push", navigate: true, force: true },
     );
 
-  // 「상태별로 보기」 칸을 누름 — 그 칸의 데이터 · 지연 · 실패 주소 그대로 한 화면
-  const openFromState = (spec: FrameSpec) =>
-    goTo(
-      {
-        ...state,
-        layout: "single",
-        dataset: spec.config.datasetId as ShellState["dataset"],
-        signedIn: spec.config.signedIn ?? state.signedIn,
-        latencyMs: spec.config.latencyMs ?? 0,
-        failPaths: [...(spec.config.failPaths ?? [])],
-      },
-      { history: "push", navigate: true, force: true },
-    );
-
   const route = findRoute(state.route);
   const frameKey = (spec: FrameSpec) => `${configKey(spec)}#${nonces[spec.frameId] ?? 0}`;
-  const draftInfo = useDraftInfo(state.draft);
-
-  // ── 참고 시안 ─────────────────────────────────────────────
-  // 겹치기 · 나란히 놓기는 주인공 프레임 하나에만(한 화면 = 그 폰 · A/B = 시안을 건 B)
-  const showsReference = state.layout === "single" || state.layout === "ab";
-  const primaryId = primaryFrameId(state.layout, specs);
-  const primarySpec = showsReference ? specs.find((spec) => spec.frameId === primaryId) : undefined;
-  const primaryScope = primarySpec
-    ? referenceScopeOf(state.route, primarySpec)
-    : { route: state.route, draftId: state.draft };
-  const primaryReference = useReferencesFor(primaryScope);
-  const sideReference =
-    primarySpec && primaryReference.reference?.view.mode === "side" ? primaryReference : null;
-  const handoffDevice = findDevice(state.device);
-  const getReferences = useMemo(
-    () =>
-      handoffReferencesFor(
-        { draftId: state.draft, platform: handoffDevice.platform, deviceId: handoffDevice.id },
-        handoffDevice,
-      ),
-    [state.draft, handoffDevice],
-  );
+  // 화면 상태 이름(머리 · 도구줄) — 「불러오기 실패」는 이 화면이 부른 주소로 알아본다
+  const detected = useDetectedPaths(state.route);
+  const labelOf = (config: StateConfig) => (route ? stateLabel(config, route, detected) : "");
+  const aStateLabel = labelOf(state);
+  const bStateLabel = state.b ? labelOf(state.b) : aStateLabel;
 
   // ── 확대 ────────────────────────────────────────────────
   // 기기 줄 위에 이미 쓰인 높이(안내 · A/B 설명) — 배율과 무관하므로 그린 뒤 재서 맞춤에 쓴다
@@ -487,19 +466,33 @@ export function ShellApp() {
     const top = rowRef.current?.offsetTop;
     if (top != null && top !== rowTop) setRowTop(top);
   });
-  const captionReserve = state.layout === "ab" ? AB_CAPTION : 0;
+  // 설명 줄이 셸을 다시 그리지 않고 커질 때도(시안 확정 칸이 펼쳐짐 등) 다시 잰다 — 기기 줄을 감싼 칸의 크기를 본다
+  const [rowEl, setRowEl] = useState<HTMLDivElement | null>(null);
+  const attachRow = useCallback((element: HTMLDivElement | null) => {
+    rowRef.current = element;
+    setRowEl(element);
+  }, []);
+  useEffect(() => {
+    const rowParent = rowEl?.parentElement;
+    if (!rowParent || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      const top = rowRef.current?.offsetTop;
+      if (top != null) setRowTop(top);
+    });
+    observer.observe(rowParent);
+    return () => observer.disconnect();
+  }, [rowEl]);
+  const captionReserve =
+    state.layout === "ab"
+      ? AB_CAPTION
+      : state.layout === "variants"
+        ? AB_CAPTION + VARIANT_PICK
+        : 0;
   const phoneSizes = specs.map((spec) => {
     const g = chromeGeometry(spec.device, skinKnownAvailable(spec.device));
     return { width: g.outerWidth, height: g.outerHeight };
   });
-  // 「옆에 나란히 놓기」면 같은 기기 하나를 더 세운다 — 한 줄에 같이 맞춘다
-  const fitted =
-    sideReference && primarySpec
-      ? fitRow(area, rowTop + captionReserve, [
-          ...phoneSizes,
-          phoneSizes[specs.indexOf(primarySpec)]!,
-        ])
-      : fitScale(state.layout, area, rowTop + captionReserve, phoneSizes);
+  const fitted = fitScale(state.layout, area, rowTop + captionReserve, phoneSizes);
   const scale = state.zoom === "fit" ? fitted : state.zoom;
   const setZoom = (zoom: Zoom) => goTo({ ...state, zoom }, { history: "replace" });
   const stepBy = (direction: 1 | -1) => setZoom(stepZoom(scale, direction));
@@ -527,18 +520,24 @@ export function ShellApp() {
     else goTo({ ...state, navOpen: false }, { history: "replace" });
   };
 
-  // A/B 「시안 만들기」 — 시안은 편집기가 만든다. 셸은 디자인 편집 탭을 열고 이름 칸에 커서를 둔다
-  const startDraft = () => {
-    openSide("design");
+  // 도구줄 · A/B 설명의 「화면 상태 바꾸기」 — 고르는 자리는 화면 조건 패널 하나다. 그 칸을 열고 커서를 둔다
+  const focusStatePicker = (which: "a" | "b") => {
+    openSide("controls");
     setTimeout(() => {
-      const input = document.querySelector<HTMLInputElement>('input[aria-label="시안 이름"]');
-      input?.scrollIntoView({ block: "center" });
-      input?.focus();
+      const select = document.querySelector<HTMLSelectElement>(
+        `[data-testid="${which === "b" ? "b-screen-state" : "screen-state"}"]`,
+      );
+      select?.scrollIntoView({ block: "center" });
+      select?.focus();
     }, 150);
   };
 
   // ── AI에게 맡기기 · 수정 결과 보기 ───────────────────────────
-  const { workspaces: newScreens, refresh: refreshNewScreens } = useNewScreenWorkspaces();
+  const newScreens = useMemo(
+    () => labWorkspaces.filter((w) => w.kind === "new-screen"),
+    [labWorkspaces],
+  );
+  const refreshNewScreens = refreshWorkspaces;
   /** 켜는 중인 미리보기 — 준비되면 저절로 연다(새 화면 목록에서 누른 것) */
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
 
@@ -565,6 +564,9 @@ export function ShellApp() {
     workspaceId: ws.id,
     title: ws.title,
     route: ws.kind === "new-screen" ? newScreenPath(ws) : null,
+    ...(ws.group
+      ? { variant: { groupId: ws.group.id, index: ws.group.index, total: ws.group.total } }
+      : {}),
   });
   /** 「수정 결과 보기」 — 화면 수정은 A/B 의 B 에(한 화면이면 그 폰에), 새 화면은 한 화면에(이 서버에는 그 화면이 없다) */
   const openPreview = (url: string, ws: WorkspaceSummary) => {
@@ -574,13 +576,83 @@ export function ShellApp() {
     const next = previewOf(url, ws);
     previewRef.current = next;
     setPreview(next);
-    const layout: LayoutId = state.layout === "single" ? "single" : "ab";
+    // 시안이면 최종 A/B(「다른 시안 다시 보기」가 그 묶음으로) — 시안 비교에서 왔어도 A/B 로
+    const layout: LayoutId = state.layout === "single" && !ws.group ? "single" : "ab";
+    const groupId = ws.group?.id ?? state.group;
     if (target && target.path !== state.route) {
       goTo(
-        { ...withRoute(state, target.path), layout },
+        { ...withRoute(state, target.path), layout, group: groupId },
         { history: "push", navigate: true, force: true },
       );
-    } else if (layout !== state.layout) goTo({ ...state, layout }, { history: "push" });
+    } else if (layout !== state.layout || groupId !== state.group)
+      goTo({ ...state, layout, group: groupId }, { history: "push" });
+  };
+
+  // ── 시안 비교 ────────────────────────────────────────────
+  /** 「시안 비교로 보기」 — 그 묶음의 화면으로 옮겨 시안 비교를 연다 */
+  const openVariants = (groupId: string) => {
+    const target = groups.find((g) => g.id === groupId)?.route;
+    const moved = target && findRoute(target) && findRoute(target)?.path !== state.route;
+    const base = moved ? withRoute(state, findRoute(target)!.path) : state;
+    previewRef.current = null;
+    setPreview(null);
+    goTo(
+      { ...base, layout: "variants", group: groupId },
+      { history: "push", navigate: true, force: Boolean(moved) },
+    );
+  };
+  /** 지금 서 있는 주소 — 레이아웃을 바꿔도 흐름을 이어 가게(그 라우트 위일 때만) */
+  const pathOn = (frameId: string) => {
+    const pathname = frameBus.get(frameId).pathname;
+    return pathname && matchPathname(pathname)?.path === state.route ? pathname : undefined;
+  };
+  /** 「이 시안 고르기」 — 최종 A/B: A 는 지금 앱, B 는 그 시안의 수정 결과 화면 */
+  const pickVariant = (spec: FrameSpec) => {
+    if (!spec.preview) return;
+    previewRef.current = spec.preview;
+    setPreview(spec.preview);
+    goTo(
+      { ...state, layout: "ab", group: spec.variant?.groupId ?? state.group },
+      { history: "push", navigate: true, target: pathOn("V0"), force: true },
+    );
+  };
+  /** 「다른 시안 다시 보기」 — 최종 A/B 에서 그 묶음의 시안 비교로 */
+  const backToVariants = () => {
+    const groupId = preview?.variant?.groupId ?? state.group;
+    const target = pathOn("A");
+    previewRef.current = null;
+    setPreview(null);
+    goTo(
+      { ...state, layout: "variants", group: groupId },
+      { history: "push", navigate: true, target, force: true },
+    );
+  };
+  // 시안 비교가 열리면 꺼져 있는 시안의 수정 결과 화면을 켠다(실행이 끝난 것만 · 한 번씩).
+  // 서버가 한꺼번에 띄우는 수는 `maxPreviews` 로 막는다
+  const startedPreviews = useRef(new Set<string>());
+  useEffect(() => {
+    if (state.layout !== "variants") {
+      startedPreviews.current.clear();
+      return;
+    }
+    if (!group) return;
+    const todo = group.members.filter(
+      (m) => shouldStartPreview(m) && !startedPreviews.current.has(m.id),
+    );
+    if (!todo.length) return;
+    for (const m of todo) startedPreviews.current.add(m.id);
+    void (async () => {
+      for (const m of todo) await defaultAgentClient.startPreview(m.id);
+      void refreshWorkspaces();
+    })();
+  }, [state.layout, group, refreshWorkspaces]);
+  const restartPreview = async (workspaceId: string) => {
+    await defaultAgentClient.startPreview(workspaceId);
+    void refreshWorkspaces();
+  };
+  const stopVariants = async (groupId: string) => {
+    await defaultAgentClient.stopVariants(groupId);
+    void refreshWorkspaces();
   };
   /** 다른 화면의 작업으로 — 그 화면을 열고 오른쪽은 「AI에게 맡기기」 */
   const openWorkspace = (ws: WorkspaceSummary) => {
@@ -640,28 +712,17 @@ export function ShellApp() {
     }),
     [state.route, route, agentDevice, state.dataset],
   );
-  const agentDraft = useMemo(
-    () => (draftInfo ? { name: draftInfo.name, changeCount: draftInfo.changes } : null),
-    [draftInfo],
-  );
-  const agentReference = useReferencesFor({
-    route: state.route,
-    draftId: state.draft,
-    platform: agentDevice.platform,
-    deviceId: agentDevice.id,
-  });
-  const buildHandoff = () =>
-    buildAgentHandoff({
-      draftId: state.draft,
-      route: frameBus.get(primaryFrameId(state.layout, specs)).pathname ?? state.route,
-      lab: { platform: state.platform, deviceId: state.device, datasetId: state.dataset },
-      getReferences,
-    });
 
   // ── 키보드 ──────────────────────────────────────────────
   // 한 화면은 그 폰, A/B 는 두 폰 함께. 눌림 상태는 프레임이 알린 `lab:keyboardState` 를 따른다
   const keyboardTargets =
-    state.layout === "single" ? ["solo"] : state.layout === "ab" ? ["A", "B"] : [];
+    state.layout === "single"
+      ? ["solo"]
+      : state.layout === "ab"
+        ? ["A", "B"]
+        : state.layout === "variants"
+          ? specs.filter((spec) => !spec.placeholder).map((spec) => spec.frameId)
+          : [];
   const keyboardOpen = keyboardTargets.some((id) => frameBus.get(id).keyboard.open);
   const keyboardReady = keyboardTargets.some((id) => frameBus.get(id).ready);
   const toggleKeyboard = () => {
@@ -676,16 +737,10 @@ export function ShellApp() {
   const [lensSize, setLensSize] = useState<number>(LENS_SIZE.initial);
   const lensActive = lensOn || lensHeld;
 
-  // ── 원래대로 잠깐 보기(한 화면 + 시안) ───────────────────────
-  const [peeking, setPeeking] = useState(false);
-  const peekSpec = peekSpecs[0];
-  const peekOn = peeking && peekSpec != null;
-
   // 단축키 — 셸에 포커스가 있을 때만(입력칸 · 프레임 안이면 그대로 둔다)
-  const canPeek = peekSpec != null;
-  const keyRef = useRef({ stepBy, setZoom, lensActive, drawer, canPeek });
+  const keyRef = useRef({ stepBy, setZoom, lensActive, drawer });
   useLayoutEffect(() => {
-    keyRef.current = { stepBy, setZoom, lensActive, drawer, canPeek };
+    keyRef.current = { stepBy, setZoom, lensActive, drawer };
   });
   useEffect(() => {
     const typing = (target: EventTarget | null) => {
@@ -707,15 +762,8 @@ export function ShellApp() {
         return;
       }
       if (event.altKey) return;
-      // R — 참고 시안 보이기 · 숨기기(누르고 있어도 한 번만)
-      if (!event.repeat && handleReferenceShortcut(event)) {
-        event.preventDefault();
-        return;
-      }
       if (event.key === "z" || event.key === "Z") {
         if (!event.repeat) setLensHeld(true);
-      } else if (event.key === "`" || event.key === "o" || event.key === "O") {
-        if (k.canPeek && !event.repeat) setPeeking(true);
       } else if (event.key === "[" && k.lensActive) {
         setLensPower((p) => Math.max(LENS_POWER.min, p - LENS_POWER.step));
       } else if (event.key === "]" && k.lensActive) {
@@ -729,12 +777,8 @@ export function ShellApp() {
     };
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === "z" || event.key === "Z") setLensHeld(false);
-      if (event.key === "`" || event.key === "o" || event.key === "O") setPeeking(false);
     };
-    const onBlur = () => {
-      setLensHeld(false);
-      setPeeking(false);
-    };
+    const onBlur = () => setLensHeld(false);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", onBlur);
@@ -750,28 +794,36 @@ export function ShellApp() {
   const [diffOpacity, setDiffOpacity] = useState(0.5);
   const overlayDiff = state.layout === "ab" && diff;
 
-  // 다른 서버의 프레임(AI 수정 결과)은 문서를 못 읽는다 — 편집기에는 없는 프레임으로 넘긴다
-  const editorFrames = specs.map((spec) => ({
-    frameId: spec.frameId,
-    element: spec.origin ? null : frameBus.get(spec.frameId).element,
-    isDraft: spec.config.designDraftId != null,
-  }));
-  const previewSpec = specs.find((spec) => spec.preview);
-  const primaryPath =
-    frameBus.get(primaryFrameId(state.layout, specs)).pathname?.split("?")[0] ?? state.route;
+  // 시안 비교의 시안들은 「AI 수정 결과 보는 중」 줄이 아니다(시안 비교 설명이 따로 있다)
+  const previewSpec = state.layout === "variants" ? undefined : specs.find((spec) => spec.preview);
+  const variantsLayout = state.layout === "variants";
+  const pickedWorkspace = preview?.variant
+    ? (labWorkspaces.find((w) => w.id === preview.workspaceId) ?? null)
+    : null;
+  const pickedGroup = preview?.variant
+    ? (groups.find((g) => g.id === preview.variant?.groupId) ?? null)
+    : null;
 
-  const frameLabel = (spec: FrameSpec) => {
-    if (spec.preview && state.layout === "ab") return `B · AI 수정 결과 (${spec.preview.title})`;
-    if (spec.role !== "draft" || state.layout !== "ab") return spec.label;
-    return draftInfo ? `B · 시안 「${draftInfo.name}」` : "B · 시안 없음";
-  };
+  const frameLabel = (spec: FrameSpec) =>
+    spec.preview && state.layout === "ab"
+      ? spec.preview.variant
+        ? `B · 시안 ${spec.preview.variant.index} (AI 수정 결과)`
+        : `B · AI 수정 결과 (${spec.preview.title})`
+      : spec.label;
+  /** A/B 머리 둘째 줄 — 그 폰의 화면 상태 */
+  const stateCaption = (isB: boolean) =>
+    isB && !state.b
+      ? `화면 상태: ${bStateLabel} (A와 같게)`
+      : `화면 상태: ${isB ? bStateLabel : aStateLabel}`;
 
   const renderFrame = (spec: FrameSpec, frameScale: number) => {
     const g = chromeGeometry(spec.device, skinKnownAvailable(spec.device));
     const width = Math.max(g.outerWidth * frameScale, MIN_CELL_WIDTH);
     const isB = state.layout === "ab" && spec.frameId === "B";
     const isA = state.layout === "ab" && spec.frameId === "A";
+    const twoLine = state.layout === "ab" || variantsLayout;
     const label = frameLabel(spec);
+    const variant = spec.variant;
     return (
       <figure
         key={spec.frameId}
@@ -803,141 +855,143 @@ export function ShellApp() {
               width: "100%",
               textAlign: "center",
               visibility: isB && overlayDiff ? "hidden" : "visible",
-              ...(state.layout === "ab" ? { minHeight: AB_CAPTION - 6 } : {}),
+              ...(twoLine ? { minHeight: AB_CAPTION - 6 } : {}),
             }}
           >
             <span
               style={{
                 ...ellipsis,
-                fontSize: state.layout === "ab" ? 14 : 12,
+                fontSize: twoLine ? 14 : 12,
                 fontWeight: 700,
-                color: spec.role === "draft" ? shellColor.draft : shellColor.ink,
+                color:
+                  (isB && (spec.preview || state.b)) || variant
+                    ? shellColor.notice
+                    : shellColor.ink,
               }}
             >
               {label}
             </span>
-            {isA ? (
-              <span style={{ ...ellipsis, fontSize: 11, color: shellColor.muted }}>
-                운영 중인 값 그대로
-              </span>
-            ) : null}
-            {isB && spec.preview ? (
-              <button
-                type="button"
-                data-testid="preview-back"
-                onClick={() => changePreview(null)}
-                title="B 를 다시 디자인 편집의 시안(이 서버의 앱)으로 돌려요"
-                style={previewBackButton}
-              >
-                시안 보기로 돌아가기
-              </button>
-            ) : isB ? (
+            {variantsLayout ? (
+              // 둘째 줄 — 기존은 화면 상태, 시안은 상태(준비됨 · 만드는 중 · 실패) + 방향 한 줄
               <span
-                data-testid="draft-change-count"
-                style={{ ...ellipsis, fontSize: 11, color: shellColor.muted }}
+                data-testid={`frame-state-${spec.frameId}`}
+                title={
+                  variant
+                    ? [variant.label, variant.summaryLine].filter(Boolean).join(" · ")
+                    : `화면 상태: ${aStateLabel}`
+                }
+                style={{
+                  ...ellipsis,
+                  fontSize: 11,
+                  color:
+                    variant?.tone === "failed"
+                      ? shellColor.danger
+                      : variant?.tone === "busy"
+                        ? shellColor.notice
+                        : shellColor.muted,
+                }}
               >
-                {draftInfo ? `바꾼 값 ${draftInfo.changes}개` : "시안을 고르면 여기에 적용돼요"}
+                {variant
+                  ? [variant.label, variant.summaryLine].filter(Boolean).join(" · ")
+                  : `화면 상태: ${aStateLabel}`}
+              </span>
+            ) : isA || isB ? (
+              // 둘째 줄 — 화면 상태(+ AI 수정 결과면 닫기). 한 줄에 둬서 머리 높이(AB_CAPTION)를 지킨다
+              <span
+                style={{
+                  display: "flex",
+                  gap: 6,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  data-testid={`frame-state-${spec.frameId}`}
+                  style={{ ...ellipsis, minWidth: 0, fontSize: 11, color: shellColor.muted }}
+                >
+                  {stateCaption(isB)}
+                </span>
+                {isB && spec.preview ? (
+                  <button
+                    type="button"
+                    data-testid="preview-back"
+                    onClick={() => changePreview(null)}
+                    title="AI 수정 결과를 닫고 B 자리에 다시 지금 앱을 띄워요"
+                    style={previewBackButton}
+                  >
+                    AI 결과 닫기
+                  </button>
+                ) : null}
               </span>
             ) : null}
           </figcaption>
         ) : null}
-        <div style={{ position: "relative" }}>
-          {/* 한 화면 + 시안 — 같은 자리 아래에 승인본을 숨겨 두고, 누르는 동안 위 시안을 감춘다 */}
-          {spec.frameId === "solo" && peekSpec ? (
-            <div
-              data-testid="peek-frame"
-              aria-hidden={!peekOn}
-              style={{ position: "absolute", left: 0, top: 0, zIndex: 0 }}
-            >
-              <LabFrame
-                key={frameKey(peekSpec)}
-                spec={peekSpec}
-                scale={frameScale}
-                realMs={realMs}
-                startPath={
-                  frameBus.get(PEEK_FRAME_ID).pathname ?? frameBus.get(spec.frameId).pathname
-                }
-              />
-            </div>
-          ) : null}
+        {spec.placeholder ? (
           <div
+            data-testid={`variant-placeholder-${spec.frameId}`}
             style={{
-              position: "relative",
-              zIndex: 1,
-              visibility: spec.frameId === "solo" && peekOn ? "hidden" : "visible",
+              width: g.outerWidth * frameScale,
+              height: g.outerHeight * frameScale,
+              boxSizing: "border-box",
+              borderRadius: 18,
+              border: `1px dashed ${shellColor.border}`,
+              background: shellColor.panel,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 12,
+              textAlign: "center",
+              fontSize: 12,
+              lineHeight: 1.5,
+              wordBreak: "keep-all",
+              color: variant?.tone === "failed" ? shellColor.danger : shellColor.muted,
             }}
           >
-            <LabFrame
-              key={frameKey(spec)}
-              spec={spec}
-              scale={frameScale}
-              realMs={realMs}
-              startPath={frameBus.get(spec.frameId).pathname}
-              // 1분 늦는 「불러오는 중」이면 경유 화면도 늦어 목적지에 못 간다 — 바로 연다
-              skipVia={(spec.config.latencyMs ?? 0) >= LOADING_LATENCY_MS}
-              screenOverlay={
-                spec === primarySpec ? (
-                  <FrameReference scope={primaryScope} device={spec.device} />
-                ) : undefined
-              }
-            />
-          </div>
-          {isB && !draftInfo && !overlayDiff && !spec.preview ? (
-            <div
-              data-testid="ab-no-draft"
-              // 흐린 막은 누르기를 통과시킨다 — 시안이 없어도 B 를 눌러 보거나 디자인 편집의
-              // 「요소 선택」으로 고를 수 있어야 한다. 막는 것은 위쪽 안내 카드 한 장뿐이다
-              style={{
-                position: "absolute",
-                inset: 0,
-                zIndex: 2,
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "center",
-                padding: `${Math.max(56, 90 * frameScale)}px 12px 12px`,
-                borderRadius: (spec.device.cornerRadius + 15) * frameScale,
-                background: "rgba(252, 252, 250, 0.55)",
-                pointerEvents: "none",
-              }}
-            >
-              <div
-                style={{
-                  maxWidth: 260,
-                  padding: "14px 16px",
-                  borderRadius: 12,
-                  background: shellColor.panel,
-                  boxShadow: "0 6px 20px rgba(0, 0, 0, 0.16)",
-                  textAlign: "center",
-                  wordBreak: "keep-all",
-                  pointerEvents: "auto",
-                }}
+            {spec.placeholder}
+            {variant?.canStart && variant.tone === "failed" ? (
+              <button
+                type="button"
+                onClick={() => void restartPreview(variant.workspaceId)}
+                style={toolbarChip(false)}
               >
-                <p style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>
-                  아직 시안이 없어서 A와 똑같아요
-                </p>
-                <p style={{ margin: "0 0 14px", fontSize: 12, color: shellColor.muted }}>
-                  디자인 편집에서 시안을 만들고 값을 고치면 B에만 바로 적용돼요.
-                </p>
-                <button
-                  type="button"
-                  onClick={startDraft}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: 8,
-                    border: 0,
-                    background: shellColor.accent,
-                    color: shellColor.onAccent,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  시안 만들기
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </div>
+                다시 켜기
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <LabFrame
+            key={frameKey(spec)}
+            spec={spec}
+            scale={frameScale}
+            realMs={realMs}
+            startPath={frameBus.get(spec.frameId).pathname}
+            // 1분 늦는 「불러오는 중」이면 경유 화면도 늦어 목적지에 못 간다 — 바로 연다
+            skipVia={(spec.config.latencyMs ?? 0) >= LOADING_LATENCY_MS}
+          />
+        )}
+        {variant ? (
+          <button
+            type="button"
+            data-testid={`variant-pick-${variant.index}`}
+            disabled={!spec.preview}
+            onClick={() => pickVariant(spec)}
+            title={
+              spec.preview
+                ? `왼쪽에 지금 앱(A), 오른쪽에 시안 ${variant.index}(B)를 나란히 띄워 최종으로 견줘요`
+                : "수정 결과 화면이 준비되면 고를 수 있어요"
+            }
+            style={{
+              ...pickButton,
+              opacity: spec.preview ? 1 : 0.45,
+              cursor: spec.preview ? "pointer" : "not-allowed",
+            }}
+          >
+            이 시안 고르기
+          </button>
+        ) : null}
       </figure>
     );
   };
@@ -984,16 +1038,28 @@ export function ShellApp() {
   };
 
   const previewBackButton: CSSProperties = {
-    margin: "2px auto 0",
-    display: "block",
+    flex: "none",
     padding: "2px 10px",
     borderRadius: 7,
-    border: `1px solid ${shellColor.draft}`,
-    background: shellColor.draftSoft,
-    color: shellColor.draft,
+    border: `1px solid ${shellColor.notice}`,
+    background: shellColor.noticeSoft,
+    color: shellColor.notice,
     fontSize: 11,
     fontWeight: 700,
     cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
+
+  const pickButton: CSSProperties = {
+    flex: "none",
+    marginTop: 2,
+    padding: "5px 12px",
+    borderRadius: 8,
+    border: `1px solid ${shellColor.accent}`,
+    background: shellColor.accent,
+    color: shellColor.onAccent,
+    fontSize: 12,
+    fontWeight: 700,
     whiteSpace: "nowrap",
   };
 
@@ -1021,7 +1087,7 @@ export function ShellApp() {
 
   // 돋보기는 같은 서버의 프레임만 — 다른 서버(AI 수정 결과)의 문서는 복제할 수 없다
   const magnifierTargets: MagnifierTarget[] = specs
-    .filter((spec) => !spec.origin)
+    .filter((spec) => !spec.origin && !spec.placeholder)
     .map((spec) => ({
       frameId: spec.frameId,
       label: spec.label || spec.route.title,
@@ -1103,24 +1169,19 @@ export function ShellApp() {
           data-testid="shell-title"
         >
           {route ? `${route.sectionTitle} · ${route.title}` : state.route}
-          {state.draft ? (
-            <span style={{ marginLeft: 8, color: shellColor.draft }}>
-              시안 {draftInfo?.name ?? state.draft}
-            </span>
-          ) : null}
         </span>
         <button
           type="button"
           aria-pressed={sideVisible}
           title={
             sideVisible
-              ? "오른쪽 칸(화면 조건 · 디자인 편집)을 닫아요"
-              : "오른쪽 칸(화면 조건 · 디자인 편집)을 열어요"
+              ? "오른쪽 칸(화면 조건 · AI에게 맡기기)을 닫아요"
+              : "오른쪽 칸(화면 조건 · AI에게 맡기기)을 열어요"
           }
           onClick={toggleSide}
           style={headerToggle(sideVisible)}
         >
-          편집 칸 보기<span aria-hidden> ▤</span>
+          오른쪽 칸 보기<span aria-hidden> ▤</span>
         </button>
       </header>
 
@@ -1230,7 +1291,6 @@ export function ShellApp() {
       >
         <StageToolbar
           layout={state.layout}
-          matrix={state.matrix}
           zoom={state.zoom}
           effectiveScale={scale}
           syncNav={syncNav}
@@ -1238,7 +1298,6 @@ export function ShellApp() {
           magnifierPower={lensPower}
           onZoom={setZoom}
           onStep={stepBy}
-          onMatrix={(matrix) => set({ matrix })}
           onSyncNav={setSyncNav}
           onMagnifier={(on) => {
             setLensOn(on);
@@ -1246,17 +1305,15 @@ export function ShellApp() {
           }}
         >
           {state.layout === "single" && route ? (
-            <StatePicker
-              route={route}
-              state={state}
-              onPick={(config) =>
-                set({
-                  dataset: config.dataset,
-                  latencyMs: config.latencyMs,
-                  failPaths: config.failPaths,
-                })
-              }
-            />
+            <button
+              type="button"
+              data-testid="state-shortcut"
+              title="화면 상태(보통 · 많음 · 불러오는 중 …)는 오른쪽 「화면 조건」 맨 위에서 바꿔요 — 누르면 그 칸을 열어요"
+              onClick={() => focusStatePicker("a")}
+              style={toolbarChip(false)}
+            >
+              화면 상태: {aStateLabel} ▾
+            </button>
           ) : null}
           {keyboardTargets.length ? (
             <button
@@ -1278,14 +1335,6 @@ export function ShellApp() {
               onBack={() => changePreview(null)}
               onCompare={() => changePreview(previewSpec.preview ?? null, "ab")}
             />
-          ) : state.layout === "single" ? (
-            <SingleDraftBar
-              draftInfo={draftInfo}
-              peeking={peekOn}
-              canPeek={canPeek}
-              onPeek={setPeeking}
-              onStartDraft={startDraft}
-            />
           ) : null}
         </StageToolbar>
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
@@ -1302,32 +1351,57 @@ export function ShellApp() {
                 nonces={nonces}
                 onOpen={openFromGrid}
               />
-            ) : state.layout === "states" && route ? (
-              <div style={{ padding: `12px ${STAGE_PAD_X}px ${STAGE_PAD_BOTTOM}px` }}>
-                <div ref={rowRef} />
-                <StatesView
-                  route={route}
-                  specs={specs}
-                  scale={scale}
-                  realMs={realMs}
-                  nonces={nonces}
-                  stageWidth={area.width - STAGE_PAD_X * 2}
-                  onOpen={openFromState}
-                  onReload={(frameId) => bump([frameId])}
-                />
-              </div>
             ) : (
               <div style={{ padding: `12px ${STAGE_PAD_X}px ${STAGE_PAD_BOTTOM}px` }}>
                 {state.layout === "ab" ? (
                   <AbBanner
                     preview={previewSpec?.preview ?? null}
-                    draftInfo={draftInfo}
+                    aState={aStateLabel}
+                    bState={state.b ? bStateLabel : null}
                     diff={diff}
                     diffOpacity={diffOpacity}
                     onDiff={setDiff}
                     onDiffOpacity={setDiffOpacity}
-                    onStartDraft={startDraft}
+                    onPickB={() => focusStatePicker("b")}
+                  >
+                    {previewSpec?.preview?.variant ? (
+                      <VariantDecision
+                        client={defaultAgentClient}
+                        workspace={pickedWorkspace}
+                        group={pickedGroup}
+                        baseBranch={pickedWorkspace?.baseBranch ?? "main"}
+                        onChanged={() => void refreshWorkspaces()}
+                        onBack={backToVariants}
+                      />
+                    ) : null}
+                  </AbBanner>
+                ) : variantsLayout ? (
+                  <VariantsBanner
+                    group={group}
+                    groups={groups.filter((g) => g.route === group?.route || g.id === group?.id)}
+                    aState={aStateLabel}
+                    onPickGroup={(id) => goTo({ ...state, group: id }, { history: "push" })}
+                    onStop={(id) => void stopVariants(id)}
+                    onOpenAgent={() => openSide("agent")}
                   />
+                ) : null}
+                {route?.path === "/home/schedule/[id]" &&
+                cachedSampleParams(state.dataset, state.now).scheduleId == null ? (
+                  <p
+                    data-testid="route-empty-notice"
+                    style={{
+                      margin: "0 auto 8px",
+                      maxWidth: 720,
+                      fontSize: 13,
+                      color: shellColor.ink,
+                      textAlign: "center",
+                      wordBreak: "keep-all",
+                    }}
+                  >
+                    「{datasetLabel(state.dataset)}」 상태에는 오늘 일정이 없어서 일정 수정이 열리지
+                    않고 홈에 머물러요. 오른쪽 「화면 조건」의 화면 상태를 「보통」이나 「많음」으로
+                    바꿔 보세요.
+                  </p>
                 ) : null}
                 {route?.hint ? (
                   <p
@@ -1345,7 +1419,7 @@ export function ShellApp() {
                   </p>
                 ) : null}
                 <div
-                  ref={rowRef}
+                  ref={attachRow}
                   data-testid="frame-row"
                   style={{
                     position: "relative",
@@ -1356,7 +1430,7 @@ export function ShellApp() {
                     alignItems: "flex-start",
                     // A/B 는 두 대를 한 덩어리로 가운데(차이 보기에서 B 를 A 위에 겹친다) ·
                     // 한 화면은 크게 키우면 옆으로 스크롤 · 매트릭스는 무대 폭 안에서 줄을 바꾼다
-                    ...(state.layout === "ab"
+                    ...(state.layout === "ab" || variantsLayout
                       ? { width: "max-content", margin: "0 auto" }
                       : state.layout === "single"
                         ? { minWidth: "max-content" }
@@ -1364,47 +1438,6 @@ export function ShellApp() {
                   }}
                 >
                   {specs.map((spec) => renderFrame(spec, scale))}
-                  {sideReference && primarySpec ? (
-                    <figure
-                      data-testid="reference-side-cell"
-                      style={{
-                        margin: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 6,
-                        flex: "none",
-                      }}
-                    >
-                      <figcaption
-                        title={`참고 시안 「${sideReference.reference?.name ?? ""}」`}
-                        style={{
-                          width: "100%",
-                          textAlign: "center",
-                          ...(state.layout === "ab" ? { minHeight: AB_CAPTION - 6 } : {}),
-                        }}
-                      >
-                        <span
-                          style={{
-                            ...ellipsis,
-                            fontSize: state.layout === "ab" ? 14 : 12,
-                            fontWeight: 700,
-                            color: shellColor.draft,
-                          }}
-                        >
-                          참고 시안 「{sideReference.reference?.name}」
-                        </span>
-                      </figcaption>
-                      <SideReferenceFrame
-                        reference={sideReference.reference}
-                        url={sideReference.url}
-                        device={primarySpec.device}
-                        scale={scale}
-                        now={state.now}
-                        realMs={realMs}
-                      />
-                    </figure>
-                  ) : null}
                 </div>
               </div>
             )}
@@ -1507,8 +1540,6 @@ export function ShellApp() {
             ×
           </button>
         </div>
-        {/* 디자인 편집기는 높이가 고정된 자리에서 스스로 스크롤한다 — 바깥은 넘치지 않게 둔다.
-            패널을 닫아도 편집기는 붙어 있다(고치던 상태를 잃지 않게) */}
         <div
           data-testid={`side-panel-${state.panel}`}
           style={{
@@ -1516,7 +1547,7 @@ export function ShellApp() {
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            overflowY: state.panel === "design" ? "hidden" : "auto",
+            overflowY: "auto",
           }}
         >
           {/* 「AI에게 맡기기」는 한 번 열면 붙여 둔다 — 다른 탭을 보고 와도 적던 지시가 남게 */}
@@ -1530,11 +1561,9 @@ export function ShellApp() {
             >
               <AgentPanel
                 screen={agentScreen}
-                draft={agentDraft}
-                hasReference={agentReference.active != null}
-                buildHandoff={buildHandoff}
                 onOpenPreview={openPreview}
                 onOpenWorkspace={openWorkspace}
+                onOpenVariants={openVariants}
               />
             </div>
           ) : null}
@@ -1564,36 +1593,13 @@ export function ShellApp() {
                 onOpenPreview={openPreview}
               />
             </div>
-          ) : state.panel === "controls" ? (
-            <ControlsPanel state={state} realMs={realMs} actions={actions} />
-          ) : state.panel === "reference" ? (
-            <ReferencePanel
-              route={state.route}
-              draftId={primarySpec?.config.designDraftId ?? state.draft}
-              platform={state.platform}
-              deviceId={state.device}
-            />
           ) : (
-            <DesignEditorPanel
-              activeDraftId={state.draft}
-              onActiveDraftChange={(draft) => set({ draft })}
-              // 시안 내용이 바뀌었다 — 그 시안을 건 프레임(A/B 면 B)만 다시 불러온다
-              onDraftChanged={(draftId) => {
-                notifyDraftsChanged();
-                bump(
-                  specs
-                    .filter((spec) => spec.config.designDraftId === draftId)
-                    .map((spec) => spec.frameId),
-                );
-              }}
-              frames={editorFrames}
-              currentRoute={primaryPath}
-              labContext={{
-                platform: state.platform,
-                deviceId: state.device,
-                datasetId: state.dataset,
-              }}
-              getReferences={getReferences}
+            <ControlsPanel
+              state={state}
+              route={route}
+              baseFrameId={state.layout === "ab" ? "A" : primaryFrameId(state.layout, specs)}
+              realMs={realMs}
+              actions={actions}
             />
           )}
         </div>
@@ -1629,7 +1635,7 @@ const toolbarChip = (active: boolean): CSSProperties => ({
   lineHeight: "16px",
 });
 
-/** 「AI 수정 결과」를 띄운 동안의 한 줄 — 무엇을 보는지 · 돌아가기 · 돋보기/눌러 고르기가 빠지는 이유 */
+/** 「AI 수정 결과」를 띄운 동안의 한 줄 — 무엇을 보는지 · 돌아가기 · 돋보기가 빠지는 이유 */
 function PreviewBar({
   preview,
   layout,
@@ -1645,9 +1651,9 @@ function PreviewBar({
     flex: "none",
     padding: "4px 10px",
     borderRadius: 7,
-    border: `1px solid ${primary ? shellColor.accent : shellColor.draft}`,
-    background: primary ? shellColor.accent : shellColor.draftSoft,
-    color: primary ? shellColor.onAccent : shellColor.draft,
+    border: `1px solid ${primary ? shellColor.accent : shellColor.notice}`,
+    background: primary ? shellColor.accent : shellColor.noticeSoft,
+    color: primary ? shellColor.onAccent : shellColor.notice,
     fontSize: 12,
     fontWeight: 700,
     cursor: "pointer",
@@ -1671,7 +1677,7 @@ function PreviewBar({
           ...ellipsis,
           minWidth: 0,
           flex: "0 1 auto",
-          color: shellColor.draft,
+          color: shellColor.notice,
           fontWeight: 600,
         }}
       >
@@ -1692,10 +1698,10 @@ function PreviewBar({
         type="button"
         data-testid="preview-close"
         onClick={onBack}
-        title="AI 수정 결과를 닫고 이 서버의 앱(시안이 있으면 시안)으로 돌아가요"
+        title="AI 수정 결과를 닫고 이 서버의 지금 앱으로 돌아가요"
         style={button(false)}
       >
-        {layout === "ab" ? "시안 보기로 돌아가기" : "지금 앱으로 돌아가기"}
+        {layout === "ab" ? "AI 결과 닫기" : "지금 앱으로 돌아가기"}
       </button>
       <span
         data-testid="cross-origin-note"
@@ -1707,111 +1713,32 @@ function PreviewBar({
   );
 }
 
-function SingleDraftBar({
-  draftInfo,
-  peeking,
-  canPeek,
-  onPeek,
-  onStartDraft,
-}: {
-  draftInfo: DraftInfo | null;
-  peeking: boolean;
-  canPeek: boolean;
-  onPeek: (value: boolean) => void;
-  onStartDraft: () => void;
-}) {
-  const smallButton = (primary: boolean): CSSProperties => ({
-    flex: "none",
-    padding: "4px 10px",
-    borderRadius: 7,
-    border: `1px solid ${primary ? shellColor.accent : shellColor.draft}`,
-    background: primary ? shellColor.accent : peeking ? shellColor.draft : shellColor.draftSoft,
-    color: primary || peeking ? shellColor.onAccent : shellColor.draft,
-    fontSize: 12,
-    fontWeight: 700,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    userSelect: "none",
-    touchAction: "none",
-  });
-  return (
-    <div
-      data-testid="single-draft-bar"
-      style={{
-        flexBasis: "100%",
-        display: "flex",
-        gap: 10,
-        alignItems: "center",
-        minWidth: 0,
-        fontSize: 12,
-      }}
-    >
-      {draftInfo ? (
-        <>
-          <span
-            style={{
-              ...ellipsis,
-              minWidth: 0,
-              flex: "0 1 auto",
-              color: shellColor.draft,
-              fontWeight: 600,
-            }}
-          >
-            {peeking
-              ? "지금 앱을 보는 중 — 떼면 시안으로 돌아가요"
-              : `시안 「${draftInfo.name}」 적용 중 · 바꾼 값 ${draftInfo.changes}개`}
-          </span>
-          <button
-            type="button"
-            aria-pressed={peeking}
-            disabled={!canPeek}
-            title="누르고 있는 동안 같은 화면을 지금 앱 그대로 보여 줘요 — ` 또는 O 키를 누르고 있어도 돼요"
-            onPointerDown={(event) => {
-              event.currentTarget.setPointerCapture(event.pointerId);
-              onPeek(true);
-            }}
-            onPointerUp={() => onPeek(false)}
-            onPointerCancel={() => onPeek(false)}
-            onLostPointerCapture={() => onPeek(false)}
-            style={smallButton(false)}
-          >
-            원래대로 잠깐 보기
-          </button>
-          <span style={{ ...ellipsis, minWidth: 0, color: shellColor.faint }}>
-            누르고 있는 동안 · ` 또는 O 키
-          </span>
-        </>
-      ) : (
-        <>
-          <span style={{ ...ellipsis, minWidth: 0, color: shellColor.muted }}>
-            시안 없음 — 지금 앱 그대로
-          </span>
-          <button type="button" onClick={onStartDraft} style={smallButton(true)}>
-            시안 만들기
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
-
 function AbBanner({
   preview,
-  draftInfo,
+  aState,
+  bState,
   diff,
   diffOpacity,
   onDiff,
   onDiffOpacity,
-  onStartDraft,
+  onPickB,
+  children,
 }: {
   preview: FramePreview | null;
-  draftInfo: DraftInfo | null;
+  /** A 의 화면 상태 이름(「보통」 …) */
+  aState: string;
+  /** B 화면 상태 이름 — null 이면 A와 같게 */
+  bState: string | null;
   diff: boolean;
   diffOpacity: number;
   onDiff: (value: boolean) => void;
   onDiffOpacity: (value: number) => void;
-  onStartDraft: () => void;
+  /** 「B 화면 상태 바꾸기」 — 화면 조건 패널의 그 칸을 연다 */
+  onPickB: () => void;
+  /** 고른 시안이면 결정 줄(「다른 시안 다시 보기」 · 「이 시안으로 확정」 · 「나머지 시안 버리기」) */
+  children?: ReactNode;
 }) {
+  const accent = { color: shellColor.notice };
   return (
     <div
       data-testid="ab-banner"
@@ -1829,19 +1756,54 @@ function AbBanner({
       }}
     >
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ flex: "1 1 260px", minWidth: 0 }}>
-          {preview ? (
+        <span data-testid="ab-banner-text" style={{ flex: "1 1 260px", minWidth: 0 }}>
+          {preview?.variant ? (
             <>
-              <b>A</b>는 지금 앱, <b style={{ color: shellColor.draft }}>B</b>는 AI 가 작업 공간 「
-              {preview.title}」에서 고친 결과예요. 같은 화면 · 같은 데이터로 나란히 보여 줘요.
+              <b>A</b>는 지금 앱, <b style={accent}>B</b>는 고른 「시안 {preview.variant.index}
+              」(시안 {preview.variant.total}개 중)예요.{" "}
+              {bState
+                ? `A는 「${aState}」, B는 「${bState}」 상태로 보여 줘요.`
+                : `둘 다 「${aState}」 상태로 나란히 보여 줘요.`}
+            </>
+          ) : preview ? (
+            <>
+              <b>A</b>는 지금 앱, <b style={accent}>B</b>는 AI 가 작업 공간 「{preview.title}」에서
+              고친 결과예요.{" "}
+              {bState
+                ? `A는 「${aState}」, B는 「${bState}」 상태로 보여 줘요.`
+                : `둘 다 「${aState}」 상태로 나란히 보여 줘요.`}
+            </>
+          ) : bState ? (
+            <>
+              같은 화면을 <b>A</b>는 「{aState}」, <b style={accent}>B</b>는 「{bState}」 상태로
+              나란히 보여 줘요.
             </>
           ) : (
             <>
-              <b>A</b>는 지금 앱, <b style={{ color: shellColor.draft }}>B</b>는 디자인 편집에서
-              고친 시안이에요. 같은 화면 · 같은 데이터로 나란히 보여 줘요.
+              <b>A</b>와 <b style={accent}>B</b>는 지금 같은 화면 · 같은 상태(「{aState}」)예요. B만
+              다른 상태(예: 많음 · 불러오는 중)로 바꾸면 두 상태를 나란히 견줄 수 있어요.
             </>
           )}
         </span>
+        <button
+          type="button"
+          data-testid="ab-pick-b"
+          onClick={onPickB}
+          title="오른쪽 「화면 조건」에서 B 화면 상태를 골라요"
+          style={{
+            padding: "4px 10px",
+            borderRadius: 7,
+            border: `1px solid ${shellColor.accent}`,
+            background: bState ? shellColor.panel : shellColor.accent,
+            color: bState ? shellColor.accent : shellColor.onAccent,
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          B 화면 상태 바꾸기
+        </button>
         <label
           title="B를 A 위에 겹쳐 반투명으로 보여 줘요 — 어긋난 자리가 겹쳐 보여요"
           style={{
@@ -1884,39 +1846,119 @@ function AbBanner({
           </label>
         ) : null}
       </div>
-      {!preview && draftInfo && draftInfo.changes === 0 ? (
-        <div data-testid="ab-empty-draft" style={{ fontSize: 12, color: shellColor.draft }}>
-          시안 「{draftInfo.name}」에 아직 바꾼 값이 없어요 — 오른쪽 디자인 편집에서 값을 고치면
-          B에만 바로 적용돼요.
-        </div>
-      ) : null}
-      {!preview && !draftInfo ? (
-        <div style={{ fontSize: 12, color: shellColor.muted }}>
-          지금은 시안이 없어 두 화면이 같아요.{" "}
-          <button
-            type="button"
-            onClick={onStartDraft}
-            style={{
-              padding: 0,
-              border: 0,
-              background: "transparent",
-              color: shellColor.accent,
-              fontSize: 12,
-              fontWeight: 700,
-              textDecoration: "underline",
-              cursor: "pointer",
-            }}
-          >
-            디자인 편집 열기
-          </button>
-        </div>
-      ) : null}
       {diff ? (
         <div style={{ fontSize: 12, color: shellColor.muted }}>
           B를 A 위에 겹쳤어요 — 막대를 A 쪽으로 밀면 A가, B 쪽으로 밀면 B가 진해져요. 겹친 동안 B는
           눌리지 않아요.
         </div>
       ) : null}
+      {children}
+    </div>
+  );
+}
+
+const groupTime = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
+/** 「시안 비교」 위 설명 — 무엇을 나란히 보는지 · 진행 · 멈추기 · 다른 묶음 고르기 · 돋보기 한계 */
+function VariantsBanner({
+  group,
+  groups,
+  aState,
+  onPickGroup,
+  onStop,
+  onOpenAgent,
+}: {
+  group: VariantGroupView | null;
+  /** 고를 수 있는 묶음(같은 화면) */
+  groups: readonly VariantGroupView[];
+  aState: string;
+  onPickGroup: (groupId: string) => void;
+  onStop: (groupId: string) => void;
+  onOpenAgent: () => void;
+}) {
+  const box: CSSProperties = {
+    margin: "0 auto 14px",
+    maxWidth: 820,
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: shellColor.panel,
+    border: `1px solid ${shellColor.border}`,
+    display: "grid",
+    gap: 6,
+    fontSize: 13,
+    wordBreak: "keep-all",
+  };
+  if (!group)
+    return (
+      <div data-testid="variants-banner" style={box}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <span data-testid="variants-empty" style={{ flex: "1 1 300px", minWidth: 0 }}>
+            이 화면의 시안이 아직 없어요. 오른쪽 「AI에게 맡기기」에서 「시안 개수」를 2개나 3개로
+            골라 맡기면, 여기에 지금 앱과 나란히 떠요.
+          </span>
+          <button type="button" onClick={onOpenAgent} style={toolbarChip(true)}>
+            AI에게 맡기기 열기
+          </button>
+        </div>
+      </div>
+    );
+  const busy = groupBusy(group);
+  return (
+    <div data-testid="variants-banner" style={box}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <span data-testid="variants-banner-text" style={{ flex: "1 1 300px", minWidth: 0 }}>
+          <b>기존</b>(지금 앱)과{" "}
+          <b style={{ color: shellColor.notice }}>시안 {group.members.length}개</b>를 같은 화면 ·
+          같은 상태(「{aState}」)로 나란히 보여 줘요. 마음에 드는 시안 아래 「이 시안 고르기」를
+          누르면 지금 앱과 A/B로 견줘요.
+        </span>
+        {groups.length > 1 ? (
+          <select
+            aria-label="시안 묶음"
+            value={group.id}
+            onChange={(event) => onPickGroup(event.target.value)}
+            style={{ ...toolbarChip(false), maxWidth: 220 }}
+          >
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                시안 {g.total}개 · {groupTime(g.createdAt)}
+              </option>
+            ))}
+          </select>
+        ) : null}
+      </div>
+      <div style={{ display: "flex", gap: "4px 10px", alignItems: "center", flexWrap: "wrap" }}>
+        <span
+          data-testid="variants-progress"
+          style={{ fontSize: 12, color: busy ? shellColor.notice : shellColor.muted }}
+        >
+          {groupProgress(group)}
+        </span>
+        {busy ? (
+          <button
+            type="button"
+            onClick={() => onStop(group.id)}
+            title="지금 만드는 시안을 멈추고, 기다리는 시안은 만들지 않아요"
+            style={{
+              ...toolbarChip(false),
+              color: shellColor.danger,
+              borderColor: shellColor.danger,
+            }}
+          >
+            시안 만들기 멈추기
+          </button>
+        ) : null}
+        <span
+          data-testid="cross-origin-note"
+          style={{ fontSize: 12, color: shellColor.faint, whiteSpace: "nowrap" }}
+        >
+          {VARIANTS_CROSS_ORIGIN_NOTE}
+        </span>
+      </div>
     </div>
   );
 }

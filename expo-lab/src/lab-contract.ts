@@ -1,13 +1,12 @@
 /**
- * Expo Lab 「전 화면」 작업의 **공유 계약**. 네 갈래(앱 프레임 · 가짜 서버 · 셸 · 디자인 편집)가
- * 동시에 만들어지므로, 서로 맞물리는 이름과 모양은 여기 하나에만 둔다. 바꾸려면 네 갈래를 같이 고친다.
+ * Expo Lab 「전 화면」 작업의 **공유 계약**. 세 갈래(앱 프레임 · 가짜 서버 · 셸)가 서로 맞물리는
+ * 이름과 모양은 여기 하나에만 둔다. 바꾸려면 세 갈래를 같이 고친다.
  *
  * 구조:
  *   셸(브라우저 최상위 창) ── <iframe name={encodeFrameConfig(config)} src="/<라우트>">
  *     └ 프레임 = 실제 앱(expo-router 전체)을 웹으로 띄운 것 한 벌
  *         · 부트스트랩이 window.name 에서 LabFrameConfig 를 읽는다
  *         · installFakeServer(config) — fetch 가로채기, 데이터 세트
- *         · applyDesignDraft(config) — 토큰·Studio 속성 덮어쓰기 (앱 모듈이 불리기 **전에**)
  *         · 그다음 ExpoRoot 를 그린다
  */
 
@@ -26,8 +25,6 @@ export type LabFrameConfig = {
   deviceId: string;
   /** 고정 시각(ISO, 예: "2026-11-02T21:30:00+09:00"). 없으면 실제 시각 */
   now?: string | null;
-  /** 적용할 디자인 시안 id. null 이면 승인본(운영 기본값) 그대로 */
-  designDraftId?: string | null;
   /** 시작 시 세션을 심을지. false 면 로그인 전(소개·로그인 화면)부터 */
   signedIn?: boolean;
   /** 가짜 서버 지연(ms). 0 이면 즉시 */
@@ -71,7 +68,6 @@ export const DEFAULT_FRAME_CONFIG: LabFrameConfig = {
   platform: "ios",
   deviceId: "iphone-16",
   now: null,
-  designDraftId: null,
   signedIn: true,
   latencyMs: 0,
   failPaths: [],
@@ -136,22 +132,6 @@ export const FRAME_STORAGE_PREFIX = "momentory.lab.frame:";
 
 /** 동적 라우트를 열 때 쓸 값 — 데이터 세트마다 실제로 있는 id 를 가짜 서버가 알려 준다 */
 export type SampleParams = { diaryId?: number; letterDate?: string; scheduleId?: number };
-
-/** 디자인 시안 한 벌. 셸·편집기·프레임이 localStorage 로 공유한다 */
-export type DesignDraft = {
-  id: string;
-  name: string;
-  /**
-   * DS 토큰 덮어쓰기. 키는 `src/design/ds` 의 export 경로를 점으로 이은 것
-   * (예: "primary.heavy", "label.normal", "typography.title1.fontSize").
-   */
-  tokens: Record<string, string | number>;
-  /** Studio 속성 덮어쓰기 — `src/design/studioApproved.json` 의 키 */
-  studio: Record<string, string | number>;
-  updatedAt: string;
-};
-
-export const DESIGN_DRAFTS_STORAGE_KEY = "momentory.lab.designDrafts";
 
 /** 데이터 세트 목록의 한 줄 — 가짜 서버가 채운다 */
 export type DatasetInfo = { id: string; label: string; description: string };

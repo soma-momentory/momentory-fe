@@ -3,10 +3,14 @@
  *
  *   #/screens?route=/home&dataset=normal&platform=ios&device=iphone-16&layout=ab
  *            &now=2026-11-03T21:30:00%2B09:00&latency=1000&fail=/api/v1/reports&scale=1.3
- *            &zoom=1.5&draft=<시안 id>&repeat=0&signedIn=0&matrix=datasets&panel=controls
- *            &nav=0&side=0
+ *            &zoom=1.5&repeat=0&signedIn=0&panel=agent&nav=0&side=0
+ *            &bdata=many&blatency=60000&bfail=/api/v1/reports     ← A/B 의 「B 화면 상태」(없으면 A와 같게)
+ *            &layout=variants&group=g1abc                          ← 「시안 비교」 · 보는 시안 묶음(A/B 에서도 남아
+ *                                                                     「다른 시안 다시 보기」가 그 묶음으로 돌아간다)
  *
- * 기본값과 같은 항목은 적지 않는다(주소를 짧게). 읽을 수 없는 값은 기본값으로 돌린다.
+ * 기본값과 같은 항목은 적지 않는다(주소를 짧게). 읽을 수 없는 값은 기본값으로 돌린다 —
+ * 지운 기능의 옛 주소도 그대로 열린다: `layout=states` → 한 화면, `matrix=datasets` → 기기별,
+ * `panel=design|reference|log` → 화면 조건, `draft=…` 는 버린다.
  */
 import { DATASET_IDS, type DatasetId, type LabPlatform } from "../lab-contract";
 import { DEFAULT_DEVICE_ID, labDevices } from "../lab-devices";
@@ -21,8 +25,9 @@ export const LAYOUTS = [
   },
   {
     id: "ab",
-    label: "지금 앱과 비교 (A/B)",
-    description: "같은 화면을 지금 앱(A)과 디자인 시안(B)으로 나란히 비교해요",
+    label: "나란히 비교 (A/B)",
+    description:
+      "같은 화면을 두 대에 나란히 띄워요 — B만 다른 화면 상태로 바꾸거나 AI 수정 결과를 띄워 비교해요",
   },
   {
     id: "grid",
@@ -31,23 +36,17 @@ export const LAYOUTS = [
   },
   {
     id: "matrix",
-    label: "기기 · 데이터별로 보기",
-    description: "같은 화면을 기기별(또는 테스트 데이터별)로 한꺼번에 봐요",
+    label: "기기별로 보기",
+    description: "같은 화면을 표의 모든 기기에 한꺼번에 띄워요",
   },
   {
-    id: "states",
-    label: "상태별로 보기",
+    id: "variants",
+    label: "시안 비교",
     description:
-      "같은 화면을 빈 계정 · 보통 · 많음 · 긴 문구 · 불러오는 중 · 불러오기 실패로 한꺼번에 봐요",
+      "AI가 만든 시안 여러 개를 지금 앱과 한 줄에 나란히 봐요 — 하나를 고르면 지금 앱과 A/B로 견줘요",
   },
 ] as const;
 export type LayoutId = (typeof LAYOUTS)[number]["id"];
-
-export const MATRIX_AXES = [
-  { id: "devices", label: "기기별로 보기" },
-  { id: "datasets", label: "테스트 데이터별로 보기" },
-] as const;
-export type MatrixAxis = (typeof MATRIX_AXES)[number]["id"];
 
 /** 글씨 배율 — 0.85 는 OS 「작게」, 1.5 는 앱 상한(1.3)을 넘겨 배치를 점검하는 값 */
 export const TEXT_SCALES = [0.85, 1, 1.3, 1.5] as const;
@@ -56,12 +55,22 @@ export type TextScale = (typeof TEXT_SCALES)[number];
 export const LATENCIES = [0, 1000, 5000] as const;
 
 /**
- * 오른쪽 패널 — 처음엔 디자인 편집기가 보인다. `reference` 는 참고 시안(`src/reference/`). 옛 「요청」 탭(`panel=log`)은 조작 패널 맨 아래
- * 「서버 요청 기록」으로 옮겼다 — 옛 주소는 조작 패널로 연다.
- * `agent` 는 「AI에게 맡기기」(`src/agent/`), `new-screen` 은 그 안의 「새 화면 만들기」(탭은 「AI에게 맡기기」가 눌린다)
+ * 오른쪽 패널 — 처음엔 「화면 조건」(`controls`)이 보인다. `agent` 는 「AI에게 맡기기」(`src/agent/`),
+ * `new-screen` 은 그 안의 「새 화면 만들기」(탭은 「AI에게 맡기기」가 눌린다).
+ * 옛 탭 주소(`log` · `design` · `reference`)는 화면 조건으로 연다.
  */
-export const SIDE_PANELS = ["design", "controls", "reference", "agent", "new-screen"] as const;
+export const SIDE_PANELS = ["controls", "agent", "new-screen"] as const;
 export type SidePanel = (typeof SIDE_PANELS)[number];
+
+/**
+ * 「화면 상태」 하나가 프레임 설정에 거는 값 — 데이터 세트 · 서버 지연 · 실패 주소.
+ * A(와 한 화면)는 셸 상태의 `dataset` · `latencyMs` · `failPaths` 그대로이고, A/B 의 B 는 `b` 가 따로 들 수 있다
+ */
+export type StateConfig = {
+  dataset: DatasetId;
+  latencyMs: number;
+  failPaths: string[];
+};
 
 /** 「맞춤」 또는 배율(0.1 ~ 2) */
 export type Zoom = "fit" | number;
@@ -91,7 +100,6 @@ export type ShellState = {
   platform: LabPlatform;
   device: string;
   layout: LayoutId;
-  matrix: MatrixAxis;
   signedIn: boolean;
   /** 가상 시각(ISO · KST). null 이면 실제 시각 */
   now: string | null;
@@ -99,8 +107,8 @@ export type ShellState = {
   failPaths: string[];
   textScale: TextScale;
   zoom: Zoom;
-  /** 시안 프레임에 걸 시안 id. null 이면 시안 없음 */
-  draft: string | null;
+  /** A/B 의 「B 화면 상태」 — null 이면 A와 같게 */
+  b: StateConfig | null;
   /** 「오늘 다시 쓰기」 — 가짜 서버가 하루 1회 제한을 풀어 준다 */
   repeatToday: boolean;
   /** 오른쪽 패널 탭 */
@@ -109,6 +117,8 @@ export type ShellState = {
   navOpen: boolean;
   /** 오른쪽 패널을 붙여 둘지(넓은 창). 좁은 창에서는 늘 서랍이다 */
   sideOpen: boolean;
+  /** 「시안 비교」로 보는 시안 묶음 id — null 이면 이 화면의 가장 새 묶음 */
+  group: string | null;
 };
 
 export const DEFAULT_STATE: ShellState = {
@@ -117,21 +127,24 @@ export const DEFAULT_STATE: ShellState = {
   platform: "ios",
   device: DEFAULT_DEVICE_ID.ios,
   layout: "single",
-  matrix: "devices",
   signedIn: true,
   now: null,
   latencyMs: 0,
   failPaths: [],
   textScale: 1,
   zoom: "fit",
-  draft: null,
+  b: null,
   repeatToday: true,
-  panel: "design",
+  panel: "controls",
   navOpen: true,
   sideOpen: true,
+  group: null,
 };
 
 const HASH_PREFIX = "#/screens";
+
+/** 시안 묶음 id — 서버가 `g<시각 36진수>` 로 만든다. 다른 모양은 버린다 */
+const readGroup = (raw: string | null) => (raw && /^[A-Za-z0-9_-]{1,40}$/.test(raw) ? raw : null);
 
 const isDataset = (value: string | null): value is DatasetId =>
   value != null && (DATASET_IDS as readonly string[]).includes(value);
@@ -139,11 +152,15 @@ const isDataset = (value: string | null): value is DatasetId =>
 const sameList = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && a.every((item, i) => item === b[i]);
 
-/** 라우트를 고르면 그 화면의 프리셋(세션 · 데이터 세트)을 적용한다 */
+/** 화면을 옮길 때의 데이터 세트 — 화면이 묶은 것(로그인 전 · 온보딩) 아니면 고른 것(신규 사용자에서 나오면 보통) */
+const datasetFor = (preset: DatasetId | null | undefined, current: DatasetId): DatasetId =>
+  preset ?? (current === "new-user" ? "normal" : current);
+
+/** 라우트를 고르면 그 화면의 프리셋(세션 · 데이터 세트)을 적용한다 — B 화면 상태도 같은 규칙으로 */
 export function withRoute(state: ShellState, path: string): ShellState {
   const route = findRoute(path);
   if (!route) return state;
-  const dataset = route.preset.dataset ?? (state.dataset === "new-user" ? "normal" : state.dataset);
+  const dataset = datasetFor(route.preset.dataset, state.dataset);
   // 화면이 붙잡으려고 건 실패 주소는 그 화면을 떠날 때 함께 거둔다(사용자가 바꿨으면 둔다)
   const previous = findRoute(state.route)?.preset.failPaths;
   const failPaths = route.preset.failPaths
@@ -151,8 +168,22 @@ export function withRoute(state: ShellState, path: string): ShellState {
     : previous && sameList(previous, state.failPaths)
       ? []
       : state.failPaths;
-  return { ...state, route: route.path, signedIn: route.preset.signedIn, dataset, failPaths };
+  const b = state.b
+    ? { ...state.b, dataset: datasetFor(route.preset.dataset, state.b.dataset) }
+    : null;
+  return { ...state, route: route.path, signedIn: route.preset.signedIn, dataset, failPaths, b };
 }
+
+const readPaths = (raw: string | null) =>
+  (raw ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.startsWith("/"));
+
+const readLatency = (raw: string | null) => {
+  const latency = Number(raw);
+  return Number.isFinite(latency) && latency > 0 ? Math.min(latency, 60_000) : 0;
+};
 
 /** 플랫폼을 바꾸면 기기도 그 플랫폼의 기본으로 */
 export function withPlatform(state: ShellState, platform: LabPlatform): ShellState {
@@ -171,11 +202,11 @@ export function parseHash(hash: string): ShellState {
   const device =
     labDevices.find((item) => item.id === p.get("device") && item.platform === platform)?.id ??
     DEFAULT_DEVICE_ID[platform];
+  // 옛 `layout=states`(상태별로 보기)처럼 없는 레이아웃은 한 화면으로
   const layout = LAYOUTS.find((item) => item.id === p.get("layout"))?.id ?? d.layout;
-  const matrix = MATRIX_AXES.find((item) => item.id === p.get("matrix"))?.id ?? d.matrix;
   const dataset = isDataset(p.get("dataset")) ? (p.get("dataset") as DatasetId) : d.dataset;
+  const bData = p.get("bdata");
   const now = p.get("now");
-  const latency = Number(p.get("latency"));
   const scale = Number(p.get("scale"));
   const zoomRaw = p.get("zoom");
   const zoomNum = Number(zoomRaw);
@@ -186,24 +217,24 @@ export function parseHash(hash: string): ShellState {
     platform,
     device,
     layout,
-    matrix,
     signedIn: p.get("signedIn") !== "0",
     now: now && !Number.isNaN(Date.parse(now)) ? now : null,
-    latencyMs: Number.isFinite(latency) && latency > 0 ? Math.min(latency, 60_000) : 0,
-    failPaths: (p.get("fail") ?? "")
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item.startsWith("/")),
+    latencyMs: readLatency(p.get("latency")),
+    failPaths: readPaths(p.get("fail")),
     textScale: TEXT_SCALES.find((item) => item === scale) ?? d.textScale,
     zoom: zoomRaw && zoomNum >= MIN_ZOOM && zoomNum <= MAX_ZOOM ? zoomNum : "fit",
-    draft: p.get("draft") || null,
+    b: isDataset(bData)
+      ? {
+          dataset: bData,
+          latencyMs: readLatency(p.get("blatency")),
+          failPaths: readPaths(p.get("bfail")),
+        }
+      : null,
     repeatToday: p.get("repeat") !== "0",
-    panel:
-      p.get("panel") === "log"
-        ? "controls"
-        : (SIDE_PANELS.find((item) => item === p.get("panel")) ?? d.panel),
+    panel: SIDE_PANELS.find((item) => item === p.get("panel")) ?? d.panel,
     navOpen: p.get("nav") !== "0",
     sideOpen: p.get("side") !== "0",
+    group: readGroup(p.get("group")),
   };
 }
 
@@ -215,18 +246,22 @@ export function serializeHash(state: ShellState): string {
   p.set("platform", state.platform);
   p.set("device", state.device);
   p.set("layout", state.layout);
-  if (state.layout === "matrix") p.set("matrix", state.matrix);
   if (!state.signedIn) p.set("signedIn", "0");
   if (state.now) p.set("now", state.now);
   if (state.latencyMs !== d.latencyMs) p.set("latency", String(state.latencyMs));
   if (state.failPaths.length) p.set("fail", state.failPaths.join(","));
   if (state.textScale !== d.textScale) p.set("scale", String(state.textScale));
   if (state.zoom !== "fit") p.set("zoom", String(state.zoom));
-  if (state.draft) p.set("draft", state.draft);
+  if (state.b) {
+    p.set("bdata", state.b.dataset);
+    if (state.b.latencyMs) p.set("blatency", String(state.b.latencyMs));
+    if (state.b.failPaths.length) p.set("bfail", state.b.failPaths.join(","));
+  }
   if (!state.repeatToday) p.set("repeat", "0");
   if (state.panel !== d.panel) p.set("panel", state.panel);
   if (!state.navOpen) p.set("nav", "0");
   if (!state.sideOpen) p.set("side", "0");
+  if (state.group) p.set("group", state.group);
   // 「/」 와 「,」 는 그대로 둬도 해시에서 안전하다 — 사람이 읽기 쉽게 되돌린다
   return `${HASH_PREFIX}?${p.toString().replace(/%2F/g, "/").replace(/%2C/g, ",")}`;
 }

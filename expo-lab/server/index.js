@@ -13,10 +13,10 @@
  *   GET    /__lab/agent/status                     CLI 유무 · 저장소 브랜치/더러움 · 작업 공간 목록
  *   GET    /__lab/agent/workspaces                 작업 공간 목록
  *   POST   /__lab/agent/workspaces                 작업 공간만 만들기 {kind:"edit",route,…} | {kind:"new-screen",slug,title,…}
- *   POST   /__lab/agent/run                        지시 {agent, target, instruction, handoff?, attachments?} — 없으면 만들고, 있으면 잇는다
+ *   POST   /__lab/agent/run                        지시 {agent, target, instruction, attachments?} — 없으면 만들고, 있으면 잇는다
  *   GET    /__lab/agent/workspaces/:id             상세(바뀐 파일 · 통계 · 저장된 수정 · 새 라우트 · 마지막 실행 · 블록)
  *   DELETE /__lab/agent/workspaces/:id             버리기(junction 먼저 끊고 worktree 제거)
- *   POST   /__lab/agent/workspaces/:id/run         같은 작업 공간에 이어서 지시 {agent, instruction, handoff?, attachments?}
+ *   POST   /__lab/agent/workspaces/:id/run         같은 작업 공간에 이어서 지시 {agent, instruction, attachments?}
  *   POST   /__lab/agent/workspaces/:id/stop        실행 중지(프로세스 트리째)
  *   GET    /__lab/agent/workspaces/:id/events      ?since=N — 폴링
  *   GET    /__lab/agent/workspaces/:id/stream      ?since=N — SSE(event: line · run)
@@ -28,6 +28,16 @@
  *   POST   /__lab/agent/workspaces/:id/check/stop  검사 중지
  *   POST   /__lab/agent/workspaces/:id/commit      {message} — git add -A · git commit -F
  *   POST   /__lab/agent/workspaces/:id/pr          {title, body, base} — git push -u · gh pr create
+ *   POST   /__lab/agent/variants                   시안 여러 개 {agent, target(edit), instruction, attachments?, count 1~3}
+ *                                                  — 같은 화면 · 같은 지시로 작업 공간 N개(한 묶음 id)를 만들고 **차례로** 돌린다
+ *   POST   /__lab/agent/variants/:group/stop       지금 도는 시안을 멈추고 기다리는 시안을 거둔다
+ *   DELETE /__lab/agent/variants/:group?keep=<id>  「나머지 시안 버리기」 — keep 말고 묶음의 나머지를 버린다(미리보기 먼저 끈다)
+ *
+ * 시안 묶음(2026-11-02): 실행은 그래도 한 번에 하나다 — 서버가 줄(queue)에 세우고 하나가 끝나면 다음을 띄운다.
+ * 줄에 시안이 남아 있는 동안 다른 지시는 받지 않는다(409). 시안의 미리보기는 실행이 끝나도 저절로 켜지 않는다 —
+ * 다음 시안이 바로 돌기 때문이다(아래 startRun 의 미리보기 주석). 「시안 비교」 화면이 열릴 때 셸이 켠다.
+ *
+ * 미리보기 서버는 한꺼번에 `maxPreviews`(기본 4 — 시안 3 + 하나)까지 띄운다. 넘으면 가장 오래 쓰지 않은 것을 끈다.
  */
 const fs = require("node:fs");
 const path = require("node:path");
@@ -40,14 +50,22 @@ const { detectTools } = require("./cli");
 const { checkLocalRequest } = require("./guard");
 const { PreviewServer, findFreePort } = require("./preview");
 const { killTree } = require("./proc");
-const { buildAgentCommand, buildPrompt, routeSlug, RESULT_SCHEMA } = require("./prompt");
+const {
+  buildAgentCommand,
+  buildPrompt,
+  routeSlug,
+  RESULT_SCHEMA,
+  MAX_VARIANTS,
+} = require("./prompt");
 const { AgentRun } = require("./runs");
 const { WorkspaceStore } = require("./workspaces");
 
 const PREFIX = "/__lab/agent";
-const BODY_LIMIT = 60 * 1024 * 1024; // 시안 파일(참고 이미지 포함 ~20MB) + 첨부 여러 장
+const BODY_LIMIT = 60 * 1024 * 1024; // 첨부 그림 여러 장(최대 12장)
 const HISTORY = 5;
 const MAX_ATTACHMENTS = 12;
+/** 미리보기 서버(Metro 하나씩 — 메모리가 크다)를 한꺼번에 몇 개까지 띄우나. 넘으면 가장 오래 쓰지 않은 것을 끈다 */
+const MAX_PREVIEWS = 4;
 
 /** @typedef {import("node:http").IncomingMessage} Req */
 /** @typedef {import("node:http").ServerResponse} Res */
@@ -157,6 +175,7 @@ function readTarget(raw) {
  *   spawnImpl?: typeof import("node:child_process").spawn;
  *   checkSpawnImpl?: typeof import("node:child_process").spawn;
  *   startPreview?: (wsPath: string, port: number, logPath: string) => PreviewServer;
+ *   maxPreviews?: number;
  * }} options
  */
 function createLabAgent(options) {
@@ -176,6 +195,21 @@ function createLabAgent(options) {
   const previews = new Map();
   /** @type {Set<string>} 미리보기 포트를 고르는 중 */
   const previewStarting = new Set();
+  /** @type {Map<string, number>} 작업 공간 id → 미리보기를 마지막으로 찾은 때(넘치면 가장 오래된 것을 끈다) */
+  const previewUsed = new Map();
+  const maxPreviews = Math.max(1, options.maxPreviews ?? MAX_PREVIEWS);
+
+  /**
+   * 시안 묶음의 줄 — 앞에서부터 하나씩 돈다. 실행 하나가 끝나면 `pump` 가 다음을 띄운다.
+   * @typedef {{ workspaceId: string; groupId: string; who: { agent: "claude" | "codex"; launcher: { file: string; prefix: string[] } };
+   *   extras: { attachments: any[]; instruction: string } }} QueueEntry
+   * @type {QueueEntry[]}
+   */
+  const queue = [];
+  /** 줄에서 다음 실행을 띄우는 중(그 사이에 끼어드는 지시를 막는다) */
+  let pumping = false;
+  /** @type {Map<string, string>} 줄에서 시작하지 못했거나 멈춰서 거둔 시안 — 이유 한 줄 */
+  const queueNotes = new Map();
 
   /** @type {Map<string, ReviewCheck>} 작업 공간 id → 마지막 저장 전 검사 */
   const checks = new Map();
@@ -210,13 +244,27 @@ function createLabAgent(options) {
   /** @param {string} id */
   const previewState = (id) => previews.get(id)?.state() ?? null;
 
+  /** 넘친 미리보기 — 살아 있는 것이 상한이면, 이번 것(`keep`) 말고 가장 오래 쓰지 않은 것부터 끈다. @param {string} keep */
+  function evictPreviews(keep) {
+    const alive = [...previews].filter(([id, p]) => p.alive && id !== keep);
+    alive.sort(([a], [b]) => (previewUsed.get(a) ?? 0) - (previewUsed.get(b) ?? 0));
+    while (alive.length >= maxPreviews) {
+      const [id, server] = /** @type {[string, PreviewServer]} */ (alive.shift());
+      server.stop();
+      previews.delete(id);
+      previewUsed.delete(id);
+    }
+  }
+
   /** @param {WorkspaceMeta} meta */
   async function ensurePreview(meta) {
+    previewUsed.set(meta.id, Date.now());
     const current = previews.get(meta.id);
     if (current?.alive) return current.state();
     if (previewStarting.has(meta.id)) return previewState(meta.id);
     previewStarting.add(meta.id);
     try {
+      evictPreviews(meta.id);
       const taken = new Set([...previews.values()].filter((p) => p.alive).map((p) => p.port));
       const port = await findFreePort(taken);
       if (port == null) throw new HttpError(503, "미리보기에 쓸 빈 포트(8100~8199)가 없어요");
@@ -232,23 +280,51 @@ function createLabAgent(options) {
     }
   }
 
+  /** @param {string} id */
+  const isQueued = (id) => queue.some((entry) => entry.workspaceId === id);
+
+  /** 줄에 선 시안들 — 상태의 `queue` 와 409 안내에 쓴다 */
+  const queueInfo = () =>
+    queue.map((entry) => {
+      const meta = store.get(entry.workspaceId);
+      return {
+        workspaceId: entry.workspaceId,
+        groupId: entry.groupId,
+        index: meta?.group?.index ?? null,
+        title: meta?.title ?? entry.workspaceId,
+      };
+    });
+
+  /** 요약의 첫 줄 — 시안이면 「방향: …」(프롬프트가 그렇게 쓰게 한다) @param {string | null} text */
+  const firstLine = (text) =>
+    (text ?? "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(Boolean)
+      ?.slice(0, 160) ?? null;
+
   /** @param {WorkspaceMeta} meta */
   async function summarize(meta) {
     const run = latestRun(meta.id);
     const check = checks.get(meta.id);
+    // 실행 · 줄은 git 을 읽기(await) **전에** 한꺼번에 본다 — 그 사이에 줄을 떠나 실행이 붙으면 「아무것도 아님」으로 보인다
+    const queued = isQueued(meta.id);
+    const note = queueNotes.get(meta.id) ?? null;
     const changes = await store.changes(meta);
     const status =
       run?.status === "running"
         ? "working"
-        : check?.status === "running"
-          ? "checking"
-          : changes.fileCount > 0
-            ? "edited"
-            : meta.pr
-              ? "pr"
-              : changes.commits.length > 0
-                ? "committed"
-                : "fresh";
+        : queued
+          ? "queued"
+          : check?.status === "running"
+            ? "checking"
+            : changes.fileCount > 0
+              ? "edited"
+              : meta.pr
+                ? "pr"
+                : changes.commits.length > 0
+                  ? "committed"
+                  : "fresh";
     return {
       id: meta.id,
       kind: meta.kind,
@@ -269,7 +345,15 @@ function createLabAgent(options) {
       pr: meta.pr,
       broken: meta.broken ?? null,
       session: meta.session ? { agent: meta.session.agent } : null,
-      lastRun: run ? { status: run.status, agent: run.agent, error: run.error } : null,
+      lastRun: run
+        ? { status: run.status, agent: run.agent, error: run.error }
+        : note
+          ? { status: "failed", agent: null, error: note }
+          : null,
+      group: meta.group ?? null,
+      queued,
+      // 막 끝난 실행은 요약이 아직 기록(meta)에 안 실렸을 수 있다 — 실행의 것을 먼저 본다
+      summaryLine: firstLine(run?.status === "running" ? null : (run?.summary ?? meta.lastSummary)),
       check: check?.state() ?? null,
       preview: previewState(meta.id),
     };
@@ -315,36 +399,39 @@ function createLabAgent(options) {
 
   /** @param {any} body */
   function readExtras(body) {
-    const handoff = body.handoff ?? null;
-    if (
-      handoff != null &&
-      (typeof handoff !== "object" || handoff.format !== "momentory-lab-handoff@1")
-    )
-      throw new HttpError(400, "시안 파일 형식이 momentory-lab-handoff@1 이 아니에요");
     const attachments = Array.isArray(body.attachments) ? body.attachments : [];
     if (attachments.length > MAX_ATTACHMENTS)
       throw new HttpError(400, `그림은 ${MAX_ATTACHMENTS}장까지 붙일 수 있어요`);
-    // 새 화면의 참고 시안 이미지(옛 모양 `reference: {name, dataUrl}`)도 첨부 하나로 받는다
+    // 새 화면의 참고 그림(옛 모양 `reference: {name, dataUrl}`)도 첨부 하나로 받는다
     if (body.reference && typeof body.reference === "object")
       attachments.push({
         ...body.reference,
         purpose: "reference",
-        note: body.reference.note ?? "참고 시안 이미지",
+        note: body.reference.note ?? "참고 그림",
       });
     return {
-      handoff,
       attachments,
       instruction: typeof body.instruction === "string" ? body.instruction : "",
     };
   }
+
+  /** 줄에 시안이 남아 있으면 다른 지시를 받지 않는다 — 그 안내 한 줄(없으면 null) */
+  const queueBusy = () => {
+    if (queue.length === 0 && !pumping) return null;
+    const next = queueInfo()[0];
+    return next
+      ? `시안을 차례로 만드는 중이에요(다음: ${next.title}) — 다 끝난 뒤에 지시해요`
+      : "시안을 차례로 만드는 중이에요 — 다 끝난 뒤에 지시해요";
+  };
 
   /**
    * @param {WorkspaceMeta} meta
    * @param {{ agent: "claude" | "codex"; launcher: { file: string; prefix: string[] } }} who
    * @param {ReturnType<typeof readExtras>} extras
    * @param {boolean} created
+   * @param {{ fromQueue?: boolean }} [opts]
    */
-  async function startRun(meta, who, extras, created) {
+  async function startRun(meta, who, extras, created, opts = {}) {
     const { agent, launcher } = who;
     // Lab 전체에서 한 번에 하나(2026-11-02 사용자 결정) — 같은 PC 의 사용량 · 저장소 검사가 겹치지 않게
     const active = activeRun();
@@ -355,6 +442,8 @@ function createLabAgent(options) {
           ? "이 작업은 AI 가 아직 고치는 중이에요"
           : `다른 화면(${active.title})에서 AI가 작업 중이에요`,
       );
+    const waiting = opts.fromQueue ? null : queueBusy();
+    if (waiting) throw new HttpError(409, waiting);
     if (checks.get(meta.id)?.status === "running")
       throw new HttpError(409, "저장 전 검사가 도는 중이에요 — 끝난 뒤에 지시해요");
     const changes = await store.changes(meta);
@@ -368,11 +457,24 @@ function createLabAgent(options) {
       agent,
       target: targetOf(meta),
       instruction: extras.instruction,
-      handoffPath: written.handoffPath,
       attachments: written.files,
       workspace: meta,
       resume: Boolean(resumeId),
       previousSummary: resumeId ? null : meta.lastSummary,
+      variant: meta.group
+        ? {
+            index: meta.group.index,
+            total: meta.group.total,
+            // 차례로 도니까 앞 시안은 이미 끝났다 — 그 요약을 건네 다른 방향을 고르게 한다
+            earlier: store
+              .groupMembers(meta.group.id)
+              .filter((m) => (m.group?.index ?? 0) < (meta.group?.index ?? 0) && m.lastSummary)
+              .map((m) => ({
+                index: m.group?.index ?? 0,
+                summary: firstLine(m.lastSummary) ?? "",
+              })),
+          }
+        : null,
     });
     const lastMessagePath =
       agent === "codex" ? path.join(store.wsRoot, ".logs", `${meta.id}-${runId}-last.json`) : null;
@@ -412,8 +514,11 @@ function createLabAgent(options) {
     while (list.length > HISTORY) list.shift();
     runs.set(meta.id, list);
     store.update(meta.id, { runCount: meta.runCount + 1 });
+    queueNotes.delete(meta.id);
 
     run.finished.then((snapshot) => {
+      // 시안 줄의 다음 차례 — 이 실행의 뒷정리(아래 기록)가 끝난 뒤에 이어 간다
+      setTimeout(() => void pump(), 0);
       if (!store.get(meta.id)) return;
       /** @type {Partial<WorkspaceMeta>} */
       const patch = {};
@@ -426,9 +531,68 @@ function createLabAgent(options) {
       // 미리보기는 AI 실행이 **끝난 뒤** 띄운다 — 실행 중에 Metro 첫 번들이 겹치면 PC 부하로 에이전트가 돌리는
       // jest 의 애니메이션 · 타이머 테스트가 흔들려(「Unable to locate attached view」) 없는 실패를 보고했다(2026-11-02 실측).
       // 이미 떠 있으면 그대로 둔다(파일 감시가 바뀐 코드를 다시 묶는다). 실패해도 결과는 그대로다.
-      ensurePreview(meta).catch(() => {});
+      // 시안은 켜지 않는다 — 다음 시안이 바로 돌고(같은 이유), 시안 비교 화면이 열릴 때 셸이 켠다.
+      if (!meta.group) ensurePreview(meta).catch(() => {});
     });
     return run;
+  }
+
+  /** 줄 맨 앞의 시안을 띄운다 — 아무것도 돌지 않을 때만. 못 띄우면 그 시안에 이유를 남기고 다음으로. */
+  async function pump() {
+    if (pumping || activeRun()) return;
+    pumping = true;
+    try {
+      while (queue.length > 0) {
+        // 띄우는 동안에도 줄 맨 앞에 둔다 — 그 사이에 상태를 읽어도 「기다리는 중」이고 「다 끝남」으로 보이지 않는다
+        const entry = /** @type {QueueEntry} */ (queue[0]);
+        const leave = () => {
+          const at = queue.indexOf(entry);
+          if (at >= 0) queue.splice(at, 1);
+          return at >= 0;
+        };
+        const meta = store.get(entry.workspaceId);
+        if (!meta) {
+          leave();
+          continue;
+        }
+        try {
+          const run = await startRun(meta, entry.who, entry.extras, true, { fromQueue: true });
+          // 띄우는 사이에 멈추기 · 버리기로 거뒀으면 바로 멈춘다
+          if (!leave()) run.stop();
+          return;
+        } catch (error) {
+          leave();
+          queueNotes.set(
+            entry.workspaceId,
+            `시작하지 못했어요: ${String(/** @type {any} */ (error)?.message ?? error)}`,
+          );
+        }
+      }
+    } finally {
+      pumping = false;
+    }
+  }
+
+  /**
+   * 작업 공간 하나를 버린다 — 줄에서 빼고 · 실행 · 검사 · 미리보기를 끈 뒤 worktree 를 지운다(junction 먼저 · workspaces.js).
+   * @param {string} id
+   */
+  async function discard(id) {
+    for (let i = queue.length - 1; i >= 0; i -= 1)
+      if (queue[i]?.workspaceId === id) queue.splice(i, 1);
+    queueNotes.delete(id);
+    const run = latestRun(id);
+    run?.stop();
+    checks.get(id)?.stop();
+    checks.delete(id);
+    previews.get(id)?.stop();
+    previews.delete(id);
+    previewUsed.delete(id);
+    if (run?.status === "running")
+      await Promise.race([run.finished, new Promise((r) => setTimeout(r, 10_000))]);
+    const result = await store.remove(id);
+    if (result.ok) runs.delete(id);
+    return result;
   }
 
   /** @param {Req} req @param {Res} res @param {AgentRun} run @param {number} since */
@@ -480,8 +644,91 @@ function createLabAgent(options) {
         git: repo,
         baseBranch: store.baseBranch,
         activeRun: activeRun(),
+        queue: queueInfo(),
+        maxVariants: MAX_VARIANTS,
+        maxPreviews,
         workspaces,
       });
+    }
+
+    if (parts[0] === "variants") {
+      if (parts.length === 1 && method === "POST") {
+        const body = await readJson(req);
+        const target = readTarget(body.target ?? body.screen);
+        if (target.kind !== "edit")
+          throw new HttpError(400, "시안 여러 개는 화면 고치기에서만 만들어요");
+        const count = Number(body.count);
+        if (!Number.isInteger(count) || count < 1 || count > MAX_VARIANTS)
+          throw new HttpError(400, `시안은 1개에서 ${MAX_VARIANTS}개까지 만들 수 있어요`);
+        const who = await launcherFor(body.agent);
+        const extras = readExtras(body);
+        // 작업 공간을 만들기 **전에** 거른다 — 다른 실행 · 줄이 있으면 아무것도 만들지 않는다
+        const active = activeRun();
+        if (active) throw new HttpError(409, `다른 화면(${active.title})에서 AI가 작업 중이에요`);
+        const waiting = queueBusy();
+        if (waiting) throw new HttpError(409, waiting);
+        const now = new Date();
+        const groupId = `g${now.getTime().toString(36)}`;
+        /** @type {WorkspaceMeta[]} */
+        const members = [];
+        try {
+          for (let index = 1; index <= count; index += 1)
+            members.push(
+              await store.createVariant(
+                target,
+                { id: groupId, index, total: count, createdAt: now.toISOString() },
+                now,
+              ),
+            );
+        } catch (error) {
+          for (const m of members) await store.remove(m.id);
+          throw new HttpError(
+            500,
+            `시안 작업 공간을 만들지 못했어요: ${String(/** @type {any} */ (error)?.message ?? error)}`,
+          );
+        }
+        for (const m of members) queue.push({ workspaceId: m.id, groupId, who, extras });
+        await pump();
+        return sendJson(res, 202, {
+          group: { id: groupId, total: count, route: target.route },
+          workspaces: await Promise.all(members.map((m) => summarize(store.get(m.id) ?? m))),
+        });
+      }
+      const groupId = String(parts[1] ?? "");
+      const members = store.groupMembers(groupId);
+      if (!groupId || members.length === 0) throw new HttpError(404, "그 시안 묶음이 없어요");
+      if (parts[2] === "stop" && parts.length === 3 && method === "POST") {
+        /** @type {string[]} */
+        const cancelled = [];
+        for (let i = queue.length - 1; i >= 0; i -= 1) {
+          const entry = queue[i];
+          if (entry?.groupId !== groupId) continue;
+          queue.splice(i, 1);
+          cancelled.unshift(entry.workspaceId);
+          queueNotes.set(entry.workspaceId, "멈춰서 만들지 않았어요");
+        }
+        const running = members.find((m) => isRunning(m.id));
+        if (running) latestRun(running.id)?.stop();
+        return sendJson(res, 200, { stopped: running?.id ?? null, cancelled });
+      }
+      if (parts.length === 2 && method === "DELETE") {
+        const keep = url.searchParams.get("keep");
+        if (!keep || !members.some((m) => m.id === keep))
+          throw new HttpError(400, "남길 시안(keep)을 이 묶음에서 골라 주세요");
+        /** @type {string[]} */
+        const removed = [];
+        /** @type {string[]} */
+        const failed = [];
+        for (const m of members) {
+          if (m.id === keep) continue;
+          const result = await discard(m.id);
+          if (result.ok) removed.push(m.id);
+          else failed.push(result.message);
+        }
+        if (failed.length) throw new HttpError(500, failed.join(" · "));
+        return sendJson(res, 200, { kept: keep, removed });
+      }
+      throw new HttpError(405, "지원하지 않는 요청이에요");
     }
 
     if (parts[0] === "run" && parts.length === 1 && method === "POST") {
@@ -490,6 +737,13 @@ function createLabAgent(options) {
       const who = await launcherFor(body.agent);
       const extras = readExtras(body);
       const existing = store.find(target);
+      // 새 작업 공간을 만들기 **전에** 거른다 — 받지 못할 지시로 worktree 만 남지 않게
+      if (!existing) {
+        const active = activeRun();
+        if (active) throw new HttpError(409, `다른 화면(${active.title})에서 AI가 작업 중이에요`);
+        const waiting = queueBusy();
+        if (waiting) throw new HttpError(409, waiting);
+      }
       const meta = existing ?? (await store.ensure(target));
       const run = await startRun(meta, who, extras, !existing);
       return sendJson(res, 202, { workspace: await summarize(meta), run: run.snapshot() });
@@ -525,17 +779,8 @@ function createLabAgent(options) {
         });
       }
       if (method === "DELETE") {
-        const run = latestRun(id);
-        run?.stop();
-        checks.get(id)?.stop();
-        checks.delete(id);
-        previews.get(id)?.stop();
-        previews.delete(id);
-        if (run?.status === "running")
-          await Promise.race([run.finished, new Promise((r) => setTimeout(r, 10_000))]);
-        const result = await store.remove(id);
+        const result = await discard(id);
         if (!result.ok) throw new HttpError(500, result.message);
-        runs.delete(id);
         return sendJson(res, 200, { ok: true });
       }
       throw new HttpError(405, "지원하지 않는 요청이에요");
@@ -711,4 +956,4 @@ function withLabAgent(config, opts = {}) {
   return config;
 }
 
-module.exports = { createLabAgent, withLabAgent, readTarget, PREFIX, BODY_LIMIT };
+module.exports = { createLabAgent, withLabAgent, readTarget, PREFIX, BODY_LIMIT, MAX_PREVIEWS };
