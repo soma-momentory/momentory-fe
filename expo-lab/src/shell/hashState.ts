@@ -152,7 +152,7 @@ const isDataset = (value: string | null): value is DatasetId =>
 const sameList = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && a.every((item, i) => item === b[i]);
 
-/** 화면을 옮길 때의 데이터 세트 — 화면이 묶은 것(로그인 전 · 온보딩) 아니면 고른 것(신규 사용자에서 나오면 보통) */
+/** 화면을 옮길 때의 데이터 세트 — 화면이 묶은 것(로그인 전 · 온보딩) 아니면 고른 것(신규 사용자에서 나오면 기록 보통) */
 const datasetFor = (preset: DatasetId | null | undefined, current: DatasetId): DatasetId =>
   preset ?? (current === "new-user" ? "normal" : current);
 

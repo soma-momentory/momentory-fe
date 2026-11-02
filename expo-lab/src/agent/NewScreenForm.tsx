@@ -2,7 +2,7 @@
  * 「새 화면 만들기」 — 이름 · 들어갈 곳 · 어떤 화면인지 설명 · (선택) 그림을 적어 AI 에게 새 화면을 맡긴다.
  * 보내면 서버가 `lab/new-<영문 이름>-<시각>` 작업 공간을 만들고(지시 없이 만들지 않는다), 그 뒤는 화면 수정과 같은 상태 카드다.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { AttachmentPicker, toPayload } from "./AttachmentPicker";
 import { defaultAgentClient, type AgentClient } from "./client";
@@ -20,8 +20,29 @@ export type NewScreenFormProps = {
   onOpenPreview?: (url: string, workspace: WorkspaceSummary) => void;
 };
 
+/** 「영문 이름」만으로는 어디에 쓰이는지 몰라서 — 주소에 쓰인다는 것을 이름에 담는다 */
+export const SLUG_LABEL = "주소에 쓸 영문 이름";
+
 const DESCRIPTION_EXAMPLE =
   "예: 쉼터에서 들어가는 「잠 기록」 화면. 어젯밤 잠든 시각과 깬 시각을 고르고, 아래에 지난 7일을 점으로 보여 준다. 저장 버튼 하나.";
+
+/** 칸 이름 + 한 줄 도움말 — 도움말은 낱말 중간에서 끊지 않고, 자리가 모자라면 통째로 다음 줄로 */
+function FieldLabel({ hint, children }: { hint: string; children: ReactNode }) {
+  return (
+    <span
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "baseline",
+        columnGap: 6,
+        wordBreak: "keep-all",
+      }}
+    >
+      <span>{children}</span>
+      <span style={smallStyle}>{hint}</span>
+    </span>
+  );
+}
 
 export function NewScreenForm({
   client = defaultAgentClient,
@@ -106,13 +127,13 @@ export function NewScreenForm({
           />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span>
-            영문 이름 (꼭) <span style={smallStyle}>— 화면 주소 · 파일 이름에 쓰여요</span>
-          </span>
+          <FieldLabel hint="화면 주소 · 파일 이름이 돼요 (영문 · 숫자 · -)">
+            {SLUG_LABEL} (꼭)
+          </FieldLabel>
           <input
             style={inputStyle}
             value={slug}
-            aria-label="영문 이름"
+            aria-label={SLUG_LABEL}
             placeholder="예: sleep-log"
             onChange={(e) => setSlug(e.target.value)}
           />
@@ -123,7 +144,7 @@ export function NewScreenForm({
           ) : null}
         </label>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span>들어갈 곳</span>
+          <FieldLabel hint="앱의 어느 묶음에 붙일지">들어갈 곳</FieldLabel>
           <div
             style={{ display: "flex", gap: 4, flexWrap: "wrap" }}
             role="group"
@@ -137,7 +158,7 @@ export function NewScreenForm({
           </div>
         </div>
         <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span>어떤 화면인지</span>
+          <FieldLabel hint="무엇을 보여 주고 무엇을 누르는지">어떤 화면인지 (꼭)</FieldLabel>
           <textarea
             style={{ ...inputStyle, minHeight: 110, lineHeight: 1.5 }}
             value={description}
@@ -175,7 +196,7 @@ export function NewScreenForm({
         </Btn>
         {active ? <Note>다른 화면({active.title})에서 AI가 작업 중이에요</Note> : null}
         {!ready ? (
-          <span style={smallStyle}>화면 이름 · 영문 이름 · 어떤 화면인지를 적어요</span>
+          <span style={smallStyle}>화면 이름 · {SLUG_LABEL} · 어떤 화면인지를 적어요</span>
         ) : null}
         {error ? <Note tone="danger">{error}</Note> : null}
         {statusError ? <Note tone="danger">{statusError}</Note> : null}

@@ -9,10 +9,14 @@
  * 셸 연결: `<AgentPanel screen={…} onOpenPreview={…} onOpenWorkspace={…} onOpenVariants={…} />` — README 「AI에게 맡기기」 참고.
  * 참고 그림(피그마 · 시안 캡처)은 지시와 함께 첨부한다(`AttachmentPicker` — 참고용 · 앱에 넣기).
  *
+ * 지시 칸은 둘로 나눈다 — 읽기만 하는 「AI에게 함께 보내는 정보」(화면 · 파일 · 환경 · 화면을 바꾸면 따라간다)와
+ * 빈 칸 「무엇을 바꿀까요?」(사용자가 적는 말). 보낼 때는 둘을 이어 `instruction` 하나로 보낸다
+ * (`composeInstruction` — 서버 API 는 그대로 · 예전 미리 채운 칸과 같은 모양의 글).
+ *
  * 「시안 개수」를 2 · 3 으로 고르면 같은 지시로 서로 다른 방향의 시안을 작업 공간마다 하나씩 만든다 —
  * 서버가 줄에 세워 차례로 돌리고(`POST /variants`), 결과는 「시안 비교」 레이아웃에서 나란히 본다(README 「시안 비교」).
  */
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import { shellColor } from "../shell/theme";
 import { AttachmentPicker, toPayload } from "./AttachmentPicker";
@@ -50,22 +54,23 @@ export const MAX_VARIANT_COUNT = 3;
 
 export const INSTRUCTION_LABEL = "지시: ";
 
-/** 지시 칸에 미리 채우는 머리말 — 사용자가 고칠 수 있다. 커서는 마지막 「지시: 」 뒤. */
-export function buildInstructionHeader(screen: AgentScreen) {
+export const CONTEXT_TITLE = "AI에게 함께 보내는 정보";
+export const ASK_LABEL = "무엇을 바꿀까요?";
+export const ASK_PLACEHOLDER = "예: 카드 사이 간격을 조금 넓히고, 제목을 한 단계 크게 해줘";
+
+/** 「AI에게 함께 보내는 정보」 — 화면 · 파일 · 환경 세 줄. 화면 · 기기 · 화면 상태가 바뀌면 따라간다 */
+export function buildInstructionContext(screen: AgentScreen) {
   const spec = screen.specId ? ` (${screen.specId})` : "";
   return [
     `[화면] ${screen.title}${spec} · ${screen.route}`,
     `[파일] ${screen.file}`,
-    `[환경] ${screen.device.label} (${screen.device.platform}) · 데이터 ${screen.datasetLabel}`,
-    INSTRUCTION_LABEL,
-  ].join("\n");
+    `[환경] ${screen.device.label} (${screen.device.platform}) · 데이터: ${screen.datasetLabel}`,
+  ];
 }
 
-/** 「지시:」 뒤에 적은 말 */
-export const instructionBody = (text: string) => {
-  const at = text.lastIndexOf(INSTRUCTION_LABEL.trim());
-  return (at >= 0 ? text.slice(at + INSTRUCTION_LABEL.trim().length) : text).trim();
-};
+/** 서버에 보내는 `instruction` — 함께 보내는 정보 세 줄 + 「지시: 」 + 사용자가 적은 말 */
+export const composeInstruction = (screen: AgentScreen, ask: string) =>
+  [...buildInstructionContext(screen), `${INSTRUCTION_LABEL}${ask.trim()}`].join("\n");
 
 export function AgentPanel({
   screen,
@@ -75,9 +80,9 @@ export function AgentPanel({
   onOpenVariants,
 }: AgentPanelProps) {
   const { status, error: statusError, refresh } = useAgentStatus(client);
-  const header = useMemo(() => buildInstructionHeader(screen), [screen]);
-  /** 사용자가 고친 글 — null 이면 머리말 그대로(화면 · 기기 · 데이터가 바뀌면 머리말이 따라간다) */
-  const [edited, setEdited] = useState<string | null>(null);
+  const context = useMemo(() => buildInstructionContext(screen), [screen]);
+  /** 「무엇을 바꿀까요?」에 적은 말 — 함께 보내는 정보와 따로라 기기 · 화면 상태가 바뀌어도 그대로다 */
+  const [ask, setAsk] = useState("");
   const [picked, setPicked] = useState<AgentId>("claude");
   /** 시안 개수 — 1 이면 지금처럼 이 화면의 작업 공간 하나 */
   const [count, setCount] = useState(1);
@@ -87,17 +92,15 @@ export function AgentPanel({
   const [openOther, setOpenOther] = useState<string | null>(null);
   const [seenRoute, setSeenRoute] = useState(screen.route);
   const othersRef = useRef<HTMLDetailsElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // 화면이 바뀌면 머리말부터 다시(렌더 중 이전 값과 견주는 React 권장 방식 — effect 로 setState 하지 않는다)
+  // 화면이 바뀌면 지시도 처음부터 — 그 화면에 맞춘 말이라(렌더 중 이전 값과 견주는 React 권장 방식 —
+  // effect 로 setState 하지 않는다). 다른 탭을 보고 오는 것은 화면이 바뀐 게 아니라 그대로 남는다
   if (seenRoute !== screen.route) {
     setSeenRoute(screen.route);
-    setEdited(null);
+    setAsk("");
     setFiles([]);
     setError(null);
   }
-  const text = edited ?? header;
-  const touched = edited !== null;
 
   // 쓸 수 없는 AI 를 골라 둔 채면 쓸 수 있는 쪽으로
   const agent: AgentId =
@@ -127,7 +130,7 @@ export function AgentPanel({
   /** 지금 도는 것이 이 화면의 시안이면 아래 묶음 카드에 이미 보인다 — 「그 작업 보기」가 필요 없다 */
   const activeHere = hereGroups.some((g) => g.members.some((m) => m.id === active?.workspaceId));
   const busyHere = workspace?.status === "working" || workspace?.status === "checking";
-  const nothing = !instructionBody(text) && files.length === 0;
+  const nothing = !ask.trim() && files.length === 0;
   const unavailable = status ? !status.available[agent] : true;
 
   const disabledReason = !status
@@ -157,21 +160,15 @@ export function AgentPanel({
         file: screen.file,
         specId: screen.specId ?? null,
       },
-      instruction: text,
+      instruction: composeInstruction(screen, ask),
       attachments: toPayload(files),
     };
     const res = count > 1 ? await client.variants({ ...body, count }) : await client.run(body);
     setSending(false);
     if (!res.ok) return setError(res.error);
-    setEdited(null);
+    setAsk("");
     setFiles([]);
     await refresh();
-  };
-
-  const placeCursor = () => {
-    const el = inputRef.current;
-    if (!el || touched) return;
-    requestAnimationFrame(() => el.setSelectionRange(el.value.length, el.value.length));
   };
 
   const goToActive = () => {
@@ -223,16 +220,34 @@ export function AgentPanel({
           <Note>이 PC 에서 {AGENT_LABEL[agent]} 를 찾지 못했어요</Note>
         ) : null}
 
-        <textarea
-          ref={inputRef}
-          style={{ ...inputStyle, minHeight: 120, lineHeight: 1.5 }}
-          value={text}
-          aria-label="AI 에게 할 말"
-          onFocus={placeCursor}
-          onChange={(e) => {
-            setEdited(e.target.value);
-          }}
-        />
+        <section
+          data-testid="agent-context"
+          aria-labelledby="agent-context-title"
+          style={{ display: "flex", flexDirection: "column", gap: 4 }}
+        >
+          <div style={fieldTitleRow}>
+            <span id="agent-context-title" style={fieldTitle}>
+              {CONTEXT_TITLE}
+            </span>
+            <span style={smallStyle}>화면 · 기기 · 화면 상태를 바꾸면 따라 바뀌어요</span>
+          </div>
+          <div data-testid="agent-context-lines" style={contextBox}>
+            {context.map((line) => (
+              <div key={line}>{line}</div>
+            ))}
+          </div>
+        </section>
+
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={fieldTitle}>{ASK_LABEL}</span>
+          <textarea
+            style={{ ...inputStyle, minHeight: 96, lineHeight: 1.5, wordBreak: "keep-all" }}
+            value={ask}
+            aria-label={ASK_LABEL}
+            placeholder={ASK_PLACEHOLDER}
+            onChange={(e) => setAsk(e.target.value)}
+          />
+        </label>
         <Note>
           디자인을 바꿀 때는 원하는 모습의 그림(피그마 · 캡처)을 붙이면 그대로 맞춰요 — 예: 카드
           간격을 그림처럼 넓혀줘
@@ -289,7 +304,9 @@ export function AgentPanel({
                   : "AI에게 수정 맡기기"}
           </Btn>
           {nothing && !disabledReason ? (
-            <span style={smallStyle}>「지시:」 뒤에 할 말을 적어요</span>
+            <span data-testid="agent-ask-hint" style={smallStyle}>
+              「{ASK_LABEL}」에 할 말을 적거나 그림을 붙여요
+            </span>
           ) : null}
         </div>
         {disabledReason ? (
@@ -402,6 +419,28 @@ export function AgentPanel({
     </div>
   );
 }
+
+const fieldTitleRow: CSSProperties = {
+  display: "flex",
+  gap: 6,
+  alignItems: "baseline",
+  flexWrap: "wrap",
+  wordBreak: "keep-all",
+};
+
+const fieldTitle: CSSProperties = { fontSize: 12, fontWeight: 700, color: shellColor.ink };
+
+/** 함께 보내는 정보 — 읽기만 하는 칸(입력칸과 헷갈리지 않게 바탕을 낮추고 테두리를 점선으로) */
+const contextBox: CSSProperties = {
+  fontSize: 12,
+  lineHeight: 1.5,
+  color: shellColor.muted,
+  background: shellColor.page,
+  border: `1px dashed ${shellColor.border}`,
+  borderRadius: 7,
+  padding: "6px 8px",
+  overflowWrap: "anywhere",
+};
 
 /** 묶음의 화면 이름 — 시안 제목(「홈 · 시안 1」)에서 뒤를 뗀다 */
 const groupTitle = (group: VariantGroupView) =>
