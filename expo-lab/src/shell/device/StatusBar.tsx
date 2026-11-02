@@ -6,7 +6,8 @@
  * - iOS 섬 기기: 시각은 섬 왼쪽 귀의 가운데, 아이콘은 오른쪽 귀의 가운데, 세로는 섬의 가운데
  * - iOS 노치 기기: 같은 규칙을 노치 양옆 귀에
  * - iPhone SE: 20pt 줄 — 신호·와이파이 왼쪽 · 시각 가운데 · 배터리 오른쪽
- * - Android(Pixel 8 AVD 캡처 실측): 시각 왼쪽 30dp · 아이콘 오른쪽 28.6dp · 세로 가운데 25dp
+ * - Android(Pixel 8 AVD 캡처 실측): 시각 왼쪽 30dp · 아이콘 오른쪽 28.6dp · 세로 = 펀치홀 가운데.
+ *   상태바가 더 낮은 Galaxy 는 같은 배치를 상태바 높이 비율로 줄인다(근사)
  */
 import type { CSSProperties } from "react";
 
@@ -18,6 +19,9 @@ type Style = "light" | "dark";
 const ink = (style: Style) => (style === "light" ? shellColor.statusLight : shellColor.statusDark);
 
 const overlay: CSSProperties = { position: "absolute", pointerEvents: "none" };
+
+/** 시각 · 아이콘을 잰 기기(Pixel 8)의 상태바 높이 — 낮은 상태바는 이 비율로 줄여 그린다 */
+const PIXEL_STATUS_BAR = 50.29;
 
 function IosSignal({ color }: { color: string }) {
   return (
@@ -175,15 +179,18 @@ export function DeviceOverlays({
   let statusBar;
   if (device.platform === "android") {
     const centerY = cutout.kind === "punch-hole" ? cutout.top + cutout.diameter / 2 : sb / 2;
+    // 시각 · 아이콘 크기와 자리는 Pixel 8 캡처 실측이다. 상태바가 더 낮은 기기(Galaxy 34dp 안팎)는
+    // 같은 비율로 줄인다 — One UI 상태바 글자는 재지 않았다(근사)
+    const k = Math.min(1, sb / PIXEL_STATUS_BAR);
     statusBar = (
       <div data-testid="device-status-bar" style={bar}>
         <span
           style={{
             position: "absolute",
-            left: 30,
+            left: 30 * k,
             top: centerY,
             transform: "translateY(-50%)",
-            fontSize: 20,
+            fontSize: 20 * k,
             fontWeight: 500,
             letterSpacing: 0.2,
             fontFamily: '"Google Sans", Roboto, "Segoe UI", sans-serif',
@@ -194,9 +201,10 @@ export function DeviceOverlays({
         <span
           style={{
             position: "absolute",
-            right: 28.6,
+            right: 28.6 * k,
             top: centerY,
-            transform: "translateY(-50%)",
+            transform: `translateY(-50%) scale(${k})`,
+            transformOrigin: "right center",
           }}
         >
           <AndroidIcons color={color} />

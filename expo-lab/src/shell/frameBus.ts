@@ -3,17 +3,38 @@
  * 상태바 글자색을 들고, 요청 기록을 쌓는다. 셸은 여기로만 프레임에 말한다(`post`).
  *
  * 화면은 `useFrameBus()` 로 구독한다 — 값이 바뀔 때마다 판(version)이 올라간다.
+ *
+ * 출처: 보통 프레임은 셸과 같은 서버다. 「AI 수정 결과」 미리보기(작업 공간의 다른 포트)는 다른 출처라 —
+ * 받을 때는 그 frameId 의 iframe 창이 보낸 것만 믿고(`accepts`), 보낼 때는 iframe `src` 의 출처로 보낸다.
  */
 import { useSyncExternalStore } from "react";
 
 import type { FrameToShellMessage, ShellToFrameMessage } from "../lab-contract";
+import { apiPrefix } from "./screenStates";
 
 export type FrameRuntime = {
   element: HTMLIFrameElement | null;
   ready: boolean;
   pathname: string | null;
   statusBar: "light" | "dark";
+  /** 프레임 화면 키보드(`lab:keyboardState`) — 셸의 「키보드 올리기 / 내리기」 눌림 상태 */
+  keyboard: { open: boolean; height: number };
 };
+
+const CLOSED_KEYBOARD = { open: false, height: 0 } as const;
+
+/**
+ * iframe 이 뜬 서버의 출처 — `src` 로 정한다(앱 안에서 주소가 바뀌어도 서버는 같다).
+ * 「AI 수정 결과」 미리보기는 다른 포트라 셸과 출처가 다르다
+ */
+export function frameOrigin(element: HTMLIFrameElement, base?: string) {
+  const here = base ?? globalThis.location?.href ?? "http://localhost/";
+  try {
+    return new URL(element.getAttribute("src") || element.src || "/", here).origin;
+  } catch {
+    return new URL(here).origin;
+  }
+}
 
 export type RequestEntry = {
   id: number;
@@ -46,6 +67,11 @@ export class FrameBus {
   private routeListeners = new Set<RouteListener>();
   private pending = new Map<string, PendingNavigation>();
   private seq = 0;
+  /**
+   * 화면(주소 · 검색 조건 뺌)마다 그 화면에 서 있는 동안 부른 서버 주소 접두사 — 「불러오기 실패」가
+   * 실패시킬 주소를 고른다(`screenStates.ts`). 요청 기록(`requests`)과 달리 잘라 내지 않는다
+   */
+  private paths = new Map<string, Set<string>>();
   requests: RequestEntry[] = [];
   version = 0;
 
@@ -70,7 +96,13 @@ export class FrameBus {
 
   get(frameId: string): FrameRuntime {
     return (
-      this.frames.get(frameId) ?? { element: null, ready: false, pathname: null, statusBar: "dark" }
+      this.frames.get(frameId) ?? {
+        element: null,
+        ready: false,
+        pathname: null,
+        statusBar: "dark",
+        keyboard: CLOSED_KEYBOARD,
+      }
     );
   }
 
@@ -82,7 +114,7 @@ export class FrameBus {
   /** iframe 가 새로 붙었다(처음 · 다시 불러오기) — 준비 전으로 돌린다 */
   attach(frameId: string, element: HTMLIFrameElement | null) {
     if (element === this.get(frameId).element) return;
-    this.patch(frameId, element ? { element, ready: false } : { element: null, ready: false });
+    this.patch(frameId, { element, ready: false, keyboard: CLOSED_KEYBOARD });
   }
 
   /** 셸이 프레임을 다른 주소로 보냈다 — 다시 불러올 때 이 주소에서 시작한다 */
@@ -116,9 +148,11 @@ export class FrameBus {
 
   post(frameId: string, message: ShellToFrameMessage): boolean {
     const runtime = this.get(frameId);
-    const target = runtime.element?.contentWindow;
-    if (!target || !runtime.ready) return false;
-    target.postMessage(message, window.location.origin);
+    const element = runtime.element;
+    const target = element?.contentWindow;
+    if (!element || !target || !runtime.ready) return false;
+    // 프레임이 뜬 서버로만 — 다른 출처(미리보기)면 그 출처, 아니면 셸 출처 그대로
+    target.postMessage(message, frameOrigin(element));
     return true;
   }
 
@@ -127,6 +161,26 @@ export class FrameBus {
       .filter(([, runtime]) => runtime.element && runtime.pathname != null)
       .filter(([, runtime]) => pathnameMatches(runtime.pathname!))
       .map(([frameId]) => frameId);
+  }
+
+  /** 주소가 `matches` 에 맞는 화면들에서 부른 서버 주소 접두사(중복 없음) */
+  pathsFor(matches: (pathname: string) => boolean): string[] {
+    const found = new Set<string>();
+    for (const [pathname, prefixes] of this.paths) {
+      if (matches(pathname)) prefixes.forEach((prefix) => found.add(prefix));
+    }
+    return [...found];
+  }
+
+  private notePath(frameId: string, path: string) {
+    // 두 단계 열기의 경유 화면이 부른 것은 목적지 몫이 아니다
+    if (this.pending.has(frameId)) return;
+    const pathname = this.get(frameId).pathname?.split(/[?#]/)[0];
+    const prefix = apiPrefix(path);
+    if (!pathname || !prefix) return;
+    const set = this.paths.get(pathname) ?? new Set<string>();
+    set.add(prefix);
+    this.paths.set(pathname, set);
   }
 
   clearRequests() {
@@ -152,6 +206,11 @@ export class FrameBus {
       case "lab:statusBar":
         this.patch(message.frameId, { statusBar: message.style });
         return;
+      case "lab:keyboardState":
+        this.patch(message.frameId, {
+          keyboard: { open: message.open, height: message.open ? message.height : 0 },
+        });
+        return;
       case "lab:request": {
         const pending = this.pending.get(message.frameId);
         if (
@@ -161,6 +220,7 @@ export class FrameBus {
         ) {
           this.flushNavigate(message.frameId, SETTLE_MS);
         }
+        this.notePath(message.frameId, message.path);
         this.seq += 1;
         this.requests = [
           { ...message, id: this.seq, at: Date.now() },
@@ -172,13 +232,23 @@ export class FrameBus {
     }
   }
 
-  /** window 의 message 를 듣는다. 같은 출처 · `lab:` 메시지만 받는다 */
+  /**
+   * 이 메시지를 믿나 — 같은 출처면 예전처럼 받는다. 다른 출처(「AI 수정 결과」 미리보기)면 **그 frameId 로
+   * 붙어 있는 iframe 의 창이 보낸 것만** 받는다(다른 탭 · 확장 프로그램이 frameId 를 흉내 내지 못하게)
+   */
+  accepts(event: Pick<MessageEvent, "origin" | "source">, frameId: string, ownOrigin: string) {
+    if (event.origin === ownOrigin) return true;
+    const element = this.get(frameId).element;
+    return element != null && event.source != null && event.source === element.contentWindow;
+  }
+
+  /** window 의 message 를 듣는다. `lab:` 메시지만 — 출처 규칙은 `accepts` */
   listen(win: Window): () => void {
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== win.location.origin) return;
       const data = event.data as Partial<FrameToShellMessage> | null;
       if (!data || typeof data.type !== "string" || !data.type.startsWith("lab:")) return;
       if (typeof data.frameId !== "string") return;
+      if (!this.accepts(event, data.frameId, win.location.origin)) return;
       this.handle(data as FrameToShellMessage);
     };
     win.addEventListener("message", onMessage);

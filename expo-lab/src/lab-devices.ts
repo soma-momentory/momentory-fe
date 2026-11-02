@@ -17,7 +17,25 @@
  *   `mask.webp`(화면 모서리) · Android Studio `sdklib.jar` 의 `devices.xml`(1080×2400 @ 420dpi) ·
  *   그리고 **Pixel_8 AVD(Android 16 · 제스처 탐색)를 띄워 `dumpsys window` 로 읽은 값**
  *   (상태바 132px · 탐색 막대 63px · 펀치홀 `cutoutSpec` · 제스처 손잡이 위치).
- * - Galaxy S24 는 뺐다 — 기본 화면 배율(dp 크기)·펀치홀·상태바를 로컬 자료로 확인할 수 없다.
+ * - Galaxy — 확인 2026-11-02. **One UI 의 상태바·탐색 막대·모서리는 에뮬레이터로 재현되지 않는다**
+ *   (삼성 스킨은 외형만 바꾼다 — 스킨 00_README 「do not include any One UI features」). 그래서
+ *   - 안전 영역 · 상태바 · 모서리 · 펀치홀 = **실기기 실측**: windowinsets.info
+ *     (github.com/easyhooon/windowinsets.info `measurements/` · Samsung Remote Test Lab 의 국내판
+ *     실기기에서 InsetsProbe 가 읽은 `WindowInsets`·`DisplayCutout`·`RoundedCorners` 원본 JSON ·
+ *     One UI 8.5 / Android 16). 같은 저장소의 Pixel 8 값(상태바 132px · 제스처 63px)이 위 AVD
+ *     실측과 **정확히 같아** 측정 방법을 교차 확인했다.
+ *   - 기본 화면 배율 = 펌웨어 `vendor.build.prop` 의 `ro.sf.lcd_density`(S24 480 · A35/A55 450 ·
+ *     GitHub xdaGari/tadiphone-buildprop-archive) — 실측 JSON 의 `defaultDensityDpi` 와 같다.
+ *     기본 해상도는 FHD+ 1080×2340(삼성 사양 · 실측 창 크기). 「화면 크기」 설정을 바꾸면 dp 가 바뀐다.
+ *   - S24 펀치홀만 스킨에서 잰다 — OS 는 S24 의 가림을 **직사각형**(511–569 × 0–103px)으로만
+ *     알린다. 원 자체는 Samsung Galaxy Emulator Skin 의 `fore_port.png` 에서 쟀다(공식 내려받기는
+ *     삼성 계정 로그인이 필요해 GitHub 사본 GabrielRegato/androidS_hardwareP `skins/Galaxy_S24` 로
+ *     읽었다 · 같은 파일의 모서리 107.6px 가 실측 108px 과 맞아 사본을 믿었다).
+ *     Galaxy S25 는 같은 사본의 모서리(120px)가 실측(102px)과 어긋나 넣지 않았다.
+ *   - **One UI 의 기본 탐색은 3버튼이다**(samsung.com 지원 문서 「Optimized Navigation bar functions
+ *     on Galaxy devices」 — "Buttons enabled by default"). 셸이 아직 3버튼 막대를 그리지 못해
+ *     지금 표는 **제스처 탐색** 값을 쓴다 — 3버튼이면 아래 여백이 48dp 다(실측 · 세 기기 모두).
+ *     제스처 손잡이 모양(`BOTTOM_BAR_SHAPE`)은 Pixel 값을 같이 쓴다 — 삼성 손잡이는 재지 않았다.
  */
 import type { LabPlatform } from "./lab-contract";
 
@@ -30,22 +48,41 @@ export type DeviceCutout =
   | { kind: "punch-hole"; diameter: number; top: number; centerX: number };
 
 /**
- * Android 에뮬레이터 외형(스킨). 값은 SDK `skins/<name>/layout` 의 px 그대로다.
- * 이미지는 저장소에 없다 — `node expo-lab/scripts/link-device-skins.mjs` 가 로컬 SDK 에서
+ * Android 에뮬레이터 외형(스킨). 값은 스킨 `layout` 의 px 그대로다.
+ * 이미지는 저장소에 없다 — `node expo-lab/scripts/link-device-skins.mjs` 가
  * `expo-lab/public/device-skins/<name>/` 로 복사한다(gitignore). 없으면 셸이 SVG 외형으로 그린다.
+ *
+ * - `android-sdk`(기본): 로컬 Android SDK `skins/<name>/` — `back.webp` · `mask.webp`.
+ * - `samsung`: Samsung Developers 「Galaxy Emulator Skin」(삼성 계정 로그인 뒤 내려받는다 ·
+ *   **저장소에 담지 않는다**). 사용자가 `LAB_SKINS_DIR`(기본 `expo-lab/.device-skins-src/`)에
+ *   `<name>/` 로 풀어 두면 스크립트가 `layout` 이 가리키는 배경 · 전경을 `back.png` · `mask.png`
+ *   로 복사한다. 전경(`fore_port.png`)은 SDK `mask.webp` 와 같은 뜻이다 — 화면 크기 그림에서
+ *   화면 **바깥**(모서리 · 펀치홀)이 불투명하다. 배경 그림에는 기기 둘레에 브랜드 카드
+ *   (「Samsung Galaxy S24」 글자)가 있어 `bodyCrop` 만 잘라 써야 실물처럼 보인다.
  */
 export type DeviceSkin = {
   name: string;
+  /** 어디서 가져오나 — 없으면 `android-sdk` */
+  origin?: "android-sdk" | "samsung";
   /** back.webp 전체 크기(px) */
   frameWidth: number;
   frameHeight: number;
   /** back.webp 안에서 화면이 놓이는 자리(px) */
   displayX: number;
   displayY: number;
-  /** 화면 크기(px) — mask.webp 크기와 같다 */
+  /** 화면 크기(px) — mask 그림 크기와 같다 */
   displayWidth: number;
   displayHeight: number;
+  /**
+   * 배경 그림에서 기기 몸통(옆 버튼 포함)만 남길 영역(px). 없으면 그림 전체를 쓴다.
+   * 삼성 스킨은 몸통 둘레에 브랜드 카드가 있어 이 영역만 그려야 한다.
+   */
+  bodyCrop?: { x: number; y: number; width: number; height: number };
 };
+
+/** 복사된 스킨 그림의 파일 이름 — SDK 스킨은 webp, 삼성 스킨은 받은 png 그대로다 */
+export const skinFile = (skin: DeviceSkin, part: "back" | "mask"): string =>
+  `${part}.${skin.origin === "samsung" ? "png" : "webp"}`;
 
 export type LabDevice = {
   id: string;
@@ -179,6 +216,74 @@ export const labDevices: readonly LabDevice[] = [
     },
     source:
       "Android SDK — devices.xml(1080×2400 @420dpi) · skins/pixel_8(layout·mask) · Pixel_8 AVD(Android 16) dumpsys 실측",
+  },
+  {
+    id: "galaxy-s24",
+    label: "Galaxy S24 (제스처)",
+    platform: "android",
+    // 1080×2340 @ 480dpi(×3) = 360×780dp — 실측 screenWidthDp/HeightDp 그대로
+    width: 360,
+    height: 780,
+    // 실측: statusBars 103px = 34.33dp · navigationBars(제스처) 45px = 15dp (3버튼이면 144px = 48dp)
+    insets: { top: 34.33, bottom: 15, left: 0, right: 0 },
+    // 실측 RoundedCorners 108px = 36dp (스킨 fore_port.png 모서리 107.6px 와 맞다)
+    cornerRadius: 36,
+    // 스킨 fore_port.png 의 원: 넓이로 잰 지름 53.7px · 중심 (540.6, 54.4)px → 위 27.6px
+    // (OS 가 알리는 가림 직사각형 511–569 × 0–103px 안에 들어간다)
+    cutout: { kind: "punch-hole", diameter: 17.9, top: 9.19, centerX: 180 },
+    statusBarHeight: 34.33,
+    bottomBar: "gesture-bar",
+    skin: {
+      name: "Galaxy_S24",
+      origin: "samsung",
+      frameWidth: 1746,
+      frameHeight: 3006,
+      displayX: 332,
+      displayY: 331,
+      displayWidth: 1080,
+      displayHeight: 2340,
+      // 배경 그림에서 회색 테두리(채도 없는 화소)가 있는 영역 278–1476 × 276–2732px 에 4px 여유
+      bodyCrop: { x: 274, y: 272, width: 1206, height: 2464 },
+    },
+    source:
+      "실기기 실측 windowinsets.info(github.com/easyhooon/windowinsets.info measurements/galaxy-s/galaxy-s24/recapture-2026-09-28-rotation/main-gesture.json · Samsung RTL SM-S921N · One UI 8.5 · Android 16 · 2026-09-28) · 480dpi = 펌웨어 ro.sf.lcd_density · 펀치홀·스킨 layout 은 Galaxy Emulator Skin(Galaxy_S24) · 확인 2026-11-02",
+  },
+  {
+    id: "galaxy-a35",
+    label: "Galaxy A35 (제스처)",
+    platform: "android",
+    // 1080×2340 @ 450dpi(×2.8125) = 384×832dp — 실측 screenWidthDp/HeightDp 그대로
+    width: 384,
+    height: 832,
+    // 실측: statusBars 101px = 35.91dp · navigationBars(제스처) 42px = 14.93dp (3버튼이면 135px = 48dp)
+    insets: { top: 35.91, bottom: 14.93, left: 0, right: 0 },
+    // 실측 RoundedCorners 113px = 40.18dp
+    cornerRadius: 40.18,
+    // 실측 DisplayCutout 경로가 원이다: 중심 (540, 56)px · 반지름 33px → 지름 66px · 위 23px
+    cutout: { kind: "punch-hole", diameter: 23.47, top: 8.18, centerX: 192 },
+    statusBarHeight: 35.91,
+    bottomBar: "gesture-bar",
+    source:
+      "실기기 실측 windowinsets.info(github.com/easyhooon/windowinsets.info measurements/galaxy-a/galaxy-a35-5g/main-gesture.json · Samsung RTL SM-A356N · One UI 8.5 · Android 16 · 2026-09-25) · 450dpi = 펌웨어 ro.sf.lcd_density · 확인 2026-11-02",
+  },
+  {
+    id: "galaxy-a55",
+    label: "Galaxy A55 (제스처)",
+    platform: "android",
+    // 1080×2340 @ 450dpi(×2.8125) = 384×832dp — 실측 screenWidthDp/HeightDp 그대로
+    width: 384,
+    height: 832,
+    // 실측: statusBars 89px = 31.64dp · navigationBars(제스처) 42px = 14.93dp (3버튼이면 135px = 48dp)
+    // (A35 와 펀치홀은 같은데 상태바가 12px 낮다 — 두 기기 모두 원본 JSON 값 그대로다)
+    insets: { top: 31.64, bottom: 14.93, left: 0, right: 0 },
+    // 실측 RoundedCorners 118px = 41.96dp
+    cornerRadius: 41.96,
+    // 실측 DisplayCutout 경로가 원이다(A35 와 같다): 중심 (540, 56)px · 반지름 33px → 지름 66px · 위 23px
+    cutout: { kind: "punch-hole", diameter: 23.47, top: 8.18, centerX: 192 },
+    statusBarHeight: 31.64,
+    bottomBar: "gesture-bar",
+    source:
+      "실기기 실측 windowinsets.info(github.com/easyhooon/windowinsets.info measurements/galaxy-a/galaxy-a55-5g/main-gesture.json · Samsung RTL SM-A556S · One UI 8.5 · Android 16 · 2026-09-25) · 450dpi = 펌웨어 ro.sf.lcd_density · 확인 2026-11-02",
   },
 ];
 

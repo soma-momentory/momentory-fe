@@ -1,3 +1,5 @@
 # Android SDK 에뮬레이터 스킨 사본 — 로컬 SDK 에서 복사한다(scripts/link-device-skins.mjs).
 # SDK 파일은 저장소에 담지 않는다.
 public/device-skins/
+# 삼성 Galaxy Emulator Skin 원본을 풀어 두는 곳(LAB_SKINS_DIR 기본값) — 삼성의 그림이라 담지 않는다.
+.device-skins-src/

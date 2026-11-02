@@ -284,42 +284,70 @@ export function tokenValueError(
   }
 }
 
-/** 무리 이름의 한국어 — 없으면 export 이름 그대로 */
+/**
+ * 묶음(export 이름)의 한국어 — 패널에 export 이름이 그대로 새어 나오지 않게 한다.
+ * 여기 없는 묶음은 「기타」로 모인다(`groupLabel`). 새 ds export 가 생기면 한 줄을 더한다 —
+ * `tokens.test.ts` 가 빠진 묶음을 잡는다.
+ */
 export const GROUP_LABELS: Readonly<Record<string, string>> = {
   background: "면",
   label: "글자색",
   primary: "브랜드 초록",
   secondary: "보조 노랑",
-  status: "상태",
-  interaction: "상호작용",
+  status: "상태 색",
+  interaction: "누를 때 색",
   fill: "채움",
   line: "선",
-  overlay: "덮개",
+  overlay: "어둡게 덮는 막",
   grid: "모눈",
   social: "소셜 로그인",
-  emotion: "감정 10색",
+  emotion: "감정 색",
   cardFrame: "카드 액자",
   retroRug: "회고 러그",
   splashLoader: "스플래시 로더",
+  splashLoaderMotion: "스플래시 로더 움직임",
   chatChoiceSelected: "회고 선택지",
   pond: "감각연못 색",
+  pondMotion: "감각연못 움직임",
+  pondVeil: "감각연못 덮는 막",
+  pondPanelVeil: "감각연못 판 덮는 막",
+  pondSize: "감각연못 크기",
+  pondLayout: "감각연못 배치",
   bodyRelease: "몸에 힘 빼기 색",
+  bodyReleaseLayout: "몸에 힘 빼기 배치",
+  bodyReleaseSize: "몸에 힘 빼기 크기",
+  bodyReleaseRing: "몸에 힘 빼기 고리",
+  bodyReleaseMotion: "몸에 힘 빼기 움직임",
+  bodyReleaseFinish: "몸에 힘 빼기 마무리",
   worryBox: "걱정상자 색",
+  worryBoxLayout: "걱정상자 배치",
+  worryBoxSize: "걱정상자 크기",
+  worryBoxMotion: "걱정상자 움직임",
+  worryBoxFinish: "걱정상자 마무리",
   treasureBox: "보물함 색",
-  restMood: "기분 쪽지",
-  restScene: "쉼터 장면",
+  treasureBoxLayout: "보물함 배치",
+  treasureBoxSize: "보물함 크기",
+  treasureBoxMotion: "보물함 움직임",
+  treasureBoxFinish: "보물함 마무리",
+  restMood: "기분 쪽지 색",
+  restMoodSize: "기분 쪽지 크기",
+  restMoodMotion: "기분 쪽지 움직임",
+  restScene: "쉼터 장면 색",
+  restSceneSize: "쉼터 장면 크기",
+  restGuideSize: "쉼터 안내 카드 크기",
+  restRecommendMotion: "쉼 추천 움직임",
   raisedShadow: "그림자 색",
   onboardingArt: "온보딩 그림",
-  text: "글자 단(타이포)",
-  fontFamily: "서체",
-  gothicFamily: "로그인 고딕",
-  gothic: "로그인 고딕 스타일",
+  text: "글자 스타일",
+  fontFamily: "글꼴",
+  gothicFamily: "로그인 글꼴",
+  gothic: "로그인 글자 스타일",
   space: "간격",
   cardPadding: "카드 여백",
   radius: "모서리",
   bubbleRadius: "말풍선 모서리",
   layout: "레이아웃",
-  hairline: "헤어라인",
+  hairline: "가는 선",
   elevation: "그림자",
   raised: "번지지 않는 그림자",
   zIndex: "쌓임 순서",
@@ -328,7 +356,7 @@ export const GROUP_LABELS: Readonly<Record<string, string>> = {
   sheetMotion: "시트 움직임",
   cardRipple: "카드 물결",
   babaBlink: "바바 눈 깜빡임",
-  homeV2: "홈 v2",
+  homeV2: "홈 전용",
   diaryMemo: "일기 메모지",
   diaryPaper: "일기 종이",
   letterPaper: "편지 종이",
@@ -339,36 +367,104 @@ export const GROUP_LABELS: Readonly<Record<string, string>> = {
   retroBubbleComparison: "회고 말풍선 비교",
 };
 
+/** 이름표가 없는 묶음이 모이는 자리 */
+export const OTHER_GROUP = "__other";
+export const OTHER_GROUP_LABEL = "기타";
+
+/** 묶음 고르기에서 먼저 보이는 것 — 가장 자주 고치는 순서 */
+export const PRIMARY_GROUPS: readonly string[] = [
+  "label",
+  "background",
+  "primary",
+  "status",
+  "emotion",
+  "space",
+  "radius",
+  "text",
+  "homeV2",
+];
+
+/** 묶음 id — 이름표가 없으면 「기타」 */
+export const groupOf = (entry: Pick<TokenEntry, "group">): string =>
+  entry.group in GROUP_LABELS ? entry.group : OTHER_GROUP;
+
+export const groupLabel = (id: string): string => GROUP_LABELS[id] ?? OTHER_GROUP_LABEL;
+
 const LEAF_LABELS: Readonly<Record<string, string>> = {
   fontSize: "글씨 크기",
   lineHeight: "행간",
   letterSpacing: "자간",
-  fontFamily: "서체",
+  fontFamily: "글꼴",
+  font: "글꼴",
   radius: "모서리",
+  borderRadius: "모서리",
   paper: "종이",
+  card: "카드 면",
   ink: "잉크",
   shadow: "그림자",
+  shadowColor: "그림자 색",
+  shadowOpacity: "그림자 농도",
+  shadowRadius: "그림자 번짐",
   normal: "기본",
   strong: "강하게",
   heavy: "진하게",
-  alternative: "대체",
+  medium: "중간",
+  light: "옅게",
+  alternative: "흐리게",
   neutral: "중립",
   assistive: "보조",
   disabled: "비활성",
   elevated: "띄운 면",
   onFill: "색 면 위 글자",
+  positive: "긍정",
+  negative: "부정",
+  cautionary: "주의",
   duration: "시간(ms)",
+  delay: "기다림(ms)",
   width: "너비",
   height: "높이",
+  size: "크기",
   gap: "간격",
+  inset: "안쪽 여백",
+  opacity: "투명도",
   tilt: "기울기",
+  grid: "모눈",
+  title: "제목",
+  stroke: "선",
+  regular: "보통",
+  semibold: "조금 굵게",
+  bold: "굵게",
+  xs: "아주 작게",
+  sm: "작게",
+  md: "보통",
+  lg: "크게",
+  xl: "아주 크게",
 };
 
+/** 가운데 경로 조각의 한국어 — `homeV2.color.paper` 의 `color` 같은 것 */
+const PART_LABELS: Readonly<Record<string, string>> = {
+  ...LEAF_LABELS,
+  color: "색",
+  type: "글자",
+  font: "글꼴",
+  size: "크기",
+  shadow: "그림자",
+  layout: "배치",
+  motion: "움직임",
+};
+
+/**
+ * 「글자색 · 기본」 · 「홈 전용 · 색 · 종이」 — 사람이 읽는 이름. 키는 따로 작게 보인다.
+ * 경로가 깊으면 잎 바로 위 조각까지 보인다(같은 묶음의 「글씨 크기」 여럿을 가르려고).
+ */
 export function tokenLabel(entry: Pick<TokenEntry, "path" | "group">): string {
-  const group = GROUP_LABELS[entry.group] ?? entry.group;
+  const group = GROUP_LABELS[entry.group] ?? OTHER_GROUP_LABEL;
   const leaf = entry.path[entry.path.length - 1] ?? "";
-  const leafLabel = LEAF_LABELS[leaf];
-  return entry.path.length === 1 ? group : `${group} · ${leafLabel ?? leaf}`;
+  const leafLabel = LEAF_LABELS[leaf] ?? leaf;
+  if (entry.path.length === 1) return group;
+  if (entry.path.length === 2) return `${group} · ${leafLabel}`;
+  const parent = entry.path[entry.path.length - 2] ?? "";
+  return `${group} · ${PART_LABELS[parent] ?? parent} · ${leafLabel}`;
 }
 
 /** 시안이 걸린 값 — 덮어쓴 값이 있으면 그것, 없으면 승인값 */

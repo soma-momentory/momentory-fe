@@ -456,17 +456,32 @@ CI 와 로컬 검증의 정본은 [`docs/CONTRIBUTING.md` 「품질 게이트」
 
 ## 검수 스킬 — `.claude/skills/`
 
-Codex(`.agents/skills/` · [`AGENTS.md`](AGENTS.md))와 **같은 14개를 사본으로** 둔다 — 출처·차이는
+Codex(`.agents/skills/` · [`AGENTS.md`](AGENTS.md))와 **같은 16개를 사본으로** 둔다 — 출처·차이는
 [`docs/CODEX_SKILLS.md`](docs/CODEX_SKILLS.md). 고치면 두 사본을 함께 고친다.
 **주 스킬 하나를 먼저 고른다** — 문구 `momentory-ux-writing` · 시각·서체·간격 `momentory-design-audit` ·
 동작·상태·반응형 `momentory-screen-qa` · diff 리뷰 `momentory-pr-review`. 감사 요청만으로 제품 코드를 고치지 않는다.
 외부 참고 스킬 다섯(`ux-writing` `expo-design-system` `vercel-react-native-skills` `diagnose-*`)은 이름으로 불러야만 돈다.
+
+> 🎨 **Lab 시안 → 코드 반영은 AI 가 한다** (2026-11-02 결정). 사람은 Expo Lab 에서 시안을 맞추고
+> 「AI에게 넘기기」로 파일(`momentory-handoff-*.json`)을 내보낸다. 받은 AI 는 `momentory-lab-handoff`
+> 스킬로 [`expo-lab/HANDOFF.md`](expo-lab/HANDOFF.md) 절차(요약·확인 → 값 반영 → 구조 차이 → DESIGN.md 갱신 →
+> 검사 → Lab 확인 → PR, **머지는 사용자 승인 뒤**)를 따른다.
+
+## Expo Lab — 웹에서 실제 앱 전 화면을 보고 디자인한다 (2026-11-02)
+
+`npm run lab:web` → `http://localhost:8085/`. **실제 앱 코드(`app/` 전 라우트 · 로그인 전부터)**를 웹 iframe 안에서
+가짜 서버 데이터로 띄운다 — 캡처 · Mock 이 아니다. 기기 외형(iOS · Pixel · Galaxy) · 상태별로 보기 · 디자인 편집(시안) ·
+참고 시안 겹치기 · 키보드 · 「AI에게 맡기기」(화면별 작업 공간에서 Claude · Codex 가 고치고, 커밋 · PR 은 사람이 버튼으로)까지.
+앱 코드는 Lab 을 위해 바뀌지 않는다(앱 → Lab import 금지). 정본 [`expo-lab/README.md`](expo-lab/README.md) ·
+시안 → 코드 규칙 [`expo-lab/HANDOFF.md`](expo-lab/HANDOFF.md) · 스킬 `momentory-lab-handoff` · `momentory-lab-verify`.
+⚠ 웹 흉내라 키보드 · 제스처 · 서체 렌더 · 네이티브 애니메이션은 기기와 다르다 — 마지막 확인은 기기에서.
 
 ## 명령
 
 ```bash
 npm start            npm run typecheck    npm run lint
 npm run test         npm run format:check
+npm run lab:web      # Expo Lab (8085) — 위 절   ·   npm run lab:verify — 바뀐 화면 전·후 비교
 npm run sync:api     # 서버 OpenAPI 계약 재반입 — docs/api/README.md
 npm run android      # 공식 개발 환경인 dev client 빌드 — Expo Go 는 지원하지 않는다
 

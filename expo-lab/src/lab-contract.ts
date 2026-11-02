@@ -45,6 +45,11 @@ export type LabFrameConfig = {
    * 넘긴다 — 1.5 는 앱 상한(`maxFontScale` 1.3)을 넘겨 배치를 점검하는 값이다. 실제 OS 설정을 대신하지 않는다
    */
   textScale?: number;
+  /**
+   * 셸 창의 출처(`location.origin`). 프레임이 다른 서버(작업 공간의 「AI 수정 결과」 미리보기 · 다른 포트)에서
+   * 뜰 때 셸에 메시지를 보낼 곳이고, 셸이 보낸 메시지를 믿는 기준이다. 없으면 프레임 자신의 출처(같은 서버)
+   */
+  shellOrigin?: string;
 };
 
 export type LabPlatform = "ios" | "android";
@@ -93,7 +98,12 @@ export type FrameToShellMessage =
   | { type: "lab:route"; frameId: string; pathname: string }
   | { type: "lab:request"; frameId: string; method: string; path: string; status: number }
   /** 앱이 `expo-status-bar` 로 정한 상태바 글자색 — 셸이 그리는 기기 상태바가 따른다 */
-  | { type: "lab:statusBar"; frameId: string; style: "light" | "dark" };
+  | { type: "lab:statusBar"; frameId: string; style: "light" | "dark" }
+  /**
+   * 화면 키보드가 열리고 닫힐 때마다(애니메이션이 **시작하는** 순간). `height` 는 화면 바닥에서
+   * 키보드 윗변까지(pt/dp) · 닫히면 0. 셸의 「키보드 올리기 / 내리기」가 눌림 상태로 따른다
+   */
+  | { type: "lab:keyboardState"; frameId: string; open: boolean; height: number };
 
 /** 셸 → 프레임 메시지 */
 export type ShellToFrameMessage =
@@ -104,7 +114,17 @@ export type ShellToFrameMessage =
   | { type: "lab:navigate"; pathname: string; mode?: "replace" | "push" }
   | { type: "lab:reload" }
   /** 이 프레임의 가짜 DB 를 데이터 세트 초기값으로 되돌리고 다시 불러온다 */
-  | { type: "lab:resetData" };
+  | { type: "lab:resetData" }
+  /**
+   * 입력칸을 누르지 않고 화면 키보드를 연다(`true`) · 닫는다(`false`). 셸이 연 키보드는 포커스가
+   * 빠져도 닫히지 않는다 — `false` 나 앱의 `Keyboard.dismiss()` 로 닫힌다
+   */
+  | { type: "lab:keyboard"; open: boolean };
+
+/** 프레임 → 셸 메시지 중 키보드 상태 하나 */
+export type LabKeyboardStateMessage = Extract<FrameToShellMessage, { type: "lab:keyboardState" }>;
+/** 셸 → 프레임 메시지 중 키보드 열고 닫기 하나 */
+export type LabKeyboardMessage = Extract<ShellToFrameMessage, { type: "lab:keyboard" }>;
 
 /**
  * 가짜 DB 는 프레임마다 localStorage 에 남는다(새로고침해도 유지).

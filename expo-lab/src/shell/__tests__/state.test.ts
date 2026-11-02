@@ -1,12 +1,13 @@
 import { describe, expect, it } from "@jest/globals";
 import { decodeFrameConfig, encodeFrameConfig } from "../../lab-contract";
-import { findDevice, labDevices } from "../../lab-devices";
+import { findDevice, labDevices, skinFile } from "../../lab-devices";
 import { chromeGeometry } from "../device/geometry";
-import { framesFor } from "../frameSpecs";
+import { framesFor, peekFrameFor, PEEK_FRAME_ID } from "../frameSpecs";
 import {
   DEFAULT_STATE,
   parseHash,
   serializeHash,
+  stepZoom,
   withPlatform,
   withRoute,
   type ShellState,
@@ -31,10 +32,12 @@ describe("해시 상태", () => {
       latencyMs: 5000,
       failPaths: ["/api/v1/reports", "/api/v1/diaries"],
       textScale: 1.3,
-      zoom: 0.75,
+      zoom: 1.5,
       draft: "draft-1",
       repeatToday: false,
-      panel: "log",
+      panel: "controls",
+      navOpen: false,
+      sideOpen: false,
     };
     const hash = serializeHash(state);
     expect(hash.startsWith("#/screens?route=/diary/%5Bid%5D")).toBe(true);
@@ -52,6 +55,24 @@ describe("해시 상태", () => {
       "#/screens?route=/nope&dataset=x&platform=android&device=iphone-16&layout=zzz&now=bad&zoom=9",
     );
     expect(state).toEqual({ ...DEFAULT_STATE, platform: "android", device: "pixel-8" });
+  });
+
+  it("옛 주소의 확대 값(0.1 ~ 2)도 그대로 읽고, 패널 접기가 없으면 둘 다 펼친 것으로", () => {
+    const state = parseHash("#/screens?route=/home&layout=ab&zoom=0.6");
+    expect(state).toMatchObject({ zoom: 0.6, navOpen: true, sideOpen: true });
+    expect(parseHash("#/screens?route=/home&zoom=2").zoom).toBe(2);
+    expect(parseHash("#/screens?route=/home&zoom=2.5").zoom).toBe("fit");
+    // 옛 「요청」 탭은 조작 패널로
+    expect(parseHash("#/screens?route=/home&panel=log").panel).toBe("controls");
+  });
+
+  it("−/+ 는 계단을 밟고, 맞춤 배율에서도 다음 칸으로 간다", () => {
+    expect(stepZoom(1, 1)).toBe(1.1);
+    expect(stepZoom(1, -1)).toBe(0.9);
+    expect(stepZoom(0.82, 1)).toBe(0.9);
+    expect(stepZoom(0.82, -1)).toBe(0.75);
+    expect(stepZoom(2, 1)).toBe(2);
+    expect(stepZoom(0.25, -1)).toBe(0.25);
   });
 
   it("라우트를 고르면 그 화면의 프리셋이 적용된다", () => {
@@ -154,6 +175,14 @@ describe("프레임 목록", () => {
       "many",
       "long-copy",
     ]);
+    // 칸 이름은 id 가 아니라 사람이 읽는 이름
+    expect(byDataset.map((f) => f.label)).toEqual([
+      "신규 사용자",
+      "빈 계정",
+      "보통",
+      "많음",
+      "긴 문구",
+    ]);
   });
 
   it("전체 화면 — 라우트마다 하나, 프리셋대로", () => {
@@ -164,6 +193,23 @@ describe("프레임 목록", () => {
     const mood = grid.find((f) => f.route.path === "/mood")!;
     expect(mood.config).toMatchObject({ signedIn: true, datasetId: "new-user" });
     expect(new Set(grid.map((f) => f.frameId)).size).toBe(grid.length);
+  });
+
+  it("한 화면 + 시안이면 그 아래 숨길 승인본(원래대로 잠깐 보기)을 하나 더 · 시안이 없으면 없다", () => {
+    expect(peekFrameFor(DEFAULT_STATE, noSample, REAL)).toEqual([]);
+    expect(peekFrameFor({ ...DEFAULT_STATE, layout: "ab", draft: "d1" }, noSample, REAL)).toEqual(
+      [],
+    );
+    const [peek] = peekFrameFor({ ...DEFAULT_STATE, draft: "d1" }, noSample, REAL);
+    const [solo] = framesFor({ ...DEFAULT_STATE, draft: "d1" }, noSample, REAL);
+    expect(peek!.frameId).toBe(PEEK_FRAME_ID);
+    expect(peek!.config.designDraftId).toBeNull();
+    expect(solo!.config.designDraftId).toBe("d1");
+    expect({ ...peek!.config, frameId: "x", designDraftId: null }).toEqual({
+      ...solo!.config,
+      frameId: "x",
+      designDraftId: null,
+    });
   });
 
   it("글씨 배율은 1 이 아닐 때만 싣는다", () => {
@@ -190,6 +236,45 @@ describe("기기 외형", () => {
     expect(g.screenX).toBeCloseTo(49 * scale);
     expect(g.screenY).toBeCloseTo(55 * scale);
     expect(g.outerWidth).toBeCloseTo(1187 * scale);
+  });
+
+  it("Galaxy S24 삼성 스킨은 bodyCrop 만 외형이다 — 겉 크기 = crop × 배율 · 화면 자리 = (display − crop) × 배율", () => {
+    const device = findDevice("galaxy-s24");
+    const skin = device.skin!;
+    const crop = skin.bodyCrop!;
+    const g = chromeGeometry(device, true);
+    const scale = 360 / 1080;
+    expect(g.kind).toBe("android-skin");
+    expect(g.outerWidth).toBeCloseTo(crop.width * scale);
+    expect(g.outerHeight).toBeCloseTo(crop.height * scale);
+    expect(g.screenX).toBeCloseTo((skin.displayX - crop.x) * scale);
+    expect(g.screenY).toBeCloseTo((skin.displayY - crop.y) * scale);
+    // 배경 그림은 통째로 그리되 crop 만큼 밀어 몸통만 보인다
+    expect(g.skinX).toBeCloseTo(-crop.x * scale);
+    expect(g.skinY).toBeCloseTo(-crop.y * scale);
+    expect(g.skinWidth).toBeCloseTo(skin.frameWidth * scale);
+    // 화면이 외형 안에 다 들어간다
+    expect(g.screenX + device.width).toBeLessThanOrEqual(g.outerWidth);
+    expect(g.screenY + device.height).toBeLessThanOrEqual(g.outerHeight);
+    expect(skinFile(skin, "back")).toBe("back.png");
+    expect(skinFile(findDevice("pixel-8").skin!, "mask")).toBe("mask.webp");
+  });
+
+  it("스킨이 없는 Galaxy 는 같은 수치의 SVG 외형 — 펀치홀이 화면 가운데 · 상태바 안", () => {
+    for (const id of ["galaxy-s24", "galaxy-a35", "galaxy-a55"]) {
+      const device = findDevice(id);
+      const g = chromeGeometry(device, false);
+      expect(g.kind).toBe("android");
+      expect(g.bodyRadius).toBeCloseTo(device.cornerRadius + 12);
+      expect(device.cutout.kind).toBe("punch-hole");
+      if (device.cutout.kind !== "punch-hole") continue;
+      expect(device.cutout.centerX).toBeCloseTo(device.width / 2);
+      // A55 는 실측 펀치홀 아래(23 + 66px)가 상태바(89px)와 거의 같다 — 반올림 여유 0.1
+      expect(device.cutout.top + device.cutout.diameter).toBeLessThanOrEqual(
+        device.statusBarHeight + 0.1,
+      );
+      expect(device.bottomBar).toBe("gesture-bar");
+    }
   });
 
   it("스킨이 없으면 SVG 외형 · SE 는 홈 버튼 외형", () => {

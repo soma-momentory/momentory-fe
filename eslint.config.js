@@ -18,6 +18,8 @@ module.exports = [
   prettierConfig,
   {
     ignores: [
+      // 에이전트 작업 폴더(저장소 사본) — 사본을 다시 검사하지 않는다
+      ".claude/worktrees/**",
       "node_modules/**",
       ".expo/**",
       "dist/**",

@@ -311,9 +311,27 @@ export function unifiedDiff(fileName, before, after, context = 3) {
   return `${out.join("\n")}\n`;
 }
 
-/** 내보낸 시안 → tokens. v2(`tokens`+`studio`)만 토큰을 가진다 */
+/**
+ * 내보낸 시안 → tokens. v2(`tokens`+`studio`)와 「AI에게 넘기기」 파일(`momentory-lab-handoff@1` —
+ * `tokens` · `studio` 가 `{ key, after }` 목록)이 토큰을 가진다
+ */
 export function tokensFromExport(exported) {
   if (typeof exported !== "object" || exported === null) throw new Error("JSON 객체가 필요하다");
+  if (exported.format === "momentory-lab-handoff@1") {
+    if (!Array.isArray(exported.tokens ?? []) || !Array.isArray(exported.studio ?? []))
+      throw new Error("넘기기 파일의 tokens · studio 는 목록이다");
+    const tokens = {};
+    for (const item of exported.tokens ?? []) {
+      if (typeof item !== "object" || item === null || typeof item.key !== "string")
+        throw new Error("넘기기 파일의 tokens 항목에 key · after 가 없다");
+      tokens[item.key] = item.after;
+    }
+    return {
+      name: typeof exported.draft?.name === "string" ? exported.draft.name : "handoff",
+      tokens,
+      studioCount: (exported.studio ?? []).length,
+    };
+  }
   if (exported.version === 1) return { name: exported.name, tokens: {}, studioCount: 0 };
   if (exported.version !== 2 || typeof exported.name !== "string")
     throw new Error("지원하지 않는 시안 파일이다(version 2 가 필요하다)");

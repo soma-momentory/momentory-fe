@@ -8,7 +8,9 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
-  testPathIgnorePatterns: ["/expo-lab/e2e/"],
+  // .claude/worktrees = 에이전트가 따로 만든 작업 폴더(저장소 사본) — 같은 테스트가 두 번 돈다
+  testPathIgnorePatterns: ["/expo-lab/e2e/", "<rootDir>/.claude/worktrees/"],
+  modulePathIgnorePatterns: ["<rootDir>/.claude/worktrees/"],
   testTimeout: 15000,
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
