@@ -173,18 +173,28 @@ function GridCell({
         />
       </div>
       {/* 이름은 칸 폭 안에서 말줄임 — 글자마다 줄바꿈되지 않게 칸에 최소 폭을 둔다 */}
-      <div
-        title={`${spec.route.title} — ${spec.route.path}`}
+      {/* 이름을 눌러도 연다(2026-11-02 Codex QA — 폰만 눌리고 이름은 반응이 없었다) */}
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden
+        title={`${spec.route.title} — ${spec.route.path} · 눌러서 한 화면으로 열기`}
+        onClick={() => onOpen(spec.route.path)}
         style={{
           fontSize: 12,
           color: shellColor.ink,
           textAlign: "center",
           width: Math.max(g.outerWidth * scale, MIN_LABEL_WIDTH),
+          background: "transparent",
+          border: 0,
+          padding: 0,
+          fontFamily: "inherit",
+          cursor: "zoom-in",
         }}
       >
         <div style={ellipsis}>{spec.route.title}</div>
         <div style={{ ...ellipsis, color: shellColor.faint, fontSize: 11 }}>{spec.route.path}</div>
-      </div>
+      </button>
     </div>
   );
 }

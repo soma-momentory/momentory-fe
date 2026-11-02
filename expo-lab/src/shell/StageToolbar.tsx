@@ -78,13 +78,13 @@ export function StageToolbar({
         data-testid="layout-description"
         title={description}
         style={{
-          flex: "1 1 220px",
+          // 설명은 늘 한 줄을 통째로 쓴다 — 조작 버튼과 한 줄에 두면 화면 상태 이름 길이에 따라
+          // 버튼이 다음 줄로 밀리고 설명이 「흐름을 시…」처럼 잘렸다(2026-11-02 Codex QA)
+          flexBasis: "100%",
           minWidth: 0,
           fontSize: 12,
           color: shellColor.muted,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          wordBreak: "keep-all",
         }}
       >
         {description}
@@ -180,6 +180,7 @@ export function StageToolbar({
         </span>
       </Group>
 
+      {children}
       {magnifier ? (
         <span
           data-testid="magnifier-note"
@@ -195,7 +196,6 @@ export function StageToolbar({
           돋보기 중에는 화면을 누를 수 없어요 · Esc 로 끄기 · 휠 = 배율 · Shift+휠 = 렌즈 크기
         </span>
       ) : null}
-      {children}
     </div>
   );
 }

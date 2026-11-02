@@ -242,6 +242,14 @@ export function ScreenStatePicker({
       <p data-testid="screen-state-note" style={noteStyle}>
         {stateNote(current, config)}
       </p>
+      {current === "loading" || current === "failure" ? (
+        // Lab 은 요청을 정말 늦추거나 실패시킨다 — 그런데도 빈 화면처럼 보이면 그 화면이
+        // 불러오는 중 · 실패를 따로 그리지 않는 것이다(예: 홈 일정 · 2026-11-02 Codex QA)
+        <p data-testid="screen-state-app-note" style={noteStyle}>
+          폰 화면이 「비어 있음」처럼 보이면, 앱의 이 화면이 불러오는 중 · 실패를 따로 그리지 않는
+          거예요(Lab 이 아니라 앱 동작).
+        </p>
+      ) : null}
       {current === "loading" ? (
         <button
           type="button"

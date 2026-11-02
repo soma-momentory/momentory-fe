@@ -389,7 +389,14 @@ export function WorkspaceCard({
   const chosenBase = base ?? status?.baseBranch ?? baseOptions[0] ?? "main";
   const otherActive =
     status?.activeRun && status.activeRun.workspaceId !== id ? status.activeRun : null;
-  const startedAt = run?.startedAt ?? 0;
+  // 시안 줄 세우기로 시작된 실행은 카드가 열린 뒤에야 생겨 `run` 이 아직 없을 수 있다 —
+  // 그때는 서버의 지금 실행 시각을 쓰고, 그것도 없으면 걸린 시간을 보이지 않는다(0 이면 1970 년부터 셌다)
+  const startedAt =
+    run?.status === "running"
+      ? run.startedAt
+      : status?.activeRun?.workspaceId === id
+        ? status.activeRun.startedAt
+        : null;
   const preview = workspace.preview;
 
   const submitPr = async () => {
@@ -429,8 +436,8 @@ export function WorkspaceCard({
       {running ? (
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Note tone="accent">
-            {AGENT_LABEL[run?.agent ?? workspace.lastRun?.agent ?? "claude"]} 가 고치는 중 ·{" "}
-            {formatElapsed(now - startedAt)}
+            {AGENT_LABEL[run?.agent ?? workspace.lastRun?.agent ?? "claude"]} 가 고치는 중
+            {startedAt != null ? ` · ${formatElapsed(Math.max(0, now - startedAt))}` : ""}
           </Note>
           <Btn
             tone="danger"
