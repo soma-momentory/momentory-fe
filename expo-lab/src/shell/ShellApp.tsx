@@ -108,7 +108,7 @@ const SIDE_TABS = [
   ["agent", "AI에게 맡기기", "AI 맡기기"],
 ] as const satisfies readonly (readonly [SidePanel, string, string])[];
 const SIDE_TAB_TITLE: Record<SidePanel, string> = {
-  controls: "화면 상태(보통 · 많음 · 불러오는 중 …) · 기기 · 시각 · 글씨 크기를 바꿔요",
+  controls: "화면 상태(기록 보통 · 기록 많음 · 불러오는 중 …) · 기기 · 시각 · 글씨 크기를 바꿔요",
   agent:
     "지금 보는 화면을 Claude Code · Codex 에게 고치게 해요 — 고친 결과는 B 자리에 띄워 지금 앱과 비교해요",
   "new-screen": "어떤 화면인지 적으면 AI 가 앱에 새 화면을 만들어요",
@@ -1308,7 +1308,7 @@ export function ShellApp() {
             <button
               type="button"
               data-testid="state-shortcut"
-              title="화면 상태(보통 · 많음 · 불러오는 중 …)는 오른쪽 「화면 조건」 맨 위에서 바꿔요 — 누르면 그 칸을 열어요"
+              title="화면 상태(기록 보통 · 기록 많음 · 불러오는 중 …)는 오른쪽 「화면 조건」 맨 위에서 바꿔요 — 누르면 그 칸을 열어요"
               onClick={() => focusStatePicker("a")}
               style={toolbarChip(false)}
             >
@@ -1399,8 +1399,8 @@ export function ShellApp() {
                     }}
                   >
                     「{datasetLabel(state.dataset)}」 상태에는 오늘 일정이 없어서 일정 수정이 열리지
-                    않고 홈에 머물러요. 오른쪽 「화면 조건」의 화면 상태를 「보통」이나 「많음」으로
-                    바꿔 보세요.
+                    않고 홈에 머물러요. 오른쪽 「화면 조건」의 화면 상태를 「기록 보통」이나 「기록
+                    많음」으로 바꿔 보세요.
                   </p>
                 ) : null}
                 {route?.hint ? (
@@ -1725,7 +1725,7 @@ function AbBanner({
   children,
 }: {
   preview: FramePreview | null;
-  /** A 의 화면 상태 이름(「보통」 …) */
+  /** A 의 화면 상태 이름(「기록 보통」 …) */
   aState: string;
   /** B 화면 상태 이름 — null 이면 A와 같게 */
   bState: string | null;
@@ -1781,7 +1781,7 @@ function AbBanner({
           ) : (
             <>
               <b>A</b>와 <b style={accent}>B</b>는 지금 같은 화면 · 같은 상태(「{aState}」)예요. B만
-              다른 상태(예: 많음 · 불러오는 중)로 바꾸면 두 상태를 나란히 견줄 수 있어요.
+              다른 상태(예: 기록 많음 · 불러오는 중)로 바꾸면 두 상태를 나란히 견줄 수 있어요.
             </>
           )}
         </span>

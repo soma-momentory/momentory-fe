@@ -338,7 +338,7 @@ export const WORRIES: readonly string[] = [
 
 export const REST_CONTENTS = ["SENSE_POND", "WORRY_BOX", "TREASURE_BOX", "BODY_RELEASE"] as const;
 
-/** 긴 문구 세트 — 줄바꿈 · 넘침을 보는 용도 */
+/** 긴 글 세트(`long-copy`) — 줄바꿈 · 넘침을 보는 용도 */
 export const LONG = {
   /** 온보딩 선택지의 닉네임 최대 길이(10)를 꽉 채운다 */
   nickname: "말랑말랑한바바의친구",

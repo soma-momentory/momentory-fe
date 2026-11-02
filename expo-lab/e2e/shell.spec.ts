@@ -148,11 +148,11 @@ test("A/B 는 스스로 설명하고, 화면 조건의 「B 화면 상태」로 
     "/#/screens?route=/home&dataset=normal&platform=ios&device=iphone-16&layout=ab&panel=agent",
   );
   await expect(page.getByTestId("ab-banner")).toContainText(
-    "A와 B는 지금 같은 화면 · 같은 상태(「보통」)예요.",
+    "A와 B는 지금 같은 화면 · 같은 상태(「기록 보통」)예요.",
   );
   await expect(page.getByTestId("frame-label-A")).toContainText("A · 지금 앱");
-  await expect(page.getByTestId("frame-state-A")).toHaveText("화면 상태: 보통");
-  await expect(page.getByTestId("frame-state-B")).toHaveText("화면 상태: 보통 (A와 같게)");
+  await expect(page.getByTestId("frame-state-A")).toHaveText("화면 상태: 기록 보통");
+  await expect(page.getByTestId("frame-state-B")).toHaveText("화면 상태: 기록 보통 (A와 같게)");
   // 「B 화면 상태 바꾸기」 → 화면 조건 패널이 열리고 B 칸에 커서
   await page.getByTestId("ab-pick-b").click();
   await expect(page).not.toHaveURL(/panel=agent/);
@@ -161,19 +161,19 @@ test("A/B 는 스스로 설명하고, 화면 조건의 「B 화면 상태」로 
   await expect(bPicker).toHaveValue("");
   // B 에는 신규 사용자가 없다(앱이 B 를 온보딩으로 보내면 A 까지 끌려간다)
   await expect(bPicker.locator('option[value="new-user"]')).toHaveCount(0);
-  await bPicker.selectOption({ label: "많음" });
+  await bPicker.selectOption({ label: "기록 많음" });
   await expect(page).toHaveURL(/bdata=many/);
   expect(await frameConfig(page, "A")).toMatchObject({ datasetId: "normal", latencyMs: 0 });
   expect(await frameConfig(page, "B")).toMatchObject({ datasetId: "many", latencyMs: 0 });
-  await expect(page.getByTestId("frame-state-B")).toHaveText("화면 상태: 많음");
-  await expect(page.getByTestId("ab-banner")).toContainText("B는 「많음」 상태로");
+  await expect(page.getByTestId("frame-state-B")).toHaveText("화면 상태: 기록 많음");
+  await expect(page.getByTestId("ab-banner")).toContainText("B는 「기록 많음」 상태로");
   // B 를 불러오는 중으로 — B 만 1분 늦게
   await bPicker.selectOption({ label: "불러오는 중" });
   await expect(page).toHaveURL(/blatency=60000/);
   expect(await frameConfig(page, "B")).toMatchObject({ datasetId: "normal", latencyMs: 60_000 });
   expect((await frameConfig(page, "A")).latencyMs).toBe(0);
   // A 화면 상태를 바꿔도 B 는 제 상태
-  await page.getByTestId("screen-state").selectOption({ label: "긴 문구" });
+  await page.getByTestId("screen-state").selectOption({ label: "긴 글" });
   expect(await frameConfig(page, "A")).toMatchObject({ datasetId: "long-copy" });
   expect(await frameConfig(page, "B")).toMatchObject({ latencyMs: 60_000 });
   // 새로고침해도 그대로 · 「A와 같게」로 돌리면 해시에서 빠진다
@@ -383,21 +383,27 @@ test("화면 상태 — 화면 조건 한 곳에서 고르면 한 화면에 걸�
   // 도구줄에는 고르는 칸이 아니라 지금 상태 · 바로 가기만
   await expect(page.getByTestId("state-picker")).toHaveCount(0);
   const shortcut = page.getByTestId("state-shortcut");
-  await expect(shortcut).toHaveText("화면 상태: 보통 ▾");
+  await expect(shortcut).toHaveText("화면 상태: 기록 보통 ▾");
   await shortcut.click();
   await expect(page).not.toHaveURL(/panel=agent/);
   const picker = page.getByTestId("screen-state");
   await expect(picker).toBeFocused();
   // 데이터 상태 다섯 + 불러오는 중 · 실패 — 테스트 데이터 칸은 따로 없다
   const options = await picker.locator("option").allTextContents();
-  expect(options.slice(0, 5)).toEqual(["신규 사용자", "빈 계정", "보통", "많음", "긴 문구"]);
+  expect(options.slice(0, 5)).toEqual([
+    "신규 사용자",
+    "기록 없음",
+    "기록 보통",
+    "기록 많음",
+    "긴 글",
+  ]);
   expect(options[5]).toMatch(/^불러오는 중/);
   expect(options[6]).toMatch(/^불러오기 실패/);
   await expect(page.getByLabel("테스트 데이터")).toHaveCount(0);
-  await picker.selectOption({ label: "많음" });
+  await picker.selectOption({ label: "기록 많음" });
   await expect(page).toHaveURL(/route=\/report&dataset=many/);
   expect(await frameConfig(page, "solo")).toMatchObject({ datasetId: "many", latencyMs: 0 });
-  await expect(shortcut).toHaveText("화면 상태: 많음 ▾");
+  await expect(shortcut).toHaveText("화면 상태: 기록 많음 ▾");
   await expect(page.getByTestId("screen-state-note")).toContainText("3개월치");
   await picker.selectOption({ label: "불러오는 중" });
   await expect(page).toHaveURL(/dataset=normal.*latency=60000/);
@@ -501,7 +507,9 @@ test.describe("실제 앱 프레임이 필요한 검사 (갈래 A·B 합친 뒤)
     }
   });
 
-  test("A/B 의 B 화면 상태 「많음」 — B 프레임 안이 실제로 많음 데이터다", async ({ page }) => {
+  test("A/B 의 B 화면 상태 「기록 많음」 — B 프레임 안이 실제로 많음 데이터다", async ({
+    page,
+  }) => {
     await page.goto("/#/screens?route=/my&layout=ab&bdata=many");
     await expect(page.getByTestId("route-badge-A")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByTestId("route-badge-B")).toBeVisible({ timeout: 60_000 });

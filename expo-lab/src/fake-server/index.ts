@@ -47,10 +47,10 @@ import { dayOf, dayOfIso } from "./time";
 
 export const datasets: readonly (DatasetInfo & { id: DatasetId })[] = [
   { id: "new-user", label: "신규 사용자", description: "온보딩 전 · 기록 없음" },
-  { id: "empty", label: "빈 계정", description: "온보딩 끝 · 기록 0" },
-  { id: "normal", label: "보통", description: "2주치 일기·일정·바람카드·편지·쉼 기록" },
-  { id: "many", label: "많음", description: "3개월치 · 하루 일정 10개 이상 · 감정 10종" },
-  { id: "long-copy", label: "긴 문구", description: "긴 닉네임·제목·본문·편지" },
+  { id: "empty", label: "기록 없음", description: "온보딩 끝 · 기록 0" },
+  { id: "normal", label: "기록 보통", description: "2주치 일기·일정·바람카드·편지·쉼 기록" },
+  { id: "many", label: "기록 많음", description: "3개월치 · 하루 일정 10개 이상 · 감정 10종" },
+  { id: "long-copy", label: "긴 글", description: "긴 닉네임·제목·본문·편지" },
 ];
 
 // ── 저장소 ─────────────────────────────────────────────────────────────

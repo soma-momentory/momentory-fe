@@ -129,7 +129,7 @@ test("「AI에게 맡기기」 탭 — 지금 화면 · 파일 · 기기 · 데�
   const text = await input.inputValue();
   expect(text).toContain("[화면] 홈 (12 · 12-b) · /home");
   expect(text).toContain("[파일] app/(tabs)/home.tsx");
-  expect(text).toContain("[환경] iPhone 16 (ios) · 데이터 보통");
+  expect(text).toContain("[환경] iPhone 16 (ios) · 데이터 기록 보통");
   expect(text).not.toContain("[시안]");
   expect(text.trimEnd().endsWith("지시:")).toBe(true);
   // 다른 화면을 고르면 머리말이 따라간다
@@ -428,7 +428,7 @@ test("시안 비교 — 기존 + 시안 3대 · 이름 · 상태 · 꺼진 화�
   await expect(page.getByTestId("frame-label-V0")).toHaveAttribute("title", "기존 · 지금 앱");
   for (const i of [1, 2, 3])
     await expect(page.getByTestId(`frame-label-V${i}`)).toHaveAttribute("title", `시안 ${i}`);
-  await expect(page.getByTestId("frame-state-V0")).toHaveText("화면 상태: 보통");
+  await expect(page.getByTestId("frame-state-V0")).toHaveText("화면 상태: 기록 보통");
   await expect(page.getByTestId("frame-state-V1")).toHaveText("준비됨 · 방향: 시안 1 의 방향");
   await expect(page.getByTestId("frame-state-V3")).toHaveText("만드는 중");
   await expect(page.getByTestId("variant-placeholder-V3")).toHaveText(

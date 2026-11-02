@@ -16,13 +16,13 @@ import { fitRow, fitScale } from "../stageFit";
 const route = (path: string) => findRoute(path)!;
 
 describe("화면 상태 — 고를 수 있는 것", () => {
-  it("로그인한 화면은 신규 사용자 · 빈 계정 · 보통 · 많음 · 긴 문구 · 불러오는 중 · 불러오기 실패", () => {
+  it("로그인한 화면은 신규 사용자 · 기록 없음 · 기록 보통 · 기록 많음 · 긴 글 · 불러오는 중 · 불러오기 실패", () => {
     expect(statesFor(route("/home")).map((s) => s.label)).toEqual([
       "신규 사용자",
-      "빈 계정",
-      "보통",
-      "많음",
-      "긴 문구",
+      "기록 없음",
+      "기록 보통",
+      "기록 많음",
+      "긴 글",
       "불러오는 중",
       "불러오기 실패",
     ]);
@@ -46,7 +46,7 @@ describe("화면 상태 — 고를 수 있는 것", () => {
     ]);
   });
 
-  it("불러오는 중은 보통 + 1분 지연, 실패는 보통 + 이 화면이 부른 주소", () => {
+  it("불러오는 중은 기록 보통 + 1분 지연, 실패는 기록 보통 + 이 화면이 부른 주소", () => {
     const home = route("/home");
     expect(stateConfig(home, "loading", ["/api/v1/schedules"])).toEqual({
       dataset: "normal",
@@ -85,7 +85,7 @@ describe("화면 상태 — 고를 수 있는 것", () => {
     expect(currentStateOf({ ...base, latencyMs: 1000 }, home, detected)).toBeNull();
     expect(currentStateOf({ ...base, failPaths: ["/api/v1/reports"] }, home, detected)).toBeNull();
     // 머리 · 도구줄에 쓰는 이름
-    expect(stateLabel({ ...base, dataset: "many" }, home, detected)).toBe("많음");
+    expect(stateLabel({ ...base, dataset: "many" }, home, detected)).toBe("기록 많음");
     expect(stateLabel({ ...base, latencyMs: 1000 }, home, detected)).toBe("직접 고른 조건");
   });
 });

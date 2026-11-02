@@ -112,7 +112,7 @@ describe("해시 상태", () => {
     });
   });
 
-  it("B 화면 상태도 화면을 옮길 때 같은 규칙 — 온보딩이면 신규 사용자, 나오면 보통", () => {
+  it("B 화면 상태도 화면을 옮길 때 같은 규칙 — 온보딩이면 신규 사용자, 나오면 기록 보통", () => {
     const b = { dataset: "many" as const, latencyMs: 60_000, failPaths: [] };
     const ab: ShellState = { ...DEFAULT_STATE, layout: "ab", b };
     expect(withRoute(ab, "/report").b).toEqual(b);
