@@ -9,10 +9,12 @@ import { DefaultTheme, ThemeProvider, router, usePathname } from "expo-router";
 import { useEffect, useRef, type PropsWithChildren } from "react";
 
 import { PreviewFontScaleContext } from "@/components/ds/Text";
+import { useDay } from "@/features/home/model/day";
 
 import { resetFakeData } from "../fake-server";
 import type { LabFrameConfig } from "../lab-contract";
 
+import { retargetScheduleEdit } from "./liveTarget";
 import { listenToShell, postToShell } from "./messages";
 import { getFrameConfig } from "./runtime";
 import { forgetFrameState } from "./storage";
@@ -39,8 +41,12 @@ export function FrameBridge({ children }: PropsWithChildren) {
     const config = getFrameConfig();
     if (config == null) return;
     return listenToShell({
-      navigate: (next, mode) =>
-        mode === "push" ? router.push(next as never) : router.replace(next as never),
+      navigate: (requested, mode) => {
+        const next = retargetScheduleEdit(requested, useDay.getState().schedules);
+        if (next == null) return; // 오늘 일정이 없다 — 열어도 바로 닫히므로 홈에 머문다
+        if (mode === "push") router.push(next as never);
+        else router.replace(next as never);
+      },
       reload: () => window.location.reload(),
       resetData: () => resetFrame(config),
     });

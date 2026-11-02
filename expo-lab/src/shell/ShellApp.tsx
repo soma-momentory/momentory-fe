@@ -1329,6 +1329,24 @@ export function ShellApp() {
                     onStartDraft={startDraft}
                   />
                 ) : null}
+                {route?.path === "/home/schedule/[id]" &&
+                cachedSampleParams(state.dataset, state.now).scheduleId == null ? (
+                  <p
+                    data-testid="route-empty-notice"
+                    style={{
+                      margin: "0 auto 8px",
+                      maxWidth: 720,
+                      fontSize: 13,
+                      color: shellColor.ink,
+                      textAlign: "center",
+                      wordBreak: "keep-all",
+                    }}
+                  >
+                    「{datasetLabel(state.dataset)}」 데이터에는 오늘 일정이 없어서 일정 수정이
+                    열리지 않고 홈에 머물러요. 「조작」의 테스트 데이터를 「보통」이나 「많음」으로
+                    바꿔 보세요.
+                  </p>
+                ) : null}
                 {route?.hint ? (
                   <p
                     data-testid="route-hint"
