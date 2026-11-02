@@ -1,84 +1,74 @@
-import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
-import { BottomSheet, Button, Text } from "@/components/ds";
-import { fill, label as labelColor, layout, radius, space } from "@/design/ds";
-import type { RestContent, RestContentId } from "@/features/rest/model/contents";
+import { BottomSheet, Button, EmotionPebble } from "@/components/ds";
+import { NotchedTapeLabel } from "@/components/ds/NotchedTapeLabel";
+import { homeV2, layout, restRecommendSize, space } from "@/design/ds";
+import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
+import type { RestContent } from "@/features/rest/model/contents";
 
-/**
- * 쉼터 화면 가운데의 장면 — 위 안내 글과 아래 카드 사이의 띠를 잘라 만들었다
- * (`scripts/make-rest-recommend-art.py`). 들어가면 보게 될 장면을 시트가 미리 보여 준다.
- */
-const ART: Record<RestContentId, number> = {
-  sensePond: require("../../../assets/sensory-pond/recommend.webp"),
-  worryBox: require("../../../assets/worry-box/recommend.webp"),
-  treasureBox: require("../../../assets/treasure-box/recommend.webp"),
-  bodyRelease: require("../../../assets/body-release/recommend.webp"),
-};
-
-/** 그림 칸의 가로:세로 — 그림을 자른 비율(`make-rest-recommend-art.py` `ASPECT`)과 같다 */
-const ART_ASPECT = 1.8;
+import { RestCardPressable } from "./RestCardPressable";
+import { RestPolaroid } from "./RestPolaroid";
 
 /**
- * 일기를 쓴 날 쉼터(`R1`)에 올라오는 **쉼 추천 시트** (2026-10-12 · 사용자와 정함).
+ * 일기를 쓴 날 쉼터(`R1`)에 올라오는 **쉼 추천 시트** (2026-11-02 · 사용자가 고른 시안).
  *
- * 글자만 있던 첫 판이 밋밋해서 사용자 시안대로 다시 짰다(같은 날):
+ * 3초 안에 세 가지만 읽히게 한다. 왜 떴는지는 제목과 오늘의 조약돌이, 무엇을 하는지는 쉼터 칸이,
+ * 어디를 누르는지는 버튼이 말한다. 지난 판(2026-10-12)은 이유 줄 · 장면 그림 · 질문 · 효용 · 알약
+ * 셋을 쌓아 무엇을 전하려는지 모르겠다는 평을 받았다.
  *
- * - 맨 위 작은 한 줄은 **왜 골랐는지**(`reason`) — 무작위면 「바바가 하나 골라 봤어요」
- * - 그 쉼터의 **장면 그림** 한 장 — 카피바라와 소품이 앉은 화면 가운데
- * - 제목은 **하자는 말**(`invite`), 그 아래 **하고 나면 무엇이 달라지는지** 한 줄(`benefit`)
- * - 알약 셋 — 쉼터 이름 · 하는 일 · 걸리는 시간. 시간을 보여 줘 부담을 낮춘다
- * - 주 버튼 「지금 해 볼게요」 하나, 그 아래 「다른 쉼터 둘러보기」 — 닫고 쉼터에 남는다.
- *   ✕ · 쓸어내리기 · 바깥 누르기와 같은 닫기다(공용 시트가 맡는다)
+ * - 쉼터 칸은 쉼터 탭과 같은 부품이다(`RestPolaroid`). 사진을 바꾸면 시트도 같이 바뀌고, 시트만의
+ *   문구와 그림이 없다. 탭에서처럼 칸을 눌러도 그 쉼으로 간다
+ * - 감정이 없는 날은 조약돌과 화살표를 빼고 칸만 세운다. 빈 조약돌은 비어 있다는 느낌만 준다
+ * - 주 버튼 「지금 해 볼게요」 아래 「다른 쉼터 둘러보기」는 닫고 쉼터에 남는다. ✕ · 쓸어내리기 ·
+ *   바깥 누르기와 같은 닫기다(공용 시트가 맡는다)
  *
- * 「오늘의 일기를 저장했어요」는 뺐다(사용자 요청) — 쉼터로 넘어온 것이 곧 저장이 끝났다는 뜻이다.
  * **모달이 아니라 시트다** — 화면을 막는 모달은 되돌릴 수 없는 행동의 확인에만 쓴다(`DESIGN.md`).
  */
 type Props = {
   content: RestContent;
-  reason: string;
+  /** 오늘 일기의 첫 감정 — 없으면 칸만 선다 */
+  emotion: EmotionId | null;
+  title: string;
   onAccept: () => void;
   onDismiss: () => void;
 };
 
-export function RestRecommendSheet({ content, reason, onAccept, onDismiss }: Props) {
+export function RestRecommendSheet({ content, emotion, title, onAccept, onDismiss }: Props) {
   return (
-    <BottomSheet eyebrow={reason} closable onDismiss={onDismiss}>
-      {/* 장식이다 — 무엇을 하는지는 아래 글이 말한다. 비율은 틀이 잡고 그림은 그 안을 채운다
-          (RN `Image` 는 원본 크기로 그려져 시트가 화면 밖으로 넘쳤다 · 2026-10-12 시뮬레이터 —
-          쉼터 기록 화면처럼 `expo-image` 로 채운다) */}
-      <View
-        style={styles.art}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        <Image
-          testID="rest-recommend-art"
-          source={ART[content.id]}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          transition={0}
-          accessible={false}
-        />
-      </View>
-
-      <View style={styles.copy}>
-        <Text variant="heading1" color={labelColor.strong}>
-          {content.invite}
-        </Text>
-        <Text variant="body2" color={labelColor.neutral}>
-          {content.benefit}
-        </Text>
-      </View>
-
-      <View style={styles.pills}>
-        {[content.title, content.activity, content.duration].map((pill) => (
-          <View key={pill} style={styles.pill}>
-            <Text variant="label2" color={labelColor.normal}>
-              {pill}
-            </Text>
-          </View>
-        ))}
+    <BottomSheet title={title} closable onDismiss={onDismiss}>
+      <View style={[styles.row, emotion == null && styles.rowSolo]}>
+        {emotion != null ? (
+          <>
+            <View style={styles.stone}>
+              <EmotionPebble id={emotion} size={S.pebble} />
+              <NotchedTapeLabel color={homeV2.color.date} style={styles.tape}>
+                {emotionName(emotion)}
+              </NotchedTapeLabel>
+            </View>
+            <Svg
+              width={S.arrow.width}
+              height={S.arrow.height}
+              viewBox="0 0 46 24"
+              fill="none"
+              stroke={homeV2.color.muted}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              accessible={false}
+            >
+              <Path d="M2 14 C12 8 24 18 40 11" strokeDasharray="1 6" />
+              <Path d="M33 5 L42 10 L35 18" />
+            </Svg>
+          </>
+        ) : null}
+        <RestCardPressable
+          accessibilityLabel={`${content.title} 열기`}
+          onPress={onAccept}
+          style={emotion == null ? styles.cardSolo : styles.card}
+        >
+          <RestPolaroid item={content} size="sheet" />
+        </RestCardPressable>
       </View>
 
       <View style={styles.actions}>
@@ -91,17 +81,15 @@ export function RestRecommendSheet({ content, reason, onAccept, onDismiss }: Pro
   );
 }
 
+const S = restRecommendSize;
+
 const styles = StyleSheet.create({
-  art: { aspectRatio: ART_ASPECT, borderRadius: radius.xlarge, overflow: "hidden" },
-  copy: { gap: space.xs },
-  pills: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  // 알약은 글자를 감싸는 자국이지 버튼이 아니다 — 주간 리포트의 바람 알약과 같은 결(`WeekWishCard`)
-  pill: {
-    paddingHorizontal: space.md,
-    paddingVertical: space.xs,
-    borderRadius: radius.full,
-    backgroundColor: fill.normal,
-  },
+  row: { flexDirection: "row", alignItems: "center", gap: space.xs },
+  rowSolo: { justifyContent: "center" },
+  stone: { width: S.stone, alignItems: "center", gap: space.xs },
+  tape: { alignSelf: "center" },
+  card: { flex: 1 },
+  cardSolo: { width: S.soloCard },
   // 주 버튼과 보조 버튼 사이 — 같은 짝을 쓰는 화면이 전부 같은 값이다(`layout.dockActionGap`)
   actions: { gap: layout.dockActionGap },
   secondary: { alignItems: "center" },

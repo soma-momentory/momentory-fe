@@ -2,7 +2,7 @@ import { EMOTIONS } from "@/features/emotion/model/emotion";
 
 import { settledMemory } from "../data/recommendMemory";
 import { REST_CONTENTS } from "../model/contents";
-import { dayRandom, recommendRest, REST_BY_EMOTION, REST_BY_METHOD } from "../model/recommend";
+import { dayRandom, recommendRest, REST_BY_EMOTION } from "../model/recommend";
 
 /**
  * 쉼 추천 — 감정이 먼저, 쉬는 방법은 후보 안에서 순서만, 둘 다 없으면 그날의 무작위.
@@ -18,12 +18,13 @@ describe("쉼 추천 고르기", () => {
     }
   });
 
-  it("첫 감정의 맨 앞 후보를 고르고, 왜 골랐는지 감정 이름으로 말한다", () => {
+  it("첫 감정의 맨 앞 후보를 고르고, 제목과 조약돌로 그 감정을 말한다", () => {
     // 불안함(7) 다음 우울함(8) — 첫 감정만 본다
     expect(recommendRest([7, 8], [])).toEqual({
       content: "bodyRelease",
       basis: "emotion",
-      reason: "오늘 일기의 「불안함」을 보고 골랐어요",
+      emotion: 7,
+      title: "불안한 날엔, 이걸 해 봐요",
     });
   });
 
@@ -32,7 +33,8 @@ describe("쉼 추천 고르기", () => {
     expect(recommendRest([7], ["MEDITATION"])).toEqual({
       content: "sensePond",
       basis: "preference",
-      reason: "「불안함」과 평소 즐기는 「명상하기」를 보고 골랐어요",
+      emotion: 7,
+      title: "불안한 날엔, 이걸 해 봐요",
     });
     // 피곤함의 후보는 몸에 힘 빼기 하나 — 명상하기를 즐겨도 감정이 이긴다
     expect(recommendRest([4], ["MEDITATION"]).content).toBe("bodyRelease");
@@ -44,21 +46,23 @@ describe("쉼 추천 고르기", () => {
     expect(recommendRest([], ["EXERCISE"])).toEqual({
       content: "bodyRelease",
       basis: "preference",
-      reason: "평소 즐기는 「운동하기」와 닮은 쉼이에요",
+      emotion: null,
+      title: "오늘은 이걸 해 봐요",
     });
 
     const picked = new Set([0, 0.3, 0.6, 0.99].map((r) => recommendRest([], [], () => r).content));
     expect(picked).toEqual(new Set(REST_CONTENTS.map((c) => c.id)));
     expect(recommendRest([], [], () => 0)).toMatchObject({
       basis: "random",
-      reason: "바바가 하나 골라 봤어요",
+      emotion: null,
+      title: "오늘은 이걸 해 봐요",
     });
   });
 
-  it("조사를 고정해 둔 전제 — 감정 이름은 받침으로, 쉬는 방법 이름은 「기」로 끝난다", () => {
-    const hasBatchim = (word: string) => (word.charCodeAt(word.length - 1) - 0xac00) % 28 !== 0;
-    for (const { name } of EMOTIONS) expect(hasBatchim(name)).toBe(true);
-    for (const { name } of Object.values(REST_BY_METHOD)) expect(name.endsWith("기")).toBe(true);
+  it("감정 열 개 모두 제목이 있다 — 「~ 날엔, 이걸 해 봐요」", () => {
+    for (const { id } of EMOTIONS) {
+      expect(recommendRest([id], []).title).toMatch(/^\S+( \S+)? 날엔, 이걸 해 봐요$/);
+    }
   });
 
   it("무작위는 그날로 정해진다 — 하루 안에서는 같고, 0 이상 1 미만이다", () => {

@@ -19,7 +19,6 @@ import {
   line,
   fill,
   overlay,
-  primary,
   radius,
   sheetMotion,
   space,
@@ -82,8 +81,6 @@ type Props = {
   children: ReactNode;
   /** Heading 1. 없으면 제목 줄을 두지 않는다 */
   title?: string;
-  /** 제목 위의 작은 한 줄 — 왜 이 시트가 떴는지 짧게 말한다(쉼 추천의 「바바가 하나 골라 봤어요」) */
-  eyebrow?: string;
   /** 제목 줄 오른쪽에 ✕ 를 둔다 — 누르면 딤과 같은 `onDismiss` 다 */
   closable?: boolean;
   onDismiss: () => void;
@@ -133,7 +130,7 @@ const useKeyboardInset = (): number => {
   return inset;
 };
 
-export function BottomSheet({ children, title, eyebrow, closable = false, onDismiss }: Props) {
+export function BottomSheet({ children, title, closable = false, onDismiss }: Props) {
   // 시트는 화면 아래에 붙으므로 **실제 하단 inset** 을 자기가 맡는다
   // (`Screen` 안에 들어가지 않는다). `layout.safeArea`(34)는 iOS 시안 값이라
   // 그대로 쓰면 Android·제스처 내비에서 여백이 뜨거나 시스템 UI 와 겹친다
@@ -205,14 +202,9 @@ export function BottomSheet({ children, title, eyebrow, closable = false, onDism
           onResponderTerminate={settle}
         >
           <View style={styles.handle} />
-          {title != null || eyebrow != null || closable ? (
+          {title != null || closable ? (
             <View style={styles.titleRow}>
               <View style={styles.titleText}>
-                {eyebrow != null ? (
-                  <Text variant="label1" color={primary.heavy}>
-                    {eyebrow}
-                  </Text>
-                ) : null}
                 {title != null ? (
                   <Text variant="heading1" color={labelColor.strong}>
                     {title}
@@ -279,7 +271,7 @@ const styles = StyleSheet.create({
   // 손잡이와 제목 사이는 시트의 다른 줄 사이와 같다(`sheet.gap`)
   grab: { marginTop: -space.md, paddingTop: space.md, gap: space.lg },
   titleRow: { flexDirection: "row", alignItems: "center", gap: space.md },
-  titleText: { flex: 1, gap: space.xs },
+  titleText: { flex: 1 },
   // ✕ 는 옅은 원 안에 선다 — 눌리는 자리(44)는 그대로, 보이는 원만 작게
   close: { width: CLOSE_SIZE, height: CLOSE_SIZE, backgroundColor: fill.normal },
   handle: {
