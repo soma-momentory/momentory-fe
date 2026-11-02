@@ -665,12 +665,11 @@ describe("BottomSheet · 닫는 길", () => {
     await plain.unmount();
 
     const closable = await render(
-      <BottomSheet eyebrow="바바가 하나 골라 봤어요" closable onDismiss={onDismiss}>
+      <BottomSheet title="오늘은 이걸 해 봐요" closable onDismiss={onDismiss}>
         <Text>내용</Text>
       </BottomSheet>,
     );
-    // 제목 없이 작은 한 줄과 ✕ 만으로도 머리 줄이 선다(쉼 추천 시트)
-    expect(closable.getByText("바바가 하나 골라 봤어요")).toBeTruthy();
+    expect(closable.getByText("오늘은 이걸 해 봐요")).toBeTruthy();
     const closes = closable.getAllByLabelText("닫기");
     expect(closes).toHaveLength(2);
     for (const close of closes) await fireEvent.press(close);

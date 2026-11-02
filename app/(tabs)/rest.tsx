@@ -85,7 +85,8 @@ export default function Rest() {
         recommended != null && recommend.sheet != null ? (
           <RestRecommendSheet
             content={recommended}
-            reason={recommend.sheet.reason}
+            emotion={recommend.sheet.emotion}
+            title={recommend.sheet.title}
             onAccept={() => {
               recommend.accept("sheet");
               if (recommended.route != null) router.push(recommended.route);

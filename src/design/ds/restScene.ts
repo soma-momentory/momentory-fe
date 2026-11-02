@@ -82,6 +82,22 @@ export const restMoodMotion = {
  * 바바 말풍선(`retroDiary.question`) · 공용 `Button`. 쉼터만 따로 노는 모양이라는 평가를 받고 바꿨다.
  * 2026-10-12 판의 줄무늬 테이프 소제목(`restGuideTape`)은 소제목이 없어지며 지웠다.
  */
+/**
+ * **쉼 추천 시트**의 크기(2026-11-02) — 조약돌 · 화살표 · 쉼터 칸이 한 줄에 선다.
+ * 칸은 탭보다 넓어(탭 165 · 시트 약 215) 사진도 그만큼 키운다.
+ */
+export const restRecommendSize = {
+  /** 조약돌과 감정 이름이 서는 왼쪽 자리의 폭 · 조약돌 지름 */
+  stone: 92,
+  pebble: 86,
+  /** 조약돌에서 칸으로 잇는 화살표 */
+  arrow: { width: 34, height: 18 },
+  /** 시트 안 쉼터 칸의 사진 높이 */
+  photo: 118,
+  /** 감정이 없는 날 칸만 설 때의 폭 */
+  soloCard: 226,
+} as const;
+
 export const restGuideSize = {
   /**
    * 카드 뒤 막 — 앱 공통 막(`overlay.dimmer` 32%)과 같은 색을 훨씬 짙게. 뒤 장면의 소개 글자가
