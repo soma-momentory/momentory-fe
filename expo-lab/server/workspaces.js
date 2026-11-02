@@ -100,6 +100,10 @@ function isInside(parent, child) {
   return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
 }
 
+/** worktree 지우기 시도 횟수 · 기다림(시도마다 늘린다) — 미리보기 서버가 파일을 놓기를 기다린다 */
+const REMOVE_ATTEMPTS = 4;
+const REMOVE_RETRY_MS = Number(process.env.MOMENTORY_LAB_REMOVE_RETRY_MS ?? 1500);
+
 /** @param {string} p */
 function lstatOrNull(p) {
   try {
@@ -433,12 +437,16 @@ class WorkspaceStore {
     if (fs.existsSync(meta.path)) {
       const unlinked = await unlinkJunction(path.join(meta.path, "node_modules"));
       if (!unlinked.ok) return keep(unlinked.message);
-      const removed = await git(
-        this.repoRoot,
-        ["worktree", "remove", "--force", meta.path],
-        120_000,
-      );
-      if (removed.code !== 0) return keep(`작업 공간을 지우지 못했어요: ${removed.stderr.trim()}`);
+      // 막 끈 미리보기 서버(Metro)가 Windows 에서 파일을 잠깐 더 쥐고 있으면 처음 지우기가
+      // 실패한다(2026-11-02 QA — 두 번째 시도에 지워졌다). 잠깐 기다렸다 몇 번 더 해 본다
+      let removed = await git(this.repoRoot, ["worktree", "remove", "--force", meta.path], 120_000);
+      for (let attempt = 1; removed.code !== 0 && attempt < REMOVE_ATTEMPTS; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, REMOVE_RETRY_MS * attempt));
+        if (!fs.existsSync(meta.path)) break;
+        removed = await git(this.repoRoot, ["worktree", "remove", "--force", meta.path], 120_000);
+      }
+      if (removed.code !== 0 && fs.existsSync(meta.path))
+        return keep(`작업 공간을 지우지 못했어요: ${removed.stderr.trim()}`);
     }
     await git(this.repoRoot, ["worktree", "prune"]);
 
