@@ -147,6 +147,5 @@ export type RunRequest = {
   agent: AgentId;
   target: EditTarget | NewScreenTarget;
   instruction?: string;
-  handoff?: object | null;
   attachments?: { name: string; dataUrl: string; purpose: "reference" | "asset"; note: string }[];
 };

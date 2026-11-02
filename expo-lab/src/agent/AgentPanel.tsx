@@ -6,7 +6,8 @@
  * - AI 는 작업 공간에서 고치고 검사까지만 한다. 수정 저장(커밋) · 검토 요청 올리기(PR)는 사용자가 누른다.
  * - AI 실행은 Lab 전체에서 한 번에 하나다.
  *
- * 셸 연결: `<AgentPanel screen={…} draft={…} hasReference={…} buildHandoff={…} />` — README 「AI에게 맡기기」 참고.
+ * 셸 연결: `<AgentPanel screen={…} onOpenPreview={…} onOpenWorkspace={…} />` — README 「AI에게 맡기기」 참고.
+ * 참고 그림(피그마 · 시안 캡처)은 지시와 함께 첨부한다(`AttachmentPicker` — 참고용 · 앱에 넣기).
  */
 import { useMemo, useRef, useState } from "react";
 
@@ -30,10 +31,6 @@ export type AgentScreen = {
 
 export type AgentPanelProps = {
   screen: AgentScreen;
-  draft: { name: string; changeCount: number } | null;
-  hasReference: boolean;
-  /** 지금 시안을 `momentory-lab-handoff@1` 로 — 디자인 편집기의 「AI에게 넘기기」 내보내기와 같은 것 */
-  buildHandoff?: () => Promise<object | null>;
   client?: AgentClient;
   /** 「수정 결과 보기」를 셸이 B 자리에 띄우려면 받는다(없으면 새 탭) */
   onOpenPreview?: (url: string, workspace: WorkspaceSummary) => void;
@@ -44,19 +41,12 @@ export type AgentPanelProps = {
 export const INSTRUCTION_LABEL = "지시: ";
 
 /** 지시 칸에 미리 채우는 머리말 — 사용자가 고칠 수 있다. 커서는 마지막 「지시: 」 뒤. */
-export function buildInstructionHeader(
-  screen: AgentScreen,
-  draft: AgentPanelProps["draft"],
-  hasReference: boolean,
-) {
+export function buildInstructionHeader(screen: AgentScreen) {
   const spec = screen.specId ? ` (${screen.specId})` : "";
   return [
     `[화면] ${screen.title}${spec} · ${screen.route}`,
     `[파일] ${screen.file}`,
     `[환경] ${screen.device.label} (${screen.device.platform}) · 데이터 ${screen.datasetLabel}`,
-    draft
-      ? `[시안] 「${draft.name}」 바꾼 값 ${draft.changeCount}개 · 참고 시안 이미지 ${hasReference ? "있음" : "없음"}`
-      : `[시안] 없음 · 참고 시안 이미지 ${hasReference ? "있음" : "없음"}`,
     INSTRUCTION_LABEL,
   ].join("\n");
 }
@@ -69,19 +59,13 @@ export const instructionBody = (text: string) => {
 
 export function AgentPanel({
   screen,
-  draft,
-  hasReference,
-  buildHandoff,
   client = defaultAgentClient,
   onOpenPreview,
   onOpenWorkspace,
 }: AgentPanelProps) {
   const { status, error: statusError, refresh } = useAgentStatus(client);
-  const header = useMemo(
-    () => buildInstructionHeader(screen, draft, hasReference),
-    [screen, draft, hasReference],
-  );
-  /** 사용자가 고친 글 — null 이면 머리말 그대로(시안 · 화면이 바뀌면 머리말이 따라간다) */
+  const header = useMemo(() => buildInstructionHeader(screen), [screen]);
+  /** 사용자가 고친 글 — null 이면 머리말 그대로(화면 · 기기 · 데이터가 바뀌면 머리말이 따라간다) */
   const [edited, setEdited] = useState<string | null>(null);
   const [picked, setPicked] = useState<AgentId>("claude");
   const [files, setFiles] = useState<Attachment[]>([]);
@@ -120,7 +104,7 @@ export function AgentPanel({
   const active = status?.activeRun ?? null;
   const otherActive = active && active.workspaceId !== workspace?.id ? active : null;
   const busyHere = workspace?.status === "working" || workspace?.status === "checking";
-  const nothing = !instructionBody(text) && !draft && files.length === 0;
+  const nothing = !instructionBody(text) && files.length === 0;
   const unavailable = status ? !status.available[agent] : true;
 
   const disabledReason = !status
@@ -139,7 +123,6 @@ export function AgentPanel({
     setError(null);
     askNotificationPermission();
     setSending(true);
-    const handoff = draft && buildHandoff ? await buildHandoff().catch(() => null) : null;
     const res = await client.run({
       agent,
       target: {
@@ -150,7 +133,6 @@ export function AgentPanel({
         specId: screen.specId ?? null,
       },
       instruction: text,
-      handoff,
       attachments: toPayload(files),
     });
     setSending(false);
@@ -223,9 +205,10 @@ export function AgentPanel({
             setEdited(e.target.value);
           }}
         />
-        {!draft ? (
-          <Note>시안이 없으면 적은 말대로만 고쳐요 — 예: 카드 간격도 시안처럼 넓혀줘</Note>
-        ) : null}
+        <Note>
+          디자인을 바꿀 때는 원하는 모습의 그림(피그마 · 캡처)을 붙이면 그대로 맞춰요 — 예: 카드
+          간격을 그림처럼 넓혀줘
+        </Note>
         <AttachmentPicker value={files} onChange={setFiles} disabled={sending} />
 
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -293,7 +276,7 @@ export function AgentPanel({
                     {w.title}{" "}
                     <span
                       style={{
-                        color: w.status === "working" ? shellColor.draft : shellColor.muted,
+                        color: w.status === "working" ? shellColor.notice : shellColor.muted,
                         fontSize: 12,
                       }}
                     >

@@ -1,5 +1,5 @@
 /**
- * 가운데 무대 위 도구줄 — 지금 레이아웃의 한 줄 설명 · 매트릭스 축 · 프레임 같이 움직이기 · 돋보기 ·
+ * 가운데 무대 위 도구줄 — 지금 레이아웃의 한 줄 설명 · 프레임 같이 움직이기 · 돋보기 ·
  * 확대(맞춤 · 100% · 125% · 150% · 200% · −/+). 확대 조작은 **여기 하나뿐**이다(조작 패널에 없다).
  *
  * 단축키(셸에 포커스가 있을 때 · 입력칸 밖): Ctrl/⌘ + = / − / 0(맞춤) · Z 누르고 있기 = 돋보기 ·
@@ -7,14 +7,7 @@
  */
 import type { CSSProperties, ReactNode } from "react";
 
-import {
-  LAYOUTS,
-  MATRIX_AXES,
-  ZOOM_PRESETS,
-  type LayoutId,
-  type MatrixAxis,
-  type Zoom,
-} from "./hashState";
+import { LAYOUTS, ZOOM_PRESETS, type LayoutId, type Zoom } from "./hashState";
 import { shellColor } from "./theme";
 
 const chip = (active = false): CSSProperties => ({
@@ -42,7 +35,6 @@ export const percent = (scale: number) => `${Math.round(scale * 100)}%`;
 
 export function StageToolbar({
   layout,
-  matrix,
   zoom,
   effectiveScale,
   syncNav,
@@ -50,13 +42,11 @@ export function StageToolbar({
   magnifierPower,
   onZoom,
   onStep,
-  onMatrix,
   onSyncNav,
   onMagnifier,
   children,
 }: {
   layout: LayoutId;
-  matrix: MatrixAxis;
   zoom: Zoom;
   /** 지금 그려진 배율(맞춤이면 계산된 값) */
   effectiveScale: number;
@@ -65,10 +55,9 @@ export function StageToolbar({
   magnifierPower: number;
   onZoom: (zoom: Zoom) => void;
   onStep: (direction: 1 | -1) => void;
-  onMatrix: (axis: MatrixAxis) => void;
   onSyncNav: (value: boolean) => void;
   onMagnifier: (value: boolean) => void;
-  /** 레이아웃별 한 줄(한 화면의 시안 줄 등) — 도구줄 아래쪽에 한 줄로 */
+  /** 레이아웃별 조각(화면 상태 바로 가기 · 키보드 · AI 수정 결과 줄) — 도구줄 끝에 */
   children?: ReactNode;
 }) {
   const description = LAYOUTS.find((item) => item.id === layout)?.description ?? "";
@@ -100,27 +89,6 @@ export function StageToolbar({
       >
         {description}
       </span>
-
-      {layout === "matrix" ? (
-        <Group label="보기 기준">
-          {MATRIX_AXES.map((axis) => (
-            <button
-              key={axis.id}
-              type="button"
-              aria-pressed={matrix === axis.id}
-              title={
-                axis.id === "devices"
-                  ? "같은 화면 · 같은 데이터를 표의 모든 기기에 띄워요"
-                  : "같은 화면 · 같은 기기에 테스트 데이터 다섯 가지를 띄워요"
-              }
-              onClick={() => onMatrix(axis.id)}
-              style={chip(matrix === axis.id)}
-            >
-              {axis.label}
-            </button>
-          ))}
-        </Group>
-      ) : null}
 
       {layout === "ab" || layout === "matrix" ? (
         <label
@@ -214,7 +182,7 @@ export function StageToolbar({
           style={{
             flexBasis: "100%",
             fontSize: 12,
-            color: shellColor.draft,
+            color: shellColor.notice,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",

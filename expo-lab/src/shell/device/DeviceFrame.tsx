@@ -50,8 +50,6 @@ export function DeviceFrame({
   clock,
   statusBarStyle,
   children,
-  screenOverlay,
-  hideOverlays = false,
   testID,
 }: {
   device: LabDevice;
@@ -59,14 +57,6 @@ export function DeviceFrame({
   clock: string;
   statusBarStyle: "light" | "dark";
   children: ReactNode;
-  /**
-   * 화면 위에 얹는 층(참고 시안). 상태바 · 가림 **뒤에** 그려서 시안의 상태바가 셸 상태바와 겹친다.
-   * ⚠ 감싸지 않고 그대로 둔다 — z-index · isolation · opacity · transform 이 있는 상자로 감싸면
-   * 「다른 곳만 표시」(mix-blend-mode)가 iframe 과 섞이지 않는다
-   */
-  screenOverlay?: ReactNode;
-  /** 상태바 · 가림 · 하단 막대를 그리지 않는다(시안 이미지만 세우는 「옆에 나란히」 칸) */
-  hideOverlays?: boolean;
   testID?: string;
 }) {
   const skinAvailable = useSkinAvailable(device);
@@ -155,10 +145,7 @@ export function DeviceFrame({
         )}
         <div style={screen} data-testid={testID ? `${testID}-screen` : undefined}>
           {children}
-          {hideOverlays ? null : (
-            <DeviceOverlays device={device} clock={clock} style={statusBarStyle} />
-          )}
-          {screenOverlay}
+          <DeviceOverlays device={device} clock={clock} style={statusBarStyle} />
         </div>
       </div>
     </div>

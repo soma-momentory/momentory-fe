@@ -2,7 +2,7 @@ import { describe, expect, it } from "@jest/globals";
 import { decodeFrameConfig, encodeFrameConfig } from "../../lab-contract";
 import { findDevice, labDevices, skinFile } from "../../lab-devices";
 import { chromeGeometry } from "../device/geometry";
-import { framesFor, peekFrameFor, PEEK_FRAME_ID } from "../frameSpecs";
+import { framesFor } from "../frameSpecs";
 import {
   DEFAULT_STATE,
   parseHash,
@@ -25,17 +25,16 @@ describe("해시 상태", () => {
       dataset: "many",
       platform: "android",
       device: "pixel-8",
-      layout: "matrix",
-      matrix: "datasets",
+      layout: "ab",
       signedIn: false,
       now: "2026-11-03T21:30:00+09:00",
       latencyMs: 5000,
       failPaths: ["/api/v1/reports", "/api/v1/diaries"],
       textScale: 1.3,
       zoom: 1.5,
-      draft: "draft-1",
+      b: { dataset: "long-copy", latencyMs: 60_000, failPaths: ["/api/v1/diaries"] },
       repeatToday: false,
-      panel: "controls",
+      panel: "agent",
       navOpen: false,
       sideOpen: false,
     };
@@ -66,6 +65,32 @@ describe("해시 상태", () => {
     expect(parseHash("#/screens?route=/home&panel=log").panel).toBe("controls");
   });
 
+  it("지운 기능의 옛 주소도 열린다 — 상태별로 보기 · 데이터별 매트릭스 · 디자인 편집 · 참고 시안 · 시안", () => {
+    expect(parseHash("#/screens?route=/report&layout=states")).toMatchObject({
+      route: "/report",
+      layout: "single",
+    });
+    const matrix = parseHash("#/screens?route=/report&layout=matrix&matrix=datasets");
+    expect(matrix.layout).toBe("matrix");
+    expect(serializeHash(matrix)).not.toContain("matrix=");
+    for (const panel of ["design", "reference", "log"]) {
+      expect(parseHash(`#/screens?route=/home&panel=${panel}`).panel).toBe("controls");
+    }
+    const old = parseHash("#/screens?route=/home&layout=ab&draft=v1");
+    expect(old).toEqual({ ...DEFAULT_STATE, layout: "ab" });
+    expect(serializeHash(old)).not.toContain("draft=");
+  });
+
+  it("B 화면 상태 — bdata 가 없거나 읽을 수 없으면 A와 같게", () => {
+    expect(parseHash("#/screens?route=/home&layout=ab").b).toBeNull();
+    expect(parseHash("#/screens?route=/home&layout=ab&bdata=zzz&blatency=5").b).toBeNull();
+    expect(parseHash("#/screens?route=/home&layout=ab&bdata=many").b).toEqual({
+      dataset: "many",
+      latencyMs: 0,
+      failPaths: [],
+    });
+  });
+
   it("−/+ 는 계단을 밟고, 맞춤 배율에서도 다음 칸으로 간다", () => {
     expect(stepZoom(1, 1)).toBe(1.1);
     expect(stepZoom(1, -1)).toBe(0.9);
@@ -84,6 +109,16 @@ describe("해시 상태", () => {
     expect(withRoute({ ...DEFAULT_STATE, dataset: "many" }, "/report")).toMatchObject({
       dataset: "many",
     });
+  });
+
+  it("B 화면 상태도 화면을 옮길 때 같은 규칙 — 온보딩이면 신규 사용자, 나오면 보통", () => {
+    const b = { dataset: "many" as const, latencyMs: 60_000, failPaths: [] };
+    const ab: ShellState = { ...DEFAULT_STATE, layout: "ab", b };
+    expect(withRoute(ab, "/report").b).toEqual(b);
+    const onboarding = withRoute(ab, "/mood");
+    expect(onboarding.b).toEqual({ ...b, dataset: "new-user" });
+    expect(withRoute(onboarding, "/home").b).toEqual({ ...b, dataset: "normal" });
+    expect(withRoute(DEFAULT_STATE, "/report").b).toBeNull();
   });
 
   it("스플래시가 건 실패 주소는 떠날 때 거두고, 사용자가 고친 것은 둔다", () => {
@@ -142,7 +177,6 @@ describe("프레임 목록", () => {
       platform: "ios",
       deviceId: "iphone-16",
       now: "2026-11-03T21:30:00+09:00",
-      designDraftId: null,
       signedIn: true,
       latencyMs: 0,
       failPaths: [],
@@ -152,37 +186,44 @@ describe("프레임 목록", () => {
     expect(decodeFrameConfig(encodeFrameConfig(solo!.config))).toEqual(solo!.config);
   });
 
-  it("A/B — A 는 승인본(시안 없음), B 는 지금 시안", () => {
-    const [a, b] = framesFor({ ...DEFAULT_STATE, layout: "ab", draft: "d1" }, noSample, REAL);
-    expect([a!.frameId, a!.config.designDraftId]).toEqual(["A", null]);
-    expect([b!.frameId, b!.config.designDraftId]).toEqual(["B", "d1"]);
-    expect(a!.config.datasetId).toBe(b!.config.datasetId);
-  });
-
-  it("매트릭스 — 기기별이면 모든 기기, 데이터 세트별이면 다섯 세트", () => {
-    const byDevice = framesFor({ ...DEFAULT_STATE, layout: "matrix" }, noSample, REAL);
-    expect(byDevice.map((f) => f.config.deviceId)).toEqual(labDevices.map((d) => d.id));
-    expect(byDevice.find((f) => f.config.deviceId === "pixel-8")!.config.platform).toBe("android");
-    const byDataset = framesFor(
-      { ...DEFAULT_STATE, layout: "matrix", matrix: "datasets" },
+  it("A/B — B 화면 상태가 없으면 A와 같은 설정, 있으면 B 만 그 데이터 · 지연 · 실패 주소", () => {
+    const [a, b] = framesFor({ ...DEFAULT_STATE, layout: "ab" }, noSample, REAL);
+    expect([a!.frameId, b!.frameId]).toEqual(["A", "B"]);
+    expect({ ...b!.config, frameId: "A" }).toEqual(a!.config);
+    const [a2, b2] = framesFor(
+      {
+        ...DEFAULT_STATE,
+        layout: "ab",
+        b: { dataset: "many", latencyMs: 60_000, failPaths: ["/api/v1/schedules"] },
+      },
       noSample,
       REAL,
     );
-    expect(byDataset.map((f) => f.config.datasetId)).toEqual([
-      "new-user",
-      "empty",
-      "normal",
-      "many",
-      "long-copy",
-    ]);
-    // 칸 이름은 id 가 아니라 사람이 읽는 이름
-    expect(byDataset.map((f) => f.label)).toEqual([
-      "신규 사용자",
-      "빈 계정",
-      "보통",
-      "많음",
-      "긴 문구",
-    ]);
+    expect(a2!.config).toMatchObject({ datasetId: "normal", latencyMs: 0, failPaths: [] });
+    expect(b2!.config).toMatchObject({
+      datasetId: "many",
+      latencyMs: 60_000,
+      failPaths: ["/api/v1/schedules"],
+    });
+    // 데이터 세트가 묶인 화면(온보딩)은 B 도 그 세트
+    const [, b3] = framesFor(
+      {
+        ...DEFAULT_STATE,
+        route: "/mood",
+        dataset: "new-user",
+        layout: "ab",
+        b: { dataset: "many", latencyMs: 0, failPaths: [] },
+      },
+      noSample,
+      REAL,
+    );
+    expect(b3!.config.datasetId).toBe("new-user");
+  });
+
+  it("기기별로 보기 — 표의 모든 기기", () => {
+    const byDevice = framesFor({ ...DEFAULT_STATE, layout: "matrix" }, noSample, REAL);
+    expect(byDevice.map((f) => f.config.deviceId)).toEqual(labDevices.map((d) => d.id));
+    expect(byDevice.find((f) => f.config.deviceId === "pixel-8")!.config.platform).toBe("android");
   });
 
   it("전체 화면 — 라우트마다 하나, 프리셋대로", () => {
@@ -193,23 +234,6 @@ describe("프레임 목록", () => {
     const mood = grid.find((f) => f.route.path === "/mood")!;
     expect(mood.config).toMatchObject({ signedIn: true, datasetId: "new-user" });
     expect(new Set(grid.map((f) => f.frameId)).size).toBe(grid.length);
-  });
-
-  it("한 화면 + 시안이면 그 아래 숨길 승인본(원래대로 잠깐 보기)을 하나 더 · 시안이 없으면 없다", () => {
-    expect(peekFrameFor(DEFAULT_STATE, noSample, REAL)).toEqual([]);
-    expect(peekFrameFor({ ...DEFAULT_STATE, layout: "ab", draft: "d1" }, noSample, REAL)).toEqual(
-      [],
-    );
-    const [peek] = peekFrameFor({ ...DEFAULT_STATE, draft: "d1" }, noSample, REAL);
-    const [solo] = framesFor({ ...DEFAULT_STATE, draft: "d1" }, noSample, REAL);
-    expect(peek!.frameId).toBe(PEEK_FRAME_ID);
-    expect(peek!.config.designDraftId).toBeNull();
-    expect(solo!.config.designDraftId).toBe("d1");
-    expect({ ...peek!.config, frameId: "x", designDraftId: null }).toEqual({
-      ...solo!.config,
-      frameId: "x",
-      designDraftId: null,
-    });
   });
 
   it("글씨 배율은 1 이 아닐 때만 싣는다", () => {

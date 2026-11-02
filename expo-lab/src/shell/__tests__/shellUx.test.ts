@@ -1,6 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { findDraftInfo } from "../draftInfo";
 import { FIT_MAX, fitScale, GRID_FIT } from "../stageFit";
 
 const phone = { width: 431, height: 882 }; // iPhone 16 외형(393×852 + 테두리)
@@ -34,29 +33,5 @@ describe("맞춤 배율", () => {
 
   it("전체 화면은 맞춤이어도 작은 고정 배율", () => {
     expect(fitScale("grid", { width: 2000, height: 2000 }, 0, [phone])).toBe(GRID_FIT);
-  });
-});
-
-describe("시안 정보", () => {
-  const raw = JSON.stringify([
-    {
-      id: "v",
-      name: "테스트",
-      tokens: { "label.normal": "rgb(31, 58, 95)" },
-      studio: { a: 1, b: 2 },
-    },
-    { id: "e", name: "빈 시안", tokens: {}, studio: {} },
-  ]);
-
-  it("바꾼 값 = 토큰 + 화면 속성 키 수", () => {
-    expect(findDraftInfo(raw, "v")).toEqual({ id: "v", name: "테스트", changes: 3 });
-    expect(findDraftInfo(raw, "e")?.changes).toBe(0);
-  });
-
-  it("없거나 깨진 것은 null", () => {
-    expect(findDraftInfo(raw, "nope")).toBeNull();
-    expect(findDraftInfo(raw, null)).toBeNull();
-    expect(findDraftInfo("{oops", "v")).toBeNull();
-    expect(findDraftInfo(null, "v")).toBeNull();
   });
 });

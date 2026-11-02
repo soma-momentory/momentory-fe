@@ -12,8 +12,9 @@ export const shellColor = {
   accent: "rgb(66, 104, 78)",
   accentSoft: "rgb(226, 236, 228)",
   onAccent: "rgb(255, 255, 255)",
-  draft: "rgb(176, 96, 40)",
-  draftSoft: "rgb(248, 233, 220)",
+  /** 눈에 띄게 알릴 것(B · AI 수정 결과 · 바꾼 조건) */
+  notice: "rgb(176, 96, 40)",
+  noticeSoft: "rgb(248, 233, 220)",
   danger: "rgb(176, 48, 48)",
   stage: "rgb(229, 229, 224)",
   // 기기 외형

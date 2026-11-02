@@ -130,11 +130,11 @@ export function NewScreenNav({
                     width: "100%",
                     padding: "5px 8px",
                     border: 0,
-                    borderLeft: `2px solid ${selected ? shellColor.draft : shellColor.border}`,
+                    borderLeft: `2px solid ${selected ? shellColor.notice : shellColor.border}`,
                     borderRadius: "0 7px 7px 0",
                     textAlign: "left",
                     cursor: "pointer",
-                    background: selected ? shellColor.draftSoft : "transparent",
+                    background: selected ? shellColor.noticeSoft : "transparent",
                     fontWeight: selected ? 700 : 400,
                     color: shellColor.ink,
                   }}
@@ -144,7 +144,7 @@ export function NewScreenNav({
                     style={{
                       ...ellipsis,
                       fontSize: 11,
-                      color: w.status === "working" ? shellColor.draft : shellColor.faint,
+                      color: w.status === "working" ? shellColor.notice : shellColor.faint,
                     }}
                   >
                     {w.id === pendingWorkspaceId

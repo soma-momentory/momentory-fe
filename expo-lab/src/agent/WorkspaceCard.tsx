@@ -414,7 +414,7 @@ export function WorkspaceCard({
           style={{
             fontSize: 12,
             fontWeight: 700,
-            color: running ? shellColor.draft : shellColor.accent,
+            color: running ? shellColor.notice : shellColor.accent,
           }}
         >
           {statusText(workspace)}

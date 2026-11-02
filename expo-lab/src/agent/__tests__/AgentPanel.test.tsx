@@ -232,18 +232,13 @@ async function click(el: HTMLElement) {
 }
 
 describe("머리말", () => {
-  it("화면 · 파일 · 환경 · 시안을 채우고 「지시: 」 로 끝난다", () => {
-    const header = buildInstructionHeader(
-      screenInfo,
-      { name: "버튼 둥글게", changeCount: 3 },
-      true,
-    );
+  it("화면 · 파일 · 환경을 채우고 「지시: 」 로 끝난다", () => {
+    const header = buildInstructionHeader(screenInfo);
     expect(header).toBe(
       [
         "[화면] 홈 (12) · /(tabs)/home",
         "[파일] app/(tabs)/home.tsx",
         "[환경] iPhone 16 (ios) · 데이터 보통",
-        "[시안] 「버튼 둥글게」 바꾼 값 3개 · 참고 시안 이미지 있음",
         "지시: ",
       ].join("\n"),
     );
@@ -253,19 +248,10 @@ describe("머리말", () => {
 });
 
 describe("AgentPanel", () => {
-  it("작업 공간이 없으면 한 줄 안내 · 할 말이 없으면 못 누른다 · 보내면 run(화면 · 지시 · 시안)", async () => {
+  it("작업 공간이 없으면 한 줄 안내 · 할 말이 없으면 못 누른다 · 보내면 run(화면 · 지시)", async () => {
     const { client } = makeClient(baseStatus());
-    const buildHandoff = jest.fn(() => Promise.resolve({ format: "momentory-lab-handoff@1" }));
     await act(async () => {
-      root.render(
-        <AgentPanel
-          screen={screenInfo}
-          draft={{ name: "버튼", changeCount: 2 }}
-          hasReference={false}
-          buildHandoff={buildHandoff}
-          client={client}
-        />,
-      );
+      root.render(<AgentPanel screen={screenInfo} client={client} />);
     });
     await settle();
     expect(text()).toContain("지시를 보내면 이 화면용 작업 공간을 만들어요");
@@ -274,33 +260,27 @@ describe("AgentPanel", () => {
       'textarea[aria-label="AI 에게 할 말"]',
     );
     expect(textarea?.value.endsWith("지시: ")).toBe(true);
-    expect(textarea?.value).toContain("[시안] 「버튼」 바꾼 값 2개");
+    expect(textarea?.value).not.toContain("[시안]");
     // Codex 는 이 PC 에 없다 → 고를 수 없다
     expect(button("Codex").disabled).toBe(true);
-    // 시안이 있으면 지시 없이도 보낼 수 있다
-    expect(button("AI에게 수정 맡기기").disabled).toBe(false);
+    // 할 말도 그림도 없으면 보낼 수 없다
+    expect(button("AI에게 수정 맡기기").disabled).toBe(true);
 
     await act(async () => typeInto(textarea!, `${textarea!.value}카드 간격을 넓혀줘`));
     await click(button("AI에게 수정 맡기기"));
-    expect(buildHandoff).toHaveBeenCalled();
     expect(client.run).toHaveBeenCalledWith(
       expect.objectContaining({
         agent: "claude",
         target: expect.objectContaining({ kind: "edit", route: "/(tabs)/home", specId: "12" }),
         instruction: expect.stringContaining("지시: 카드 간격을 넓혀줘"),
-        handoff: { format: "momentory-lab-handoff@1" },
         attachments: [],
       }),
     );
   });
 
-  it("시안도 할 말도 없으면 「AI에게 수정 맡기기」를 누를 수 없다", async () => {
+  it("할 말도 그림도 없으면 「AI에게 수정 맡기기」를 누를 수 없다", async () => {
     const { client } = makeClient(baseStatus());
-    await act(async () =>
-      root.render(
-        <AgentPanel screen={screenInfo} draft={null} hasReference={false} client={client} />,
-      ),
-    );
+    await act(async () => root.render(<AgentPanel screen={screenInfo} client={client} />));
     await settle();
     expect(button("AI에게 수정 맡기기").disabled).toBe(true);
   });
@@ -328,13 +308,7 @@ describe("AgentPanel", () => {
     const onOpenWorkspace = jest.fn();
     await act(async () =>
       root.render(
-        <AgentPanel
-          screen={screenInfo}
-          draft={{ name: "x", changeCount: 1 }}
-          hasReference={false}
-          client={client}
-          onOpenWorkspace={onOpenWorkspace}
-        />,
+        <AgentPanel screen={screenInfo} client={client} onOpenWorkspace={onOpenWorkspace} />,
       ),
     );
     await settle();
@@ -348,11 +322,7 @@ describe("AgentPanel", () => {
   it("작업 공간 카드 — 결과 · 하지 않은 것 · 더 필요한 그림 · 바뀐 파일 · 새 그림 · 수정 결과 보기", async () => {
     const summary = ws();
     const { client } = makeClient(baseStatus({ workspaces: [summary] }), detailOf(summary));
-    await act(async () =>
-      root.render(
-        <AgentPanel screen={screenInfo} draft={null} hasReference={false} client={client} />,
-      ),
-    );
+    await act(async () => root.render(<AgentPanel screen={screenInfo} client={client} />));
     await settle();
     expect(button("이어서 맡기기")).toBeTruthy();
     expect(text()).toContain("수정됨 · 저장 전");
@@ -372,11 +342,7 @@ describe("AgentPanel", () => {
   it("수정 저장(커밋) — 검사가 통과하면 바로 저장한다", async () => {
     const summary = ws();
     const { client } = makeClient(baseStatus({ workspaces: [summary] }), detailOf(summary));
-    await act(async () =>
-      root.render(
-        <AgentPanel screen={screenInfo} draft={null} hasReference={false} client={client} />,
-      ),
-    );
+    await act(async () => root.render(<AgentPanel screen={screenInfo} client={client} />));
     await settle();
     const message = container.querySelector<HTMLTextAreaElement>(
       'textarea[aria-label="저장 메시지"]',
@@ -402,11 +368,7 @@ describe("AgentPanel", () => {
         } as CheckState,
       }),
     );
-    await act(async () =>
-      root.render(
-        <AgentPanel screen={screenInfo} draft={null} hasReference={false} client={client} />,
-      ),
-    );
+    await act(async () => root.render(<AgentPanel screen={screenInfo} client={client} />));
     await settle();
     await click(button("수정 저장(커밋)"));
     expect(client.commit).not.toHaveBeenCalled();
@@ -432,11 +394,7 @@ describe("AgentPanel", () => {
       detailOf(summary, running),
     );
     document.title = "Momentory Lab";
-    await act(async () =>
-      root.render(
-        <AgentPanel screen={screenInfo} draft={null} hasReference={false} client={client} />,
-      ),
-    );
+    await act(async () => root.render(<AgentPanel screen={screenInfo} client={client} />));
     await settle();
     expect(button("AI 멈추기")).toBeTruthy();
     await act(async () => {

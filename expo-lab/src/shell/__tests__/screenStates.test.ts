@@ -1,10 +1,10 @@
 import { describe, expect, it } from "@jest/globals";
 import { FrameBus } from "../frameBus";
-import { framesFor, stateSpecs, withFailPaths } from "../frameSpecs";
-import { DEFAULT_STATE, parseHash, serializeHash, type ShellState } from "../hashState";
+import { describeFailPaths, stateLabel } from "../ScreenStatePicker";
 import { findRoute, matchPathname } from "../routes";
 import {
   apiPrefix,
+  bStatesFor,
   currentStateOf,
   failurePathsFrom,
   LOADING_LATENCY_MS,
@@ -13,13 +13,12 @@ import {
 } from "../screenStates";
 import { fitRow, fitScale } from "../stageFit";
 
-const REAL = Date.parse("2026-11-02T14:05:00+09:00");
-const noSample = () => ({});
 const route = (path: string) => findRoute(path)!;
 
-describe("상태별로 보기 — 상태 목록", () => {
-  it("로그인한 화면은 빈 계정 · 보통 · 많음 · 긴 문구 · 불러오는 중 · 불러오기 실패", () => {
+describe("화면 상태 — 고를 수 있는 것", () => {
+  it("로그인한 화면은 신규 사용자 · 빈 계정 · 보통 · 많음 · 긴 문구 · 불러오는 중 · 불러오기 실패", () => {
     expect(statesFor(route("/home")).map((s) => s.label)).toEqual([
+      "신규 사용자",
       "빈 계정",
       "보통",
       "많음",
@@ -32,7 +31,19 @@ describe("상태별로 보기 — 상태 목록", () => {
   it("로그인 전 · 온보딩 화면은 신규 사용자 하나와 불러오는 중 · 실패", () => {
     for (const path of ["/login", "/intro/start", "/mood"]) {
       expect(statesFor(route(path)).map((s) => s.id)).toEqual(["new-user", "loading", "failure"]);
+      expect(bStatesFor(route(path)).map((s) => s.id)).toEqual(["new-user", "loading", "failure"]);
     }
+  });
+
+  it("B 화면 상태는 일반 화면에서 신규 사용자를 뺀다 — 앱이 B 를 온보딩으로 보내면 A 까지 끌려간다", () => {
+    expect(bStatesFor(route("/home")).map((s) => s.id)).toEqual([
+      "empty",
+      "normal",
+      "many",
+      "long-copy",
+      "loading",
+      "failure",
+    ]);
   });
 
   it("불러오는 중은 보통 + 1분 지연, 실패는 보통 + 이 화면이 부른 주소", () => {
@@ -73,10 +84,13 @@ describe("상태별로 보기 — 상태 목록", () => {
     );
     expect(currentStateOf({ ...base, latencyMs: 1000 }, home, detected)).toBeNull();
     expect(currentStateOf({ ...base, failPaths: ["/api/v1/reports"] }, home, detected)).toBeNull();
+    // 머리 · 도구줄에 쓰는 이름
+    expect(stateLabel({ ...base, dataset: "many" }, home, detected)).toBe("많음");
+    expect(stateLabel({ ...base, latencyMs: 1000 }, home, detected)).toBe("직접 고른 조건");
   });
 });
 
-describe("상태별로 보기 — 실패시킬 주소", () => {
+describe("화면 상태 — 실패시킬 주소", () => {
   it("요청 주소에서 id · 날짜 · 검색 조건을 뗀 접두사", () => {
     expect(apiPrefix("/api/v1/diaries/12?x=1")).toBe("/api/v1/diaries");
     expect(apiPrefix("/api/v1/letters/2026-11-01")).toBe("/api/v1/letters");
@@ -99,11 +113,11 @@ describe("상태별로 보기 — 실패시킬 주소", () => {
 
   it("셸은 프레임이 서 있던 화면 몫으로 모은다 — 두 단계 열기의 경유 화면 요청은 빼고", () => {
     const bus = new FrameBus();
-    bus.setPathname("s-normal", "/home");
-    bus.handle({ type: "lab:ready", frameId: "s-normal", pathname: "/home" });
+    bus.setPathname("solo", "/home");
+    bus.handle({ type: "lab:ready", frameId: "solo", pathname: "/home" });
     bus.handle({
       type: "lab:request",
-      frameId: "s-normal",
+      frameId: "solo",
       method: "GET",
       path: "/api/v1/schedules?date=2026-11-02",
       status: 200,
@@ -125,61 +139,17 @@ describe("상태별로 보기 — 실패시킬 주소", () => {
   });
 });
 
-describe("상태별로 보기 — 프레임", () => {
-  const state: ShellState = { ...DEFAULT_STATE, route: "/report", layout: "states" };
-
-  it("상태마다 칸 하나 — 칸마다 따로인 프레임 id · 데이터 · 지연", () => {
-    const specs = framesFor(state, noSample, REAL);
-    expect(specs.map((spec) => spec.frameId)).toEqual([
-      "s-empty",
-      "s-normal",
-      "s-many",
-      "s-long-copy",
-      "s-loading",
-      "s-failure",
-    ]);
-    expect(specs.map((spec) => spec.config.datasetId)).toEqual([
-      "empty",
-      "normal",
-      "many",
-      "long-copy",
-      "normal",
-      "normal",
-    ]);
-    expect(specs.find((spec) => spec.frameId === "s-loading")!.config.latencyMs).toBe(
-      LOADING_LATENCY_MS,
+describe("화면 상태 — 안내 · 배율", () => {
+  it("실패시킨 주소는 /api/v1 을 떼고 보여 준다", () => {
+    expect(describeFailPaths(["/api/v1/reports/weekly", "/api/v1/users/me"])).toBe(
+      "실패시킨 요청: /reports/weekly · /users/me",
     );
-    // 실패 칸의 주소는 셸이 모은 뒤 채운다
-    const failure = specs.find((spec) => spec.frameId === "s-failure")!;
-    expect(failure.config.failPaths).toEqual([]);
-    expect(withFailPaths(failure, ["/api/v1/reports"]).config.failPaths).toEqual([
-      "/api/v1/reports",
-    ]);
+    expect(describeFailPaths([])).toBe("실패시킬 요청이 없어요");
   });
 
-  it("로그인 전 화면은 세션 없이 신규 사용자로", () => {
-    const specs = stateSpecs(state, route("/login"), noSample, REAL);
-    expect(
-      specs.map((spec) => [spec.frameId, spec.config.signedIn, spec.config.datasetId]),
-    ).toEqual([
-      ["s-new-user", false, "new-user"],
-      ["s-loading", false, "new-user"],
-      ["s-failure", false, "new-user"],
-    ]);
-  });
-
-  it("해시에 layout=states 가 남는다", () => {
-    expect(serializeHash(state)).toContain("layout=states");
-    expect(parseHash(serializeHash(state)).layout).toBe("states");
-    expect(parseHash(serializeHash({ ...state, panel: "reference" })).panel).toBe("reference");
-  });
-
-  it("맞춤 배율 — 상태 칸은 줄을 바꿔 가며 크게, 나란히 놓기는 한 줄에", () => {
+  it("A/B 는 두 대를 한 줄에 — fitRow 와 같다", () => {
     const phone = { width: 420, height: 880 };
     const area = { width: 1100, height: 900 };
-    const six = fitScale("states", area, 12, Array(6).fill(phone));
-    expect(six).toBeGreaterThan(0.2);
-    expect(six).toBeLessThan(1);
     const two = fitRow(area, 12, [phone, phone]);
     expect(two).toBeCloseTo(fitScale("ab", area, 12, [phone, phone]));
     expect(fitRow(area, 12, [phone, phone, phone])).toBeLessThan(two);

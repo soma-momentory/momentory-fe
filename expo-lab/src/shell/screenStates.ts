@@ -1,8 +1,9 @@
 /**
- * 「상태별로 보기」 · 한 화면 「상태: 보통 ▾」 — 같은 화면을 데이터 양 · 불러오는 중 · 불러오기 실패로.
+ * 「화면 조건」 패널의 「화면 상태」(+ A/B 의 「B 화면 상태」) — 같은 화면을 데이터 양 · 불러오는 중 ·
+ * 불러오기 실패로. 고르는 자리는 패널 하나뿐이다(`ScreenStatePicker.tsx`).
  *
- * - 데이터 상태(빈 계정 · 보통 · 많음 · 긴 문구)는 가짜 서버 데이터 세트 하나씩이다. 로그인 전 ·
- *   온보딩 화면은 데이터 세트가 「신규 사용자」로 묶여 있어 그 하나만 보인다.
+ * - 데이터 상태(신규 사용자 · 빈 계정 · 보통 · 많음 · 긴 문구)는 가짜 서버 데이터 세트 하나씩이다. 로그인 전 ·
+ *   온보딩 화면은 데이터 세트가 「신규 사용자」로 묶여 있어 그 하나만 고른다.
  * - 불러오는 중 = 보통 + 서버가 1분 늦게 답한다(`LOADING_LATENCY_MS`) — 그동안 로딩이 머문다.
  * - 불러오기 실패 = 보통 + **이 화면이 실제로 부른 서버 주소**를 실패시킨다. 주소는 셸이 프레임의
  *   `lab:request` 를 받을 때 그 프레임이 서 있던 화면 몫으로 모은다(`frameBus.pathsFor`) —
@@ -13,7 +14,7 @@
  * 순수 함수만 둔다 — `__tests__/screenStates.test.ts` 가 고정한다.
  */
 import type { DatasetId } from "../lab-contract";
-import type { ShellState } from "./hashState";
+import type { ShellState, StateConfig } from "./hashState";
 import type { ShellRoute } from "./routes";
 
 export type ScreenStateId =
@@ -33,7 +34,7 @@ const STATES: Record<ScreenStateId, ScreenStateDef> = {
   "new-user": {
     id: "new-user",
     label: "신규 사용자",
-    help: "처음 설치한 사람처럼 기록이 하나도 없는 상태예요",
+    help: "처음 설치해 온보딩도 하지 않은 사람이에요 — 일반 화면은 앱이 온보딩으로 보낼 수 있어요",
   },
   empty: { id: "empty", label: "빈 계정", help: "온보딩은 마쳤지만 기록이 하나도 없는 상태예요" },
   normal: { id: "normal", label: "보통", help: "2주쯤 꾸준히 쓴 사람의 기록이에요" },
@@ -59,7 +60,7 @@ const STATES: Record<ScreenStateId, ScreenStateDef> = {
   },
 };
 
-const DATA_STATES: readonly ScreenStateId[] = ["empty", "normal", "many", "long-copy"];
+const DATA_STATES: readonly ScreenStateId[] = ["new-user", "empty", "normal", "many", "long-copy"];
 
 /** 데이터 세트가 「신규 사용자」로 묶인 화면(로그인 전 · 온보딩)인가 */
 export const isNewUserRoute = (route: Pick<ShellRoute, "preset">) =>
@@ -71,6 +72,13 @@ export function statesFor(route: Pick<ShellRoute, "preset">): ScreenStateDef[] {
   return [...data, "loading", "failure"].map((id) => STATES[id as ScreenStateId]);
 }
 
+/**
+ * A/B 의 B 에 고를 수 있는 상태. 일반 화면에서는 「신규 사용자」를 뺀다 — 앱이 B 를 온보딩으로 보내면
+ * 「두 화면 함께 이동」이 A 까지 온보딩으로 끌고 간다
+ */
+export const bStatesFor = (route: Pick<ShellRoute, "preset">): ScreenStateDef[] =>
+  statesFor(route).filter((def) => isNewUserRoute(route) || def.id !== "new-user");
+
 export const stateDef = (id: ScreenStateId) => STATES[id];
 
 /** 그 상태의 바탕 데이터 세트 */
@@ -79,11 +87,7 @@ export function datasetOf(route: Pick<ShellRoute, "preset">, id: ScreenStateId):
   return id === "new-user" ? "new-user" : id;
 }
 
-export type StateFrameConfig = {
-  dataset: DatasetId;
-  latencyMs: number;
-  failPaths: string[];
-};
+export type StateFrameConfig = StateConfig;
 
 /**
  * 상태 하나 → 프레임 설정 조각. 화면이 붙잡으려고 건 실패 주소(스플래시)는 늘 둔다.
@@ -110,7 +114,7 @@ const unique = (items: readonly string[]) => [...new Set(items)];
  * 실패는 화면이 나중에 부른 주소가 늘어도 그대로 「불러오기 실패」로 읽는다(실패시킨 것이 모은 것 안에 있으면)
  */
 export function currentStateOf(
-  state: Pick<ShellState, "dataset" | "latencyMs" | "failPaths">,
+  state: Pick<ShellState, "dataset" | "latencyMs" | "failPaths"> | StateConfig,
   route: Pick<ShellRoute, "preset">,
   detected: readonly string[],
 ): ScreenStateId | null {

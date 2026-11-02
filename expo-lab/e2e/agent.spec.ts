@@ -130,7 +130,7 @@ test("「AI에게 맡기기」 탭 — 지금 화면 · 파일 · 기기 · 데�
   expect(text).toContain("[화면] 홈 (12 · 12-b) · /home");
   expect(text).toContain("[파일] app/(tabs)/home.tsx");
   expect(text).toContain("[환경] iPhone 16 (ios) · 데이터 보통");
-  expect(text).toContain("[시안] 없음 · 참고 시안 이미지 없음");
+  expect(text).not.toContain("[시안]");
   expect(text.trimEnd().endsWith("지시:")).toBe(true);
   // 다른 화면을 고르면 머리말이 따라간다
   await page.getByTestId("route-tree").locator('[data-route="/rest"]').click();
@@ -217,11 +217,10 @@ test.describe("프레임과 말하기 (실제 앱 프레임)", () => {
     await expect(frame).toHaveAttribute("src", `${PREVIEW_URL}/home`);
     expect(await frameConfig(page, "B")).toMatchObject({
       frameId: "B",
-      designDraftId: null,
       shellOrigin: new URL(page.url()).origin,
     });
     await expect(page.getByTestId("cross-origin-note")).toHaveText(
-      "AI 수정 결과 화면은 다른 서버라 돋보기 · 눌러 고르기를 쓸 수 없어요",
+      "AI 수정 결과 화면은 다른 서버라 돋보기를 쓸 수 없어요",
     );
 
     // 프레임 → 셸: lab:ready — 다른 출처 프레임이 셸에 말했다(배지만으로는 모른다 — 셸이 붙일 때 주소를 적는다)
@@ -256,6 +255,6 @@ test.describe("프레임과 말하기 (실제 앱 프레임)", () => {
     // 돌아가기 — B 가 이 서버의 앱으로
     await page.getByTestId("preview-close").click();
     await expect(page.getByTestId("lab-frame-B")).toHaveAttribute("src", "/report");
-    await expect(page.getByTestId("frame-label-B")).toHaveAttribute("title", "B · 시안 없음");
+    await expect(page.getByTestId("frame-label-B")).toHaveAttribute("title", "B · 지금 앱");
   });
 });

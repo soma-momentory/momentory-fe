@@ -8,18 +8,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-const DRAFTS = JSON.stringify([
-  {
-    id: "v",
-    name: "테스트",
-    tokens: { "label.normal": "rgb(31, 58, 95)" },
-    studio: {},
-    updatedAt: "2026-11-02T00:00:00.000Z",
-  },
-  { id: "e", name: "빈 시안", tokens: {}, studio: {}, updatedAt: "2026-11-02T00:00:00.000Z" },
-]);
-
-/** 오른쪽 패널은 처음에 디자인 편집기다 — 조작 패널로 바꾼다 */
+/** 오른쪽 패널은 처음부터 「화면 조건」이다 — 다른 탭에서 왔을 때를 위해 눌러 둔다 */
 const openControls = (page: Page) => page.getByRole("tab", { name: "화면 조건" }).click();
 
 const frameConfig = async (page: Page, frameId: string) => {
@@ -42,8 +31,12 @@ test("기본 주소는 홈 한 화면이고 해시에 상태가 적힌다", asyn
     signedIn: true,
     repeatToday: true,
   });
-  // 첫 화면 오른쪽에 디자인 편집기가 보인다(갈래 D 의 studio.spec 이 여기서 시작한다)
-  await expect(page.getByTestId("design-editor-panel")).toBeVisible();
+  // 첫 화면 오른쪽은 「화면 조건」 — 맨 위 「화면 상태」가 보통
+  await expect(page.getByTestId("controls-panel")).toBeVisible();
+  await expect(page.getByTestId("screen-state")).toHaveValue("normal");
+  // 디자인 편집 · 참고 시안 탭은 없다
+  const tabs = await page.getByRole("tablist", { name: "패널" }).getByRole("tab").allTextContents();
+  expect(tabs).toEqual(["화면 조건", "AI에게 맡기기"]);
 });
 
 test("라우트 목록은 앱 순서의 접힌 묶음이고, ＋ 로 펼치며 검색된다", async ({ page }) => {
@@ -101,7 +94,7 @@ test("로그인 전 화면을 고르면 세션 없는 new-user 프레임으로 �
 test("뒤로/앞으로가 레이아웃과 화면을 되돌린다", async ({ page }) => {
   await page.goto("/");
   await page.locator('[data-route="/archive"]').click();
-  await page.getByRole("tab", { name: "지금 앱과 비교 (A/B)" }).click();
+  await page.getByRole("tab", { name: "나란히 비교 (A/B)" }).click();
   await expect(page.getByTestId("lab-frame-A")).toBeVisible();
   await expect(page.getByTestId("lab-frame-B")).toBeVisible();
 
@@ -131,52 +124,64 @@ test("해시를 그대로 열면 같은 상태로 돌아온다", async ({ page }
     failPaths: ["/api/v1/reports"],
     repeatToday: false,
   });
-  await expect(page.getByLabel("테스트 데이터")).toHaveValue("many");
+  // 1초 지연 · 실패 주소를 직접 걸었으니 화면 상태는 「직접 고른 조건」
+  await expect(page.getByTestId("screen-state")).toHaveValue("");
+  await expect(page.getByTestId("screen-state-note")).toContainText("직접 바꾼 조건");
   await expect(page.getByLabel("오늘 다시 쓰기")).not.toBeChecked();
 });
 
-test("A/B — A 는 승인본, B 는 시안 자리 · 같은 라우트와 데이터", async ({ page }) => {
+test("A/B — B 화면 상태가 없으면 A와 같은 라우트 · 같은 설정", async ({ page }) => {
   await page.goto(
     "/#/screens?route=/report&dataset=normal&platform=ios&device=iphone-16&layout=ab",
   );
   const a = await frameConfig(page, "A");
   const b = await frameConfig(page, "B");
-  expect(a.designDraftId).toBeNull();
-  expect(a.datasetId).toBe(b.datasetId);
+  expect({ ...b, frameId: "A" }).toEqual(a);
   await expect(page.getByTestId("lab-frame-A")).toHaveAttribute("src", "/report");
   await expect(page.getByTestId("lab-frame-B")).toHaveAttribute("src", "/report");
 });
 
-test("A/B 는 스스로 설명한다 — 시안이 없으면 B 에 「시안 만들기」, 있으면 이름 · 바꾼 값 수", async ({
+test("A/B 는 스스로 설명하고, 화면 조건의 「B 화면 상태」로 B 만 다른 상태가 된다", async ({
   page,
 }) => {
   await page.goto(
-    "/#/screens?route=/home&dataset=normal&platform=ios&device=iphone-16&layout=ab&panel=controls",
+    "/#/screens?route=/home&dataset=normal&platform=ios&device=iphone-16&layout=ab&panel=agent",
   );
   await expect(page.getByTestId("ab-banner")).toContainText(
-    "A는 지금 앱, B는 디자인 편집에서 고친 시안이에요.",
+    "A와 B는 지금 같은 화면 · 같은 상태(「보통」)예요.",
   );
   await expect(page.getByTestId("frame-label-A")).toContainText("A · 지금 앱");
-  await expect(page.getByTestId("ab-no-draft")).toContainText("아직 시안이 없어서 A와 똑같아요");
-  await page.getByRole("button", { name: "시안 만들기" }).click();
-  await expect(page).not.toHaveURL(/panel=controls/);
-  await expect(page.getByTestId("design-editor-panel")).toBeVisible();
-  await expect(page.getByLabel("시안 이름")).toBeFocused();
-
-  // 시안을 고르면 B 머리에 이름과 바꾼 값 수
-  await page.evaluate((value) => localStorage.setItem("momentory.lab.designDrafts", value), DRAFTS);
-  await page.goto(
-    "/#/screens?route=/home&dataset=normal&platform=ios&device=iphone-16&layout=ab&draft=v",
-  );
-  await expect(page.getByTestId("frame-label-B")).toContainText("B · 시안 「테스트」");
-  await expect(page.getByTestId("draft-change-count")).toHaveText("바꾼 값 1개");
-  await expect(page.getByTestId("ab-no-draft")).toHaveCount(0);
-  await page.goto(
-    "/#/screens?route=/home&dataset=normal&platform=ios&device=iphone-16&layout=ab&draft=e",
-  );
-  await expect(page.getByTestId("ab-empty-draft")).toContainText(
-    "시안 「빈 시안」에 아직 바꾼 값이 없어요",
-  );
+  await expect(page.getByTestId("frame-state-A")).toHaveText("화면 상태: 보통");
+  await expect(page.getByTestId("frame-state-B")).toHaveText("화면 상태: 보통 (A와 같게)");
+  // 「B 화면 상태 바꾸기」 → 화면 조건 패널이 열리고 B 칸에 커서
+  await page.getByTestId("ab-pick-b").click();
+  await expect(page).not.toHaveURL(/panel=agent/);
+  const bPicker = page.getByTestId("b-screen-state");
+  await expect(bPicker).toBeFocused();
+  await expect(bPicker).toHaveValue("");
+  // B 에는 신규 사용자가 없다(앱이 B 를 온보딩으로 보내면 A 까지 끌려간다)
+  await expect(bPicker.locator('option[value="new-user"]')).toHaveCount(0);
+  await bPicker.selectOption({ label: "많음" });
+  await expect(page).toHaveURL(/bdata=many/);
+  expect(await frameConfig(page, "A")).toMatchObject({ datasetId: "normal", latencyMs: 0 });
+  expect(await frameConfig(page, "B")).toMatchObject({ datasetId: "many", latencyMs: 0 });
+  await expect(page.getByTestId("frame-state-B")).toHaveText("화면 상태: 많음");
+  await expect(page.getByTestId("ab-banner")).toContainText("B는 「많음」 상태로");
+  // B 를 불러오는 중으로 — B 만 1분 늦게
+  await bPicker.selectOption({ label: "불러오는 중" });
+  await expect(page).toHaveURL(/blatency=60000/);
+  expect(await frameConfig(page, "B")).toMatchObject({ datasetId: "normal", latencyMs: 60_000 });
+  expect((await frameConfig(page, "A")).latencyMs).toBe(0);
+  // A 화면 상태를 바꿔도 B 는 제 상태
+  await page.getByTestId("screen-state").selectOption({ label: "긴 문구" });
+  expect(await frameConfig(page, "A")).toMatchObject({ datasetId: "long-copy" });
+  expect(await frameConfig(page, "B")).toMatchObject({ latencyMs: 60_000 });
+  // 새로고침해도 그대로 · 「A와 같게」로 돌리면 해시에서 빠진다
+  await page.reload();
+  await expect(page.getByTestId("b-screen-state")).toHaveValue("loading");
+  await page.getByTestId("b-screen-state").selectOption({ label: "A와 같게" });
+  await expect(page).not.toHaveURL(/bdata=/);
+  expect(await frameConfig(page, "B")).toMatchObject({ datasetId: "long-copy", latencyMs: 0 });
   // 차이 보기 — B 를 A 위에 겹친다
   await page.getByLabel("겹쳐서 차이 보기").check();
   const a = (await page.getByTestId("lab-frame-A").boundingBox())!;
@@ -187,17 +192,22 @@ test("A/B 는 스스로 설명한다 — 시안이 없으면 B 에 「시안 만
 
 test("레이아웃 탭과 도구줄이 무엇을 하는지 말한다", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("tab", { name: "기기 · 데이터별로 보기" })).toHaveAttribute(
+  const tabs = await page
+    .getByRole("tablist", { name: "보는 방식" })
+    .getByRole("tab")
+    .allTextContents();
+  expect(tabs).toEqual(["한 화면", "나란히 비교 (A/B)", "모든 화면", "기기별로 보기"]);
+  await expect(page.getByRole("tab", { name: "기기별로 보기" })).toHaveAttribute(
     "title",
-    /기기별/,
+    /모든 기기/,
   );
-  await page.getByRole("tab", { name: "기기 · 데이터별로 보기" }).click();
+  await page.getByRole("tab", { name: "기기별로 보기" }).click();
   await expect(page.getByTestId("layout-description")).toHaveText(
-    "같은 화면을 기기별(또는 테스트 데이터별)로 한꺼번에 봐요",
+    "같은 화면을 표의 모든 기기에 한꺼번에 띄워요",
   );
-  await page.getByRole("button", { name: "테스트 데이터별로 보기" }).click();
-  await expect(page).toHaveURL(/matrix=datasets/);
-  await expect(page.getByTestId("frame-cell-m-new-user")).toContainText("신규 사용자");
+  // 데이터별 축은 없다 — 데이터는 화면 조건의 「화면 상태」로 바꾼다
+  await expect(page.getByRole("button", { name: "테스트 데이터별로 보기" })).toHaveCount(0);
+  await expect(page.getByTestId("frame-cell-m-pixel-8")).toContainText("Pixel 8");
 });
 
 test("확대 — 도구줄 한 곳 · 해시에 남고 · 프레임은 기기 크기 그대로 키운다", async ({ page }) => {
@@ -237,7 +247,7 @@ test("양옆 패널을 접고 펴며, 해시에 남는다", async ({ page }) => 
   await page.getByRole("button", { name: "패널 닫기" }).click();
   await expect(page).toHaveURL(/side=0/);
   await expect(page.getByTestId("side-panel")).toBeHidden();
-  await expect(page.getByRole("button", { name: "편집 칸 보기" })).toHaveAttribute(
+  await expect(page.getByRole("button", { name: "오른쪽 칸 보기" })).toHaveAttribute(
     "aria-pressed",
     "false",
   );
@@ -258,7 +268,7 @@ test("좁은 창(브라우저 확대)에서는 패널이 서랍이 되고 무대
 }) => {
   await page.setViewportSize({ width: 720, height: 600 });
   await page.goto(
-    "/#/screens?route=/report&dataset=normal&platform=ios&device=iphone-16&layout=matrix&matrix=datasets",
+    "/#/screens?route=/report&dataset=normal&platform=ios&device=iphone-16&layout=matrix",
   );
   await expect(page.getByTestId("lab-shell")).toHaveAttribute("data-narrow", "1");
   await expect(page.getByTestId("route-tree")).toBeHidden();
@@ -268,7 +278,7 @@ test("좁은 창(브라우저 확대)에서는 패널이 서랍이 되고 무대
     const box = (await label.boundingBox())!;
     expect(box.height).toBeLessThan(24);
   }
-  await page.getByRole("button", { name: "편집 칸 보기" }).click();
+  await page.getByRole("button", { name: "오른쪽 칸 보기" }).click();
   await expect(page.getByTestId("side-panel")).toBeVisible();
   await page.getByTestId("drawer-backdrop").click({ position: { x: 10, y: 300 } });
   await expect(page.getByTestId("side-panel")).toBeHidden();
@@ -311,7 +321,7 @@ test("하루 넘기기 · 되돌리기 · 지금으로 — 가상 날짜가 보�
 test("「오늘 다시 쓰기」와 일기 쓰기 다시 시작", async ({ page }) => {
   await page.goto("/");
   await openControls(page);
-  await expect(page).toHaveURL(/panel=controls/);
+  await expect(page).not.toHaveURL(/panel=/); // 화면 조건이 기본 탭이라 적지 않는다
   await page.getByLabel("오늘 다시 쓰기").uncheck();
   await expect(page).toHaveURL(/repeat=0/);
   expect((await frameConfig(page, "solo")).repeatToday).toBe(false);
@@ -356,76 +366,67 @@ test("전체 화면 — 라우트마다 칸 · 화면 근처만 부팅 · 누르
   await expect(page.getByTestId("lab-frame-solo")).toHaveAttribute("src", "/login");
 });
 
-test("상태별로 보기 — 같은 화면을 상태마다 한 칸씩 · 누르면 그 상태로 한 화면", async ({
+test("화면 상태 — 화면 조건 한 곳에서 고르면 한 화면에 걸리고, 도구줄은 그 칸을 연다", async ({
   page,
 }) => {
-  await page.goto("/");
-  const tab = page.getByRole("tab", { name: "상태별로 보기" });
-  await expect(tab).toHaveAttribute("title", /빈 계정 · 보통 · 많음 · 긴 문구 · 불러오는 중/);
-  await page.locator('[data-route="/report"]').click();
-  await tab.click();
-  await expect(page).toHaveURL(/layout=states/);
-  for (const id of ["empty", "normal", "many", "long-copy", "loading"]) {
-    await expect(page.getByTestId(`state-cell-${id}`)).toBeVisible();
-  }
-  expect(await frameConfig(page, "s-many")).toMatchObject({ datasetId: "many", latencyMs: 0 });
-  expect(await frameConfig(page, "s-loading")).toMatchObject({
-    datasetId: "normal",
-    latencyMs: 60_000,
-  });
-  await page.getByRole("button", { name: "「많음」 상태로 한 화면에서 열기" }).click();
-  await expect(page).toHaveURL(/route=\/report&dataset=many.*layout=single/);
-  // 한 화면 도구줄에서도 같은 상태를 고른다
-  const picker = page.getByTestId("state-picker");
-  await expect(picker).toHaveValue("many");
+  await page.goto("/#/screens?route=/report&layout=single&panel=agent");
+  // 도구줄에는 고르는 칸이 아니라 지금 상태 · 바로 가기만
+  await expect(page.getByTestId("state-picker")).toHaveCount(0);
+  const shortcut = page.getByTestId("state-shortcut");
+  await expect(shortcut).toHaveText("화면 상태: 보통 ▾");
+  await shortcut.click();
+  await expect(page).not.toHaveURL(/panel=agent/);
+  const picker = page.getByTestId("screen-state");
+  await expect(picker).toBeFocused();
+  // 데이터 상태 다섯 + 불러오는 중 · 실패 — 테스트 데이터 칸은 따로 없다
+  const options = await picker.locator("option").allTextContents();
+  expect(options.slice(0, 5)).toEqual(["신규 사용자", "빈 계정", "보통", "많음", "긴 문구"]);
+  expect(options[5]).toMatch(/^불러오는 중/);
+  expect(options[6]).toMatch(/^불러오기 실패/);
+  await expect(page.getByLabel("테스트 데이터")).toHaveCount(0);
+  await picker.selectOption({ label: "많음" });
+  await expect(page).toHaveURL(/route=\/report&dataset=many/);
+  expect(await frameConfig(page, "solo")).toMatchObject({ datasetId: "many", latencyMs: 0 });
+  await expect(shortcut).toHaveText("화면 상태: 많음 ▾");
+  await expect(page.getByTestId("screen-state-note")).toContainText("3개월치");
   await picker.selectOption({ label: "불러오는 중" });
   await expect(page).toHaveURL(/dataset=normal.*latency=60000/);
   expect(await frameConfig(page, "solo")).toMatchObject({ latencyMs: 60_000 });
+  await expect(page.getByRole("button", { name: "처음부터 다시 보기" })).toBeVisible();
+  // 세부 조건(1초 늦게)을 직접 바꾸면 「직접 고른 조건」
+  await page.getByRole("button", { name: "1초 늦게 응답" }).click();
+  await expect(picker).toHaveValue("");
+  await expect(shortcut).toHaveText("화면 상태: 직접 고른 조건 ▾");
 });
 
-test("상태별로 보기 — 로그인 전 화면은 신규 사용자 칸만, 요청이 없으면 그렇다고 알린다", async ({
+test("지운 기능의 옛 주소 — 상태별로 보기 · 디자인 편집 · 참고 시안 · 시안은 기본으로 돌아온다", async ({
   page,
 }) => {
-  await page.goto("/#/screens?route=/login&dataset=new-user&signedIn=0&layout=states");
-  await expect(page.getByTestId("state-cell-new-user")).toBeVisible();
-  await expect(page.getByTestId("state-cell-empty")).toHaveCount(0);
-  expect(await frameConfig(page, "s-new-user")).toMatchObject({ signedIn: false });
+  await page.goto("/#/screens?route=/report&dataset=many&layout=states&panel=design&draft=v");
+  await expect(page.getByTestId("lab-shell")).toBeVisible();
+  await expect(page.getByTestId("stage")).toHaveAttribute("data-layout", "single");
+  await expect(page.getByTestId("controls-panel")).toBeVisible();
+  expect(await frameConfig(page, "solo")).toMatchObject({ datasetId: "many" });
+  expect(await frameConfig(page, "solo")).not.toHaveProperty("designDraftId");
+  await expect(page.getByTestId("screen-state")).toHaveValue("many");
+  await page.goto("/#/screens?route=/home&layout=ab&panel=reference");
+  await expect(page.getByTestId("lab-frame-B")).toBeVisible();
+  await expect(page.getByTestId("controls-panel")).toBeVisible();
+  await expect(page.getByTestId("b-screen-state")).toHaveValue("");
 });
 
-test("참고 시안 — 오른쪽 탭에서 넣으면 폰 화면 위에 겹치고, R 로 숨기며, 나란히 놓기는 칸을 더한다", async ({
-  page,
-}) => {
-  await page.goto("/#/screens?route=/home&layout=single");
-  const tab = page.getByRole("tab", { name: "참고 시안" });
-  await expect(tab).toHaveAttribute("title", /겹쳐/);
-  await tab.click();
-  await expect(page).toHaveURL(/panel=reference/);
-  await expect(page.getByTestId("reference-panel")).toBeVisible();
-  // 시안 이미지 — 지금 폰 화면을 찍은 것
-  const image = await page.getByTestId("device-solo-screen").screenshot();
-  await page
-    .getByTestId("reference-file-input")
-    .setInputFiles({ name: "home-mockup.png", mimeType: "image/png", buffer: image });
-  // 기기 화면 상자 안, iframe 과 같은 자리에 겹친다
-  const overlay = page.getByTestId("device-solo-screen").getByTestId("reference-overlay");
-  await expect(overlay).toBeVisible();
-  await expect(overlay).toHaveAttribute("data-mode", "overlay");
-  await page.getByRole("radio", { name: "다른 곳만 표시" }).click();
-  await expect(overlay).toHaveAttribute("data-mode", "difference");
-  // R — 보이기 · 숨기기
-  await page.keyboard.press("r");
-  await expect(overlay).toHaveCount(0);
-  await page.keyboard.press("r");
-  await expect(overlay).toHaveCount(1);
-  // 옆에 나란히 놓기 — 같은 기기 외형의 칸이 하나 더 · A/B 에서도
-  await page.getByRole("radio", { name: "옆에 나란히 놓기" }).click();
-  await expect(page.getByTestId("reference-side-cell")).toBeVisible();
-  await expect(page.getByTestId("reference-side-phone")).toBeVisible();
-  await page.getByRole("tab", { name: "지금 앱과 비교 (A/B)" }).click();
-  await expect(page.getByTestId("reference-side-cell")).toBeVisible();
-  await page.getByRole("radio", { name: "반투명 겹치기" }).click();
-  await expect(page.getByTestId("device-B-screen").getByTestId("reference-overlay")).toBeVisible();
-  await expect(page.getByTestId("device-A-screen").getByTestId("reference-overlay")).toHaveCount(0);
+test("로그인 전 화면은 신규 사용자 상태로만 — 한 줄로 알린다", async ({ page }) => {
+  await page.goto("/#/screens?route=/login&dataset=new-user&signedIn=0");
+  const picker = page.getByTestId("screen-state");
+  await expect(picker).toHaveValue("new-user");
+  const values = await picker
+    .locator("option")
+    .evaluateAll((items) => items.map((item) => (item as HTMLOptionElement).value));
+  expect(values).toEqual(["new-user", "loading", "failure"]);
+  await expect(page.getByTestId("screen-state-new-user")).toContainText(
+    "「신규 사용자」)로만 열려요",
+  );
+  expect(await frameConfig(page, "solo")).toMatchObject({ signedIn: false });
 });
 
 test.describe("실제 앱 프레임이 필요한 검사 (갈래 A·B 합친 뒤)", () => {
@@ -460,19 +461,49 @@ test.describe("실제 앱 프레임이 필요한 검사 (갈래 A·B 합친 뒤)
     await expect(input).toHaveValue("모리", { timeout: 60_000 });
   });
 
-  test("상태별로 보기 — 불러오기 실패 칸은 이 화면이 부른 요청을 찾아 실패시킨다", async ({
+  test("화면 상태 「불러오기 실패」는 이 화면이 부른 요청을 찾아 실패시킨다", async ({ page }) => {
+    await page.goto("/#/screens?route=/report&layout=single");
+    const failure = page.getByTestId("screen-state").locator('option[value="failure"]');
+    // option 의 disabled 는 toBeEnabled 가 보지 않는다 — 속성으로 기다린다
+    await expect(failure).not.toHaveAttribute("disabled", { timeout: 60_000 });
+    await page.getByTestId("screen-state").selectOption("failure");
+    await expect
+      .poll(async () => (await frameConfig(page, "solo")).failPaths)
+      .toContain("/api/v1/reports/weekly");
+    await expect(page.getByTestId("screen-state-note")).toContainText("/reports/weekly");
+    await expect(
+      page.frameLocator('[data-testid="lab-frame-solo"]').getByText("리포트를 불러오지 못했어요"),
+    ).toBeVisible({ timeout: 60_000 });
+  });
+
+  test("서버에 요청하지 않는 화면은 불러오는 중 · 실패를 고를 수 없다고 한 줄로 알린다", async ({
     page,
   }) => {
-    await page.goto("/#/screens?route=/report&layout=states");
-    const failure = page.getByTestId("lab-frame-s-failure");
-    await expect(failure).toBeAttached({ timeout: 60_000 });
-    expect((await frameConfig(page, "s-failure")).failPaths).toContain("/api/v1/reports/weekly");
-    await expect(page.getByTestId("state-cell-failure")).toContainText("/reports/weekly");
-    await expect(
+    await page.goto("/#/screens?route=/login&dataset=new-user&signedIn=0");
+    await expect(page.getByTestId("screen-state-no-requests")).toHaveText(
+      "이 화면은 서버에 요청하지 않아요 — 「불러오는 중」 · 「불러오기 실패」는 고를 수 없어요.",
+      { timeout: 60_000 },
+    );
+    for (const id of ["loading", "failure"]) {
+      await expect(
+        page.getByTestId("screen-state").locator(`option[value="${id}"]`),
+      ).toHaveAttribute("disabled", "");
+    }
+  });
+
+  test("A/B 의 B 화면 상태 「많음」 — B 프레임 안이 실제로 많음 데이터다", async ({ page }) => {
+    await page.goto("/#/screens?route=/my&layout=ab&bdata=many");
+    await expect(page.getByTestId("route-badge-A")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("route-badge-B")).toBeVisible({ timeout: 60_000 });
+    expect(await frameConfig(page, "A")).toMatchObject({ datasetId: "normal" });
+    expect(await frameConfig(page, "B")).toMatchObject({ datasetId: "many" });
+    const nicknameOf = (frameId: string) =>
       page
-        .frameLocator('[data-testid="lab-frame-s-failure"]')
-        .getByText("리포트를 불러오지 못했어요"),
-    ).toBeVisible({ timeout: 60_000 });
+        .frameLocator(`[data-testid="lab-frame-${frameId}"]`)
+        .locator("body")
+        .evaluate((body) => body.innerText);
+    await expect.poll(() => nicknameOf("A"), { timeout: 60_000 }).toContain("모리");
+    await expect.poll(() => nicknameOf("B"), { timeout: 60_000 }).toContain("하루");
   });
 
   test("A/B 는 진입 가드의 잠깐 거치는 주소에 서로 끌려다니지 않는다", async ({ page }) => {
@@ -501,35 +532,6 @@ test.describe("실제 앱 프레임이 필요한 검사 (갈래 A·B 합친 뒤)
       "/#/screens?route=/report&dataset=normal&platform=ios&device=iphone-16&layout=single&fail=/api/v1/reports&panel=controls",
     );
     await expect(page.getByTestId("request-log-failed")).toBeVisible({ timeout: 60_000 });
-  });
-
-  test("한 화면 + 시안 — 「원래대로 잠깐 보기」를 누르는 동안만 승인본이 보인다", async ({
-    page,
-  }) => {
-    await page.addInitScript((value) => {
-      if (window.top === window) localStorage.setItem("momentory.lab.designDrafts", value);
-    }, DRAFTS);
-    await page.goto(
-      "/#/screens?route=/home&dataset=normal&platform=ios&device=iphone-16&layout=single&draft=v",
-    );
-    const solo = page.getByTestId("lab-frame-solo");
-    const base = page.getByTestId("lab-frame-solo-base");
-    expect((await frameConfig(page, "solo-base")).designDraftId).toBeNull();
-    await expect(page.getByTestId("single-draft-bar")).toContainText(
-      "시안 「테스트」 적용 중 · 바꾼 값 1개",
-    );
-    const button = page.getByRole("button", { name: "원래대로 잠깐 보기" });
-    await button.hover();
-    await page.mouse.down();
-    await expect(solo).not.toBeVisible();
-    await expect(base).toBeVisible();
-    await page.mouse.up();
-    await expect(solo).toBeVisible();
-    // 목록에서 화면을 옮기면 숨은 승인본도 따라간다
-    await page.locator('[data-route="/archive"]').click();
-    await expect
-      .poll(() => base.evaluate((el) => (el as HTMLIFrameElement).contentWindow?.location.pathname))
-      .toBe("/archive");
   });
 
   test("돋보기 — 렌즈 안에 같은 화면이 크게 · A/B 는 두 렌즈 · Esc 로 끈다", async ({ page }) => {

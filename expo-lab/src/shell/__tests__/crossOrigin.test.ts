@@ -104,8 +104,9 @@ describe("프레임 — 셸 메시지를 믿는 기준", () => {
 });
 
 describe("미리보기 프레임 설정", () => {
-  it("B 자리만 다른 서버에서 — 시안 없이 · 셸 출처를 싣고 · 새 화면이면 그 주소에서 시작", () => {
-    const [, b] = framesFor({ ...DEFAULT_STATE, layout: "ab", draft: "v" }, () => ({}), 0);
+  it("B 자리만 다른 서버에서 — 같은 설정(B 화면 상태 포함) · 셸 출처 · 새 화면이면 그 주소에서", () => {
+    const many = { dataset: "many" as const, latencyMs: 0, failPaths: [] };
+    const [, b] = framesFor({ ...DEFAULT_STATE, layout: "ab", b: many }, () => ({}), 0);
     const spec = withPreview(
       b!,
       { url: `${PREVIEW}/`, workspaceId: "ws", title: "잠 기록", route: "/rest/sleep-log" },
@@ -113,9 +114,8 @@ describe("미리보기 프레임 설정", () => {
     );
     expect(spec.origin).toBe(PREVIEW);
     expect(spec.startPath).toBe("/rest/sleep-log");
-    expect(spec.config).toMatchObject({ frameId: "B", designDraftId: null, shellOrigin: SHELL });
-    // 원래 B 는 그대로(시안을 건 채)
-    expect(b!.config.designDraftId).toBe("v");
+    expect(spec.config).toMatchObject({ frameId: "B", datasetId: "many", shellOrigin: SHELL });
+    // 원래 B 는 그대로
     expect(b!.config.shellOrigin).toBeUndefined();
   });
 });

@@ -59,11 +59,11 @@ describe("frame launch", () => {
     expect(config.latencyMs).toBe(0);
   });
 
-  it("reads latency, failing paths and a design draft", () => {
+  it("reads latency and failing paths, and ignores an old design draft", () => {
     const config = configFromQuery("?latency=400&fail=/api/v1/reports,/api/v1/letters&draft=d1");
     expect(config.latencyMs).toBe(400);
     expect(config.failPaths).toEqual(["/api/v1/reports", "/api/v1/letters"]);
-    expect(config.designDraftId).toBe("d1");
+    expect(config).not.toHaveProperty("designDraftId");
   });
 
   it("treats an iframe with no name as a frame with defaults", () => {

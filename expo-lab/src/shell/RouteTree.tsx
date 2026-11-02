@@ -260,7 +260,7 @@ export function RouteTree({
                               padding: "1px 5px",
                               borderRadius: 6,
                               color: shellColor.onAccent,
-                              background: frameId === "B" ? shellColor.draft : shellColor.accent,
+                              background: frameId === "B" ? shellColor.notice : shellColor.accent,
                             }}
                           >
                             {frameLabel(frameId)}

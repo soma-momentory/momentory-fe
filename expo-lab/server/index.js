@@ -318,12 +318,12 @@ function createLabAgent(options) {
     const attachments = Array.isArray(body.attachments) ? body.attachments : [];
     if (attachments.length > MAX_ATTACHMENTS)
       throw new HttpError(400, `그림은 ${MAX_ATTACHMENTS}장까지 붙일 수 있어요`);
-    // 새 화면의 참고 시안 이미지(옛 모양 `reference: {name, dataUrl}`)도 첨부 하나로 받는다
+    // 새 화면의 참고 그림(옛 모양 `reference: {name, dataUrl}`)도 첨부 하나로 받는다
     if (body.reference && typeof body.reference === "object")
       attachments.push({
         ...body.reference,
         purpose: "reference",
-        note: body.reference.note ?? "참고 시안 이미지",
+        note: body.reference.note ?? "참고 그림",
       });
     return {
       attachments,
