@@ -158,6 +158,42 @@ function normalizeResult(value) {
   };
 }
 
+/** 시안을 몇 개까지 한 번에 만드는가 — 시안마다 작업 공간 · 미리보기 서버가 하나씩이라 PC 부담을 생각해 3 */
+const MAX_VARIANTS = 3;
+
+/**
+ * 시안 k 의 출발점 — 시안끼리 같은 답을 내지 않게 방향을 하나씩 건넨다. 꼭 따르지 않아도 된다(지시가 먼저다).
+ * @type {readonly string[]}
+ */
+const VARIANT_DIRECTIONS = [
+  "지시를 가장 곧게 따르는 정석 — 지금 구성은 지키고 값 · 위계를 다듬는다",
+  "구성을 과감하게 — 배치 · 묶음 · 순서를 바꿔 같은 지시를 다른 모양으로 푼다",
+  "덜어 내는 방향 — 요소를 줄이고 여백과 강조 하나로 위계를 분명히 한다",
+];
+
+/**
+ * 「시안 k / N」 안내 — 같은 지시로 시안 여러 개를 차례로 만들 때 시안마다 붙는다(`server/index.js` 시안 묶음).
+ * @param {{ index: number; total: number; earlier?: readonly { index: number; summary: string }[] }} variant
+ */
+function variantBlock(variant) {
+  const { index, total } = variant;
+  const lines = [
+    `[시안 ${index} / ${total}]`,
+    `- 같은 지시로 시안 ${total}개를 따로 만든다 — 이 작업 공간은 그중 시안 ${index} 다. 시안마다 작업 공간이 따로라 다른 시안의 폴더는 열지 않는다.`,
+    "- 다른 시안은 다른 방향을 맡는다. 다른 시안과 겹치지 않는 뚜렷한 디자인 방향 하나를 골라 끝까지 밀고 간다 — 사용자가 시안을 나란히 놓고 하나를 고른다.",
+    `- 출발점(꼭 따르지 않아도 된다): ${VARIANT_DIRECTIONS[(index - 1) % VARIANT_DIRECTIONS.length]}`,
+    "- 방향이 달라도 저장소 규칙(CLAUDE.md · docs/DESIGN.md)은 그대로다 — 규칙을 어겨서 다르게 만들지 않는다.",
+    "- summary 첫 줄은 「방향: …」 한 줄로 이 시안이 고른 방향을 적는다(Lab 이 시안 비교 화면의 이름 아래에 그 줄을 띄운다).",
+  ];
+  const earlier = (variant.earlier ?? []).filter((e) => e.summary.trim());
+  if (earlier.length > 0)
+    lines.push(
+      "[앞서 만든 시안 — 이것들과 다른 방향으로]",
+      ...earlier.map((e) => `- 시안 ${e.index}: ${oneLine(e.summary, 300)}`),
+    );
+  return lines.join("\n");
+}
+
 /** @param {AttachmentFile} a */
 const attachmentLine = (a) =>
   `[첨부] ${a.path} · 용도: ${a.purpose === "asset" ? "앱에 넣기" : "참고용"}${a.note ? ` · 설명: ${oneLine(a.note, 200)}` : ""}`;
@@ -171,6 +207,7 @@ const attachmentLine = (a) =>
  *   workspace: { path: string; branch: string; baseBranch: string };
  *   resume?: boolean;
  *   previousSummary?: string | null;
+ *   variant?: { index: number; total: number; earlier?: readonly { index: number; summary: string }[] } | null;
  * }} input
  */
 function buildPrompt(input) {
@@ -229,6 +266,8 @@ function buildPrompt(input) {
         .join("\n"),
     );
   }
+
+  if (input.variant && !input.resume) parts.push(variantBlock(input.variant));
 
   const attachments = input.attachments ?? [];
   if (attachments.length > 0)
@@ -465,6 +504,8 @@ module.exports = {
   normalizeResult,
   RESULT_SCHEMA,
   SECTIONS,
+  MAX_VARIANTS,
+  VARIANT_DIRECTIONS,
   CLAUDE_ALLOWED,
   CLAUDE_DENIED,
   INSTRUCTION_START: START,

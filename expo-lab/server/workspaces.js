@@ -34,7 +34,13 @@ const { branchName, routeSlug, routesFromAppFiles } = require("./prompt");
  *   blocks: { commitMessage: string | null; prBody: string | null };
  *   pr: { number: number | null; url: string } | null;
  *   broken?: string | null;
+ *   group?: VariantGroup | null;
  * }} WorkspaceMeta
+ */
+
+/**
+ * 「시안 여러 개」 묶음의 한 자리 — 같은 화면 · 같은 지시로 만든 시안 N개가 같은 `id` 를 나눠 갖는다.
+ * @typedef {{ id: string; index: number; total: number; createdAt: string }} VariantGroup
  */
 
 const ATTACH_DIR = ".lab-attachments";
@@ -47,6 +53,12 @@ const BASE_BRANCH = process.env.MOMENTORY_LAB_BASE || "main";
 
 /** 작업 공간 하나를 가리키는 열쇠 — 화면 수정은 라우트, 새 화면은 slug. @param {Target} target */
 const targetKey = (target) => (target.kind === "new-screen" ? `new:${target.slug}` : target.route);
+
+/**
+ * 시안 묶음의 한 자리 열쇠 — 라우트와 겹치지 않아서 같은 화면의 「이어서 맡기기」(라우트 열쇠)가 시안을 잡지 않는다.
+ * @param {VariantGroup} group
+ */
+const variantKey = (group) => `variant:${group.id}:${group.index}`;
 
 const IMAGE_TYPES = /** @type {Record<string, string>} */ ({
   png: "image/png",
@@ -279,12 +291,32 @@ class WorkspaceStore {
   }
 
   /**
-   * @param {Target} target @param {Date} now
+   * 시안 묶음의 한 자리를 만든다 — 같은 화면이어도 늘 새 작업 공간이다(`<라우트>-s<k>` · 제목 「<화면> · 시안 k」).
+   * @param {import("./prompt").EditTarget} target @param {VariantGroup} group @param {Date} [now]
    * @returns {Promise<WorkspaceMeta>}
    */
-  async create(target, now) {
+  async createVariant(target, group, now = new Date()) {
+    return this.create(target, now, group);
+  }
+
+  /** 같은 묶음의 시안들(자리 순서). @param {string} groupId */
+  groupMembers(groupId) {
+    return this.list()
+      .filter((m) => m.group?.id === groupId)
+      .sort((a, b) => (a.group?.index ?? 0) - (b.group?.index ?? 0));
+  }
+
+  /**
+   * @param {Target} target @param {Date} now @param {VariantGroup | null} [group]
+   * @returns {Promise<WorkspaceMeta>}
+   */
+  async create(target, now, group = null) {
     const slug =
-      target.kind === "new-screen" ? `new-${routeSlug(target.slug)}` : routeSlug(target.route);
+      target.kind === "new-screen"
+        ? `new-${routeSlug(target.slug)}`
+        : group
+          ? `${routeSlug(target.route)}-s${group.index}`
+          : routeSlug(target.route);
     const all = this.load();
     let id = slug;
     for (let n = 2; all[id] || fs.existsSync(path.join(this.wsRoot, id)); n += 1)
@@ -322,9 +354,12 @@ class WorkspaceStore {
     const meta = {
       id,
       kind: target.kind,
-      key: targetKey(target),
+      key: group ? variantKey(group) : targetKey(target),
       route: target.kind === "edit" ? target.route : null,
-      title: target.kind === "edit" ? (target.title ?? target.route) : target.title || target.slug,
+      title:
+        target.kind === "edit"
+          ? `${target.title ?? target.route}${group ? ` · 시안 ${group.index}` : ""}`
+          : target.title || target.slug,
       file: target.kind === "edit" ? (target.file ?? "") : "",
       specId: target.kind === "edit" ? (target.specId ?? null) : null,
       slug: target.kind === "new-screen" ? target.slug : null,
@@ -341,6 +376,7 @@ class WorkspaceStore {
       blocks: { commitMessage: null, prBody: null },
       pr: null,
       broken: null,
+      group,
     };
     const latest = this.load();
     latest[id] = meta;
@@ -642,6 +678,7 @@ module.exports = {
   parsePorcelain,
   isInside,
   targetKey,
+  variantKey,
   decodeImage,
   safeFileName,
   prCreateArgs,
