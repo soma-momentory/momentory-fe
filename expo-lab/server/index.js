@@ -76,10 +76,17 @@ const MAX_PREVIEWS = 4;
  * Lab 이 띄우는 자식(에이전트 · 저장 전 검사 · 수정 결과 화면)의 환경 — 부모 그대로 + `MOMENTORY_LAB_RUN=1`.
  * 저장소 훅이 이 값을 본다: 알림을 끄고, 무인 에이전트가 `.claude/settings.json` · `.claude/hooks/**` · `.codex/**` 를
  * 못 고치게 막는다. 인증 값은 새로 넣지 않는다(이 PC 에 로그인된 CLI 기본값 그대로).
+ * `NODE_ENV` 는 물려주지 않는다 — Expo 가 켠 `development` 가 따라가면 jest 가 건드리지 않은 테스트까지
+ * 「Unable to locate attached view」로 깨뜨린다(2026-11-03 재현). 비워 두면 jest 가 `test` 로 잡는다.
  * @param {NodeJS.ProcessEnv} [extra]
  * @returns {NodeJS.ProcessEnv}
  */
-const labRunEnv = (extra = {}) => ({ ...process.env, MOMENTORY_LAB_RUN: "1", ...extra });
+const labRunEnv = (extra = {}) => {
+  /** @type {NodeJS.ProcessEnv} */
+  const env = { ...process.env, MOMENTORY_LAB_RUN: "1", ...extra };
+  delete env.NODE_ENV;
+  return env;
+};
 
 class HttpError extends Error {
   /** @param {number} status @param {string} message */
@@ -506,8 +513,8 @@ function createLabAgent(options) {
       if (snapshot.summary) patch.lastSummary = snapshot.summary.slice(0, 4000);
       if (snapshot.blocks.commitMessage || snapshot.blocks.prBody) patch.blocks = snapshot.blocks;
       store.update(meta.id, patch);
-      // 미리보기는 AI 실행이 **끝난 뒤** 띄운다 — 실행 중에 Metro 첫 번들이 겹치면 PC 부하로 에이전트가 돌리는
-      // jest 의 애니메이션 · 타이머 테스트가 흔들려(「Unable to locate attached view」) 없는 실패를 보고했다(2026-11-02 실측).
+      // 미리보기는 AI 실행이 **끝난 뒤** 띄운다 — 실행 중에 Metro 첫 번들이 겹치면 PC 가 무거워진다.
+      // (2026-11-02 에 부하 탓으로 본 「Unable to locate attached view」의 진짜 원인은 NODE_ENV 였다 — labRunEnv)
       // 이미 떠 있으면 그대로 둔다(파일 감시가 바뀐 코드를 다시 묶는다). 실패해도 결과는 그대로다.
       // 시안은 켜지 않는다 — 다른 시안이 아직 돌 수 있고(같은 이유), 시안 비교 화면이 열릴 때 셸이 켠다.
       if (!meta.group) ensurePreview(meta).catch(() => {});

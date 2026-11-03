@@ -15,7 +15,7 @@ const require = createRequire(import.meta.url);
 const { createLabAgent } = require("../index.js");
 const { buildPrompt, MAX_VARIANTS, VARIANT_DIRECTIONS } = require("../prompt.js");
 
-/** @type {{ cwd: string; stdin: string }[]} */
+/** @type {{ cwd: string; stdin: string; env: NodeJS.ProcessEnv }[]} */
 const spawned = [];
 let running = 0;
 let maxRunning = 0;
@@ -43,7 +43,7 @@ function fakeSpawn(
   const wait = hold;
   child.stdin.on("data", (/** @type {Buffer} */ c) => (input += c));
   child.stdin.on("end", async () => {
-    spawned.push({ cwd: opts.cwd, stdin: input });
+    spawned.push({ cwd: opts.cwd, stdin: input, env: opts.env });
     const summary = `방향: ${path.basename(opts.cwd)} 쪽\n카드를 고쳤어요.`;
     const structured = {
       summary,
@@ -151,7 +151,7 @@ async function waitIdle() {
 
 const HOME = { kind: "edit", route: "/(tabs)/home", title: "홈", file: "app/(tabs)/home.tsx" };
 
-test("시안 프롬프트 — 「시안 k / N」 · 맡은 방향 · 다른 시안이 맡은 방향 · 검사 부하", () => {
+test("시안 프롬프트 — 「시안 k / N」 · 맡은 방향 · 다른 시안이 맡은 방향 · 검사 범위", () => {
   const prompt = buildPrompt({
     agent: "claude",
     target: HOME,
@@ -164,7 +164,17 @@ test("시안 프롬프트 — 「시안 k / N」 · 맡은 방향 · 다른 시�
   assert.ok(prompt.includes(`시안 1 이 맡은 방향(이쪽과 겹치지 않게): ${VARIANT_DIRECTIONS[0]}`));
   assert.ok(prompt.includes(`시안 3 이 맡은 방향(이쪽과 겹치지 않게): ${VARIANT_DIRECTIONS[2]}`));
   assert.ok(prompt.includes("「방향: …」"));
+  // 시안은 초안이다 — 바뀐 파일만 검사하고 저장소 전체 검사는 시키지 않는다
+  assert.ok(prompt.includes("고치고 바뀐 파일만 검사한다"));
   assert.ok(prompt.includes("--maxWorkers=2"));
+  assert.ok(!prompt.includes("고치고 검사(npm run typecheck"));
+  const plain = buildPrompt({
+    agent: "claude",
+    target: HOME,
+    workspace: { path: "/ws", branch: "lab/x", baseBranch: "main" },
+  });
+  assert.ok(plain.includes("고치고 검사(npm run typecheck"), "시안이 아니면 전체 검사 그대로");
+  assert.ok(!plain.includes("고치고 바뀐 파일만 검사한다"));
   // 시안이 둘이면 없는 시안 3 의 방향은 말하지 않는다
   const two = buildPrompt({
     agent: "claude",
@@ -211,10 +221,15 @@ test("묶음 — 작업 공간 3개 · 같은 묶음 id · 시안 수만큼 동�
   /** @type {() => void} */
   let release = () => {};
   hold = new Promise((r) => (release = () => r()));
+  // Expo 가 켠 NODE_ENV 는 에이전트에게 물려주지 않는다 — jest 가 없는 실패를 낸다
+  const nodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "development";
   const res = await call("/variants", {
     method: "POST",
     json: { agent: "claude", target: HOME, instruction: "지시: 카드를 더 눈에 띄게", count: 3 },
   });
+  if (nodeEnv === undefined) delete process.env.NODE_ENV;
+  else process.env.NODE_ENV = nodeEnv;
   hold = null;
   assert.equal(res.status, 202);
   const { group, workspaces } = res.body;
@@ -284,6 +299,8 @@ test("묶음 — 작업 공간 3개 · 같은 묶음 id · 시안 수만큼 동�
     assert.ok(stdin.includes(`이 시안이 맡은 방향: ${VARIANT_DIRECTIONS[index - 1]}`));
     assert.ok(stdin.includes("지시: 카드를 더 눈에 띄게"));
   }
+  assert.ok(spawned.every((s) => s.env.NODE_ENV === undefined));
+  assert.ok(spawned.every((s) => s.env.MOMENTORY_LAB_RUN === "1"));
   assert.deepEqual(previewsStarted, [], "시안의 미리보기는 시안 비교 화면이 켠다");
   const done = idle.workspaces.filter((/** @type {any} */ w) => w.group?.id === group.id);
   assert.deepEqual(

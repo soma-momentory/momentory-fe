@@ -100,6 +100,7 @@ class ReviewCheck {
     // MOMENTORY_LAB_RUN=1 — Lab 이 띄운 실행이라는 표시(저장소 훅이 알림을 끈다 · index.js labRunEnv 와 같다)
     const env = { ...process.env, MOMENTORY_LAB_RUN: "1", CLAUDE_PROJECT_DIR: opts.wsPath };
     delete env.CODEX_REVIEW; // 에이전트 실행 때 끈 값이 여기까지 따라오지 않게 — 이 검사가 그 리뷰다
+    delete env.NODE_ENV; // Expo 의 development 가 따라가면 jest 가 없는 실패를 낸다(index.js labRunEnv)
     fs.mkdirSync(path.dirname(opts.logPath), { recursive: true });
     const log = fs.createWriteStream(opts.logPath, { flags: "a" });
     let stdout = "";
