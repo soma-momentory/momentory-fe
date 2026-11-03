@@ -447,8 +447,23 @@ class WorkspaceStore {
         if (!fs.existsSync(meta.path)) break;
         removed = await git(this.repoRoot, ["worktree", "remove", "--force", meta.path], 120_000);
       }
-      if (removed.code !== 0 && fs.existsSync(meta.path))
-        return keep(`작업 공간을 지우지 못했어요: ${removed.stderr.trim()}`);
+      if (removed.code !== 0 && fs.existsSync(meta.path)) {
+        // git 이 .git 과 등록 정보를 지운 뒤 잠긴 파일에 걸려 멈추면 폴더만 남고, 재시도는 「is not a working tree」로
+        // 실패한다(2026-11-03 실측). 이때 남은 폴더는 worktree 가 아니므로 git 을 부르면 바깥 저장소가 잡힐 수 있다 —
+        // 등록이 사라진 것을 확인한 뒤 마저 지운다. junction 은 위에서 이미 끊었다.
+        if (await this.isRegisteredWorktree(meta.path))
+          return keep(`작업 공간을 지우지 못했어요: ${removed.stderr.trim()}`);
+        try {
+          fs.rmSync(meta.path, {
+            recursive: true,
+            force: true,
+            maxRetries: REMOVE_ATTEMPTS,
+            retryDelay: REMOVE_RETRY_MS,
+          });
+        } catch (error) {
+          return keep(`작업 공간 폴더를 지우지 못했어요: ${String(error)}`);
+        }
+      }
     }
     await git(this.repoRoot, ["worktree", "prune"]);
 
@@ -464,6 +479,16 @@ class WorkspaceStore {
     delete latest[id];
     this.save(latest);
     return { ok: true };
+  }
+
+  /** git 이 이 폴더를 아직 worktree 로 아는가. @param {string} wsPath */
+  async isRegisteredWorktree(wsPath) {
+    const list = await git(this.repoRoot, ["worktree", "list", "--porcelain"]);
+    const key = (/** @type {string} */ p) => path.resolve(p).toLowerCase();
+    return list.stdout
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith("worktree "))
+      .some((line) => key(line.slice("worktree ".length)) === key(wsPath));
   }
 
   /** 바뀐 파일 · 통계 · 저장된 수정(커밋) · 새 라우트 · 새 그림. @param {WorkspaceMeta} meta */

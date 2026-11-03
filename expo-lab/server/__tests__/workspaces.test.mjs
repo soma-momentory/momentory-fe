@@ -256,6 +256,18 @@ test("버리기 — junction 을 먼저 끊고 worktree 를 지운다 · 원본 
   assert.equal(git(fx.repo, ["worktree", "list"]).split("\n").length, 1);
 });
 
+test("버리기 — git 이 등록만 지우고 폴더를 남겨도 마저 지운다 · 원본 node_modules 는 그대로", async () => {
+  const meta = await store.ensure({ kind: "edit", route: "/half-removed", title: "반쯤" }, now);
+  // 잠긴 파일에 걸려 git 이 .git 과 등록만 지운 상태를 만든다(2026-11-03 실측)
+  fs.rmSync(path.join(meta.path, ".git"));
+  git(fx.repo, ["worktree", "prune"]);
+  assert.ok(fs.existsSync(meta.path));
+  assert.deepEqual(await store.remove(meta.id), { ok: true });
+  assert.ok(!fs.existsSync(meta.path));
+  assert.equal(store.get(meta.id), null);
+  assert.ok(fs.existsSync(fx.sentinel), "원본 node_modules 가 살아 있다");
+});
+
 test("junction 끊기 — 링크가 아니면 손대지 않는다 · 없으면 그대로 통과", async () => {
   const dir = path.join(fx.tmp, "real-dir");
   fs.mkdirSync(dir);

@@ -3,6 +3,7 @@ import { describe, expect, it } from "@jest/globals";
 import type { WorkspaceSummary } from "../../agent/types";
 import {
   groupProgress,
+  memberProgress,
   pickGroup,
   shouldStartPreview,
   slotState,
@@ -203,6 +204,13 @@ describe("시안 묶음", () => {
     expect(shouldStartPreview(member(1))).toBe(false);
     expect(shouldStartPreview(member(1, { status: "working", preview: null }))).toBe(false);
     expect(shouldStartPreview(member(1, { status: "starting", preview: null }))).toBe(false);
+    // Lab 을 다시 켜면 실행 기록이 사라진다 — 수정이 남아 있으면 화면을 켠다
+    const restarted = member(1, { lastRun: null, changedCount: 6, preview: null });
+    expect(shouldStartPreview(restarted)).toBe(true);
+    expect(memberProgress(restarted)).toBe("시안 1 다 만듦");
+    const untouched = member(1, { lastRun: null, changedCount: 0, commitCount: 0, preview: null });
+    expect(shouldStartPreview(untouched)).toBe(false);
+    expect(memberProgress(untouched)).toBe("시안 1 아직 안 만듦");
     const failed = member(1, { preview: { ...off, status: "failed", error: "포트 없음" } });
     expect(shouldStartPreview(failed)).toBe(false);
     expect(slotState(failed)).toMatchObject({ label: "실패", note: "포트 없음", canStart: true });
