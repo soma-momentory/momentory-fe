@@ -35,6 +35,8 @@ type Props = {
 const BABA_SCALE = { min: 0.7, max: 1.7, fallback: 1.2 } as const;
 /** 가운데 칸을 다 채우지 않고 이만큼만 채운다 — 위아래로 숨 쉴 자리를 둔다 */
 const BABA_FILL = 0.86;
+/** SE 처럼 낮은 화면은 칸을 다 채운다 — 바바가 커지는 만큼 말풍선을 내리지 않아 말풍선이 함께 올라간다 */
+const SHORT_SCREEN = { below: 700, fill: 1 } as const;
 /** 바바 캔버스(170 × 227)에서 몸이 차지하는 높이 · 몸 아래 투명 여백 */
 const BABA_VISIBLE = 168;
 const BABA_CANVAS_BOTTOM = 35;
@@ -60,8 +62,26 @@ const LABEL_OUTLINE =
 const LABEL_STITCH =
   "M20 11 C80 9 140 12 195 10 C250 9 295 11 328 11 C338 12 340 18 340 27 C339 37 341 46 338 50 C336 54 330 55 322 55 C260 56 190 54 122 56 C82 56 44 55 22 55 C13 54 11 49 11 41 C10 32 12 24 12 18 C13 13 15 11 20 11 Z";
 
-const BUBBLE_OUTLINE =
-  "M28 22 C55 12 77 0 106 5 C129 9 153 9 178 13 C210 14 219 34 216 58 C214 78 198 90 199 106 C201 119 207 132 215 139 C193 129 179 119 169 109 C145 104 134 112 108 111 C78 110 50 106 29 103 C10 100 5 79 4 62 C2 47 11 35 28 22 Z";
+/** 말풍선 윤곽의 그림 폭(`viewBox` 왼쪽 끝 · 폭)과 꼬리 끝이 갈 수 있는 범위 */
+const BUBBLE_VIEW = { left: -4, top: -4, width: 228, height: 148 } as const;
+/** 꼬리 끝이 갈 수 있는 범위 — 가로와 세로(꼬리 길이). 세로 `min` 은 머리가 말풍선까지 올라온 작은 화면의 짧은 꼬리다 */
+const TAIL_TIP = { minX: 150, maxX: 190, fallbackX: 175, minY: 118, maxY: 139 } as const;
+const TAIL_BASE_Y = 107;
+/** 말풍선 아래로 내려오는 종이 높이 — `bubblePaper` 의 `bottom` 과 같은 값이다 */
+const BUBBLE_PAPER_DROP = 22;
+/** 바바가 앉는 기준선에서 귀 사이 머리 윗선까지의 높이(배율 1 기준 · 그림에서 잰 값) */
+const BABA_HEAD_TOP = 147;
+/** 꼬리 끝과 머리 사이를 이만큼 띄운다 */
+const TAIL_HEAD_GAP = 8;
+
+/**
+ * 말풍선 윤곽 — 꼬리 끝을 (`tipX`, `tipY`)에 둔다. 말풍선은 왼쪽에 붙고 바바는 가운데에 앉아서 화면 폭 ·
+ * 글씨 크기마다 둘의 거리가 달라진다. 꼬리를 고정하면 끝이 귀나 얼굴 위에 얹히므로 귀 사이 머리 위로 맞춘다.
+ */
+function bubbleOutline(tipX: number, tipY: number) {
+  const y = (ratio: number) => TAIL_BASE_Y + (tipY - TAIL_BASE_Y) * ratio;
+  return `M28 22 C55 12 77 0 106 5 C129 9 153 9 178 13 C210 14 219 34 216 58 C214 82 ${tipX + 18} 102 ${tipX - 8} 106 C${tipX - 7} ${y(0.35)} ${tipX - 5} ${y(0.72)} ${tipX} ${tipY} C${tipX - 17} ${y(0.69)} ${tipX - 30} ${y(0.34)} ${tipX - 39} 108 C${tipX - 49} 106 118 111 108 111 C78 110 50 106 29 103 C10 100 5 79 4 62 C2 47 11 35 28 22 Z`;
+}
 
 export function HeroCard({
   design = approvedDesign,
@@ -74,18 +94,37 @@ export function HeroCard({
   const extra = Math.max(0, fontScale - 1);
   const [heroHeight, setHeroHeight] = useState(0);
   const [scene, setScene] = useState({ width: 0, height: 0 });
+  const [bubbleBox, setBubbleBox] = useState({ x: 0, width: 0, height: 0 });
+  const [talkHeight, setTalkHeight] = useState(0);
   const sceneHeight = scene.height;
+  const { height: windowHeight } = useWindowDimensions();
+  const babaFill = windowHeight < SHORT_SCREEN.below ? SHORT_SCREEN.fill : BABA_FILL;
   const babaScale =
     sceneHeight === 0
       ? BABA_SCALE.fallback
       : Math.min(
           BABA_SCALE.max,
-          Math.max(BABA_SCALE.min, (BABA_FILL * (sceneHeight + BUBBLE_OVERLAP)) / BABA_VISIBLE),
+          Math.max(BABA_SCALE.min, (babaFill * (sceneHeight + BUBBLE_OVERLAP)) / BABA_VISIBLE),
         );
   // 바바가 최대 크기에 걸려 남는 높이만큼 말풍선을 내린다 — 꼬리가 늘 얼굴에 닿게. 자리는 그대로라 배치가 다시 돌지 않는다
   const bubbleDrop =
     sceneHeight === 0 ? 0 : Math.max(0, sceneHeight + BUBBLE_OVERLAP - BABA_VISIBLE * babaScale);
-  const { height: windowHeight } = useWindowDimensions();
+  const bubbleOffset = bubbleDrop + (extra > 0 ? 0 : BUBBLE_NUDGE);
+  // 바바는 장면 가운데에 앉는다 — 그 자리를 말풍선 그림의 좌표로 옮겨 꼬리 끝을 귀 사이 머리 위에 둔다
+  const measured = bubbleBox.width > 0 && scene.width > 0;
+  const tailX = measured
+    ? BUBBLE_VIEW.left + ((scene.width / 2 - bubbleBox.x) / bubbleBox.width) * BUBBLE_VIEW.width
+    : TAIL_TIP.fallbackX;
+  const headTop = talkHeight + sceneHeight - BABA_HEAD_TOP * babaScale;
+  const tailY = measured
+    ? BUBBLE_VIEW.top +
+      ((headTop - TAIL_HEAD_GAP - bubbleOffset) / (bubbleBox.height + BUBBLE_PAPER_DROP)) *
+        BUBBLE_VIEW.height
+    : TAIL_TIP.maxY;
+  const bubblePath = bubbleOutline(
+    Math.min(TAIL_TIP.maxX, Math.max(TAIL_TIP.minX, tailX)),
+    Math.min(TAIL_TIP.maxY, Math.max(TAIL_TIP.minY, tailY)),
+  );
   const headOnly = fontScale > HEAD_ONLY.fontScale && windowHeight < HEAD_ONLY.below;
   const compact = fontScale > 1.2 || (heroHeight > 0 && heroHeight < COMPACT_BELOW);
   // 러그는 바바 가운데에 맞추되 화면 밖으로 잘리지 않을 만큼만 넓힌다
@@ -109,19 +148,22 @@ export function HeroCard({
         </View>
       ) : null}
 
-      <View style={styles.talk}>
+      <View
+        style={styles.talk}
+        onLayout={(event) => setTalkHeight(event.nativeEvent.layout.height)}
+      >
         <View
           testID="studio-home-bubble"
+          onLayout={({ nativeEvent: { layout } }) =>
+            setBubbleBox({ x: layout.x, width: layout.width, height: layout.height })
+          }
           style={[
             styles.bubble,
             {
               minWidth: 214 + 120 * extra,
               borderRadius: design["home.bubble.borderRadius"],
               paddingHorizontal: design["home.bubble.paddingHorizontal"],
-              transform: [
-                { translateY: bubbleDrop + (extra > 0 ? 0 : BUBBLE_NUDGE) },
-                { rotate: homeV2.tilt.bubble },
-              ],
+              transform: [{ translateY: bubbleOffset }, { rotate: homeV2.tilt.bubble }],
             },
           ]}
         >
@@ -133,13 +175,13 @@ export function HeroCard({
           >
             <Svg width="100%" height="100%" viewBox="-4 -4 228 148" preserveAspectRatio="none">
               <Path
-                d={BUBBLE_OUTLINE}
+                d={bubblePath}
                 transform="translate(0 3)"
                 fill={homeV2.color.shadow}
                 opacity={0.09}
               />
               <Path
-                d={BUBBLE_OUTLINE}
+                d={bubblePath}
                 fill={design["home.bubble.backgroundColor"]}
                 stroke={homeV2.color.bubbleBorder}
                 strokeWidth={1.8}
@@ -324,7 +366,7 @@ const styles = StyleSheet.create({
     ...homeV2.type.bubble,
     transform: [{ translateY: 2 }],
   },
-  bubblePaper: { ...StyleSheet.absoluteFill, bottom: -22 },
+  bubblePaper: { ...StyleSheet.absoluteFill, bottom: -BUBBLE_PAPER_DROP },
   weather: { marginTop: 22 },
   // 날씨 사진의 위쪽 가운데에 붙인다 — 사진과 같은 쪽으로 조금 기운다
   tape: {

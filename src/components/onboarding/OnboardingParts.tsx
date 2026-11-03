@@ -189,6 +189,7 @@ export function OnboardingFrame({
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.content, !hasTop && styles.contentNoTop]}
+        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >

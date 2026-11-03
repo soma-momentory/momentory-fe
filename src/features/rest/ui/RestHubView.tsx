@@ -32,6 +32,7 @@ export function RestHubView({
       testID="studio-rest-root"
       style={styles.root}
       contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
     >
       <View testID="studio-rest-heading" style={styles.headingPaper}>
         <MaskingTape color={design["rest.heading.backgroundColor"]} />
