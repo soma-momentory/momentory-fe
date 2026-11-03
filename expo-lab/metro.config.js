@@ -6,6 +6,7 @@
  * 한 줄도 바꾸지 않는다 — 앱이 부르는 모듈 이름은 그대로이고, 무엇이 불려 오는지만 여기서 바뀐다.
  * 이름표는 `src/frame/metroShims.js`, 심마다의 이유는 `src/frame/shims/` 각 파일 머리말에 있다.
  */
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { getDefaultConfig } = require("expo/metro-config");
@@ -25,6 +26,17 @@ config.watchFolders = [
     ...["app", "src", "assets"].map((dir) => path.join(appRoot, dir)),
   ]),
 ];
+
+// `app.config.ts` 는 Babel 이 `expo-constants` 안에 문자열로 박아 넣는데(`process.env.APP_MANIFEST`), Metro 의
+// 변환 캐시 키는 그 파일의 내용만 본다 — 설정이 바뀌어도, 옛 설정의 작업 공간이 같은 캐시를 채워도 옛 설정이 그대로
+// 나온다. 그러면 `extra.apiBaseUrl` 이 비어 앱이 가짜 서버에 요청을 보내지 않고, 화면 상태를 바꿔도 전부 빈 화면이 된다
+// (2026-11-03 실측). 설정 내용을 캐시 키에 넣는다.
+const appConfigHash = crypto
+  .createHash("sha256")
+  .update(fs.readFileSync(path.join(__dirname, "app.config.ts")))
+  .digest("hex")
+  .slice(0, 12);
+config.cacheVersion = `${config.cacheVersion ?? ""}lab-config-${appConfigHash}`;
 
 const upstream = config.resolver.resolveRequest;
 
