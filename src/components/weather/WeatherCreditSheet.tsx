@@ -41,7 +41,9 @@ export function WeatherCreditSheet({
     <NativeModal
       visible={visible}
       transparent
-      animationType="slide"
+      // 움직임은 `BottomSheet` 가 맡는다 — 딤은 제자리에서 짙어지고 시트만 올라온다(홈의 일정 · 이번 주 감정과 같다).
+      // "slide" 를 주면 딤까지 함께 밀려 올라온다
+      animationType="none"
       statusBarTranslucent
       onRequestClose={onDismiss}
     >
