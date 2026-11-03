@@ -40,7 +40,6 @@ const ws = (patch: Partial<WorkspaceSummary> = {}): WorkspaceSummary => ({
   check: null,
   preview: { status: "ready", port: 8101, url: "http://localhost:8101", ready: true, error: null },
   group: { id: "g1", index: 1, total: 3, createdAt: "2026-11-02T12:00:00.000Z" },
-  queued: false,
   summaryLine: "방향: 정석",
   ...patch,
 });
@@ -120,10 +119,10 @@ describe("시안 비교 — 프레임", () => {
     expect(new Set(specs.map((s) => s.route.path))).toEqual(new Set(["/home"]));
   });
 
-  it("화면을 띄울 수 없는 시안은 iframe 대신 한 줄 — 만드는 중 · 대기 중 · 켜는 중 · 실패", () => {
+  it("화면을 띄울 수 없는 시안은 iframe 대신 한 줄 — 만드는 중 · 시작하는 중 · 켜는 중 · 실패", () => {
     const group = variantGroups([
       member(1, { status: "working", preview: null }),
-      member(2, { status: "queued", queued: true, lastRun: null, preview: null }),
+      member(2, { status: "starting", lastRun: null, preview: null }),
       member(3, {
         preview: { status: "starting", port: 8103, url: null, ready: false, error: null },
       }),
@@ -131,12 +130,12 @@ describe("시안 비교 — 프레임", () => {
     const [, a, b, c] = variantSpecs(state, group, SHELL, noSample, REAL);
     expect([a!.placeholder, b!.placeholder, c!.placeholder]).toEqual([
       "AI가 이 시안을 만드는 중이에요",
-      "앞 시안이 끝나면 차례로 만들어요",
+      "곧 만들기 시작해요",
       "수정 결과 화면을 켜는 중…",
     ]);
     expect([a!.variant!.label, b!.variant!.label, c!.variant!.label]).toEqual([
       "만드는 중",
-      "대기 중",
+      "시작하는 중",
       "준비 중",
     ]);
     expect(a!.origin).toBeUndefined();
@@ -176,15 +175,15 @@ describe("시안 묶음", () => {
     expect(pickGroup(groups, null, "/report")).toBeNull();
   });
 
-  it("진행 한 줄 — 다 만듦 · 만드는 중 · 대기 중 · 멈춤 · 실패", () => {
+  it("진행 한 줄 — 다 만듦 · 만드는 중 · 시작하는 중 · 멈춤 · 실패", () => {
     const group = {
       members: [
         member(1),
         member(2, { status: "working" }),
-        member(3, { status: "queued", queued: true, lastRun: null }),
+        member(3, { status: "starting", lastRun: null }),
       ],
     };
-    expect(groupProgress(group)).toBe("시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 대기 중");
+    expect(groupProgress(group)).toBe("시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 시작하는 중");
     expect(
       groupProgress({
         members: [
@@ -203,9 +202,7 @@ describe("시안 묶음", () => {
     expect(shouldStartPreview(member(1, { preview: null }))).toBe(true);
     expect(shouldStartPreview(member(1))).toBe(false);
     expect(shouldStartPreview(member(1, { status: "working", preview: null }))).toBe(false);
-    expect(shouldStartPreview(member(1, { queued: true, status: "queued", preview: null }))).toBe(
-      false,
-    );
+    expect(shouldStartPreview(member(1, { status: "starting", preview: null }))).toBe(false);
     const failed = member(1, { preview: { ...off, status: "failed", error: "포트 없음" } });
     expect(shouldStartPreview(failed)).toBe(false);
     expect(slotState(failed)).toMatchObject({ label: "실패", note: "포트 없음", canStart: true });

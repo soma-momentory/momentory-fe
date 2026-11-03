@@ -26,7 +26,7 @@ import { boxStyle, Btn, inputStyle, Note, smallStyle, Title } from "./ui";
 
 export const STATUS_LABEL: Record<WorkspaceStatus, string> = {
   working: "AI가 고치는 중",
-  queued: "AI 차례 기다리는 중",
+  starting: "AI 시작하는 중",
   checking: "저장 전 검사 중",
   edited: "수정됨 · 저장 전",
   committed: "저장됨 · 검토 요청 전",
@@ -387,16 +387,14 @@ export function WorkspaceCard({
   const body = prBody ?? detail?.blocks.prBody ?? "";
   const baseOptions = detail?.baseOptions ?? [status?.baseBranch ?? "main"];
   const chosenBase = base ?? status?.baseBranch ?? baseOptions[0] ?? "main";
-  const otherActive =
-    status?.activeRun && status.activeRun.workspaceId !== id ? status.activeRun : null;
-  // 시안 줄 세우기로 시작된 실행은 카드가 열린 뒤에야 생겨 `run` 이 아직 없을 수 있다 —
+  const activeRuns = status?.activeRuns ?? [];
+  const otherActive = activeRuns.find((r) => r.workspaceId !== id) ?? null;
+  // 카드가 열린 뒤에 막 시작된 실행은 `run` 이 아직 없을 수 있다 —
   // 그때는 서버의 지금 실행 시각을 쓰고, 그것도 없으면 걸린 시간을 보이지 않는다(0 이면 1970 년부터 셌다)
   const startedAt =
     run?.status === "running"
       ? run.startedAt
-      : status?.activeRun?.workspaceId === id
-        ? status.activeRun.startedAt
-        : null;
+      : (activeRuns.find((r) => r.workspaceId === id)?.startedAt ?? null);
   const preview = workspace.preview;
 
   const submitPr = async () => {
@@ -552,7 +550,13 @@ export function WorkspaceCard({
           >
             이어서 맡기기
           </Btn>
-          {otherActive ? <Note>다른 화면({otherActive.title})에서 AI가 작업 중이에요</Note> : null}
+          {otherActive && !running ? (
+            <Note>
+              {otherActive.groupId
+                ? "시안을 만드는 중이에요 — 다 끝난 뒤에 지시해요"
+                : `다른 화면(${otherActive.title})에서 AI가 작업 중이에요`}
+            </Note>
+          ) : null}
         </div>
       ) : null}
 

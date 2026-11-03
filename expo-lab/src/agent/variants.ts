@@ -2,7 +2,7 @@
  * 「시안 여러 개」 — 같은 화면 · 같은 지시로 만든 시안 N개(서버의 묶음 `group`)를 셸 · 패널이 같은 말로 그린다.
  * 순수 함수라 `__tests__/variants.test.ts` 가 고정한다.
  *
- * 서버(`server/index.js`)는 시안을 줄에 세워 **한 번에 하나씩** 돌리고, 시안의 수정 결과 화면(미리보기 서버)은
+ * 서버(`server/index.js`)는 시안을 **동시에** 돌리고, 시안의 수정 결과 화면(미리보기 서버)은
  * 실행이 끝나도 저절로 켜지 않는다 — 「시안 비교」 화면이 열릴 때 셸이 켠다(`shouldStartPreview`).
  */
 import type { WorkspaceSummary } from "./types";
@@ -79,10 +79,10 @@ export function slotState(ws: WorkspaceSummary): SlotState {
       canStart: false,
       tone: "busy",
     };
-  if (ws.status === "queued" || ws.queued)
+  if (ws.status === "starting")
     return {
-      label: "대기 중",
-      note: "앞 시안이 끝나면 차례로 만들어요",
+      label: "시작하는 중",
+      note: "곧 만들기 시작해요",
       ready: false,
       canStart: false,
       tone: "busy",
@@ -139,7 +139,7 @@ export const shouldStartPreview = (ws: WorkspaceSummary) => {
 export function memberProgress(ws: WorkspaceSummary): string {
   const name = variantName(ws);
   if (ws.status === "working") return `${name} 만드는 중`;
-  if (ws.status === "queued" || ws.queued) return `${name} 대기 중`;
+  if (ws.status === "starting") return `${name} 시작하는 중`;
   if (ws.status === "pr") return `${name} 확정 · 검토 요청 올림`;
   if (ws.status === "committed") return `${name} 저장됨`;
   const run = ws.lastRun;
@@ -149,10 +149,10 @@ export function memberProgress(ws: WorkspaceSummary): string {
   return `${name} 다 만듦`;
 }
 
-/** 묶음의 진행 한 줄 — 「시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 대기 중」 */
+/** 묶음의 진행 한 줄 — 「시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 만드는 중」 */
 export const groupProgress = (group: Pick<VariantGroupView, "members">) =>
   group.members.map(memberProgress).join(" · ");
 
-/** 묶음에서 아직 AI 가 돌거나 기다리는 시안이 있나 */
+/** 묶음에서 아직 AI 가 도는 시안이 있나 */
 export const groupBusy = (group: Pick<VariantGroupView, "members">) =>
-  group.members.some((m) => m.status === "working" || m.status === "queued" || m.queued);
+  group.members.some((m) => m.status === "working" || m.status === "starting");

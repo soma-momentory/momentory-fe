@@ -41,7 +41,7 @@ export type FrameSpec = {
   /** 시안 비교의 시안 한 자리 — 머리 둘째 줄 · 「이 시안 고르기」 */
   variant?: FrameVariant;
   /**
-   * 화면을 띄울 수 없을 때 폰 자리에 보일 한 줄(만드는 중 · 대기 중 · 켜는 중 · 실패) — 있으면 iframe 을 붙이지 않는다.
+   * 화면을 띄울 수 없을 때 폰 자리에 보일 한 줄(만드는 중 · 시작하는 중 · 켜는 중 · 실패) — 있으면 iframe 을 붙이지 않는다.
    * 시안의 수정 결과 화면이 아직 없는데 이 서버의 앱을 띄우면 「시안」이 지금 앱처럼 보이기 때문이다
    */
   placeholder?: string;
@@ -193,7 +193,7 @@ export function framesFor(state: ShellState, sample: SampleParamsFor, realMs: nu
 
 /**
  * 「시안 비교」 — 기존(지금 앱 · `V0`) + 시안마다 한 대(`V<k>`). 같은 라우트 · 같은 기기 · 같은 화면 상태(A 의 것)이고,
- * 시안은 그 작업 공간의 미리보기 서버(다른 출처 · `withPreview`)에서 뜬다. 화면을 띄울 수 없는 시안(만드는 중 · 대기 중 ·
+ * 시안은 그 작업 공간의 미리보기 서버(다른 출처 · `withPreview`)에서 뜬다. 화면을 띄울 수 없는 시안(만드는 중 · 시작하는 중 ·
  * 켜는 중 · 실패)은 `placeholder` 한 줄만 둔다.
  */
 export function variantSpecs(

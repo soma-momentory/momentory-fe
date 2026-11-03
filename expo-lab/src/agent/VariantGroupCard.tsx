@@ -1,5 +1,5 @@
 /**
- * 시안 묶음 하나의 카드 — 「AI에게 맡기기」 패널 안. 진행(「시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 대기 중」) ·
+ * 시안 묶음 하나의 카드 — 「AI에게 맡기기」 패널 안. 진행(「시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 만드는 중」) ·
  * 「시안 비교로 보기」 · 「시안 만들기 멈추기」 · 시안마다 접힌 자세히(진행 기록 · 결과 — `WorkspaceCard`).
  */
 import { useState } from "react";
@@ -78,11 +78,7 @@ export function VariantGroupCard({
       >
         {groupProgress(group)}
       </div>
-      {busy ? (
-        <Note>
-          시안은 한 번에 하나씩 차례로 만들어요 — 다 끝나기 전에는 다른 지시를 받지 않아요
-        </Note>
-      ) : null}
+      {busy ? <Note>시안을 동시에 만들어요 — 다 끝나기 전에는 다른 지시를 받지 않아요</Note> : null}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <Btn
           tone={anyDone && !busy ? "primary" : "plain"}
@@ -96,7 +92,7 @@ export function VariantGroupCard({
             tone="danger"
             disabled={stopping}
             onClick={() => void stop()}
-            title="지금 만드는 시안을 멈추고, 기다리는 시안은 만들지 않아요. 그때까지 고친 것은 남아요"
+            title="만들고 있는 시안을 모두 멈춰요. 그때까지 고친 것은 남아요"
           >
             시안 만들기 멈추기
           </Btn>
