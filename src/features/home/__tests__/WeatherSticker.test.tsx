@@ -65,6 +65,11 @@ describe("WeatherCreditSheet", () => {
     />
   );
 
+  it("움직임은 `BottomSheet` 가 맡는다 — 모달이 밀어 올리면 딤까지 함께 올라온다", async () => {
+    await render(sheet());
+    expect(screen.root?.props.animationType).toBe("none");
+  });
+
   it("요약 · 출처 이름(응답의 source 그대로) · 오늘의 갱신 시각", async () => {
     await render(sheet());
     expect(screen.getByText("맑음 · 22℃")).toBeTruthy();
