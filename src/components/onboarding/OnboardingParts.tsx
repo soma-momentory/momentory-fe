@@ -1,12 +1,20 @@
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from "react-native";
 
 import { Button, Icon, Text } from "@/components/ds";
 import {
   background,
   elevation,
   label as labelColor,
+  layout,
   line,
   onboardingArt,
   primary,
@@ -160,7 +168,7 @@ export function OnboardingFrame({
   const hasTop = onBack != null || progress != null || onSkip != null;
 
   return (
-    <View style={[styles.root, turn && styles.turn]}>
+    <View style={[styles.root, turn && styles.turn, { paddingBottom: bottom }]}>
       <View style={[styles.top, { paddingTop: insets.top + space.md }]}>
         <View style={styles.topSide}>
           {onBack != null ? (
@@ -186,59 +194,66 @@ export function OnboardingFrame({
         </View>
       </View>
 
-      <ScrollView
+      {/* 입력이 있는 화면(이름 · 기타)에서 버튼이 키보드 뒤로 숨지 않게 바로 위로 올린다 — `BasicInfoEditor` 와 같다 */}
+      <KeyboardAvoidingView
         style={styles.scroll}
-        contentContainerStyle={[styles.content, !hasTop && styles.contentNoTop]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
+        behavior="padding"
+        keyboardVerticalOffset={layout.keyboardGap}
       >
-        {children ?? (
-          <View style={styles.center}>
-            {art}
-            {title != null ? (
-              <Text variant="title3Hand" color={labelColor.strong} style={styles.title}>
-                {title}
-              </Text>
-            ) : null}
-            {body != null ? (
-              <Text variant="body2Reading" color={labelColor.neutral} style={styles.body}>
-                {body}
-                {emphasis != null ? (
-                  <Text variant="body2Reading" color={labelColor.strong}>
-                    {`\n${emphasis}`}
-                  </Text>
-                ) : null}
-              </Text>
-            ) : null}
-            {cite != null ? (
-              <Text variant="caption2" color={labelColor.alternative} style={styles.cite}>
-                {cite}
-              </Text>
-            ) : null}
-          </View>
-        )}
-      </ScrollView>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, !hasTop && styles.contentNoTop]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          {children ?? (
+            <View style={styles.center}>
+              {art}
+              {title != null ? (
+                <Text variant="title3Hand" color={labelColor.strong} style={styles.title}>
+                  {title}
+                </Text>
+              ) : null}
+              {body != null ? (
+                <Text variant="body2Reading" color={labelColor.neutral} style={styles.body}>
+                  {body}
+                  {emphasis != null ? (
+                    <Text variant="body2Reading" color={labelColor.strong}>
+                      {`\n${emphasis}`}
+                    </Text>
+                  ) : null}
+                </Text>
+              ) : null}
+              {cite != null ? (
+                <Text variant="caption2" color={labelColor.alternative} style={styles.cite}>
+                  {cite}
+                </Text>
+              ) : null}
+            </View>
+          )}
+        </ScrollView>
 
-      <View style={[styles.actions, { paddingBottom: bottom }]}>
-        {main != null ? (
-          <Button label={main.label} fill disabled={main.disabled} onPress={main.onPress} />
-        ) : null}
-        {secondary != null ? (
-          <TextLink label={secondary.label} onPress={secondary.onPress} />
-        ) : null}
-        {error != null ? (
-          <Text
-            variant="caption1"
-            color={status.negative}
-            style={styles.error}
-            accessibilityLiveRegion="polite"
-            accessibilityRole="alert"
-          >
-            {error}
-          </Text>
-        ) : null}
-      </View>
+        <View style={styles.actions}>
+          {main != null ? (
+            <Button label={main.label} fill disabled={main.disabled} onPress={main.onPress} />
+          ) : null}
+          {secondary != null ? (
+            <TextLink label={secondary.label} onPress={secondary.onPress} />
+          ) : null}
+          {error != null ? (
+            <Text
+              variant="caption1"
+              color={status.negative}
+              style={styles.error}
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+            >
+              {error}
+            </Text>
+          ) : null}
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
