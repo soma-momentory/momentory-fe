@@ -1,7 +1,8 @@
 /**
  * 「화면 조건」 패널 맨 위의 **「화면 상태」** — 같은 화면을 신규 사용자 · 기록 없음 · 기록 보통 · 기록 많음 · 긴 글 ·
  * 불러오는 중 · 불러오기 실패로 바꿔 본다. 한 화면 · A/B 의 A 에 걸리고, A/B 에서는 **「B 화면 상태」**로 B 만
- * 따로 고를 수 있다(처음은 「A와 같게」). 고르는 자리는 여기 하나뿐이다 — 도구줄 · A/B 설명은 이 칸을 연다.
+ * 따로 고를 수 있다(처음은 「A와 같게」). 한 화면의 도구줄에도 같은 목록을 띄운다(`ToolbarStatePicker` — 패널을 거치지
+ * 않고 그 자리에서 고른다 · 2026-11-04 사용자 요청). A/B 설명의 「B 화면 상태 바꾸기」는 이 칸을 연다.
  *
  * 「불러오기 실패」는 **이 화면이 실제로 부른 서버 주소**를 실패시킨다(`screenStates.ts`). 주소는 셸이 모은
  * 것(`frameBus.pathsFor`)이고, 고르는 순간의 목록을 프레임 설정에 싣는다(그 뒤 늘어도 다시 띄우지 않는다).
@@ -135,20 +136,8 @@ function stateNote(id: ScreenStateId | null, config: StateConfig) {
   return stateDef(id).help;
 }
 
-function StateSelect({
-  label,
-  showLabel = true,
-  testId,
-  defs,
-  value,
-  sameAsA,
-  detected,
-  settled,
-  onPick,
-}: {
+type StateFieldProps = {
   label: string;
-  /** 칸 위에 이름을 쓸지 — 한 화면이면 묶음 제목(「화면 상태」)과 겹쳐 뺀다 */
-  showLabel?: boolean;
   testId: string;
   defs: readonly ScreenStateDef[];
   /** 지금 상태 — null 이면 직접 고른 조건(또는 B 의 「A와 같게」) */
@@ -158,40 +147,133 @@ function StateSelect({
   detected: readonly string[];
   settled: readonly string[] | null;
   onPick: (id: ScreenStateId | null) => void;
+};
+
+/** 고르는 목록 — 패널의 칸과 도구줄이 함께 쓴다. 고를 수 없는 상태를 막는 규칙도 여기 하나다 */
+function StateField({
+  label,
+  testId,
+  defs,
+  value,
+  sameAsA,
+  detected,
+  settled,
+  onPick,
+  style,
+  onFocus,
+  onBlur,
+}: StateFieldProps & {
+  style: CSSProperties;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   const noRequests = settled != null && detected.length === 0;
   // 실패는 실패시킬 주소를 알아야 한다 · 요청이 없는 화면이면 둘 다 아무 일도 없다
   const blocked = (id: ScreenStateId) =>
     (id === "failure" && detected.length === 0) || (id === "loading" && noRequests);
   return (
+    <select
+      aria-label={label}
+      data-testid={testId}
+      value={value ?? ""}
+      onChange={(event) => {
+        const id = (event.target.value || null) as ScreenStateId | null;
+        // 막힌 칸은 자동화 도구가 값을 밀어 넣어도 고르지 않는다
+        if (id && blocked(id)) return;
+        onPick(id);
+      }}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      style={style}
+    >
+      {sameAsA ? <option value="">A와 같게</option> : null}
+      {!sameAsA && value == null ? <option value="">직접 고른 조건</option> : null}
+      {defs.map((def) => {
+        const off = blocked(def.id);
+        const suffix = off ? (noRequests ? " (요청 없는 화면)" : " (요청을 찾는 중)") : "";
+        return (
+          <option key={def.id} value={def.id} disabled={off} title={def.help}>
+            {def.label}
+            {suffix}
+          </option>
+        );
+      })}
+    </select>
+  );
+}
+
+function StateSelect({
+  showLabel = true,
+  ...field
+}: StateFieldProps & {
+  /** 칸 위에 이름을 쓸지 — 한 화면이면 묶음 제목(「화면 상태」)과 겹쳐 뺀다 */
+  showLabel?: boolean;
+}) {
+  return (
     <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-      {showLabel ? <span style={{ fontWeight: 600 }}>{label}</span> : null}
-      <select
-        aria-label={label}
-        data-testid={testId}
-        value={value ?? ""}
-        onChange={(event) => {
-          const id = (event.target.value || null) as ScreenStateId | null;
-          // 막힌 칸은 자동화 도구가 값을 밀어 넣어도 고르지 않는다
-          if (id && blocked(id)) return;
-          onPick(id);
-        }}
-        style={selectStyle}
-      >
-        {sameAsA ? <option value="">A와 같게</option> : null}
-        {!sameAsA && value == null ? <option value="">직접 고른 조건</option> : null}
-        {defs.map((def) => {
-          const off = blocked(def.id);
-          const suffix = off ? (noRequests ? " (요청 없는 화면)" : " (요청을 찾는 중)") : "";
-          return (
-            <option key={def.id} value={def.id} disabled={off} title={def.help}>
-              {def.label}
-              {suffix}
-            </option>
-          );
-        })}
-      </select>
+      {showLabel ? <span style={{ fontWeight: 600 }}>{field.label}</span> : null}
+      <StateField {...field} style={selectStyle} />
     </label>
+  );
+}
+
+/**
+ * 도구줄의 「화면 상태: 기록 보통 ▾」 — 누르면 그 자리에서 목록이 열리고, 오른쪽 패널은 움직이지 않는다.
+ * 보이는 것은 글자이고, 투명한 목록을 칩 전체에 덮어 어디를 눌러도 열리게 한다.
+ */
+export function ToolbarStatePicker({
+  route,
+  config,
+  baseFrameId,
+  chipStyle,
+  onPick,
+}: {
+  route: ShellRoute;
+  config: StateConfig;
+  /** 「요청이 있나」를 굳힐 때 기다리는 프레임 */
+  baseFrameId: string;
+  /** 도구줄 버튼들과 같은 모양 */
+  chipStyle: CSSProperties;
+  onPick: (config: StateConfig) => void;
+}) {
+  const detected = useDetectedPaths(route.path);
+  const settled = useSettledPaths(route.path, baseFrameId);
+  const [focused, setFocused] = useState(false);
+  return (
+    <span
+      data-testid="state-shortcut"
+      title="화면 상태를 바꿔요 — 기록 보통 · 기록 많음 · 불러오는 중 …"
+      style={{
+        ...chipStyle,
+        position: "relative",
+        display: "inline-block",
+        ...(focused ? { borderColor: shellColor.accent } : null),
+      }}
+    >
+      화면 상태: {stateLabel(config, route, detected)} ▾
+      <StateField
+        label="화면 상태"
+        testId="toolbar-screen-state"
+        defs={statesFor(route)}
+        value={currentStateOf(config, route, detected)}
+        detected={detected}
+        settled={settled}
+        onPick={(id) => {
+          if (id) onPick(stateConfig(route, id, detected));
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          opacity: 0,
+          cursor: "pointer",
+          fontSize: 13,
+        }}
+      />
+    </span>
   );
 }
 

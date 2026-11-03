@@ -80,7 +80,7 @@ import { LENS_POWER, LENS_SIZE, MagnifierLayer, type MagnifierTarget } from "./M
 import { findRoute, matchPathname, shellRoutes, type ShellRoute } from "./routes";
 import { RouteTree } from "./RouteTree";
 import { StageToolbar } from "./StageToolbar";
-import { stateLabel, useDetectedPaths } from "./ScreenStatePicker";
+import { stateLabel, ToolbarStatePicker, useDetectedPaths } from "./ScreenStatePicker";
 import { LOADING_LATENCY_MS } from "./screenStates";
 import { FRAME_GAP, MIN_CELL_WIDTH, STAGE_PAD_BOTTOM, STAGE_PAD_X, fitScale } from "./stageFit";
 import { shellColor, shellFont } from "./theme";
@@ -520,13 +520,11 @@ export function ShellApp() {
     else goTo({ ...state, navOpen: false }, { history: "replace" });
   };
 
-  // 도구줄 · A/B 설명의 「화면 상태 바꾸기」 — 고르는 자리는 화면 조건 패널 하나다. 그 칸을 열고 커서를 둔다
-  const focusStatePicker = (which: "a" | "b") => {
+  // A/B 설명의 「B 화면 상태 바꾸기」 — 화면 조건 패널의 그 칸을 열고 커서를 둔다
+  const focusBStatePicker = () => {
     openSide("controls");
     setTimeout(() => {
-      const select = document.querySelector<HTMLSelectElement>(
-        `[data-testid="${which === "b" ? "b-screen-state" : "screen-state"}"]`,
-      );
+      const select = document.querySelector<HTMLSelectElement>('[data-testid="b-screen-state"]');
       select?.scrollIntoView({ block: "center" });
       select?.focus();
     }, 150);
@@ -1305,15 +1303,13 @@ export function ShellApp() {
           }}
         >
           {state.layout === "single" && route ? (
-            <button
-              type="button"
-              data-testid="state-shortcut"
-              title="화면 상태(기록 보통 · 기록 많음 · 불러오는 중 …)는 오른쪽 「화면 조건」 맨 위에서 바꿔요 — 누르면 그 칸을 열어요"
-              onClick={() => focusStatePicker("a")}
-              style={toolbarChip(false)}
-            >
-              화면 상태: {aStateLabel} ▾
-            </button>
+            <ToolbarStatePicker
+              route={route}
+              config={state}
+              baseFrameId={primaryFrameId(state.layout, specs)}
+              chipStyle={toolbarChip(false)}
+              onPick={(config) => actions.set(config)}
+            />
           ) : null}
           {keyboardTargets.length ? (
             <button
@@ -1362,7 +1358,7 @@ export function ShellApp() {
                     diffOpacity={diffOpacity}
                     onDiff={setDiff}
                     onDiffOpacity={setDiffOpacity}
-                    onPickB={() => focusStatePicker("b")}
+                    onPickB={focusBStatePicker}
                   >
                     {previewSpec?.preview?.variant ? (
                       <VariantDecision

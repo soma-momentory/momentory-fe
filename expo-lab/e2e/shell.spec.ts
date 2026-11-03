@@ -376,18 +376,25 @@ test("전체 화면 — 라우트마다 칸 · 화면 근처만 부팅 · 누르
   await expect(page.getByTestId("lab-frame-solo")).toHaveAttribute("src", "/login");
 });
 
-test("화면 상태 — 화면 조건 한 곳에서 고르면 한 화면에 걸리고, 도구줄은 그 칸을 연다", async ({
+test("화면 상태 — 도구줄에서 고르면 패널이 움직이지 않고, 화면 조건의 칸과 같은 값이다", async ({
   page,
 }) => {
   await page.goto("/#/screens?route=/report&layout=single&panel=agent");
-  // 도구줄에는 고르는 칸이 아니라 지금 상태 · 바로 가기만
-  await expect(page.getByTestId("state-picker")).toHaveCount(0);
   const shortcut = page.getByTestId("state-shortcut");
-  await expect(shortcut).toHaveText("화면 상태: 기록 보통 ▾");
-  await shortcut.click();
-  await expect(page).not.toHaveURL(/panel=agent/);
+  await expect(shortcut).toHaveText(/^화면 상태: 기록 보통 ▾/);
+  const toolbarPicker = page.getByTestId("toolbar-screen-state");
+  await expect(toolbarPicker).toHaveValue("normal");
+  await toolbarPicker.selectOption({ label: "기록 많음" });
+  // 오른쪽은 「AI에게 맡기기」 그대로 — 화면 조건으로 넘어가지 않는다
+  await expect(page).toHaveURL(/panel=agent/);
+  await expect(page.getByTestId("controls-panel")).toHaveCount(0);
+  await expect(page).toHaveURL(/route=\/report&dataset=many/);
+  expect(await frameConfig(page, "solo")).toMatchObject({ datasetId: "many", latencyMs: 0 });
+  await expect(shortcut).toHaveText(/^화면 상태: 기록 많음 ▾/);
+
+  await openControls(page);
   const picker = page.getByTestId("screen-state");
-  await expect(picker).toBeFocused();
+  await expect(picker).toHaveValue("many");
   // 데이터 상태 다섯 + 불러오는 중 · 실패 — 테스트 데이터 칸은 따로 없다
   const options = await picker.locator("option").allTextContents();
   expect(options.slice(0, 5)).toEqual([
@@ -400,10 +407,6 @@ test("화면 상태 — 화면 조건 한 곳에서 고르면 한 화면에 걸�
   expect(options[5]).toMatch(/^불러오는 중/);
   expect(options[6]).toMatch(/^불러오기 실패/);
   await expect(page.getByLabel("테스트 데이터")).toHaveCount(0);
-  await picker.selectOption({ label: "기록 많음" });
-  await expect(page).toHaveURL(/route=\/report&dataset=many/);
-  expect(await frameConfig(page, "solo")).toMatchObject({ datasetId: "many", latencyMs: 0 });
-  await expect(shortcut).toHaveText("화면 상태: 기록 많음 ▾");
   await expect(page.getByTestId("screen-state-note")).toContainText("3개월치");
   await picker.selectOption({ label: "불러오는 중" });
   await expect(page).toHaveURL(/dataset=normal.*latency=60000/);
@@ -412,7 +415,8 @@ test("화면 상태 — 화면 조건 한 곳에서 고르면 한 화면에 걸�
   // 세부 조건(1초 늦게)을 직접 바꾸면 「직접 고른 조건」
   await page.getByRole("button", { name: "1초 늦게 응답" }).click();
   await expect(picker).toHaveValue("");
-  await expect(shortcut).toHaveText("화면 상태: 직접 고른 조건 ▾");
+  await expect(shortcut).toHaveText(/^화면 상태: 직접 고른 조건 ▾/);
+  await expect(toolbarPicker).toHaveValue("");
 });
 
 test("지운 기능의 옛 주소 — 상태별로 보기 · 디자인 편집 · 참고 시안 · 시안은 기본으로 돌아온다", async ({
