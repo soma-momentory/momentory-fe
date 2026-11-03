@@ -25,6 +25,8 @@ module.exports = [
       "dist/**",
       "expo-lab/dist/**",
       "expo-lab/dist-*/**",
+      // 지운 Vite Design Lab(9ade0f1)의 빌드 결과물이 로컬에 남아 있을 수 있다 — gitignore 대상
+      "design-lab/**",
       "android/**",
       "ios/**",
       "expo-env.d.ts",
