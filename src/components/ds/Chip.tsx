@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, View, type TextStyle, type ViewStyle } from "react-native";
 
 import {
   background,
@@ -44,6 +44,8 @@ type Props = {
   style?: ViewStyle;
   /** 채팅 선택지는 테두리 변화 없이 은은한 면과 들림으로 선택을 표시한다. */
   selectedStyle?: "outlined" | "soft";
+  /** 글자 크기를 덮는다 — 기본은 `label2`. 보관함 필터만 자기 값을 준다(`archiveType.chip`) */
+  labelStyle?: TextStyle;
 };
 
 export function Chip({
@@ -53,6 +55,7 @@ export function Chip({
   disabled = false,
   style,
   selectedStyle = "outlined",
+  labelStyle,
 }: Props) {
   const soft = selected && selectedStyle === "soft";
 
@@ -77,6 +80,7 @@ export function Chip({
               soft ? chatChoiceSelected.label : selected ? labelColor.strong : labelColor.neutral
             }
             numberOfLines={1}
+            style={labelStyle}
           >
             {label}
           </Text>

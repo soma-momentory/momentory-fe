@@ -3,12 +3,12 @@ import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Circle, Rect } from "react-native-svg";
 
-import { interaction, label as labelColor, primary, radius, space } from "@/design/ds";
+import { archiveType, interaction, label as labelColor, primary, radius, space } from "@/design/ds";
 import { formatKoreanMonth } from "@/lib/day";
 
 import { columnWidth } from "./columnWidth";
 import { IconButton } from "./IconButton";
-import { Text } from "./Text";
+import { Text, useEffectiveFontScale } from "./Text";
 
 /**
  * 월 달력 — `Archive.dc.html` A1 · `Rest.dc.html` R2 가 **같은 그리드**를 쓴다.
@@ -93,7 +93,13 @@ type Props = {
    * 점 모드(쉼터의 수행/미수행 점).
    */
   dateSticker?: boolean;
-  /** HTML 보관함 시안처럼 46pt 줄에 작은 얼굴을 배치한다. 기본 달력 크기는 유지한다. */
+  /**
+   * HTML 보관함 시안처럼 46pt 줄에 작은 얼굴을 배치한다. 기본 달력 크기는 유지한다.
+   *
+   * **보관함 전용**이라 읽기 값도 여기에 함께 건다(2026-11-03 · 사용자 요청) — 요일과 날짜는
+   * `archiveType` 크기에 읽히는 색이다. 쉼터(`R2`)는 이 값을 켜지 않아 그대로다.
+   * 큰 글씨에서는 머리글과 날짜 줄이 함께 자라 점과 얼굴을 누르지 않는다.
+   */
   compactDateSticker?: boolean;
   /** 월 이동 UI를 화면 제목 옆에 배치할 때 달력 안의 중복 행을 숨긴다. */
   showMonthControls?: boolean;
@@ -141,7 +147,20 @@ export function Calendar({
     : cell == null
       ? STICKER_MAX
       : Math.max(STICKER_MIN, Math.min(STICKER_MAX, Math.round(cell - STICKER_GUTTER)));
-  const schedDotTop = compactDateSticker ? 2 : SCHED_DOT_TOP;
+  const schedDotTop = compactDateSticker ? 0 : SCHED_DOT_TOP;
+  const fontScale = useEffectiveFontScale();
+  const headHeight = compactDateSticker ? Math.ceil(COMPACT_HEAD_HEIGHT * fontScale) : HEAD_HEIGHT;
+  const dateRow = compactDateSticker
+    ? Math.ceil(archiveType.date.lineHeight * fontScale)
+    : DATE_ROW;
+  const pillTop = compactDateSticker ? Math.round(COMPACT_PILL_TOP * fontScale) : PILL_DROP;
+  const pill = {
+    width: compactDateSticker
+      ? Math.min(cell ?? Infinity, Math.round(COMPACT_PILL_WIDTH * fontScale))
+      : DATE_PILL_WIDTH,
+    height: compactDateSticker ? dateRow - pillTop : DATE_ROW,
+    top: pillTop,
+  };
 
   const [y = "2026", m = "1"] = month.split("-");
   // 1일의 요일만큼 앞을 비운다 — 요일 머리글과 줄이 맞아야 달력으로 읽힌다
@@ -158,10 +177,15 @@ export function Calendar({
    * 덕에 **아래**에 남는다(`styles.grid`).
    */
   const cellHeight = dateSticker
-    ? DATE_TOP + DATE_ROW + schedDotTop + SCHED_DOT + STICKER_GAP + stickerSize
+    ? (compactDateSticker ? 0 : DATE_TOP) +
+      dateRow +
+      schedDotTop +
+      SCHED_DOT +
+      STICKER_GAP +
+      stickerSize
     : CELL_HEIGHT;
   const reservedGridHeight =
-    reserveRows == null ? null : HEAD_HEIGHT + reserveRows * (cellHeight + ROW_GAP);
+    reserveRows == null ? null : headHeight + reserveRows * (cellHeight + ROW_GAP);
 
   return (
     <View style={styles.root}>
@@ -192,8 +216,12 @@ export function Calendar({
         onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}
       >
         {WEEKDAYS.map((d) => (
-          <View key={d} style={[styles.head, cellSize]}>
-            <Text variant="caption2" color={labelColor.assistive}>
+          <View key={d} style={[styles.head, { height: headHeight }, cellSize]}>
+            <Text
+              variant={compactDateSticker ? "label1" : "caption2"}
+              color={compactDateSticker ? labelColor.neutral : labelColor.assistive}
+              style={compactDateSticker ? archiveType.weekday : null}
+            >
               {d}
             </Text>
           </View>
@@ -241,12 +269,19 @@ export function Calendar({
                   {/* 고른 날은 날짜를 **초록 알약**이 감싼다. 알약 자리(높이·최소 폭)는
                       늘 잡아 두고 색만 준다 — 고를 때 숫자가 움직이지 않게. 흰 글자가
                       얹히는 초록 면은 `primary.heavy` 하나뿐이다(`ds/color.ts` 머리말) */}
-                  <View style={styles.datePill}>
-                    {selected ? <PillFill /> : null}
+                  <View style={[styles.datePill, { width: pill.width, height: dateRow }]}>
+                    {selected ? <PillFill {...pill} /> : null}
                     <Text
-                      variant={mark.emphasized === true ? "caption1" : "caption2"}
-                      color={selected ? labelColor.onFill : cellColor(mark)}
-                      style={styles.dateNum}
+                      variant={
+                        compactDateSticker
+                          ? "label1"
+                          : mark.emphasized === true
+                            ? "caption1"
+                            : "caption2"
+                      }
+                      color={selected ? labelColor.onFill : cellColor(mark, compactDateSticker)}
+                      style={[styles.dateNum, compactDateSticker ? styles.dateNumCompact : null]}
+                      numberOfLines={1}
                     >
                       {day}
                     </Text>
@@ -306,25 +341,20 @@ export function Calendar({
  * 글자 뒤에 깔린다 — 자리(`absoluteFill`)만 차지하고 크기는 알약과 같다.
  * `testID` 는 화면 테스트가 「고른 날에만 면이 생긴다」를 보는 손잡이다.
  */
-function PillFill() {
+function PillFill({ width, height, top }: { width: number; height: number; top: number }) {
   return (
-    <View testID="date-pill" style={[StyleSheet.absoluteFill, PILL_OFFSET]} pointerEvents="none">
-      <Svg width={DATE_PILL_WIDTH} height={DATE_ROW}>
-        <Rect
-          width={DATE_PILL_WIDTH}
-          height={DATE_ROW}
-          rx={DATE_ROW / 2}
-          ry={DATE_ROW / 2}
-          fill={primary.heavy}
-        />
+    <View testID="date-pill" style={[StyleSheet.absoluteFill, { top }]} pointerEvents="none">
+      <Svg width={width} height={height}>
+        <Rect width={width} height={height} rx={height / 2} ry={height / 2} fill={primary.heavy} />
       </Svg>
     </View>
   );
 }
 
-function cellColor(mark: CalendarMark) {
+function cellColor(mark: CalendarMark, compact = false) {
   if (mark.disabled === true) return labelColor.disabled;
-  return mark.emphasized === true ? labelColor.strong : interaction.inactive;
+  if (mark.emphasized === true) return labelColor.strong;
+  return compact ? labelColor.normal : interaction.inactive;
 }
 
 /**
@@ -424,9 +454,12 @@ const DIGIT_NUDGE = 1;
  * 글자를 올리지 않는 이유: 알약이 없는 날의 숫자와 **같은 줄에 서 있어야** 한다.
  */
 const PILL_DROP = 1.7;
-
-/** 알약 면을 글리프에 맞춰 내리는 오프셋 — 위 `PILL_DROP` */
-const PILL_OFFSET = { top: PILL_DROP } as const;
+/** 보관함 요일 머리글 높이 — `archiveType.weekday` 의 행간이 들어가는 값 */
+const COMPACT_HEAD_HEIGHT = 24;
+/** 보관함의 고른 날 알약 폭 — 두 자리 숫자(폭 21)의 좌우에 5 남짓 남긴다 */
+const COMPACT_PILL_WIDTH = 28;
+/** 보관함 알약 면을 내리는 값 — 면의 아래끝이 점 자리에 닿지 않게 날짜 줄 안에서 끝난다 */
+const COMPACT_PILL_TOP = 2;
 
 /** 폭을 재기 전 한 프레임 — 퍼센트로 서 있다가 다음 프레임에 픽셀로 갈아탄다 */
 const MEASURING_WIDTH = { width: `${100 / WEEKDAYS.length}%` } as const;
@@ -494,6 +527,9 @@ const styles = StyleSheet.create({
     // 보인다**. 그 자리만큼 되돌린다 — 레이아웃이 아니라 그림만 옮기는 보정이다
     transform: [{ translateY: DIGIT_NUDGE }],
   },
+  // 보관함 — 글줄 상자가 날짜 줄과 같아서 보정 없이도 숫자가 알약 가운데에 선다.
+  // 행간은 배율 전 값이다 — `Text` 가 글꼴과 함께 키운다
+  dateNumCompact: { ...archiveType.date, transform: [{ translateY: 0 }] },
   // 일정 점 자리 — 일정이 없는 날에도 잡아 둔다(줄 높이가 오르내리지 않게).
   // 날짜에서 조금 떨어뜨려 **얼굴 쪽에 붙인다**(2026-09-07 · 사용자 요청)
   schedSlot: {

@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet } from "react-native";
 
 import { Chip } from "@/components/ds";
-import { size } from "@/design/ds";
+import { archiveType, size } from "@/design/ds";
 import { EMOTIONS_BY_SENTIMENT, type EmotionId } from "@/features/emotion/model/emotion";
 
 /**
@@ -60,6 +60,7 @@ export function EmotionFilter({ selected, onToggle, edgePadding = 0 }: Props) {
         <Chip
           key={e.id}
           label={e.name}
+          labelStyle={archiveType.chip}
           selected={selected.includes(e.id)}
           // 필터는 테두리 굵기(1→2)로 고른 칩을 표시한다 — 색만으로 선택을 말하지 않는다(CLAUDE.md 규칙 3).
           // 채팅 선택지의 은은한 면(soft)은 여기 쓰지 않는다

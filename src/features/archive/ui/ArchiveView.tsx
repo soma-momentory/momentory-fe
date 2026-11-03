@@ -17,6 +17,7 @@ import {
   type ViewOption,
 } from "@/components/ds";
 import {
+  archiveType,
   background,
   emotion,
   label as labelColor,
@@ -192,8 +193,10 @@ export function ArchiveView({
                   <DayScheduleList
                     schedules={daySchedules}
                     title={`${formatKoreanDateShort(selectedDate)}의 일정`}
-                    titleVariant="label1"
-                    titleColor={labelColor.neutral}
+                    titleVariant="body2"
+                    titleColor={labelColor.normal}
+                    titleType={archiveType.scheduleTitle}
+                    itemType={archiveType.scheduleItem}
                     showStatusDot
                   />
                 </View>
@@ -214,7 +217,7 @@ export function ArchiveView({
               <EmotionFilter selected={filters} onToggle={onToggleFilter} edgePadding={space.xl} />
             </View>
             <View style={styles.countRow}>
-              <Text variant="body2" color={labelColor.neutral}>
+              <Text variant="body2" color={labelColor.normal} style={archiveType.listMeta}>
                 {`기록 ${listed.length}건`}
               </Text>
               <Pressable
@@ -224,10 +227,13 @@ export function ArchiveView({
                 hitSlop={space.sm}
                 style={styles.scopeTrigger}
               >
-                <Text variant="body2" color={labelColor.normal}>
+                <NotchedTapeLabel
+                  testID="archive-list-month-tape"
+                  style={styles.listMonthPaper}
+                  trailing={<Icon name="chevron-right" size={16} color={labelColor.strong} />}
+                >
                   {listMonthLabel}
-                </Text>
-                <Icon name="chevron-right" size={16} color={labelColor.assistive} />
+                </NotchedTapeLabel>
               </Pressable>
             </View>
           </View>
@@ -268,7 +274,7 @@ export function ArchiveView({
           </View>
         ) : null}
         <Text variant="label1" color={labelColor.normal} style={styles.summaryTitle}>
-          {"이번 달\n기록"}
+          이번 달 기록
         </Text>
         <View style={styles.summaryCount}>
           {emotionMarks.map((emotionId, index) => (
@@ -277,7 +283,11 @@ export function ArchiveView({
               style={[styles.emotionDot, { backgroundColor: emotion[emotionId] }]}
             />
           ))}
-          <Text variant="label1" color={labelColor.normal}>{`${monthly.length}일`}</Text>
+          <Text
+            variant="label1"
+            color={labelColor.normal}
+            style={archiveType.dock}
+          >{`${monthly.length}일`}</Text>
         </View>
         <ViewSwitcher options={VIEWS} active={view} onChange={onViewChange} />
       </View>
@@ -306,12 +316,16 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 34 },
   monthPaper: {
+    // 공용 라벨 기본 10 에 4 를 더한다 — 글자가 뜯긴 끝에 붙어 보이지 않게
+    paddingHorizontal: 14,
     position: "absolute",
     right: 12,
     top: -14,
     zIndex: 2,
     transform: [{ rotate: "-1deg" }],
   },
+  // 달력의 월 라벨과 같은 여백 · 기울기 — 두 보기가 같은 라벨로 읽히게
+  listMonthPaper: { paddingHorizontal: 14, transform: [{ rotate: "-1deg" }] },
   monthActions: { flexDirection: "row", gap: 2 },
   scroll: { flex: 1, minHeight: 0 },
   content: { gap: 18, paddingBottom: 24 },
@@ -385,7 +399,9 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  summaryTitle: { textAlign: "center", lineHeight: 18 },
-  summaryCount: { flex: 1, flexDirection: "row", alignItems: "center", gap: 4 },
+  // 평소에는 한 줄이다. 자리가 모자랄 때만 이 제목이 줄어 낱말 사이에서 접힌다 —
+  // 그래서 옆의 셈은 줄지 않고(`flexShrink` 0) 남는 자리만 차지한다(`flexGrow`)
+  summaryTitle: { ...archiveType.dock, flexShrink: 1, textAlign: "center" },
+  summaryCount: { flexGrow: 1, flexDirection: "row", alignItems: "center", gap: 4 },
   emotionDot: { width: 13, height: 13, borderRadius: 7 },
 });

@@ -3,7 +3,7 @@ import { router } from "expo-router";
 
 import Archive from "../archive";
 
-import { label as labelColor, primary } from "@/design/ds";
+import { archiveType, label as labelColor, primary } from "@/design/ds";
 import { useMonthSchedules } from "@/features/archive/model/monthSchedules";
 import { useDiary } from "@/features/diary/model/diary";
 import * as scheduleApi from "@/features/home/data/scheduleApi";
@@ -110,6 +110,61 @@ describe("A1 · 보관함 달력", () => {
     expect(within(day).queryByTestId("schedule-dot")).not.toBeNull();
     // 일정이 없는 날에는 점이 없다 — 자리만 비어 있다
     expect(within(r.getByLabelText("22일, 화남")).queryByTestId("schedule-dot")).toBeNull();
+  });
+
+  it("하단 요약 제목은 낱말 사이에 줄바꿈을 박아 두지 않는다 — 평소에 한 줄로 읽힌다", async () => {
+    const r = await render(<Archive />);
+
+    expect(r.getByText("이번 달 기록")).toBeTruthy();
+  });
+
+  it("기록 카드의 글자는 보관함 전용 크기에 읽히는 색이다", async () => {
+    const r = await render(<Archive />);
+    await fireEvent.press(r.getByLabelText("22일, 화남"));
+
+    const name = flatten(r.getByText("화남").props.style);
+    expect(name.color).toBe(labelColor.normal);
+    expect(name.fontSize).toBe(archiveType.emotionName.fontSize);
+    const link = flatten(r.getByText("일기 열어보기 ›").props.style);
+    expect(link.color).toBe(labelColor.neutral);
+    expect(link.fontSize).toBe(archiveType.openLink.fontSize);
+    expect(flatten(r.getByText("7월 22일의 일기").props.style).fontSize).toBe(
+      archiveType.diaryTitle.fontSize,
+    );
+  });
+
+  it("일정 머리글과 줄도 보관함 전용 크기다", async () => {
+    jest.spyOn(scheduleApi, "fetchSchedulesInPeriod").mockResolvedValue({
+      ok: true,
+      data: [schedule("s-1", "2026-07-27", "장보기", false)],
+    });
+    const r = await render(<Archive />);
+
+    expect(flatten((await r.findByText("7월 27일의 일정")).props.style).fontSize).toBe(
+      archiveType.scheduleTitle.fontSize,
+    );
+    expect(flatten(r.getByText("장보기").props.style).fontSize).toBe(
+      archiveType.scheduleItem.fontSize,
+    );
+  });
+
+  it("하단 요약과 목록의 머리 글자, 감정 칩도 보관함 전용 크기다", async () => {
+    const r = await render(<Archive />);
+    expect(flatten(r.getByText("이번 달 기록").props.style).fontSize).toBe(
+      archiveType.dock.fontSize,
+    );
+
+    await fireEvent.press(r.getByLabelText("목록으로 보기"));
+
+    expect(flatten(r.getByText(/^기록 \d+건$/).props.style).fontSize).toBe(
+      archiveType.listMeta.fontSize,
+    );
+    // 기간은 달력과 같은 월 라벨이다
+    expect(within(r.getByTestId("archive-list-month-tape")).getByText("2026년 7월")).toBeTruthy();
+    const filter = within(r.getByTestId("emotion-filter"));
+    expect(flatten(filter.getByText("행복함").props.style).fontSize).toBe(
+      archiveType.chip.fontSize,
+    );
   });
 
   it("연속 일수를 세지 않고 화살표로 압박하지 않는다", async () => {

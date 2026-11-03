@@ -44,7 +44,12 @@ type Props = {
    * 완료 점은 이 단의 첫 줄 가운데에 선다.
    */
   itemVariant?: TextToken;
+  /** 제목 · 줄 글자의 크기를 덮는다 — 보관함만 자기 값을 준다(`archiveType`) */
+  titleType?: TextType;
+  itemType?: TextType;
 };
+
+type TextType = { fontSize: number; lineHeight: number };
 
 export function DayScheduleList({
   schedules,
@@ -54,16 +59,18 @@ export function DayScheduleList({
   inset = 0,
   showStatusDot = false,
   itemVariant = "body2",
+  titleType,
+  itemType,
 }: Props) {
   if (schedules.length === 0) return null;
 
   // 점을 줄의 첫 줄 세로 가운데에 — body2(22) 면 7 이다
-  const dotTop = (text[itemVariant].lineHeight - DOT) / 2;
+  const dotTop = ((itemType ?? text[itemVariant]).lineHeight - DOT) / 2;
 
   return (
     <View style={[styles.root, inset > 0 ? { paddingLeft: inset } : null]}>
       {title != null ? (
-        <Text variant={titleVariant} color={titleColor}>
+        <Text variant={titleVariant} color={titleColor} style={titleType}>
           {title}
         </Text>
       ) : null}
@@ -95,7 +102,7 @@ export function DayScheduleList({
             <Text
               variant={itemVariant}
               color={s.done ? labelColor.neutral : labelColor.strong}
-              style={s.done ? styles.done : null}
+              style={[s.done ? styles.done : null, itemType]}
             >
               {s.title}
             </Text>
