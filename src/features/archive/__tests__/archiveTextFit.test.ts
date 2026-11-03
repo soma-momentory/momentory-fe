@@ -172,10 +172,10 @@ describe("기록 카드 머리", () => {
 describe("줄 하나에 서는 글자", () => {
   it.each(SCALES)("글씨 %s 배에서 하단 「이번 달 기록」이 한 줄에 든다", (scale) => {
     const size = archiveType.dock.fontSize * scale;
-    // 안쪽 330 = 제목 + 간격 10 + 조약돌 셋과 셈 + 간격 10 + 스위처 70
+    // 안쪽 320(350 - 왼쪽 20 - 오른쪽 10) = 제목 + 간격 10 + 조약돌 셋과 셈 + 간격 10 + 스위처 70
     const used =
       widthOf("이번 달 기록", size) + 10 + (13 + 4) * 3 + widthOf("31일", size) + 10 + 70;
-    expect(used).toBeLessThanOrEqual(330);
+    expect(used).toBeLessThanOrEqual(320);
   });
 
   it.each(SCALES)("글씨 %s 배에서 「기록 N건」과 기간이 한 줄에 든다", (scale) => {

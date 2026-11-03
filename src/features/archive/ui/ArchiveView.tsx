@@ -392,7 +392,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 10,
+    // 글자로 시작하는 왼쪽은 넉넉히, 둥근 스위처가 서는 오른쪽은 모서리를 따라 좁게
+    paddingLeft: 20,
+    paddingRight: 10,
     marginBottom: 8,
     shadowColor: labelColor.normal,
     shadowOpacity: 0.12,
