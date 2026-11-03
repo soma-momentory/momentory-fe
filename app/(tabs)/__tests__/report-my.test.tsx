@@ -777,6 +777,14 @@ describe("M1 · 캘린더 연동 — 온보딩에서 미룬 사람이 다시 잇
     expect(syncDeviceCalendar).not.toHaveBeenCalled();
   });
 
+  it("프로필을 아직 못 받았으면 맞추지 않는다 — 빈 프로필로 서버를 덮어쓰지 않는다", async () => {
+    useProfile.getState().set({ calendarLinked: false, nickname: "" });
+    await render(<My />);
+    await act(async () => {});
+
+    expect(completeOnboarding).not.toHaveBeenCalled();
+  });
+
   it("기기 권한이 없으면 서버 값을 건드리지 않는다", async () => {
     useProfile.getState().set({ calendarLinked: false });
     access.mockResolvedValue(denied);
