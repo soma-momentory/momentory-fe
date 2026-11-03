@@ -53,7 +53,11 @@ let adopting: Promise<unknown> | null = null;
  * (이미 돌고 있다). 실패는 조용하다 — 다음에 들어오거나 앞으로 돌아올 때 다시 맞춘다.
  */
 export function adoptGrantedCalendar(access: CalendarAccess): Promise<unknown> {
-  if (!access.granted || useProfile.getState().calendarLinked) return Promise.resolve();
+  const { calendarLinked, nickname } = useProfile.getState();
+  if (!access.granted || calendarLinked) return Promise.resolve();
+  // 닉네임이 비었으면 프로필을 아직 못 받은 것이다 — `false` 는 「연결 안 함」이 아니라 「모름」이고,
+  // 이 저장은 프로필을 통째로 덮어쓰는 PUT 이라 빈 값이 서버로 간다. 다음에 들어올 때 다시 맞춘다
+  if (!nickname) return Promise.resolve();
   // 들어오기와 앞으로 돌아오기가 겹쳐도 한 번만 보낸다
   adopting ??= saveCalendarLinked().finally(() => {
     adopting = null;
