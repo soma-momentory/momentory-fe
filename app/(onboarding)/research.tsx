@@ -151,7 +151,11 @@ export default function Research() {
 
       {open ? (
         <BottomSheet title="연구 자세히 보기" onDismiss={() => setOpen(false)}>
-          <ScrollView style={styles.sheet} contentContainerStyle={styles.sheetList}>
+          <ScrollView
+            style={styles.sheet}
+            contentContainerStyle={styles.sheetList}
+            showsVerticalScrollIndicator={false}
+          >
             {RESEARCH_DETAILS.map((d) => (
               <View key={d.title} style={styles.item}>
                 <Text variant="body1" color={labelColor.strong}>

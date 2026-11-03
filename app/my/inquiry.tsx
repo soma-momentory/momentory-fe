@@ -60,6 +60,7 @@ export default function Inquiry() {
         <ScrollView
           style={styles.fill}
           contentContainerStyle={styles.body}
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.group}>
