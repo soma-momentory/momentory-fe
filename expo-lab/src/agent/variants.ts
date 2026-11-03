@@ -69,6 +69,13 @@ export type SlotState = {
   tone: "busy" | "ready" | "failed" | "idle";
 };
 
+/**
+ * 만든 것이 있나 — 실행 기록은 서버 메모리에만 있어 Lab 을 다시 켜면 사라진다. 그때도 수정 · 저장이
+ * 남아 있으면 「아직 안 만듦」이 아니다(2026-11-03 · 재시작 뒤 시안 비교에 시안이 안 뜨던 자리).
+ */
+const hasWork = (ws: WorkspaceSummary) =>
+  ws.lastRun != null || ws.changedCount > 0 || ws.commitCount > 0;
+
 export function slotState(ws: WorkspaceSummary): SlotState {
   const preview = ws.preview;
   if (ws.status === "working")
@@ -88,7 +95,7 @@ export function slotState(ws: WorkspaceSummary): SlotState {
       tone: "busy",
     };
   const run = ws.lastRun;
-  if (!run)
+  if (!hasWork(ws))
     return {
       label: "아직 안 만듦",
       note: "아직 만들지 않았어요",
@@ -96,7 +103,7 @@ export function slotState(ws: WorkspaceSummary): SlotState {
       canStart: false,
       tone: "idle",
     };
-  if (run.status === "failed")
+  if (run?.status === "failed")
     return {
       label: run.error === STOPPED_NOTE ? "멈춤" : "실패",
       note: run.error ?? "AI가 끝까지 만들지 못했어요",
@@ -106,7 +113,7 @@ export function slotState(ws: WorkspaceSummary): SlotState {
     };
   if (preview?.ready && preview.url)
     return {
-      label: run.status === "stopped" ? "멈춤 · 준비됨" : "준비됨",
+      label: run?.status === "stopped" ? "멈춤 · 준비됨" : "준비됨",
       note: null,
       ready: true,
       canStart: false,
@@ -143,9 +150,9 @@ export function memberProgress(ws: WorkspaceSummary): string {
   if (ws.status === "pr") return `${name} 확정 · 검토 요청 올림`;
   if (ws.status === "committed") return `${name} 저장됨`;
   const run = ws.lastRun;
-  if (!run) return `${name} 아직 안 만듦`;
-  if (run.status === "failed") return `${name} ${run.error === STOPPED_NOTE ? "멈춤" : "실패"}`;
-  if (run.status === "stopped") return `${name} 멈춤`;
+  if (!hasWork(ws)) return `${name} 아직 안 만듦`;
+  if (run?.status === "failed") return `${name} ${run.error === STOPPED_NOTE ? "멈춤" : "실패"}`;
+  if (run?.status === "stopped") return `${name} 멈춤`;
   return `${name} 다 만듦`;
 }
 

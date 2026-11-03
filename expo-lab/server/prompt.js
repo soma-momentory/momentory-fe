@@ -61,18 +61,26 @@ function sanitizeInstruction(text, max = INSTRUCTION_LIMIT) {
 const skillCall = (agent) =>
   agent === "claude" ? "/momentory-lab-handoff" : "$momentory-lab-handoff";
 
-const RULES = [
-  "이 실행의 약속 — expo-lab/HANDOFF.md 「Lab 에서 바로 맡길 때」 그대로다. 어기지 않는다:",
-  "- 지금 폴더는 이 작업 전용 작업 공간(git worktree)이고, 작업 브랜치는 이미 만들어져 있다. 브랜치를 새로 만들거나 바꾸지 않는다.",
-  "- 고치고 검사(npm run typecheck · npm run lint · npm run format:check · 바뀐 곳과 관련된 테스트 npx jest <경로>)까지만 한다.",
-  "- **커밋 · push · PR 을 하지 않는다.** 사용자가 결과를 보고 Lab 에서 직접 누른다. git 은 status · diff · log 같은 읽기만 쓴다.",
-  "- 절차 1 의 「확인받기」는 요약을 출력으로 남기는 것으로 대신한다 — 묻지 말고 진행한다.",
-  "  단, 저장소 규칙(CLAUDE.md · docs/DESIGN.md)과 부딪히거나 값으로 안 되는 큰 구조 변경이면 고치지 말고 보고만 한다.",
-  "- 절차 2(브랜치) · 6(Lab 에서 다시 보기) · 7(PR)은 건너뛴다 — 사용자가 미리보기에서 본다.",
-  "- 앱에 넣기 이미지는 expo-lab/HANDOFF.md 「이미지 넣기」 절차를 따른다 · Lab 실행 중에는 이미지 생성 도구(ask.py image 등)를 쓰지 않고 필요한 그림은 보고에 적는다.",
-  "- `.lab-attachments/` 는 Lab 이 넘긴 첨부 자리다(git 에 안 올라간다). 거기에 파일을 만들거나 고치지 않는다 — 앱에 넣을 그림은 assets/ 로 복사한다.",
-  "- 명령은 셸 도구로 실행한다. 파일 삭제(rm) · git reset/checkout/stash 같은 되돌릴 수 없는 명령은 쓰지 않는다.",
-].join("\n");
+/** 검사 범위 — 시안은 고르기 전 초안이라 바뀐 파일만 본다(2026-11-03 — 저장소 전체 검사가 시안마다 여러 번 돌아 오래 걸렸다) */
+const CHECK_RULE =
+  "- 고치고 검사(npm run typecheck · npm run lint · npm run format:check · 바뀐 곳과 관련된 테스트 npx jest <경로>)까지만 한다.";
+const VARIANT_CHECK_RULE =
+  "- 고치고 바뀐 파일만 검사한다(npx prettier --check <파일> · npx eslint <파일> · 바뀐 곳과 관련된 테스트 npx jest <경로> --maxWorkers=2). 이 시안은 고르기 전 초안이다 — 저장소 전체 검사(npm run typecheck · npm run lint · npm run format:check)는 돌리지 않는다. 고른 시안을 저장할 때 Lab 의 저장 전 검사가 전체를 본다.";
+
+/** @param {boolean} isVariant */
+const rulesFor = (isVariant) =>
+  [
+    "이 실행의 약속 — expo-lab/HANDOFF.md 「Lab 에서 바로 맡길 때」 그대로다. 어기지 않는다:",
+    "- 지금 폴더는 이 작업 전용 작업 공간(git worktree)이고, 작업 브랜치는 이미 만들어져 있다. 브랜치를 새로 만들거나 바꾸지 않는다.",
+    isVariant ? VARIANT_CHECK_RULE : CHECK_RULE,
+    "- **커밋 · push · PR 을 하지 않는다.** 사용자가 결과를 보고 Lab 에서 직접 누른다. git 은 status · diff · log 같은 읽기만 쓴다.",
+    "- 절차 1 의 「확인받기」는 요약을 출력으로 남기는 것으로 대신한다 — 묻지 말고 진행한다.",
+    "  단, 저장소 규칙(CLAUDE.md · docs/DESIGN.md)과 부딪히거나 값으로 안 되는 큰 구조 변경이면 고치지 말고 보고만 한다.",
+    "- 절차 2(브랜치) · 6(Lab 에서 다시 보기) · 7(PR)은 건너뛴다 — 사용자가 미리보기에서 본다.",
+    "- 앱에 넣기 이미지는 expo-lab/HANDOFF.md 「이미지 넣기」 절차를 따른다 · Lab 실행 중에는 이미지 생성 도구(ask.py image 등)를 쓰지 않고 필요한 그림은 보고에 적는다.",
+    "- `.lab-attachments/` 는 Lab 이 넘긴 첨부 자리다(git 에 안 올라간다). 거기에 파일을 만들거나 고치지 않는다 — 앱에 넣을 그림은 assets/ 로 복사한다.",
+    "- 명령은 셸 도구로 실행한다. 파일 삭제(rm) · git reset/checkout/stash 같은 되돌릴 수 없는 명령은 쓰지 않는다.",
+  ].join("\n");
 
 /**
  * 마지막 응답의 모양 — Claude `--json-schema` · Codex `--output-schema` 로 받는다.
@@ -188,7 +196,6 @@ function variantBlock(variant) {
     ...others.map((k) => `- 시안 ${k} 이 맡은 방향(이쪽과 겹치지 않게): ${directionOf(k)}`),
     "- 맡은 방향을 끝까지 밀고 간다 — 사용자가 시안을 나란히 놓고 하나를 고른다. 지시와 부딪히면 지시가 먼저다.",
     "- 방향이 달라도 저장소 규칙(CLAUDE.md · docs/DESIGN.md)은 그대로다 — 규칙을 어겨서 다르게 만들지 않는다.",
-    "- 다른 시안도 같은 PC 에서 검사를 돌릴 수 있다 — 테스트는 npx jest <경로> --maxWorkers=2 로 돌린다. 시간에 기대는 테스트(애니메이션 · 타이머)가 실패하면 그 파일만 다시 돌려 부하 탓인지 가른 뒤 보고한다.",
     "- summary 첫 줄은 「방향: …」 한 줄로 이 시안의 방향을 적는다(Lab 이 시안 비교 화면의 이름 아래에 그 줄을 띄운다).",
   ].join("\n");
 }
@@ -295,7 +302,7 @@ function buildPrompt(input) {
       END,
     ].join("\n"),
   );
-  parts.push(RULES);
+  parts.push(rulesFor(Boolean(input.variant)));
   parts.push(BLOCKS);
   return parts.join("\n\n") + "\n";
 }

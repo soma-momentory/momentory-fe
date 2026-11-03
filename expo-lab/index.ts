@@ -19,5 +19,8 @@ if (launch.mode === "frame") {
   startFrame(launch.config);
 } else {
   const { App } = require("./src/App") as typeof import("./src/App");
+  const { installShellWebStyle } =
+    require("./src/shell/shellStyle") as typeof import("./src/shell/shellStyle");
+  installShellWebStyle();
   registerRootComponent(App);
 }

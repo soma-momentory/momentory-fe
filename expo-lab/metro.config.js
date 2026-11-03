@@ -6,6 +6,7 @@
  * 한 줄도 바꾸지 않는다 — 앱이 부르는 모듈 이름은 그대로이고, 무엇이 불려 오는지만 여기서 바뀐다.
  * 이름표는 `src/frame/metroShims.js`, 심마다의 이유는 `src/frame/shims/` 각 파일 머리말에 있다.
  */
+const fs = require("node:fs");
 const path = require("node:path");
 const { getDefaultConfig } = require("expo/metro-config");
 
@@ -27,12 +28,35 @@ config.watchFolders = [
 
 const upstream = config.resolver.resolveRequest;
 
+/**
+ * 작업 공간의 node_modules 는 원본으로 잇는 링크(junction)라, 같은 패키지가 링크 경로와 실제 경로 두 군데로 풀린다.
+ * 그대로 두면 react-native-web 이 두 벌 묶여 스타일 규칙 순서가 꼬이고, 여백 · 테두리가 사라진 채 그려진다
+ * (2026-11-03 실측 — 시안 미리보기의 일정 행 폭 324 → 393 · 체크 테두리 1 → 0). 늘 실제 경로 하나로 모은다.
+ * @type {Map<string, string>}
+ */
+const realPaths = new Map();
+const realFile = (/** @type {string} */ file) => {
+  let real = realPaths.get(file);
+  if (real === undefined) {
+    try {
+      real = fs.realpathSync(file);
+    } catch {
+      real = file;
+    }
+    realPaths.set(file, real);
+  }
+  return real;
+};
+
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === "web") {
     const shim = labShimFor(context.originModulePath, moduleName);
     if (shim) return { type: "sourceFile", filePath: shim };
   }
-  return (upstream ?? context.resolveRequest)(context, moduleName, platform);
+  const resolved = (upstream ?? context.resolveRequest)(context, moduleName, platform);
+  return resolved.type === "sourceFile"
+    ? { ...resolved, filePath: realFile(resolved.filePath) }
+    : resolved;
 };
 
 // 「AI에게 맡기기」 — 개발 서버에 로컬 전용 `/__lab/agent/*` 를 단다(`server/index.js` 머리말).
