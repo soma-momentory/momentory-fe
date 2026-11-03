@@ -1,23 +1,26 @@
-import { useCallback, useRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useState } from "react";
+import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
 
+import { BottomSheet } from "@/components/ds/BottomSheet";
 import { IconButton } from "@/components/ds/IconButton";
-import { useEffectiveFontScale } from "@/components/ds/Text";
 import { Menu, type MenuAction } from "@/components/ds/Menu";
 import { Modal } from "@/components/ds/Modal";
+import { useEffectiveFontScale } from "@/components/ds/Text";
 import { Toast } from "@/components/ds/Toast";
 import { homeV2, layout, space } from "@/design/ds";
 import { type StudioDesign } from "@/design/studioDesign";
-import { homeLayoutMode, type HomeLayoutMode } from "@/features/home/model/homeLayout";
-import { MAX_VISIBLE_SCHEDULES, visibleSchedules } from "@/features/home/model/presentation";
-
-import { PAPER_ROW_PITCH } from "../ScheduleList";
+import {
+  MAX_VISIBLE_SCHEDULES,
+  remainingLabel,
+  visibleSchedules,
+} from "@/features/home/model/presentation";
 
 import { DatePaper, datePaperExtraFor } from "./DatePaper";
 import { HeroCard } from "./HeroCard";
+import { ScheduleColumn, WeekColumn } from "./HomeStickers";
 import { ScheduleSection, ScheduleSectionHeader } from "./ScheduleSection";
 import type { HomeV2ViewProps } from "./types";
-import { WeekDock } from "./WeekDock";
+import { dockDayName, WeekDock } from "./WeekDock";
 
 export type { HomeV2ViewActions, HomeV2ViewModel, HomeV2ViewProps, HomeWeatherView } from "./types";
 
@@ -29,14 +32,14 @@ export type { HomeV2ViewActions, HomeV2ViewModel, HomeV2ViewProps, HomeWeatherVi
  * 옛 `HomeView` 와 같은 원칙이다 — store · router · API · 계측을 **import 하지 않는다.** 값은
  * `model`, 부작용은 `actions` 로 받고, 프레임(앱 `TabScreen` · Lab 가상 폰)은 `renderFrame` 이 정한다.
  *
- * ## 배치 — `listOnly` · `wholeBody` (계획 §2.4)
+ * ## 배치 — 홈 배경 자체가 카드 한 장 (2026-11-03 · 시안 4)
  *
- * 보통은 날짜 · 히어로 · 일정 머리가 **고정**이고, **일정 목록만** 스크롤하며,
- * 이번 주 감정 도크는 탭바 위에 **늘 붙어 있다**(HD-7 · WK-1). 바깥 스크롤이 없으니 중첩 스크롤도 없다 —
- * 끄는 동안에는 스크롤을 잠근다. 목록 칸이 일정 2행보다 좁으면 날짜부터 일정까지 한 덩어리로
- * 스크롤한다(LY-1). 판정에는 `ScheduleList` 가 실제 배치에 쓰는 한 칸을 쓴다.
- *
- * 날씨는 `model.weather` 가 있을 때만, 편지 아이콘의 점은 안 연 새 편지가 있을 때만 그린다.
+ * 면을 따로 그리지 않는다. 배경 위에 날짜 · 편지 → 히어로(남는 높이를 모두 채운다)가 놓이고,
+ * 「오늘 일정」 · 「이번 주 감정」은 히어로 맨 위의 칸반 보드 두 칸이다.
+ * 칸을 누르면 각 내용이 시트로 올라온다.
+ * 일정 기능은 시트 안의 같은 `ScheduleSection` 이 그대로 맡는다
+ * (HD-4 — 체크 · ⋮ 메뉴 · 삭제 확인 · 끌기 · 접근성 이동 · 5개 접기 · 「+ 추가」).
+ * 화면이 카드의 최소 높이보다 작으면 바깥이 스크롤되고 두 칸은 그 아래에 남는다.
  */
 export function HomeV2View({
   design,
@@ -53,10 +56,8 @@ export function HomeV2View({
   const [menu, setMenu] = useState<{ id: string; top: number; anchorTop: number } | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<"schedule" | "week" | null>(null);
   const fontScale = useEffectiveFontScale(1.5);
-  const sizes = useRef({ root: 0, fixed: 0, pitch: PAPER_ROW_PITCH, empty: 0, dock: DOCK_SPACE });
-  const [dockSpace, setDockSpace] = useState(DOCK_SPACE);
-  const [mode, setMode] = useState<HomeLayoutMode>("listOnly");
 
   const shown = visibleSchedules(model.schedules);
   const empty = shown.length === 0;
@@ -64,30 +65,8 @@ export function HomeV2View({
   const rows = folded ? shown.slice(0, MAX_VISIBLE_SCHEDULES) : shown;
   const allDone = !empty && shown.every((schedule) => schedule.done);
   const target = model.schedules.find((schedule) => schedule.id === menu?.id) ?? null;
-  const refreshMode = useCallback(() => {
-    const { root, fixed, pitch, empty: measuredEmpty, dock } = sizes.current;
-    if (root === 0 || fixed === 0) return;
-    const rowPitch = empty
-      ? PAPER_ROW_PITCH + Math.max(0, Math.round(homeV2.type.task.lineHeight * (fontScale - 1)))
-      : pitch;
-    // Schedule count, check state and fold state do not affect this decision.
-    setMode((previous) =>
-      homeLayoutMode({
-        availableHeight: root - fixed - dock,
-        rowPitch,
-        emptyHeight: empty ? measuredEmpty : 0,
-        previous,
-      }),
-    );
-  }, [empty, fontScale]);
-  const handleRowPitch = useCallback(
-    (pitch: number) => {
-      sizes.current.pitch = pitch;
-      refreshMode();
-      onRowPitch?.(pitch);
-    },
-    [onRowPitch, refreshMode],
-  );
+  const today = model.week.find((day) => day.date === model.today) ?? null;
+  const closeSheet = useCallback(() => setSheet(null), []);
 
   // ⋮ 메뉴 — 직접 추가한 일정은 수정 · 삭제, 캘린더에서 온 일정은 「삭제하기」(= 숨김 · S5 · S8)
   const menuActions: MenuAction[] =
@@ -127,143 +106,119 @@ export function HomeV2View({
           ];
 
   const unread = model.hasUnreadLetter;
-
-  const fixed = (
-    <View
-      testID="home-v2-fixed"
-      style={styles.fixed}
-      onLayout={(event) => {
-        sizes.current.fixed = event.nativeEvent.layout.height;
-        refreshMode();
-      }}
-    >
-      <View style={[styles.header, { height: layout.minTouch + datePaperExtraFor(fontScale) }]}>
-        <DatePaper today={model.today} fontScale={fontScale} />
-        <View>
-          <IconButton
-            name="mail"
-            size={homeV2.size.mail.icon}
-            accessibilityLabel={unread ? "바바의 편지, 새 편지 있음" : "바바의 편지"}
-            color={homeV2.color.ink}
-            onPress={actions.onOpenLetter}
-          />
-          {/* 점은 장식이 아니라 상태다 — 그래서 이름도 함께 바뀐다(위). 숫자는 세지 않는다 */}
-          {unread ? <View testID="home-v2-unread-dot" style={styles.dot} /> : null}
-        </View>
-      </View>
-
-      <View style={styles.heroWrap}>
-        <HeroCard
-          design={design}
-          weather={model.weather}
-          onStartReflection={actions.onStartReflection}
-          onOpenWeatherInfo={actions.onOpenWeatherInfo}
-        />
-      </View>
-
-      <View style={styles.inset}>
-        <ScheduleSectionHeader
-          schedules={model.schedules}
-          empty={empty}
-          onAdd={actions.onAddSchedule}
-        />
-      </View>
-    </View>
-  );
-
-  const list = (
-    <View style={empty && mode === "listOnly" ? styles.emptyFill : undefined}>
-      <ScheduleSection
-        fillEmpty={empty && mode === "listOnly"}
-        onEmptyHeight={(height) => {
-          if (sizes.current.empty === height) return;
-          sizes.current.empty = height;
-          refreshMode();
-        }}
-        rows={rows}
-        empty={empty}
-        hiddenCount={folded ? shown.length - MAX_VISIBLE_SCHEDULES : 0}
-        allDone={allDone}
-        onExpand={() => setExpanded(true)}
-        onToggleDone={actions.onToggleDone}
-        onMore={(id, topPageY, bottomPageY) => {
-          const anchorTop = menuTopFromPageY(topPageY);
-          const anchorBottom = menuTopFromPageY(bottomPageY);
-          const open = (resolvedTop: number, resolvedBottom: number) =>
-            setMenu({ id, top: resolvedBottom + space.sm, anchorTop: resolvedTop });
-          if (typeof anchorTop === "number" && typeof anchorBottom === "number") {
-            open(anchorTop, anchorBottom);
-          } else {
-            void Promise.all([anchorTop, anchorBottom]).then(([top, bottom]) => open(top, bottom));
-          }
-        }}
-        onMove={actions.onMove}
-        onReorder={actions.onReorder}
-        onDragStateChange={setDragging}
-        onRowPitch={handleRowPitch}
-      />
-    </View>
-  );
+  const scheduleState = empty ? "0개" : remainingLabel(model.schedules);
 
   const body = (
-    <View
-      testID="home-v2-root"
-      style={styles.root}
-      onLayout={(event) => {
-        sizes.current.root = event.nativeEvent.layout.height;
-        refreshMode();
-      }}
-    >
-      {mode === "listOnly" ? (
-        <>
-          {fixed}
-          <ScrollView
-            testID="home-v2-list-scroll"
-            style={styles.list}
-            contentContainerStyle={[styles.listContent, empty && styles.emptyContent]}
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={!dragging}
-          >
-            {list}
-          </ScrollView>
-        </>
-      ) : (
-        <ScrollView
-          testID="home-v2-body-scroll"
-          style={styles.list}
-          contentContainerStyle={styles.wholeContent}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={!dragging}
-        >
-          {fixed}
-          <View style={styles.wholeList}>{list}</View>
-        </ScrollView>
-      )}
-
-      <View
-        style={styles.dock}
-        onLayout={({ nativeEvent: { layout } }) => {
-          const next = layout.height + DOCK_GAP * 2;
-          if (sizes.current.dock === next) return;
-          sizes.current.dock = next;
-          setDockSpace(next);
-          refreshMode();
-        }}
+    <View testID="home-v2-root" style={styles.root}>
+      <ScrollView
+        testID="home-v2-body-scroll"
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <WeekDock days={model.week} today={model.today} />
-      </View>
+        <View testID="home-v2-page" style={styles.page}>
+          <View style={[styles.header, { height: layout.minTouch + datePaperExtraFor(fontScale) }]}>
+            <DatePaper today={model.today} fontScale={fontScale} />
+            <View>
+              <IconButton
+                name="mail"
+                size={homeV2.size.mail.icon}
+                accessibilityLabel={unread ? "바바의 편지, 새 편지 있음" : "바바의 편지"}
+                color={homeV2.color.ink}
+                onPress={actions.onOpenLetter}
+              />
+              {/* 점은 장식이 아니라 상태다 — 그래서 이름도 함께 바뀐다(위). 숫자는 세지 않는다 */}
+              {unread ? <View testID="home-v2-unread-dot" style={styles.dot} /> : null}
+            </View>
+          </View>
+
+          <View testID="home-v2-hero-wrap" style={styles.heroWrap}>
+            <HeroCard
+              design={design}
+              weather={model.weather}
+              onStartReflection={actions.onStartReflection}
+              onOpenWeatherInfo={actions.onOpenWeatherInfo}
+              board={(compact, headOnly) => (
+                <>
+                  <ScheduleColumn
+                    schedules={shown}
+                    state={scheduleState}
+                    compact={compact}
+                    headOnly={headOnly}
+                    onPress={() => setSheet("schedule")}
+                  />
+                  <WeekColumn
+                    days={model.week}
+                    today={model.today}
+                    state={today == null ? "기록 없음" : dockDayName(today)}
+                    compact={compact}
+                    headOnly={headOnly}
+                    onPress={() => setSheet("week")}
+                  />
+                </>
+              )}
+            />
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 
   const overlay = (
     <>
+      {sheet === "schedule" ? (
+        <BottomSheet onDismiss={closeSheet}>
+          <ScheduleSectionHeader
+            schedules={model.schedules}
+            empty={empty}
+            onAdd={actions.onAddSchedule}
+            flushTop
+          />
+          <ScrollView
+            testID="home-v2-list-scroll"
+            style={styles.sheetList}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={!dragging}
+          >
+            <ScheduleSection
+              rows={rows}
+              empty={empty}
+              hiddenCount={folded ? shown.length - MAX_VISIBLE_SCHEDULES : 0}
+              allDone={allDone}
+              onExpand={() => setExpanded(true)}
+              onToggleDone={actions.onToggleDone}
+              onMore={(id, topPageY, bottomPageY) => {
+                const anchorTop = menuTopFromPageY(topPageY);
+                const anchorBottom = menuTopFromPageY(bottomPageY);
+                const open = (resolvedTop: number, resolvedBottom: number) =>
+                  setMenu({ id, top: resolvedBottom + space.sm, anchorTop: resolvedTop });
+                if (typeof anchorTop === "number" && typeof anchorBottom === "number") {
+                  open(anchorTop, anchorBottom);
+                } else {
+                  void Promise.all([anchorTop, anchorBottom]).then(([top, bottom]) =>
+                    open(top, bottom),
+                  );
+                }
+              }}
+              onMove={actions.onMove}
+              onReorder={actions.onReorder}
+              onDragStateChange={setDragging}
+              onRowPitch={onRowPitch}
+            />
+          </ScrollView>
+        </BottomSheet>
+      ) : null}
+      {sheet === "week" ? (
+        <BottomSheet title="이번 주 감정" closable onDismiss={closeSheet}>
+          <WeekDock days={model.week} today={model.today} />
+        </BottomSheet>
+      ) : null}
       {menu != null && menuActions.length > 0 ? (
         <Menu
           actions={menuActions}
           top={menu.top}
           anchorTop={menu.anchorTop}
-          // ⋮ 메뉴가 도크를 덮지 않게 — 호출자의 탭바 여백 위에 도크 자리를 더한다
-          bottomInset={menuBottomInset + dockSpace}
+          bottomInset={menuBottomInset}
           onDismiss={() => setMenu(null)}
         />
       ) : null}
@@ -285,23 +240,25 @@ export function HomeV2View({
       {toast != null ? (
         <Toast message={toast} variant="positive" onDismiss={() => setToast(null)} />
       ) : null}
-      {menu == null && asking == null && toast == null ? weatherIntroSheet : null}
+      {menu == null && asking == null && toast == null && sheet == null ? weatherIntroSheet : null}
     </>
   );
 
   return renderFrame(body, overlay);
 }
 
-/** 도크가 탭바 위로 떠 있는 간격 */
-const DOCK_GAP = space.md;
-/** 도크가 차지하는 아래 자리 — 목록 끝 여백 · 메뉴 아래 여백에 더한다 */
-const DOCK_SPACE = homeV2.size.dock.height + DOCK_GAP * 2;
+/** 시트 안 일정 목록의 최대 높이 — 화면의 절반쯤. 넘으면 그 안에서 스크롤한다 */
+const SHEET_LIST_MAX = Math.round(Dimensions.get("window").height * 0.5);
 
 const styles = StyleSheet.create({
   // 프레임(TabScreen)의 좌우 패딩을 되돌린다 — 모눈 종이가 화면 끝까지 깔리고, 안쪽 여백은 v2 값을 쓴다
   root: { flex: 1, minHeight: 0, marginHorizontal: -layout.screenPadding },
-  fixed: { paddingTop: space.xs },
+  scroll: { flex: 1, minHeight: 0 },
+  scrollContent: { flexGrow: 1, paddingTop: space.xs, paddingBottom: space.md },
+  // 면을 그리지 않는다 — 홈 배경이 곧 카드이고 안쪽 것들은 그 위에 놓인다
+  page: { flex: 1 },
   header: {
+    zIndex: 1,
     height: layout.minTouch,
     paddingLeft: 22,
     paddingRight: space.md,
@@ -318,14 +275,6 @@ const styles = StyleSheet.create({
     borderRadius: homeV2.size.bell.dot / 2,
     backgroundColor: homeV2.color.alert,
   },
-  heroWrap: { marginHorizontal: space.lg },
-  inset: { paddingHorizontal: space.xl },
-  list: { flex: 1, minHeight: 0 },
-  emptyContent: { flexGrow: 1 },
-  emptyFill: { flex: 1 },
-  // The dock has its own flex row, so scrolling content cannot pass underneath it.
-  listContent: { paddingHorizontal: space.xl },
-  wholeContent: { paddingBottom: 0 },
-  wholeList: { paddingHorizontal: space.xl },
-  dock: { marginHorizontal: space.lg, marginVertical: DOCK_GAP },
+  heroWrap: { flex: 1 },
+  sheetList: { maxHeight: SHEET_LIST_MAX, marginTop: space.xs },
 });

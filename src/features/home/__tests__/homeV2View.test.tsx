@@ -77,6 +77,12 @@ const show = (model: HomeV2ViewModel = baseModel(), a: HomeV2ViewActions = actio
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
 
+/** 일정 · 이번 주 감정은 메모를 눌러 올라오는 시트 안에 있다 */
+const openSchedule = (r: Awaited<ReturnType<typeof show>>) =>
+  fireEvent.press(r.getByRole("button", { name: /오늘 일정 보기/ }));
+const openWeek = (r: Awaited<ReturnType<typeof show>>) =>
+  fireEvent.press(r.getByRole("button", { name: /이번 주 감정 보기/ }));
+
 describe("홈 v2 — 표시 전용", () => {
   it("표시 전용이다 — store · router · 계측을 import 하지 않는다(모듈 목킹 없이 렌더)", async () => {
     const r = await show();
@@ -127,7 +133,7 @@ describe("홈 v2 — 큰 글씨 날짜", () => {
 });
 
 describe("홈 v2 — 큰 글씨 배치", () => {
-  it("큰 글씨에서도 말풍선과 CTA 간격을 확보하고, 일정 머리글은 필요한 경우 접힌다", async () => {
+  it("큰 글씨에서도 말풍선이 함께 커지고, 메모 머리글은 필요한 경우 접힌다", async () => {
     const screen = await render(
       <PreviewFontScaleContext.Provider value={1.5}>
         <HomeV2View
@@ -139,17 +145,48 @@ describe("홈 v2 — 큰 글씨 배치", () => {
       </PreviewFontScaleContext.Provider>,
     );
     const bubbleStyle = flatten(screen.getByText("오늘 하루는\n어땠어요?").props.style);
-    const heroStyle = flatten(screen.getByTestId("studio-home-hero").props.style);
-    const ctaStyle = flatten(screen.getByRole("button", { name: "일기 작성하기" }).props.style);
-    const headingStyle = flatten(screen.getByText("오늘 일정").parent?.parent?.props.style);
+    const headingStyle = flatten(screen.getAllByTestId("home-v2-note-head")[0]?.props.style);
 
-    expect(bubbleStyle.lineHeight).toBe(homeV2.type.bubble.lineHeight * 1.5);
-    expect(heroStyle.minHeight).toBe(homeV2.size.hero.height);
-    expect(heroStyle.height).toBeUndefined();
-    expect(heroStyle.paddingTop).toBeGreaterThan(128);
-    expect(ctaStyle.position).toBeUndefined();
-    expect(ctaStyle.marginTop).toBeGreaterThan(0);
+    expect(bubbleStyle.lineHeight).toBeGreaterThan(homeV2.type.bubble.lineHeight);
     expect(headingStyle.flexWrap).toBe("wrap");
+    expect(screen.getByRole("button", { name: "일기 작성하기" })).toBeTruthy();
+  });
+});
+
+describe("홈 v2 — 다이어리 메모(2026-11-03)", () => {
+  it("메모 두 장이 버튼이고, 낭독기는 남은 수와 오늘의 상태를 읽는다", async () => {
+    const r = await show();
+    expect(r.getByRole("button", { name: "오늘 일정 보기, 1개 남음" })).toBeTruthy();
+    expect(r.getByRole("button", { name: "이번 주 감정 보기, 오늘 · 기록 없음" })).toBeTruthy();
+  });
+
+  it("일정 메모에는 앞 두 일정만 적히고, 세 번째부터는 시트에서 본다", async () => {
+    const r = await show(baseModel({ schedules: [schedule(0), schedule(1), schedule(2)] }));
+    const hidden = { includeHiddenElements: true };
+    expect(r.getByText("일정 1", hidden)).toBeTruthy();
+    expect(r.getByText("일정 2", hidden)).toBeTruthy();
+    expect(r.queryByText("일정 3", hidden)).toBeNull();
+    // 메모 안의 글은 낭독기에서 숨는다 — 메모의 이름이 대신 읽는다. 시트를 열어야 일정 행이 있다
+    expect(r.queryByRole("checkbox", { name: "일정 1 마침" })).toBeNull();
+    await openSchedule(r);
+    expect(r.getByRole("checkbox", { name: "일정 3 마침" })).toBeTruthy();
+  });
+
+  it("이번 주 메모에는 조약돌 일곱 알이 놓이고, 눌러야 시트의 칸이 나온다", async () => {
+    const r = await show();
+    expect(r.getAllByTestId("week-dock-no-record", { includeHiddenElements: true })).toHaveLength(
+      7,
+    );
+    expect(r.queryByTestId("week-dock")).toBeNull();
+    await openWeek(r);
+    expect(r.getByTestId("week-dock")).toBeTruthy();
+  });
+
+  it("시트는 ✕ 로 닫힌다", async () => {
+    const r = await show();
+    await openWeek(r);
+    await fireEvent.press(r.getAllByLabelText("닫기").at(-1)!); // 딤 · ✕ 가 같은 닫기다
+    expect(r.queryByTestId("week-dock")).toBeNull();
   });
 });
 
@@ -212,16 +249,20 @@ describe("홈 v2 — 바바의 편지 아이콘(알림함 종 자리)", () => {
   });
 });
 
-describe("홈 v2 — 이번 주 감정 도크(WK-1 · D2 · DN-1)", () => {
+describe("홈 v2 — 이번 주 감정 시트(D2 · DN-1)", () => {
   const NO_EMOTION = require("../../../../assets/emotion-pebble/no-emotion.png");
+  const inSheet = (r: Awaited<ReturnType<typeof show>>) => within(r.getByTestId("week-dock"));
 
-  it("도크는 이번 주 기록이 없어도 일곱 칸 · 빈 날은 「기록 없음」 + no-emotion 그림", async () => {
+  it("이번 주 기록이 없어도 일곱 칸 · 빈 날은 「기록 없음」 + no-emotion 그림", async () => {
     const r = await show(baseModel({ week: emptyWeek() }));
-    expect(r.getByText("이번 주\n감정")).toBeTruthy();
+    await openWeek(r);
+    expect(r.getAllByText("이번 주 감정")).toHaveLength(2); // 메모 머리 · 시트 제목
     const cells = r.getAllByRole("button", { name: /요일 · / });
     expect(cells).toHaveLength(7);
     expect(r.getByRole("button", { name: "금요일 · 기록 없음" })).toBeTruthy();
-    const marks = r.getAllByTestId("week-dock-no-record", { includeHiddenElements: true });
+    const marks = inSheet(r).getAllByTestId("week-dock-no-record", {
+      includeHiddenElements: true,
+    });
     expect(marks).toHaveLength(7);
     for (const mark of marks) expect(mark.props.source).toEqual(NO_EMOTION);
   });
@@ -235,34 +276,37 @@ describe("홈 v2 — 이번 주 감정 도크(WK-1 · D2 · DN-1)", () => {
           : d,
     );
     const r = await show(baseModel({ week }));
+    await openWeek(r);
 
     expect(r.getByRole("button", { name: "월요일 · 불안함, 우울함" })).toBeTruthy();
     expect(r.getByRole("button", { name: "화요일 · 기록 있음, 감정 없음" })).toBeTruthy();
     expect(r.getByRole("button", { name: "수요일 · 기록 없음" })).toBeTruthy();
 
     // 일기만 있는 날은 테두리 조약돌(no-emotion.png)이 아니라 채운 조약돌 + 점이다
-    expect(r.getAllByTestId("week-dock-written", { includeHiddenElements: true })).toHaveLength(1);
-    expect(r.getAllByTestId("week-dock-no-record", { includeHiddenElements: true })).toHaveLength(
-      5,
-    );
+    const hidden = { includeHiddenElements: true };
+    expect(inSheet(r).getAllByTestId("week-dock-written", hidden)).toHaveLength(1);
+    expect(inSheet(r).getAllByTestId("week-dock-no-record", hidden)).toHaveLength(5);
   });
 
-  it("칸을 누르면 그날 감정 이름이 도크 위에 서고, 다시 누르면 접힌다", async () => {
+  it("처음에는 오늘의 말이 서 있고, 칸을 누르면 그날로 바뀐다", async () => {
     const week: WeekDay[] = emptyWeek().map((d) =>
       d.label === "월" ? { ...d, emotions: [1], written: true } : d,
     );
     const r = await show(baseModel({ week }));
-    expect(r.queryByTestId("week-dock-picked")).toBeNull();
+    await openWeek(r);
+    expect(r.getByText("수요일 · 기록 없음")).toBeTruthy();
 
     await fireEvent.press(r.getByRole("button", { name: "월요일 · 행복함" }));
-    expect(within(r.getByTestId("week-dock-picked")).getByText("월요일 · 행복함")).toBeTruthy();
-
-    await fireEvent.press(r.getByRole("button", { name: "월요일 · 행복함" }));
-    expect(r.queryByTestId("week-dock-picked")).toBeNull();
+    expect(r.getByText("월요일 · 행복함")).toBeTruthy();
+    expect(r.queryByText("수요일 · 기록 없음")).toBeNull();
+    expect(
+      r.getByRole("button", { name: "월요일 · 행복함" }).props.accessibilityState.selected,
+    ).toBe(true);
   });
 
   it("오늘은 형광 바탕으로 구분하고 밑줄은 표시하지 않는다", async () => {
     const r = await show();
+    await openWeek(r);
     const day = (label: string) =>
       flatten(
         within(r.getByRole("button", { name: `${label}요일 · 기록 없음` })).getByText(label).props
@@ -281,6 +325,7 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
   it("체크는 마침 토글이고 히트 영역은 44 다(S1 · S3)", async () => {
     const a = actions();
     const r = await show(baseModel(), a);
+    await openSchedule(r);
     const check = r.getByRole("checkbox", { name: "일정 2 마침" });
     expect(check.props.hitSlop).toBe(10); // (44 - 24) / 2
     await fireEvent.press(check);
@@ -289,6 +334,7 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
 
   it("마친 줄은 취소선 + 보정한 글자색으로 남는다(S4 · 색만으로 말하지 않는다)", async () => {
     const r = await show();
+    await openSchedule(r);
     const done = flatten(r.getByText("일정 1").props.style);
     expect(done.textDecorationLine).toBe("line-through");
     expect(done.color).toBe(homeV2.color.taskDone);
@@ -297,14 +343,16 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
 
   it("「N개 남음」 · 다 마치면 「모두 완료」와 한 줄 — 진행률 · 배지 · 감정 알약이 없다(S13 · S14 · S16 · S17)", async () => {
     const r = await show();
-    expect(r.getByText("1개 남음")).toBeTruthy();
+    await openSchedule(r);
+    expect(r.getAllByText("1개 남음")).toHaveLength(2); // 메모 머리 · 시트 머리
     expect(r.queryByText(/%|연속|배지/)).toBeNull();
     expect(r.queryByText(/행복함|불안함/)).toBeNull();
 
     const all = await show(
       baseModel({ schedules: [schedule(0, { done: true }), schedule(1, { done: true })] }),
     );
-    expect(all.getByText("모두 완료")).toBeTruthy();
+    await openSchedule(all);
+    expect(all.getAllByText("모두 완료")).toHaveLength(2);
     expect(all.getByText("오늘 일정을 모두 마쳤어요.")).toBeTruthy();
   });
 
@@ -314,7 +362,8 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
       schedule(7, { hidden: true }),
     ];
     const r = await show(baseModel({ schedules: many }));
-    expect(r.getByText("7개 남음")).toBeTruthy();
+    await openSchedule(r);
+    expect(r.getAllByText("7개 남음")).toHaveLength(2);
     expect(r.queryByText("일정 6")).toBeNull();
 
     await fireEvent.press(r.getByRole("button", { name: "2개 더 보기" }));
@@ -336,6 +385,7 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
       }),
       a,
     );
+    await openSchedule(r);
 
     await fireEvent.press(r.getByLabelText("일정 1 더보기"));
     await fireEvent.press(r.getByText("수정하기"));
@@ -356,11 +406,10 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     measure.mockRestore();
   });
 
-  it("⋮ 메뉴는 도크를 덮지 않는다 — 아래 여백에 도크 자리를 더한다", async () => {
-    // ⋮ 가 화면 아래쪽(y 500)에 있다 — 탭바 여백만 보면 아래로 펴지지만 도크까지 보면 위로 뒤집힌다
+  it("⋮ 메뉴는 탭바를 덮지 않는다 — 아래 여백이 모자라면 위로 뒤집힌다", async () => {
     const measure = jest
       .spyOn(View.prototype, "measureInWindow")
-      .mockImplementation((cb) => cb(0, 500, 44, 44));
+      .mockImplementation((cb) => cb(0, 640, 44, 44));
     const r = await render(
       <HomeV2View
         model={baseModel()}
@@ -370,52 +419,36 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
         menuBottomInset={80}
       />,
     );
+    await openSchedule(r);
     await fireEvent.press(r.getByLabelText("일정 2 더보기"));
     await fireEvent(r.getByTestId("ds-menu-overlay"), "layout", {
       nativeEvent: { layout: { x: 0, y: 0, width: 400, height: 800 } },
     });
-    // 메뉴 높이 88(두 줄) · 바라던 자리 552(⋮ 아래 + 8) — 552 + 88 = 640 은 탭바 여백(800 - 80 - 8)
-    // 안이지만 도크 자리를 더하면 넘친다 → ⋮ 위로(500 - 8 - 88) 뒤집혀 도크를 덮지 않는다
-    expect(flatten(r.getByTestId("ds-menu-panel").props.style).top).toBe(404);
+    // 메뉴 높이 88(두 줄) · 바라던 자리 692(⋮ 아래 + 8) — 692 + 88 은 탭바 여백(800 - 80 - 8)을 넘는다
+    // → ⋮ 위로(640 - 8 - 88) 뒤집힌다
+    expect(flatten(r.getByTestId("ds-menu-panel").props.style).top).toBe(544);
     measure.mockRestore();
   });
 
-  it("일정이 없으면 v2 빈 카드 — 머리 · 히어로 · 도크는 그대로다(S18)", async () => {
+  it("일정이 없으면 시트에 v2 빈 카드 — 일기 작성하기와 「+ 추가」는 그대로다(S18)", async () => {
     const a = actions();
     const r = await show(baseModel({ schedules: [] }), a);
+    expect(r.getByRole("button", { name: "오늘 일정 보기, 0개" })).toBeTruthy();
+    await openSchedule(r);
     expect(r.getByText("오늘은 일정이 없어요")).toBeTruthy();
     expect(r.getByText("여유로운 하루예요.\n하고 싶은 일 하나 적어둘까요?")).toBeTruthy();
-    expect(r.getByText("0개")).toBeTruthy();
+    expect(r.getAllByText("0개")).toHaveLength(2);
     expect(r.queryByText("오늘 하루를 차곡차곡 담아볼까요?")).toBeNull();
     expect(r.getByRole("button", { name: "일기 작성하기" })).toBeTruthy();
-    expect(r.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
 
     await fireEvent.press(r.getByRole("button", { name: "일정 추가" }));
     expect(a.onAddSchedule).toHaveBeenCalledTimes(1);
   });
 
-  it("빈 카드는 남는 공간을 채우고, 내용이 커지면 전체 스크롤로 전환한다", async () => {
-    const r = await show(baseModel({ schedules: [] }));
-    await fireEvent(r.getByTestId("home-v2-root"), "layout", {
-      nativeEvent: { layout: { width: 390, height: 800 } },
-    });
-    await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
-      nativeEvent: { layout: { width: 390, height: 400 } },
-    });
-    expect(r.getByTestId("home-v2-list-scroll")).toBeTruthy();
-    expect(flatten(r.getByTestId("home-v2-empty-card").props.style).flex).toBe(1);
-
-    await fireEvent(r.getByText("오늘은 일정이 없어요").parent!, "layout", {
-      nativeEvent: { layout: { width: 300, height: 320 } },
-    });
-    expect(r.getByTestId("home-v2-body-scroll")).toBeTruthy();
-    expect(flatten(r.getByTestId("home-v2-empty-card").props.style).flex).toBeUndefined();
-    expect(r.getByTestId("week-dock")).toBeTruthy();
-  });
-
-  it("끄는 동안 목록 스크롤이 잠긴다 — 바깥은 처음부터 스크롤하지 않는다", async () => {
+  it("끄는 동안 시트의 목록 스크롤이 잠긴다", async () => {
     jest.useFakeTimers();
     const r = await show();
+    await openSchedule(r);
     const scroll = () => r.getByTestId("home-v2-list-scroll");
     expect(scroll().props.scrollEnabled).toBe(true);
 
@@ -426,34 +459,6 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     await fireEvent(r.getByLabelText("일정 2"), "responderMove", { nativeEvent: { pageY: 10 } });
     expect(scroll().props.scrollEnabled).toBe(false);
 
-    await fireEvent(r.getByLabelText("일정 2"), "responderRelease", {});
-    expect(scroll().props.scrollEnabled).toBe(true);
-    jest.useRealTimers();
-  });
-
-  it("좁은 화면에서는 날짜와 목록이 함께 스크롤하고, 끄는 동안 그 스크롤도 잠긴다", async () => {
-    jest.useFakeTimers();
-    const r = await show();
-    await fireEvent(r.getByTestId("home-v2-root"), "layout", {
-      nativeEvent: { layout: { width: 360, height: 500 } },
-    });
-    await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
-      nativeEvent: { layout: { width: 360, height: 370 } },
-    });
-    const scroll = () => r.getByTestId("home-v2-body-scroll");
-    expect(scroll().props.scrollEnabled).toBe(true);
-    expect(within(scroll()).getByText("10월 14일")).toBeTruthy();
-    expect(within(scroll()).getByText("일정 2")).toBeTruthy();
-    expect(r.getByTestId("week-dock")).toBeTruthy();
-
-    await fireEvent(r.getByLabelText("일정 2"), "responderGrant", { nativeEvent: { pageY: 0 } });
-    await act(async () => {
-      jest.advanceTimersByTime(220);
-    });
-    await fireEvent(r.getByLabelText("일정 2"), "responderMove", {
-      nativeEvent: { pageY: 10 },
-    });
-    expect(scroll().props.scrollEnabled).toBe(false);
     await fireEvent(r.getByLabelText("일정 2"), "responderRelease", {});
     expect(scroll().props.scrollEnabled).toBe(true);
     jest.useRealTimers();

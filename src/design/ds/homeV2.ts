@@ -33,6 +33,9 @@ const shadow = "#48291A";
 
 export const homeV2 = {
   color: {
+    /** 쉼터에서도 쓰는 체크 테이프 색 */
+    tapeBase: "rgba(255,255,255,.5)",
+    tapeStripe: "rgba(150,175,135,.45)",
     /** 화면 바탕 — 모눈 종이 */
     paper: "#F6F1E7",
     /** 모눈 선(22px 칸) — 장식 */
@@ -77,20 +80,15 @@ export const homeV2 = {
     /** 그 조약돌 가운데 「썼다」 점 */
     writtenMark: ink,
     /** 도크 · 떠 있는 면 — 모눈이 살짝 비친다 */
-    dock: withAlpha(card, 0.92),
     /** 바바 아래 연노랑 단색 러그 — 2026-11-01 사용자 참고 이미지 */
     rugYellow: "#F3E4A6",
     rugEdge: "#B59C78",
-    /** 쉼터에서도 쓰는 체크 테이프 색 */
-    tapeBase: "rgba(255,255,255,.5)",
-    tapeStripe: "rgba(150,175,135,.45)",
   },
   /** 종이 위에 뜬 것들의 그림자 — 잉크색을 옅게(시안 값) */
   shadow: {
     hero: `0px 6px 18px ${withAlpha(shadow, 0.08)}`,
     bubble: `0px 4px 12px ${withAlpha(shadow, 0.1)}`,
     sticker: `0px 2px 6px ${withAlpha(shadow, 0.1)}`,
-    dock: `0px 8px 24px ${withAlpha(shadow, 0.12)}`,
   },
   font: { regular: fontFamily.hand, bold: fontFamily.hand },
   /** v2 의 px 값 — **최소 14**(`DESIGN.md` 손글씨 최소 크기) · 배율 상한은 `maxFontScale` */
@@ -106,21 +104,20 @@ export const homeV2 = {
     task: { fontSize: 19, lineHeight: 25 },
     emptyTitle: { fontSize: 20, lineHeight: 24 },
     emptyBody: { fontSize: 16, lineHeight: 22 },
-    dockTitle: { fontSize: 17, lineHeight: 19 },
     dockDay: { fontSize: 14, lineHeight: 16 },
     dockPicked: { fontSize: 16, lineHeight: 20 },
   },
   size: {
     /** 모눈 한 칸 */
     grid: 22,
-    hero: { height: 270, radius: 16, marginTop: 34 },
     baba: { width: 170, height: 227 },
     cta: { height: 54 },
     /** 원형 체크 — 히트는 44 그대로(hitSlop) */
     check: 24,
     checkBorder: 1.75,
     list: { radius: 14, paddingX: 14 },
-    dock: { height: 72, radius: 24, pebble: 28, gap: 12 },
+    /** 이번 주 감정 시트의 조약돌 */
+    dock: { pebble: 34 },
     bell: { dot: 8 },
     mail: { icon: 28 },
   },
@@ -130,7 +127,6 @@ export const homeV2 = {
     weekday: "-1deg",
     bubble: "-2deg",
     note: "-4deg",
-    tape: "-1deg",
     add: "-3deg",
     ground: "0deg",
     weather: "7deg",

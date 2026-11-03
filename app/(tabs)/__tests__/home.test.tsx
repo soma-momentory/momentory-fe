@@ -50,6 +50,18 @@ beforeEach(() => {
   useDay.setState({ schedules: testSchedules() });
 });
 
+/** 일정 · 이번 주 감정은 홈의 메모를 눌러 올라오는 시트 안에 있다 */
+const renderSchedule = async () => {
+  const r = await render(<Home />);
+  await fireEvent.press(r.getByRole("button", { name: /오늘 일정 보기/ }));
+  return r;
+};
+const renderWeek = async () => {
+  const r = await render(<Home />);
+  await fireEvent.press(r.getByRole("button", { name: /이번 주 감정 보기/ }));
+  return r;
+};
+
 /** 터치 좌표와 다른 버튼 경계를 재게 해 메뉴가 실제 행을 기준으로 뜨는지 본다. */
 const openMenu = async (r: Awaited<ReturnType<typeof render>>, title: string) => {
   const measure = jest.spyOn(View.prototype, "measureInWindow").mockImplementation((callback) => {
@@ -210,9 +222,9 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
   });
 
   it("이번 주 감정은 요일마다 한 칸이고, 이름을 낭독기에 준다", async () => {
-    const { getByText, getByLabelText } = await render(<Home />);
+    const { getAllByText, getByLabelText } = await renderWeek();
 
-    expect(getByText("이번 주\n감정")).toBeTruthy();
+    expect(getAllByText("이번 주 감정")).toHaveLength(2); // 메모 머리 · 시트 제목
     // 샘플 하루(7/27 월)의 일기 감정은 불안함·우울함 둘이다 — 색만으로 말하지 않고,
     // 도트가 하나뿐이라 낭독기에는 **둘 다** 읽힌다
     expect(getByLabelText("월요일 · 불안함, 우울함")).toBeTruthy();
@@ -220,7 +232,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
   });
 
   it("요일을 누르면 그날 감정이 전부 글자로 선다", async () => {
-    const { getByLabelText, getByText, queryByText } = await render(<Home />);
+    const { getByLabelText, getByText, queryByText } = await renderWeek();
 
     expect(queryByText("불안함")).toBeNull();
     await fireEvent.press(getByLabelText("월요일 · 불안함, 우울함"));
@@ -238,19 +250,19 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
         { ...sample!, id: "no-emotion", date: "2026-07-31", emotions: [] },
       ],
     });
-    const { getByLabelText, getByText } = await render(<Home />);
+    const { getByLabelText, getByText } = await renderWeek();
 
     await fireEvent.press(getByLabelText("금요일 · 기록 있음, 감정 없음"));
     expect(getByText("금요일 · 기록 있음, 감정 없음")).toBeTruthy();
   });
 
   it("일정 4건과 「2개 남음」을 보인다 — 남은 수이지 달성률이 아니다", async () => {
-    const { getByText } = await render(<Home />);
+    const { getByText, getAllByText } = await renderSchedule();
 
     for (const title of ["팀 회의", "발표 준비", "면접 스터디", "운동 가기"]) {
       expect(getByText(title)).toBeTruthy();
     }
-    expect(getByText("2개 남음")).toBeTruthy();
+    expect(getAllByText("2개 남음")).toHaveLength(2); // 메모 머리 · 시트 머리
   });
 
   it("진행률·연속·배지를 두지 않는다", async () => {
@@ -274,9 +286,9 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     await act(() =>
       useDay.setState({ schedules: testSchedules().map((s) => ({ ...s, done: true })) }),
     );
-    const { getByText } = await render(<Home />);
+    const { getByText, getAllByText } = await renderSchedule();
 
-    expect(getByText("모두 완료")).toBeTruthy();
+    expect(getAllByText("모두 완료")).toHaveLength(2);
     expect(getByText("오늘 일정을 모두 마쳤어요.")).toBeTruthy();
   });
 });
@@ -284,7 +296,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
 describe("일정 순서 — 꾹 눌러 끈다 (design.md 「일정」)", () => {
   it("끌 수 없어도 옮길 수 있다 — 제목의 접근성 동작", async () => {
     // 끌기만 있으면 스크린리더로는 순서를 못 바꾼다 (RULES.md 「접근성」)
-    const { getByLabelText } = await render(<Home />);
+    const { getByLabelText } = await renderSchedule();
     const before = useDay.getState().schedules.map((s) => s.title);
 
     await fireEvent(getByLabelText("발표 준비"), "accessibilityAction", {
@@ -297,7 +309,7 @@ describe("일정 순서 — 꾹 눌러 끈다 (design.md 「일정」)", () => {
   });
 
   it("갈 곳이 없으면 아무 일도 없다", async () => {
-    const { getByLabelText } = await render(<Home />);
+    const { getByLabelText } = await renderSchedule();
     const before = useDay.getState().schedules.map((s) => s.id);
 
     await fireEvent(getByLabelText("팀 회의"), "accessibilityAction", {
@@ -319,20 +331,20 @@ describe("일정 순서 — 꾹 눌러 끈다 (design.md 「일정」)", () => {
 
 describe("일정 행 — 체크박스와 ⋮", () => {
   it("체크는 즉시 마침/취소이고 **감정을 묻지 않는다** (N7)", async () => {
-    const { getByLabelText, getByText } = await render(<Home />);
+    const { getByLabelText, getAllByText } = await renderSchedule();
 
     await fireEvent.press(getByLabelText("면접 스터디 마침"));
-    expect(getByText("1개 남음")).toBeTruthy();
+    expect(getAllByText("1개 남음")).toHaveLength(2);
     expect(useDay.getState().schedules[2]?.done).toBe(true);
     // 감정 시트로 가는 길이 사라졌다 — 라우트 자체가 없다
     expect(router.push).not.toHaveBeenCalled();
 
     await fireEvent.press(getByLabelText("면접 스터디 마침"));
-    expect(getByText("2개 남음")).toBeTruthy();
+    expect(getAllByText("2개 남음")).toHaveLength(2);
   });
 
   it("마침은 doneAt 을 남기고 취소하면 지운다", async () => {
-    const { getByLabelText } = await render(<Home />);
+    const { getByLabelText } = await renderSchedule();
 
     await fireEvent.press(getByLabelText("운동 가기 마침"));
     expect(useDay.getState().schedules[3]?.doneAt).not.toBeNull();
@@ -342,7 +354,7 @@ describe("일정 행 — 체크박스와 ⋮", () => {
   });
 
   it("손으로 마친 순간에만 작은 끝맺음이 핀다 — 처음부터 마친 줄 · 체크를 풀 때는 피지 않는다", async () => {
-    const { getByLabelText, queryAllByTestId } = await render(<Home />);
+    const { getByLabelText, queryAllByTestId } = await renderSchedule();
     const bursts = () => queryAllByTestId("check-burst", { includeHiddenElements: true });
     expect(bursts()).toHaveLength(0); // 「팀 회의」는 처음부터 마친 줄이다
 
@@ -355,20 +367,20 @@ describe("일정 행 — 체크박스와 ⋮", () => {
 
   it("체크박스는 24 이지만 히트 영역은 44 다", async () => {
     // 작은 글리프는 시각 크기를 키우지 말고 hitSlop 으로 44 를 확보한다 (RULES.md)
-    const { getByLabelText } = await render(<Home />);
+    const { getByLabelText } = await renderSchedule();
 
     expect(getByLabelText("팀 회의 마침").props.hitSlop).toBe(10); // (44 - 24) / 2
   });
 
   it("마친 줄은 취소선으로 목록에 남는다 — 사라지지 않는다", async () => {
-    const { getByText } = await render(<Home />);
+    const { getByText } = await renderSchedule();
 
     expect(flatten(getByText("팀 회의").props.style).textDecorationLine).toBe("line-through");
     expect(flatten(getByText("운동 가기").props.style).textDecorationLine).toBeUndefined();
   });
 
   it("직접 추가한 일정의 ⋮ 는 수정과 삭제를 준다", async () => {
-    const r = await render(<Home />);
+    const r = await renderSchedule();
     await openMenu(r, "운동 가기");
 
     expect(flatten(r.getByTestId("ds-menu-panel").props.style).top).toBe(332);
@@ -380,7 +392,7 @@ describe("일정 행 — 체크박스와 ⋮", () => {
   });
 
   it("가져온 일정은 「삭제하기」라고 말하지만 숨기는 것이다 — 캘린더 원본은 그대로다", async () => {
-    const r = await render(<Home />);
+    const r = await renderSchedule();
     await openMenu(r, "면접 스터디");
 
     // 수정은 여전히 없다 — 가져온 제목은 우리가 고칠 수 있는 것이 아니다
@@ -395,7 +407,7 @@ describe("일정 행 — 체크박스와 ⋮", () => {
   });
 
   it("바깥을 누르면 메뉴가 닫힌다", async () => {
-    const r = await render(<Home />);
+    const r = await renderSchedule();
     await openMenu(r, "운동 가기");
 
     await fireEvent.press(r.getByLabelText("메뉴 닫기"));
@@ -403,7 +415,7 @@ describe("일정 행 — 체크박스와 ⋮", () => {
   });
 
   it("삭제는 한 번 묻는다 — 되돌릴 수 없다", async () => {
-    const r = await render(<Home />);
+    const r = await renderSchedule();
     await openMenu(r, "운동 가기");
     await fireEvent.press(r.getByText("삭제하기"));
 
@@ -417,7 +429,7 @@ describe("일정 행 — 체크박스와 ⋮", () => {
   });
 
   it("확인하면 지워지고 한 줄로 알린다", async () => {
-    const r = await render(<Home />);
+    const r = await renderSchedule();
     await openMenu(r, "운동 가기");
     await fireEvent.press(r.getByText("삭제하기"));
     await fireEvent.press(r.getByRole("button", { name: "삭제" }));
@@ -439,7 +451,7 @@ describe("목록이 길 때 — 5개까지 펼친다 (12.md)", () => {
 
   it("접힌 줄은 그리지 않고, 누르면 펼쳐진다", async () => {
     await act(() => useDay.setState({ schedules: many() }));
-    const { getByText, queryByText } = await render(<Home />);
+    const { getByText, queryByText } = await renderSchedule();
 
     expect(queryByText("일정 5")).toBeNull();
     await fireEvent.press(getByText("2개 더 보기"));
@@ -451,7 +463,7 @@ describe("목록이 길 때 — 5개까지 펼친다 (12.md)", () => {
 });
 
 describe("운영 홈 v2 배치", () => {
-  it.each([0, 3, 6, 10])("일정 %i개에서도 도크와 모눈 종이가 남는다", async (count) => {
+  it.each([0, 3, 6, 10])("일정 %i개에서도 메모 두 장과 모눈 종이가 그대로다", async (count) => {
     await act(() =>
       useDay.setState({
         schedules: Array.from({ length: count }, (_, i) => ({
@@ -463,26 +475,16 @@ describe("운영 홈 v2 배치", () => {
     );
     const r = await render(<Home />);
     expect(r.getByTestId("tab-paper-background", { includeHiddenElements: true })).toBeTruthy();
-    expect(r.getByTestId("week-dock")).toBeTruthy();
+    expect(r.getByRole("button", { name: /오늘 일정 보기/ })).toBeTruthy();
+    expect(r.getByRole("button", { name: /이번 주 감정 보기/ })).toBeTruthy();
+    expect(r.getByRole("button", { name: "일기 작성하기" })).toBeTruthy();
+
+    // 일정은 시트에서 다룬다 — 5개까지 펼치고 접는 규칙은 그대로다
+    await fireEvent.press(r.getByRole("button", { name: /오늘 일정 보기/ }));
     expect(r.getByTestId("home-v2-list-scroll")).toBeTruthy();
-    expect(r.getAllByRole("button", { name: /요일 · / })).toHaveLength(7);
     if (count > 5) {
       expect(r.getByRole("button", { name: `${count - 5}개 더 보기` })).toBeTruthy();
     }
-  });
-
-  it("목록 공간이 두 행보다 작으면 날짜와 일정이 함께 스크롤하고 도크는 고정한다", async () => {
-    const r = await render(<Home />);
-    await fireEvent(r.getByTestId("home-v2-root"), "layout", {
-      nativeEvent: { layout: { width: 360, height: 500 } },
-    });
-    // 고정 영역은 날짜와 Baba를 포함한다. 실측 공간을 줄여 LY-1 분기를 확인한다.
-    await fireEvent(r.getByTestId("home-v2-fixed"), "layout", {
-      nativeEvent: { layout: { width: 360, height: 370 } },
-    });
-    expect(r.queryByTestId("home-v2-list-scroll")).toBeNull();
-    expect(r.getByTestId("home-v2-body-scroll")).toBeTruthy();
-    expect(r.getByTestId("week-dock")).toBeTruthy();
   });
 });
 
@@ -494,6 +496,7 @@ describe("12-b · 일정이 없는 경우", () => {
     const { getByText, getByRole } = await render(<Home />);
 
     expect(getByText("오늘 일정")).toBeTruthy();
+    await fireEvent.press(getByRole("button", { name: /오늘 일정 보기/ }));
     expect(getByText("+ 추가")).toBeTruthy();
     // 일정이 없어도 회고는 열린다 (12-b.md)
     expect(getByRole("button", { name: "일기 작성하기" })).toBeTruthy();
@@ -501,11 +504,11 @@ describe("12-b · 일정이 없는 경우", () => {
 
   it("목록 슬롯의 줄만 초대 문구로 바뀐다", async () => {
     await emptyDay();
-    const { getByText, queryByText } = await render(<Home />);
+    const { getByText, getAllByText, queryByText } = await renderSchedule();
 
     expect(getByText("오늘은 일정이 없어요")).toBeTruthy();
     expect(getByText("여유로운 하루예요.\n하고 싶은 일 하나 적어둘까요?")).toBeTruthy();
-    expect(getByText("0개")).toBeTruthy();
+    expect(getAllByText("0개")).toHaveLength(2);
     // 셀 것이 없으면 세지 않는다
     expect(queryByText(/개 남음/)).toBeNull();
     expect(queryByText("모두 완료")).toBeNull();
@@ -513,10 +516,10 @@ describe("12-b · 일정이 없는 경우", () => {
 
   it("숨긴 일정은 세지 않는다", async () => {
     await act(() => useDay.getState().hide("s1"));
-    const { getByText } = await render(<Home />);
+    const { getAllByText } = await renderSchedule();
 
     // 4건 중 마침이던 「팀 회의」를 숨겼으므로 남은 것은 그대로 2 다
-    expect(getByText("2개 남음")).toBeTruthy();
+    expect(getAllByText("2개 남음")).toHaveLength(2);
     expect(useDay.getState().schedules).toHaveLength(4);
   });
 });

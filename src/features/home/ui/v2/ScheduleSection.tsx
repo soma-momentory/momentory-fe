@@ -19,13 +19,16 @@ export function ScheduleSectionHeader({
   schedules,
   empty,
   onAdd,
+  flushTop = false,
 }: {
   schedules: readonly Schedule[];
   empty: boolean;
   onAdd: () => void;
+  /** 시트 안에서는 날짜 테이프 자리를 비우지 않는다 */
+  flushTop?: boolean;
 }) {
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, flushTop && styles.headerFlush]}>
       <View style={styles.heading}>
         <Text
           style={[styles.title, { lineHeight: homeV2.type.sectionTitle.lineHeight }]}
@@ -67,15 +70,9 @@ export function ScheduleSectionHeader({
   );
 }
 
-const EMPTY_PADDING = 24;
-const EMPTY_BORDER = 1.5;
-const EMPTY_TOP_GAP = 10;
-
 type BodyProps = {
   /** 접기까지 끝낸 줄 */
   rows: Schedule[];
-  fillEmpty?: boolean;
-  onEmptyHeight?: (height: number) => void;
   empty: boolean;
   /** 접혀 남은 줄 수 — 0 이면 「더 보기」가 없다 */
   hiddenCount: number;
@@ -91,8 +88,6 @@ type BodyProps = {
 
 export function ScheduleSection({
   rows,
-  fillEmpty = false,
-  onEmptyHeight,
   empty,
   hiddenCount,
   allDone,
@@ -104,21 +99,10 @@ export function ScheduleSection({
   onDragStateChange,
   onRowPitch,
 }: BodyProps) {
-  // 빈 카드는 도크 위의 남는 공간을 채운다. 작은 화면에서는 자연 높이로 스크롤한다.
   if (empty) {
     return (
-      <View testID="home-v2-empty-card" style={[styles.empty, fillEmpty && styles.emptyFill]}>
-        <View
-          style={styles.emptyContent}
-          onLayout={(event) =>
-            onEmptyHeight?.(
-              event.nativeEvent.layout.height +
-                EMPTY_PADDING * 2 +
-                EMPTY_BORDER * 2 +
-                EMPTY_TOP_GAP,
-            )
-          }
-        >
+      <View testID="home-v2-empty-card" style={styles.empty}>
+        <View style={styles.emptyContent}>
           <Text
             style={[styles.emptyTitle, { lineHeight: homeV2.type.emptyTitle.lineHeight }]}
             color={homeV2.color.ink}
@@ -187,8 +171,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     columnGap: 8,
     rowGap: 8,
-    paddingTop: 30,
+    // 날짜 · 요일 테이프가 머리 칸보다 아래로 내려온 만큼 비운다
+    paddingTop: 34,
   },
+  headerFlush: { paddingTop: 0 },
   heading: {
     flexDirection: "row",
     maxWidth: "100%",
@@ -214,15 +200,14 @@ const styles = StyleSheet.create({
   more: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingTop: 4 },
   moreText: { fontFamily: homeV2.font.bold, ...homeV2.type.add },
   done: { fontFamily: homeV2.font.regular, ...homeV2.type.count, paddingTop: 10 },
-  emptyFill: { flex: 1 },
   empty: {
-    marginTop: EMPTY_TOP_GAP,
+    marginTop: 10,
     borderRadius: homeV2.size.list.radius,
     backgroundColor: homeV2.color.card,
-    borderWidth: EMPTY_BORDER,
+    borderWidth: 1.5,
     borderColor: homeV2.color.emptyBorder,
     paddingHorizontal: 20,
-    paddingVertical: EMPTY_PADDING,
+    paddingVertical: 24,
     alignItems: "center",
     justifyContent: "center",
   },
