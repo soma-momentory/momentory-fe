@@ -7,7 +7,7 @@
  * 미리보기 서버를 띄우고 → 에이전트가 그 폴더에서 고치고 검사한다(커밋하지 않는다) →
  * 사용자가 결과를 보고 「수정 저장(커밋)」 · 「검토 요청 올리기(PR)」를 누른다. 머지 API 는 없다.
  * 지시 없이 작업 공간을 만들지 않는다 — 패널을 여는 것만으로는 아무것도 생기지 않는다.
- * AI 실행은 Lab 전체에서 **한 번에 하나**다. 작업 공간은 지금 브랜치가 아니라 기준 브랜치(main)에서 갈라 낸다.
+ * AI 실행은 Lab 전체에서 **한 번에 한 건**이다(시안 묶음은 통째로 한 건). 작업 공간은 지금 브랜치가 아니라 기준 브랜치(main)에서 갈라 낸다.
  *
  * 경로(전부 로컬 전용 — `guard.js`):
  *   GET    /__lab/agent/status                     CLI 유무 · 저장소 브랜치/더러움 · 작업 공간 목록
@@ -29,13 +29,13 @@
  *   POST   /__lab/agent/workspaces/:id/commit      {message} — git add -A · git commit -F
  *   POST   /__lab/agent/workspaces/:id/pr          {title, body, base} — git push -u · gh pr create
  *   POST   /__lab/agent/variants                   시안 여러 개 {agent, target(edit), instruction, attachments?, count 1~3}
- *                                                  — 같은 화면 · 같은 지시로 작업 공간 N개(한 묶음 id)를 만들고 **차례로** 돌린다
- *   POST   /__lab/agent/variants/:group/stop       지금 도는 시안을 멈추고 기다리는 시안을 거둔다
+ *                                                  — 같은 화면 · 같은 지시로 작업 공간 N개(한 묶음 id)를 만들고 **동시에** 돌린다
+ *   POST   /__lab/agent/variants/:group/stop       묶음에서 도는 시안을 모두 멈춘다
  *   DELETE /__lab/agent/variants/:group?keep=<id>  「나머지 시안 버리기」 — keep 말고 묶음의 나머지를 버린다(미리보기 먼저 끈다)
  *
- * 시안 묶음(2026-11-02): 실행은 그래도 한 번에 하나다 — 서버가 줄(queue)에 세우고 하나가 끝나면 다음을 띄운다.
- * 줄에 시안이 남아 있는 동안 다른 지시는 받지 않는다(409). 시안의 미리보기는 실행이 끝나도 저절로 켜지 않는다 —
- * 다음 시안이 바로 돌기 때문이다(아래 startRun 의 미리보기 주석). 「시안 비교」 화면이 열릴 때 셸이 켠다.
+ * 시안 묶음(2026-11-03 개정 — 하나씩 돌리니 너무 느렸다): 시안 N개가 한꺼번에 돈다.
+ * 하나라도 도는 동안 다른 지시는 받지 않는다(409). 시안의 미리보기는 실행이 끝나도 저절로 켜지 않는다 —
+ * 다른 시안이 아직 돌 수 있기 때문이다(아래 startRun 의 미리보기 주석). 「시안 비교」 화면이 열릴 때 셸이 켠다.
  *
  * 미리보기 서버는 한꺼번에 `maxPreviews`(기본 4 — 시안 3 + 하나)까지 띄운다. 넘으면 가장 오래 쓰지 않은 것을 끈다.
  */
@@ -199,17 +199,12 @@ function createLabAgent(options) {
   const previewUsed = new Map();
   const maxPreviews = Math.max(1, options.maxPreviews ?? MAX_PREVIEWS);
 
-  /**
-   * 시안 묶음의 줄 — 앞에서부터 하나씩 돈다. 실행 하나가 끝나면 `pump` 가 다음을 띄운다.
-   * @typedef {{ workspaceId: string; groupId: string; who: { agent: "claude" | "codex"; launcher: { file: string; prefix: string[] } };
-   *   extras: { attachments: any[]; instruction: string } }} QueueEntry
-   * @type {QueueEntry[]}
-   */
-  const queue = [];
-  /** 줄에서 다음 실행을 띄우는 중(그 사이에 끼어드는 지시를 막는다) */
-  let pumping = false;
-  /** @type {Map<string, string>} 줄에서 시작하지 못했거나 멈춰서 거둔 시안 — 이유 한 줄 */
-  const queueNotes = new Map();
+  /** @type {Set<string>} 띄우는 중인 시안 — 작업 공간은 있는데 실행이 아직 안 붙었다 */
+  const starting = new Set();
+  /** 시안 묶음을 만들고 띄우는 중(그 사이에 끼어드는 지시를 막는다) */
+  let launching = false;
+  /** @type {Map<string, string>} 시작하지 못했거나 멈춰서 거둔 시안 — 이유 한 줄 */
+  const variantNotes = new Map();
 
   /** @type {Map<string, ReviewCheck>} 작업 공간 id → 마지막 저장 전 검사 */
   const checks = new Map();
@@ -217,26 +212,56 @@ function createLabAgent(options) {
   /** @param {string} id */
   const latestRun = (id) => runs.get(id)?.at(-1) ?? null;
 
-  /** Lab 전체에서 지금 돌고 있는 실행(하나뿐이다). */
-  const activeRun = () => {
+  /** 지금 돌고 있는 실행 전부 — 보통 하나이고, 시안 묶음이면 시안 수만큼이다. */
+  const activeRuns = () => {
+    const found = [];
     for (const [id, list] of runs) {
       const run = list.at(-1);
-      if (run?.status === "running")
-        return {
-          workspaceId: id,
-          title: store.get(id)?.title ?? id,
-          agent: run.agent,
-          startedAt: run.startedAt,
-        };
+      if (run?.status !== "running") continue;
+      const meta = store.get(id);
+      found.push({
+        workspaceId: id,
+        title: meta?.title ?? id,
+        agent: run.agent,
+        startedAt: run.startedAt,
+        groupId: meta?.group?.id ?? null,
+      });
     }
-    return null;
+    return found;
   };
 
-  /** Codex `--output-schema` 에 줄 파일 — 저장소 밖(`<wsRoot>/.tmp`)에 한 번 쓴다. */
+  /**
+   * 지금 새 지시를 못 받는 이유 한 줄(받을 수 있으면 null). 작업 공간을 만들기 전에도 부른다.
+   * @param {string | null} [id] 이어서 지시할 작업 공간
+   */
+  const busyReason = (id = null) => {
+    const active = activeRuns();
+    if (launching || active.some((run) => run.groupId))
+      return "시안을 만드는 중이에요 — 다 끝난 뒤에 지시해요";
+    const run = active[0];
+    if (!run) return null;
+    return run.workspaceId === id
+      ? "이 작업은 AI 가 아직 고치는 중이에요"
+      : `다른 화면(${run.title})에서 AI가 작업 중이에요`;
+  };
+
+  /**
+   * Codex `--output-schema` 에 줄 파일 — 저장소 밖(`<wsRoot>/.tmp`)에 둔다.
+   * 내용이 같으면 쓰지 않는다 — 시안이 함께 뜰 때 다른 Codex 가 읽는 중인 파일을 비우지 않게.
+   */
   const resultSchemaFile = () => {
     const file = path.join(store.wsRoot, ".tmp", "result-schema.json");
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, JSON.stringify(RESULT_SCHEMA, null, 2));
+    const text = JSON.stringify(RESULT_SCHEMA, null, 2);
+    let current = null;
+    try {
+      current = fs.readFileSync(file, "utf8");
+    } catch {
+      /* 아직 없다 */
+    }
+    if (current !== text) {
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, text);
+    }
     return file;
   };
   /** @param {string} id */
@@ -280,21 +305,6 @@ function createLabAgent(options) {
     }
   }
 
-  /** @param {string} id */
-  const isQueued = (id) => queue.some((entry) => entry.workspaceId === id);
-
-  /** 줄에 선 시안들 — 상태의 `queue` 와 409 안내에 쓴다 */
-  const queueInfo = () =>
-    queue.map((entry) => {
-      const meta = store.get(entry.workspaceId);
-      return {
-        workspaceId: entry.workspaceId,
-        groupId: entry.groupId,
-        index: meta?.group?.index ?? null,
-        title: meta?.title ?? entry.workspaceId,
-      };
-    });
-
   /** 요약의 첫 줄 — 시안이면 「방향: …」(프롬프트가 그렇게 쓰게 한다) @param {string | null} text */
   const firstLine = (text) =>
     (text ?? "")
@@ -307,15 +317,15 @@ function createLabAgent(options) {
   async function summarize(meta) {
     const run = latestRun(meta.id);
     const check = checks.get(meta.id);
-    // 실행 · 줄은 git 을 읽기(await) **전에** 한꺼번에 본다 — 그 사이에 줄을 떠나 실행이 붙으면 「아무것도 아님」으로 보인다
-    const queued = isQueued(meta.id);
-    const note = queueNotes.get(meta.id) ?? null;
+    // 실행 · 띄우는 중은 git 을 읽기(await) **전에** 한꺼번에 본다 — 그 사이에 실행이 붙으면 「아무것도 아님」으로 보인다
+    const isStarting = starting.has(meta.id);
+    const note = variantNotes.get(meta.id) ?? null;
     const changes = await store.changes(meta);
     const status =
       run?.status === "running"
         ? "working"
-        : queued
-          ? "queued"
+        : isStarting
+          ? "starting"
           : check?.status === "running"
             ? "checking"
             : changes.fileCount > 0
@@ -351,7 +361,6 @@ function createLabAgent(options) {
           ? { status: "failed", agent: null, error: note }
           : null,
       group: meta.group ?? null,
-      queued,
       // 막 끝난 실행은 요약이 아직 기록(meta)에 안 실렸을 수 있다 — 실행의 것을 먼저 본다
       summaryLine: firstLine(run?.status === "running" ? null : (run?.summary ?? meta.lastSummary)),
       check: check?.state() ?? null,
@@ -415,35 +424,19 @@ function createLabAgent(options) {
     };
   }
 
-  /** 줄에 시안이 남아 있으면 다른 지시를 받지 않는다 — 그 안내 한 줄(없으면 null) */
-  const queueBusy = () => {
-    if (queue.length === 0 && !pumping) return null;
-    const next = queueInfo()[0];
-    return next
-      ? `시안을 차례로 만드는 중이에요(다음: ${next.title}) — 다 끝난 뒤에 지시해요`
-      : "시안을 차례로 만드는 중이에요 — 다 끝난 뒤에 지시해요";
-  };
-
   /**
    * @param {WorkspaceMeta} meta
    * @param {{ agent: "claude" | "codex"; launcher: { file: string; prefix: string[] } }} who
    * @param {ReturnType<typeof readExtras>} extras
    * @param {boolean} created
-   * @param {{ fromQueue?: boolean }} [opts]
+   * @param {{ fromGroup?: boolean }} [opts] 시안 묶음을 함께 띄울 때 — 서로를 「작업 중」으로 막지 않는다(묶음이 통째로 한 건)
    */
   async function startRun(meta, who, extras, created, opts = {}) {
     const { agent, launcher } = who;
-    // Lab 전체에서 한 번에 하나(2026-11-02 사용자 결정) — 같은 PC 의 사용량 · 저장소 검사가 겹치지 않게
-    const active = activeRun();
-    if (active)
-      throw new HttpError(
-        409,
-        active.workspaceId === meta.id
-          ? "이 작업은 AI 가 아직 고치는 중이에요"
-          : `다른 화면(${active.title})에서 AI가 작업 중이에요`,
-      );
-    const waiting = opts.fromQueue ? null : queueBusy();
-    if (waiting) throw new HttpError(409, waiting);
+    // Lab 전체에서 한 번에 한 건(2026-11-02 사용자 결정) — 같은 PC 의 사용량 · 저장소 검사가 겹치지 않게.
+    // 시안 묶음만 통째로 한 건이다(2026-11-03 사용자 결정 — 하나씩 돌리니 너무 느렸다)
+    const busy = opts.fromGroup ? null : busyReason(meta.id);
+    if (busy) throw new HttpError(409, busy);
     if (checks.get(meta.id)?.status === "running")
       throw new HttpError(409, "저장 전 검사가 도는 중이에요 — 끝난 뒤에 지시해요");
     const changes = await store.changes(meta);
@@ -461,20 +454,7 @@ function createLabAgent(options) {
       workspace: meta,
       resume: Boolean(resumeId),
       previousSummary: resumeId ? null : meta.lastSummary,
-      variant: meta.group
-        ? {
-            index: meta.group.index,
-            total: meta.group.total,
-            // 차례로 도니까 앞 시안은 이미 끝났다 — 그 요약을 건네 다른 방향을 고르게 한다
-            earlier: store
-              .groupMembers(meta.group.id)
-              .filter((m) => (m.group?.index ?? 0) < (meta.group?.index ?? 0) && m.lastSummary)
-              .map((m) => ({
-                index: m.group?.index ?? 0,
-                summary: firstLine(m.lastSummary) ?? "",
-              })),
-          }
-        : null,
+      variant: meta.group ? { index: meta.group.index, total: meta.group.total } : null,
     });
     const lastMessagePath =
       agent === "codex" ? path.join(store.wsRoot, ".logs", `${meta.id}-${runId}-last.json`) : null;
@@ -514,11 +494,9 @@ function createLabAgent(options) {
     while (list.length > HISTORY) list.shift();
     runs.set(meta.id, list);
     store.update(meta.id, { runCount: meta.runCount + 1 });
-    queueNotes.delete(meta.id);
+    variantNotes.delete(meta.id);
 
     run.finished.then((snapshot) => {
-      // 시안 줄의 다음 차례 — 이 실행의 뒷정리(아래 기록)가 끝난 뒤에 이어 간다
-      setTimeout(() => void pump(), 0);
       if (!store.get(meta.id)) return;
       /** @type {Partial<WorkspaceMeta>} */
       const patch = {};
@@ -531,56 +509,41 @@ function createLabAgent(options) {
       // 미리보기는 AI 실행이 **끝난 뒤** 띄운다 — 실행 중에 Metro 첫 번들이 겹치면 PC 부하로 에이전트가 돌리는
       // jest 의 애니메이션 · 타이머 테스트가 흔들려(「Unable to locate attached view」) 없는 실패를 보고했다(2026-11-02 실측).
       // 이미 떠 있으면 그대로 둔다(파일 감시가 바뀐 코드를 다시 묶는다). 실패해도 결과는 그대로다.
-      // 시안은 켜지 않는다 — 다음 시안이 바로 돌고(같은 이유), 시안 비교 화면이 열릴 때 셸이 켠다.
+      // 시안은 켜지 않는다 — 다른 시안이 아직 돌 수 있고(같은 이유), 시안 비교 화면이 열릴 때 셸이 켠다.
       if (!meta.group) ensurePreview(meta).catch(() => {});
     });
     return run;
   }
 
-  /** 줄 맨 앞의 시안을 띄운다 — 아무것도 돌지 않을 때만. 못 띄우면 그 시안에 이유를 남기고 다음으로. */
-  async function pump() {
-    if (pumping || activeRun()) return;
-    pumping = true;
+  /**
+   * 시안 하나를 띄운다 — 못 띄우면 그 시안에 이유를 남긴다(다른 시안은 그대로 돈다).
+   * @param {WorkspaceMeta} member
+   * @param {{ agent: "claude" | "codex"; launcher: { file: string; prefix: string[] } }} who
+   * @param {ReturnType<typeof readExtras>} extras
+   */
+  async function launchVariant(member, who, extras) {
+    const meta = store.get(member.id);
+    if (!meta || !starting.has(member.id)) return;
     try {
-      while (queue.length > 0) {
-        // 띄우는 동안에도 줄 맨 앞에 둔다 — 그 사이에 상태를 읽어도 「기다리는 중」이고 「다 끝남」으로 보이지 않는다
-        const entry = /** @type {QueueEntry} */ (queue[0]);
-        const leave = () => {
-          const at = queue.indexOf(entry);
-          if (at >= 0) queue.splice(at, 1);
-          return at >= 0;
-        };
-        const meta = store.get(entry.workspaceId);
-        if (!meta) {
-          leave();
-          continue;
-        }
-        try {
-          const run = await startRun(meta, entry.who, entry.extras, true, { fromQueue: true });
-          // 띄우는 사이에 멈추기 · 버리기로 거뒀으면 바로 멈춘다
-          if (!leave()) run.stop();
-          return;
-        } catch (error) {
-          leave();
-          queueNotes.set(
-            entry.workspaceId,
-            `시작하지 못했어요: ${String(/** @type {any} */ (error)?.message ?? error)}`,
-          );
-        }
-      }
-    } finally {
-      pumping = false;
+      const run = await startRun(meta, who, extras, true, { fromGroup: true });
+      // 띄우는 사이에 멈추기 · 버리기로 거뒀으면 바로 멈춘다
+      if (!starting.delete(member.id)) run.stop();
+    } catch (error) {
+      starting.delete(member.id);
+      variantNotes.set(
+        member.id,
+        `시작하지 못했어요: ${String(/** @type {any} */ (error)?.message ?? error)}`,
+      );
     }
   }
 
   /**
-   * 작업 공간 하나를 버린다 — 줄에서 빼고 · 실행 · 검사 · 미리보기를 끈 뒤 worktree 를 지운다(junction 먼저 · workspaces.js).
+   * 작업 공간 하나를 버린다 — 실행 · 검사 · 미리보기를 끈 뒤 worktree 를 지운다(junction 먼저 · workspaces.js).
    * @param {string} id
    */
   async function discard(id) {
-    for (let i = queue.length - 1; i >= 0; i -= 1)
-      if (queue[i]?.workspaceId === id) queue.splice(i, 1);
-    queueNotes.delete(id);
+    starting.delete(id);
+    variantNotes.delete(id);
     const run = latestRun(id);
     run?.stop();
     checks.get(id)?.stop();
@@ -643,8 +606,7 @@ function createLabAgent(options) {
         versions: available.versions,
         git: repo,
         baseBranch: store.baseBranch,
-        activeRun: activeRun(),
-        queue: queueInfo(),
+        activeRuns: activeRuns(),
         maxVariants: MAX_VARIANTS,
         maxPreviews,
         workspaces,
@@ -662,33 +624,37 @@ function createLabAgent(options) {
           throw new HttpError(400, `시안은 1개에서 ${MAX_VARIANTS}개까지 만들 수 있어요`);
         const who = await launcherFor(body.agent);
         const extras = readExtras(body);
-        // 작업 공간을 만들기 **전에** 거른다 — 다른 실행 · 줄이 있으면 아무것도 만들지 않는다
-        const active = activeRun();
-        if (active) throw new HttpError(409, `다른 화면(${active.title})에서 AI가 작업 중이에요`);
-        const waiting = queueBusy();
-        if (waiting) throw new HttpError(409, waiting);
+        // 작업 공간을 만들기 **전에** 거른다 — 다른 실행이 있으면 아무것도 만들지 않는다
+        const busy = busyReason();
+        if (busy) throw new HttpError(409, busy);
         const now = new Date();
         const groupId = `g${now.getTime().toString(36)}`;
         /** @type {WorkspaceMeta[]} */
         const members = [];
+        launching = true;
         try {
-          for (let index = 1; index <= count; index += 1)
-            members.push(
-              await store.createVariant(
-                target,
-                { id: groupId, index, total: count, createdAt: now.toISOString() },
-                now,
-              ),
+          // 작업 공간은 하나씩 만든다 — 저마다 기준 브랜치를 fetch 하고 같은 등록부를 쓴다
+          try {
+            for (let index = 1; index <= count; index += 1)
+              members.push(
+                await store.createVariant(
+                  target,
+                  { id: groupId, index, total: count, createdAt: now.toISOString() },
+                  now,
+                ),
+              );
+          } catch (error) {
+            for (const m of members) await store.remove(m.id);
+            throw new HttpError(
+              500,
+              `시안 작업 공간을 만들지 못했어요: ${String(/** @type {any} */ (error)?.message ?? error)}`,
             );
-        } catch (error) {
-          for (const m of members) await store.remove(m.id);
-          throw new HttpError(
-            500,
-            `시안 작업 공간을 만들지 못했어요: ${String(/** @type {any} */ (error)?.message ?? error)}`,
-          );
+          }
+          for (const m of members) starting.add(m.id);
+          await Promise.all(members.map((m) => launchVariant(m, who, extras)));
+        } finally {
+          launching = false;
         }
-        for (const m of members) queue.push({ workspaceId: m.id, groupId, who, extras });
-        await pump();
         return sendJson(res, 202, {
           group: { id: groupId, total: count, route: target.route },
           workspaces: await Promise.all(members.map((m) => summarize(store.get(m.id) ?? m))),
@@ -699,17 +665,20 @@ function createLabAgent(options) {
       if (!groupId || members.length === 0) throw new HttpError(404, "그 시안 묶음이 없어요");
       if (parts[2] === "stop" && parts.length === 3 && method === "POST") {
         /** @type {string[]} */
+        const stopped = [];
+        /** @type {string[]} */
         const cancelled = [];
-        for (let i = queue.length - 1; i >= 0; i -= 1) {
-          const entry = queue[i];
-          if (entry?.groupId !== groupId) continue;
-          queue.splice(i, 1);
-          cancelled.unshift(entry.workspaceId);
-          queueNotes.set(entry.workspaceId, "멈춰서 만들지 않았어요");
+        for (const m of members) {
+          if (starting.delete(m.id)) {
+            cancelled.push(m.id);
+            variantNotes.set(m.id, "멈춰서 만들지 않았어요");
+          }
+          if (isRunning(m.id)) {
+            latestRun(m.id)?.stop();
+            stopped.push(m.id);
+          }
         }
-        const running = members.find((m) => isRunning(m.id));
-        if (running) latestRun(running.id)?.stop();
-        return sendJson(res, 200, { stopped: running?.id ?? null, cancelled });
+        return sendJson(res, 200, { stopped, cancelled });
       }
       if (parts.length === 2 && method === "DELETE") {
         const keep = url.searchParams.get("keep");
@@ -739,10 +708,8 @@ function createLabAgent(options) {
       const existing = store.find(target);
       // 새 작업 공간을 만들기 **전에** 거른다 — 받지 못할 지시로 worktree 만 남지 않게
       if (!existing) {
-        const active = activeRun();
-        if (active) throw new HttpError(409, `다른 화면(${active.title})에서 AI가 작업 중이에요`);
-        const waiting = queueBusy();
-        if (waiting) throw new HttpError(409, waiting);
+        const busy = busyReason();
+        if (busy) throw new HttpError(409, busy);
       }
       const meta = existing ?? (await store.ensure(target));
       const run = await startRun(meta, who, extras, !existing);

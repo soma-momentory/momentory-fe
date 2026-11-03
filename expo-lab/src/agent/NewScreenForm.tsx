@@ -61,7 +61,7 @@ export function NewScreenForm({
   const [createdId, setCreatedId] = useState<string | null>(null);
 
   const created = createdId ? (status?.workspaces.find((w) => w.id === createdId) ?? null) : null;
-  const active = status?.activeRun ?? null;
+  const active = status?.activeRuns[0] ?? null;
   const cleanSlug = toSlug(slug);
   const unavailable = status ? !status.available[agent] : true;
   const ready = title.trim() && cleanSlug && description.trim();

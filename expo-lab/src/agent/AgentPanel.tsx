@@ -4,7 +4,7 @@
  * - 패널을 여는 것만으로는 아무것도 만들지 않는다. 그 화면에서 **처음 「AI에게 수정 맡기기」를 누를 때** 서버가
  *   이 화면용 작업 공간(저장소 바깥 git worktree + 작업 이름(브랜치) + 수정 결과 화면)을 만든다.
  * - AI 는 작업 공간에서 고치고 검사까지만 한다. 수정 저장(커밋) · 검토 요청 올리기(PR)는 사용자가 누른다.
- * - AI 실행은 Lab 전체에서 한 번에 하나다.
+ * - AI 실행은 Lab 전체에서 한 번에 한 건이다(시안 묶음은 통째로 한 건).
  *
  * 셸 연결: `<AgentPanel screen={…} onOpenPreview={…} onOpenWorkspace={…} onOpenVariants={…} />` — README 「AI에게 맡기기」 참고.
  * 참고 그림(피그마 · 시안 캡처)은 지시와 함께 첨부한다(`AttachmentPicker` — 참고용 · 앱에 넣기).
@@ -14,7 +14,7 @@
  * (`composeInstruction` — 서버 API 는 그대로 · 예전 미리 채운 칸과 같은 모양의 글).
  *
  * 「시안 개수」를 2 · 3 으로 고르면 같은 지시로 서로 다른 방향의 시안을 작업 공간마다 하나씩 만든다 —
- * 서버가 줄에 세워 차례로 돌리고(`POST /variants`), 결과는 「시안 비교」 레이아웃에서 나란히 본다(README 「시안 비교」).
+ * 서버가 동시에 돌리고(`POST /variants`), 결과는 「시안 비교」 레이아웃에서 나란히 본다(README 「시안 비교」).
  */
 import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
@@ -26,7 +26,7 @@ import type { AgentId, Attachment, WorkspaceSummary } from "./types";
 import { boxStyle, Btn, Chip, inputStyle, Note, panelStyle, smallStyle } from "./ui";
 import { useAgentStatus } from "./useAgentStatus";
 import { VariantGroupCard } from "./VariantGroupCard";
-import { groupProgress, variantGroups, type VariantGroupView } from "./variants";
+import { groupBusy, groupProgress, variantGroups, type VariantGroupView } from "./variants";
 import { AGENT_LABEL, statusText, WorkspaceCard } from "./WorkspaceCard";
 
 export type AgentScreen = {
@@ -124,8 +124,7 @@ export function AgentPanel({
   const others = (status?.workspaces ?? []).filter((w) => w.id !== workspace?.id && !w.group);
   const otherCount = others.length + otherGroups.length;
   const maxCount = status?.maxVariants ?? MAX_VARIANT_COUNT;
-  const queue = status?.queue ?? [];
-  const active = status?.activeRun ?? null;
+  const active = status?.activeRuns[0] ?? null;
   const otherActive = active && active.workspaceId !== workspace?.id ? active : null;
   /** 지금 도는 것이 이 화면의 시안이면 아래 묶음 카드에 이미 보인다 — 「그 작업 보기」가 필요 없다 */
   const activeHere = hereGroups.some((g) => g.members.some((m) => m.id === active?.workspaceId));
@@ -137,8 +136,8 @@ export function AgentPanel({
     ? null
     : !status.available.claude && !status.available.codex
       ? "이 PC 에서 Claude Code · Codex 를 찾지 못했어요"
-      : queue.length > 0
-        ? `시안을 차례로 만드는 중이에요(다음: ${queue[0]?.title ?? ""}) — 다 끝난 뒤에 지시해요`
+      : active?.groupId
+        ? "시안을 만드는 중이에요 — 다 끝난 뒤에 지시해요"
         : otherActive
           ? `다른 화면(${otherActive.title})에서 AI가 작업 중이에요`
           : count === 1 && workspace?.status === "working"
@@ -277,8 +276,8 @@ export function AgentPanel({
         </div>
         {count > 1 ? (
           <Note>
-            같은 지시로 방향이 다른 시안 {count}개를 따로 만들어요. 한 번에 하나씩 차례로 만들고,
-            결과는 「시안 비교」에서 지금 앱과 나란히 봐요.
+            같은 지시로 방향이 다른 시안 {count}개를 동시에 만들어요. 결과는 「시안 비교」에서 지금
+            앱과 나란히 봐요.
           </Note>
         ) : null}
 
@@ -289,7 +288,7 @@ export function AgentPanel({
             onClick={() => void send()}
             title={
               count > 1
-                ? `시안마다 작업 공간을 하나씩 만들고 AI 가 차례로 만들어요(${count}개)`
+                ? `시안마다 작업 공간을 하나씩 만들고 AI 가 동시에 만들어요(${count}개)`
                 : workspace
                   ? "같은 작업 공간 · 같은 AI 대화에서 이어서 고쳐요"
                   : "이 화면용 작업 공간을 만들고 AI 에게 고치게 해요"
@@ -458,7 +457,7 @@ function OtherGroupRow({
   onToggle: () => void;
   children: ReactNode;
 }) {
-  const busy = group.members.some((m) => m.status === "working" || m.queued);
+  const busy = groupBusy(group);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div

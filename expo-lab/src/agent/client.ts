@@ -35,15 +35,15 @@ export type AgentClient = {
     body: Omit<RunRequest, "target">,
   ): Promise<Result<{ workspace: WorkspaceSummary; run: RunSnapshot }>>;
   stop(id: string): Promise<Result<{ run: RunSnapshot | null }>>;
-  /** 시안 여러 개 — 같은 지시로 작업 공간 N개를 만들고 서버가 차례로 돌린다 */
+  /** 시안 여러 개 — 같은 지시로 작업 공간 N개를 만들고 서버가 동시에 돌린다 */
   variants(body: VariantsRequest): Promise<
     Result<{
       group: { id: string; total: number; route: string };
       workspaces: WorkspaceSummary[];
     }>
   >;
-  /** 시안 만들기 멈추기 — 지금 도는 시안을 멈추고 기다리는 시안을 거둔다 */
-  stopVariants(groupId: string): Promise<Result<{ stopped: string | null; cancelled: string[] }>>;
+  /** 시안 만들기 멈추기 — 묶음에서 도는 시안을 모두 멈춘다 */
+  stopVariants(groupId: string): Promise<Result<{ stopped: string[]; cancelled: string[] }>>;
   /** 나머지 시안 버리기 — keep 말고 묶음의 나머지 작업 공간을 지운다 */
   discardOtherVariants(
     groupId: string,

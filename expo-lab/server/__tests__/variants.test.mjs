@@ -1,4 +1,4 @@
-// 「시안 여러 개」 — 같은 화면 · 같은 지시로 작업 공간 N개(한 묶음)를 만들고 차례로 돌린다(server/index.js).
+// 「시안 여러 개」 — 같은 화면 · 같은 지시로 작업 공간 N개(한 묶음)를 만들고 동시에 돌린다(server/index.js).
 // 가짜 CLI · 가짜 미리보기로만 돈다 — 실제 AI 는 부르지 않는다.
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
@@ -13,7 +13,7 @@ import { makeRepo } from "./helpers.mjs";
 
 const require = createRequire(import.meta.url);
 const { createLabAgent } = require("../index.js");
-const { buildPrompt, MAX_VARIANTS } = require("../prompt.js");
+const { buildPrompt, MAX_VARIANTS, VARIANT_DIRECTIONS } = require("../prompt.js");
 
 /** @type {{ cwd: string; stdin: string }[]} */
 const spawned = [];
@@ -22,6 +22,8 @@ let maxRunning = 0;
 /** 값이 있으면 그 약속이 풀릴 때까지 실행이 끝나지 않는다 */
 /** @type {Promise<void> | null} */
 let hold = null;
+/** 이 이름으로 끝나는 작업 공간은 띄우지 못한다 */
+let spawnFailsFor = "";
 
 /** 가짜 claude — 요약 첫 줄에 「방향: <작업 공간 폴더 이름>」 */
 function fakeSpawn(
@@ -29,6 +31,7 @@ function fakeSpawn(
   /** @type {string[]} */ _args,
   /** @type {any} */ opts,
 ) {
+  if (spawnFailsFor && opts.cwd.endsWith(spawnFailsFor)) throw new Error("띄우기 실패");
   const child = /** @type {any} */ (new EventEmitter());
   child.stdout = new PassThrough();
   child.stderr = new PassThrough();
@@ -133,34 +136,44 @@ async function call(p, init = {}) {
   return { status: res.status, body: text ? JSON.parse(text) : null };
 }
 
-/** 줄이 비고 아무것도 돌지 않을 때까지 */
+/** 아무것도 돌지 않을 때까지 */
 async function waitIdle() {
   for (let i = 0; i < 300; i += 1) {
     const { body } = await call("/status");
     const busy = body.workspaces.some(
-      (/** @type {any} */ w) => w.status === "working" || w.status === "queued",
+      (/** @type {any} */ w) => w.status === "working" || w.status === "starting",
     );
-    if (!body.activeRun && body.queue.length === 0 && !busy) return body;
+    if (body.activeRuns.length === 0 && !busy) return body;
     await new Promise((r) => setTimeout(r, 20));
   }
-  throw new Error("줄이 비지 않았다");
+  throw new Error("실행이 끝나지 않았다");
 }
 
 const HOME = { kind: "edit", route: "/(tabs)/home", title: "홈", file: "app/(tabs)/home.tsx" };
 
-test("시안 프롬프트 — 「시안 k / N」 · 다른 방향 · 앞 시안 요약", () => {
+test("시안 프롬프트 — 「시안 k / N」 · 맡은 방향 · 다른 시안이 맡은 방향 · 검사 부하", () => {
   const prompt = buildPrompt({
     agent: "claude",
     target: HOME,
     instruction: "지시: 카드를 더 눈에 띄게",
     workspace: { path: "/ws", branch: "lab/x", baseBranch: "main" },
-    variant: { index: 2, total: 3, earlier: [{ index: 1, summary: "방향: 정석으로 다듬기" }] },
+    variant: { index: 2, total: 3 },
   });
   assert.ok(prompt.includes("[시안 2 / 3]"));
-  assert.ok(prompt.includes("다른 시안은 다른 방향을 맡는다"));
-  assert.ok(prompt.includes("겹치지 않는 뚜렷한 디자인 방향"));
+  assert.ok(prompt.includes(`이 시안이 맡은 방향: ${VARIANT_DIRECTIONS[1]}`));
+  assert.ok(prompt.includes(`시안 1 이 맡은 방향(이쪽과 겹치지 않게): ${VARIANT_DIRECTIONS[0]}`));
+  assert.ok(prompt.includes(`시안 3 이 맡은 방향(이쪽과 겹치지 않게): ${VARIANT_DIRECTIONS[2]}`));
   assert.ok(prompt.includes("「방향: …」"));
-  assert.ok(prompt.includes("- 시안 1: 방향: 정석으로 다듬기"));
+  assert.ok(prompt.includes("--maxWorkers=2"));
+  // 시안이 둘이면 없는 시안 3 의 방향은 말하지 않는다
+  const two = buildPrompt({
+    agent: "claude",
+    target: HOME,
+    workspace: { path: "/ws", branch: "lab/x", baseBranch: "main" },
+    variant: { index: 1, total: 2 },
+  });
+  assert.ok(two.includes("시안 2 이 맡은 방향"));
+  assert.ok(!two.includes("시안 3 이 맡은 방향"));
   // 이어지는 지시(같은 세션)에는 다시 싣지 않는다
   const resumed = buildPrompt({
     agent: "claude",
@@ -194,7 +207,7 @@ test("시안 개수 검사 — 0 · 4 · 새 화면은 400 이고 아무것도 �
   assert.deepEqual((await call("/workspaces")).body.workspaces, []);
 });
 
-test("묶음 — 작업 공간 3개 · 같은 묶음 id · 차례로 하나씩(동시에 둘이 돌지 않는다) · 미리보기는 저절로 켜지 않는다", async () => {
+test("묶음 — 작업 공간 3개 · 같은 묶음 id · 시안 수만큼 동시에 돈다 · 미리보기는 저절로 켜지 않는다", async () => {
   /** @type {() => void} */
   let release = () => {};
   hold = new Promise((r) => (release = () => r()));
@@ -220,50 +233,57 @@ test("묶음 — 작업 공간 3개 · 같은 묶음 id · 차례로 하나씩(�
       { id: group.id, index: i + 1, total: 3 },
     );
   }
-  // 첫 시안만 돈다 — 나머지는 줄에서 기다린다
+  // 응답이 올 때 셋 다 이미 돌고 있다 — 앞 시안을 기다리지 않는다
   assert.deepEqual(
     workspaces.map((/** @type {any} */ w) => w.status),
-    ["working", "queued", "queued"],
+    ["working", "working", "working"],
   );
+  assert.equal(running, 3);
   const during = (await call("/status")).body;
-  assert.equal(during.activeRun.workspaceId, "tabs-home-s1");
   assert.deepEqual(
-    during.queue.map((/** @type {any} */ q) => q.workspaceId),
-    ["tabs-home-s2", "tabs-home-s3"],
+    during.activeRuns.map((/** @type {any} */ r) => [r.workspaceId, r.groupId]),
+    [
+      ["tabs-home-s1", group.id],
+      ["tabs-home-s2", group.id],
+      ["tabs-home-s3", group.id],
+    ],
   );
-  // 줄이 남아 있으면 다른 지시는 받지 않는다(첫 시안이 끝난 틈에도)
+  // 묶음이 도는 동안 다른 지시는 받지 않는다 — 다른 화면도, 묶음의 시안에 이어서도, 새 묶음도
   const other = await call("/run", {
     method: "POST",
     json: { agent: "claude", target: { kind: "edit", route: "/my" }, instruction: "x" },
   });
   assert.equal(other.status, 409);
-  release();
-  // 첫 시안이 끝나 다음으로 넘어가는 틈에 끼어들어도 409
-  for (let i = 0; i < 100 && spawned.length < 2; i += 1)
-    await new Promise((r) => setTimeout(r, 10));
-  const between = await call("/run", {
-    method: "POST",
-    json: { agent: "claude", target: { kind: "edit", route: "/my" }, instruction: "x" },
-  });
-  assert.equal(between.status, 409);
-  assert.match(between.body.error, /시안을 차례로 만드는 중|AI가 작업 중/);
+  assert.equal(other.body.error, "시안을 만드는 중이에요 — 다 끝난 뒤에 지시해요");
   assert.ok(
     !(await call("/workspaces")).body.workspaces.some((/** @type {any} */ w) => w.id === "my"),
     "받지 못한 지시로 작업 공간을 만들지 않는다",
   );
+  const more = await call("/workspaces/tabs-home-s1/run", {
+    method: "POST",
+    json: { agent: "claude", instruction: "더" },
+  });
+  assert.equal(more.status, 409);
+  const again = await call("/variants", {
+    method: "POST",
+    json: { agent: "claude", target: HOME, instruction: "x", count: 2 },
+  });
+  assert.equal(again.status, 409);
+  release();
 
   const idle = await waitIdle();
-  assert.equal(maxRunning, 1, "AI 실행은 한 번에 하나");
-  assert.deepEqual(
-    spawned.map((s) => path.basename(s.cwd)),
-    ["tabs-home-s1", "tabs-home-s2", "tabs-home-s3"],
-  );
-  assert.ok(spawned[0]?.stdin.includes("[시안 1 / 3]"));
-  assert.ok(spawned[2]?.stdin.includes("[시안 3 / 3]"));
-  // 앞 시안이 끝난 뒤에 도니까 그 방향을 건네받는다
-  assert.ok(spawned[1]?.stdin.includes("- 시안 1: 방향: tabs-home-s1 쪽"));
-  assert.ok(spawned[2]?.stdin.includes("- 시안 2: 방향: tabs-home-s2 쪽"));
-  assert.ok(spawned.every((s) => s.stdin.includes("지시: 카드를 더 눈에 띄게")));
+  assert.equal(maxRunning, 3, "시안 수만큼 동시에 돈다");
+  assert.deepEqual(spawned.map((s) => path.basename(s.cwd)).sort(), [
+    "tabs-home-s1",
+    "tabs-home-s2",
+    "tabs-home-s3",
+  ]);
+  for (const index of [1, 2, 3]) {
+    const stdin = spawned.find((s) => path.basename(s.cwd) === `tabs-home-s${index}`)?.stdin ?? "";
+    assert.ok(stdin.includes(`[시안 ${index} / 3]`));
+    assert.ok(stdin.includes(`이 시안이 맡은 방향: ${VARIANT_DIRECTIONS[index - 1]}`));
+    assert.ok(stdin.includes("지시: 카드를 더 눈에 띄게"));
+  }
   assert.deepEqual(previewsStarted, [], "시안의 미리보기는 시안 비교 화면이 켠다");
   const done = idle.workspaces.filter((/** @type {any} */ w) => w.group?.id === group.id);
   assert.deepEqual(
@@ -281,7 +301,7 @@ test("묶음 — 작업 공간 3개 · 같은 묶음 id · 차례로 하나씩(�
   await waitIdle();
 });
 
-test("멈추기 — 지금 도는 시안을 멈추고 기다리는 시안은 거둔다", async () => {
+test("멈추기 — 도는 시안을 모두 멈춘다", async () => {
   /** @type {() => void} */
   let release = () => {};
   hold = new Promise((r) => (release = () => r()));
@@ -300,16 +320,16 @@ test("멈추기 — 지금 도는 시안을 멈추고 기다리는 시안은 거
   const groupId = res.body.group.id;
   const stop = await call(`/variants/${groupId}/stop`, { method: "POST" });
   assert.equal(stop.status, 200);
-  assert.equal(stop.body.stopped, "my-s1");
-  assert.deepEqual(stop.body.cancelled, ["my-s2", "my-s3"]);
+  assert.deepEqual(stop.body.stopped, ["my-s1", "my-s2", "my-s3"]);
+  assert.deepEqual(stop.body.cancelled, []);
   release();
   const idle = await waitIdle();
-  assert.equal(spawned.length - before, 1, "거둔 시안은 돌지 않는다");
+  assert.equal(spawned.length - before, 3);
   const members = idle.workspaces.filter((/** @type {any} */ w) => w.group?.id === groupId);
-  assert.equal(members[0].lastRun.status, "stopped");
-  assert.equal(members[1].status, "fresh");
-  assert.equal(members[1].queued, false);
-  assert.equal(members[1].lastRun.error, "멈춰서 만들지 않았어요");
+  assert.deepEqual(
+    members.map((/** @type {any} */ w) => w.lastRun.status),
+    ["stopped", "stopped", "stopped"],
+  );
   // 멈춘 뒤에는 다른 지시를 받는다
   const next = await call("/workspaces/my-s2/run", {
     method: "POST",
@@ -317,6 +337,30 @@ test("멈추기 — 지금 도는 시안을 멈추고 기다리는 시안은 거
   });
   assert.equal(next.status, 202);
   await waitIdle();
+});
+
+test("시안 하나를 못 띄워도 나머지는 돌고, 그 시안에 이유가 남는다", async () => {
+  spawnFailsFor = "report-s2";
+  const res = await call("/variants", {
+    method: "POST",
+    json: {
+      agent: "claude",
+      target: { kind: "edit", route: "/report", title: "리포트" },
+      count: 3,
+      instruction: "x",
+    },
+  });
+  spawnFailsFor = "";
+  assert.equal(res.status, 202);
+  const idle = await waitIdle();
+  const members = idle.workspaces.filter(
+    (/** @type {any} */ w) => w.group?.id === res.body.group.id,
+  );
+  assert.deepEqual(
+    members.map((/** @type {any} */ w) => w.lastRun.status),
+    ["done", "failed", "done"],
+  );
+  assert.equal(members[1].lastRun.error, "시작하지 못했어요: 띄우기 실패");
 });
 
 test("나머지 시안 버리기 — keep 말고 같은 묶음만 지운다 · 미리보기도 끈다 · 원본 node_modules 는 그대로", async () => {

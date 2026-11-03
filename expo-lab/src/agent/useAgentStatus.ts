@@ -17,7 +17,7 @@ export function useAgentStatus(client: AgentClient) {
   }, [client]);
 
   const busy =
-    Boolean(status?.activeRun) ||
+    Boolean(status?.activeRuns.length) ||
     Boolean(
       status?.workspaces.some((w) => w.preview?.status === "starting" || w.status === "checking"),
     );

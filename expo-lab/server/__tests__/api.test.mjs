@@ -362,7 +362,7 @@ test("새 화면 — kind 와 새 라우트가 목록에 실린다", async () =>
   );
 });
 
-test("AI 실행은 Lab 전체에서 한 번에 하나 — 다른 화면에서 돌면 409 · 상태에 activeRun", async () => {
+test("AI 실행은 Lab 전체에서 한 번에 한 건 — 다른 화면에서 돌면 409 · 상태에 activeRuns", async () => {
   /** @type {() => void} */
   let release = () => {};
   hold = new Promise((r) => (release = () => r()));
@@ -379,11 +379,13 @@ test("AI 실행은 Lab 전체에서 한 번에 하나 — 다른 화면에서 �
   assert.equal(other.status, 409);
   assert.equal(other.body.error, "다른 화면(잠 기록)에서 AI가 작업 중이에요");
   const status = await call("/status");
-  assert.equal(status.body.activeRun.workspaceId, "new-sleep-log");
-  assert.equal(status.body.activeRun.title, "잠 기록");
+  assert.equal(status.body.activeRuns.length, 1);
+  assert.equal(status.body.activeRuns[0].workspaceId, "new-sleep-log");
+  assert.equal(status.body.activeRuns[0].title, "잠 기록");
+  assert.equal(status.body.activeRuns[0].groupId, null);
   release();
   await waitDone("new-sleep-log");
-  assert.equal((await call("/status")).body.activeRun, null);
+  assert.deepEqual((await call("/status")).body.activeRuns, []);
 });
 
 test("스키마 결과가 없으면 글 블록(COMMIT_MESSAGE · PR_BODY)으로 대신한다", async () => {

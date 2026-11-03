@@ -85,7 +85,7 @@ async function fakeAgentServer(page: Page, workspaces: Record<string, unknown>[]
           versions: { claude: "test", codex: null, gh: null },
           git: { branch: "main", dirty: false, dirtyFiles: [] },
           baseBranch: "main",
-          activeRun: null,
+          activeRuns: [],
           workspaces,
         },
       });
@@ -310,7 +310,6 @@ const member = (index: number, patch: Record<string, unknown> = {}) =>
     status: "edited",
     lastRun: { status: "done", agent: "claude", error: null },
     group: { id: "g1", index, total: 3, createdAt: "2026-11-02T12:00:00.000Z" },
-    queued: false,
     summaryLine: `방향: 시안 ${index} 의 방향`,
     preview: { status: "ready", port: 8100 + index, url: VARIANT_URL, ready: true, error: null },
     ...patch,
@@ -320,11 +319,7 @@ const member = (index: number, patch: Record<string, unknown> = {}) =>
  * 시안 묶음을 가진 가짜 서버 — 읽기에 더해 시안 · 미리보기 켜기 · 검사 · 저장 · 검토 요청 · 나머지 버리기를 **기록만** 하고 답한다.
  * AI 도 git 도 돌지 않는다. 미리보기 켜기를 받으면 그 시안의 화면을 준비된 것으로 바꾼다.
  */
-async function fakeVariantServer(
-  page: Page,
-  initial: Record<string, unknown>[],
-  extra: { queue?: unknown[]; activeRun?: unknown } = {},
-) {
+async function fakeVariantServer(page: Page, initial: Record<string, unknown>[]) {
   const calls: Recorded[] = [];
   let list = initial.map((w) => ({ ...w }));
   const find = (id: string) => list.find((w) => w.id === id);
@@ -339,8 +334,7 @@ async function fakeVariantServer(
       versions: { claude: "test", codex: null, gh: "test" },
       git: { branch: "main", dirty: false, dirtyFiles: [] },
       baseBranch: "main",
-      activeRun: extra.activeRun ?? null,
-      queue: extra.queue ?? [],
+      activeRuns: [],
       maxVariants: 3,
       maxPreviews: 4,
       workspaces: list,
@@ -429,7 +423,7 @@ test("「시안 개수」 — 3 을 고르면 같은 지시를 시안 3개로(PO
   await expect(counts).toContainText("시안 개수");
   await expect(counts.getByRole("button", { name: "1개" })).toHaveAttribute("aria-pressed", "true");
   await counts.getByRole("button", { name: "3개" }).click();
-  await expect(page.getByText("같은 지시로 방향이 다른 시안 3개를 따로 만들어요")).toBeVisible();
+  await expect(page.getByText("같은 지시로 방향이 다른 시안 3개를 동시에 만들어요")).toBeVisible();
   const go = page.getByRole("button", { name: "시안 3개 만들기 맡기기" });
   // 시안도 할 말이 없으면 못 보낸다
   await expect(go).toBeDisabled();

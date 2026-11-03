@@ -162,7 +162,7 @@ function normalizeResult(value) {
 const MAX_VARIANTS = 3;
 
 /**
- * 시안 k 의 출발점 — 시안끼리 같은 답을 내지 않게 방향을 하나씩 건넨다. 꼭 따르지 않아도 된다(지시가 먼저다).
+ * 시안 k 가 맡는 방향 — 시안은 동시에 돌아 서로의 결과를 못 본다. 그래서 겹치지 않는 방향을 미리 나눠 준다(지시가 먼저다).
  * @type {readonly string[]}
  */
 const VARIANT_DIRECTIONS = [
@@ -171,27 +171,26 @@ const VARIANT_DIRECTIONS = [
   "덜어 내는 방향 — 요소를 줄이고 여백과 강조 하나로 위계를 분명히 한다",
 ];
 
+/** @param {number} index */
+const directionOf = (index) => VARIANT_DIRECTIONS[(index - 1) % VARIANT_DIRECTIONS.length];
+
 /**
- * 「시안 k / N」 안내 — 같은 지시로 시안 여러 개를 차례로 만들 때 시안마다 붙는다(`server/index.js` 시안 묶음).
- * @param {{ index: number; total: number; earlier?: readonly { index: number; summary: string }[] }} variant
+ * 「시안 k / N」 안내 — 같은 지시로 시안 여러 개를 동시에 만들 때 시안마다 붙는다(`server/index.js` 시안 묶음).
+ * @param {{ index: number; total: number }} variant
  */
 function variantBlock(variant) {
   const { index, total } = variant;
-  const lines = [
+  const others = Array.from({ length: total }, (_, i) => i + 1).filter((k) => k !== index);
+  return [
     `[시안 ${index} / ${total}]`,
     `- 같은 지시로 시안 ${total}개를 따로 만든다 — 이 작업 공간은 그중 시안 ${index} 다. 시안마다 작업 공간이 따로라 다른 시안의 폴더는 열지 않는다.`,
-    "- 다른 시안은 다른 방향을 맡는다. 다른 시안과 겹치지 않는 뚜렷한 디자인 방향 하나를 골라 끝까지 밀고 간다 — 사용자가 시안을 나란히 놓고 하나를 고른다.",
-    `- 출발점(꼭 따르지 않아도 된다): ${VARIANT_DIRECTIONS[(index - 1) % VARIANT_DIRECTIONS.length]}`,
+    `- 이 시안이 맡은 방향: ${directionOf(index)}`,
+    ...others.map((k) => `- 시안 ${k} 이 맡은 방향(이쪽과 겹치지 않게): ${directionOf(k)}`),
+    "- 맡은 방향을 끝까지 밀고 간다 — 사용자가 시안을 나란히 놓고 하나를 고른다. 지시와 부딪히면 지시가 먼저다.",
     "- 방향이 달라도 저장소 규칙(CLAUDE.md · docs/DESIGN.md)은 그대로다 — 규칙을 어겨서 다르게 만들지 않는다.",
-    "- summary 첫 줄은 「방향: …」 한 줄로 이 시안이 고른 방향을 적는다(Lab 이 시안 비교 화면의 이름 아래에 그 줄을 띄운다).",
-  ];
-  const earlier = (variant.earlier ?? []).filter((e) => e.summary.trim());
-  if (earlier.length > 0)
-    lines.push(
-      "[앞서 만든 시안 — 이것들과 다른 방향으로]",
-      ...earlier.map((e) => `- 시안 ${e.index}: ${oneLine(e.summary, 300)}`),
-    );
-  return lines.join("\n");
+    "- 다른 시안도 같은 PC 에서 검사를 돌릴 수 있다 — 테스트는 npx jest <경로> --maxWorkers=2 로 돌린다. 시간에 기대는 테스트(애니메이션 · 타이머)가 실패하면 그 파일만 다시 돌려 부하 탓인지 가른 뒤 보고한다.",
+    "- summary 첫 줄은 「방향: …」 한 줄로 이 시안의 방향을 적는다(Lab 이 시안 비교 화면의 이름 아래에 그 줄을 띄운다).",
+  ].join("\n");
 }
 
 /** @param {AttachmentFile} a */
@@ -207,7 +206,7 @@ const attachmentLine = (a) =>
  *   workspace: { path: string; branch: string; baseBranch: string };
  *   resume?: boolean;
  *   previousSummary?: string | null;
- *   variant?: { index: number; total: number; earlier?: readonly { index: number; summary: string }[] } | null;
+ *   variant?: { index: number; total: number } | null;
  * }} input
  */
 function buildPrompt(input) {

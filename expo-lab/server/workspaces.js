@@ -425,9 +425,11 @@ class WorkspaceStore {
     if (!isInside(this.wsRoot, meta.path))
       return { ok: false, message: `작업 공간 폴더 밖이라 지우지 않았어요: ${meta.path}` };
 
+    // 지우는 동안(await) 다른 시안의 실행이 끝나 등록부를 고칠 수 있다 — 저장은 늘 최신 등록부 위에 한다
     const keep = (/** @type {string} */ message) => {
-      all[id] = { ...meta, broken: message };
-      this.save(all);
+      const latest = this.load();
+      latest[id] = { ...meta, broken: message };
+      this.save(latest);
       return {
         ok: /** @type {const} */ (false),
         message: `${message} — ${meta.path} 를 직접 확인해 주세요`,
@@ -458,8 +460,9 @@ class WorkspaceStore {
     if (ahead.code === 0 && ahead.stdout.trim() === "0" && !meta.pr) {
       await git(this.repoRoot, ["branch", "-D", meta.branch]);
     }
-    delete all[id];
-    this.save(all);
+    const latest = this.load();
+    delete latest[id];
+    this.save(latest);
     return { ok: true };
   }
 

@@ -45,7 +45,7 @@ export function useLabWorkspaces() {
   const busy = list.some(
     (w) =>
       w.status === "working" ||
-      w.status === "queued" ||
+      w.status === "starting" ||
       w.status === "checking" ||
       w.preview?.status === "starting",
   );

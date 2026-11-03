@@ -41,8 +41,7 @@ const baseStatus = (patch: Partial<AgentStatus> = {}): AgentStatus => ({
   versions: { claude: "2.1.316 (Claude Code)", codex: null, gh: "gh 2.97.0" },
   git: { branch: "main", dirty: false, dirtyFiles: [] },
   baseBranch: "main",
-  activeRun: null,
-  queue: [],
+  activeRuns: [],
   maxVariants: 3,
   maxPreviews: 4,
   workspaces: [],
@@ -73,7 +72,6 @@ const ws = (patch: Partial<WorkspaceSummary> = {}): WorkspaceSummary => ({
   check: null,
   preview: { status: "ready", port: 8100, url: "http://localhost:8100", ready: true, error: null },
   group: null,
-  queued: false,
   summaryLine: null,
   ...patch,
 });
@@ -143,7 +141,7 @@ function makeClient(status: AgentStatus, detail?: WorkspaceDetail) {
     variants: jest.fn(() =>
       ok({ group: { id: "g1", total: 2, route: "/(tabs)/home" }, workspaces: [] }),
     ),
-    stopVariants: jest.fn(() => ok({ stopped: "tabs-home-s2", cancelled: ["tabs-home-s3"] })),
+    stopVariants: jest.fn(() => ok({ stopped: ["tabs-home-s2"], cancelled: ["tabs-home-s3"] })),
     discardOtherVariants: jest.fn(() => ok({ kept: "tabs-home-s2", removed: [] })),
     startCheck: jest.fn(() =>
       ok({
@@ -319,12 +317,15 @@ describe("AgentPanel", () => {
     });
     const { client } = makeClient(
       baseStatus({
-        activeRun: {
-          workspaceId: "new-sleep-log",
-          title: "잠 기록",
-          agent: "claude",
-          startedAt: 0,
-        },
+        activeRuns: [
+          {
+            workspaceId: "new-sleep-log",
+            title: "잠 기록",
+            agent: "claude",
+            startedAt: 0,
+            groupId: null,
+          },
+        ],
         workspaces: [other],
       }),
       detailOf(other, { ...doneRun, status: "running", workspaceId: "new-sleep-log" }),
@@ -496,7 +497,7 @@ describe("시안 여러 개", () => {
     expect(group?.textContent).toContain("시안 개수");
     expect(button("1개").getAttribute("aria-pressed")).toBe("true");
     await click(button("2개"));
-    expect(text()).toContain("같은 지시로 방향이 다른 시안 2개를 따로 만들어요");
+    expect(text()).toContain("같은 지시로 방향이 다른 시안 2개를 동시에 만들어요");
     const textarea = container.querySelector<HTMLTextAreaElement>(
       'textarea[aria-label="무엇을 바꿀까요?"]',
     )!;
@@ -520,18 +521,20 @@ describe("시안 여러 개", () => {
         status: "working",
         lastRun: { status: "running", agent: "claude", error: null },
       }),
-      member(3, { status: "queued", queued: true, lastRun: null, changedCount: 0 }),
+      member(3, { status: "starting", lastRun: null, changedCount: 0 }),
     ];
     const { client } = makeClient(
       baseStatus({
         workspaces: members,
-        activeRun: {
-          workspaceId: "tabs-home-s2",
-          title: "홈 · 시안 2",
-          agent: "claude",
-          startedAt: 0,
-        },
-        queue: [{ workspaceId: "tabs-home-s3", groupId: "g1", index: 3, title: "홈 · 시안 3" }],
+        activeRuns: [
+          {
+            workspaceId: "tabs-home-s2",
+            title: "홈 · 시안 2",
+            agent: "claude",
+            startedAt: 0,
+            groupId: "g1",
+          },
+        ],
       }),
     );
     const onOpenVariants = jest.fn();
@@ -542,12 +545,12 @@ describe("시안 여러 개", () => {
     );
     await settle();
     expect(container.querySelector('[data-testid="variant-progress"]')?.textContent).toBe(
-      "시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 대기 중",
+      "시안 1 다 만듦 · 시안 2 만드는 중 · 시안 3 시작하는 중",
     );
     expect(text()).toContain("방향: 정석");
     // 시안은 이 화면의 「이어서 맡기기」 작업 공간이 아니다
     expect(text()).toContain("지시를 보내면 이 화면용 작업 공간을 만들어요");
-    expect(text()).toContain("시안을 차례로 만드는 중이에요(다음: 홈 · 시안 3)");
+    expect(text()).toContain("시안을 만드는 중이에요 — 다 끝난 뒤에 지시해요");
     expect(button("AI에게 수정 맡기기").disabled).toBe(true);
     await click(button("시안 비교로 보기"));
     expect(onOpenVariants).toHaveBeenCalledWith("g1");
