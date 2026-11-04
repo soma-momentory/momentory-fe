@@ -61,6 +61,10 @@ describe("공책의 장", () => {
     expect(pages).toEqual(["feelEvents", "closing"]);
   });
 
+  it("위기 주는 바바의 말과 인사만 둔다 — 힘든 감정을 세어 보이지 않는다", () => {
+    expect(bookPages(book({ tone: "CRISIS" }))).toEqual(["review", "closing"]);
+  });
+
   it("일기 3일 미만인 주는 안쪽 장이 없다", () => {
     expect(bookPages(book({ detailed: false }))).toEqual([]);
   });

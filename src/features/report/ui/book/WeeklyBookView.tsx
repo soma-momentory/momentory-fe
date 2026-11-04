@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   Animated,
+  BackHandler,
   Easing,
   Pressable,
   StyleSheet,
@@ -28,7 +29,7 @@ import {
   type WeeklyBookStatus,
 } from "@/features/report/model/weeklyBook";
 
-import { BookPageBody } from "./BookPages";
+import { BookPageBody, pageSizeOf } from "./BookPages";
 import { KraftFace, Leaf, Notebook } from "./Notebook";
 import {
   BabaOnRug,
@@ -46,7 +47,9 @@ import {
  * 탭바까지 덮어야 해서 `TabScreen` 의 `overlay` 로 화면 전체에 깐다. 덮인 공책은 탭바 위에 작게 비스듬히 놓이고,
  * 펼치면 탭바를 가리며 똑바로 커진다. 위치를 재서 움직이므로 탭바를 없앨 때처럼 공책이 튀지 않는다.
  *
- * 일기가 3일 미만인 주는 표지 한 장이고, 큰 버튼은 그 주 일기로 간다. 일기가 전혀 없으면 빈 공책만 둔다.
+ * 속지는 펼친 크기로 고정해 둔다. 공책이 커지는 동안 글이 프레임마다 다시 줄을 바꾸면 저가형 폰에서 끊긴다.
+ *
+ * 일기가 3일 미만인 주는 표지 한 장이고, 큰 버튼은 그 주 일기로 간다. 일기가 전혀 없으면 빈 공책과 일기 쓰기 버튼을 둔다.
  */
 type Props = {
   book: WeeklyBook | null;
@@ -55,17 +58,23 @@ type Props = {
   diaries: readonly Diary[];
   onOpenPast: () => void;
   onOpenDiary: (id: string) => void;
+  /** 빈 공책의 버튼 — 오늘 일기를 이미 썼으면 그 일기를 보여 준다 */
+  writeLabel: string;
+  onWriteDiary: () => void;
   onTurn: (page: BookPage | "cover") => void;
 };
 
 const OPEN_MS = 550;
-const CTA_HEIGHT = 78;
+const CTA_HEIGHT = 84;
 const HINT_HEIGHT = 26;
 const TOP_ROW = 44;
-const FOOT_HEIGHT = 68;
+const FOOT_HEIGHT = 80;
+const PAGE_FOOT_HEIGHT = 24;
 /** 덮인 공책의 가로세로 비 · 양옆 여백 — 실제 공책처럼 보이는 비율로 묶는다 */
 const CLOSED = { aspect: 1.73, sideGap: 80, tilt: "-1.2deg" } as const;
 const OPENED = { left: 36, right: 30 } as const;
+/** 표지 안쪽 여백(바느질 · 고무줄을 피한다) */
+const COVER_PAD = { left: 40, right: 36 } as const;
 
 const rangeOf = (book: WeeklyBook) => {
   const [, sm = "", sd = ""] = book.startDate.split("-").map(Number).map(String);
@@ -76,7 +85,16 @@ const rangeOf = (book: WeeklyBook) => {
   };
 };
 
-export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary, onTurn }: Props) {
+export function WeeklyBookView({
+  book,
+  status,
+  diaries,
+  onOpenPast,
+  onOpenDiary,
+  writeLabel,
+  onWriteDiary,
+  onTurn,
+}: Props) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [at, setAt] = useState(-1);
@@ -90,11 +108,16 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
 
   const pages = useMemo(() => (book == null ? [] : bookPages(book)), [book]);
   const last = pages.length - 1;
+
   const go = (next: number) => {
     const target = Math.max(-1, Math.min(last, next));
     if (target === at) return;
     setAt(target);
-    onTurn(target < 0 ? "cover" : (pages[target] ?? "cover"));
+    const page = target < 0 ? "cover" : (pages[target] ?? "cover");
+    onTurn(page);
+    if (page !== "cover" && page !== "closing") {
+      AccessibilityInfo.announceForAccessibility(`${target + 1}쪽, ${BOOK_PAGE_TITLES[page]}`);
+    }
     if (target < 0 !== at < 0) {
       const toValue = target < 0 ? 0 : 1;
       if (reduceMotion) open.setValue(toValue);
@@ -107,6 +130,22 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
         }).start();
     }
   };
+
+  // 탭바까지 가린 전체 화면처럼 보이므로, 안드로이드 뒤로 가기는 공책을 덮는다
+  const goRef = useRef(go);
+  useEffect(() => {
+    goRef.current = go;
+  });
+  const isOpen = at >= 0;
+  useEffect(() => {
+    if (!isOpen) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      goRef.current(-1);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [isOpen]);
+
   // 스크롤을 빼앗지 않도록 응답자를 잡지 않고, 손가락을 뗄 때 움직인 거리만 본다
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const onSwipeEnd = (x: number, y: number) => {
@@ -120,20 +159,21 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
 
   const navHeight = layout.tabBar + Math.max(insets.bottom, layout.minBottomInset);
   const hasHint = book != null && !book.detailed && book.diaryCount > 0;
-  const hasCta = book != null && book.diaryCount > 0;
   const closedTop = insets.top + TOP_ROW + 10;
-  const closedBottom = navHeight + (hasCta ? CTA_HEIGHT : 0) + (hasHint ? HINT_HEIGHT : 0) + 14;
+  const closedBottom = navHeight + CTA_HEIGHT + (hasHint ? HINT_HEIGHT : 0) + 14;
   const roomHeight = height - closedTop - closedBottom;
   const closedWidth = Math.min(width - CLOSED.sideGap, roomHeight / CLOSED.aspect);
   const closedHeight = Math.min(roomHeight, closedWidth * CLOSED.aspect);
+  const footBottom = Math.max(insets.bottom - 8, 8);
   const openTop = insets.top + TOP_ROW + 6;
-  const openHeight = height - openTop - FOOT_HEIGHT - Math.max(insets.bottom, 8);
+  const openHeight = height - openTop - FOOT_HEIGHT - footBottom;
+  const openWidth = width - OPENED.left - OPENED.right;
   const between = (from: number, to: number) =>
     open.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
   const bookBox = {
     left: between((width - closedWidth) / 2 + 3, OPENED.left),
     top: between(closedTop + (roomHeight - closedHeight) / 2, openTop),
-    width: between(closedWidth, width - OPENED.left - OPENED.right),
+    width: between(closedWidth, openWidth),
     height: between(closedHeight, openHeight),
     transform: [
       { rotate: open.interpolate({ inputRange: [0, 1], outputRange: [CLOSED.tilt, "0deg"] }) },
@@ -145,8 +185,12 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
       <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
         <View pointerEvents="box-none" style={[styles.center, { paddingBottom: navHeight }]}>
           {status === "failed" ? (
-            <Text testID="book-failed" style={hand(17, 24)} color={homeV2.color.muted}>
-              리포트를 불러오지 못했어요 · 잠시 뒤에 다시 열어 주세요
+            <Text
+              testID="book-failed"
+              style={[hand(17, 24), styles.centerText]}
+              color={homeV2.color.muted}
+            >
+              {keepWords("리포트를 불러오지 못했어요 · 잠시 뒤에 다시 열어 주세요")}
             </Text>
           ) : (
             <>
@@ -160,8 +204,12 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
   }
 
   const range = rangeOf(book);
-  const isOpen = at >= 0;
+  const empty = book.diaryCount === 0;
   const pressCta = () => {
+    if (empty) {
+      onWriteDiary();
+      return;
+    }
     if (book.detailed) {
       go(0);
       return;
@@ -169,6 +217,17 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
     if (diaries.length === 1 && diaries[0] != null) onOpenDiary(diaries[0].id);
     else setSheet(true);
   };
+  const ctaLabel = empty ? writeLabel : book.detailed ? "펼쳐 보기" : diaryButtonLabel(book);
+  const closedOpacity = open.interpolate({
+    inputRange: [0, 0.6],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
+  const openOpacity = open.interpolate({
+    inputRange: [0.4, 1],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill} testID="weekly-book">
@@ -217,7 +276,15 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
         }}
         onTouchEnd={(e) => onSwipeEnd(e.nativeEvent.pageX, e.nativeEvent.pageY)}
       >
-        <Notebook tabCount={pages.length > 0 ? pages.length : 3} activeTab={at}>
+        <Notebook
+          tabCount={pages.length}
+          activeTab={at}
+          ringsHeight={isOpen ? openHeight : closedHeight}
+          tabLabels={pages.map((page, i) =>
+            page === "closing" ? "마지막 쪽" : `${i + 1}쪽, ${BOOK_PAGE_TITLES[page]}`,
+          )}
+          onPressTab={isOpen ? go : undefined}
+        >
           {pages.map((page, i) => (
             <Leaf
               key={page}
@@ -226,7 +293,11 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
               reduceMotion={reduceMotion}
               testID={`book-leaf-${page}`}
             >
-              <View style={styles.paper} accessibilityElementsHidden={i !== at}>
+              <View
+                style={[styles.paper, { width: openWidth, height: openHeight }]}
+                accessibilityElementsHidden={i !== at}
+                importantForAccessibility={i === at ? "auto" : "no-hide-descendants"}
+              >
                 {page !== "closing" ? (
                   <View style={styles.pageHead}>
                     <TapeTitle>{BOOK_PAGE_TITLES[page]}</TapeTitle>
@@ -235,14 +306,22 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
                     </Text>
                   </View>
                 ) : null}
-                <BookPageBody page={page} book={book} />
-                <Text
-                  style={[hand(14, 18), styles.pageNo]}
-                  color={homeV2.color.muted}
-                  accessibilityElementsHidden
-                >
-                  {i + 1}
-                </Text>
+                <BookPageBody
+                  page={page}
+                  book={book}
+                  size={pageSizeOf(openHeight)}
+                  active={i === at}
+                  reduceMotion={reduceMotion}
+                />
+                <View style={styles.pageFoot}>
+                  <Text
+                    style={hand(14, 18)}
+                    color={homeV2.color.muted}
+                    testID={`book-page-no-${i}`}
+                  >
+                    {i + 1} / {pages.length}
+                  </Text>
+                </View>
                 <View style={styles.corner} />
               </View>
             </Leaf>
@@ -254,30 +333,30 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
             testID="book-cover"
           >
             <KraftFace>
-              <Cover book={book} label={range.label} />
+              <Cover book={book} label={empty ? "이번 주 공책" : range.label} width={closedWidth} />
             </KraftFace>
           </Leaf>
         </Notebook>
       </Animated.View>
 
-      {!isOpen && hasCta ? (
-        <View style={[styles.cta, { bottom: navHeight }]}>
+      {!isOpen ? (
+        <Animated.View style={[styles.cta, { bottom: navHeight, opacity: closedOpacity }]}>
           <ReflectionButton
             testID="book-cta"
             color={homeV2.color.green}
-            label={book.detailed ? "펼쳐 보기" : diaryButtonLabel(book)}
+            label={ctaLabel}
             onPress={pressCta}
           />
           {hasHint ? (
-            <Text style={[hand(15, 20), styles.hint]} color={homeV2.color.muted}>
-              한 주에 3일 이상 일기를 쓰면, 리포트가 생겨요
+            <Text testID="book-hint" style={[hand(15, 20), styles.hint]} color={homeV2.color.muted}>
+              {keepWords("한 주에 3일 이상 일기를 쓰면, 리포트가 생겨요")}
             </Text>
           ) : null}
-        </View>
+        </Animated.View>
       ) : null}
 
       {isOpen ? (
-        <View style={[styles.foot, { bottom: Math.max(insets.bottom, 8) }]}>
+        <Animated.View style={[styles.foot, { bottom: footBottom, opacity: openOpacity }]}>
           <PaperButton
             testID="book-prev"
             label="앞 장"
@@ -296,11 +375,16 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
           ) : (
             <PaperButton testID="book-done" label="닫기" go onPress={() => go(-1)} />
           )}
-        </View>
+        </Animated.View>
       ) : null}
 
       {sheet ? (
-        <DiarySheet diaries={diaries} onDismiss={() => setSheet(false)} onOpen={onOpenDiary} />
+        <DiarySheet
+          title={diaryButtonLabel(book).replace(" 보기", "")}
+          diaries={diaries}
+          onDismiss={() => setSheet(false)}
+          onOpen={onOpenDiary}
+        />
       ) : null}
     </View>
   );
@@ -309,24 +393,36 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
 const TILTS = ["-6deg", "4deg", "-3deg", "5deg", "-4deg", "3deg", "-5deg"] as const;
 const DROPS = [0, 2, -1, 2, 0, -2, 1] as const;
 
-function Cover({ book, label }: { book: WeeklyBook; label: string }) {
+function Cover({ book, label, width }: { book: WeeklyBook; label: string; width: number }) {
   const written = book.days.filter((d) => d.written);
   const short = !book.detailed;
   const empty = book.diaryCount === 0;
-  const stickerSize = short ? 36 : written.length > 6 ? 25 : 28;
+  const crisis = book.tone === "CRISIS";
+  const inner = width - COVER_PAD.left - COVER_PAD.right;
+  // 일곱 개가 고무줄 밑으로 들어가지 않게 안쪽 폭에서 잰다
+  const stickerSize = Math.min(
+    short ? 36 : 32,
+    Math.floor((inner - 4 * Math.max(0, written.length - 1)) / Math.max(1, written.length)),
+  );
+  const babaWidth = Math.min(short ? 96 : 112, width * 0.34);
+  const small = width < 260;
   return (
     <View style={styles.cover}>
       <View style={styles.label}>
         <View style={styles.labelLine} />
-        {book.newest && !empty ? (
+        {!empty && !crisis ? (
           <View style={styles.newTag}>
             <MaskingTape color={reportBook.color.tagTape} edge="notched" />
             <Text style={hand(14, 18)} color={homeV2.color.ink}>
-              새 공책
+              {book.newest ? "새 공책" : "예전 공책"}
             </Text>
           </View>
         ) : null}
-        <Text testID="book-range" style={hand(21, 28)} color={raisedShadow.grass}>
+        <Text
+          testID="book-range"
+          style={[hand(small ? 18 : 21, 28), styles.labelText]}
+          color={raisedShadow.grass}
+        >
           {label}
         </Text>
       </View>
@@ -334,6 +430,8 @@ function Cover({ book, label }: { book: WeeklyBook; label: string }) {
         {written.map((day, i) => (
           <View
             key={day.date}
+            accessible
+            accessibilityLabel={`${weekdayOf(day.date)}요일 ${emotionName(day.emotion)}`}
             style={[
               styles.stickerDay,
               { transform: [{ translateY: DROPS[i] ?? 0 }, { rotate: TILTS[i] ?? "0deg" }] },
@@ -346,17 +444,27 @@ function Cover({ book, label }: { book: WeeklyBook; label: string }) {
           </View>
         ))}
       </View>
-      {book.restCount > 0 ? (
+      {book.restCount > 0 && !crisis ? (
         <Text style={[hand(15, 20), styles.coverRest]} color={homeV2.color.ink}>
-          쉼터에도 {book.restCount}번 다녀왔어요
+          쉼터에 {book.restCount}번 다녀왔어요
         </Text>
       ) : null}
       <View style={styles.talk}>
-        <Bubble size={short ? 16 : 17} lineHeight={short ? 22 : 24} testID="book-cover-line">
-          {keepWords(empty ? "일기를 쓰면 일요일에 공책이 도착해요" : book.coverLine)}
+        <Bubble
+          size={small ? 15 : short ? 16 : 17}
+          lineHeight={small ? 21 : short ? 22 : 24}
+          testID="book-cover-line"
+        >
+          {keepWords(
+            empty
+              ? "일기를 쓰면 일요일에 공책이 도착해요"
+              : small
+                ? book.coverLine.replace(/\n/g, " ")
+                : book.coverLine,
+          )}
         </Bubble>
         <View style={styles.coverBaba}>
-          <BabaSticker width={short ? 96 : 112} />
+          <BabaSticker width={babaWidth} />
         </View>
       </View>
     </View>
@@ -364,10 +472,12 @@ function Cover({ book, label }: { book: WeeklyBook; label: string }) {
 }
 
 function DiarySheet({
+  title,
   diaries,
   onDismiss,
   onOpen,
 }: {
+  title: string;
   diaries: readonly Diary[];
   onDismiss: () => void;
   onOpen: (id: string) => void;
@@ -375,12 +485,18 @@ function DiarySheet({
   return (
     <BottomSheet onDismiss={onDismiss}>
       <View testID="book-diary-sheet" style={styles.sheet}>
+        <Text style={hand(22, 30)} color={homeV2.color.ink} accessibilityRole="header">
+          {title}
+        </Text>
         {diaries.map((diary) => (
           <Pressable
             key={diary.id}
             accessibilityRole="button"
             accessibilityLabel={`${weekdayOf(diary.date)}요일 일기 보기`}
-            onPress={() => onOpen(diary.id)}
+            onPress={() => {
+              onDismiss();
+              onOpen(diary.id);
+            }}
             style={styles.sheetRow}
           >
             <EmotionPebble id={diary.emotions[0] ?? null} size={32} />
@@ -395,6 +511,9 @@ function DiarySheet({
             <Icon name="chevron-right" size={16} color={homeV2.color.muted} />
           </Pressable>
         ))}
+        <View style={styles.sheetClose}>
+          <PaperButton testID="book-sheet-close" label="닫기" onPress={onDismiss} />
+        </View>
       </View>
     </BottomSheet>
   );
@@ -408,6 +527,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 24,
   },
+  centerText: { textAlign: "center" },
   past: {
     position: "absolute",
     right: 16,
@@ -427,7 +547,7 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   bookBox: { position: "absolute" },
-  paper: { flex: 1, backgroundColor: reportBook.color.page },
+  paper: { backgroundColor: reportBook.color.page },
   pageHead: {
     flexDirection: "row",
     alignItems: "center",
@@ -444,7 +564,12 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     borderBottomColor: reportBook.color.fieldLine,
   },
-  pageNo: { position: "absolute", right: 30, bottom: 7 },
+  pageFoot: {
+    height: PAGE_FOOT_HEIGHT,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    paddingRight: 30,
+  },
   corner: {
     position: "absolute",
     right: 0,
@@ -456,7 +581,7 @@ const styles = StyleSheet.create({
     borderTopColor: "transparent",
     borderLeftColor: reportBook.color.curl,
   },
-  cta: { position: "absolute", left: 16, right: 16, gap: 6, paddingBottom: 12 },
+  cta: { position: "absolute", left: 16, right: 16, gap: 6, paddingBottom: 18 },
   hint: { textAlign: "center" },
   foot: {
     position: "absolute",
@@ -467,9 +592,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  cover: { flex: 1, paddingTop: 22, paddingBottom: 20, paddingLeft: 40, paddingRight: 36 },
+  cover: {
+    flex: 1,
+    paddingTop: 22,
+    paddingBottom: 20,
+    paddingLeft: COVER_PAD.left,
+    paddingRight: COVER_PAD.right,
+  },
   label: {
-    height: 50,
+    minHeight: 50,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: reportBook.color.label,
@@ -477,6 +610,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "-0.6deg" }],
     boxShadow: reportBook.shadow.label,
   },
+  labelText: { textAlign: "center" },
   labelLine: {
     position: "absolute",
     top: 3,
@@ -495,12 +629,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     justifyContent: "center",
     transform: [{ rotate: "-4deg" }],
+    zIndex: 2,
   },
   stickers: { flexDirection: "row", justifyContent: "center", gap: 4, marginTop: 14 },
   stickersShort: { flexWrap: "wrap", gap: 2, columnGap: 12 },
   stickerDay: { alignItems: "center", gap: 1 },
   coverRest: { textAlign: "center", marginTop: 6 },
-  talk: { flex: 1, minHeight: 0, justifyContent: "flex-end", marginHorizontal: -9 },
+  talk: { flex: 1, minHeight: 0, justifyContent: "flex-end", marginLeft: -9, marginRight: -4 },
   coverBaba: { alignSelf: "center", marginTop: -16 },
   sheet: { gap: 6 },
   sheetRow: {
@@ -512,4 +647,5 @@ const styles = StyleSheet.create({
     borderBottomColor: reportBook.color.rule,
   },
   sheetText: { flex: 1, minWidth: 0 },
+  sheetClose: { alignItems: "flex-end", marginTop: 8 },
 });
