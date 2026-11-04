@@ -100,6 +100,9 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | worry_box_handed              | 걱정상자에 걱정을 맡김                                           | chars (글자 수만)                                                                                         |
 | worry_box_choice_selected     | 걱정상자의 맡겨두기/흘려보내기 선택                              | choice: keep/release                                                                                      |
 | treasure_box_tucked           | 오늘의 보물함에 보물을 담음                                      | chars (글자 수만)                                                                                         |
+| meditation_started            | 3분 명상을 시작함                                                | concept (wave, forest, sunlight, rain, lantern)                                                           |
+| meditation_ended              | 3분을 마쳤거나 「여기서 멈추기」를 누름                          | concept, reason (natural, user_stop), duration_ms (실제로 머문 시간), voice_enabled                       |
+| meditation_audio_failed       | 음성을 불러오지 못함                                             | concept                                                                                                   |
 | store_review_requested        | 쉼터를 「나아졌어요」로 마치고 나와 별점 창을 요청               | 없음 (창이 떴는지는 알 수 없음)                                                                           |
 | inquiry_submitted             | 마이 「문의하기」에서 문의를 보냄                                | category: bug/suggestion/account/etc                                                                      |
 | letter_entry_shown            | 홈에서 편지 목록을 받아 편지 아이콘의 점을 정함                  | has_unread                                                                                                |
@@ -119,7 +122,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 
 화면명은 login, home, archive, rest, report, my, onboarding, schedule_new,
 schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
-wish_cards, wish_card_trail, sense_pond, body_release, worry_box, worry_list, treasure_box, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다.
+wish_cards, wish_card_trail, sense_pond, body_release, worry_box, worry_list, treasure_box, meditation, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다.
 온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다.
 retroTime 단계에서는 진행 여부와 알림 권한 허용 여부(notify_permission_result)를 알 수 있다.
 설정 시각·예약 성공은 수집하지 않는다. 마이 M2 에서는 꺼진 알림을 켤 때 묻는 결과만 남는다.
@@ -165,7 +168,7 @@ step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단
 
 **쉼 콘텐츠 공통 계측**(2026-10-05 · `rest_content_*`)은 모든 쉼 콘텐츠가 같이 쓴다 — 얼마나 들어오고,
 얼마나 끝까지 가고, 못 끝내면 어디서 나가는지를 같은 이벤트로 보고 content(sense_pond, body_release,
-worry_box, treasure_box)로 가른다. 시간은 모두 전면 시계로 잰다.
+worry_box, treasure_box, meditation)로 가른다. 시간은 모두 전면 시계로 잰다.
 
 - rest_content_opened 의 entry 는 쉼터에 **어떻게 들어왔나**다. 회고 완료 화면(retro_done)에서 쉼터
   묶음(쉼터 탭 · 바람카드 · 쉼 콘텐츠)으로 들어온 방문은 after_diary 이고(2026-10-12 부터 바람카드가 없는
