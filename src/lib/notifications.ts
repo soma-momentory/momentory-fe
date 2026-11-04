@@ -44,9 +44,9 @@ export const REMINDER_KEYS: readonly ReminderKey[] = ["retro", "daily"];
  * 알림이 **무엇을 부르는가** — 눌렀을 때 갈 곳을 고르는 이름이다(`data.reminder` 에 싣는다).
  * 바바의 편지 둘(아침 편지 · 고른 작은 일)이 더해졌다(2026-10-27).
  */
-export type ReminderKind = ReminderKey | "letter" | "letter_action";
+export type ReminderKind = ReminderKey | "letter" | "letter_action" | "report";
 
-const REMINDER_KINDS: readonly string[] = ["retro", "daily", "letter", "letter_action"];
+const REMINDER_KINDS: readonly string[] = ["retro", "daily", "letter", "letter_action", "report"];
 
 /**
  * 더는 예약하지 않지만 **화해할 때마다 함께 지우는** 것 — 옛 버전이 기기에 남긴 예약이다.
