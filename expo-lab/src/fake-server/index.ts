@@ -42,7 +42,7 @@ import {
 } from "../lab-contract";
 import { DB_SCHEMA, type FakeDb } from "./db";
 import { handleRequest, type Ctx, type FakeResponse } from "./routes";
-import { seedDataset } from "./seed";
+import { ensureTodayDiary, seedDataset } from "./seed";
 import { dayOf, dayOfIso } from "./time";
 
 export const datasets: readonly (DatasetInfo & { id: DatasetId })[] = [
@@ -75,8 +75,8 @@ const defaultStorage = (): StorageLike => {
   return memoryStorage;
 };
 
-export const storageKey = (config: Pick<LabFrameConfig, "frameId" | "datasetId">) =>
-  `${FAKE_DB_STORAGE_PREFIX}${config.frameId}:${config.datasetId}`;
+export const storageKey = (config: Pick<LabFrameConfig, "frameId" | "datasetId" | "todayDiary">) =>
+  `${FAKE_DB_STORAGE_PREFIX}${config.frameId}:${config.datasetId}${config.todayDiary ? ":today-diary" : ""}`;
 
 // ── 요청 로그 ──────────────────────────────────────────────────────────
 
@@ -148,20 +148,27 @@ export function createFakeServer(
   let db: FakeDb | null = null;
   let lastStamp = 0;
 
+  const withTodayDiary = (value: FakeDb): FakeDb => {
+    if (config.todayDiary && ensureTodayDiary(value, nowOf(config))) persist(value);
+    return value;
+  };
+
   const load = (): FakeDb => {
     const key = storageKey(config);
     try {
       const raw = storage.getItem(key);
       if (raw != null) {
         const parsed = JSON.parse(raw) as FakeDb;
-        if (parsed?.schema === DB_SCHEMA && parsed.datasetId === config.datasetId) return parsed;
+        if (parsed?.schema === DB_SCHEMA && parsed.datasetId === config.datasetId) {
+          return withTodayDiary(parsed);
+        }
       }
     } catch {
       // 깨진 저장본 — 새로 심는다
     }
     const fresh = seedDataset(config.datasetId, nowOf(config));
     persist(fresh);
-    return fresh;
+    return withTodayDiary(fresh);
   };
 
   const persist = (value: FakeDb) => {

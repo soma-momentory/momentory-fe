@@ -31,6 +31,14 @@ export type RouteMeta = {
    * 셸이 프레임 위에 한 줄로 보여 준다
    */
   hint?: string;
+  /**
+   * **라우트가 아니라 그 라우트 위에 뜨는 모습**(시트)이다 — 목록 줄만 따로이고 앱 파일은 `screenOf` 의 것이다.
+   * `path` 는 목록의 열쇠이자 실제로 여는 주소(`/rest?afterDiary=1`)다. 프레임은 라우트 주소(`/rest`)만 알리므로
+   * 셸은 그 주소에 머무는 동안 이 줄을 지금 화면으로 둔다
+   */
+  screenOf?: string;
+  /** 고칠 자리가 라우트 파일이 아닐 때(`screenOf`) — 「AI에게 맡기기」와 `lab:verify` 가 쓴다 */
+  file?: string;
   /** 바로 열 때 붙일 검색 조건(예: `?content=sense_pond`) */
   query?: Record<string, string>;
   /**
@@ -40,7 +48,12 @@ export type RouteMeta = {
    */
   openVia?: { path: string; afterRequest: string };
   /** 묶음 프리셋을 이 화면만 바꾼다 */
-  presetOverride?: { signedIn?: boolean; dataset?: DatasetId; failPaths?: readonly string[] };
+  presetOverride?: {
+    signedIn?: boolean;
+    dataset?: DatasetId;
+    failPaths?: readonly string[];
+    todayDiary?: boolean;
+  };
 };
 
 export type RouteSection = { id: RouteSectionId; title: string; routes: readonly RouteMeta[] };
@@ -232,6 +245,15 @@ export const routeSections: readonly RouteSection[] = [
     id: "rest",
     title: "쉼터 콘텐츠",
     routes: [
+      {
+        path: "/rest?afterDiary=1",
+        screenOf: "/rest",
+        title: "쉼 추천 시트",
+        file: "src/components/rest/RestRecommendSheet.tsx",
+        // 앱이 일기 완료 뒤에 쓰는 표시 그대로다 — 오늘 일기만 있으면 기기 기억과 관계없이 매번 뜬다
+        presetOverride: { todayDiary: true },
+        hint: "오늘 쓴 일기를 심고 일기 완료 진입(afterDiary=1)으로 쉼터를 연다 — 0.6초 뒤 시트가 올라온다 · 닫은 뒤 다시 보려면 목록에서 한 번 더 누른다",
+      },
       {
         path: "/rest/cards",
         title: "날짜별 바람카드",

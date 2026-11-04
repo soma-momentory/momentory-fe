@@ -10,7 +10,7 @@ import { useState, type ReactNode } from "react";
 
 import { datasetLabel } from "./frameSpecs";
 import { frameBus, useFrameBus } from "./frameBus";
-import { findRoute, matchPathname, shellSections, type ShellRoute } from "./routes";
+import { findRoute, isOnScreenOf, matchPathname, shellSections, type ShellRoute } from "./routes";
 import { shellColor } from "./theme";
 
 const frameLabel = (frameId: string) =>
@@ -98,7 +98,9 @@ export function RouteTree({
     const pathname = frameBus.get(frameId).pathname;
     const route = pathname ? matchPathname(pathname) : undefined;
     if (!route) continue;
-    onRoute.set(route.path, [...(onRoute.get(route.path) ?? []), frameId]);
+    // 시트 줄(`screenOf`)을 고른 동안에는 그 줄에 배지를 단다
+    const row = isOnScreenOf(current, pathname!) ? current : route.path;
+    onRoute.set(row, [...(onRoute.get(row) ?? []), frameId]);
   }
 
   const allOpen = shellSections.every((section) => open.includes(section.id));
