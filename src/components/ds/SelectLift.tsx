@@ -41,7 +41,7 @@ type Props = {
 const LIFT = 1.18;
 
 export function SelectLift({ selected, size, children }: Props) {
-  // 저장소 관례(`ChatBubble`·`SurfaceRipple`) — ref 는 렌더 중 읽지 않는다
+  // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다
   const [lift] = useState(() => new Animated.Value(selected ? 1 : 0));
 
   useEffect(() => {

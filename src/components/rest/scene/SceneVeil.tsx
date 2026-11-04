@@ -17,9 +17,9 @@ import { restScene, restSceneSize } from "@/design/ds";
  * ## 둘로 쓴다
  *
  * - `SceneTopVeil` — 머리글 뒤. 장면 그림 **바로 위 층**에 깔면 끝이다. 기본 짙기 · 높이는
- *   공통 토큰(`restSceneSize.topVeil`)이고, 장면마다 다르면 `veil` 로 바꾼다(감각연못 `pondVeil`)
+ *   공통 토큰(`restSceneSize.topVeil`)이고, 장면마다 다르면 `veil` 로 바꾼다(감각연못 `pondScene.veil`)
  * - `SceneVeil` — 그 밖의 자리(판 뒤 등). 그라디언트만 그리고 **자리는 부르는 쪽이 `style` 로**
- *   정한다(감각연못 아래 판 `pondPanelVeil`)
+ *   정한다(판 뒤 등)
  *
  * 그라디언트 이름은 알아서 붙는다(`useId`) — 한 화면에 여럿 깔아도 겹치지 않는다. 폭 · 높이는
  * 재지 않고 비율로만 서서 첫 프레임에 빈 자리가 없다. 장식이라 낭독기에 읽히지 않고 손짓도

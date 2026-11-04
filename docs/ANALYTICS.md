@@ -177,7 +177,7 @@ worry_box, treasure_box)로 가른다. 시간은 모두 전면 시계로 잰다.
   와 같은 때), 몸에 힘 빼기는 네 부위를 다 한 순간, 걱정상자는 맡겨두기/흘려보내기를 고른 순간이다.
   오늘의 보물함은 보물함이 닫히는 연출이 끝난 순간이다(저장 성공 여부와 상관없이).
   끝까지 간 판은 떠나도 rest_content_exited 를 보내지 않는다.
-- rest_content_exited 의 stage 는 **나간 자리**다. 감각연못 see/hear/feel, 몸에 힘 빼기 intro(시작 전)/
+- rest_content_exited 의 stage 는 **나간 자리**다. 감각연못 see/hear/feel(시작 화면에서 나가면 이 이벤트를 보내지 않는다 — 2026-11-04 부터 연 수에서 끝낸 수와 나간 수를 뺀 나머지가 시작 화면 이탈이다), 몸에 힘 빼기 intro(시작 전)/
   hands/shoulders/face/legs(하던 부위), 걱정상자 write(쓰다가)/handing(건네는 연출 중)/boxed(고르기 전),
   오늘의 보물함 write(쓰다가)/tucking(담는 연출 중).
   화면이 닫힐 때 보내므로, 쉼 콘텐츠 화면에서 앱을 강제 종료하면 빠질 수 있다 — 그때는 screen_left

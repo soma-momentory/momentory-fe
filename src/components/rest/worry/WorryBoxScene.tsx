@@ -54,7 +54,7 @@ import { SceneTopVeil } from "../scene/SceneVeil";
  *   반딧불 같은 알갱이가 떠오른다(화면은 그 빈자리에 한마디를 띄운다)
  *
  * 둘 다 끝나면 `onEnded`. 끝은 시계가 말한다 — 네이티브 드라이버의 완료 콜백은 jest 에
- * 오지 않는다(`SurfaceRipple` 과 같은 판단).
+ * 오지 않는다.
  *
  * 그림은 ChatGPT 로 생성해 `scripts/keyout-worry-box.py` 로 다듬은 것이다(숲 · 앉은 포즈 ·
  * 상자를 인 뒷모습 둘 · 상자 셋 — 처음 자세만 따로 받은 흰 바탕 그림이다). 그림이 바뀌면

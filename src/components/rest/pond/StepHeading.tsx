@@ -3,19 +3,15 @@ import { Animated, Easing, StyleSheet } from "react-native";
 
 import { Text } from "@/components/ds";
 import { label as labelColor, pondMotion, space } from "@/design/ds";
-import type { SensePondStep } from "@/features/rest/model/sensePond";
-
-import { HoldHint } from "./HoldHint";
 
 /**
- * 감각연못의 **머리글** — 화면 위쪽에서 지금 말할 것 하나
- * (2026-09-04 · 소개/진행/완료 분리 2026-09-06).
+ * 쉼터 장면의 **머리글** — 화면 위쪽에서 지금 말할 것 하나
+ * (2026-09-04 감각연못에서 시작 · 지금은 걱정상자 · 보물함 · 몸에 힘 빼기가 쓴다).
  *
  * ## 한 번에 한 가지만 말한다
  *
  * 여기 서는 것은 **제목 한 줄과 설명 한두 줄**뿐이다. 소개(「감각연못」)든 진행 중의
  * 단계든 완료든 형태가 같아서, 화면은 이 자리에 넣을 문구만 갈아 끼운다
- * (`features/rest/model/sensePond.ts` 「상단은 한 번에 한 가지만 말한다」).
  * 브랜드 이름과 단계 안내를 같이 쌓지 않는 것이 이 컴포넌트의 요점이다 —
  * 위가 조용해야 눈이 연못으로 간다. 그래서 옛 `note`(설명 아래 보조 문구 한 줄)도
  * 받지 않는다.
@@ -33,7 +29,7 @@ import { HoldHint } from "./HoldHint";
  * ## 바뀌는 시각은 시계가 정한다
  *
  * 새 문구로 갈아 끼우는 순간은 애니메이션의 완료 콜백이 아니라 **타이머**가 정한다 —
- * 네이티브 드라이버의 완료는 jest 에 오지 않고(`Ripple` 과 같은 이유) 앱이 뒤로
+ * 네이티브 드라이버의 완료는 jest 에 오지 않고앱이 뒤로
  * 갔다 오면 늦게 올 수 있다. 옅어지는 길이는 정해져 있으니 그 시각에 바꾼다.
  *
  * ## 글자는 한 단씩 크다 (2026-09-11 · 사용자 요청)
@@ -42,12 +38,6 @@ import { HoldHint } from "./HoldHint";
  * `title3Hand`(24) → `title1Hand`(32) · `caption1` → `body2`, 진행·완료는
  * `headline1`(18) → `heading1`(22) · `body2` → `body1` 로 한 단씩 올렸다. 위쪽 빛
  * (`SceneTopVeil` · 장면의 42%) 안에서 끝나고 물에는 닿지 않는다.
- *
- * ## 잠시 누르기 단계에는 알약이 하나 더 선다
- *
- * `hint` 가 있으면(감각 단계) 설명 아래 「꾸욱」 알약(`HoldHint`)이 붙는다 — 제목·설명과
- * **같은 묶음**이라 함께 옅어졌다 돌아온다. 설명 문장만으로는 톡 두 단계를 지나온
- * 손이 오래 누르지 않았다.
  */
 type Props = {
   title: string;
@@ -57,17 +47,13 @@ type Props = {
    * 읽혀야 한다. 진행·완료(`step`)의 제목은 지금 할 일이라 본문 위계의 굵은 한 줄이다.
    */
   tone?: "intro" | "lead" | "step" | "close" | "stepLead" | "closeLead";
-  /** 잠시 누르기 단계의 「꾸욱」 안내 — 없으면 알약을 세우지 않는다 */
-  hint?: SensePondStep["hint"];
 };
 
-type Shown = Required<Pick<Props, "title" | "description" | "tone">> & Pick<Props, "hint">;
+type Shown = Required<Pick<Props, "title" | "description" | "tone">>;
 
 type ViewProps = Props & {
   /** 연못 장면 위에 얹힐 때는 가운데로 선다(2026-09-05) */
   center?: boolean;
-  /** 잠시 누르기에서 일찍 손을 뗀 횟수 — 알약이 「조금 더 오래」로 한 번 튄다 */
-  nudge?: number;
   /**
    * 결이 잔 그림(하늘 · 풀밭) 위에 앉을 때 글자 둘레에 두르는 빛의 색 — 주면 설명도
    * 한 단 진하게(`label.normal`) 선다. 몸에 힘 빼기의 노을 하늘 위에서 설명이 흐렸다
@@ -80,22 +66,16 @@ export function StepHeading({
   title,
   description,
   tone = "step",
-  hint,
   center = false,
-  nudge = 0,
   halo,
 }: ViewProps) {
   const glow = halo == null ? null : { textShadowColor: halo, textShadowRadius: 8 };
   // 지금 **보이고 있는** 문구. 새 문구는 옅어진 뒤에야 여기로 온다
-  const [shown, setShown] = useState<Shown>({ title, description, tone, hint });
+  const [shown, setShown] = useState<Shown>({ title, description, tone });
   // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다(react-hooks/refs)
   const [fade] = useState(() => new Animated.Value(1));
 
-  const stale =
-    shown.title !== title ||
-    shown.description !== description ||
-    shown.tone !== tone ||
-    shown.hint?.text !== hint?.text;
+  const stale = shown.title !== title || shown.description !== description || shown.tone !== tone;
 
   useEffect(() => {
     if (!stale) return;
@@ -107,14 +87,14 @@ export function StepHeading({
     });
     out.start();
     const swap = setTimeout(
-      () => setShown({ title, description, tone, hint }),
+      () => setShown({ title, description, tone }),
       pondMotion.headingSwap.out,
     );
     return () => {
       clearTimeout(swap);
       out.stop();
     };
-  }, [stale, title, description, tone, hint, fade]);
+  }, [stale, title, description, tone, fade]);
 
   /**
    * 돌아오는 길은 **새 문구가 자리에 앉은 다음**이다 — 갈아 끼우는 것과 같은 틱에
@@ -165,9 +145,6 @@ export function StepHeading({
       >
         {shown.description}
       </Text>
-      {shown.hint != null ? (
-        <HoldHint text={shown.hint.text} again={shown.hint.again} nudge={nudge} />
-      ) : null}
     </Animated.View>
   );
 }

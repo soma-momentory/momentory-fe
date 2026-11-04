@@ -36,9 +36,9 @@ type GuideArt = { steps: ImageSource[]; target?: ImageSource; choices?: ImageSou
 const ART: Record<RestRecordContent, GuideArt> = {
   sense_pond: {
     steps: [
-      require("../../../../assets/sensory-pond/lily-01.png"),
-      require("../../../../assets/sensory-pond/sound-mark-01.png"),
-      require("../../../../assets/sensory-pond/touch-flower.png"),
+      require("../../../../assets/sensory-pond/eye.webp"),
+      require("../../../../assets/sensory-pond/sound.webp"),
+      require("../../../../assets/sensory-pond/hand.webp"),
     ],
   },
   worry_box: {

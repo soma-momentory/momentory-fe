@@ -37,7 +37,7 @@ import { toHHMM } from "@/lib/time";
  * 못 받아 오면 비어 있다는 말만 한다(`RULES.md` 4).
  */
 const BACKGROUNDS: Record<RestRecordContent, number> = {
-  sense_pond: require("../../assets/sensory-pond/pond-background.png"),
+  sense_pond: require("../../assets/sensory-pond/pond.webp"),
   worry_box: require("../../assets/worry-box/forest.webp"),
   treasure_box: require("../../assets/treasure-box/meadow.webp"),
   body_release: require("../../assets/body-release/sky.webp"),
