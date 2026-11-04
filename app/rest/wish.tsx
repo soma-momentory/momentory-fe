@@ -88,6 +88,7 @@ export default function WishScreen() {
   const [noteAt, setNoteAt] = useState<number | null>(null);
   const [memoOpacity] = useState(() => new Animated.Value(1));
   const joinedInBatch = useRef(0);
+  const batchFinished = useRef(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viewRef = useRef(view);
   useEffect(() => {
@@ -181,6 +182,7 @@ export default function WishScreen() {
     setBatch(first != null ? [first, ...others] : pond.wishes);
     setPosition(0);
     joinedInBatch.current = 0;
+    batchFinished.current = false;
     setJustPosted(false);
     setView("card");
   };
@@ -192,13 +194,12 @@ export default function WishScreen() {
 
   const turnPage = (delta: 1 | -1) => {
     const next = position + delta;
-    if (next < 0) return;
-    if (next >= batch.length) {
-      track("wish_batch_finished", { joined: joinedInBatch.current });
-      backToPond();
-      return;
-    }
+    if (next < 0 || next >= batch.length) return;
     setPosition(next);
+    if (next === batch.length - 1 && !batchFinished.current) {
+      batchFinished.current = true;
+      track("wish_batch_finished", { joined: joinedInBatch.current });
+    }
   };
 
   const join = () => {

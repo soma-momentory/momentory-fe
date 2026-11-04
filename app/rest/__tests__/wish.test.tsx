@@ -14,6 +14,7 @@ import {
 } from "@/features/rest/data/wishApi";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
 import { pondSceneMotion } from "@/design/ds";
+import { useProfile } from "@/features/my/model/settings";
 
 import WishScreen from "../wish";
 
@@ -84,6 +85,7 @@ const wait = async (ms = 0) => {
 beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers();
+  useProfile.setState({ nickname: "하늘" });
 });
 
 afterEach(() => {
@@ -274,16 +276,36 @@ describe("소원 빌기", () => {
       expect(sent()).toContainEqual(["wish_join_cancelled", {}]);
     });
 
-    it("끝까지 넘기면 연못으로 돌아와 새로 받는다", async () => {
+    it("첫 장에는 이전 원이, 마지막 장에는 다음 원이 없다", async () => {
       const r = await toCard();
-      const calls = jest.mocked(fetchPond).mock.calls.length;
-      await fireEvent.press(r.getByRole("button", { name: "다음 소원" }));
+      expect(r.queryByRole("button", { name: "이전 소원" })).toBeNull();
       await fireEvent.press(r.getByRole("button", { name: "다음 소원" }));
       await wait();
 
-      expect(r.getByRole("button", { name: "내 소원 빌기" })).toBeTruthy();
-      expect(jest.mocked(fetchPond).mock.calls.length).toBe(calls + 1);
+      expect(r.getByText("소원 2")).toBeTruthy();
       expect(sent()).toContainEqual(["wish_batch_finished", { joined: 0 }]);
+      expect(r.queryByRole("button", { name: "다음 소원" })).toBeNull();
+      expect(r.getByRole("button", { name: "이전 소원" })).toBeTruthy();
+    });
+
+    it("같이 빈 소원에는 칩이 붙고, 넘겼다 돌아와도 남는다", async () => {
+      const r = await toCard();
+      expect(r.queryByText("같이 빌었어요")).toBeNull();
+      await fireEvent(r.getByRole("button", { name: "꾸욱 눌러 같이 빌기" }), "pressIn");
+      await wait(pondSceneMotion.hold);
+      expect(r.getByText("같이 빌었어요")).toBeTruthy();
+      expect(r.getByText(/다른 사람의 소원을 같이 빌어줘서 고마워요/)).toBeTruthy();
+      expect(r.getByText(/하늘님에게도 좋은 일만 있을 거예요/)).toBeTruthy();
+
+      await fireEvent.press(r.getByRole("button", { name: "다음 소원" }));
+      await wait();
+      expect(r.queryByText("같이 빌었어요")).toBeNull();
+
+      await fireEvent.press(r.getByRole("button", { name: "이전 소원" }));
+      await wait();
+      // 칩은 남고, 고마운 말은 그 순간 한 번뿐이다
+      expect(r.getByText("같이 빌었어요")).toBeTruthy();
+      expect(r.queryByText(/고마워요/)).toBeNull();
     });
 
     it("신고하면 그 장이 빠지고 되돌리기가 뜬다 · 바바의 소원에는 메뉴가 없다", async () => {

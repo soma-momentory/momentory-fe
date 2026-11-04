@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import { useEffect, useState } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 
 import { useReducedMotion } from "@/components/rest/pond/useReducedMotion";
@@ -23,6 +24,7 @@ export function WishFlower({
   still = false,
   onPress,
   label,
+  pop = 0,
 }: {
   /** 꽃 가운데 — 지금 화면의 자리 */
   x: number;
@@ -32,7 +34,15 @@ export function WishFlower({
   still?: boolean;
   onPress?: () => void;
   label?: string;
+  /** 값이 오를 때마다 꽃이 한 번 튕긴다 — 같이 빈 순간 */
+  pop?: number;
 }) {
+  const [scale] = useState(() => new Animated.Value(1));
+  useEffect(() => {
+    if (pop === 0) return;
+    scale.setValue(0.72);
+    Animated.spring(scale, { toValue: 1, friction: 4, tension: 90, useNativeDriver: true }).start();
+  }, [pop, scale]);
   const reduced = useReducedMotion();
   const wave = useWave(wishSceneMotion.bob, reduced || still);
   const height = width * wishScene.flowerAspect;
@@ -64,7 +74,7 @@ export function WishFlower({
     <Animated.View
       style={[
         styles.flower,
-        { left: x - width / 2, top: y - height / 2, transform: [{ translateY }] },
+        { left: x - width / 2, top: y - height / 2, transform: [{ translateY }, { scale }] },
       ]}
     >
       {onPress != null ? (

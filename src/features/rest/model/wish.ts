@@ -24,6 +24,7 @@ export const WISH_PILL = {
 export const WISH_WRITE_ASK = "어떤 소원을 띄울까요?";
 export const WISH_WRITE_PLACEHOLDER = "내일 면접에서 떨지 않으면 좋겠어요";
 export const WISH_JOIN_ON_NOTE = "같이 빌기";
+export const WISH_JOINED_CHIP = "같이 빌었어요";
 export const WISH_POSTED = "연못에 띄웠어요\n제가 먼저 같이 빌었어요";
 export const WISH_LOAD_FAILED = "연못을 불러오지 못했어요";
 export const WISH_POST_FAILED = "지금은 띄우지 못했어요. 쓴 글은 그대로예요.";
@@ -87,6 +88,11 @@ export const WISH_OUTCOMES: readonly { id: WishOutcome; label: string }[] = [
   { id: "came_true", label: "이뤄졌어요" },
   { id: "not_yet", label: "아직이에요" },
 ];
+
+/** 같이 빈 순간의 고마운 말 — 이름을 모르면 이름 없이 말한다 */
+export const wishJoinThanks = (author: WishAuthor, nickname: string) =>
+  `${author === "baba" ? "바바" : "다른 사람"}의 소원을 같이 빌어줘서 고마워요\n` +
+  `${nickname.length > 0 ? `${nickname}님에게도 ` : ""}좋은 일만 있을 거예요`;
 
 export const wishSign = (author: WishAuthor) => (author === "baba" ? WISH_BABA : WISH_ANONYMOUS);
 

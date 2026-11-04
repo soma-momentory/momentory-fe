@@ -1,4 +1,3 @@
-import { Image } from "expo-image";
 import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,10 +20,9 @@ import {
 import { WishAuthorRow } from "./WishAuthorRow";
 import { WishNote } from "./WishNote";
 
-const BABA = require("../../../../assets/home/v2/baba-composite.png");
 const M = wishScene.memo;
 
-/** 소원 쓰기 — 바바가 묻고, 메모지에 적고, 「다 썼어요」를 누른다. 이름은 고칠 수 없다 */
+/** 소원 쓰기 — 말풍선이 묻고, 메모지에 적고, 「다 썼어요」를 누른다. 이름은 고칠 수 없다 */
 export function WishWrite({
   text,
   onChange,
@@ -55,10 +53,9 @@ export function WishWrite({
             {WISH_WRITE_ASK}
           </Text>
         </View>
-        <Image source={BABA} contentFit="contain" transition={0} style={styles.baba} />
       </View>
 
-      <WishNote tilt={-0.5} style={[styles.note, { top: top + SCENE_BACK_SIZE + 84 }]}>
+      <WishNote tilt={-0.5} style={[styles.note, { top: top + SCENE_BACK_SIZE + 68 }]}>
         <WishAuthorRow name={WISH_ANONYMOUS} />
         <TextInput
           accessibilityLabel="소원 쓰기"
@@ -97,20 +94,13 @@ export function WishWrite({
 }
 
 const styles = StyleSheet.create({
-  ask: {
-    position: "absolute",
-    right: space.xl,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.sm,
-  },
+  ask: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   bubble: {
     backgroundColor: wishScene.bubble.color,
     borderRadius: wishScene.bubble.radius,
     paddingVertical: space.xs,
     paddingHorizontal: space.md,
   },
-  baba: { width: 56, height: 72 },
   note: {
     minHeight: M.write.minHeight,
     paddingTop: space.xl,

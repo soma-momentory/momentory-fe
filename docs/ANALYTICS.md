@@ -99,7 +99,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | wish_rules_agreed             | 소원 연못 이용 규칙에 동의                                       | 없음                                                                                                      |
 | wish_joined                   | 소원 한 장을 꾸욱 눌러 같이 빎                                   | position(묶음 안 자리), author(user, baba)                                                                |
 | wish_join_cancelled           | 다 채우기 전에 손을 뗌                                           | 없음                                                                                                      |
-| wish_batch_finished           | 10장 묶음을 끝까지 넘김                                          | joined(그 묶음에서 같이 빈 수)                                                                            |
+| wish_batch_finished           | 묶음의 마지막 장까지 넘김(묶음마다 한 번)                        | joined(그 묶음에서 같이 빈 수)                                                                            |
 | wish_submitted                | 쓴 소원을 심사에 보냄                                            | chars                                                                                                     |
 | wish_review_result            | 심사 결과를 받음                                                 | result(pass, edited, rejected, crisis, failed)                                                            |
 | wish_posted                   | 소원을 연못에 띄움                                               | chars                                                                                                     |
