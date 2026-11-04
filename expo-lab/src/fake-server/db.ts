@@ -138,7 +138,8 @@ export type LetterRow = {
   openedAt: string | null;
 };
 
-export type RestContent = "SENSE_POND" | "WORRY_BOX" | "TREASURE_BOX" | "BODY_RELEASE";
+export type RestContent =
+  "SENSE_POND" | "WORRY_BOX" | "TREASURE_BOX" | "BODY_RELEASE" | "MEDITATION";
 export type RestMood = "BETTER" | "SAME" | "UNSURE";
 
 export type RestRecordRow = {

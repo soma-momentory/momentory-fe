@@ -89,11 +89,11 @@ const latest = () => {
 };
 
 describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
-  it("바람카드 아래에 쉼 콘텐츠 넷이 2×2 로 있다 — 안내 한 줄과 함께", async () => {
+  it("바람카드 아래에 쉼 콘텐츠 다섯이 두 칸씩 있다 — 안내 한 줄과 함께", async () => {
     const { getByText } = await render(<Rest />);
 
     expect(getByText("지금 나에게 맞는 쉼을 골라보세요")).toBeTruthy();
-    for (const title of ["감각연못", "걱정상자", "오늘의 보물함", "몸에 힘 빼기"]) {
+    for (const title of ["감각연못", "걱정상자", "오늘의 보물함", "몸에 힘 빼기", "3분 명상"]) {
       expect(getByText(title)).toBeTruthy();
     }
   });
@@ -101,7 +101,7 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
   it("화면이 있는 콘텐츠만 눌린다 — 갈 곳이 없는 줄을 누르게 두지 않는다", async () => {
     const { getAllByRole } = await render(<Rest />);
 
-    // 쉼 콘텐츠 넷 모두 화면이 생겼다(보물함 2026-10-05) — 바람카드 진입점과 함께 다섯이 눌린다
+    // 쉼 콘텐츠 다섯 모두 화면이 있다(3분 명상 2026-11-04) — 바람카드 진입점과 함께 여섯이 눌린다
     const labels = getAllByRole("button").map((b) => b.props.accessibilityLabel);
     expect(labels).toEqual([
       "바람카드 보기",
@@ -109,6 +109,7 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
       "걱정상자 열기",
       "오늘의 보물함 열기",
       "몸에 힘 빼기 열기",
+      "3분 명상 열기",
     ]);
   });
 

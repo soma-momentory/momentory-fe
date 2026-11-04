@@ -11,7 +11,7 @@
  */
 import type { IconName } from "@/components/ds";
 
-export type RestContentId = "sensePond" | "worryBox" | "treasureBox" | "bodyRelease";
+export type RestContentId = "sensePond" | "worryBox" | "treasureBox" | "bodyRelease" | "meditation";
 
 export type RestContent = {
   id: RestContentId;
@@ -40,7 +40,12 @@ export type RestContent = {
    */
   duration: string;
   /** 여는 화면. **없으면 아직 화면이 없다** — 카드가 눌리지 않는다 */
-  route?: "/rest/sense-pond" | "/rest/body-release" | "/rest/worry-box" | "/rest/treasure-box";
+  route?:
+    | "/rest/sense-pond"
+    | "/rest/body-release"
+    | "/rest/worry-box"
+    | "/rest/treasure-box"
+    | "/rest/meditation";
 };
 
 export const REST_CONTENTS: readonly RestContent[] = [
@@ -75,6 +80,14 @@ export const REST_CONTENTS: readonly RestContent[] = [
     description: "몸에 힘을 줬다가\n천천히 풀어봐요",
     icon: "capybara-rest",
     route: "/rest/body-release",
+  },
+  {
+    id: "meditation",
+    title: "3분 명상",
+    duration: "3분",
+    description: "마음에 맞는 풍경에서\n잠시 머물러봐요",
+    icon: "wave",
+    route: "/rest/meditation",
   },
 ];
 

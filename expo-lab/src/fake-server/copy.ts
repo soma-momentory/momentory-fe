@@ -336,7 +336,13 @@ export const WORRIES: readonly string[] = [
   "팀장님이 내 보고서를 어떻게 봤을까",
 ];
 
-export const REST_CONTENTS = ["SENSE_POND", "WORRY_BOX", "TREASURE_BOX", "BODY_RELEASE"] as const;
+export const REST_CONTENTS = [
+  "SENSE_POND",
+  "WORRY_BOX",
+  "TREASURE_BOX",
+  "BODY_RELEASE",
+  "MEDITATION",
+] as const;
 
 /** 긴 글 세트(`long-copy`) — 줄바꿈 · 넘침을 보는 용도 */
 export const LONG = {
