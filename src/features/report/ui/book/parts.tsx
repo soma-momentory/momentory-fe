@@ -10,14 +10,27 @@ import {
 import Svg, { Path } from "react-native-svg";
 
 import { MaskingTape } from "@/components/ds/MaskingTape";
-import { emotionPebbleSource, Text } from "@/components/ds";
+import { Text } from "@/components/ds";
 import { homeV2, reportBook } from "@/design/ds";
 import type { EmotionId } from "@/features/emotion/model/emotion";
-import { Baba } from "@/features/home/ui/v2/Baba";
 import { Rug } from "@/features/home/ui/v2/Rug";
 
 const { color, font } = reportBook;
 const BABA_COMPOSITE = require("../../../../../assets/home/v2/baba-composite.png");
+const BABA_STICKER = require("../../../../../assets/report/stickers/baba.png");
+const PEBBLE_STICKERS: Record<EmotionId, number> = {
+  1: require("../../../../../assets/report/stickers/happy.png"),
+  2: require("../../../../../assets/report/stickers/proud.png"),
+  3: require("../../../../../assets/report/stickers/calm.png"),
+  4: require("../../../../../assets/report/stickers/tired.png"),
+  5: require("../../../../../assets/report/stickers/stuck.png"),
+  6: require("../../../../../assets/report/stickers/lethargic.png"),
+  7: require("../../../../../assets/report/stickers/anxious.png"),
+  8: require("../../../../../assets/report/stickers/depressed.png"),
+  9: require("../../../../../assets/report/stickers/angry.png"),
+  10: require("../../../../../assets/report/stickers/frustrated.png"),
+};
+const NO_EMOTION_STICKER = require("../../../../../assets/report/stickers/no-emotion.png");
 
 /** 손글씨 글자 — 크기와 줄 높이를 함께 준다 */
 export const hand = (fontSize: number, lineHeight: number): TextStyle => ({
@@ -73,54 +86,49 @@ export function Ruled({
   );
 }
 
-/** 흰 테두리 스티커 — 같은 그림을 흰색으로 물들여 사방으로 조금씩 밀어 깐다. 원본 그림을 더 만들지 않는다 */
-const EDGE = [
-  [1, 0],
-  [-1, 0],
-  [0, 1],
-  [0, -1],
-  [0.7, 0.7],
-  [-0.7, 0.7],
-  [0.7, -0.7],
-  [-0.7, -0.7],
-] as const;
-
+/**
+ * 흰 테두리 스티커 — 테두리가 그림에 들어 있다(`scripts/make-report-stickers.py`). 그림 둘레의 여백(`pad`,
+ * 폭에 대한 비율)만큼 상자 밖으로 크게 그려서, 테두리 안쪽 그림이 상자에 꼭 맞게 한다.
+ */
 function Sticker({
   source,
   width,
   height,
-  edge,
+  pad,
 }: {
   source: number;
   width: number;
   height: number;
-  edge: number;
+  pad: number;
 }) {
-  const box = { width, height };
+  const out = width * pad;
   return (
-    <View style={box} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {EDGE.map(([x, y], i) => (
-        <Image
-          key={i}
-          source={source}
-          resizeMode="contain"
-          style={[
-            styles.layer,
-            box,
-            {
-              tintColor: homeV2.color.white,
-              transform: [{ translateX: x * edge }, { translateY: y * edge }],
-            },
-          ]}
-        />
-      ))}
-      <Image source={source} resizeMode="contain" style={[styles.layer, box]} />
+    <View
+      style={{ width, height }}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Image
+        source={source}
+        resizeMode="contain"
+        style={[
+          styles.layer,
+          { left: -out, top: -out, width: width + out * 2, height: height + out * 2 },
+        ]}
+      />
     </View>
   );
 }
 
 export function PebbleSticker({ id, size }: { id: EmotionId | null; size: number }) {
-  return <Sticker source={emotionPebbleSource(id)} width={size} height={size} edge={1.3} />;
+  return (
+    <Sticker
+      source={id == null ? NO_EMOTION_STICKER : PEBBLE_STICKERS[id]}
+      width={size}
+      height={size}
+      pad={6 / 96}
+    />
+  );
 }
 
 export function BabaSticker({ width }: { width: number }) {
@@ -135,10 +143,21 @@ export function BabaSticker({ width }: { width: number }) {
       >
         <Rug />
       </View>
-      <Sticker source={BABA_COMPOSITE} width={width} height={height} edge={2} />
+      <Sticker source={BABA_STICKER} width={width} height={height} pad={10 / 436} />
     </View>
   );
 }
+
+/**
+ * 여백을 잘라 낸 합친 그림을 레이어 바바가 있던 자리에 놓는다(레이어 상자 폭에 대한 비율). 레이어 바바는 그림
+ * 아홉 장이라 장마다 두면 공책을 여는 일이 밀린다.
+ */
+const compositeBox = (width: number) => ({
+  left: width * 0.1527,
+  top: width * 0.1818,
+  width: width * 0.688,
+  height: width * 0.9468,
+});
 
 /** 속지 위의 바바 — 홈과 같은 그림을 스티커 없이 앉힌다 */
 export function BabaOnRug({ width }: { width: number }) {
@@ -154,7 +173,11 @@ export function BabaOnRug({ width }: { width: number }) {
       >
         <Rug />
       </View>
-      <Baba scale={scale} />
+      <Image
+        source={BABA_COMPOSITE}
+        resizeMode="contain"
+        style={[styles.layer, compositeBox(width)]}
+      />
     </View>
   );
 }

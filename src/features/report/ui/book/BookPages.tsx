@@ -16,6 +16,7 @@ import { REST_PHOTOS } from "@/components/rest/RestPolaroid";
 import { MoodMark } from "@/components/rest/scene/MoodMark";
 import { homeV2, reportBook, restMood } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
+import { DayPebble } from "@/features/home/ui/v2/WeekDock";
 import { keepWords } from "@/features/letter/model/letter";
 import type { BookDone, BookRest, WeeklyBook } from "@/features/report/data/weeklyBookApi";
 import { closingLines, weekdayOf, type BookPage } from "@/features/report/model/weeklyBook";
@@ -384,15 +385,11 @@ function OkMoments({ book }: { book: WeeklyBook }) {
           return (
             <View key={day.date} style={styles.stripDay}>
               <View style={styles.stripMark}>
-                {good ? (
-                  <PebbleSticker id={day.emotion} size={32} />
-                ) : day.written ? (
-                  <View style={styles.faded}>
-                    <PebbleSticker id={day.emotion} size={20} />
-                  </View>
-                ) : (
-                  <View style={styles.noDiary} />
-                )}
+                {/* 홈의 이번 주 감정과 같은 그림이다 */}
+                <DayPebble
+                  day={{ emotions: day.emotion == null ? [] : [day.emotion], written: day.written }}
+                  size={homeV2.size.dock.pebble}
+                />
               </View>
               <Text style={hand(14, 18)} color={good ? ink : muted}>
                 {weekdayOf(day.date)}
@@ -738,8 +735,6 @@ const styles = StyleSheet.create({
   strip: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
   stripDay: { alignItems: "center", gap: 2 },
   stripMark: { width: 34, height: 36, alignItems: "center", justifyContent: "center" },
-  faded: { opacity: 0.3 },
-  noDiary: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: color.empty },
   okList: { gap: 14, marginTop: 5 },
   okCard: { paddingTop: 12, paddingBottom: 10, paddingHorizontal: 14 },
   okHead: { flexDirection: "row", alignItems: "center", gap: 10 },

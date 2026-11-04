@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 
 import { BottomSheet, EmotionPebble, Icon, Spinner, Text } from "@/components/ds";
 import { MaskingTape } from "@/components/ds/MaskingTape";
@@ -101,6 +102,8 @@ export function WeeklyBookView({
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [at, setAt] = useState(-1);
+  // 그림이 많아 첫 화면이 밀린다 — 지금 장과 앞뒤 장만 그리고, 한 번 그린 장은 남겨 넘길 때 비지 않게 한다
+  const [drawn, setDrawn] = useState<ReadonlySet<number>>(() => new Set([0]));
   const [sheet, setSheet] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [open] = useState(() => new Animated.Value(0));
@@ -116,6 +119,7 @@ export function WeeklyBookView({
     const target = Math.max(-1, Math.min(last, next));
     if (target === at) return;
     setAt(target);
+    setDrawn((prev) => new Set([...prev, target - 1, target, target + 1]));
     const page = target < 0 ? "cover" : (pages[target] ?? "cover");
     onTurn(page);
     if (page !== "cover" && page !== "closing") {
@@ -301,31 +305,50 @@ export function WeeklyBookView({
                 accessibilityElementsHidden={i !== at}
                 importantForAccessibility={i === at ? "auto" : "no-hide-descendants"}
               >
-                {page !== "closing" ? (
-                  <View style={styles.pageHead}>
-                    <TapeTitle>{BOOK_PAGE_TITLES[page]}</TapeTitle>
-                    <Text style={[hand(14, 18), styles.dateField]} color={homeV2.color.muted}>
-                      {range.field}
-                    </Text>
-                  </View>
+                {drawn.has(i) ? (
+                  <>
+                    {page !== "closing" ? (
+                      <View style={styles.pageHead}>
+                        <TapeTitle>{BOOK_PAGE_TITLES[page]}</TapeTitle>
+                        <Text style={[hand(14, 18), styles.dateField]} color={homeV2.color.muted}>
+                          {range.field}
+                        </Text>
+                      </View>
+                    ) : null}
+                    <BookPageBody
+                      page={page}
+                      book={book}
+                      size={pageSizeOf(openHeight)}
+                      active={i === at}
+                      reduceMotion={reduceMotion}
+                    />
+                    <View style={styles.pageFoot}>
+                      <Text
+                        style={hand(14, 18)}
+                        color={homeV2.color.muted}
+                        testID={`book-page-no-${i}`}
+                      >
+                        {i + 1} / {pages.length}
+                      </Text>
+                    </View>
+                    <Svg
+                      style={styles.corner}
+                      width={CORNER}
+                      height={CORNER}
+                      viewBox={`0 0 ${CORNER} ${CORNER}`}
+                      pointerEvents="none"
+                    >
+                      {/* 접혀 올라간 자리에는 아래 장이 보이고, 접힌 귀는 금 안쪽으로 눕는다 */}
+                      <Path d={`M${CORNER} 0V${CORNER}H0Z`} fill={reportBook.color.pageLine} />
+                      <Path d={`M0 0H${CORNER}L0 ${CORNER}Z`} fill={reportBook.color.curl} />
+                      <Path
+                        d={`M${CORNER} 0L0 ${CORNER}`}
+                        stroke={reportBook.color.fold}
+                        strokeWidth={1}
+                      />
+                    </Svg>
+                  </>
                 ) : null}
-                <BookPageBody
-                  page={page}
-                  book={book}
-                  size={pageSizeOf(openHeight)}
-                  active={i === at}
-                  reduceMotion={reduceMotion}
-                />
-                <View style={styles.pageFoot}>
-                  <Text
-                    style={hand(14, 18)}
-                    color={homeV2.color.muted}
-                    testID={`book-page-no-${i}`}
-                  >
-                    {i + 1} / {pages.length}
-                  </Text>
-                </View>
-                <View style={styles.corner} />
               </View>
             </Leaf>
           ))}
@@ -522,6 +545,9 @@ function DiarySheet({
   );
 }
 
+/** 장 오른쪽 아래 귀가 접힌 크기 */
+const CORNER = 22;
+
 const styles = StyleSheet.create({
   center: {
     flex: 1,
@@ -577,12 +603,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     bottom: 0,
-    width: 0,
-    height: 0,
-    borderTopWidth: 22,
-    borderLeftWidth: 22,
-    borderTopColor: "transparent",
-    borderLeftColor: reportBook.color.curl,
   },
   cta: { position: "absolute", left: 16, right: 16, gap: 6, paddingBottom: 18 },
   hint: { textAlign: "center" },
