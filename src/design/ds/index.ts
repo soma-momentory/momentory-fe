@@ -86,6 +86,7 @@ export {
 
 // 홈 v2 한 화면만의 종이 · 손글씨 결(HD-3) — 글로벌 color · typography 와 섞지 않는다
 export { homeV2 } from "./homeV2";
+export { restThemeCard } from "./restThemeCard";
 
 // 보관함 한 화면만의 글자 크기 — 공용 12단은 그대로 둔다
 export { archiveType } from "./archive";

@@ -294,7 +294,8 @@ src/components/report/{WeekMoodSummary, WeekEmotionCard, WeekEmotionStack, WeekG
                                             **제목은 감정 카드에만 둔다**(2026-09-12) —
                                             나머지는 첫 줄이 곧 제 이름이다.
                                             비율(도넛·%)을 만들지 않는다 — 세는 값은 서버 것이다
-src/components/rest/{RestActionCard, RestCardPressable, RestContentGrid, RestPolaroid}.tsx + pond/
+src/components/rest/{RestActionCard, RestCardPressable, RestContentGrid, RestPolaroid,
+                      RestThemeCard, RestThemeGrid, RestWishPreview}.tsx + restThemes.ts + pond/
                                           ← pond/ 는 감각연못 장면 조각(배경·수면·물결·
                                             감각 판·카피바라·「꾸욱」). 판정은 그리지 않는다
 src/features/emotion/model/emotion.ts     ← **감정 10종의 도메인 정본** — id·이름·EmotionId.
