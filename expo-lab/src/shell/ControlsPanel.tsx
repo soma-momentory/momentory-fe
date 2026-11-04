@@ -34,6 +34,7 @@ export const FAIL_PATH_OPTIONS = [
   "/api/v1/rest-records",
   "/api/v1/treasures",
   "/api/v1/worries",
+  "/api/v1/wishes",
   "/api/v1/inquiries",
 ] as const;
 

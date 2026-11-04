@@ -101,10 +101,11 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
   it("화면이 있는 콘텐츠만 눌린다 — 갈 곳이 없는 줄을 누르게 두지 않는다", async () => {
     const { getAllByRole } = await render(<Rest />);
 
-    // 쉼 콘텐츠 넷 모두 화면이 생겼다(보물함 2026-10-05) — 바람카드 진입점과 함께 다섯이 눌린다
+    // 쉼 콘텐츠 다섯 모두 화면이 있다(소원 빌기 2026-11-04) — 바람카드 진입점과 함께 여섯이 눌린다
     const labels = getAllByRole("button").map((b) => b.props.accessibilityLabel);
     expect(labels).toEqual([
       "바람카드 보기",
+      "소원 빌기 열기",
       "감각연못 열기",
       "걱정상자 열기",
       "오늘의 보물함 열기",
@@ -263,7 +264,7 @@ describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
     // 쉼터 칸은 쉼터 탭과 같은 부품이다 — 뒤 격자와 시트에 같은 글자가 하나씩 선다
     expect(r.getAllByText("몸에 힘 빼기")).toHaveLength(2);
     expect(r.getAllByText("몸에 힘을 줬다가\n천천히 풀어봐요")).toHaveLength(2);
-    expect(r.getAllByText("1분")).toHaveLength(2);
+    expect(r.getAllByText("1분")).toHaveLength(3);
     expect(r.getByText("지금 해 볼게요")).toBeTruthy();
     // 저장 알림은 두지 않는다 — 쉼터로 넘어온 것이 곧 저장이 끝났다는 뜻이다(사용자 요청)
     expect(r.queryByText(/저장했어요/)).toBeNull();

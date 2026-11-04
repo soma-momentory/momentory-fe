@@ -51,7 +51,8 @@ describe("쉼 추천 고르기", () => {
     });
 
     const picked = new Set([0, 0.3, 0.6, 0.99].map((r) => recommendRest([], [], () => r).content));
-    expect(picked).toEqual(new Set(REST_CONTENTS.map((c) => c.id)));
+    // 소원 빌기는 권하지 않는다
+    expect(picked).toEqual(new Set(REST_CONTENTS.map((c) => c.id).filter((id) => id !== "wish")));
     expect(recommendRest([], [], () => 0)).toMatchObject({
       basis: "random",
       emotion: null,

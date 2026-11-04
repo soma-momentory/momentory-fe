@@ -184,6 +184,17 @@ const longTheme = (base: Theme): Theme => ({
 });
 
 /** 데이터 세트 하나를 「오늘 = today」 기준으로 심는다 */
+const WISHES = [
+  "이번 주는 야근 없이 퇴근하고 싶어요",
+  "우리 강아지가 오래 건강하면 좋겠어요",
+  "올해는 이사 갈 집을 찾으면 좋겠어요",
+  "엄마 수술이 잘 끝나면 좋겠어요",
+  "이번 시험은 잘 보면 좋겠어요",
+  "내일은 일찍 잠들면 좋겠어요",
+  "친구랑 먼저 화해하고 싶어요",
+  "주말에는 푹 쉴 수 있으면 좋겠어요",
+];
+
 export function seedDataset(datasetId: string, nowMs: number): FakeDb {
   const spec = SPECS[datasetId] ?? (datasetId in SPECS ? null : SPECS.normal!);
   const db = emptyDb(datasetId, {
@@ -382,6 +393,21 @@ export function seedDataset(datasetId: string, nowMs: number): FakeDb {
       date,
       content: spec.long ? LONG.worry : WORRIES[k % WORRIES.length]!,
       createdAt: kstIso(date, 22, (k * 13) % 60),
+    });
+  }
+  // 소원 — 걱정을 쌓은 데이터면 연못도 찬다. 많은 데이터는 뒤쪽 작은 꽃까지 보인다
+  for (let k = 0; k < spec.worries * 2; k++) {
+    db.wishes.push({
+      id: nextId(db),
+      mine: false,
+      content: spec.long && k === 0 ? LONG.worry : WISHES[k % WISHES.length]!,
+      daysLeft: (k % 7) + 1,
+      light: k % 4 !== 3,
+      joined: false,
+      joinedByOthers: false,
+      endReason: null,
+      outcome: null,
+      hidden: false,
     });
   }
 

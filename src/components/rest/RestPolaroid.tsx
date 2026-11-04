@@ -7,6 +7,7 @@ import { homeV2, restRecommendSize } from "@/design/ds";
 import type { RestContent, RestContentId } from "@/features/rest/model/contents";
 
 const PHOTOS: Record<RestContentId, number> = {
+  wish: require("../../../assets/rest/wish.webp"),
   sensePond: require("../../../assets/rest/rest-records.webp"),
   worryBox: require("../../../assets/rest/worries.webp"),
   treasureBox: require("../../../assets/rest/treasures.webp"),
@@ -16,6 +17,7 @@ const PHOTOS: Record<RestContentId, number> = {
 };
 
 const PHOTO_BACKGROUNDS: Record<RestContentId, string> = {
+  wish: homeV2.color.greenSoft,
   sensePond: homeV2.color.greenSoft,
   worryBox: homeV2.color.date,
   treasureBox: homeV2.color.today,

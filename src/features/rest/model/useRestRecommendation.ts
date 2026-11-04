@@ -19,6 +19,7 @@ import { dayRandom, recommendRest } from "./recommend";
 export const RECOMMEND_DISMISS_LIMIT = 3;
 
 const CONTENT_NAME: Record<RestContentId, RestContentName> = {
+  wish: "wish",
   sensePond: "sense_pond",
   worryBox: "worry_box",
   treasureBox: "treasure_box",

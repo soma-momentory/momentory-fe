@@ -73,11 +73,12 @@ const goals: Field<string> = (v) =>
 const provider = choice("kakao", "apple", "google");
 const pondStep = choice("see", "hear", "feel");
 /** 쉼 콘텐츠 — 화면이 있는 것만(2026-10-05) */
-const restContent = choice("sense_pond", "body_release", "worry_box", "treasure_box");
+const restContent = choice("sense_pond", "body_release", "worry_box", "treasure_box", "wish");
 /**
  * 쉼 콘텐츠를 **어디까지** 했는가 — 끝내지 않고 나간 자리. 콘텐츠마다 단계가 달라 한 목록에 모은다.
  * 감각연못 see/hear/feel · 몸에 힘 빼기 intro(시작 전)/hands/shoulders/face/legs · 걱정상자
- * write/handing(건네는 연출 중)/boxed(둘 중 하나를 고르기 전) · 오늘의 보물함 write/tucking(담는 연출 중)
+ * write/handing(건네는 연출 중)/boxed(둘 중 하나를 고르기 전) · 오늘의 보물함 write/tucking(담는 연출 중) ·
+ * 소원 빌기 pond/wish_card/rules/write/confirm
  */
 const restStage = choice(
   "see",
@@ -92,6 +93,10 @@ const restStage = choice(
   "handing",
   "boxed",
   "tucking",
+  "pond",
+  "wish_card",
+  "rules",
+  "confirm",
 );
 /** 쉼터에 어떻게 들어왔나 — 회고(일기)를 마친 화면에서 곧장 / 그 밖에서 따로 */
 const restEntry = choice("after_diary", "direct");
@@ -145,6 +150,8 @@ const screen = choice(
   "worry_box",
   "treasure_box",
   "treasure_list",
+  "wish_pond",
+  "wish_mine",
   "worry_list",
   "rest_records",
   "profile",
@@ -267,6 +274,18 @@ export const events = {
   rest_content_exited: { content: restContent, stage: restStage, duration_ms: millis },
   /** 쉼터의 「?」 원을 눌러 설명 카드를 다시 열었다 — 처음 저절로 뜬 것은 보내지 않는다 */
   rest_guide_opened: { content: restContent },
+  /** 소원 빌기(2026-11-04) — 글은 보내지 않는다. 글자 수와 결과만 싣는다 */
+  wish_rules_agreed: {},
+  wish_joined: { position: count, author: choice("user", "baba") },
+  wish_join_cancelled: {},
+  wish_batch_finished: { joined: count },
+  wish_submitted: { chars: count },
+  wish_review_result: { result: choice("pass", "edited", "rejected", "crisis", "failed") },
+  wish_posted: { chars: count },
+  wish_deleted: {},
+  wish_reported: {},
+  wish_report_undone: {},
+  wish_followup_answered: { outcome: choice("came_true", "not_yet") },
   worry_box_handed: { chars: count },
   worry_box_choice_selected: { choice: choice("keep", "release") },
   /** 보물을 담았다 — 쓴 글은 보내지 않고 길이만 */

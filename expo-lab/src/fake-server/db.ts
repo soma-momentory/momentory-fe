@@ -138,7 +138,7 @@ export type LetterRow = {
   openedAt: string | null;
 };
 
-export type RestContent = "SENSE_POND" | "WORRY_BOX" | "TREASURE_BOX" | "BODY_RELEASE";
+export type RestContent = "SENSE_POND" | "WORRY_BOX" | "TREASURE_BOX" | "BODY_RELEASE" | "WISH";
 export type RestMood = "BETTER" | "SAME" | "UNSURE";
 
 export type RestRecordRow = {
@@ -148,6 +148,19 @@ export type RestRecordRow = {
   completed: boolean;
   mood: RestMood | null;
   createdAt: string;
+};
+
+export type WishRow = {
+  id: number;
+  mine: boolean;
+  content: string;
+  daysLeft: number;
+  light: boolean;
+  joined: boolean;
+  joinedByOthers: boolean;
+  endReason: "EXPIRED" | "REPORTED" | null;
+  outcome: "CAME_TRUE" | "NOT_YET" | null;
+  hidden: boolean;
 };
 
 export type NoteRow = { id: number; date: string; content: string; createdAt: string };
@@ -197,11 +210,14 @@ export type FakeDb = {
   restRecords: RestRecordRow[];
   treasures: NoteRow[];
   worries: NoteRow[];
+  wishes: WishRow[];
+  wishRulesAgreed: boolean;
+  wishPostedToday: boolean;
   inquiries: InquiryRow[];
   retroSessions: RetroSessionRow[];
 };
 
-export const DB_SCHEMA = 1;
+export const DB_SCHEMA = 2;
 
 export const nextId = (db: FakeDb): number => db.seq++;
 
@@ -217,6 +233,9 @@ export const emptyDb = (datasetId: string, user: UserRow): FakeDb => ({
   restRecords: [],
   treasures: [],
   worries: [],
+  wishes: [],
+  wishRulesAgreed: false,
+  wishPostedToday: false,
   inquiries: [],
   retroSessions: [],
 });

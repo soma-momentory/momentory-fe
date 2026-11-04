@@ -109,7 +109,11 @@ function BabaSays({ children, large }: { children: string; large?: boolean }) {
   );
 }
 
-const REST_PREVIEW = REST_CONTENTS.map((c) => ({ ...c, route: undefined }));
+// 소개 그림은 처음 그린 네 칸 그대로다 — 소원 빌기는 남의 글이 있어야 뜻이 통한다
+const REST_PREVIEW = REST_CONTENTS.filter((c) => c.id !== "wish").map((c) => ({
+  ...c,
+  route: undefined,
+}));
 
 const WEEK: { day: string; pebble?: EmotionId; note?: string }[] = [
   { day: "월", pebble: P.anxious, note: "자소서" },

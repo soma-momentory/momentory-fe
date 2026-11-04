@@ -38,7 +38,9 @@ describe("RestHubView", () => {
     await fireEvent.press(screen.getByRole("button", { name: "바람카드 보기" }));
     await waitFor(() => expect(onOpenCards).toHaveBeenCalledTimes(1));
     await fireEvent.press(screen.getByRole("button", { name: "감각연못 열기" }));
-    await waitFor(() => expect(onOpenContent).toHaveBeenCalledWith(REST_CONTENTS[0]));
+    await waitFor(() =>
+      expect(onOpenContent).toHaveBeenCalledWith(REST_CONTENTS.find((c) => c.id === "sensePond")),
+    );
   });
 
   it("긴 요약과 추천 표시를 전달받은 그대로 렌더링한다", async () => {

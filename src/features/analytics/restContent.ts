@@ -54,6 +54,7 @@ const REST_FAMILY: ReadonlySet<ScreenName> = new Set([
   "sense_pond",
   "body_release",
   "worry_box",
+  "wish_pond",
 ]);
 
 /**
