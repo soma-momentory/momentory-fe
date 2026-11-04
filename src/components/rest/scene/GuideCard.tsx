@@ -60,6 +60,7 @@ const ART: Record<RestRecordContent, GuideArt> = {
       require("../../../../assets/body-release/capybara-release.webp"),
     ],
   },
+  meditation: { steps: [] },
 };
 
 /**
@@ -78,10 +79,13 @@ export function GuideCard({
   content,
   first,
   onClose,
+  lastPageLink,
 }: {
   content: RestRecordContent;
   first: boolean;
   onClose: () => void;
+  /** 마지막 장 버튼 아래의 글자 버튼 — 3분 명상이 출처로 가는 길이다 */
+  lastPageLink?: { label: string; onPress: () => void };
 }) {
   const guide = REST_GUIDES[content];
   const insets = useSafeAreaInsets();
@@ -157,6 +161,17 @@ export function GuideCard({
             fill
             onPress={last ? onClose : () => setPage(page + 1)}
           />
+          {last && lastPageLink != null ? (
+            <View style={styles.link}>
+              <Button
+                label={lastPageLink.label}
+                labelVariant="label1"
+                variant="text"
+                size="small"
+                onPress={lastPageLink.onPress}
+              />
+            </View>
+          ) : null}
         </View>
       </Animated.View>
     </View>
@@ -322,6 +337,8 @@ const styles = StyleSheet.create({
   // 처음 판(사이 12)보다 위아래를 조금씩 더 띄운다(2026-11-01 · 사용자 요청)
   body: { gap: space.lg },
   footer: { gap: space.md },
+  // 글자 버튼을 앞 버튼과 카드 끝 사이 한가운데에 — 위아래 여백이 같고 카드가 늘지 않게 줄인다
+  link: { marginTop: -G.link.top, marginBottom: -G.link.bottom },
   baba: { width: G.baba, aspectRatio: 436 / 600, alignSelf: "center" },
   dots: { flexDirection: "row", justifyContent: "center", gap: space.sm - space.xs2 },
   dot: { width: G.dot, height: G.dot, borderRadius: G.dot / 2, backgroundColor: line.alternative },

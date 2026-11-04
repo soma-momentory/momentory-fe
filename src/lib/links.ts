@@ -46,6 +46,13 @@ export const EXTERNAL_LINKS = {
    * 주소를 아는 곳이 하나여야 하므로 여기 함께 적는다.
    */
   accountDelete: "https://momentory.co.kr/account-delete",
+  /** 쉼터 3분 명상 콘텐츠 정보의 출처 — 파도 · 비 오는 창가 */
+  meditationBreathingSpace: "https://www.mindful.org/the-three-minute-breathing-space-practice/",
+  /** 쉼터 3분 명상 콘텐츠 정보의 출처 — 숲 · 햇살 */
+  meditationUcla: "https://www.uclahealth.org/uclamindful/guided-meditations",
+  /** 쉼터 3분 명상 콘텐츠 정보의 출처 — 작은 모닥불 */
+  meditationSelfCompassion:
+    "https://self-compassion.org/exercises/exercise-2-self-compassion-break/",
 } as const;
 
 export type ExternalLink = keyof typeof EXTERNAL_LINKS;

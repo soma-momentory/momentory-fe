@@ -73,7 +73,7 @@ const goals: Field<string> = (v) =>
 const provider = choice("kakao", "apple", "google");
 const pondStep = choice("see", "hear", "feel");
 /** 쉼 콘텐츠 — 화면이 있는 것만(2026-10-05) */
-const restContent = choice("sense_pond", "body_release", "worry_box", "treasure_box");
+const restContent = choice("sense_pond", "body_release", "worry_box", "treasure_box", "meditation");
 /**
  * 쉼 콘텐츠를 **어디까지** 했는가 — 끝내지 않고 나간 자리. 콘텐츠마다 단계가 달라 한 목록에 모은다.
  * 감각연못 see/hear/feel · 몸에 힘 빼기 intro(시작 전)/hands/shoulders/face/legs · 걱정상자
@@ -92,7 +92,10 @@ const restStage = choice(
   "handing",
   "boxed",
   "tucking",
+  "ready",
+  "meditating",
 );
+const meditationConcept = choice("wave", "forest", "sunlight", "rain", "lantern");
 /** 쉼터에 어떻게 들어왔나 — 회고(일기)를 마친 화면에서 곧장 / 그 밖에서 따로 */
 const restEntry = choice("after_diary", "direct");
 /**
@@ -144,6 +147,7 @@ const screen = choice(
   "body_release",
   "worry_box",
   "treasure_box",
+  "meditation",
   "treasure_list",
   "worry_list",
   "rest_records",
@@ -271,6 +275,17 @@ export const events = {
   worry_box_choice_selected: { choice: choice("keep", "release") },
   /** 보물을 담았다 — 쓴 글은 보내지 않고 길이만 */
   treasure_box_tucked: { chars: count },
+  /** 3분 명상을 시작했다 — 어느 풍경인지 */
+  meditation_started: { concept: meditationConcept },
+  /** 3분을 마쳤거나(natural) 「여기서 멈추기」를 눌렀다(user_stop) — 시간은 실제로 머문 만큼 */
+  meditation_ended: {
+    concept: meditationConcept,
+    reason: choice("natural", "user_stop"),
+    duration_ms: millis,
+    voice_enabled: bool,
+  },
+  /** 3분 명상의 음성을 불러오지 못했다 */
+  meditation_audio_failed: { concept: meditationConcept },
   /** 별점 창을 요청했다 — 떴는지 · 남겼는지는 스토어가 알려 주지 않는다(`storeReview.ts`) */
   store_review_requested: {},
   /** 문의를 보냈다 — 내용은 보내지 않는다 */
