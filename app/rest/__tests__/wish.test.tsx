@@ -104,6 +104,14 @@ describe("소원 연꽃", () => {
     ]);
   });
 
+  it("오른쪽 위에서 내 소원과 지난 기록으로 간다 — 보물함 · 걱정상자와 같다", async () => {
+    const r = await open();
+    await fireEvent.press(r.getByRole("button", { name: "내 소원" }));
+    expect(jest.mocked(router.push)).toHaveBeenLastCalledWith("/rest/wish-mine");
+    await fireEvent.press(r.getByRole("button", { name: "지난 기록 보기" }));
+    expect(jest.mocked(router.push)).toHaveBeenLastCalledWith("/rest/records?content=wish");
+  });
+
   it("연꽃을 누르면 그 꽃의 소원이 쪽지에 뜨고, 소원 한 장으로 넘어가지 않는다", async () => {
     const r = await open();
     expect(r.getByText("소원 1")).toBeTruthy();

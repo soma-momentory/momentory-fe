@@ -43,6 +43,7 @@ import {
   reviewWish,
   undoReportWish,
 } from "@/features/rest/data/wishApi";
+import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
 import { useRestGuide } from "@/features/rest/model/useRestGuide";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
 import {
@@ -449,6 +450,13 @@ export default function WishScreen() {
               icon="list"
               label="내 소원"
               onPress={() => router.push("/rest/wish-mine")}
+            />
+            <SceneCornerButton
+              top={top}
+              slot={1}
+              icon="clock"
+              label={REST_RECORDS_LINK}
+              onPress={() => router.push("/rest/records?content=wish")}
             />
 
             {pond != null ? (

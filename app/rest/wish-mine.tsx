@@ -8,7 +8,6 @@ import { Icon, Modal, Screen, Text } from "@/components/ds";
 import {
   SCENE_BACK_SIZE,
   SceneBackButton,
-  SceneCornerButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
 import { label as labelColor, layout, radius, restScene, space, wishScene } from "@/design/ds";
@@ -175,12 +174,6 @@ export default function WishMineScreen() {
         </ScrollView>
       )}
       <SceneBackButton top={top} onPress={() => router.back()} />
-      <SceneCornerButton
-        top={top}
-        icon="clock"
-        label="지난 기록"
-        onPress={() => router.push("/rest/records?content=wish")}
-      />
       {empty ? (
         <View style={[styles.pill, { bottom: Math.max(insets.bottom, space.md) + space.md }]}>
           <ScenePillButton
