@@ -84,7 +84,7 @@ export const WORRY_BOX_RELEASE_DONE = {
 export const WORRY_BOX_RELEASED = "방금 했던 고민은\n이제 잊어도 괜찮아요";
 
 /** 그 쪽지의 서명 — 카피바라가 남기고 간 답장이다 */
-export const WORRY_BOX_RELEASED_SIGN = "-카피바라-";
+export const WORRY_BOX_RELEASED_SIGN = "-바바-";
 
 export const WORRY_BOX_DONE_CTA = "쉼터로 돌아가기";
 
