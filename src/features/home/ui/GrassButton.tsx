@@ -125,7 +125,7 @@ export function GrassButton({ label, onPress, style }: Props) {
   };
 
   const [down, setDown] = useState(false);
-  // 저장소 관례(`ChatBubble`·`SurfaceRipple`) — ref 는 렌더 중 읽지 않는다
+  // 저장소 관례(`ChatBubble`) — ref 는 렌더 중 읽지 않는다
   const [press] = useState(() => new Animated.Value(0));
 
   useEffect(() => {

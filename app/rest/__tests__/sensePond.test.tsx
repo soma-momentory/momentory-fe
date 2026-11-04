@@ -5,31 +5,22 @@ import SensePondScreen from "../sense-pond";
 
 import { track } from "@/features/analytics";
 
-import { pondMotion, surfaceRippleMs } from "@/design/ds";
+import { pondSceneMotion } from "@/design/ds";
 import { markGuideSeen, readGuideSeen } from "@/features/rest/data/guideMemory";
 import { addRestRecord } from "@/features/rest/data/restRecordApi";
 import { REST_GUIDES } from "@/features/rest/model/restGuide";
 
 /**
- * 감각연못 — **표시를 찾아 누르는 미니게임이 아니라, 연못을 건드리면 조용히
- * 반응하는 쉼터**다 (2026-09-06 개편).
- *
- * 연못 위에 눈·음표·손 표시가 떠 있고 그것을 찾아 누르던 구조는 사라졌다. 손짓마다
- * 연잎이 하나씩 떠오르던 것도 지웠다 — 모으는 화면이 되면 쉼이 수집이 된다.
- * 지금은 셋 다 같은 방식이다: 현실에서 감각 하나를 찾고 **연못의 물 아무 데나**
- * 건드리면 그 자리에서 물결이 퍼지고 셈이 하나 오른다(감각 단계만 잠시 누르기).
- *
- * 여기서 고정하는 것: 연못에 새로 생기는 것이 없다 · 물인 자리만 센다(글·카피바라는
- * 아니다) · 건드린 자리에서 물결이 퍼진다 · 아래 판은 **첫 손짓 전에는 없고**, 찾을
- * 때마다 그 단계의 칸이 가운데에 뜨고 차오른다(2026-09-11) · 다 채우면 「다 채웠어요」 ·
- * 감각 단계는 「꾸욱」을 두 번 말한다.
+ * 감각연못 — 시작 → 보이는 것 3 → 들리는 소리 2 → 몸에 닿는 느낌 1 → 끝. 여기서 고정하는 것: 손짓이
+ * 어떻게 세어지는지, 이용 기록과 계측이 어떤 값으로 언제 나가는지, 설명 카드. 눈에 보이는 모양은
+ * 고정하지 않는다. ⚠ 이용 기록의 값(`sense_pond`)은 서버에 쌓이는 값이라 바꾸지 않는다.
  */
 jest.mock("@/features/rest/data/restRecordApi", () => ({
   addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
   fetchRestRecords: jest.fn(),
 }));
 
-// 처음 들어온 쉼터의 설명 카드는 감각연못 테스트 「설명 카드」에서 본다 — 여기서는 이미 본 쉼터로 둔다
+// 설명 카드는 아래 「설명 카드」에서 본다 — 여기서는 이미 본 쉼터로 둔다
 jest.mock("@/features/rest/data/guideMemory", () => ({
   readGuideSeen: jest.fn(() => Promise.resolve(true)),
   markGuideSeen: jest.fn(() => Promise.resolve()),
@@ -37,561 +28,265 @@ jest.mock("@/features/rest/data/guideMemory", () => ({
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
-  Stack: jest.fn(() => null),
-  Redirect: jest.fn(() => null),
 }));
 
-// 계측은 켜 두고 전송만 가로챈다 — 화면이 언제 무엇을 보내는지 본다
 jest.mock("@/features/analytics", () => ({
   ...jest.requireActual("@/features/analytics"),
   isAnalyticsEnabled: true,
   track: jest.fn(),
 }));
 
-/** 연못 위의 그림은 낭독기에서 숨긴다 — 세려면 숨긴 것까지 봐야 한다 */
-const HIDDEN = { includeHiddenElements: true } as const;
-
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 type Q = Awaited<ReturnType<typeof render>>;
 
-/**
- * 연못이 크기를 재야 장면·카피바라가 그려진다 — 테스트에서는 직접 준다.
- * 손에 들리는 화면과 비슷한 비율이어야 한다(수면 판정이 비율을 본다).
- */
-const SCENE = { width: 360, height: 640 };
-
-// RNTL 14 의 fireEvent 는 비동기다 — 기다리지 않으면 뒤따르는 테스트의 트리가 비어 버린다
-const layout = (r: Q) =>
-  fireEvent(r.getByLabelText("연못"), "layout", { nativeEvent: { layout: SCENE } });
-
-/** 열린 수면 한가운데 — 여기를 건드리면 언제나 세어진다 */
-const WATER = { x: 0.55, y: 0.62 };
-
-const surface = (r: Q) => r.getByTestId("pond-surface", HIDDEN);
-
-/** 손끝이 닿은 자리를 담은 손짓 — 좌표가 없으면(낭독기 활성화) 빈 채로 온다 */
-const touch = (spot?: { x: number; y: number }) => ({
-  nativeEvent:
-    spot == null ? {} : { locationX: spot.x * SCENE.width, locationY: spot.y * SCENE.height },
-});
-
-/** 연못의 한 자리를 톡 건드린다(보기·듣기) */
-const tapPond = (r: Q, spot?: { x: number; y: number }) => fireEvent.press(surface(r), touch(spot));
-
-/** 연못의 한 자리에 손을 얹는다(감각) */
-const holdPond = (r: Q, spot?: { x: number; y: number }) =>
-  fireEvent(surface(r), "pressIn", touch(spot));
-
-const releasePond = (r: Q) => fireEvent(surface(r), "pressOut");
-
-/**
- * 시계를 돌린다. 타이머 안의 상태 갱신은 **비동기 act** 여야 화면에 반영된다
- * (React 19 · RNTL 14) — 동기 `act` 로 감싸면 콜백은 불리는데 트리는 그대로다.
- */
-const wait = (ms: number) =>
-  act(async () => {
-    jest.advanceTimersByTime(ms);
+const wait = async (ms: number) => {
+  await act(async () => {
+    await jest.advanceTimersByTimeAsync(ms);
   });
-
-/** 그 단계의 물결이 다 퍼질 때까지 */
-const settle = (step: "see" | "hear" | "feel") => wait(surfaceRippleMs(step) + 50);
-
-/** 제목·설명이 갈리는 한 박자 — 셈은 바로 바뀌지만 머리글은 이만큼 늦다 */
-const swap = () => wait(pondMotion.headingSwap.out + 20);
-
-/** 연못 위에 처음부터 떠 있는 것 — 수련 꽃 하나뿐이다(배경 속 연잎·연꽃은 그림이다) */
-const decor = (r: Q) => r.queryAllByTestId("pond-decor-flower", HIDDEN);
-
-/** 손짓의 반응 — 건드린 자리의 물결과 누르고 있는 동안의 빛 */
-const waves = (r: Q) => r.queryAllByTestId("pond-surface-ripple", HIDDEN);
-const glows = (r: Q) => r.queryAllByTestId("pond-hold-glow", HIDDEN);
-
-/** 아래 판 — 첫 손짓 전에는 없다 */
-const panel = (r: Q) => r.queryByTestId("pond-panel", HIDDEN);
-/** 그중 떠오른 칸 — 그 단계의 첫 손짓에 하나씩 */
-const cells = (r: Q) => r.queryAllByTestId("pond-panel-cell", HIDDEN);
-/** 칸 하나가 낭독기에 읽히는 말 — 「보이는 것 · 1 / 3」 */
-const count = (r: Q, text: string) => r.getByLabelText(text);
-
-/** 보기 셋 · 듣기 둘을 다 채우고 감각 단계까지 간다 */
-const reachFeel = async (r: Q) => {
-  for (let i = 0; i < 3; i++) {
-    await tapPond(r, WATER);
-    await settle("see");
-  }
-  await wait(pondMotion.stepHold + 50);
-  for (let i = 0; i < 2; i++) {
-    await tapPond(r, WATER);
-    await settle("hear");
-  }
-  await wait(pondMotion.stepHold + 50);
 };
 
-describe("감각연못 · 들어온 직후", () => {
-  it("위에는 소개 둘만 선다 — 단계 제목·설명을 함께 쌓지 않는다", async () => {
-    const r = await render(<SensePondScreen />);
+const open = async () => {
+  const r = await render(<SensePondScreen />);
+  await wait(0);
+  return r;
+};
 
+const press = async (r: Q, label: string) => {
+  await fireEvent.press(r.getByLabelText(label));
+  await wait(pondSceneMotion.landing);
+};
+
+const HOLD_LABEL = "꾸욱 누르면서 느끼기";
+
+/** 잠시 누르기는 누르고 있어야 세어진다 */
+const hold = async (r: Q, ms: number) => {
+  const pill = r.getByLabelText(HOLD_LABEL);
+  await fireEvent(pill, "pressIn");
+  await wait(ms);
+  return pill;
+};
+
+const toFeel = async (r: Q) => {
+  await press(r, "시작하기");
+  for (let i = 0; i < 3; i += 1) await press(r, "찾았어요");
+  for (let i = 0; i < 2; i += 1) await press(r, "들었어요");
+};
+
+const toTheEnd = async (r: Q) => {
+  await toFeel(r);
+  await hold(r, pondSceneMotion.hold);
+  await wait(pondSceneMotion.landing);
+};
+
+const leave = async (r: Q) => {
+  await r.unmount();
+  await wait(0);
+};
+
+describe("감각연못 · 찾아 가기", () => {
+  it("시작 화면에는 할 일 한 줄과 시작 버튼이 있고, 뒤로는 한 단계 돌아간다", async () => {
+    const r = await open();
     expect(r.getByText("감각연못")).toBeTruthy();
-    expect(r.getByText("연못처럼 잔잔하게, 지금 이 순간을 찾아봐요")).toBeTruthy();
-
-    // 소개가 서 있는 동안 단계 문구는 위에 없다(2026-09-06)
-    expect(r.queryByText("보이는 것 3개")).toBeNull();
-    expect(r.queryByText(/처음/)).toBeNull();
-  });
-
-  it("연못에는 새로 생기는 것이 없다 — 배경 속 연잎·연꽃은 그림이다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    // 우리가 얹는 것은 수련 꽃 하나뿐이고, 손짓의 결과물은 하나도 없다
-    expect(decor(r)).toHaveLength(1);
-    expect(waves(r)).toHaveLength(0);
-    expect(glows(r)).toHaveLength(0);
-  });
-
-  it("누를 표시가 없다 — 손짓을 받는 것은 수면 하나다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    expect(surface(r)).toBeTruthy();
-    // 옛 눈·음표·손 표시는 연못 위에 없다
-    expect(r.queryAllByTestId("pond-point-eye", HIDDEN)).toHaveLength(0);
-    expect(r.queryAllByTestId("pond-point-sound", HIDDEN)).toHaveLength(0);
-    expect(r.queryAllByTestId("pond-point-hand", HIDDEN)).toHaveLength(0);
-  });
-
-  it("눌리는 것은 뒤로 · 설명 · 지난 기록 · 수면뿐이다 — 숨은그림찾기를 시키지 않는다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    const labels = r
-      .getAllByRole("button")
-      .map((b) => b.props.accessibilityLabel)
-      .sort();
-    expect(labels).toEqual(["뒤로", "설명 보기", "지난 기록 보기", "보이는 것 하나 찾기"].sort());
-  });
-
-  it("들어온 직후에는 아래 판이 없다 — 빈 칸도 동그라미도 없다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    expect(panel(r)).toBeNull();
-    expect(cells(r)).toHaveLength(0);
-    expect(r.queryByText("다 채웠어요")).toBeNull();
-    expect(r.queryByText("보이는 것")).toBeNull();
-    expect(r.queryByText("0 / 3")).toBeNull();
-    expect(r.queryByText("닿는 감각")).toBeNull();
-  });
-
-  it("글이 앉는 위쪽에만 옅은 빛 한 겹이 깔린다 — 흰 카드를 두지 않는다", async () => {
-    const r = await render(<SensePondScreen />);
-
-    expect(r.getByTestId("pond-top-veil", HIDDEN)).toBeTruthy();
-  });
-
-  it("움직이는 수면이 정지 배경 위에 겹친다 — 둘 다 장면에 있다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    expect(r.getByTestId("pond-ambient", HIDDEN)).toBeTruthy();
-    expect(r.getByTestId("pond-backdrop", HIDDEN)).toBeTruthy();
-  });
-
-  it("뒤로는 한 단계 돌아간다", async () => {
-    const r = await render(<SensePondScreen />);
+    expect(r.getByLabelText("시작하기")).toBeTruthy();
 
     await fireEvent.press(r.getByLabelText("뒤로"));
-    expect(jest.mocked(router.back)).toHaveBeenCalled();
-    expect(jest.mocked(router.push)).not.toHaveBeenCalled();
+    expect(jest.mocked(router.back)).toHaveBeenCalledTimes(1);
+  });
+
+  it("찾을 때마다 셈이 오르고, 다 찾으면 다음 감각으로 넘어간다", async () => {
+    const r = await open();
+    await press(r, "시작하기");
+    expect(r.getByLabelText("보이는 것 · 0 / 3")).toBeTruthy();
+    await press(r, "찾았어요");
+    expect(r.getByLabelText("보이는 것 · 1 / 3")).toBeTruthy();
+    await press(r, "찾았어요");
+    await press(r, "찾았어요");
+    expect(r.getByLabelText("들리는 소리 · 0 / 2")).toBeTruthy();
+    expect(r.getByLabelText("들었어요")).toBeTruthy();
+  });
+
+  it("바바가 건너가는 동안의 손짓은 세지 않는다 — 버튼이 꺼져 보이지도 않는다", async () => {
+    const r = await open();
+    await press(r, "시작하기");
+    await fireEvent.press(r.getByLabelText("찾았어요"));
+    await fireEvent.press(r.getByLabelText("찾았어요"));
+    await wait(pondSceneMotion.landing);
+
+    expect(r.getByLabelText("보이는 것 · 1 / 3")).toBeTruthy();
+    expect(r.getByLabelText("찾았어요").props.accessibilityState?.disabled).toBeFalsy();
+  });
+
+  it("꾸욱은 일찍 떼면 세지 않고, 끝까지 누르면 끝 화면이 뜬다", async () => {
+    const r = await open();
+    await toFeel(r);
+
+    const pill = await hold(r, pondSceneMotion.hold / 2);
+    await fireEvent(pill, "pressOut");
+    await wait(pondSceneMotion.landing);
+    expect(r.queryByText("잘 찾았어요")).toBeNull();
+
+    await hold(r, pondSceneMotion.hold);
+    await wait(pondSceneMotion.landing);
+    expect(r.getByText("잘 찾았어요")).toBeTruthy();
+  });
+
+  it("낭독기의 활성화 하나가 꾸욱을 대신한다", async () => {
+    const r = await open();
+    await toFeel(r);
+    await fireEvent(r.getByLabelText(HOLD_LABEL), "accessibilityAction", {
+      nativeEvent: { actionName: "activate" },
+    });
+    await wait(pondSceneMotion.landing);
+    expect(r.getByText("잘 찾았어요")).toBeTruthy();
   });
 });
 
-// 가짜 시계를 쓰므로 **마지막** describe 에 둔다(`ds.test.tsx` 와 같은 이유)
-describe("감각연못 · 찾아 가기", () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
-  it("소개는 한 호흡만 머문다 — 그 뒤에는 지금 할 일 하나만 위에 남는다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    await wait(pondMotion.introHold + 20);
-    await swap();
-
-    expect(r.getByText("보이는 것 3개")).toBeTruthy();
-    expect(
-      r.getByText("주변을 천천히 둘러봐요. 하나 찾았다면 연못을 가볍게 건드려보세요."),
-    ).toBeTruthy();
-    expect(r.queryByText("감각연못")).toBeNull();
-  });
-
-  it("수면을 건드리면 1 / 3 · 그 자리에서 물결 하나 · 연못에 남는 것은 없다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    await tapPond(r, WATER);
-    expect(count(r, "보이는 것 · 1 / 3")).toBeTruthy();
-    expect(waves(r).length).toBeGreaterThan(0);
-
-    // 물결은 다 퍼지면 지워진다 — 연잎도 꽃도 새로 생기지 않는다
-    await settle("see");
-    expect(waves(r)).toHaveLength(0);
-    expect(decor(r)).toHaveLength(1);
-  });
-
-  it("잇달아 건드려도 앞선 물결은 제 수명대로 사라진다 — 새 물결이 그것을 되살리지 않는다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    const life = surfaceRippleMs("see");
-
-    await tapPond(r, WATER);
-    const rings = waves(r).length;
-    // 반쯤 퍼졌을 때 한 번 더 — 부모가 다시 그려도 앞선 물결의 시계는 그대로다
-    await wait(life / 2);
-    await tapPond(r, { x: 0.45, y: 0.6 });
-    expect(waves(r)).toHaveLength(rings * 2);
-
-    // 첫 물결의 수명이 끝나면 그것만 사라진다(둘째는 아직 퍼지는 중이다)
-    await wait(life / 2 + 60);
-    expect(waves(r)).toHaveLength(rings);
-  });
-
-  it("물이 아닌 곳은 세지 않는다 — 글·카피바라를 눌러도 아무 일이 없다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    await tapPond(r, { x: 0.5, y: 0.12 }); // 위쪽 글이 앉는 자리
-    await tapPond(r, { x: 0.15, y: 0.7 }); // 카피바라가 앉은 왼쪽 물가
-    await tapPond(r, { x: 0.5, y: 0.92 }); // 아래 판 언저리
-
-    expect(panel(r)).toBeNull();
-    expect(waves(r)).toHaveLength(0);
-  });
-
-  it("낭독기의 활성화에는 좌표가 없다 — 그때도 수면 한가운데에서 하나가 세어진다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    await tapPond(r);
-
-    expect(count(r, "보이는 것 · 1 / 3")).toBeTruthy();
-  });
-
-  it("첫 손짓에 판이 올라와 가운데에 칸 하나가 뜬다 — 다음 단계의 첫 손짓에 하나가 더 뜬다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    // 보기의 첫 손짓 — 판이 올라오고 눈 칸 하나만 뜬다
-    await tapPond(r, WATER);
-    expect(panel(r)).toBeTruthy();
-    expect(cells(r)).toHaveLength(1);
-    expect(r.getByTestId("pond-panel-eye", HIDDEN)).toBeTruthy();
-    expect(r.getByText("1 / 3")).toBeTruthy();
-
-    // 같은 단계의 손짓은 칸을 늘리지 않고 그 칸을 채운다
-    await settle("see");
-    await tapPond(r, WATER);
-    expect(cells(r)).toHaveLength(1);
-    expect(r.getByText("2 / 3")).toBeTruthy();
-
-    await settle("see");
-    await tapPond(r, WATER);
-    await wait(pondMotion.stepHold + 50);
-    // 듣기로 넘어가도 둘째 칸은 아직 비어 있다 — 첫 소리를 찾아야 떠오른다
-    expect(cells(r)).toHaveLength(1);
-
-    await tapPond(r, WATER);
-    expect(cells(r)).toHaveLength(2);
-    expect(r.getByTestId("pond-panel-sound", HIDDEN)).toBeTruthy();
-    expect(count(r, "보이는 것 · 3 / 3")).toBeTruthy();
-    expect(count(r, "들리는 소리 · 1 / 2")).toBeTruthy();
-    expect(r.queryByTestId("pond-panel-hand", HIDDEN)).toBeNull();
-  });
-
-  it("셋을 다 찾으면 잠시 머문 뒤 같은 화면에서 「들리는 소리」로 넘어간다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    for (let i = 0; i < 2; i++) {
-      await tapPond(r, WATER);
-      await settle("see");
-    }
-    // 마지막 하나는 셈이 오른 것을 눈으로 볼 시간(`stepHold`)이 지나기 전에 본다
-    await tapPond(r, WATER);
-    expect(count(r, "보이는 것 · 3 / 3")).toBeTruthy();
-
-    await wait(pondMotion.stepHold + 50);
-    await swap();
-    expect(r.getByText("들리는 소리 2개")).toBeTruthy();
-    expect(
-      r.getByText("잠시 귀를 기울여봐요. 하나 들렸다면 연못을 가볍게 건드려보세요."),
-    ).toBeTruthy();
-    // 지나온 칸은 가득 찬 채 남고, 소리 칸은 첫 소리를 찾기 전까지 뜨지 않는다
-    expect(cells(r)).toHaveLength(1);
-    expect(r.queryByText("다 채웠어요")).toBeNull();
-  });
-
-  it("듣기도 같은 손짓이다 — 표시를 찾지 않고 수면을 건드린다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    for (let i = 0; i < 3; i++) {
-      await tapPond(r, WATER);
-      await settle("see");
-    }
-    await wait(pondMotion.stepHold + 50);
-
-    expect(surface(r).props.accessibilityLabel).toBe("들리는 소리 하나 찾기");
-    await tapPond(r, WATER);
-    expect(count(r, "들리는 소리 · 1 / 2")).toBeTruthy();
-  });
-
-  it("감각은 톡이 아니라 꾸욱 누르기다 — 짧은 누름은 세지 않고 「조금 더 오래」를 말한다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await reachFeel(r);
-    await swap();
-
-    expect(r.getByText("몸에 닿는 감각 1개")).toBeTruthy();
-    expect(
-      r.getByText("몸에 닿는 감각 하나를 느껴봐요. 느껴졌다면 연못을 꾸욱 눌러보세요."),
-    ).toBeTruthy();
-    // 설명 끝에 묻어 두지 않고 알약으로 한 번 더 말한다
-    expect(r.getByTestId("pond-hold-hint")).toBeTruthy();
-    expect(r.getByText("손을 떼지 말고 꾸욱, 오래 눌러요")).toBeTruthy();
-
-    await holdPond(r, WATER);
-    expect(glows(r).length).toBeGreaterThan(0);
-    await wait(pondMotion.hold - 200);
-    await releasePond(r);
-
-    expect(r.queryByLabelText("몸에 닿는 감각 · 1 / 1")).toBeNull();
-    expect(cells(r)).toHaveLength(2);
-    expect(waves(r)).toHaveLength(0);
-
-    // 일찍 뗐다 — 알약이 다시 말하고, 잠시 뒤 원래 말로 돌아온다
-    expect(r.getByText("조금 더 오래 눌러요")).toBeTruthy();
-    await wait(pondMotion.holdHint.nudge + 20);
-    expect(r.getByText("손을 떼지 말고 꾸욱, 오래 눌러요")).toBeTruthy();
-  });
-
-  it("「꾸욱」 알약은 감각 단계에만 선다 — 톡 단계와 완료에는 없다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await wait(pondMotion.introHold + 20);
-    await swap();
-    expect(r.queryByTestId("pond-hold-hint")).toBeNull();
-
-    await reachFeel(r);
-    await swap();
-    expect(r.getByTestId("pond-hold-hint")).toBeTruthy();
-
-    await holdPond(r, WATER);
-    await wait(pondMotion.hold + 20);
-    await wait(pondMotion.doneHold + 100);
-    await swap();
-    expect(r.queryByTestId("pond-hold-hint")).toBeNull();
-  });
-
-  it("잠시 누르고 있으면 가장 큰 물결 한 번 뒤 완료가 같은 자리에 선다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await reachFeel(r);
-
-    await holdPond(r, WATER);
-    await wait(pondMotion.hold + 20);
-    expect(count(r, "몸에 닿는 감각 · 1 / 1")).toBeTruthy();
-    expect(waves(r).length).toBeGreaterThan(0);
-
-    // 물결이 다 퍼진 **뒤에** 완료가 온다 — 마지막 반응이 잘리지 않는다
-    await wait(pondMotion.doneHold + 100);
-    await swap();
-    expect(r.getByText("잘 찾았어요")).toBeTruthy();
-    expect(r.getByText("잠시 지금 이 순간에 머물렀어요.")).toBeTruthy();
-
-    // 차오른 칸 셋은 그대로이고, 「다 채웠어요」와 돌아가는 길이 붙는다
-    expect(r.getByText("다 채웠어요")).toBeTruthy();
-    expect(cells(r)).toHaveLength(3);
-    expect(r.getByText("3 / 3")).toBeTruthy();
-    expect(r.getByText("2 / 2")).toBeTruthy();
-    expect(r.getByText("1 / 1")).toBeTruthy();
-    expect(r.getByText("쉼터로 돌아가기")).toBeTruthy();
-
-    // 완료된 연못은 손짓을 받지 않는다 — 보는 시간이다
-    expect(r.queryByTestId("pond-surface", HIDDEN)).toBeNull();
-    expect(decor(r)).toHaveLength(1);
-
-    // 돌아가기 — 회고 완료와 같은 replace 로 쉼터 탭에 선다
-    // 누르면 장면 위에 기분 쪽지가 뜬다 — 고르기 전에는 나가는 길이 없다
-    await fireEvent.press(r.getByText("쉼터로 돌아가기"));
-    expect(r.getByTestId("rest-mood-exit")).toBeTruthy();
-    // 아래 장면은 쪽지 뒤로 물러난다(낭독기에도) — 나가는 길은 아직 없다
-    expect(r.queryAllByRole("button", { name: "쉼터로 돌아가기" })).toHaveLength(0);
-    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
-    await fireEvent.press(r.getByRole("button", { name: "나아졌어요" }));
-    // 다시 고를 수 있고, 보내기는 떠날 때 한 번이다
+describe("감각연못 · 이용 기록", () => {
+  it("시작만 하고 나가면 남기지 않는다", async () => {
+    const r = await open();
+    await fireEvent.press(r.getByLabelText("시작하기"));
+    await leave(r);
     expect(addRestRecord).not.toHaveBeenCalled();
-    expect(router.replace).not.toHaveBeenCalled();
-    await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
+  });
+
+  it("하나라도 찾고 나가면 「중간에 나감」을 남긴다", async () => {
+    const r = await open();
+    await press(r, "시작하기");
+    await press(r, "찾았어요");
+    await leave(r);
+    expect(addRestRecord).toHaveBeenCalledWith("sense_pond", { completed: false });
+  });
+
+  it("끝까지 가서 기분을 고르면 그 값으로 남기고 쉼터 탭으로 돌아간다", async () => {
+    const r = await open();
+    await toTheEnd(r);
+    await fireEvent.press(r.getByLabelText("쉼터로 돌아가기"));
+    await wait(1000);
+    await fireEvent.press(r.getByLabelText("그대로예요"));
+    await wait(1000);
+    const leaves = r.getAllByLabelText("쉼터로 돌아가기");
+    await fireEvent.press(leaves[leaves.length - 1]!);
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/(tabs)/rest");
+
+    await leave(r);
+    expect(addRestRecord).toHaveBeenCalledTimes(1);
+    expect(addRestRecord).toHaveBeenCalledWith("sense_pond", { completed: true, mood: "same" });
   });
 
-  it("낭독기·스위치 제어의 활성화 하나가 잠시 누르기를 대신한다 — 손가락 없이도 완료까지 간다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await reachFeel(r);
-    expect(r.queryByLabelText("몸에 닿는 감각 · 1 / 1")).toBeNull();
-
-    await fireEvent(surface(r), "accessibilityAction", {
-      nativeEvent: { actionName: "activate" },
-    });
-    expect(count(r, "몸에 닿는 감각 · 1 / 1")).toBeTruthy();
-
-    await wait(pondMotion.doneHold + 100);
-    await swap();
-    expect(r.getByText("잘 찾았어요")).toBeTruthy();
-  });
-
-  it("톡 단계에는 활성화를 따로 받지 않는다 — `onPress` 가 이미 받아 두 번 세게 된다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-
-    expect(surface(r).props.accessibilityActions).toBeUndefined();
+  it("지난 기록 보기는 감각연못의 기록으로 간다", async () => {
+    const r = await open();
+    await fireEvent.press(r.getByLabelText("지난 기록 보기"));
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/records?content=sense_pond");
   });
 });
 
 describe("감각연못 · 계측", () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
   const calls = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
-  /** 감각연못 전용 이벤트만 — 쉼 콘텐츠 공통 이벤트(`rest_content_*`)는 아래에서 따로 본다 */
-  const sent = () => calls().filter(([name]) => String(name).startsWith("sense_pond"));
+  const pondSent = () => calls().filter(([name]) => String(name).startsWith("sense_pond"));
   const restSent = () => calls().filter(([name]) => String(name).startsWith("rest_content"));
 
-  it("세 단계를 마치면 단계마다 한 번씩, 그리고 완료를 한 번 보낸다 — 떠날 때는 더 보내지 않는다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await reachFeel(r);
-    await holdPond(r, WATER);
-    await wait(pondMotion.hold + 20);
-    await wait(pondMotion.doneHold + 100);
+  it("세 단계를 마치면 단계마다 한 번씩, 그리고 완료를 한 번 보낸다", async () => {
+    const r = await open();
+    await toTheEnd(r);
+    await leave(r);
 
-    await act(async () => {
-      r.unmount();
-    });
-
-    expect(sent()).toEqual([
+    expect(pondSent()).toEqual([
       ["sense_pond_step_completed", expect.objectContaining({ step: "see", hold_cancels: 0 })],
       ["sense_pond_step_completed", expect.objectContaining({ step: "hear", hold_cancels: 0 })],
       ["sense_pond_step_completed", expect.objectContaining({ step: "feel", hold_cancels: 0 })],
       ["sense_pond_finished", { duration_ms: expect.any(Number) }],
     ]);
-  });
-
-  it("꾹 누르기를 일찍 떼면 감각 단계 완료에 그 횟수가 실린다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await reachFeel(r);
-    await holdPond(r, WATER);
-    await wait(pondMotion.hold - 200);
-    await releasePond(r);
-    await holdPond(r, WATER);
-    await wait(pondMotion.hold + 20);
-
-    expect(sent()).toContainEqual([
-      "sense_pond_step_completed",
-      expect.objectContaining({ step: "feel", hold_cancels: 1 }),
-    ]);
-  });
-
-  it("중간에 떠나면 그 단계와 찾은 개수를 보낸다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await tapPond(r, WATER);
-    await settle("see");
-
-    await act(async () => {
-      r.unmount();
-    });
-
-    expect(sent()).toEqual([
-      [
-        "sense_pond_exited",
-        { step: "see", found: 1, hold_cancels: 0, duration_ms: expect.any(Number) },
-      ],
-    ]);
-  });
-
-  it("물이 아닌 자리의 손짓은 화면처럼 계측에서도 세지 않는다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await tapPond(r, { x: 0.5, y: 0.12 });
-    await tapPond(r, { x: 0.15, y: 0.7 });
-    await tapPond(r, { x: 0.5, y: 0.92 });
-
-    expect(waves(r)).toHaveLength(0);
-    expect(sent()).toEqual([]);
-  });
-
-  it("쉼 콘텐츠 공통 — 열면 들어온 길을, 마지막 감각을 찾으면 끝을 보낸다(떠나도 이탈은 없다)", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await reachFeel(r);
-    await holdPond(r, WATER);
-    await wait(pondMotion.hold + 20);
-    await act(async () => {
-      r.unmount();
-    });
-
     expect(restSent()).toEqual([
       ["rest_content_opened", { content: "sense_pond", entry: "direct", diary_today: false }],
       ["rest_content_completed", { content: "sense_pond", duration_ms: expect.any(Number) }],
     ]);
   });
 
-  it("쉼 콘텐츠 공통 — 중간에 떠나면 나간 자리(단계)를 보낸다", async () => {
-    const r = await render(<SensePondScreen />);
-    await layout(r);
-    await tapPond(r, WATER);
-    await settle("see");
-    await act(async () => {
-      r.unmount();
-    });
+  it("꾸욱을 일찍 떼면 단계 완료에 그 횟수가 실린다", async () => {
+    const r = await open();
+    await toFeel(r);
+    const pill = await hold(r, pondSceneMotion.hold / 2);
+    await fireEvent(pill, "pressOut");
+    await hold(r, pondSceneMotion.hold);
 
+    expect(pondSent()).toContainEqual([
+      "sense_pond_step_completed",
+      expect.objectContaining({ step: "feel", hold_cancels: 1 }),
+    ]);
+  });
+
+  it("중간에 떠나면 그 단계와 찾은 개수 · 나간 자리를 보낸다", async () => {
+    const r = await open();
+    await press(r, "시작하기");
+    await press(r, "찾았어요");
+    await leave(r);
+
+    expect(pondSent()).toEqual([
+      [
+        "sense_pond_exited",
+        { step: "see", found: 1, hold_cancels: 0, duration_ms: expect.any(Number) },
+      ],
+    ]);
     expect(restSent()).toContainEqual([
       "rest_content_exited",
       { content: "sense_pond", stage: "see", duration_ms: expect.any(Number) },
     ]);
   });
+
+  it("시작 화면에서 나가면 나간 자리는 intro 이고, 감각연못 단계 이탈은 보내지 않는다", async () => {
+    const r = await open();
+    await leave(r);
+
+    expect(pondSent()).toEqual([]);
+    expect(restSent()).toContainEqual([
+      "rest_content_exited",
+      { content: "sense_pond", stage: "intro", duration_ms: expect.any(Number) },
+    ]);
+  });
+
+  it("시작하자마자 나가면 나간 자리는 see 다", async () => {
+    const r = await open();
+    await press(r, "시작하기");
+    await leave(r);
+
+    expect(pondSent()).toEqual([
+      ["sense_pond_exited", expect.objectContaining({ step: "see", found: 0 })],
+    ]);
+    expect(restSent()).toContainEqual([
+      "rest_content_exited",
+      expect.objectContaining({ content: "sense_pond", stage: "see" }),
+    ]);
+  });
+
+  it("시작 화면에 머문 시간은 단계 시간과 놀이 전체 시간에 들어가지 않는다", async () => {
+    const r = await open();
+    await wait(600_000);
+    await toTheEnd(r);
+
+    const sent = pondSent().map(([, props]) => (props as { duration_ms: number }).duration_ms);
+    expect(sent).toHaveLength(4);
+    for (const ms of sent) expect(ms).toBeLessThan(600_000);
+  });
 });
 
-/**
- * 처음 들어간 쉼터의 **설명 카드** (2026-10-12) — 네 쉼터가 같은 `useRestGuide` · `GuideCard` 를 쓴다.
- * 감각연못에서 보는 것은 소개 한 호흡이 저절로 지나가는 쉼터라서다 — 카드가 닫힌 뒤에야 시계가 돈다.
- */
+/** 처음 들어간 쉼터의 설명 카드 — 네 쉼터가 같은 `useRestGuide` · `GuideCard` 를 쓴다(2026-10-12) */
 describe("감각연못 · 설명 카드", () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-
   const firstVisit = () => jest.mocked(readGuideSeen).mockResolvedValueOnce(false);
   const card = (r: Q) => r.queryByTestId("rest-guide-card");
-  const INTRO = "연못처럼 잔잔하게, 지금 이 순간을 찾아봐요";
   const guide = REST_GUIDES.sense_pond;
   const firstAct = guide.pages[0].example!.steps![0]!.act;
 
-  // 카드를 끝까지 넘겨 마지막 장의 버튼(`label`)으로 닫는다
-  const finish = async (r: Q, label: string) => {
-    for (let i = 1; i < guide.pages.length; i += 1)
-      await fireEvent.press(r.getByRole("button", { name: "다음" }));
-    await fireEvent.press(r.getByRole("button", { name: label }));
-  };
-
   it("처음 들어오면 카드가 저절로 뜨고 「봤음」을 남긴다 — 세 장을 한 장씩 넘긴다", async () => {
     firstVisit();
-    const r = await render(<SensePondScreen />);
+    const r = await open();
 
     expect(card(r)).toBeTruthy();
     expect(jest.mocked(markGuideSeen)).toHaveBeenCalledWith("sense_pond");
@@ -601,7 +296,6 @@ describe("감각연못 · 설명 카드", () => {
 
     await fireEvent.press(r.getByRole("button", { name: "다음" }));
     expect(r.getByText(guide.pages[1].text)).toBeTruthy();
-    expect(r.queryByText(guide.pages[0].text)).toBeNull();
     expect(r.queryByText(firstAct)).toBeNull();
 
     await fireEvent.press(r.getByRole("button", { name: "다음" }));
@@ -613,24 +307,8 @@ describe("감각연못 · 설명 카드", () => {
     expect(jest.mocked(track).mock.calls.map(([name]) => name)).not.toContain("rest_guide_opened");
   });
 
-  it("소개의 한 호흡은 카드가 닫힌 뒤에 잰다 — 읽는 동안 소개가 지나가 버리지 않는다", async () => {
-    firstVisit();
-    const r = await render(<SensePondScreen />);
-
-    await wait(pondMotion.introHold + 20);
-    await swap();
-    // 카드가 떠 있는 동안 뒤 장면은 낭독기에서 물러나 있다 — 숨은 것까지 본다
-    expect(r.getByText(INTRO, HIDDEN)).toBeTruthy();
-
-    await finish(r, "시작할게요");
-    await wait(pondMotion.introHold + 20);
-    await swap();
-    expect(r.queryByText(INTRO)).toBeNull();
-    expect(r.getByText("보이는 것 3개")).toBeTruthy();
-  });
-
   it("이미 본 쉼터에서는 뜨지 않고, 「?」 원이 같은 카드를 다시 연다 — 그 누름 하나만 보낸다", async () => {
-    const r = await render(<SensePondScreen />);
+    const r = await open();
     expect(card(r)).toBeNull();
     expect(jest.mocked(markGuideSeen)).not.toHaveBeenCalled();
 
@@ -638,9 +316,10 @@ describe("감각연못 · 설명 카드", () => {
     expect(card(r)).toBeTruthy();
     expect(jest.mocked(track)).toHaveBeenCalledWith("rest_guide_opened", { content: "sense_pond" });
 
-    // 다시 연 카드는 첫 장부터 보이고, 마지막 장의 「알겠어요」로 닫는다
     expect(r.getByText(guide.pages[0].text)).toBeTruthy();
-    await finish(r, "알겠어요");
+    await fireEvent.press(r.getByRole("button", { name: "다음" }));
+    await fireEvent.press(r.getByRole("button", { name: "다음" }));
+    await fireEvent.press(r.getByRole("button", { name: "알겠어요" }));
     expect(card(r)).toBeNull();
   });
 });

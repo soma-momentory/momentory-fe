@@ -73,18 +73,7 @@ export {
   type TextToken,
 } from "./typography";
 
-export {
-  capybaraSpace,
-  isWaterSpot,
-  pondLayout,
-  pondMotion,
-  pondPanelVeil,
-  pondSize,
-  pondVeil,
-  surfaceRippleMs,
-  type PondPointKind,
-  type PondSpot,
-} from "./pond";
+export { pondLayout, pondMotion } from "./pond";
 
 export {
   restGuideSize,
@@ -141,4 +130,5 @@ export {
 export const ds = { ...color, ...metrics, ...typography } as const;
 export default ds;
 
+export { pondScene, pondSceneMotion } from "./pondScene";
 export { retroDiary } from "./retroDiary";

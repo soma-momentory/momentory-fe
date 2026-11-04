@@ -50,7 +50,7 @@ export const REST_GUIDES: Record<RestRecordContent, RestGuide> = {
           ],
         },
       },
-      { text: "찾을 때마다 연못을 톡 눌러요.\n몸에 닿는 느낌은 꾸욱 눌러요." },
+      { text: "찾을 때마다 아래 버튼을 톡 눌러요.\n몸에 닿는 느낌은 꾸욱 눌러요." },
       { text: "머리가 복잡할 때 1분이면 돼요.\n생각이 좀 가라앉아요." },
     ],
   },

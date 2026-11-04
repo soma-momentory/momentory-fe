@@ -32,7 +32,8 @@ export function createSensePondTracker(track: Track, now: () => number) {
   let since: number | null = now();
   const clock = () => banked + (since == null ? 0 : now() - since);
 
-  let step: SensePondStepName = "see";
+  // 첫 단계가 서기 전(시작 화면)에는 비어 있다 — 이때는 놀이가 시작되지 않았다
+  let step: SensePondStepName | null = null;
   let stepAt = 0;
   let lastAt = 0;
   let longest = 0;
@@ -42,9 +43,13 @@ export function createSensePondTracker(track: Track, now: () => number) {
   let over = false;
 
   return {
-    /** 새 단계가 화면에 섰다. 단계 시간은 여기서부터 잰다 */
+    /** 새 단계가 화면에 섰다. 단계 시간은 여기서부터 잰다. 첫 단계면 전체 시간도 여기서부터다 */
     show(next: SensePondStepName) {
       if (over) return;
+      if (step == null) {
+        banked = 0;
+        if (since != null) since = now();
+      }
       step = next;
       stepAt = lastAt = clock();
       longest = 0;
@@ -53,7 +58,7 @@ export function createSensePondTracker(track: Track, now: () => number) {
     },
     /** 감각 하나를 찾았다. 목표를 채운 뒤의 손짓은 화면처럼 세지 않는다 */
     find(goal: number, last: boolean) {
-      if (over || found >= goal) return;
+      if (over || step == null || found >= goal) return;
       const at = clock();
       longest = Math.max(longest, at - lastAt);
       lastAt = at;
@@ -81,9 +86,9 @@ export function createSensePondTracker(track: Track, now: () => number) {
     resume() {
       if (since == null) since = now();
     },
-    /** 끝내지 않고 화면을 떠났다. 끝까지 간 판에는 부르지 않아도 된다 */
+    /** 끝내지 않고 화면을 떠났다. 끝까지 간 판과 시작하기 전에는 보내지 않는다 */
     leave() {
-      if (over) return;
+      if (over || step == null) return;
       over = true;
       track("sense_pond_exited", { step, found, hold_cancels: holdCancels, duration_ms: clock() });
     },

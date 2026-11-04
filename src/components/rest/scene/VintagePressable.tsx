@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
 import { restScene, restSceneSize } from "@/design/ds";
 
@@ -28,6 +35,11 @@ type Props = {
   /** 바깥 자리(절대 배치 등) */
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** 누르고 있기처럼 톡이 아닌 손짓 — 감각연못의 「꾸욱」 */
+  pressable?: Pick<
+    PressableProps,
+    "onPressIn" | "onPressOut" | "accessibilityActions" | "onAccessibilityAction"
+  >;
 };
 
 const V = restSceneSize.vintage;
@@ -42,10 +54,12 @@ export function VintagePressable({
   faceStyle,
   style,
   testID,
+  pressable,
 }: Props) {
   const ink = disabled ? restScene.mutedInk : restScene.ink;
   return (
     <Pressable
+      {...pressable}
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
