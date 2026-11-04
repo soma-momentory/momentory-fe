@@ -95,6 +95,20 @@ it("끝내지 않고 떠나면 그 단계와 찾은 개수를 한 번만 보낸�
   ]);
 });
 
+it("첫 단계가 서기 전에 떠나면 보내지 않고, 그때까지의 시간은 전체 시간에 넣지 않는다", () => {
+  const unstarted = setup();
+  unstarted.pass(9_000);
+  unstarted.pond.leave();
+  expect(unstarted.track).not.toHaveBeenCalled();
+
+  const { pond, track, pass } = setup();
+  pass(60_000);
+  pond.show("feel");
+  pass(2_000);
+  pond.find(1, true);
+  expect(track).toHaveBeenLastCalledWith("sense_pond_finished", { duration_ms: 2_000 });
+});
+
 it("꾹 누르기를 일찍 뗀 횟수는 그 단계에만 쌓여 완료와 이탈에 실린다", () => {
   const { pond, track } = setup();
   pond.show("hear");

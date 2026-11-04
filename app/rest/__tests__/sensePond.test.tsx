@@ -241,19 +241,39 @@ describe("감각연못 · 계측", () => {
     ]);
   });
 
-  it("시작 화면에서 나가면 나간 자리를 남기지 않는다 — 연 수에서 끝낸 수와 나간 수를 뺀 나머지다", async () => {
+  it("시작 화면에서 나가면 나간 자리는 intro 이고, 감각연못 단계 이탈은 보내지 않는다", async () => {
     const r = await open();
     await leave(r);
-    expect(restSent().map(([name]) => name)).toEqual(["rest_content_opened"]);
+
+    expect(pondSent()).toEqual([]);
+    expect(restSent()).toContainEqual([
+      "rest_content_exited",
+      { content: "sense_pond", stage: "intro", duration_ms: expect.any(Number) },
+    ]);
   });
 
-  it("시작 화면에 머문 시간은 첫 단계 시간에 들어가지 않는다", async () => {
+  it("시작하자마자 나가면 나간 자리는 see 다", async () => {
     const r = await open();
-    await wait(60_000);
+    await press(r, "시작하기");
+    await leave(r);
+
+    expect(pondSent()).toEqual([
+      ["sense_pond_exited", expect.objectContaining({ step: "see", found: 0 })],
+    ]);
+    expect(restSent()).toContainEqual([
+      "rest_content_exited",
+      expect.objectContaining({ content: "sense_pond", stage: "see" }),
+    ]);
+  });
+
+  it("시작 화면에 머문 시간은 단계 시간과 놀이 전체 시간에 들어가지 않는다", async () => {
+    const r = await open();
+    await wait(600_000);
     await toTheEnd(r);
 
-    const see = pondSent().find(([, props]) => (props as { step?: string })?.step === "see");
-    expect((see![1] as { duration_ms: number }).duration_ms).toBeLessThan(60_000);
+    const sent = pondSent().map(([, props]) => (props as { duration_ms: number }).duration_ms);
+    expect(sent).toHaveLength(4);
+    for (const ms of sent) expect(ms).toBeLessThan(600_000);
   });
 });
 

@@ -73,11 +73,10 @@ export default function SensePondScreen() {
   const hasNext = stepIndex + 1 < SENSE_POND_STEPS.length;
 
   // 기록 · 계측의 이름은 도입 때부터 같다 — 쌓인 값이 이어지려면 바꾸지 않는다
-  const pond = useSensePondAnalytics(step.id);
+  const pond = useSensePondAnalytics(started ? step.id : null);
   const { date: today } = useTodayContext();
   const diaryToday = useDiary((s) => hasDiaryOn(s.diaries, today));
-  // 시작 화면에서는 나간 자리를 남기지 않는다 — 연 수에서 끝낸 수와 나간 수를 빼면 시작 화면에서 나간 수다
-  const rest = useRestContentAnalytics("sense_pond", started ? step.id : null, diaryToday);
+  const rest = useRestContentAnalytics("sense_pond", started ? step.id : "intro", diaryToday);
   const record = useRestRecord("sense_pond", stepIndex > 0 || found > 0 || finished);
   const guide = useRestGuide("sense_pond");
 
@@ -95,8 +94,6 @@ export default function SensePondScreen() {
   const start = () => {
     setStarted(true);
     setHop((n) => n + 1);
-    // 시작 화면에 머문 시간을 첫 단계 시간에 넣지 않는다
-    pond.show(step.id);
   };
 
   const find = () => {
