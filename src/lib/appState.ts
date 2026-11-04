@@ -38,3 +38,24 @@ export function onForeground(handler: () => void): () => void {
 
   return () => subscription.remove();
 }
+
+/**
+ * 앱이 **앞에서 물러난 순간** — `onForeground` 의 반대쪽이다. iOS 의 잠깐의 `inactive`(알림 센터 등)도
+ * 부른다. 멈추는 쪽이 안전한 일에만 쓴다(3분 명상의 자동 일시정지).
+ */
+export function onLeaveForeground(handler: () => void): () => void {
+  // 시작 상태를 묻지 않는다 — `currentState` 가 아직 없는 때가 있어 첫 전이를 놓친다
+  let away = false;
+
+  const subscription = AppState.addEventListener("change", (next) => {
+    if (next === "active") {
+      away = false;
+      return;
+    }
+    if (away) return;
+    away = true;
+    handler();
+  });
+
+  return () => subscription.remove();
+}

@@ -40,6 +40,7 @@ export {
   onboardingArt,
   overlay,
   pond,
+  meditation,
   primary,
   raisedShadow,
   restMood,
@@ -108,6 +109,8 @@ export {
   treasureBoxMotion,
   treasureBoxSize,
 } from "./treasureBox";
+
+export { meditationLayout, meditationMotion, meditationSize } from "./meditation";
 
 export {
   bodyReleaseFinish,

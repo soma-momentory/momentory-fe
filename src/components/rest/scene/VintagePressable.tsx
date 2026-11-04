@@ -20,6 +20,10 @@ type Props = {
   onPress: () => void;
   accessibilityLabel: string;
   disabled?: boolean;
+  /** 눌리지만 꺼져 있는 것 — 면과 선만 빛바랜다(3분 명상의 음성 안내 원) */
+  muted?: boolean;
+  /** 고른 칸이면 낭독기에 알린다 — 3분 명상의 풍경 고르기 */
+  selected?: boolean;
   /** 면 색 — 기본은 크림(`restScene.surface`) */
   face?: string;
   radius: number;
@@ -37,19 +41,22 @@ export function VintagePressable({
   onPress,
   accessibilityLabel,
   disabled = false,
+  muted = false,
+  selected,
   face = restScene.surface,
   radius,
   faceStyle,
   style,
   testID,
 }: Props) {
-  const ink = disabled ? restScene.mutedInk : restScene.ink;
+  const faded = disabled || muted;
+  const ink = faded ? restScene.mutedInk : restScene.ink;
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, selected }}
       disabled={disabled}
       onPress={onPress}
       style={[styles.outer, style]}
@@ -62,7 +69,7 @@ export function VintagePressable({
               styles.shadow,
               {
                 borderRadius: radius,
-                backgroundColor: disabled ? restScene.mutedShadow : restScene.shadow,
+                backgroundColor: faded ? restScene.mutedShadow : restScene.shadow,
               },
             ]}
           />
@@ -72,7 +79,7 @@ export function VintagePressable({
               {
                 borderRadius: radius,
                 borderColor: ink,
-                backgroundColor: disabled ? restScene.mutedFace : face,
+                backgroundColor: faded ? restScene.mutedFace : face,
                 transform: [{ translateY: pressed && !disabled ? V.depth : 0 }],
               },
               faceStyle,

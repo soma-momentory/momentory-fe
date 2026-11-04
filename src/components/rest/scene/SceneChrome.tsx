@@ -74,7 +74,7 @@ export function SceneCornerButton({
       accessibilityLabel={label}
       onPress={onPress}
       radius={BACK / 2}
-      style={[styles.back, { left: undefined, right: space.lg + slot * (BACK + space.sm), top }]}
+      style={[styles.backRight, { right: space.lg + slot * (BACK + space.sm), top }]}
       faceStyle={styles.backFace}
     >
       <Icon name={icon} size={20} color={restScene.ink} />
@@ -139,6 +139,7 @@ export function SceneCard({
 
 const styles = StyleSheet.create({
   back: { position: "absolute", left: space.lg, width: BACK },
+  backRight: { position: "absolute", right: space.lg, width: BACK },
   backFace: { height: BACK, alignItems: "center", justifyContent: "center" },
   pillOuter: { alignSelf: "stretch" },
   pill: { height: V.pill, alignItems: "center", justifyContent: "center" },
