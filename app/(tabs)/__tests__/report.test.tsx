@@ -2,6 +2,7 @@ import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { useEffect as mockUseEffect } from "react";
 import { BackHandler, Linking } from "react-native";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 
 import Report from "../report";
@@ -62,7 +63,8 @@ const diary = (id: string, date: string) =>
 // 표시 글에는 낱말을 붙이는 보이지 않는 글자가 끼어 있다 — 비교할 때 뺀다
 const shown = (text: unknown) => String(text).replace(/⁠/g, "");
 
-beforeEach(() => {
+beforeEach(async () => {
+  await AsyncStorage.clear();
   jest.clearAllMocks();
   useWeeklyBook.getState().reset();
   useDiary.setState({ diaries: [] });
@@ -119,6 +121,24 @@ describe("W1 · 공책", () => {
     );
     await fireEvent.press(view.getByTestId("book-cta"));
     expect(router.push).toHaveBeenCalledWith("/diary/d1");
+  });
+
+  it("3일 안내는 처음 두 주만 보인다", async () => {
+    const week = (startDate: string) => ({
+      ok: true,
+      data: book({ startDate, diaryCount: 2, detailed: false }),
+    });
+    for (const [startDate, shownHint] of [
+      ["2026-07-05", true],
+      ["2026-07-12", true],
+      ["2026-07-19", false],
+    ] as const) {
+      api.fetchWeeklyBook.mockResolvedValue(week(startDate));
+      const view = await render(<Report />);
+      await waitFor(() => view.getByTestId("book-cta"));
+      expect(view.queryByTestId("book-hint") != null).toBe(shownHint);
+      await view.unmount();
+    }
   });
 
   it("일기 2편인 주의 버튼은 목록을 열고, 줄을 누르면 그 일기로 간다", async () => {

@@ -29,6 +29,8 @@ import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import { useLetters } from "@/features/letter/model/letter";
+import { clearThreeDayHint } from "@/features/report/data/hintMemory";
+import { useWeeklyBook } from "@/features/report/model/weeklyBook";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
@@ -372,6 +374,9 @@ const clearUserScopedStores = (userId?: number) => {
   useCalendarSync.getState().reset();
   // 편지 목록(홈 아이콘의 점)도 그 사람의 것이다 — 진행 중 응답은 주인이 바뀌어 버려진다 (2026-10-27)
   useLetters.getState().reset();
+  // 공책에는 AI 가 쓴 그 사람의 한 주가 들어 있다 — 다음 사람에게 잠깐이라도 보이면 안 된다
+  useWeeklyBook.getState().reset();
+  void clearThreeDayHint();
 
   // 캘린더 동기화 상태는 **기기에 눕는다** — 메모리를 비우는 것만으로는 부족하다.
   // 남기면 다음 사용자가 앞 사람의 해시와 비교해 **자기 첫 동기화를 통째로
