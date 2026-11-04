@@ -1,5 +1,6 @@
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { useEffect as mockUseEffect } from "react";
+import { BackHandler, Linking } from "react-native";
 
 import { router } from "expo-router";
 
@@ -113,7 +114,9 @@ describe("W1 · 공책", () => {
     await waitFor(() => view.getByTestId("book-cta"));
 
     expect(view.getByText("수요일 일기 보기")).toBeTruthy();
-    expect(view.getByText("한 주에 3일 이상 일기를 쓰면, 리포트가 생겨요")).toBeTruthy();
+    expect(shown(view.getByTestId("book-hint").props.children)).toBe(
+      "한 주에 3일 이상 일기를 쓰면, 리포트가 생겨요",
+    );
     await fireEvent.press(view.getByTestId("book-cta"));
     expect(router.push).toHaveBeenCalledWith("/diary/d1");
   });
@@ -136,7 +139,7 @@ describe("W1 · 공책", () => {
     expect(router.push).toHaveBeenCalledWith("/diary/d2");
   });
 
-  it("일기가 전혀 없으면 버튼 없는 빈 공책이다", async () => {
+  it("일기가 전혀 없으면 빈 공책이고, 버튼은 오늘 일기로 간다", async () => {
     api.fetchWeeklyBook.mockResolvedValue({
       ok: true,
       data: book({
@@ -150,22 +153,81 @@ describe("W1 · 공책", () => {
     expect(shown(view.getByTestId("book-cover-line").props.children)).toBe(
       "일기를 쓰면 일요일에 공책이 도착해요",
     );
-    expect(view.queryByTestId("book-cta")).toBeNull();
+    expect(view.getByTestId("book-range").props.children).toBe("이번 주 공책");
     expect(view.queryByText("새 공책")).toBeNull();
+    await fireEvent.press(view.getByTestId("book-cta"));
+    expect(router.push).toHaveBeenCalledWith("/retro/confirm");
   });
 
-  it("위기 주는 도움받을 곳을 보여 주고 활기차게라고 하지 않는다", async () => {
+  it("위기 주는 눌러서 걸 수 있는 번호를 앞뒤로 두고 활기차게라고 하지 않는다", async () => {
+    const openURL = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
     api.fetchWeeklyBook.mockResolvedValue({
       ok: true,
-      data: book({ tone: "CRISIS", goodWords: null, helpResources: ["자살예방 상담전화 109"] }),
+      data: book({
+        tone: "CRISIS",
+        goodWords: null,
+        restCount: 4,
+        helpResources: ["자살예방 상담전화 109"],
+      }),
     });
     const view = await render(<Report />);
     await waitFor(() => view.getByTestId("book-cta"));
+    expect(view.queryByText("새 공책")).toBeNull();
+    expect(view.queryByText(/쉼터에/)).toBeNull();
+
     await fireEvent.press(view.getByTestId("book-cta"));
-    expect(view.getByText(/1\u2060?0\u2060?9/)).toBeTruthy();
+    await fireEvent.press(view.getAllByTestId("book-help-line")[0]!);
+    expect(openURL).toHaveBeenCalledWith("tel:109");
+
     await fireEvent.press(view.getByTestId("book-next"));
-    await fireEvent.press(view.getByTestId("book-next"));
+    expect(view.queryByTestId("book-next")).toBeNull();
+    expect(view.getAllByTestId("book-help-line")).toHaveLength(1); // 마지막 장에서도 다시 보인다
     expect(shown(view.getByTestId("book-closing").props.children)).not.toContain("활기차게");
+    openURL.mockRestore();
+  });
+
+  it("안드로이드 뒤로 가기는 공책을 덮는다", async () => {
+    const view = await render(<Report />);
+    await waitFor(() => view.getByTestId("book-cta"));
+    const add = jest.spyOn(BackHandler, "addEventListener");
+    await fireEvent.press(view.getByTestId("book-cta"));
+    const handler = add.mock.calls.find(([name]) => name === "hardwareBackPress")?.[1];
+    expect(handler).toBeDefined();
+    await act(async () => {
+      expect(handler?.({} as never)).toBe(true);
+    });
+    expect(view.getByTestId("book-cta")).toBeTruthy();
+    add.mockRestore();
+  });
+
+  it("힘든 주는 감정을 세지 않고, 해낸 일도 막대 없이 한 문장으로 말한다", async () => {
+    api.fetchWeeklyBook.mockResolvedValue({
+      ok: true,
+      data: book({
+        tone: "HARD",
+        emotions: [{ emotion: 4, count: 2, events: ["야근"] }],
+        done: { completedCount: 6, perDay: [0, 2, 1, 1, 0, 2, 0], linked: [] },
+      }),
+    });
+    const view = await render(<Report />);
+    await waitFor(() => view.getByTestId("book-cta"));
+    await fireEvent.press(view.getByTestId("book-cta")); // 바바가 본 한 주
+    await fireEvent.press(view.getByTestId("book-next")); // 감정과 있었던 일
+    expect(view.queryByText("2번")).toBeNull();
+    await fireEvent.press(view.getByTestId("book-next")); // 해낸 일
+    expect(view.getByTestId("book-done-line")).toBeTruthy();
+    expect(view.queryByTestId("book-done-count")).toBeNull();
+  });
+
+  it("색인 탭을 누르면 그 장으로 간다", async () => {
+    const view = await render(<Report />);
+    await waitFor(() => view.getByTestId("book-cta"));
+    await fireEvent.press(view.getByTestId("book-cta"));
+    await fireEvent.press(view.getByLabelText("2쪽, 해낸 일"));
+    expect(track).toHaveBeenLastCalledWith("report_page_viewed", {
+      week_start: "2026-07-19",
+      page: "done",
+    });
   });
 
   it("실패는 한 줄로 흡수한다", async () => {

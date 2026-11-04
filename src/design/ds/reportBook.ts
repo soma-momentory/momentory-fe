@@ -52,6 +52,7 @@ export const reportBook = {
   shadow: {
     book: "0px 12px 16px rgba(72,41,26,.2)",
     label: "0px 1px 2px rgba(72,41,26,.25)",
+    photo: "0px 1px 3px rgba(72,41,26,.2)",
   },
   font: fontFamily.hand,
   size: {

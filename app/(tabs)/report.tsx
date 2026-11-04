@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 
 import { TabScreen } from "@/components/ds";
@@ -7,6 +7,7 @@ import { track } from "@/features/analytics";
 import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { useDiary } from "@/features/diary/model/diary";
 import { weekEnd } from "@/features/report/model/report";
+import { clock } from "@/lib/clock";
 import { notebookOptions, useWeeklyBook, type BookPage } from "@/features/report/model/weeklyBook";
 import { NotebookPickerSheet } from "@/features/report/ui/book/NotebookPickerSheet";
 import { WeeklyBookView } from "@/features/report/ui/book/WeeklyBookView";
@@ -25,9 +26,15 @@ export default function Report() {
   const book = useWeeklyBook((s) => s.book);
   const status = useWeeklyBook((s) => s.status);
   const [picking, setPicking] = useState(false);
+  // 공책에서 일기를 보고 돌아오면 보던 공책에 그대로 있는다 — 최신 공책으로 튀지 않게
+  const backFromDiary = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
+      if (backFromDiary.current) {
+        backFromDiary.current = false;
+        return;
+      }
       void useWeeklyBook.getState().open();
     }, []),
   );
@@ -38,6 +45,7 @@ export default function Report() {
     return allDiaries.filter((d) => d.date >= book.startDate && d.date <= end);
   }, [allDiaries, book]);
 
+  const todayDiary = allDiaries.find((d) => d.date === clock.today());
   const week = book?.startDate;
   const onTurn = useCallback(
     (page: BookPage | "cover") => {
@@ -63,7 +71,14 @@ export default function Report() {
             status={status}
             diaries={diaries}
             onOpenPast={() => setPicking(true)}
-            onOpenDiary={(id) => router.push(`/diary/${id}`)}
+            onOpenDiary={(id) => {
+              backFromDiary.current = true;
+              router.push(`/diary/${id}`);
+            }}
+            writeLabel={todayDiary == null ? "오늘 일기 쓰기" : "오늘 일기 보기"}
+            onWriteDiary={() =>
+              router.push(todayDiary == null ? "/retro/confirm" : `/diary/${todayDiary.id}`)
+            }
             onTurn={onTurn}
           />
           {picking ? (

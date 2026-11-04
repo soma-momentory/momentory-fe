@@ -32,6 +32,8 @@ export const BOOK_PAGE_TITLES: Record<Exclude<BookPage, "closing">, string> = {
 /** 공책의 장 순서. 일기가 3일 미만인 주는 표지 한 장이라 안쪽 장이 없다 */
 export function bookPages(book: WeeklyBook): BookPage[] {
   if (!book.detailed) return [];
+  // 위기 안내가 나온 주는 힘든 감정을 세어 보이지 않는다 — 바바의 말과 도움받을 곳, 인사만 둔다
+  if (book.tone === "CRISIS") return ["review", "closing"];
   const pages: BookPage[] = [];
   if (book.review != null) pages.push("review");
   if (book.words.length > 0) pages.push("words");
@@ -49,7 +51,7 @@ export function bookPages(book: WeeklyBook): BookPage[] {
  */
 export function closingLines(book: WeeklyBook): [string, string] {
   if (book.tone === "CRISIS")
-    return ["이야기를 남겨 줘서 고마워요", "아무것도 하지 않아도 괜찮아요"];
+    return ["이야기를 남겨 줘서 고마워요", "오늘은 아무것도 해내지 않아도 괜찮아요"];
   const first = book.newest ? "지난 주도 고생 많았어요" : "이 주도 고생 많았어요";
   if (book.tone === "HARD") {
     return [first, book.newest ? "이번 주는 더 편안하기를 바라요" : "오늘은 더 편안하기를 바라요"];

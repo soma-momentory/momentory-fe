@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Animated, Easing, Image, StyleSheet, View } from "react-native";
+import { Animated, Easing, Image, Pressable, StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
 import { reportBook } from "@/design/ds";
@@ -84,35 +84,51 @@ export function KraftFace({ children }: { children: ReactNode }) {
 export function Notebook({
   tabCount,
   activeTab,
+  ringsHeight,
+  tabLabels,
+  onPressTab,
   children,
 }: {
   tabCount: number;
   activeTab: number;
+  tabLabels: readonly string[];
+  /** 펼쳤을 때만 눌린다 — 덮인 공책의 탭은 그림이다 */
+  onPressTab?: (index: number) => void;
+  /** 공책의 목표 높이 — 펼치고 덮는 동안 매 프레임 다시 재지 않으려고 목표값으로 그린다 */
+  ringsHeight: number;
   children: ReactNode;
 }) {
-  const [height, setHeight] = useState(0);
   return (
-    <View style={styles.book} onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
+    <View style={styles.book}>
       <View style={styles.back} />
       <View style={styles.pages} />
-      <View style={styles.tabs} pointerEvents="none">
-        {Array.from({ length: tabCount }, (_, i) => (
-          <View
-            key={i}
-            testID={i === activeTab ? "book-tab-on" : "book-tab"}
-            style={[
-              styles.tab,
-              {
-                top: size.tab.top + i * size.tab.pitch,
-                backgroundColor: i === activeTab ? color.green : color.tabs[i % color.tabs.length],
-                width: i === activeTab ? size.tab.onWidth : size.tab.width,
-              },
-            ]}
-          />
-        ))}
+      <View style={styles.tabs} pointerEvents={onPressTab == null ? "none" : "box-none"}>
+        {Array.from({ length: tabCount }, (_, i) => {
+          const tabStyle = [
+            styles.tab,
+            {
+              top: size.tab.top + i * size.tab.pitch,
+              backgroundColor: i === activeTab ? color.green : color.tabs[i % color.tabs.length],
+              width: i === activeTab ? size.tab.onWidth : size.tab.width,
+            },
+          ];
+          return (
+            <Pressable
+              key={i}
+              testID={i === activeTab ? "book-tab-on" : "book-tab"}
+              accessibilityRole="button"
+              accessibilityLabel={tabLabels[i]}
+              // 탭이 공책 밖으로 조금만 나와 있어 누르는 자리를 간격만큼 넓힌다
+              hitSlop={{ top: 5, bottom: 5, left: 4, right: 18 }}
+              disabled={onPressTab == null}
+              onPress={() => onPressTab?.(i)}
+              style={tabStyle}
+            />
+          );
+        })}
       </View>
       <View style={StyleSheet.absoluteFill}>{children}</View>
-      <Rings height={height} />
+      <Rings height={ringsHeight} />
     </View>
   );
 }
@@ -121,16 +137,18 @@ function Rings({ height }: { height: number }) {
   const { pitch, width, out } = size.rings;
   const count = Math.max(0, Math.floor((height - 12) / pitch));
   if (count === 0) return null;
+  // 나머지를 고리 사이에 고르게 나눠 위아래 여백을 맞춘다
+  const step = (height - 12) / count;
   return (
     <View
       pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={[styles.rings, { left: -out, width, height: count * pitch }]}
+      style={[styles.rings, { left: -out, width, height: height - 12 }]}
     >
-      <Svg width={width} height={count * pitch} viewBox={`0 0 ${width} ${count * pitch}`}>
+      <Svg width={width} height={height - 12} viewBox={`0 0 ${width} ${height - 12}`}>
         {Array.from({ length: count }, (_, i) => (
-          <G key={i} y={i * pitch}>
+          <G key={i} y={i * step + (step - pitch) / 2}>
             <Path
               d="M4.6 14 C5 17.6 10 18.6 15 18"
               fill="none"
