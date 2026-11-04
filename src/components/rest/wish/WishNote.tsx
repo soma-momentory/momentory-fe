@@ -6,7 +6,12 @@ import { wishScene } from "@/design/ds";
 
 const M = wishScene.memo;
 
-/** 소원이 적힌 메모지 — 홈 · 일기 종이와 같은 판판한 면에 체크 테이프를 붙인다 */
+/**
+ * 소원이 적힌 메모지 — 홈 · 일기 종이와 같은 판판한 면에 체크 테이프를 붙인다.
+ *
+ * 종이와 테이프만 기울이고 글과 버튼은 곧게 둔다. 통째로 기울이면 iOS 가 둥근 테두리의 가장자리를
+ * 다듬지 않아 버튼이 계단처럼 보였다.
+ */
 export function WishNote({
   children,
   tilt = -1,
@@ -18,9 +23,11 @@ export function WishNote({
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={[styles.note, { transform: [{ rotate: `${tilt}deg` }] }, style]}>
-      <View style={styles.tape}>
-        <MaskingTape color={M.tape} stripeColor={M.tapeStripe} />
+    <View style={[styles.note, style]}>
+      <View style={[styles.paper, { transform: [{ rotate: `${tilt}deg` }] }]}>
+        <View style={styles.tape}>
+          <MaskingTape color={M.tape} stripeColor={M.tapeStripe} />
+        </View>
       </View>
       {children}
     </View>
@@ -28,10 +35,13 @@ export function WishNote({
 }
 
 const styles = StyleSheet.create({
-  note: {
+  note: { position: "absolute", left: M.side, right: M.side },
+  paper: {
     position: "absolute",
-    left: M.side,
-    right: M.side,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: M.paper,
     borderRadius: M.radius,
     shadowColor: M.shadow,
@@ -47,6 +57,5 @@ const styles = StyleSheet.create({
     width: M.tapeWidth,
     height: M.tapeHeight,
     transform: [{ rotate: "-1.5deg" }],
-    zIndex: 2,
   },
 });

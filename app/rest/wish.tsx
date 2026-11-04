@@ -17,6 +17,7 @@ import {
   SceneGuideButton,
   ScenePillButton,
 } from "@/components/rest/scene/SceneChrome";
+import { VintagePressable } from "@/components/rest/scene/VintagePressable";
 import { WishCard } from "@/components/rest/wish/WishCard";
 import { WishCare } from "@/components/rest/wish/WishCare";
 import { WishConfirmSheet } from "@/components/rest/wish/WishConfirmSheet";
@@ -84,7 +85,7 @@ export default function WishScreen() {
   const [asking, setAsking] = useState(false);
   const [reportedId, setReportedId] = useState<number | null>(null);
   const [hop, setHop] = useState(0);
-  const [turn, setTurn] = useState(0);
+  const [noteAt, setNoteAt] = useState<number | null>(null);
   const [memoOpacity] = useState(() => new Animated.Value(1));
   const joinedInBatch = useRef(0);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -129,28 +130,43 @@ export default function WishScreen() {
     }, [load]),
   );
 
-  // 쪽지에는 가벼운 소원만 돌아간다
-  const lights = pond?.wishes.filter((w) => w.light) ?? [];
-  const noted = lights.length > 0 ? lights[turn % lights.length]! : null;
+  const wishes = pond?.wishes ?? [];
+  // 쪽지에 뜬 소원의 자리 — 연꽃을 누르면 그 꽃의 소원으로 바뀐다. 앞 다섯 자리가 큰 꽃 다섯 송이다
+  const firstLight = wishes.findIndex((w) => w.light);
+  const noteIndex = noteAt != null && noteAt < wishes.length ? noteAt : firstLight;
+  const noted = noteIndex >= 0 ? wishes[noteIndex]! : null;
 
-  useEffect(() => {
-    if (reduced || view !== "pond" || lights.length < 2) return;
-    const id = setInterval(() => {
+  const showNote = useCallback(
+    (index: number) => {
       Animated.timing(memoOpacity, {
         toValue: 0,
-        duration: wishSceneMotion.memoFade,
+        duration: wishSceneMotion.memoFade / 2,
         useNativeDriver: true,
       }).start(() => {
-        setTurn((t) => t + 1);
+        setNoteAt(index);
         Animated.timing(memoOpacity, {
           toValue: 1,
-          duration: wishSceneMotion.memoFade,
+          duration: wishSceneMotion.memoFade / 2,
           useNativeDriver: true,
         }).start();
       });
-    }, wishSceneMotion.memoTurn);
-    return () => clearInterval(id);
-  }, [reduced, view, lights.length, memoOpacity]);
+    },
+    [memoOpacity],
+  );
+
+  const pickFlower = (index: number) => {
+    setJustPosted(false);
+    showNote(index);
+  };
+
+  // 가만히 두면 가벼운 소원만 차례로 돈다. 꽃을 누르면 그 자리부터 다시 잰다
+  const nextLight = wishes.findIndex((w, i) => i > noteIndex && w.light);
+  const following = nextLight >= 0 ? nextLight : firstLight;
+  useEffect(() => {
+    if (reduced || view !== "pond" || following < 0 || following === noteIndex) return;
+    const id = setTimeout(() => showNote(following), wishSceneMotion.memoTurn);
+    return () => clearTimeout(id);
+  }, [reduced, view, following, noteIndex, showNote]);
 
   useEffect(
     () => () => {
@@ -314,8 +330,7 @@ export default function WishScreen() {
   };
   const hasMine = pond?.hasFloatingWish === true || justPosted;
   const mine = artPoint(wishScene.mine.x, wishScene.mine.y, width, height);
-  const flowerCount = Math.min(pond?.wishes.length ?? 0, wishScene.spots.length);
-  const onFlower = noted == null ? -1 : turn % Math.max(flowerCount, 1);
+  const flowerCount = Math.min(wishes.length, wishScene.spots.length);
 
   return (
     <Screen grid={false} padded={false} edges={[]}>
@@ -333,7 +348,7 @@ export default function WishScreen() {
                   y={at.y}
                   width={t.width * k}
                   still
-                  onPress={() => enter()}
+                  onPress={() => pickFlower((flowerCount + i) % wishes.length)}
                   label="소원 보기"
                 />
               );
@@ -346,8 +361,8 @@ export default function WishScreen() {
                   x={at.x}
                   y={at.y}
                   width={s.width * k}
-                  glow={i === onFlower ? "bright" : "soft"}
-                  onPress={() => enter()}
+                  glow={i === noteIndex ? "bright" : "soft"}
+                  onPress={() => pickFlower(i)}
                   label="소원 보기"
                 />
               );
@@ -387,7 +402,7 @@ export default function WishScreen() {
               >
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`${noted.content} ${WISH_JOIN_ON_NOTE}`}
+                  accessibilityLabel={`${noted.content} 소원 보기`}
                   onPress={() => enter(noted)}
                 >
                   <WishNote style={styles.lineNote}>
@@ -402,11 +417,18 @@ export default function WishScreen() {
                     <Text variant="label1Hand" color={restScene.mutedInk} style={styles.center}>
                       {wishSign(noted.author)}
                     </Text>
-                    <View style={styles.joinChip}>
+                    <VintagePressable
+                      accessibilityLabel={WISH_JOIN_ON_NOTE}
+                      onPress={() => enter(noted)}
+                      face={restScene.accent}
+                      radius={radius.full}
+                      style={styles.joinChip}
+                      faceStyle={styles.joinFace}
+                    >
                       <Text variant="label1Hand" color={restScene.ink}>
                         {WISH_JOIN_ON_NOTE}
                       </Text>
-                    </View>
+                    </VintagePressable>
                   </WishNote>
                 </Pressable>
               </Animated.View>
@@ -556,15 +578,8 @@ const styles = StyleSheet.create({
     lineHeight: wishScene.memo.line.lineHeight,
   },
   center: { textAlign: "center" },
-  joinChip: {
-    marginTop: space.xs,
-    paddingHorizontal: space.xl,
-    paddingVertical: space.xs,
-    borderRadius: radius.full,
-    borderWidth: 2,
-    borderColor: restScene.ink,
-    backgroundColor: restScene.accent,
-  },
+  joinChip: { marginTop: space.xs },
+  joinFace: { paddingHorizontal: space.xl, paddingVertical: space.xs },
   mineLabel: {
     position: "absolute",
     width: 80,

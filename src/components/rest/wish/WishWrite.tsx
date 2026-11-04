@@ -79,9 +79,11 @@ export function WishWrite({
 
       <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, space.md) }]}>
         {warning != null ? (
-          <Text variant="label1" color={wishScene.warn} style={styles.warning}>
-            {warning}
-          </Text>
+          <View style={styles.warning}>
+            <Text variant="label1" color={restScene.ink} style={styles.warningText}>
+              {warning}
+            </Text>
+          </View>
         ) : null}
         <ScenePillButton
           tone="accent"
@@ -127,5 +129,12 @@ const styles = StyleSheet.create({
   },
   count: { textAlign: "right" },
   foot: { marginTop: "auto", paddingHorizontal: space.xl, gap: space.sm },
-  warning: { textAlign: "center" },
+  // 밤 배경 위에서 놓치지 않게 바바 말풍선과 같은 면에 얹는다
+  warning: {
+    backgroundColor: wishScene.bubble.color,
+    borderRadius: wishScene.bubble.radius,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+  },
+  warningText: { textAlign: "center" },
 });

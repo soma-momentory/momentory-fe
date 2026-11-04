@@ -124,7 +124,7 @@ export function WishCard({
         ]}
       />
 
-      <WishNote key={wish.id} tilt={-0.7} style={[styles.note, { top: barTop + space.xl2 }]}>
+      <WishNote key={wish.id} tilt={-0.7} style={[styles.note, { top: barTop + space.xl5 }]}>
         <WishAuthorRow name={wishSign(wish.author)} />
         <Text
           variant="title1Hand"

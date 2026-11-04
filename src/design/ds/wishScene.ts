@@ -48,7 +48,6 @@ export const wishScene = {
   /** 넘기기 원 */
   nav: { size: 44, bottom: 88 },
   toast: { face: "rgba(36,31,25,0.92)", ink: "#FFF7EE" },
-  warn: "#FFE7C4",
   /** 위기 안내의 첫 줄 */
   careFace: "#F0C27E",
   bubble: { color: "#EBDCC7", radius: 26 },

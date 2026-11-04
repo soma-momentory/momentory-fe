@@ -102,6 +102,25 @@ describe("소원 빌기", () => {
     ]);
   });
 
+  it("연꽃을 누르면 그 꽃의 소원이 쪽지에 뜨고, 소원 한 장으로 넘어가지 않는다", async () => {
+    const r = await open();
+    expect(r.getByText("소원 1")).toBeTruthy();
+    await fireEvent.press(r.getAllByLabelText("소원 보기")[1]!);
+    await wait(1000);
+
+    expect(r.getByText("소원 2")).toBeTruthy();
+    expect(r.queryByText("소원 1")).toBeNull();
+    expect(r.queryByRole("button", { name: "꾸욱 눌러 같이 빌기" })).toBeNull();
+  });
+
+  it("쪽지는 가벼운 소원만 차례로 돌고, 무거운 소원은 건너뛴다", async () => {
+    const r = await open(pond({ wishes: [wish(1), wish(2, { light: false }), wish(3)] }));
+    await wait(10_500);
+    expect(r.getByText("소원 3")).toBeTruthy();
+    await wait(10_500);
+    expect(r.getByText("소원 1")).toBeTruthy();
+  });
+
   it("바바의 소원은 바바의 소원이라고 적는다", async () => {
     const r = await open(
       pond({ wishes: [wish(-1, { author: "baba", content: "귤이 달면 좋겠어요" })] }),
