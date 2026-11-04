@@ -1,8 +1,14 @@
+import type { ComponentType } from "react";
+
 import type { RestContentId } from "@/features/rest/model/contents";
+
+import { RestLedgerArt } from "./weekly/RestLedgerArt";
 
 export type RestTheme = {
   /** 창을 채우는 배경 — 그 콘텐츠 안에서 쓰는 장면 그대로다 */
-  scene: number;
+  scene?: number;
+  /** 그림 파일 대신 코드로 그리는 창 */
+  Art?: ComponentType;
   /** 세로 그림의 어디를 창에 보일지(`contentPosition`) */
   position?: `${number}%`;
   /** 배경 아래에 까는 땅 그림 */
@@ -61,8 +67,10 @@ export const REST_THEMES: Record<RestContentId, RestTheme> = {
     scene: require("../../../assets/meditation/wave.webp"),
     position: "47%",
   },
+  weeklyHappiness: { Art: RestLedgerArt },
   wish: {
     scene: require("../../../assets/rest/wish.webp"),
+    position: "78%",
   },
 };
 

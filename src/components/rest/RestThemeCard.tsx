@@ -21,12 +21,15 @@ export function RestThemeCard({ item }: { item: RestContent }) {
       style={[styles.card, { backgroundColor: restThemeCard.paper[item.id] }]}
     >
       <View style={styles.window}>
-        <Image
-          source={theme.scene}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          contentPosition={theme.position == null ? "center" : { top: theme.position }}
-        />
+        {theme.Art != null ? <theme.Art /> : null}
+        {theme.scene != null ? (
+          <Image
+            source={theme.scene}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            contentPosition={theme.position == null ? "center" : { top: theme.position }}
+          />
+        ) : null}
         {theme.ground != null ? (
           <Image source={theme.ground} style={styles.ground} contentFit="cover" />
         ) : null}

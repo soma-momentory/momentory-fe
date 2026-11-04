@@ -15,6 +15,8 @@ const PHOTOS: Record<RestContentId, number> = {
   // body-release illustration; the HTML draft used a treasure-box image here.
   bodyRelease: require("../../../assets/rest/baba-sleep.webp"),
   meditation: require("../../../assets/meditation/wave.webp"),
+  // 쉼 추천 · 소개 그림에 넣지 않아 지금은 그려지지 않는다
+  weeklyHappiness: require("../../../assets/rest/treasures.webp"),
 };
 
 const PHOTO_BACKGROUNDS: Record<RestContentId, string> = {
@@ -24,6 +26,7 @@ const PHOTO_BACKGROUNDS: Record<RestContentId, string> = {
   treasureBox: homeV2.color.today,
   bodyRelease: homeV2.color.greenSoft,
   meditation: meditation.scene.wave,
+  weeklyHappiness: homeV2.color.date,
 };
 
 /**

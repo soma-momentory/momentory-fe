@@ -271,6 +271,7 @@ export const routeSections: readonly RouteSection[] = [
       { path: "/rest/treasures", title: "지난 보물" },
       { path: "/rest/body-release", title: "몸에 힘 빼기" },
       { path: "/rest/meditation", title: "3분 명상" },
+      { path: "/rest/weekly-happiness", title: "주간 행복" },
       { path: "/rest/records", title: "쉼터 이용 기록", query: { content: "sense_pond" } },
     ],
   },

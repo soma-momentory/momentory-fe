@@ -244,7 +244,7 @@ app/letter/{_layout, index, [date], time}.tsx
                     데이터는 `features/letter/` · 서버 `/api/v1/letters` · 홈 상단 편지 아이콘이 옛 알림함 자리다
 app/diary/{_layout, [id]/index}.tsx = A3 · A3-c
                   ← `[id]/edit`(A4)은 2026-08-20 에 지웠다(DESIGN.md N2 · PRODUCT.md #24·26)
-app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, treasures, body-release, meditation, records}.tsx
+app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, treasures, body-release, meditation, weekly-happiness, records}.tsx
                   = R2(날짜별 바람카드) · 감각연못 · 걱정상자(+ 맡겨둔 걱정) · 오늘의 보물함(+ 지난 보물) · 몸에 힘 빼기 · 3분 명상
                     · 쉼터별 이용 기록(`?content=`)
                   ← 쉼 콘텐츠 넷이 모두 화면을 가졌다(2026-10-05). 쓴 글을 서버에 남기는 것은 보물함

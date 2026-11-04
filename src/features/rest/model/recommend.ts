@@ -120,7 +120,7 @@ export function recommendRest(
   return {
     content: pickOne(
       // 소원 연꽃은 권하지 않는다 — 쉼을 권하는 자리에 남의 글을 올리지 않는다
-      REST_CONTENTS.filter((c) => c.id !== "wish").map((c) => c.id),
+      REST_CONTENTS.filter((c) => c.id !== "wish" && c.id !== "weeklyHappiness").map((c) => c.id),
       random,
     ),
     basis: "random",
