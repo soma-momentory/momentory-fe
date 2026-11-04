@@ -442,6 +442,44 @@ export const restScene = {
 } as const;
 
 /**
+ * 쉼터 3분 명상 (2026-11-04 · Design 시안 값). 어두운 그림 위에 크림빛 글자가 서고, 정보 시트와 멈춤
+ * 확인은 크림 면 위 잉크 글자다. 버튼 면 · 잉크는 `restScene` 을 그대로 쓴다.
+ */
+export const meditation = {
+  /** 풍경마다 그림이 뜨기 전에 보이는 바탕 — 그림의 주된 빛깔 */
+  scene: {
+    wave: "#14233A",
+    forest: "#16231F",
+    sunlight: "#8A5068",
+    rain: "#020E2E",
+    lantern: "#3A2A26",
+  },
+  /** 그림 위 글자 — 이름 · 시계 · 자막 */
+  onScene: "#FFF7EE",
+  /** 그림 위 버금 글자 — 부제 · 일시정지 중의 자막 */
+  onSceneSub: "#EFE3D3",
+  onScenePaused: "#D9CDBD",
+  /** 고른 풍경의 이름 */
+  onScenePicked: "#FFE2B0",
+  /** 그림 위 글자가 묻히지 않게 두르는 그림자 */
+  textShadow: "rgba(0,0,0,0.6)",
+  /** 일시정지 · 멈춤 확인 · 정보 시트 뒤의 막 */
+  dimPaused: "rgba(20,14,8,0.35)",
+  dimAsk: "rgba(20,14,8,0.55)",
+  dimInfo: "rgba(8,12,16,0.5)",
+  /** 크림 면 위 버금 글자 */
+  caption: "#6B5C4A",
+  /** 크림 면 위 항목 이름 */
+  term: "#7C6C5B",
+  /** 정보 시트의 출처 링크 */
+  link: "#56755F",
+  /** 제품용 재구성 칸의 바탕 */
+  noteFace: "rgba(140,122,102,0.12)",
+  /** 음성 로딩 실패 카드의 면 */
+  alertFace: "rgba(255,247,238,0.92)",
+} as const;
+
+/**
  * 앱 화면의 **번지지 않는 아래쪽 그림자** (2026-10-05 · 사용자 요청).
  *
  * 쉼터 안 빈티지 버튼(`restScene.shadow`)의 결을 앱 화면에 맞게 **옅게** 옮겼다 — 잉크

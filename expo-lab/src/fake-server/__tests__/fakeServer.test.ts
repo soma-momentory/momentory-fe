@@ -161,7 +161,13 @@ describe.each(datasets.map((d) => d.id))("데이터 세트 %s", (datasetId) => {
       expect((await fetchLetter(letters.data[0].date)).ok).toBe(true);
     }
 
-    for (const content of ["sense_pond", "worry_box", "treasure_box", "body_release"] as const) {
+    for (const content of [
+      "sense_pond",
+      "worry_box",
+      "treasure_box",
+      "body_release",
+      "meditation",
+    ] as const) {
       expect((await fetchRestRecords(content)).ok).toBe(true);
     }
     expect((await fetchTreasures()).ok).toBe(true);

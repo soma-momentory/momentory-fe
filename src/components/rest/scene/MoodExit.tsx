@@ -29,7 +29,7 @@ import { ScenePillButton } from "./SceneChrome";
  * 끊기지 않는다(2026-10-08 · 사용자와 정함).
  *
  * 쪽지는 걱정상자의 카피바라 쪽지와 같은 결이다 — 종이색 면 · 잉크 선 · 단단한 그림자 · 손글씨 ·
- * 「-카피바라-」. 답 셋은 쪽지 안에 표식(해 · 얼굴 · 구름)과 함께 가로로 놓인다.
+ * 「-바바-」. 답 셋은 쪽지 안에 표식(해 · 얼굴 · 구름)과 함께 가로로 놓인다.
  *
  * **건너뛰기가 없다** — 나가는 버튼은 하나를 고른 뒤에 붙는다. 고르면 그 칸에 인주빛 도장이
  * 꾹 찍히고 빛 알갱이가 떠오른다. **나가기 전까지 몇 번이고 다시 고를 수 있다.** 서버로는 화면을
@@ -185,7 +185,7 @@ export function MoodExit({
             })}
           </View>
           <Text variant="label1Hand" color={labelColor.alternative} style={styles.sign}>
-            -카피바라-
+            -바바-
           </Text>
         </View>
       </Animated.View>

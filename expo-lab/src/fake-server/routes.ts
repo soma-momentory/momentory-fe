@@ -190,6 +190,7 @@ const REST_CONTENTS: readonly RestContent[] = [
   "WORRY_BOX",
   "TREASURE_BOX",
   "BODY_RELEASE",
+  "MEDITATION",
 ];
 const REST_MOODS: readonly RestMood[] = ["BETTER", "SAME", "UNSURE"];
 const INQUIRY_CATEGORIES = ["BUG", "SUGGESTION", "ACCOUNT", "ETC"];

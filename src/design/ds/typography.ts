@@ -195,6 +195,11 @@ export const text = {
    * 24/32 · 28/38 의 행간비 1.33 을 그대로 이었다). `DESIGN.md` §2.
    */
   title1Hand: style("hand", 32, 42),
+  /** 쉼터 3분 명상 — 풍경 이름 42/54 · 부제 25/34 · 시계 40/52 · 자막 20/32(Design 시안 값) */
+  meditationName: style("hand", 42, 54),
+  meditationSub: style("hand", 25, 34),
+  meditationClock: style("hand", 40, 52),
+  meditationCue: style("hand", 20, 32),
   /** 24/32 손글씨 — 탭 제목 셋(쉼터·보관함·마이). 같은 크기의 `title3` 와 짝이다 */
   title3Hand: style("hand", 24, 32),
   /**

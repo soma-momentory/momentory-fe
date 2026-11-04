@@ -64,6 +64,7 @@ export const generatedRoutes: readonly GeneratedRoute[] = [
   { path: "/my/rest", file: "app/my/rest.tsx", group: null, params: [] },
   { path: "/rest/body-release", file: "app/rest/body-release.tsx", group: null, params: [] },
   { path: "/rest/cards", file: "app/rest/cards/index.tsx", group: null, params: [] },
+  { path: "/rest/meditation", file: "app/rest/meditation.tsx", group: null, params: [] },
   { path: "/rest/records", file: "app/rest/records.tsx", group: null, params: [] },
   { path: "/rest/sense-pond", file: "app/rest/sense-pond.tsx", group: null, params: [] },
   { path: "/rest/treasure-box", file: "app/rest/treasure-box.tsx", group: null, params: [] },
