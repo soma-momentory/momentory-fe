@@ -954,7 +954,7 @@ R1 아래 쉼 콘텐츠의 첫 항목이에요(`app/rest/sense-pond.tsx` · `com
 
 ### 소원 연꽃 (2026-11-04 도입)
 
-R1 쉼 콘텐츠의 맨 앞 칸이에요. 다른 칸과 같은 크기이고, 칸이 다섯이라 마지막 줄의 몸에 힘 빼기 옆은 비어요. 쉼 추천과 온보딩 소개 그림에는 넣지 않아요(`app/rest/wish.tsx` · `wish-mine.tsx` · `components/rest/wish/` · 값 `ds/wishScene.ts` · 시안 `analysis/2026-11-02-wish/simple.html`).
+R1 쉼 콘텐츠의 맨 뒤 칸이에요(사용자 결정 2026-11-04). 다른 칸과 같은 크기예요. 쉼 추천과 온보딩 소개 그림에는 넣지 않아요(`app/rest/wish.tsx` · `wish-mine.tsx` · `components/rest/wish/` · 값 `ds/wishScene.ts` · 시안 `analysis/2026-11-02-wish/simple.html`).
 
 귤 없이 누구나 **하루에 하나**, 「익명의 누군가」로 **7일 동안** 소원을 띄워요. 흐름은 두 갈래예요 — 보는 사람은 **연못 → 소원 10장(꾸욱 눌러 같이 빌기) → 연못**, 비는 사람은 **연못 → 이용 규칙(처음 한 번) → 쓰기 → AI 심사 → 띄우기 전 확인 → 연못에 내 꽃**.
 

@@ -11,7 +11,7 @@
  */
 import type { IconName } from "@/components/ds";
 
-export type RestContentId = "wish" | "sensePond" | "worryBox" | "treasureBox" | "bodyRelease";
+export type RestContentId = "sensePond" | "worryBox" | "treasureBox" | "bodyRelease" | "wish";
 
 export type RestContent = {
   id: RestContentId;
@@ -50,14 +50,6 @@ export type RestContent = {
 
 export const REST_CONTENTS: readonly RestContent[] = [
   {
-    id: "wish",
-    title: "소원 연꽃",
-    duration: "1분",
-    description: "다른 사람 소원을 같이 빌고\n내 소원도 띄워봐요",
-    icon: "wave",
-    route: "/rest/wish",
-  },
-  {
     id: "sensePond",
     title: "감각연못",
     duration: "1~2분",
@@ -88,6 +80,14 @@ export const REST_CONTENTS: readonly RestContent[] = [
     description: "몸에 힘을 줬다가\n천천히 풀어봐요",
     icon: "capybara-rest",
     route: "/rest/body-release",
+  },
+  {
+    id: "wish",
+    title: "소원 연꽃",
+    duration: "1분",
+    description: "다른 사람 소원을 같이 빌고\n내 소원도 띄워봐요",
+    icon: "wave",
+    route: "/rest/wish",
   },
 ];
 
