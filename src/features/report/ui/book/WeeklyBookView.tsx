@@ -54,6 +54,8 @@ import {
 type Props = {
   book: WeeklyBook | null;
   status: WeeklyBookStatus;
+  /** 3일 안내를 보여 주는가 */
+  showHint: boolean;
   /** 그 주의 일기 — 일기가 적은 주의 버튼이 쓴다 */
   diaries: readonly Diary[];
   onOpenPast: () => void;
@@ -88,6 +90,7 @@ const rangeOf = (book: WeeklyBook) => {
 export function WeeklyBookView({
   book,
   status,
+  showHint,
   diaries,
   onOpenPast,
   onOpenDiary,
@@ -158,7 +161,7 @@ export function WeeklyBookView({
   };
 
   const navHeight = layout.tabBar + Math.max(insets.bottom, layout.minBottomInset);
-  const hasHint = book != null && !book.detailed && book.diaryCount > 0;
+  const hasHint = book != null && showHint;
   const closedTop = insets.top + TOP_ROW + 10;
   const closedBottom = navHeight + CTA_HEIGHT + (hasHint ? HINT_HEIGHT : 0) + 14;
   const roomHeight = height - closedTop - closedBottom;

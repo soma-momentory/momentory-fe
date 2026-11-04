@@ -25,6 +25,7 @@ export default function Report() {
   const allDiaries = useDiary((s) => s.diaries);
   const book = useWeeklyBook((s) => s.book);
   const status = useWeeklyBook((s) => s.status);
+  const showHint = useWeeklyBook((s) => s.showHint);
   const [picking, setPicking] = useState(false);
   // 공책에서 일기를 보고 돌아오면 보던 공책에 그대로 있는다 — 최신 공책으로 튀지 않게
   const backFromDiary = useRef(false);
@@ -69,6 +70,7 @@ export default function Report() {
             key={week ?? "loading"}
             book={book}
             status={status}
+            showHint={showHint}
             diaries={diaries}
             onOpenPast={() => setPicking(true)}
             onOpenDiary={(id) => {

@@ -7,6 +7,7 @@ import {
   type WeeklyBook,
   type WeeklyBookFailureCode,
 } from "@/features/report/data/weeklyBookApi";
+import { takeThreeDayHint } from "@/features/report/data/hintMemory";
 import { weekEnd } from "@/features/report/model/report";
 import { clock } from "@/lib/clock";
 import { formatKoreanDateShort } from "@/lib/day";
@@ -45,6 +46,8 @@ export function bookPages(book: WeeklyBook): BookPage[] {
   return pages;
 }
 
+const REST_MANY = 5;
+
 /**
  * 마지막 인사. 「지난 주」는 가장 최근 공책에만 맞는 말이라 예전 공책은 「이 주」로 쓴다. 힘든 주에 「활기차게」는
  * 재촉으로 들리므로 빼고, 위기 안내가 나온 주는 아무것도 권하지 않는다.
@@ -53,7 +56,8 @@ export function closingLines(book: WeeklyBook): [string, string] {
   if (book.tone === "CRISIS")
     return ["이야기를 남겨 줘서 고마워요", "오늘은 아무것도 해내지 않아도 괜찮아요"];
   const first = book.newest ? "지난 주도 고생 많았어요" : "이 주도 고생 많았어요";
-  if (book.tone === "HARD") {
+  // 쉼터를 자주 찾은 주에 「활기차게」는 그 주를 안 본 말처럼 들린다
+  if (book.tone === "HARD" || book.restCount >= REST_MANY) {
     return [first, book.newest ? "이번 주는 더 편안하기를 바라요" : "오늘은 더 편안하기를 바라요"];
   }
   return [first, book.newest ? "이번 주도 활기차게 보내 봐요!" : "오늘도 활기차게 보내 봐요!"];
@@ -98,6 +102,8 @@ export type WeeklyBookStatus = "idle" | "loading" | "ready" | "failed";
 
 type WeeklyBookStore = {
   book: WeeklyBook | null;
+  /** 일기가 적은 주의 3일 안내를 이 공책에 보여 주는가 — 처음 두 주만(`hintMemory.ts`) */
+  showHint: boolean;
   status: WeeklyBookStatus;
   failure: WeeklyBookFailureCode | null;
   /** 화면에 들어올 때 — 서버가 고른 가장 최근 공책을 연다 */
@@ -115,11 +121,18 @@ export const useWeeklyBook = create<WeeklyBookStore>((set) => {
     set({ status: "loading" });
     const result = await fetchWeeklyBook(date);
     if (token !== latest) return;
-    if (result.ok) set({ book: result.data, status: "ready", failure: null });
-    else set({ status: "failed", failure: result.code });
+    if (result.ok) {
+      const book = result.data;
+      // 안내가 있고 없고에 따라 공책 크기가 달라지므로 공책과 함께 정해서 한 번에 그린다
+      const short = !book.detailed && book.diaryCount > 0;
+      const showHint = short ? await takeThreeDayHint(book.startDate) : false;
+      if (token !== latest) return;
+      set({ book, showHint, status: "ready", failure: null });
+    } else set({ status: "failed", failure: result.code });
   };
   return {
     book: null,
+    showHint: false,
     status: "idle",
     failure: null,
     open: () => load(null),
@@ -129,7 +142,7 @@ export const useWeeklyBook = create<WeeklyBookStore>((set) => {
     },
     reset: () => {
       latest += 1;
-      set({ book: null, status: "idle", failure: null });
+      set({ book: null, showHint: false, status: "idle", failure: null });
     },
   };
 });

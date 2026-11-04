@@ -80,6 +80,11 @@ describe("마지막 인사", () => {
   it("예전 공책에는 지난 주라고 쓰지 않는다", () => {
     expect(closingLines(book({ newest: false })).join()).not.toContain("지난 주");
   });
+  it("쉼터를 다섯 번 넘게 찾은 주에는 활기차게를 쓰지 않는다", () => {
+    expect(closingLines(book({ restCount: 4 })).join()).toContain("활기차게");
+    expect(closingLines(book({ restCount: 5 })).join()).toContain("편안하기를");
+    expect(closingLines(book({ restCount: 5, newest: false })).join()).toContain("오늘은");
+  });
   it("힘든 주에는 활기차게를 쓰지 않는다", () => {
     expect(closingLines(book({ tone: "HARD" })).join()).not.toContain("활기차게");
   });
