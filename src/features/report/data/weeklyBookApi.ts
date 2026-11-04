@@ -85,7 +85,8 @@ export type WeeklyBookResult =
   { ok: true; data: WeeklyBook } | { ok: false; code: WeeklyBookFailureCode };
 
 type Json = Record<string, unknown>;
-const isObject = (v: unknown): v is Json => typeof v === "object" && v !== null && !Array.isArray(v);
+const isObject = (v: unknown): v is Json =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
 const list = (v: unknown): Json[] => (Array.isArray(v) ? v.filter(isObject) : []);
 const strings = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((s): s is string => typeof s === "string") : [];
@@ -150,7 +151,14 @@ export function parseWeeklyBook(value: unknown): WeeklyBook | null {
       const said = text(w.text);
       return said == null
         ? []
-        : [{ date: String(w.date), label: text(w.label), fromLetter: w.fromLetter === true, text: said }];
+        : [
+            {
+              date: String(w.date),
+              label: text(w.label),
+              fromLetter: w.fromLetter === true,
+              text: said,
+            },
+          ];
     }),
     emotions: list(value.emotions).flatMap((e) => {
       const emotion = emotionOf(e.emotion);
@@ -160,7 +168,15 @@ export function parseWeeklyBook(value: unknown): WeeklyBook | null {
       const emotion = emotionOf(m.emotion);
       return emotion == null
         ? []
-        : [{ date: String(m.date), emotion, event: text(m.event), tasks: strings(m.tasks), betterRest: restOf(m.betterRest) }];
+        : [
+            {
+              date: String(m.date),
+              emotion,
+              event: text(m.event),
+              tasks: strings(m.tasks),
+              betterRest: restOf(m.betterRest),
+            },
+          ];
     }),
     rest: {
       ...tally(rest),
@@ -171,7 +187,11 @@ export function parseWeeklyBook(value: unknown): WeeklyBook | null {
       soFar:
         soFar == null
           ? null
-          : { content: restOf(soFar.content), answered: count(soFar.answered), better: count(soFar.better) },
+          : {
+              content: restOf(soFar.content),
+              answered: count(soFar.answered),
+              better: count(soFar.better),
+            },
     },
     done: {
       completedCount: count(done.completedCount),

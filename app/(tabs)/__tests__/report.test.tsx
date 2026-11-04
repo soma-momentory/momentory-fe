@@ -25,7 +25,9 @@ jest.mock("@/features/analytics", () => ({
   track: jest.fn(),
 }));
 
-const api = jest.requireMock("@/features/report/data/weeklyBookApi") as { fetchWeeklyBook: jest.Mock };
+const api = jest.requireMock("@/features/report/data/weeklyBookApi") as {
+  fetchWeeklyBook: jest.Mock;
+};
 
 const book = (over: Partial<WeeklyBook> = {}): WeeklyBook => ({
   startDate: "2026-07-19",
@@ -82,7 +84,10 @@ describe("W1 · 공책", () => {
 
     await fireEvent.press(view.getByTestId("book-cta"));
     expect(view.getByTestId("book-tab-on")).toBeTruthy();
-    expect(track).toHaveBeenCalledWith("report_page_viewed", { week_start: "2026-07-19", page: "review" });
+    expect(track).toHaveBeenCalledWith("report_page_viewed", {
+      week_start: "2026-07-19",
+      page: "review",
+    });
 
     await fireEvent.press(view.getByTestId("book-next")); // 해낸 일
     await fireEvent.press(view.getByTestId("book-next")); // 마지막 인사
@@ -114,8 +119,13 @@ describe("W1 · 공책", () => {
   });
 
   it("일기 2편인 주의 버튼은 목록을 열고, 줄을 누르면 그 일기로 간다", async () => {
-    api.fetchWeeklyBook.mockResolvedValue({ ok: true, data: book({ diaryCount: 2, detailed: false }) });
-    useDiary.setState({ diaries: [diary("d1", "2026-07-20"), diary("d2", "2026-07-23"), diary("old", "2026-07-10")] });
+    api.fetchWeeklyBook.mockResolvedValue({
+      ok: true,
+      data: book({ diaryCount: 2, detailed: false }),
+    });
+    useDiary.setState({
+      diaries: [diary("d1", "2026-07-20"), diary("d2", "2026-07-23"), diary("old", "2026-07-10")],
+    });
     const view = await render(<Report />);
     await waitFor(() => view.getByTestId("book-cta"));
 
@@ -129,11 +139,17 @@ describe("W1 · 공책", () => {
   it("일기가 전혀 없으면 버튼 없는 빈 공책이다", async () => {
     api.fetchWeeklyBook.mockResolvedValue({
       ok: true,
-      data: book({ diaryCount: 0, detailed: false, days: book().days.map((d) => ({ ...d, written: false, emotion: null })) }),
+      data: book({
+        diaryCount: 0,
+        detailed: false,
+        days: book().days.map((d) => ({ ...d, written: false, emotion: null })),
+      }),
     });
     const view = await render(<Report />);
     await waitFor(() => view.getByTestId("book-cover-line"));
-    expect(shown(view.getByTestId("book-cover-line").props.children)).toBe("일기를 쓰면 일요일에 공책이 도착해요");
+    expect(shown(view.getByTestId("book-cover-line").props.children)).toBe(
+      "일기를 쓰면 일요일에 공책이 도착해요",
+    );
     expect(view.queryByTestId("book-cta")).toBeNull();
     expect(view.queryByText("새 공책")).toBeNull();
   });

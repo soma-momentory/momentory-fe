@@ -1,5 +1,12 @@
 import { useState, type ReactNode } from "react";
-import { Image, Pressable, StyleSheet, View, type TextLayoutLine, type TextStyle } from "react-native";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  View,
+  type TextLayoutLine,
+  type TextStyle,
+} from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 import { MaskingTape } from "@/components/ds/MaskingTape";
@@ -13,7 +20,11 @@ const { color, font } = reportBook;
 const BABA_COMPOSITE = require("../../../../../assets/home/v2/baba-composite.png");
 
 /** 손글씨 글자 — 크기와 줄 높이를 함께 준다 */
-export const hand = (fontSize: number, lineHeight: number): TextStyle => ({ fontFamily: font, fontSize, lineHeight });
+export const hand = (fontSize: number, lineHeight: number): TextStyle => ({
+  fontFamily: font,
+  fontSize,
+  lineHeight,
+});
 
 /**
  * 공책 글 — 글자가 실제로 그려진 줄마다 밑줄을 긋는다(`LetterPaper` 와 같은 판단). 빈 줄에는 긋지 않는다.
@@ -36,11 +47,19 @@ export function Ruled({
   const [boxHeight, setBoxHeight] = useState(0);
   const lines: readonly Pick<TextLayoutLine, "y" | "height">[] =
     textLines ??
-    Array.from({ length: Math.round(boxHeight / lineHeight) }, (_, i) => ({ y: i * lineHeight, height: lineHeight }));
+    Array.from({ length: Math.round(boxHeight / lineHeight) }, (_, i) => ({
+      y: i * lineHeight,
+      height: lineHeight,
+    }));
   return (
     <View onLayout={(e) => setBoxHeight(e.nativeEvent.layout.height)}>
       {lines.map((line, i) => (
-        <View key={i} testID="book-rule" pointerEvents="none" style={[styles.rule, { top: line.y + line.height - 1 }]} />
+        <View
+          key={i}
+          testID="book-rule"
+          pointerEvents="none"
+          style={[styles.rule, { top: line.y + line.height - 1 }]}
+        />
       ))}
       <Text
         testID={testID}
@@ -66,20 +85,33 @@ const EDGE = [
   [-0.7, -0.7],
 ] as const;
 
-function Sticker({ source, width, height, edge }: { source: number; width: number; height: number; edge: number }) {
+function Sticker({
+  source,
+  width,
+  height,
+  edge,
+}: {
+  source: number;
+  width: number;
+  height: number;
+  edge: number;
+}) {
   const box = { width, height };
   return (
-    <View
-      style={box}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
+    <View style={box} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {EDGE.map(([x, y], i) => (
         <Image
           key={i}
           source={source}
           resizeMode="contain"
-          style={[styles.layer, box, { tintColor: homeV2.color.white, transform: [{ translateX: x * edge }, { translateY: y * edge }] }]}
+          style={[
+            styles.layer,
+            box,
+            {
+              tintColor: homeV2.color.white,
+              transform: [{ translateX: x * edge }, { translateY: y * edge }],
+            },
+          ]}
         />
       ))}
       <Image source={source} resizeMode="contain" style={[styles.layer, box]} />
@@ -95,7 +127,12 @@ export function BabaSticker({ width }: { width: number }) {
   const height = (width * 600) / 436;
   return (
     <View style={{ width, height: height * 0.86 }}>
-      <View style={[styles.babaRug, { height: width * 0.4, width: width * 1.44, left: -width * 0.22, bottom: -width * 0.06 }]}>
+      <View
+        style={[
+          styles.babaRug,
+          { height: width * 0.4, width: width * 1.44, left: -width * 0.22, bottom: -width * 0.06 },
+        ]}
+      >
         <Rug />
       </View>
       <Sticker source={BABA_COMPOSITE} width={width} height={height} edge={2} />
@@ -112,7 +149,9 @@ export function BabaOnRug({ width }: { width: number }) {
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <View style={[styles.babaRug, { height: width * 0.34, width: width * 1.18, left: -width * 0.09 }]}>
+      <View
+        style={[styles.babaRug, { height: width * 0.34, width: width * 1.18, left: -width * 0.09 }]}
+      >
         <Rug />
       </View>
       <Baba scale={scale} />
@@ -150,7 +189,11 @@ export function Bubble({
           />
         </Svg>
       </View>
-      <Text testID={testID} style={[hand(size, lineHeight), styles.bubbleText]} color={homeV2.color.ink}>
+      <Text
+        testID={testID}
+        style={[hand(size, lineHeight), styles.bubbleText]}
+        color={homeV2.color.ink}
+      >
         {children}
       </Text>
     </View>
@@ -177,7 +220,13 @@ export function CutPaper({ fill, stroke }: { fill: string; stroke?: string }) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Svg width="100%" height="100%" viewBox="0 0 172 111" preserveAspectRatio="none">
-        <Path d={NOTE} fill={fill} stroke={stroke} strokeWidth={stroke == null ? 0 : 1.3} vectorEffect="non-scaling-stroke" />
+        <Path
+          d={NOTE}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={stroke == null ? 0 : 1.3}
+          vectorEffect="non-scaling-stroke"
+        />
       </Svg>
     </View>
   );
@@ -212,7 +261,10 @@ export function PaperButton({
       hitSlop={4}
       style={[styles.paperButton, disabled ? styles.disabled : null]}
     >
-      <CutPaper fill={go ? color.green : color.card} stroke={go ? undefined : homeV2.color.bubbleBorder} />
+      <CutPaper
+        fill={go ? color.green : color.card}
+        stroke={go ? undefined : homeV2.color.bubbleBorder}
+      />
       <View style={styles.paperButtonFace}>
         {leading}
         <Text style={hand(17, 22)} color={go ? homeV2.color.white : homeV2.color.ink}>
@@ -228,9 +280,21 @@ const styles = StyleSheet.create({
   rule: { position: "absolute", left: 0, right: 0, height: 1, backgroundColor: color.rule },
   layer: { position: "absolute", left: 0, top: 0 },
   babaRug: { position: "absolute", bottom: 0 },
-  bubble: { alignSelf: "stretch", paddingTop: 16, paddingBottom: 34, paddingHorizontal: 14, zIndex: 3 },
+  bubble: {
+    alignSelf: "stretch",
+    paddingTop: 16,
+    paddingBottom: 34,
+    paddingHorizontal: 14,
+    zIndex: 3,
+  },
   bubbleText: { textAlign: "center" },
-  tape: { minHeight: 34, paddingHorizontal: 14, justifyContent: "center", alignSelf: "flex-start", transform: [{ rotate: "-1.5deg" }] },
+  tape: {
+    minHeight: 34,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    alignSelf: "flex-start",
+    transform: [{ rotate: "-1.5deg" }],
+  },
   paperButton: {
     minHeight: 48,
     minWidth: 76,

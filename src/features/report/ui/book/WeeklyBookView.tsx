@@ -30,7 +30,15 @@ import {
 
 import { BookPageBody } from "./BookPages";
 import { KraftFace, Leaf, Notebook } from "./Notebook";
-import { BabaOnRug, BabaSticker, Bubble, hand, PaperButton, PebbleSticker, TapeTitle } from "./parts";
+import {
+  BabaOnRug,
+  BabaSticker,
+  Bubble,
+  hand,
+  PaperButton,
+  PebbleSticker,
+  TapeTitle,
+} from "./parts";
 
 /**
  * `W1` · 주간 리포트 공책 — 책상 위 스프링 공책 한 권(2026-11-04 시안 v10).
@@ -87,7 +95,7 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
     if (target === at) return;
     setAt(target);
     onTurn(target < 0 ? "cover" : (pages[target] ?? "cover"));
-    if ((target < 0) !== (at < 0)) {
+    if (target < 0 !== at < 0) {
       const toValue = target < 0 ? 0 : 1;
       if (reduceMotion) open.setValue(toValue);
       else
@@ -120,13 +128,16 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
   const closedHeight = Math.min(roomHeight, closedWidth * CLOSED.aspect);
   const openTop = insets.top + TOP_ROW + 6;
   const openHeight = height - openTop - FOOT_HEIGHT - Math.max(insets.bottom, 8);
-  const between = (from: number, to: number) => open.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
+  const between = (from: number, to: number) =>
+    open.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
   const bookBox = {
     left: between((width - closedWidth) / 2 + 3, OPENED.left),
     top: between(closedTop + (roomHeight - closedHeight) / 2, openTop),
     width: between(closedWidth, width - OPENED.left - OPENED.right),
     height: between(closedHeight, openHeight),
-    transform: [{ rotate: open.interpolate({ inputRange: [0, 1], outputRange: [CLOSED.tilt, "0deg"] }) }],
+    transform: [
+      { rotate: open.interpolate({ inputRange: [0, 1], outputRange: [CLOSED.tilt, "0deg"] }) },
+    ],
   };
 
   if (book == null) {
@@ -164,7 +175,10 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
       {/* 펼치면 탭바까지 가리는 바탕 */}
       <Animated.View
         pointerEvents={isOpen ? "auto" : "none"}
-        style={[StyleSheet.absoluteFill, { opacity: open.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 1, 1] }) }]}
+        style={[
+          StyleSheet.absoluteFill,
+          { opacity: open.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 1, 1] }) },
+        ]}
       >
         <TabPaperBackground tab="리포트" />
       </Animated.View>
@@ -205,7 +219,13 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
       >
         <Notebook tabCount={pages.length > 0 ? pages.length : 3} activeTab={at}>
           {pages.map((page, i) => (
-            <Leaf key={page} turned={i < at} z={pages.length - i} reduceMotion={reduceMotion} testID={`book-leaf-${page}`}>
+            <Leaf
+              key={page}
+              turned={i < at}
+              z={pages.length - i}
+              reduceMotion={reduceMotion}
+              testID={`book-leaf-${page}`}
+            >
               <View style={styles.paper} accessibilityElementsHidden={i !== at}>
                 {page !== "closing" ? (
                   <View style={styles.pageHead}>
@@ -216,14 +236,23 @@ export function WeeklyBookView({ book, status, diaries, onOpenPast, onOpenDiary,
                   </View>
                 ) : null}
                 <BookPageBody page={page} book={book} />
-                <Text style={[hand(14, 18), styles.pageNo]} color={homeV2.color.muted} accessibilityElementsHidden>
+                <Text
+                  style={[hand(14, 18), styles.pageNo]}
+                  color={homeV2.color.muted}
+                  accessibilityElementsHidden
+                >
                   {i + 1}
                 </Text>
                 <View style={styles.corner} />
               </View>
             </Leaf>
           ))}
-          <Leaf turned={isOpen} z={pages.length + 1} reduceMotion={reduceMotion} testID="book-cover">
+          <Leaf
+            turned={isOpen}
+            z={pages.length + 1}
+            reduceMotion={reduceMotion}
+            testID="book-cover"
+          >
             <KraftFace>
               <Cover book={book} label={range.label} />
             </KraftFace>
@@ -305,7 +334,10 @@ function Cover({ book, label }: { book: WeeklyBook; label: string }) {
         {written.map((day, i) => (
           <View
             key={day.date}
-            style={[styles.stickerDay, { transform: [{ translateY: DROPS[i] ?? 0 }, { rotate: TILTS[i] ?? "0deg" }] }]}
+            style={[
+              styles.stickerDay,
+              { transform: [{ translateY: DROPS[i] ?? 0 }, { rotate: TILTS[i] ?? "0deg" }] },
+            ]}
           >
             <PebbleSticker id={day.emotion} size={stickerSize} />
             <Text style={hand(14, 17)} color={homeV2.color.ink}>
@@ -369,9 +401,31 @@ function DiarySheet({
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 24 },
-  past: { position: "absolute", right: 16, minHeight: 44, flexDirection: "row", alignItems: "center", gap: 2, zIndex: 5 },
-  exit: { position: "absolute", right: 12, width: 44, height: 44, alignItems: "center", justifyContent: "center", zIndex: 5 },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+  past: {
+    position: "absolute",
+    right: 16,
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    zIndex: 5,
+  },
+  exit: {
+    position: "absolute",
+    right: 12,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
+  },
   bookBox: { position: "absolute" },
   paper: { flex: 1, backgroundColor: reportBook.color.page },
   pageHead: {
@@ -384,7 +438,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginLeft: 24,
   },
-  dateField: { paddingHorizontal: 2, borderBottomWidth: 1, borderStyle: "dashed", borderBottomColor: reportBook.color.fieldLine },
+  dateField: {
+    paddingHorizontal: 2,
+    borderBottomWidth: 1,
+    borderStyle: "dashed",
+    borderBottomColor: reportBook.color.fieldLine,
+  },
   pageNo: { position: "absolute", right: 30, bottom: 7 },
   corner: {
     position: "absolute",

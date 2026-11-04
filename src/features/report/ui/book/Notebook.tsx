@@ -66,7 +66,11 @@ export function KraftFace({ children }: { children: ReactNode }) {
   return (
     <View style={styles.kraft}>
       {GRAIN_TILES.map(([x, y]) => (
-        <Image key={`${x}${y}`} source={GRAIN} style={[styles.grain, { left: x * GRAIN_SIZE, top: y * GRAIN_SIZE }]} />
+        <Image
+          key={`${x}${y}`}
+          source={GRAIN}
+          style={[styles.grain, { left: x * GRAIN_SIZE, top: y * GRAIN_SIZE }]}
+        />
       ))}
       <View style={styles.fold} />
       <View style={styles.stitch} />
@@ -127,10 +131,28 @@ function Rings({ height }: { height: number }) {
       <Svg width={width} height={count * pitch} viewBox={`0 0 ${width} ${count * pitch}`}>
         {Array.from({ length: count }, (_, i) => (
           <G key={i} y={i * pitch}>
-            <Path d="M4.6 14 C5 17.6 10 18.6 15 18" fill="none" stroke={color.ringBack} strokeWidth={2.2} strokeLinecap="round" />
+            <Path
+              d="M4.6 14 C5 17.6 10 18.6 15 18"
+              fill="none"
+              stroke={color.ringBack}
+              strokeWidth={2.2}
+              strokeLinecap="round"
+            />
             <Circle cx={24} cy={13} r={2.8} fill={color.hole} fillOpacity={0.6} />
-            <Path d="M4.6 14 C4.6 7.6 17.6 6.4 24 13" fill="none" stroke={color.ring} strokeWidth={3} strokeLinecap="round" />
-            <Path d="M6.6 12.2 C8.6 9 17 8.2 21.8 11.2" fill="none" stroke={color.ringShine} strokeWidth={0.9} strokeLinecap="round" />
+            <Path
+              d="M4.6 14 C4.6 7.6 17.6 6.4 24 13"
+              fill="none"
+              stroke={color.ring}
+              strokeWidth={3}
+              strokeLinecap="round"
+            />
+            <Path
+              d="M6.6 12.2 C8.6 9 17 8.2 21.8 11.2"
+              fill="none"
+              stroke={color.ringShine}
+              strokeWidth={0.9}
+              strokeLinecap="round"
+            />
           </G>
         ))}
       </Svg>
@@ -138,11 +160,24 @@ function Rings({ height }: { height: number }) {
   );
 }
 
-const RADIUS = { borderTopLeftRadius: 3, borderBottomLeftRadius: 3, borderTopRightRadius: 10, borderBottomRightRadius: 10 };
+const RADIUS = {
+  borderTopLeftRadius: 3,
+  borderBottomLeftRadius: 3,
+  borderTopRightRadius: 10,
+  borderBottomRightRadius: 10,
+};
 
 const styles = StyleSheet.create({
   book: { flex: 1, boxShadow: reportBook.shadow.book, ...RADIUS },
-  back: { position: "absolute", top: 4, bottom: -8, left: 0, right: -6, backgroundColor: color.kraftBack, ...RADIUS },
+  back: {
+    position: "absolute",
+    top: 4,
+    bottom: -8,
+    left: 0,
+    right: -6,
+    backgroundColor: color.kraftBack,
+    ...RADIUS,
+  },
   pages: {
     position: "absolute",
     top: 2,
@@ -155,7 +190,13 @@ const styles = StyleSheet.create({
     borderColor: color.pageLine,
     ...RADIUS,
   },
-  tabs: { position: "absolute", top: 0, bottom: 0, right: -size.tab.onWidth, width: size.tab.onWidth },
+  tabs: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    right: -size.tab.onWidth,
+    width: size.tab.onWidth,
+  },
   tab: {
     position: "absolute",
     left: 0,
@@ -163,10 +204,23 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 5,
     borderBottomRightRadius: 5,
   },
-  leaf: { ...StyleSheet.absoluteFill, transformOrigin: "left center", backfaceVisibility: "hidden", overflow: "hidden", ...RADIUS },
+  leaf: {
+    ...StyleSheet.absoluteFill,
+    transformOrigin: "left center",
+    backfaceVisibility: "hidden",
+    overflow: "hidden",
+    ...RADIUS,
+  },
   kraft: { flex: 1, backgroundColor: color.kraft, overflow: "hidden", ...RADIUS },
   grain: { position: "absolute", width: GRAIN_SIZE, height: GRAIN_SIZE },
-  fold: { position: "absolute", top: 0, bottom: 0, left: 25, width: 1.5, backgroundColor: color.fold },
+  fold: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 25,
+    width: 1.5,
+    backgroundColor: color.fold,
+  },
   stitch: {
     position: "absolute",
     top: 9,

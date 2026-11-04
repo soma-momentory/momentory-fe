@@ -53,12 +53,17 @@ export function weeklyBook(db: FakeDb, date: string | null, today: string) {
   const dates = Array.from({ length: 7 }, (_, i) => addDays(startDate, i));
   const diaries = dates.flatMap((day) => {
     const diary = diaryOn(db, day);
-    return diary == null ? [] : [{ day, emotion: diary.primaryEmotion ?? diary.emotions[0] ?? null }];
+    return diary == null
+      ? []
+      : [{ day, emotion: diary.primaryEmotion ?? diary.emotions[0] ?? null }];
   });
   const schedules = db.schedules.filter((s) => !s.hidden && inRange(s.date, startDate, endDate));
-  const good = diaries.filter((d) => d.emotion === "calm" || d.emotion === "proud" || d.emotion === "happy");
+  const good = diaries.filter(
+    (d) => d.emotion === "calm" || d.emotion === "proud" || d.emotion === "happy",
+  );
   const counts = new Map<EmotionKey, number>();
-  for (const d of diaries) if (d.emotion != null) counts.set(d.emotion, (counts.get(d.emotion) ?? 0) + 1);
+  for (const d of diaries)
+    if (d.emotion != null) counts.set(d.emotion, (counts.get(d.emotion) ?? 0) + 1);
   const perDay = dates.map((day) => schedules.filter((s) => s.date === day && s.completed).length);
   return {
     startDate,
@@ -74,12 +79,29 @@ export function weeklyBook(db: FakeDb, date: string | null, today: string) {
     }),
     restCount: 0,
     coverLine: "면접 스터디 이야기가\n가장 많았던 한 주예요",
-    review: diaries.length >= 3 ? "면접 스터디 이야기를 가장 많이 들려줬어요. 월요일에는 대답이 막혔다고 적었어요." : null,
-    goodWords: diaries.length >= 3 ? "막힌 다음 날에도 다시 간 건 멋진 일이에요. 앞으로도 수고했다고 말해 주는 날이 있기를 바라요." : null,
+    review:
+      diaries.length >= 3
+        ? "면접 스터디 이야기를 가장 많이 들려줬어요. 월요일에는 대답이 막혔다고 적었어요."
+        : null,
+    goodWords:
+      diaries.length >= 3
+        ? "막힌 다음 날에도 다시 간 건 멋진 일이에요. 앞으로도 수고했다고 말해 주는 날이 있기를 바라요."
+        : null,
     okLine: good.length > 0 ? "친구를 만나거나 발표를 끝낸 날 괜찮았어요" : null,
-    words: diaries.slice(0, 2).map((d) => ({ date: d.day, label: "면접 스터디", fromLetter: false, text: "생각보다 산책이 길게 느껴지지 않았다" })),
+    words: diaries.slice(0, 2).map((d) => ({
+      date: d.day,
+      label: "면접 스터디",
+      fromLetter: false,
+      text: "생각보다 산책이 길게 느껴지지 않았다",
+    })),
     emotions: [...counts].map(([emotion, count]) => ({ emotion, count, events: ["면접 스터디"] })),
-    okMoments: good.map((d) => ({ date: d.day, emotion: d.emotion, event: "친구와 저녁", tasks: ["장보기", "방 정리"], betterRest: "BODY_RELEASE" })),
+    okMoments: good.map((d) => ({
+      date: d.day,
+      emotion: d.emotion,
+      event: "친구와 저녁",
+      tasks: ["장보기", "방 정리"],
+      betterRest: "BODY_RELEASE",
+    })),
     rest: { total: 0, better: 0, same: 0, unsure: 0, places: [], soFar: null },
     done: { completedCount: perDay.reduce((sum, n) => sum + n, 0), perDay, linked: [] },
   };
