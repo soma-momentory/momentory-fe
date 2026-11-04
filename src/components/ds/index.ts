@@ -48,7 +48,7 @@ export { SearchField } from "./SearchField";
 export { Chip } from "./Chip";
 export { Calendar, type CalendarMark } from "./Calendar";
 export { EmotionDot } from "./EmotionDot";
-export { EmotionPebble } from "./EmotionPebble";
+export { EmotionPebble, emotionPebbleSource } from "./EmotionPebble";
 export { SelectLift } from "./SelectLift";
 export { WeekEmptyDot } from "./WeekEmptyDot";
 export { EmotionSticker } from "./EmotionSticker";

@@ -334,6 +334,10 @@ export const events = {
   letter_notification_scheduled: { kind: choice("morning", "action", "unread_night") },
   report_week_selected: { week_start: week },
   weekly_report_viewed: { week_start: week },
+  report_page_viewed: {
+    week_start: week,
+    page: choice("cover", "review", "words", "feelEvents", "okMoments", "restMoods", "done", "closing"),
+  },
   logout_clicked: {},
   logout_completed: {},
   withdrawal_opened: {},

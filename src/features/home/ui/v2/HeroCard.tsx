@@ -272,13 +272,23 @@ export function HeroCard({
  * 점선 바느질을 얹어 다꾸 페이지와 어울리게 했다. 초록 면 + 흰 글자는 대비 기준 그대로다.
  * 아래에 같은 윤곽을 짙은 초록으로 깔았고, 누르면 면이 내려앉는다. 바깥 상자는 그대로라 자리가 밀리지 않는다.
  */
-function ReflectionButton({ color, onPress }: { color: string; onPress: () => void }) {
+export function ReflectionButton({
+  color,
+  onPress,
+  label = "일기 작성하기",
+  testID = "studio-home-cta",
+}: {
+  color: string;
+  onPress: () => void;
+  label?: string;
+  testID?: string;
+}) {
   const gridId = `label-grid-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <Pressable
-      testID="studio-home-cta"
+      testID={testID}
       accessibilityRole="button"
-      accessibilityLabel="일기 작성하기"
+      accessibilityLabel={label}
       onPress={onPress}
       style={styles.cta}
     >
@@ -326,7 +336,7 @@ function ReflectionButton({ color, onPress }: { color: string; onPress: () => vo
               </Svg>
             </View>
             <Text style={styles.ctaText} color={homeV2.color.white}>
-              일기 작성하기
+              {label}
             </Text>
           </View>
         </>

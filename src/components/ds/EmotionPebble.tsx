@@ -58,6 +58,9 @@ const MARKS = {
 /** 감정 없이 끝난 일기 — 테두리만 있는 빈 조약돌(`scripts/make-no-emotion-marks.py`) */
 const NO_EMOTION = require("../../../assets/emotion-pebble/no-emotion.png");
 
+/** 조약돌 그림 — 공책 스티커처럼 그림을 직접 겹쳐 그리는 자리가 쓴다 */
+export const emotionPebbleSource = (id: EmotionId | null) => (id == null ? NO_EMOTION : MARKS[id]);
+
 export function EmotionPebble({ id, size = 26 }: Props) {
   // 반지름은 **지름의 절반**이다 — `radius.full`(999)을 쓰지 않는다(`EmotionDot` 주석의
   // 안드로이드 New Architecture 사정이 그대로 적용된다)
