@@ -15,12 +15,15 @@ const rowsOf = async (count: number) => {
 
 describe("RestThemeGrid", () => {
   it("쉼 콘텐츠마다 테마가 있다", () => {
-    for (const item of REST_CONTENTS) expect(REST_THEMES[item.id].scene).toBeDefined();
+    for (const item of REST_CONTENTS) {
+      const theme = REST_THEMES[item.id];
+      expect(theme.scene ?? theme.Art).toBeDefined();
+    }
   });
 
   it("개수가 늘어도 두 칸씩 놓고, 눌리는 이름을 그대로 둔다", async () => {
     const { screen, rows } = await rowsOf(REST_CONTENTS.length);
-    expect(rows.map((row) => row.children.length)).toEqual([2, 2, 2]);
+    expect(rows.map((row) => row.children.length)).toEqual([2, 2, 2, 1]);
     for (const item of REST_CONTENTS) {
       expect(screen.getByRole("button", { name: `${item.title} 열기` })).toBeTruthy();
       expect(screen.getByText(keepWords(item.title))).toBeTruthy();

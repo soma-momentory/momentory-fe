@@ -79,6 +79,7 @@ const restContent = choice(
   "worry_box",
   "treasure_box",
   "meditation",
+  "weekly_happiness",
   "wish",
 );
 /**

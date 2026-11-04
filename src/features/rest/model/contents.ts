@@ -12,7 +12,13 @@
 import type { IconName } from "@/components/ds";
 
 export type RestContentId =
-  "sensePond" | "worryBox" | "treasureBox" | "bodyRelease" | "meditation" | "wish";
+  | "sensePond"
+  | "worryBox"
+  | "treasureBox"
+  | "bodyRelease"
+  | "meditation"
+  | "weeklyHappiness"
+  | "wish";
 
 export type RestContent = {
   id: RestContentId;
@@ -47,6 +53,7 @@ export type RestContent = {
     | "/rest/worry-box"
     | "/rest/treasure-box"
     | "/rest/meditation"
+    | "/rest/weekly-happiness"
     | "/rest/wish";
 };
 
@@ -91,6 +98,19 @@ export const REST_CONTENTS: readonly RestContent[] = [
     icon: "wave",
     route: "/rest/meditation",
   },
+  // ⚠ 디자인만 들어왔다 — 적은 글이 저장되지 않아 출시 빌드에는 내보내지 않는다(`model/weeklyHappiness.ts`)
+  ...(__DEV__
+    ? [
+        {
+          id: "weeklyHappiness" as const,
+          title: "주간 행복",
+          duration: "2분",
+          description: "한 주의 좋았던 일을\n칸마다 적어봐요",
+          icon: "wave" as const,
+          route: "/rest/weekly-happiness" as const,
+        },
+      ]
+    : []),
   {
     id: "wish",
     title: "소원 연꽃",

@@ -48,6 +48,7 @@ export const restThemeCard = {
     treasureBox: "#F8E9B8",
     bodyRelease: "#F9DFC8",
     meditation: "#DCE7EF",
+    weeklyHappiness: "#DBEBE8",
     wish: "#E3E0EE",
   },
 } as const;
