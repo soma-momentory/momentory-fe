@@ -1,5 +1,5 @@
 /**
- * 쉼터의 **쉼 콘텐츠** 다섯 가지 (2026-09-02 · 소원 빌기는 2026-11-04).
+ * 쉼터의 **쉼 콘텐츠** 다섯 가지 (2026-09-02 · 소원 연꽃은 2026-11-04).
  *
  * `R1` 진입 화면에서 바람카드 아래 두 칸씩 보여 주는 항목이다. 이름·설명은 제품
  * 문안이라 디자인이 아니라 **도메인**에 둔다(`CLAUDE.md` 「디자인 파일에 제품 규칙을
@@ -51,7 +51,7 @@ export type RestContent = {
 export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "wish",
-    title: "소원 빌기",
+    title: "소원 연꽃",
     duration: "1분",
     description: "다른 사람 소원을 같이 빌고\n내 소원도 띄워봐요",
     icon: "wave",

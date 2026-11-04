@@ -101,11 +101,11 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
   it("화면이 있는 콘텐츠만 눌린다 — 갈 곳이 없는 줄을 누르게 두지 않는다", async () => {
     const { getAllByRole } = await render(<Rest />);
 
-    // 쉼 콘텐츠 다섯 모두 화면이 있다(소원 빌기 2026-11-04) — 바람카드 진입점과 함께 여섯이 눌린다
+    // 쉼 콘텐츠 다섯 모두 화면이 있다(소원 연꽃 2026-11-04) — 바람카드 진입점과 함께 여섯이 눌린다
     const labels = getAllByRole("button").map((b) => b.props.accessibilityLabel);
     expect(labels).toEqual([
       "바람카드 보기",
-      "소원 빌기 열기",
+      "소원 연꽃 열기",
       "감각연못 열기",
       "걱정상자 열기",
       "오늘의 보물함 열기",

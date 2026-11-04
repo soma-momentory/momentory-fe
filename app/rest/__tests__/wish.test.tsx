@@ -92,7 +92,7 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-describe("소원 빌기", () => {
+describe("소원 연꽃", () => {
   it("연못에 익명의 쪽지와 쓰기 버튼이 있고, 귤은 없다", async () => {
     const r = await open();
     expect(r.getByText("소원 1")).toBeTruthy();
@@ -137,9 +137,11 @@ describe("소원 빌기", () => {
     });
     const r = await render(<WishScreen />);
     await wait();
-    expect(r.getByText("오늘 소원은 띄웠어요")).toBeTruthy();
+    expect(r.getByText("소원 연꽃은 하루에 한 번만 띄울 수 있어요")).toBeTruthy();
     expect(r.getByText("내 소원")).toBeTruthy();
-    await fireEvent.press(r.getByRole("button", { name: "오늘 소원은 띄웠어요" }));
+    await fireEvent.press(
+      r.getByRole("button", { name: "소원 연꽃은 하루에 한 번만 띄울 수 있어요" }),
+    );
     expect(r.queryByText("어떤 소원을 띄울까요?")).toBeNull();
   });
 
@@ -153,7 +155,7 @@ describe("소원 빌기", () => {
   it("처음이면 이용 규칙에 동의해야 쓰기가 열린다", async () => {
     const r = await open(pond({ rulesAgreed: false }));
     await fireEvent.press(r.getByRole("button", { name: "내 소원 빌기" }));
-    expect(r.getByText("소원 연못 이용 규칙")).toBeTruthy();
+    expect(r.getByText("소원 연꽃 이용 규칙")).toBeTruthy();
     expect(r.queryByText("어떤 소원을 띄울까요?")).toBeNull();
 
     await fireEvent.press(r.getByRole("button", { name: "동의하고 쓰기" }));
@@ -195,7 +197,12 @@ describe("소원 빌기", () => {
     await wait();
 
     expect(r.getByText(/연못에 띄웠어요/)).toBeTruthy();
-    expect(r.getByText("오늘 소원은 띄웠어요")).toBeTruthy();
+    expect(r.getByText("소원 연꽃은 하루에 한 번만 띄울 수 있어요")).toBeTruthy();
+
+    // 어디든 한 번 누르면 말풍선이 걷힌다
+    await fireEvent.press(r.getByLabelText(/연못에 띄웠어요[\s\S]*닫기/));
+    await wait();
+    expect(r.queryByText(/연못에 띄웠어요/)).toBeNull();
     expect(jest.mocked(postWish)).toHaveBeenCalledWith("그 사람이 답장해 주면 좋겠어요", "표");
     expect(sent()).toEqual(
       expect.arrayContaining([

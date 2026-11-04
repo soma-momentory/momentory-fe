@@ -79,12 +79,14 @@ describe("wishApi", () => {
 
   it("내 소원과 답을 옮긴다", async () => {
     ok({
+      postedToday: true,
       floating: [{ id: 1, content: "글", daysLeft: 3, joinedByOthers: true }],
       past: [{ id: 2, content: "지난", endReason: "REPORTED", outcome: "CAME_TRUE" }],
     });
     expect(await fetchMyWishes()).toEqual({
       ok: true,
       data: {
+        postedToday: true,
         floating: [{ id: 1, content: "글", daysLeft: 3, joinedByOthers: true }],
         past: [{ id: 2, content: "지난", endReason: "reported", outcome: "came_true" }],
       },

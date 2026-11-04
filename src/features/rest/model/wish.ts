@@ -1,7 +1,7 @@
 import type { WishAuthor, WishOutcome } from "../data/wishApi";
 
 /**
- * 소원 빌기 — 문안과 규칙 (2026-11-04).
+ * 소원 연꽃 — 문안과 규칙 (2026-11-04).
  *
  * 귤 없이 누구나 하루에 하나, 「익명의 누군가」로 7일 동안 띄운다. 남의 소원은 꾸욱 눌러 같이 빈다.
  * 같이 빈 사람 수는 세어 보여 주지 않는다. 심사 · 하루 하나 · 신고의 판정은 서버가 한다.
@@ -12,7 +12,7 @@ export const WISH_BABA = "바바의 소원";
 
 export const WISH_PILL = {
   write: "내 소원 빌기",
-  postedToday: "오늘 소원은 띄웠어요",
+  postedToday: "소원 연꽃은 하루에 한 번만 띄울 수 있어요",
   hold: "꾸욱 눌러 같이 빌기",
   holdShort: "꾹 눌러 주세요",
   joined: "같이 빌어준 소원이에요",
@@ -39,7 +39,7 @@ export const WISH_CONFIRM = {
 } as const;
 
 export const WISH_RULES = {
-  title: "소원 연못 이용 규칙",
+  title: "소원 연꽃 이용 규칙",
   items: [
     "소원은 익명으로 7일 동안 모두에게 보여요. 이름과 연락처는 AI가 고쳐서 띄워요.",
     "누군가를 해치거나 잘못되길 바라는 글, 광고는 올리지 않아요.",
@@ -71,11 +71,10 @@ export const WISH_CARE = {
 
 export const WISH_MINE = {
   title: "내 소원",
-  floating: "떠 있어요",
+  floating: "현재 떠 있는 소원",
   past: "지나간 소원",
   empty: "아직 띄운 소원이 없어요",
   joinedByOthers: "누군가 같이 빌었어요",
-  joinedByBaba: "바바가 같이 빌었어요",
   followUp: "그 소원, 어떻게 됐어요?",
   reported: "신고가 있어 내려왔어요",
   deleteTitle: "이 소원을 지울까요?",

@@ -78,7 +78,7 @@ const restContent = choice("sense_pond", "body_release", "worry_box", "treasure_
  * 쉼 콘텐츠를 **어디까지** 했는가 — 끝내지 않고 나간 자리. 콘텐츠마다 단계가 달라 한 목록에 모은다.
  * 감각연못 see/hear/feel · 몸에 힘 빼기 intro(시작 전)/hands/shoulders/face/legs · 걱정상자
  * write/handing(건네는 연출 중)/boxed(둘 중 하나를 고르기 전) · 오늘의 보물함 write/tucking(담는 연출 중) ·
- * 소원 빌기 pond/wish_card/rules/write/confirm
+ * 소원 연꽃 pond/wish_card/rules/write/confirm
  */
 const restStage = choice(
   "see",
@@ -274,7 +274,7 @@ export const events = {
   rest_content_exited: { content: restContent, stage: restStage, duration_ms: millis },
   /** 쉼터의 「?」 원을 눌러 설명 카드를 다시 열었다 — 처음 저절로 뜬 것은 보내지 않는다 */
   rest_guide_opened: { content: restContent },
-  /** 소원 빌기(2026-11-04) — 글은 보내지 않는다. 글자 수와 결과만 싣는다 */
+  /** 소원 연꽃(2026-11-04) — 글은 보내지 않는다. 글자 수와 결과만 싣는다 */
   wish_rules_agreed: {},
   wish_joined: { position: count, author: choice("user", "baba") },
   wish_join_cancelled: {},

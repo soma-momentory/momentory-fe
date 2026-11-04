@@ -32,7 +32,7 @@ export const REST_RECORD_TITLES: Record<RestRecordContent, string> = {
   worry_box: "걱정상자 기록",
   treasure_box: "보물함 기록",
   body_release: "몸에 힘 빼기 기록",
-  wish: "소원 빌기 기록",
+  wish: "소원 연꽃 기록",
 };
 
 export const isRestRecordContent = (v: unknown): v is RestRecordContent =>

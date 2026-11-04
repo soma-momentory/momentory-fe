@@ -1,7 +1,7 @@
 import { authedRequest, type HttpError } from "@/lib/http";
 
 /**
- * 소원 빌기 `/api/v1/wishes` (2026-11-04 · BE `feat/wish-pond`).
+ * 소원 연꽃 `/api/v1/wishes` (2026-11-04 · BE `feat/wish-pond`).
  *
  * ```
  * GET    /pond               연못 — 남의 소원 최대 10장 · 적으면 바바의 소원으로 채운다
@@ -63,7 +63,7 @@ export type PastWish = {
   outcome: WishOutcome | null;
 };
 
-export type MyWishes = { floating: FloatingWish[]; past: PastWish[] };
+export type MyWishes = { postedToday: boolean; floating: FloatingWish[]; past: PastWish[] };
 
 export type WishFailureCode =
   | "rules_required"
@@ -177,7 +177,11 @@ const toMine = (raw: unknown): MyWishes | null => {
   const floating = raw.floating.map(toFloating);
   const past = raw.past.map(toPast);
   if (!floating.every((w) => w != null) || !past.every((w) => w != null)) return null;
-  return { floating: floating as FloatingWish[], past: past as PastWish[] };
+  return {
+    postedToday: raw.postedToday === true,
+    floating: floating as FloatingWish[],
+    past: past as PastWish[],
+  };
 };
 
 const call = async <T>(

@@ -5,6 +5,7 @@ import { Animated, Keyboard, Pressable, StyleSheet, View, useWindowDimensions } 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Screen, Text } from "@/components/ds";
+import { Pop } from "@/components/rest/pond/Appear";
 import { artPoint, artScale } from "@/components/rest/pond/layout";
 import { PondBaba } from "@/components/rest/pond/PondBaba";
 import { useReducedMotion } from "@/components/rest/pond/useReducedMotion";
@@ -61,7 +62,7 @@ type Stage = "pond" | "card" | "rules" | "write" | "care";
 type Reviewed = { content: string; reviewToken: string; edited: boolean };
 
 /**
- * 소원 빌기 (2026-11-04) — 밤 연못에 남의 소원이 떠 있고, 같이 빌거나 내 소원을 하루에 하나 띄운다.
+ * 소원 연꽃 (2026-11-04) — 밤 연못에 남의 소원이 떠 있고, 같이 빌거나 내 소원을 하루에 하나 띄운다.
  *
  * 한 화면 안에서 넘어간다: 연못 → 소원 10장 → 연못 / 연못 → 이용 규칙(처음 한 번) → 쓰기 → AI 심사
  * → 띄우기 전 확인 → 연못에 내 꽃. 귤이 없고 숫자도 없다. 쓴 글은 계측에 넣지 않는다.
@@ -435,16 +436,6 @@ export default function WishScreen() {
               </Animated.View>
             ) : null}
 
-            {justPosted ? (
-              <View
-                style={[styles.bubble, { top: artPoint(0, wishScene.spots[0].y, width, height).y }]}
-              >
-                <Text variant="title3Hand" color={restScene.ink} style={styles.center}>
-                  {WISH_POSTED}
-                </Text>
-              </View>
-            ) : null}
-
             {failed && pond == null ? (
               <Text variant="headline1" color={restScene.surface} style={styles.failed}>
                 {WISH_LOAD_FAILED}
@@ -475,6 +466,35 @@ export default function WishScreen() {
               </View>
             ) : null}
           </>
+        ) : null}
+
+        {/* 바바가 말한다 — 어디든 한 번 누르면 말풍선이 걷히고 연못으로 돌아온다 */}
+        {view === "pond" && justPosted ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${WISH_POSTED} 닫기`}
+            onPress={() => setJustPosted(false)}
+            style={StyleSheet.absoluteFill}
+          >
+            <Pop
+              from={0.9}
+              style={[
+                styles.bubble,
+                {
+                  bottom:
+                    height -
+                    babaSpot.y +
+                    babaSpot.width * pondScene.babaAspect +
+                    wishScene.bubble.tail,
+                },
+              ]}
+            >
+              <Text variant="title3Hand" color={restScene.ink} style={styles.center}>
+                {WISH_POSTED}
+              </Text>
+              <View style={styles.bubbleTail} />
+            </Pop>
+          </Pressable>
         ) : null}
 
         {view === "card" && batch[position] != null ? (
@@ -596,6 +616,19 @@ const styles = StyleSheet.create({
     padding: space.md,
     borderRadius: wishScene.bubble.radius,
     backgroundColor: wishScene.bubble.color,
+  },
+  bubbleTail: {
+    position: "absolute",
+    right: wishScene.bubble.tailRight,
+    bottom: -wishScene.bubble.tail,
+    width: 0,
+    height: 0,
+    borderLeftWidth: wishScene.bubble.tail,
+    borderRightWidth: wishScene.bubble.tail,
+    borderTopWidth: wishScene.bubble.tail,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: wishScene.bubble.color,
   },
   failed: {
     position: "absolute",

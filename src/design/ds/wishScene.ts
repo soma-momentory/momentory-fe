@@ -1,5 +1,5 @@
 /**
- * Momentory DS — 소원 빌기의 장면 값 (2026-11-04 · 시안 `analysis/2026-11-02-wish/simple.html`).
+ * Momentory DS — 소원 연꽃의 장면 값 (2026-11-04 · 시안 `analysis/2026-11-02-wish/simple.html`).
  *
  * 그림이 감각연못 배경을 밤으로 바꾼 것이라 구도가 같다. 자리는 기준 화면(393 × 852) 좌표이고
  * `components/rest/pond/layout.ts` 의 `artPoint` 가 지금 화면의 같은 그림 위 자리로 옮긴다.
@@ -50,7 +50,7 @@ export const wishScene = {
   toast: { face: "rgba(36,31,25,0.92)", ink: "#FFF7EE" },
   /** 위기 안내의 첫 줄 */
   careFace: "#F0C27E",
-  bubble: { color: "#EBDCC7", radius: 26 },
+  bubble: { color: "#EBDCC7", radius: 26, tail: 11, tailRight: 51 },
   /** 이용 규칙 뒤의 짙은 막 */
   rulesDim: "rgba(48,38,28,0.82)",
   line: "#EFE7DA",

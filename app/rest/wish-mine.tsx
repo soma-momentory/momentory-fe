@@ -43,7 +43,7 @@ export default function WishMineScreen() {
   useEffect(() => {
     let alive = true;
     void fetchMyWishes().then((r) => {
-      if (alive) setMine(r.ok ? r.data : { floating: [], past: [] });
+      if (alive) setMine(r.ok ? r.data : { postedToday: false, floating: [], past: [] });
     });
     return () => {
       alive = false;
@@ -59,6 +59,7 @@ export default function WishMineScreen() {
       m == null
         ? m
         : {
+            ...m,
             floating: m.floating.filter((w) => w.id !== id),
             past: m.past.filter((w) => w.id !== id),
           },
@@ -124,7 +125,9 @@ export default function WishMineScreen() {
                 </Pressable>
               </View>
               <Text variant="label2" color={labelColor.alternative}>
-                {`${w.joinedByOthers ? WISH_MINE.joinedByOthers : WISH_MINE.joinedByBaba} · ${wishDaysLeft(w.daysLeft)}`}
+                {w.joinedByOthers
+                  ? `${WISH_MINE.joinedByOthers} · ${wishDaysLeft(w.daysLeft)}`
+                  : wishDaysLeft(w.daysLeft)}
               </Text>
             </View>
           ))}
@@ -182,7 +185,8 @@ export default function WishMineScreen() {
         <View style={[styles.pill, { bottom: Math.max(insets.bottom, space.md) + space.md }]}>
           <ScenePillButton
             tone="accent"
-            label={WISH_PILL.write}
+            label={mine?.postedToday ? WISH_PILL.postedToday : WISH_PILL.write}
+            disabled={mine?.postedToday}
             onPress={() => {
               wishIntent.write = true;
               router.back();

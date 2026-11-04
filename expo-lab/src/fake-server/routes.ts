@@ -845,7 +845,7 @@ const ROUTES: Route[] = [
     }),
   ]),
 
-  // ── 소원 빌기 ──
+  // ── 소원 연꽃 ──
   route("GET", "/api/v1/wishes/pond", (ctx) => {
     const floating = ctx.db.wishes.filter((w) => !w.mine && !w.hidden && w.endReason == null);
     const picked = [...floating].sort(() => Math.random() - 0.5).slice(0, 10);
@@ -930,6 +930,7 @@ const ROUTES: Route[] = [
   route("GET", "/api/v1/wishes/mine", (ctx) => {
     const mine = ctx.db.wishes.filter((w) => w.mine && !w.hidden);
     return json({
+      postedToday: ctx.db.wishPostedToday,
       floating: mine
         .filter((w) => w.endReason == null)
         .map((w) => ({
