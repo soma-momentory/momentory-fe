@@ -41,8 +41,9 @@ import {
   groupBusy,
   groupProgress,
   pickGroup,
-  shouldStartPreview,
+  previewsToOpen,
   variantGroups,
+  type OpenedPreviews,
   type VariantGroupView,
 } from "../agent/variants";
 import { resetFakeData, sampleParams } from "../fake-server";
@@ -625,20 +626,17 @@ export function ShellApp() {
       { history: "push", navigate: true, target, force: true },
     );
   };
-  // 시안 비교가 열리면 꺼져 있는 시안의 수정 결과 화면을 켠다(실행이 끝난 것만 · 한 번씩).
+  // 시안 비교가 열리면 꺼져 있는 시안의 수정 결과 화면을 켠다(실행이 끝난 것만 · 묶음을 열 때마다 한 번씩).
   // 서버가 한꺼번에 띄우는 수는 `maxPreviews` 로 막는다
-  const startedPreviews = useRef(new Set<string>());
+  const openedPreviews = useRef<OpenedPreviews>({ groupId: null, ids: new Set() });
   useEffect(() => {
     if (state.layout !== "variants") {
-      startedPreviews.current.clear();
+      openedPreviews.current = { groupId: null, ids: new Set() };
       return;
     }
     if (!group) return;
-    const todo = group.members.filter(
-      (m) => shouldStartPreview(m) && !startedPreviews.current.has(m.id),
-    );
+    const todo = previewsToOpen(group, openedPreviews.current);
     if (!todo.length) return;
-    for (const m of todo) startedPreviews.current.add(m.id);
     void (async () => {
       for (const m of todo) await defaultAgentClient.startPreview(m.id);
       void refreshWorkspaces();
