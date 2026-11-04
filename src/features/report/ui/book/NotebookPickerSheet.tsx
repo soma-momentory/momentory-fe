@@ -19,7 +19,11 @@ export function NotebookPickerSheet({
   const { height } = useWindowDimensions();
   return (
     <BottomSheet onDismiss={onDismiss}>
-      <ScrollView testID="book-picker" style={{ maxHeight: height / 2 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        testID="book-picker"
+        style={{ maxHeight: height / 2 }}
+        showsVerticalScrollIndicator={false}
+      >
         {options.map((option, i) => (
           <View key={option.weekStart}>
             {i > 0 ? <ListDivider /> : null}
@@ -27,7 +31,9 @@ export function NotebookPickerSheet({
               title={option.range}
               description={`일기 ${option.diaryCount}일`}
               trailing={
-                option.weekStart === current ? <Icon name="check" size={20} color={primary.normal} /> : undefined
+                option.weekStart === current ? (
+                  <Icon name="check" size={20} color={primary.normal} />
+                ) : undefined
               }
               onPress={() => onSelect(option.weekStart)}
             />

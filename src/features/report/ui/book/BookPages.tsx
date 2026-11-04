@@ -10,7 +10,11 @@ import { keepWords } from "@/features/letter/model/letter";
 import type { BookDone, BookRest, WeeklyBook } from "@/features/report/data/weeklyBookApi";
 import { closingLines, weekdayOf, type BookPage } from "@/features/report/model/weeklyBook";
 import { REST_CONTENTS, type RestContentId } from "@/features/rest/model/contents";
-import { REST_MOODS, type RestMood, type RestRecordContent } from "@/features/rest/model/restRecord";
+import {
+  REST_MOODS,
+  type RestMood,
+  type RestRecordContent,
+} from "@/features/rest/model/restRecord";
 
 import { BabaOnRug, Bubble, CutPaper, hand, PebbleSticker, Ruled } from "./parts";
 
@@ -148,7 +152,9 @@ function Donut({ book }: { book: WeeklyBook }) {
     <View
       style={styles.donut}
       accessibilityRole="image"
-      accessibilityLabel={book.emotions.map((e) => `${emotionName(e.emotion)} ${e.count}번`).join(", ")}
+      accessibilityLabel={book.emotions
+        .map((e) => `${emotionName(e.emotion)} ${e.count}번`)
+        .join(", ")}
     >
       <Svg width={DONUT.size} height={DONUT.size}>
         {segments.map((e) => (
@@ -334,7 +340,9 @@ function RestMoods({ rest }: { rest: BookRest }) {
             <View style={styles.rowMarks}>
               {place.better + place.same + place.unsure <= REST_MARKS
                 ? (["better", "same", "unsure"] as const).flatMap((m) =>
-                    Array.from({ length: place[m] }, (_, n) => <MoodMark key={`${m}${n}`} mood={m} size={24} />),
+                    Array.from({ length: place[m] }, (_, n) => (
+                      <MoodMark key={`${m}${n}`} mood={m} size={24} />
+                    )),
                   )
                 : (["better", "same", "unsure"] as const)
                     .filter((m) => place[m] > 0)
@@ -433,16 +441,35 @@ function Closing({ book }: { book: WeeklyBook }) {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  page: { flexGrow: 1, paddingTop: 4, paddingBottom: 26, paddingLeft: 32, paddingRight: 14, gap: 9 },
+  page: {
+    flexGrow: 1,
+    paddingTop: 4,
+    paddingBottom: 26,
+    paddingLeft: 32,
+    paddingRight: 14,
+    gap: 9,
+  },
   shrink: { flexShrink: 1 },
   goodWords: { marginTop: 11 },
   babaCorner: { marginTop: "auto", alignSelf: "flex-end", paddingRight: 8, paddingTop: 2 },
   words: { gap: 30, marginTop: 9 },
   word: { gap: 8 },
   wordHead: { flexDirection: "row", alignItems: "center", gap: 8 },
-  dayTag: { width: 24, height: 24, borderRadius: 6, alignItems: "center", backgroundColor: color.tape },
+  dayTag: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    alignItems: "center",
+    backgroundColor: color.tape,
+  },
   donut: { alignSelf: "center", width: DONUT.size, height: DONUT.size, marginVertical: 4 },
-  donutCenter: { ...StyleSheet.absoluteFill, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 2 },
+  donutCenter: {
+    ...StyleSheet.absoluteFill,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
   row: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 36, paddingVertical: 5 },
   rowLine: { borderTopWidth: 1, borderTopColor: color.rule },
   rowEnd: { flex: 1, textAlign: "right" },
@@ -465,7 +492,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: color.rule,
   },
-  moodBar: { flexDirection: "row", height: 14, gap: 2, borderRadius: 4, overflow: "hidden", marginTop: 4 },
+  moodBar: {
+    flexDirection: "row",
+    height: 14,
+    gap: 2,
+    borderRadius: 4,
+    overflow: "hidden",
+    marginTop: 4,
+  },
   moodKey: { flexDirection: "row", flexWrap: "wrap", gap: 2, columnGap: 10 },
   moodKeyItem: { flexDirection: "row", alignItems: "center", gap: 3 },
   restPhoto: {
@@ -479,10 +513,20 @@ const styles = StyleSheet.create({
   doneHead: { flexDirection: "row", alignItems: "baseline", gap: 14, marginTop: 8 },
   digit: { letterSpacing: -1 },
   digitOne: { letterSpacing: -8 },
-  bars: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 6 },
+  bars: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
   barCol: { alignItems: "center", flex: 1 },
   bar: { width: 24, borderTopLeftRadius: 4, borderTopRightRadius: 4, backgroundColor: color.honey },
-  barLabel: { alignSelf: "stretch", textAlign: "center", borderTopWidth: 1, borderTopColor: color.rule },
+  barLabel: {
+    alignSelf: "stretch",
+    textAlign: "center",
+    borderTopWidth: 1,
+    borderTopColor: color.rule,
+  },
   closing: { flex: 1, justifyContent: "center", paddingHorizontal: 24, paddingBottom: 26 },
   closingBaba: { alignSelf: "center", marginTop: -18 },
 });

@@ -336,7 +336,16 @@ export const events = {
   weekly_report_viewed: { week_start: week },
   report_page_viewed: {
     week_start: week,
-    page: choice("cover", "review", "words", "feelEvents", "okMoments", "restMoods", "done", "closing"),
+    page: choice(
+      "cover",
+      "review",
+      "words",
+      "feelEvents",
+      "okMoments",
+      "restMoods",
+      "done",
+      "closing",
+    ),
   },
   logout_clicked: {},
   logout_completed: {},

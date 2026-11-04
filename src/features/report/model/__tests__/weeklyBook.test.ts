@@ -68,7 +68,10 @@ describe("공책의 장", () => {
 
 describe("마지막 인사", () => {
   it("가장 최근 공책은 지난 주 · 활기차게", () => {
-    expect(closingLines(book())).toEqual(["지난 주도 고생 많았어요", "이번 주도 활기차게 보내 봐요!"]);
+    expect(closingLines(book())).toEqual([
+      "지난 주도 고생 많았어요",
+      "이번 주도 활기차게 보내 봐요!",
+    ]);
   });
   it("예전 공책에는 지난 주라고 쓰지 않는다", () => {
     expect(closingLines(book({ newest: false })).join()).not.toContain("지난 주");
@@ -134,7 +137,13 @@ describe("응답 읽기", () => {
       { emotion: "없는감정", count: 1, events: [] },
     ],
     okMoments: [
-      { date: "2026-10-25", emotion: "calm", event: null, tasks: ["장보기"], betterRest: "BODY_RELEASE" },
+      {
+        date: "2026-10-25",
+        emotion: "calm",
+        event: null,
+        tasks: ["장보기"],
+        betterRest: "BODY_RELEASE",
+      },
     ],
     rest: {
       total: 1,

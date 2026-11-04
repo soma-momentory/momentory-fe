@@ -48,7 +48,8 @@ export function bookPages(book: WeeklyBook): BookPage[] {
  * 재촉으로 들리므로 빼고, 위기 안내가 나온 주는 아무것도 권하지 않는다.
  */
 export function closingLines(book: WeeklyBook): [string, string] {
-  if (book.tone === "CRISIS") return ["이야기를 남겨 줘서 고마워요", "아무것도 하지 않아도 괜찮아요"];
+  if (book.tone === "CRISIS")
+    return ["이야기를 남겨 줘서 고마워요", "아무것도 하지 않아도 괜찮아요"];
   const first = book.newest ? "지난 주도 고생 많았어요" : "이 주도 고생 많았어요";
   if (book.tone === "HARD") {
     return [first, book.newest ? "이번 주는 더 편안하기를 바라요" : "오늘은 더 편안하기를 바라요"];
