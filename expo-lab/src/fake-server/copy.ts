@@ -341,6 +341,7 @@ export const REST_CONTENTS = [
   "WORRY_BOX",
   "TREASURE_BOX",
   "BODY_RELEASE",
+  "MEDITATION",
   "WISH",
 ] as const;
 

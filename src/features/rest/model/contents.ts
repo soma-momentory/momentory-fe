@@ -1,5 +1,5 @@
 /**
- * 쉼터의 **쉼 콘텐츠** 다섯 가지 (2026-09-02 · 소원 연꽃은 2026-11-04).
+ * 쉼터의 **쉼 콘텐츠** 여섯 가지 (2026-09-02 · 3분 명상과 소원 연꽃은 2026-11-04).
  *
  * `R1` 진입 화면에서 바람카드 아래 두 칸씩 보여 주는 항목이다. 이름·설명은 제품
  * 문안이라 디자인이 아니라 **도메인**에 둔다(`CLAUDE.md` 「디자인 파일에 제품 규칙을
@@ -11,7 +11,8 @@
  */
 import type { IconName } from "@/components/ds";
 
-export type RestContentId = "sensePond" | "worryBox" | "treasureBox" | "bodyRelease" | "wish";
+export type RestContentId =
+  "sensePond" | "worryBox" | "treasureBox" | "bodyRelease" | "meditation" | "wish";
 
 export type RestContent = {
   id: RestContentId;
@@ -41,11 +42,12 @@ export type RestContent = {
   duration: string;
   /** 여는 화면. **없으면 아직 화면이 없다** — 카드가 눌리지 않는다 */
   route?:
-    | "/rest/wish"
     | "/rest/sense-pond"
     | "/rest/body-release"
     | "/rest/worry-box"
-    | "/rest/treasure-box";
+    | "/rest/treasure-box"
+    | "/rest/meditation"
+    | "/rest/wish";
 };
 
 export const REST_CONTENTS: readonly RestContent[] = [
@@ -80,6 +82,14 @@ export const REST_CONTENTS: readonly RestContent[] = [
     description: "몸에 힘을 줬다가\n천천히 풀어봐요",
     icon: "capybara-rest",
     route: "/rest/body-release",
+  },
+  {
+    id: "meditation",
+    title: "3분 명상",
+    duration: "3분",
+    description: "마음에 맞는 풍경에서\n잠시 머물러봐요",
+    icon: "wave",
+    route: "/rest/meditation",
   },
   {
     id: "wish",

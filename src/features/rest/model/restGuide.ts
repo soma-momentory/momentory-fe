@@ -1,5 +1,6 @@
 import type { RestRecordContent } from "./restRecord";
 import { BODY_RELEASE_PHASE_LABEL, BODY_RELEASE_SECONDS } from "./bodyRelease";
+import { MEDITATION_CONCEPTS } from "./meditation";
 import { TREASURE_BOX_INPUT } from "./treasureBox";
 import { WORRY_BOX_CHOICES, WORRY_BOX_INPUT } from "./worryBox";
 
@@ -106,7 +107,21 @@ export const REST_GUIDES: Record<RestRecordContent, RestGuide> = {
       { text: "힘을 줬다 풀면 굳어 있던\n몸이 풀리는 게 느껴져요." },
     ],
   },
+  // 3장이 다른 쉼터와 다르다 — 무엇이 달라지는지 말하지 않는다. 명상은 효과를 약속하지 않는다(`meditation.ts`)
+  meditation: {
+    pages: [
+      {
+        text: "마음에 맞는 풍경을 골라\n3분 동안 잠시 머물러요.",
+        example: { chips: MEDITATION_CONCEPTS.map((c) => c.name) },
+      },
+      { text: "안내 음성과 자막을 따라가요.\n음성은 끌 수 있어요." },
+      { text: "잠시 멈춰 지금의 나를 살펴봐요.\n불편하면 언제든 멈춰도 괜찮아요." },
+    ],
+  },
 };
+
+/** 3분 명상 설명 카드의 마지막 장에서 콘텐츠 정보(참고한 실습 · 출처)로 가는 길 */
+export const REST_GUIDE_MEDITATION_INFO = "참고한 실습 보기";
 
 /** 마지막 장이 아닌 장의 버튼 */
 export const REST_GUIDE_NEXT = "다음";

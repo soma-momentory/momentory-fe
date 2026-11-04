@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ds";
 import { useEffectiveFontScale } from "@/components/ds/Text";
-import { homeV2, restRecommendSize } from "@/design/ds";
+import { homeV2, meditation, restRecommendSize } from "@/design/ds";
 import type { RestContent, RestContentId } from "@/features/rest/model/contents";
 
 const PHOTOS: Record<RestContentId, number> = {
@@ -14,6 +14,7 @@ const PHOTOS: Record<RestContentId, number> = {
   // TODO(design): replace the temporary sleeping Baba reference with the approved
   // body-release illustration; the HTML draft used a treasure-box image here.
   bodyRelease: require("../../../assets/rest/baba-sleep.webp"),
+  meditation: require("../../../assets/meditation/wave.webp"),
 };
 
 const PHOTO_BACKGROUNDS: Record<RestContentId, string> = {
@@ -22,6 +23,7 @@ const PHOTO_BACKGROUNDS: Record<RestContentId, string> = {
   worryBox: homeV2.color.date,
   treasureBox: homeV2.color.today,
   bodyRelease: homeV2.color.greenSoft,
+  meditation: meditation.scene.wave,
 };
 
 /**

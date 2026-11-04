@@ -50,7 +50,9 @@ describe("쉼 추천 고르기", () => {
       title: "오늘은 이걸 해 봐요",
     });
 
-    const picked = new Set([0, 0.3, 0.6, 0.99].map((r) => recommendRest([], [], () => r).content));
+    const picked = new Set(
+      [0, 0.2, 0.4, 0.6, 0.99].map((r) => recommendRest([], [], () => r).content),
+    );
     // 소원 연꽃은 권하지 않는다
     expect(picked).toEqual(new Set(REST_CONTENTS.map((c) => c.id).filter((id) => id !== "wish")));
     expect(recommendRest([], [], () => 0)).toMatchObject({

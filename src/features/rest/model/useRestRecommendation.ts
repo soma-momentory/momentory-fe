@@ -24,6 +24,7 @@ const CONTENT_NAME: Record<RestContentId, RestContentName> = {
   worryBox: "worry_box",
   treasureBox: "treasure_box",
   bodyRelease: "body_release",
+  meditation: "meditation",
 };
 
 /**

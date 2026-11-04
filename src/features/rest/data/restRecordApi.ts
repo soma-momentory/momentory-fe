@@ -36,7 +36,14 @@ export type RestRecordFailureCode =
 export type RestRecordResult<T> =
   { ok: true; data: T } | { ok: false; code: RestRecordFailureCode };
 
-const CONTENTS = ["sense_pond", "worry_box", "treasure_box", "body_release", "wish"] as const;
+const CONTENTS = [
+  "sense_pond",
+  "worry_box",
+  "treasure_box",
+  "body_release",
+  "meditation",
+  "wish",
+] as const;
 const MOODS = ["better", "same", "unsure"] as const;
 
 const mapError = (error: HttpError): RestRecordFailureCode => {

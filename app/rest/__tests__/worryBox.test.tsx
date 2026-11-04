@@ -208,7 +208,7 @@ describe("걱정상자", () => {
     expect(r.getByText(/방금 했던 고민은\s*이제 잊어도 괜찮아요/)).toBeTruthy();
     expect(r.getByTestId("worry-box-card-motes", HIDDEN)).toBeTruthy();
     // 카피바라가 남기고 간 쪽지다 — 서명이 붙는다
-    expect(r.getByText("-카피바라-")).toBeTruthy();
+    expect(r.getByText("-바바-")).toBeTruthy();
 
     // 돌아가는 길은 쪽지가 다 내려앉은 **뒤**에 붙는다
     expect(r.queryByText("쉼터로 돌아가기")).toBeNull();
