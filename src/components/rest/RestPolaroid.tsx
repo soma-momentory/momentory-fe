@@ -27,8 +27,8 @@ const PHOTO_BACKGROUNDS: Record<RestContentId, string> = {
 };
 
 /**
- * 쉼터의 **폴라로이드 칸 하나** — 사진 · 이름 · 시간 · 설명. 쉼터 탭의 2×2(`RestContentGrid`)와
- * 쉼 추천 시트(`RestRecommendSheet`)가 함께 쓴다. 사진을 바꾸면 두 곳이 같이 바뀐다.
+ * 쉼터의 **폴라로이드 칸 하나** — 사진 · 이름 · 시간 · 설명. 온보딩 소개 그림의 격자(`RestContentGrid`)와
+ * 쉼 추천 시트(`RestRecommendSheet`)가 함께 쓴다. 쉼터 탭은 2026-11-04 부터 테마 카드(`RestThemeCard`)다.
  *
  * `size="sheet"` 는 칸이 혼자 서는 시트의 크기다. 사진을 조금 키우고, 3초 안에 읽혀야 하는 설명
  * 글자를 한 단 올린다(2026-11-02).

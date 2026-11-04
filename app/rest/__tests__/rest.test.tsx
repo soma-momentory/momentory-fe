@@ -7,6 +7,7 @@ import RestCards from "../cards/index";
 
 import { restRecommendMotion } from "@/design/ds";
 import { track } from "@/features/analytics";
+import { keepWords } from "@/features/letter/model/letter";
 import { useDiary } from "@/features/diary/model/diary";
 import { emotionName } from "@/features/emotion/model/emotion";
 import { useProfile } from "@/features/my/model/settings";
@@ -94,7 +95,7 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
 
     expect(getByText("지금 나에게 맞는 쉼을 골라보세요")).toBeTruthy();
     for (const title of ["감각연못", "걱정상자", "오늘의 보물함", "몸에 힘 빼기", "3분 명상"]) {
-      expect(getByText(title)).toBeTruthy();
+      expect(getByText(keepWords(title))).toBeTruthy();
     }
   });
 
@@ -152,7 +153,7 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     const { getByLabelText, getByText } = await render(<Rest />);
 
     // 요약 줄은 회고가 먼저라는 사실만 말하되, 진입은 막지 않는다
-    expect(getByText("회고를 마치면 그날의 바람카드가 여기 남아요")).toBeTruthy();
+    expect(getByText(keepWords("회고를 마치면 그날의 바람카드가 여기 남아요"))).toBeTruthy();
     await fireEvent.press(getByLabelText("바람카드 보기"));
     await waitFor(() => expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/cards"));
   });
@@ -262,9 +263,10 @@ describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
 
     expect(r.getByText("불안한 날엔, 이걸 해 봐요")).toBeTruthy();
     expect(r.getByText("불안함")).toBeTruthy();
-    // 쉼터 칸은 쉼터 탭과 같은 부품이다 — 뒤 격자와 시트에 같은 글자가 하나씩 선다
-    expect(r.getAllByText("몸에 힘 빼기")).toHaveLength(2);
-    expect(r.getAllByText("몸에 힘을 줬다가\n천천히 풀어봐요")).toHaveLength(2);
+    // 시트의 칸은 폴라로이드(이름 · 설명) · 뒤 격자는 테마 카드(어절을 묶은 이름 · 설명 없음)다
+    expect(r.getByText("몸에 힘 빼기")).toBeTruthy();
+    expect(r.getByText(keepWords("몸에 힘 빼기"))).toBeTruthy();
+    expect(r.getByText("몸에 힘을 줬다가\n천천히 풀어봐요")).toBeTruthy();
     expect(r.getAllByText("1분")).toHaveLength(3);
     expect(r.getByText("지금 해 볼게요")).toBeTruthy();
     // 저장 알림은 두지 않는다 — 쉼터로 넘어온 것이 곧 저장이 끝났다는 뜻이다(사용자 요청)
