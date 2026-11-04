@@ -240,6 +240,8 @@ export const routeSections: readonly RouteSection[] = [
         openVia: { path: "/rest", afterRequest: "/api/v1/action-cards" },
         hint: "쉼터를 먼저 열어 바람카드를 받은 뒤 옮긴다",
       },
+      { path: "/rest/wish", title: "소원 연꽃" },
+      { path: "/rest/wish-mine", title: "내 소원" },
       { path: "/rest/sense-pond", title: "감각연못" },
       { path: "/rest/worry-box", title: "걱정상자" },
       { path: "/rest/worries", title: "맡겨둔 걱정" },

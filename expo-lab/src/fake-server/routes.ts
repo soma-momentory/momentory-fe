@@ -191,6 +191,7 @@ const REST_CONTENTS: readonly RestContent[] = [
   "TREASURE_BOX",
   "BODY_RELEASE",
   "MEDITATION",
+  "WISH",
 ];
 const REST_MOODS: readonly RestMood[] = ["BETTER", "SAME", "UNSURE"];
 const INQUIRY_CATEGORIES = ["BUG", "SUGGESTION", "ACCOUNT", "ETC"];
@@ -844,6 +845,137 @@ const ROUTES: Route[] = [
       return json({ [kind]: newestFirst(ctx.db[kind]).map(noteDto) });
     }),
   ]),
+
+  // ── 소원 연꽃 ──
+  route("GET", "/api/v1/wishes/pond", (ctx) => {
+    const floating = ctx.db.wishes.filter((w) => !w.mine && !w.hidden && w.endReason == null);
+    const picked = [...floating].sort(() => Math.random() - 0.5).slice(0, 10);
+    const baba = [
+      "오늘은 귤이 달았으면 좋겠어요",
+      "따뜻한 물에 오래 있고 싶어요",
+      "오늘 밤에는 다들 푹 잤으면 좋겠어요",
+      "풀밭에서 낮잠을 자고 싶어요",
+      "좋아하는 모자를 오래 쓰고 싶어요",
+    ].slice(0, Math.max(0, 5 - picked.length));
+    return json({
+      rulesAgreed: ctx.db.wishRulesAgreed,
+      postedToday: ctx.db.wishPostedToday,
+      hasFloatingWish: ctx.db.wishes.some((w) => w.mine && !w.hidden && w.endReason == null),
+      floatingCount: Math.max(floating.length, picked.length + baba.length),
+      wishes: [
+        ...picked.map((w) => ({
+          id: w.id,
+          content: w.content,
+          daysLeft: w.daysLeft,
+          light: w.light,
+          joined: w.joined,
+          author: "USER",
+        })),
+        ...baba.map((content, i) => ({
+          id: -(i + 1),
+          content,
+          daysLeft: 7,
+          light: true,
+          joined: false,
+          author: "BABA",
+        })),
+      ],
+    });
+  }),
+  route("POST", "/api/v1/wishes/rules-agreement", (ctx) => {
+    ctx.db.wishRulesAgreed = true;
+    ctx.wrote = true;
+    return json(null, 204);
+  }),
+  route("POST", "/api/v1/wishes/review", (ctx, req) => {
+    const b = req.body;
+    if (!isObject(b) || !isText(b.content, 120)) return invalid();
+    if (!ctx.db.wishRulesAgreed)
+      return error(403, "WISH_RULES_REQUIRED", "이용 규칙에 먼저 동의해주세요.");
+    if (ctx.db.wishPostedToday)
+      return error(409, "WISH_DAILY_LIMIT", "소원은 하루에 하나만 띄울 수 있습니다.");
+    const text = b.content.trim();
+    if (/눈 뜨지|죽고|사라지고/.test(text)) return json({ result: "CRISIS" });
+    if (/잘리면|다치면|망하면/.test(text)) {
+      return json({ result: "REJECTED", message: "누군가 잘못되길 바라는 말은 띄울 수 없어요" });
+    }
+    const cleaned = text.replace(/\d{2,3}-?\d{3,4}-?\d{4}\s*/g, "").replace(/김지훈/g, "그 사람");
+    return json({
+      result: cleaned === text ? "PASS" : "EDITED",
+      content: cleaned,
+      reviewToken: "lab",
+    });
+  }),
+  route("POST", "/api/v1/wishes", (ctx, req) => {
+    const b = req.body;
+    if (!isObject(b) || !isText(b.content, 120)) return invalid();
+    if (ctx.db.wishPostedToday)
+      return error(409, "WISH_DAILY_LIMIT", "소원은 하루에 하나만 띄울 수 있습니다.");
+    const row = {
+      id: nextId(ctx.db),
+      mine: true,
+      content: b.content,
+      daysLeft: 7,
+      light: true,
+      joined: false,
+      joinedByOthers: false,
+      endReason: null,
+      outcome: null,
+      hidden: false,
+    };
+    ctx.db.wishes.push(row);
+    ctx.db.wishPostedToday = true;
+    ctx.wrote = true;
+    return json({ id: row.id, content: row.content, daysLeft: 7, joinedByOthers: false }, 201);
+  }),
+  route("GET", "/api/v1/wishes/mine", (ctx) => {
+    const mine = ctx.db.wishes.filter((w) => w.mine && !w.hidden);
+    return json({
+      postedToday: ctx.db.wishPostedToday,
+      floating: mine
+        .filter((w) => w.endReason == null)
+        .map((w) => ({
+          id: w.id,
+          content: w.content,
+          daysLeft: w.daysLeft,
+          joinedByOthers: w.joinedByOthers,
+        })),
+      past: mine
+        .filter((w) => w.endReason != null)
+        .map((w) => ({ id: w.id, content: w.content, endReason: w.endReason, outcome: w.outcome })),
+    });
+  }),
+  ...(["join", "report"] as const).map((action) =>
+    route("POST", `/api/v1/wishes/:id/${action}`, (ctx, _req, [id]) => {
+      const w = ctx.db.wishes.find((x) => x.id === Number(id));
+      if (!w || w.mine) return notFound("WISH_NOT_FOUND");
+      if (action === "join") w.joined = true;
+      else w.hidden = true;
+      ctx.wrote = true;
+      return json(null, 204);
+    }),
+  ),
+  route("DELETE", "/api/v1/wishes/:id/report", (ctx, _req, [id]) => {
+    const w = ctx.db.wishes.find((x) => x.id === Number(id));
+    if (w) w.hidden = false;
+    ctx.wrote = true;
+    return json(null, 204);
+  }),
+  route("DELETE", "/api/v1/wishes/:id", (ctx, _req, [id]) => {
+    const w = ctx.db.wishes.find((x) => x.id === Number(id) && x.mine);
+    if (!w) return notFound("WISH_NOT_FOUND");
+    w.hidden = true;
+    ctx.wrote = true;
+    return json(null, 204);
+  }),
+  route("PUT", "/api/v1/wishes/:id/outcome", (ctx, req, [id]) => {
+    const w = ctx.db.wishes.find((x) => x.id === Number(id) && x.mine);
+    if (!w) return notFound("WISH_NOT_FOUND");
+    if (!isObject(req.body)) return invalid();
+    w.outcome = req.body.outcome === "CAME_TRUE" ? "CAME_TRUE" : "NOT_YET";
+    ctx.wrote = true;
+    return json(null, 204);
+  }),
 
   // ── 문의 · 기타 ──
   route("POST", "/api/v1/inquiries", (ctx, req) => {

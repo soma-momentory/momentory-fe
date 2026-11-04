@@ -96,6 +96,17 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | rest_content_opened           | 쉼 콘텐츠 화면을 엶                                              | content, entry, diary_today (아래)                                                                        |
 | rest_content_completed        | 쉼 콘텐츠를 끝까지 함                                            | content, duration_ms                                                                                      |
 | rest_content_exited           | 끝내지 않고 쉼 콘텐츠 화면을 떠남                                | content, stage, duration_ms                                                                               |
+| wish_rules_agreed             | 소원 연못 이용 규칙에 동의                                       | 없음                                                                                                      |
+| wish_joined                   | 소원 한 장을 꾸욱 눌러 같이 빎                                   | position(묶음 안 자리), author(user, baba)                                                                |
+| wish_join_cancelled           | 다 채우기 전에 손을 뗌                                           | 없음                                                                                                      |
+| wish_batch_finished           | 묶음의 마지막 장까지 넘김(묶음마다 한 번)                        | joined(그 묶음에서 같이 빈 수)                                                                            |
+| wish_submitted                | 쓴 소원을 심사에 보냄                                            | chars                                                                                                     |
+| wish_review_result            | 심사 결과를 받음                                                 | result(pass, edited, rejected, crisis, failed)                                                            |
+| wish_posted                   | 소원을 연못에 띄움                                               | chars                                                                                                     |
+| wish_deleted                  | 내 소원을 지움                                                   | 없음                                                                                                      |
+| wish_reported                 | 소원을 신고함                                                    | 없음                                                                                                      |
+| wish_report_undone            | 신고를 되돌림                                                    | 없음                                                                                                      |
+| wish_followup_answered        | 지나간 소원에 답함                                               | outcome(came_true, not_yet)                                                                               |
 | rest_guide_opened             | 쉼터의 「?」 원을 눌러 설명 카드를 다시 엶                       | content                                                                                                   |
 | worry_box_handed              | 걱정상자에 걱정을 맡김                                           | chars (글자 수만)                                                                                         |
 | worry_box_choice_selected     | 걱정상자의 맡겨두기/흘려보내기 선택                              | choice: keep/release                                                                                      |
@@ -122,7 +133,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 
 화면명은 login, home, archive, rest, report, my, onboarding, schedule_new,
 schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
-wish_cards, wish_card_trail, sense_pond, body_release, worry_box, worry_list, treasure_box, meditation, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다.
+wish_cards, wish_card_trail, sense_pond, body_release, worry_box, worry_list, treasure_box, meditation, wish_pond, wish_mine, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다.
 온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다.
 retroTime 단계에서는 진행 여부와 알림 권한 허용 여부(notify_permission_result)를 알 수 있다.
 설정 시각·예약 성공은 수집하지 않는다. 마이 M2 에서는 꺼진 알림을 켤 때 묻는 결과만 남는다.
@@ -172,7 +183,7 @@ step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단
 
 **쉼 콘텐츠 공통 계측**(2026-10-05 · `rest_content_*`)은 모든 쉼 콘텐츠가 같이 쓴다 — 얼마나 들어오고,
 얼마나 끝까지 가고, 못 끝내면 어디서 나가는지를 같은 이벤트로 보고 content(sense_pond, body_release,
-worry_box, treasure_box, meditation)로 가른다. 시간은 모두 전면 시계로 잰다.
+worry_box, treasure_box, meditation, wish)로 가른다. 시간은 모두 전면 시계로 잰다.
 
 - rest_content_opened 의 entry 는 쉼터에 **어떻게 들어왔나**다. 회고 완료 화면(retro_done)에서 쉼터
   묶음(쉼터 탭 · 바람카드 · 쉼 콘텐츠)으로 들어온 방문은 after_diary 이고(2026-10-12 부터 바람카드가 없는
@@ -183,10 +194,11 @@ worry_box, treasure_box, meditation)로 가른다. 시간은 모두 전면 시�
 - rest_content_completed 는 끝까지 한 때 한 번이다 — 감각연못은 마지막 감각을 찾은 순간(sense_pond_finished
   와 같은 때), 몸에 힘 빼기는 네 부위를 다 한 순간, 걱정상자는 맡겨두기/흘려보내기를 고른 순간이다.
   오늘의 보물함은 보물함이 닫히는 연출이 끝난 순간이다(저장 성공 여부와 상관없이).
+  소원 연꽃은 처음 같이 빌거나 소원을 띄운 순간이다.
   끝까지 간 판은 떠나도 rest_content_exited 를 보내지 않는다.
 - rest_content_exited 의 stage 는 **나간 자리**다. 감각연못 intro(시작 전)/see/hear/feel(2026-11-04 부터 시작 화면이 생겨 intro 가 있다. 그 전에는 들어오자마자 나가도 see 였으므로, 예전 see 와 비교할 때는 새 앱의 intro + see 를 합쳐 본다), 몸에 힘 빼기 intro(시작 전)/
   hands/shoulders/face/legs(하던 부위), 걱정상자 write(쓰다가)/handing(건네는 연출 중)/boxed(고르기 전),
-  오늘의 보물함 write(쓰다가)/tucking(담는 연출 중).
+  오늘의 보물함 write(쓰다가)/tucking(담는 연출 중), 소원 연꽃 pond(연못)/wish_card(소원 한 장)/rules(이용 규칙)/write(쓰다가)/confirm(띄우기 전 확인).
   화면이 닫힐 때 보내므로, 쉼 콘텐츠 화면에서 앱을 강제 종료하면 빠질 수 있다 — 그때는 screen_left
   (exit=background)의 마지막 화면으로 본다.
 - 걱정상자는 쓴 걱정을 **계측으로 보내지 않는다.** worry_box_handed 는 글자 수(chars)만 싣는다. 걱정 원문은

@@ -8,7 +8,7 @@
  * 말투: 평가하지 않는다 — 기분은 답일 뿐 점수가 아니고, 중간에 나간 것도 「잠깐 들렀어요」다.
  */
 export type RestRecordContent =
-  "sense_pond" | "worry_box" | "treasure_box" | "body_release" | "meditation";
+  "sense_pond" | "worry_box" | "treasure_box" | "body_release" | "meditation" | "wish";
 export type RestMood = "better" | "same" | "unsure";
 
 export const REST_MOOD_QUESTION = "기분이 나아졌나요?";
@@ -33,6 +33,7 @@ export const REST_RECORD_TITLES: Record<RestRecordContent, string> = {
   treasure_box: "보물함 기록",
   body_release: "몸에 힘 빼기 기록",
   meditation: "3분 명상 기록",
+  wish: "소원 연꽃 기록",
 };
 
 export const isRestRecordContent = (v: unknown): v is RestRecordContent =>

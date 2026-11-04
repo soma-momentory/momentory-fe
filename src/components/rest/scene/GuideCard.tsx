@@ -54,6 +54,7 @@ const ART: Record<RestRecordContent, GuideArt> = {
     ],
   },
   treasure_box: { steps: [], target: require("../../../../assets/treasure-box/chest-closed.webp") },
+  wish: { steps: [], target: require("../../../../assets/wish/flower.webp") },
   body_release: {
     steps: [
       require("../../../../assets/body-release/capybara-hands.webp"),

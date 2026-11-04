@@ -1,7 +1,7 @@
 /**
- * 쉼터의 **쉼 콘텐츠** 네 가지 (2026-09-02).
+ * 쉼터의 **쉼 콘텐츠** 여섯 가지 (2026-09-02 · 3분 명상과 소원 연꽃은 2026-11-04).
  *
- * `R1` 진입 화면에서 바람카드 아래 2×2 로 보여 주는 항목이다. 이름·설명은 제품
+ * `R1` 진입 화면에서 바람카드 아래 두 칸씩 보여 주는 항목이다. 이름·설명은 제품
  * 문안이라 디자인이 아니라 **도메인**에 둔다(`CLAUDE.md` 「디자인 파일에 제품 규칙을
  * 넣지 않는다」). 순서는 화면에 놓이는 순서 그대로다 — 왼쪽 위부터 읽는 순서.
  *
@@ -11,7 +11,8 @@
  */
 import type { IconName } from "@/components/ds";
 
-export type RestContentId = "sensePond" | "worryBox" | "treasureBox" | "bodyRelease" | "meditation";
+export type RestContentId =
+  "sensePond" | "worryBox" | "treasureBox" | "bodyRelease" | "meditation" | "wish";
 
 export type RestContent = {
   id: RestContentId;
@@ -45,7 +46,8 @@ export type RestContent = {
     | "/rest/body-release"
     | "/rest/worry-box"
     | "/rest/treasure-box"
-    | "/rest/meditation";
+    | "/rest/meditation"
+    | "/rest/wish";
 };
 
 export const REST_CONTENTS: readonly RestContent[] = [
@@ -88,6 +90,14 @@ export const REST_CONTENTS: readonly RestContent[] = [
     description: "마음에 맞는 풍경에서\n잠시 머물러봐요",
     icon: "wave",
     route: "/rest/meditation",
+  },
+  {
+    id: "wish",
+    title: "소원 연꽃",
+    duration: "1분",
+    description: "다른 사람 소원을 같이 빌고\n내 소원도 띄워봐요",
+    icon: "wave",
+    route: "/rest/wish",
   },
 ];
 

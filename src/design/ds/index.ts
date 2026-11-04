@@ -134,4 +134,5 @@ export const ds = { ...color, ...metrics, ...typography } as const;
 export default ds;
 
 export { pondScene, pondSceneMotion } from "./pondScene";
+export { wishScene, wishSceneMotion } from "./wishScene";
 export { retroDiary } from "./retroDiary";

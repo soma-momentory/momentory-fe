@@ -342,6 +342,7 @@ export const REST_CONTENTS = [
   "TREASURE_BOX",
   "BODY_RELEASE",
   "MEDITATION",
+  "WISH",
 ] as const;
 
 /** 긴 글 세트(`long-copy`) — 줄바꿈 · 넘침을 보는 용도 */

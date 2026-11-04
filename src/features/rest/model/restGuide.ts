@@ -39,6 +39,19 @@ export type RestGuide = { pages: readonly [RestGuidePage, RestGuidePage, RestGui
 const seconds = (phase: keyof typeof BODY_RELEASE_SECONDS) => `${BODY_RELEASE_SECONDS[phase]}초`;
 
 export const REST_GUIDES: Record<RestRecordContent, RestGuide> = {
+  wish: {
+    pages: [
+      {
+        text: "다른 사람 소원이 떠 있어요.\n꾸욱 눌러 같이 빌어 봐요.",
+        example: { note: "우리 강아지가 오래 건강하면 좋겠어요" },
+      },
+      {
+        text: "내 소원은 하루에 하나 띄워요.\n익명으로 7일 동안 보여요.",
+        example: { note: "내일 면접에서 떨지 않으면 좋겠어요" },
+      },
+      { text: "누가 내 소원을 같이 빌면\n내 소원에서 알려줄게요." },
+    ],
+  },
   sense_pond: {
     pages: [
       {

@@ -42,6 +42,7 @@ const BACKGROUNDS: Record<RestRecordContent, number> = {
   treasure_box: require("../../assets/treasure-box/meadow.webp"),
   body_release: require("../../assets/body-release/sky.webp"),
   meditation: require("../../assets/meditation/wave.webp"),
+  wish: require("../../assets/wish/pond-night.webp"),
 };
 
 export default function RestRecordsScreen() {
