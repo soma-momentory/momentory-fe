@@ -36,6 +36,19 @@ export const reportBook = {
     curl: "#EFE6D6",
     fold: "rgba(72,41,26,.16)",
   },
+  /** 감정 도넛 색 — 곁에 놓이는 조약돌 그림에서 뽑았다. 글로벌 감정 색은 조약돌과 달라 같은 감정이 다른 색으로 보인다 */
+  pebble: {
+    1: "#F2C763",
+    2: "#9CCEBC",
+    3: "#BBC892",
+    4: "#C2BAB2",
+    5: "#BA9FCA",
+    6: "#6783A2",
+    7: "#F9A85F",
+    8: "#87B1D0",
+    9: "#DF8279",
+    10: "#F6ADAB",
+  },
   shadow: {
     book: "0px 12px 16px rgba(72,41,26,.2)",
     label: "0px 1px 2px rgba(72,41,26,.25)",

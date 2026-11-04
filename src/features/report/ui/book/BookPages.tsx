@@ -4,7 +4,7 @@ import Svg, { Circle } from "react-native-svg";
 import { Icon, Text } from "@/components/ds";
 import { REST_PHOTOS } from "@/components/rest/RestPolaroid";
 import { MoodMark } from "@/components/rest/scene/MoodMark";
-import { emotion as emotionColor, homeV2, reportBook, restMood } from "@/design/ds";
+import { homeV2, reportBook, restMood } from "@/design/ds";
 import { emotionName } from "@/features/emotion/model/emotion";
 import { keepWords } from "@/features/letter/model/letter";
 import type { BookDone, BookRest, WeeklyBook } from "@/features/report/data/weeklyBookApi";
@@ -35,6 +35,7 @@ const restName = (content: RestRecordContent) =>
 
 /** 많이 쓴 세 곳만 줄로 둔다 — 쉼터가 늘어도 한 장에 맞게. 제목과 막대는 전부 센다 */
 const REST_ROWS = 3;
+const WORD_JOINER = "\u2060";
 const REST_MARKS = 4;
 const MOOD_COLOR: Record<RestMood, string> = {
   better: restMood.sun,
@@ -119,13 +120,13 @@ function Words({ book }: { book: WeeklyBook }) {
               ) : null}
             </View>
             <Ruled size={22} lineHeight={36}>
+              {/* 따옴표가 혼자 다음 줄로 떨어지지 않게 낱말에 붙인다 */}
               <Text style={hand(30, 36)} color={color.honey}>
-                “{" "}
+                “{WORD_JOINER}
               </Text>
               {keepWords(word.text)}
               <Text style={hand(30, 36)} color={color.honey}>
-                {" "}
-                ”
+                {WORD_JOINER}”
               </Text>
             </Ruled>
           </View>
@@ -164,7 +165,7 @@ function Donut({ book }: { book: WeeklyBook }) {
             cy={DONUT.size / 2}
             r={radius}
             fill="none"
-            stroke={emotionColor[e.emotion]}
+            stroke={reportBook.pebble[e.emotion]}
             strokeWidth={DONUT.stroke}
             strokeDasharray={`${Math.max(e.length - DONUT.gap, 0.5)} ${round}`}
             strokeDashoffset={-e.offset}
@@ -382,7 +383,11 @@ function Done({ done }: { done: BookDone }) {
         <Text style={hand(50, 54)} color={color.honeyInk}>
           {/* 손글씨 글꼴의 1 은 옆 공간이 넓어 붙여 준다 */}
           {[...String(done.completedCount)].map((digit, i) => (
-            <Text key={i} style={digit === "1" ? styles.digitOne : styles.digit}>
+            <Text
+              key={i}
+              style={[hand(50, 54), digit === "1" ? styles.digitOne : styles.digit]}
+              color={color.honeyInk}
+            >
               {digit}
             </Text>
           ))}
