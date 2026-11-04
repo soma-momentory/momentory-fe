@@ -37,7 +37,7 @@
  * 하나라도 도는 동안 다른 지시는 받지 않는다(409). 시안의 미리보기는 실행이 끝나도 저절로 켜지 않는다 —
  * 다른 시안이 아직 돌 수 있기 때문이다(아래 startRun 의 미리보기 주석). 「시안 비교」 화면이 열릴 때 셸이 켠다.
  *
- * 미리보기 서버는 한꺼번에 `maxPreviews`(기본 4 — 시안 3 + 하나)까지 띄운다. 넘으면 가장 오래 쓰지 않은 것을 끈다.
+ * 미리보기 서버는 한꺼번에 `maxPreviews`(기본 12 — 시안 3개 묶음 넷)까지 띄운다. 넘으면 가장 오래 쓰지 않은 것을 끈다.
  */
 const fs = require("node:fs");
 const path = require("node:path");
@@ -64,8 +64,38 @@ const PREFIX = "/__lab/agent";
 const BODY_LIMIT = 60 * 1024 * 1024; // 첨부 그림 여러 장(최대 12장)
 const HISTORY = 5;
 const MAX_ATTACHMENTS = 12;
-/** 미리보기 서버(Metro 하나씩 — 메모리가 크다)를 한꺼번에 몇 개까지 띄우나. 넘으면 가장 오래 쓰지 않은 것을 끈다 */
-const MAX_PREVIEWS = 4;
+/**
+ * 미리보기 서버(Metro 하나씩)를 한꺼번에 몇 개까지 띄우나. 넘으면 가장 오래 쓰지 않은 것을 끈다.
+ * 켜는 데는 셋 동시에 약 20초가 들지만 켜 둔 것은 하나에 0.25GB 쯤이고 가만히 있을 때 CPU 를 거의 안 쓴다
+ * (2026-11-04 측정) — 묶음을 오갈 때마다 다시 켜지 않게 넉넉히 둔다.
+ */
+const MAX_PREVIEWS = 12;
+/** 목록(상태 폴링)이 기억해 둔 변경 내역을 다시 읽는 간격. 한 작업 공간을 열거나 실행이 끝나면 바로 새로 읽는다. */
+const LIST_CHANGES_TTL_MS = 60_000;
+/** 목록을 위해 git 을 동시에 돌리는 작업 공간 수 */
+const LIST_GIT_WORKSPACES = 4;
+
+/** 비동기 일을 동시에 `max` 개까지만 돌린다. @param {number} max */
+function limitConcurrency(max) {
+  let active = 0;
+  /** @type {(() => void)[]} */
+  const waiting = [];
+  /** @template T @param {() => Promise<T>} work @returns {Promise<T>} */
+  return (work) =>
+    new Promise((resolve, reject) => {
+      const start = () => {
+        active += 1;
+        work()
+          .then(resolve, reject)
+          .finally(() => {
+            active -= 1;
+            waiting.shift()?.();
+          });
+      };
+      if (active < max) start();
+      else waiting.push(start);
+    });
+}
 
 /** @typedef {import("node:http").IncomingMessage} Req */
 /** @typedef {import("node:http").ServerResponse} Res */
@@ -183,6 +213,7 @@ function readTarget(raw) {
  *   checkSpawnImpl?: typeof import("node:child_process").spawn;
  *   startPreview?: (wsPath: string, port: number, logPath: string) => PreviewServer;
  *   maxPreviews?: number;
+ *   changesTtlMs?: number;
  * }} options
  */
 function createLabAgent(options) {
@@ -215,6 +246,14 @@ function createLabAgent(options) {
 
   /** @type {Map<string, ReviewCheck>} 작업 공간 id → 마지막 저장 전 검사 */
   const checks = new Map();
+
+  const changesTtlMs = options.changesTtlMs ?? LIST_CHANGES_TTL_MS;
+  const limitListGit = limitConcurrency(LIST_GIT_WORKSPACES);
+  /**
+   * 작업 공간 id → 목록에 쓸 변경 내역(`listedChanges`)
+   * @type {Map<string, { key: string; at: number; value: ReturnType<WorkspaceStore["changes"]>; pending?: boolean; refreshing?: boolean }>}
+   */
+  const changesMemo = new Map();
 
   /** @param {string} id */
   const latestRun = (id) => runs.get(id)?.at(-1) ?? null;
@@ -320,14 +359,74 @@ function createLabAgent(options) {
       .find(Boolean)
       ?.slice(0, 160) ?? null;
 
-  /** @param {WorkspaceMeta} meta */
-  async function summarize(meta) {
+  /** 이 값이 바뀌면 기억해 둔 변경 내역을 쓰지 않는다 — 실행 · 검사가 시작되거나 끝났다는 뜻이다. @param {WorkspaceMeta} meta */
+  const changesKey = (meta) => {
+    const run = latestRun(meta.id);
+    return [meta.createdAt, run?.startedAt, run?.status, checks.get(meta.id)?.status].join("|");
+  };
+
+  /** 지금 git 으로 읽고 기억해 둔다 — 한 작업 공간을 보거나 고친 뒤에 부른다. @param {WorkspaceMeta} meta */
+  const freshChanges = (meta) => {
+    const value = store.changes(meta);
+    const memo = { key: changesKey(meta), at: Date.now(), value, pending: true };
+    changesMemo.set(meta.id, memo);
+    value.then(
+      () => {
+        memo.pending = false;
+        memo.at = Date.now();
+      },
+      () => {
+        if (changesMemo.get(meta.id) === memo) changesMemo.delete(meta.id);
+      },
+    );
+    return value;
+  };
+
+  /**
+   * 목록(상태 · 작업 공간 전부)이 쓰는 변경 내역. 폴링마다 작업 공간 전부에 git 넷씩을 돌리면 시안이
+   * 수십 개일 때 Metro 까지 함께 멈춘다 — 기억해 둔 값을 바로 주고, 오래됐으면 뒤에서 나눠 읽는다.
+   * 실행 중이거나 띄우는 중이면 늘 다시 읽는다(시안 몇 개뿐이다).
+   * @param {WorkspaceMeta} meta
+   */
+  const listedChanges = (meta) => {
+    const memo = changesMemo.get(meta.id);
+    const key = changesKey(meta);
+    const live = isRunning(meta.id) || starting.has(meta.id);
+    if (memo?.key === key) {
+      if (memo.pending) return memo.value;
+      if (!live) {
+        if (Date.now() - memo.at >= changesTtlMs && !memo.refreshing) {
+          memo.refreshing = true;
+          void limitListGit(() => freshChanges(meta)).catch(() => undefined);
+        }
+        return memo.value;
+      }
+    }
+    // 차례를 기다리는 동안의 자리표 — **먼저** 넣는다. 빈자리가 있으면 freshChanges 가 바로 돌아 제 기록으로 바꾼다
+    const placeholder = /** @type {NonNullable<ReturnType<typeof changesMemo.get>>} */ ({
+      key,
+      at: Date.now(),
+      pending: true,
+    });
+    changesMemo.set(meta.id, placeholder);
+    placeholder.value = limitListGit(() => freshChanges(meta));
+    placeholder.value.catch(() => {
+      if (changesMemo.get(meta.id) === placeholder) changesMemo.delete(meta.id);
+    });
+    return placeholder.value;
+  };
+
+  /**
+   * @param {WorkspaceMeta} meta
+   * @param {(meta: WorkspaceMeta) => Promise<Awaited<ReturnType<WorkspaceStore["changes"]>>>} [readChanges]
+   */
+  async function summarize(meta, readChanges = freshChanges) {
     const run = latestRun(meta.id);
     const check = checks.get(meta.id);
     // 실행 · 띄우는 중은 git 을 읽기(await) **전에** 한꺼번에 본다 — 그 사이에 실행이 붙으면 「아무것도 아님」으로 보인다
     const isStarting = starting.has(meta.id);
     const note = variantNotes.get(meta.id) ?? null;
-    const changes = await store.changes(meta);
+    const changes = await readChanges(meta);
     const status =
       run?.status === "running"
         ? "working"
@@ -603,7 +702,7 @@ function createLabAgent(options) {
 
     if (method === "GET" && parts[0] === "status" && parts.length === 1) {
       const [available, repo] = await Promise.all([tools(), store.repoInfo()]);
-      const workspaces = await Promise.all(store.list().map(summarize));
+      const workspaces = await Promise.all(store.list().map((m) => summarize(m, listedChanges)));
       return sendJson(res, 200, {
         available: {
           claude: Boolean(available.claude),
@@ -727,7 +826,9 @@ function createLabAgent(options) {
 
     if (parts.length === 1) {
       if (method === "GET")
-        return sendJson(res, 200, { workspaces: await Promise.all(store.list().map(summarize)) });
+        return sendJson(res, 200, {
+          workspaces: await Promise.all(store.list().map((m) => summarize(m, listedChanges))),
+        });
       if (method === "POST") {
         const meta = await store.ensure(readTarget(await readJson(req)));
         return sendJson(res, 201, { workspace: await summarize(meta) });
@@ -930,4 +1031,12 @@ function withLabAgent(config, opts = {}) {
   return config;
 }
 
-module.exports = { createLabAgent, withLabAgent, readTarget, PREFIX, BODY_LIMIT, MAX_PREVIEWS };
+module.exports = {
+  createLabAgent,
+  withLabAgent,
+  readTarget,
+  limitConcurrency,
+  PREFIX,
+  BODY_LIMIT,
+  MAX_PREVIEWS,
+};

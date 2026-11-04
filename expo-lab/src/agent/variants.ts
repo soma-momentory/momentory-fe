@@ -142,6 +142,30 @@ export const shouldStartPreview = (ws: WorkspaceSummary) => {
   return state.canStart && ws.preview?.status !== "failed";
 };
 
+/** 시안 비교가 이미 서버에 알린 시안 — 묶음을 바꾸면 다시 센다 */
+export type OpenedPreviews = { groupId: string | null; ids: Set<string> };
+
+/**
+ * 이번에 서버에 알릴 시안 — 꺼진 것은 켜고, 켜진 것은 「방금 봤다」고 알린다(상한을 넘으면 오래 안 본 것부터 끈다).
+ * 묶음을 바꾸면 처음부터 다시 센다 — 다른 묶음을 보는 사이 꺼졌을 수 있다.
+ */
+export function previewsToOpen(
+  group: Pick<VariantGroupView, "id" | "members">,
+  opened: OpenedPreviews,
+) {
+  if (opened.groupId !== group.id) {
+    opened.groupId = group.id;
+    opened.ids.clear();
+  }
+  const todo = group.members.filter(
+    (m) =>
+      !opened.ids.has(m.id) &&
+      (shouldStartPreview(m) || m.preview?.ready || m.preview?.status === "starting"),
+  );
+  for (const m of todo) opened.ids.add(m.id);
+  return todo;
+}
+
 /** 시안 한 자리의 진행 — 「시안 2 만드는 중」 */
 export function memberProgress(ws: WorkspaceSummary): string {
   const name = variantName(ws);
