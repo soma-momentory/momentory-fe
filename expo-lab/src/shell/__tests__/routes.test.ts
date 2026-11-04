@@ -4,7 +4,15 @@ import path from "node:path";
 
 import { generatedRoutes } from "../routes.generated";
 import { routeSections } from "../routeMeta";
-import { matchPathname, resolveHref, shellRoutes, shellSections } from "../routes";
+import {
+  findRoute,
+  isOnScreenOf,
+  matchPathname,
+  resolveHref,
+  restartPath,
+  shellRoutes,
+  shellSections,
+} from "../routes";
 
 const root = path.resolve(__dirname, "../../../..");
 
@@ -27,7 +35,7 @@ describe("라우트 목록은 app/ 과 맞물린다", () => {
   it("routeMeta.ts 에 app/ 에 없는 라우트가 남아 있지 않다", () => {
     const generated = new Set(generatedRoutes.map((route) => route.path));
     const stale = routeSections
-      .flatMap((section) => section.routes.map((r) => r.path))
+      .flatMap((section) => section.routes.map((r) => r.screenOf ?? r.path))
       .filter((p) => !generated.has(p));
     expect(stale).toEqual([]);
   });
@@ -50,6 +58,44 @@ describe("라우트 목록은 app/ 과 맞물린다", () => {
       "rest",
       "my",
     ]);
+  });
+});
+
+describe("쉼 추천 시트 — 라우트가 아니라 쉼터 위의 시트", () => {
+  const SHEET = "/rest?afterDiary=1";
+
+  it("「쉼터 콘텐츠」 맨 앞의 줄이고, 앱 파일과 달리 시트 부품을 가리킨다", () => {
+    const rest = shellSections.find((section) => section.id === "rest")!;
+    expect(rest.routes[0]).toMatchObject({
+      path: SHEET,
+      screenOf: "/rest",
+      title: "쉼 추천 시트",
+      file: "src/components/rest/RestRecommendSheet.tsx",
+      group: "(tabs)",
+    });
+  });
+
+  it("일기 완료 표시로 열고, 오늘 쓴 일기를 프리셋으로 건다", () => {
+    const sheet = findRoute(SHEET)!;
+    expect(resolveHref(sheet, {}, null, 0)).toBe(SHEET);
+    expect(sheet.preset).toEqual({ signedIn: true, dataset: null, todayDiary: true });
+    expect(sheet.openVia).toBeUndefined();
+  });
+
+  it("프레임이 알리는 /rest 는 여전히 쉼터 라우트다 — 시트 줄은 그동안만 지금 화면으로 둔다", () => {
+    expect(matchPathname("/rest")?.path).toBe("/rest");
+    expect(matchPathname(SHEET)?.path).toBe("/rest");
+    expect(isOnScreenOf(SHEET, "/rest")).toBe(true);
+    expect(isOnScreenOf(SHEET, "/rest/cards")).toBe(false);
+    expect(isOnScreenOf("/rest", "/rest")).toBe(false);
+  });
+
+  it("다시 띄우면 시트 줄은 시트가 뜨는 주소에서, 다른 화면은 서 있던 주소에서 시작한다", () => {
+    const sheet = findRoute(SHEET)!;
+    expect(restartPath(sheet, SHEET, "/rest")).toBe(SHEET);
+    expect(restartPath(sheet, SHEET, "/rest/sense-pond")).toBe("/rest/sense-pond");
+    expect(restartPath(sheet, SHEET, null)).toBeNull();
+    expect(restartPath(findRoute("/rest")!, "/rest", "/rest/cards")).toBe("/rest/cards");
   });
 });
 

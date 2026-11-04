@@ -44,7 +44,7 @@ npm run lab:web              # 포트 8085 고정(expo-lab/package.json) — 앱
 #/screens?route=/home&layout=variants&group=gmhxyz12        ← 시안 비교(보는 시안 묶음)
 ```
 
-새로고침 · 뒤로/앞으로 · 주소 공유가 같은 화면을 다시 연다. 기본값은 적지 않는다. 형식은 `src/shell/hashState.ts`. 레이아웃은 `single` · `ab` · `grid` · `matrix` · `variants`(시안 비교 — `group` 이 보는 묶음 · A/B 에서도 남아 「다른 시안 다시 보기」가 그 묶음으로 돌아간다), 오른쪽 탭은 `panel=controls`(기본 · 화면 조건) · `agent` · `new-screen`(「AI에게 맡기기」 탭 안의 새 화면 칸). `bdata` · `blatency` · `bfail` 은 A/B 의 「B 화면 상태」(없으면 A와 같게). 「AI 수정 결과」 미리보기는 해시에 남기지 않는다(새로고침하면 지금 앱으로 돌아온다).
+새로고침 · 뒤로/앞으로 · 주소 공유가 같은 화면을 다시 연다. 기본값은 적지 않는다. 형식은 `src/shell/hashState.ts`. 레이아웃은 `single` · `ab` · `grid` · `matrix` · `variants`(시안 비교 — `group` 이 보는 묶음 · A/B 에서도 남아 「다른 시안 다시 보기」가 그 묶음으로 돌아간다), 오른쪽 탭은 `panel=controls`(기본 · 화면 조건) · `agent` · `new-screen`(「AI에게 맡기기」 탭 안의 새 화면 칸). `bdata` · `blatency` · `bfail` 은 A/B 의 「B 화면 상태」(없으면 A와 같게). `today=1` 은 오늘 쓴 일기가 있는 프레임(쉼 추천 시트의 프리셋). 「AI 수정 결과」 미리보기는 해시에 남기지 않는다(새로고침하면 지금 앱으로 돌아온다).
 
 **옛 주소도 그대로 열린다** — 지운 기능의 값은 기본으로 돌린다: `layout=states` → 한 화면, `matrix=datasets` → 기기별(축 없음), `panel=design` · `reference` · `log` → 화면 조건, `draft=…` 는 버린다(`src/shell/__tests__/state.test.ts`).
 
@@ -135,6 +135,8 @@ npm run lab:web              # 포트 8085 고정(expo-lab/package.json) — 앱
 
 묶음(진입 · 소개 · 온보딩 · 탭 · 홈 시트 · 회고 · 편지 · 일기 · 쉼터 콘텐츠 · 마이 세부)은 **접혀 있고** 머리 줄(「＋/－」 · 이름 · 화면 수)을 누르면 펼친다. 여러 묶음을 함께 펼칠 수 있고(「모두 펼치기 / 모두 접기」), 펼친 묶음은 localStorage(`momentory.lab.shell.openSections`)에 남는다. 지금 화면의 묶음은 저절로 펼치고 그 줄을 강조한다. 검색어가 있으면 접힘을 무시하고 일치하는 묶음만 보인다.
 
+**라우트가 아닌 줄**(`routeMeta.ts` 의 `screenOf`) — 라우트 위에 뜨는 시트를 바로 고르는 줄이다. 지금은 「쉼터 콘텐츠」 맨 앞의 **「쉼 추천 시트」** 하나다: 앱이 일기 완료 뒤에 쓰는 주소(`/rest?afterDiary=1`)에 오늘 쓴 일기(프레임 설정 `todayDiary` · 해시 `today=1`)를 더해 쉼터를 열면 0.6초 뒤 시트가 올라온다. 오늘 일기는 **따로 쓰는 가짜 DB**(`…:today-diary`)에만 심어 같은 데이터 세트의 다른 화면에는 번지지 않는다 — 앱 코드는 그대로다. 프레임이 `/rest` 에 있는 동안 목록은 이 줄에 머물고, 닫은 뒤 줄을 다시 누르거나 화면 상태를 바꾸면 시트가 다시 뜬다. 「불러오는 중」 · 「불러오기 실패」는 일기를 못 받으므로 시트 없이 쉼터만 보인다.
+
 ### 화면 조건 패널
 
 처음 여는 오른쪽 탭이다. 위에서부터 **화면 상태**(+ A/B 면 B 화면 상태 · 위 절) · 플랫폼 · 기기 · 로그인 상태 · **오늘 다시 쓰기**(켜면 오늘 이미 썼어도 일기를 다시 쓸 수 있다 · 끄면 실제 서버처럼 하루 1번) · **일기 쓰기 다시 시작**(`/retro/confirm` · 「직접 쓰기로 시작」 `/retro/write` 를 새로 띄운다) · 쓴 기록 되돌리기(`lab:resetData` · 프레임이 못 들으면 셸이 직접 비운다) · **가상 시각**(아침 8:00 · 밤 21:30 · 03:59 = 04:00 하루 경계 직전 · **하루 넘기기 +1일 / 되돌리기 −1일**(시·분 유지) · 지금 시각으로) · 서버 응답 (세부)(바로 · 1초 · 5초 늦게 · 일부 요청 실패시키기 — 화면 상태보다 세밀하게 바꿀 때) · **글씨 크기**(작게 0.85× · 기본 · 크게 1.3× · 아주 크게 1.5× — 설정의 `textScale` 로 넘기고 프레임이 바로 적용한다 · 1.5 는 앱 상한 1.3 을 넘겨 배치를 점검하는 값) · 폰 화면 새로 불러오기. 뜻이 바로 안 보이는 조작에는 마우스를 올리면 한 문장 설명(`title`)이 뜬다. 맨 아래 접힌 **「서버 요청 기록 (개발용)」**(옛 「요청」 탭 · 해시 `panel=log` 는 이 패널로 연다)은 화면이 비거나 오류가 날 때 어떤 요청이 실패했는지 보는 자리이고, 실패(4xx · 5xx)가 있으면 접힌 머리에 빨간 숫자만 뜬다. 가짜 DB 는 `frameId:datasetId` 로 남으므로 하루를 넘겨도 쓴 기록이 쌓인다.
@@ -146,7 +148,7 @@ npm run lab:routes                                   # src/shell/routes.generate
 node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest 가 부른다)
 ```
 
-`routes.generated.ts`(자동 · 57개) + `routeMeta.ts`(손 · 제목 · 묶음 · 순서 · 주의) = `routes.ts`. 새 라우트가 `app/` 에 생기면 `src/shell/__tests__/routes.test.ts` 가 「제목 없음」으로 깨진다 — `routeMeta.ts` 에 한 줄을 더한다.
+`routes.generated.ts`(자동 · 57개) + `routeMeta.ts`(손 · 제목 · 묶음 · 순서 · 주의 · 라우트가 아닌 시트 줄 하나) = `routes.ts`. 새 라우트가 `app/` 에 생기면 `src/shell/__tests__/routes.test.ts` 가 「제목 없음」으로 깨진다 — `routeMeta.ts` 에 한 줄을 더한다.
 
 **프리셋** — 바로 열었을 때 의미 있게 보이도록:
 

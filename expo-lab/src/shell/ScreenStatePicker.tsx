@@ -13,7 +13,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { frameBus, useFrameBus } from "./frameBus";
 import type { StateConfig } from "./hashState";
-import { matchPathname, type ShellRoute } from "./routes";
+import { findRoute, matchPathname, type ShellRoute } from "./routes";
 import {
   bStatesFor,
   currentStateOf,
@@ -35,9 +35,9 @@ const GIVE_UP_MS = 12_000;
 /** 이 화면 몫으로 모은 서버 주소(실패시킬 접두사) — 지금까지 */
 export function useDetectedPaths(routePath: string): string[] {
   useFrameBus();
-  return failurePathsFrom(
-    frameBus.pathsFor((pathname) => matchPathname(pathname)?.path === routePath),
-  );
+  // 시트 줄(`screenOf`)은 그 라우트가 부른 주소를 함께 쓴다
+  const path = findRoute(routePath)?.screenOf ?? routePath;
+  return failurePathsFrom(frameBus.pathsFor((pathname) => matchPathname(pathname)?.path === path));
 }
 
 /**

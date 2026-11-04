@@ -78,7 +78,7 @@ import {
 } from "./hashState";
 import { LabFrame } from "./LabFrame";
 import { LENS_POWER, LENS_SIZE, MagnifierLayer, type MagnifierTarget } from "./Magnifier";
-import { findRoute, matchPathname, shellRoutes, type ShellRoute } from "./routes";
+import { findRoute, isOnScreenOf, matchPathname, shellRoutes, type ShellRoute } from "./routes";
 import { RouteTree } from "./RouteTree";
 import { StageToolbar } from "./StageToolbar";
 import { stateLabel, ToolbarStatePicker, useDetectedPaths } from "./ScreenStatePicker";
@@ -368,6 +368,8 @@ export function ShellApp() {
       const pathname = frameBus.get(frameId).pathname;
       const route = pathname ? matchPathname(pathname) : undefined;
       if (!pathname || !route) return;
+      // 시트 줄(`screenOf`)은 그 라우트 주소에 있는 동안 지금 화면이다 — 쉼터 줄로 옮겨 가지 않는다
+      if (isOnScreenOf(s.route, pathname)) return;
       if (route.path === s.route && !syncRef.current) return;
       goTo(
         { ...s, route: route.path },

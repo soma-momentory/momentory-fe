@@ -295,9 +295,11 @@ export function selectRoutes(routes, requested) {
         if (route) add(route);
       });
     } else {
-      const route = matchRoute(routes, item);
+      // 시트 줄(`/rest?afterDiary=1`)은 쿼리까지가 제 이름이다 — 쿼리를 떼면 다른 줄(`/rest`)이 된다
+      const whole = routes.find((candidate) => candidate.path === item);
+      const route = whole ?? matchRoute(routes, item);
       if (!route) unknown.push(item);
-      else add(route, route.path === item.split("?")[0] ? null : item);
+      else add(route, whole || route.path === item.split("?")[0] ? null : item);
     }
   }
   return { picked, unknown };
@@ -645,7 +647,8 @@ export function planShots({ selections, devices, datasets, textScales, now, samp
           const href =
             fixedHref ?? resolveHref(route, sample(datasetId, now), now, Date.parse(now));
           const id = [
-            slug(href.split("?")[0]),
+            // 시트 줄(`screenOf`)은 주소가 그 라우트와 같아 줄 이름으로 가른다
+            slug(route.screenOf ? route.path : href.split("?")[0]),
             device.id,
             datasetId,
             `x${String(textScale).replace(".", "_")}`,
@@ -661,6 +664,7 @@ export function planShots({ selections, devices, datasets, textScales, now, samp
             failPaths: [...(route.preset?.failPaths ?? [])],
             repeatToday: true,
             ...(textScale !== 1 ? { textScale } : {}),
+            ...(route.preset?.todayDiary ? { todayDiary: true } : {}),
           };
           shots.push({
             id,
@@ -703,6 +707,7 @@ export function buildFrameUrl(origin, shot) {
   params.set("signedIn", config.signedIn ? "1" : "0");
   if (config.now) params.set("now", config.now);
   if (config.failPaths?.length) params.set("fail", config.failPaths.join(","));
+  if (config.todayDiary) params.set("todayDiary", "1");
   return `${origin}${pathname}?${params.toString()}`;
 }
 

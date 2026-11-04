@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 import { encodeFrameConfig } from "../lab-contract";
 import { DeviceFrame } from "./device/DeviceFrame";
 import { frameBus, useFrameBus } from "./frameBus";
-import { matchPathname } from "./routes";
+import { matchPathname, restartPath } from "./routes";
 import type { FrameSpec } from "./frameSpecs";
 import { statusBarClock } from "./time";
 
@@ -39,7 +39,8 @@ export function LabFrame({
   const runtime = frameBus.get(spec.frameId);
   // 차갑게 열면 앱이 다른 곳으로 보내는 화면은 경유 화면을 먼저 열고 목적지로 옮긴다
   const [boot] = useState(() => {
-    const target = spec.startPath ?? startPath ?? spec.href;
+    const target =
+      spec.startPath ?? restartPath(spec.route, spec.href, startPath ?? null) ?? spec.href;
     const via = skipVia ? undefined : matchPathname(target)?.openVia;
     return { target, via, src: via ? via.path : target };
   });
