@@ -86,6 +86,7 @@ const restContent = choice(
  * 쉼 콘텐츠를 **어디까지** 했는가 — 끝내지 않고 나간 자리. 콘텐츠마다 단계가 달라 한 목록에 모은다.
  * 감각연못 see/hear/feel · 몸에 힘 빼기 intro(시작 전)/hands/shoulders/face/legs · 걱정상자
  * write/handing(건네는 연출 중)/boxed(둘 중 하나를 고르기 전) · 오늘의 보물함 write/tucking(담는 연출 중) ·
+ * 3분 명상 ready(시작 전)/meditating(시작한 뒤 · 마치기 전) ·
  * 소원 연꽃 pond/wish_card/rules/write/confirm
  */
 const restStage = choice(

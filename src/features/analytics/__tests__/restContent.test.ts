@@ -107,6 +107,15 @@ describe("쉼터 방문이 어디서 왔나", () => {
     expect(visit.entry()).toBe("after_diary");
   });
 
+  it("3분 명상을 다녀와도 같은 방문이다", () => {
+    const visit = createRestVisit();
+    visit.move("retro_done", "rest");
+    visit.move("rest", "meditation");
+    visit.move("meditation", "rest");
+    visit.move("rest", "worry_box");
+    expect(visit.entry()).toBe("after_diary");
+  });
+
   it("바람카드 없이 일기 확인에서 곧장 쉼터로 와도 after_diary 다 — 회고 완료를 거치지 않는다", () => {
     const visit = createRestVisit();
     visit.move("retro_draft", "rest");
