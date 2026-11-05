@@ -16,14 +16,15 @@ import {
   restMoodMotion,
   retroDiary,
   space,
+  weeklyHappiness,
 } from "@/design/ds";
 import {
   REST_GUIDE_CLOSE,
   REST_GUIDE_NEXT,
   REST_GUIDES,
+  type RestGuideContent,
   type RestGuideExample,
 } from "@/features/rest/model/restGuide";
-import type { RestRecordContent } from "@/features/rest/model/restRecord";
 
 const BABA = require("../../../../assets/home/v2/baba-composite.png");
 
@@ -33,7 +34,7 @@ const BABA = require("../../../../assets/home/v2/baba-composite.png");
  */
 type GuideArt = { steps: ImageSource[]; target?: ImageSource; choices?: ImageSource[][] };
 
-const ART: Record<RestRecordContent, GuideArt> = {
+const ART: Record<RestGuideContent, GuideArt> = {
   sense_pond: {
     steps: [
       require("../../../../assets/sensory-pond/eye.webp"),
@@ -62,6 +63,7 @@ const ART: Record<RestRecordContent, GuideArt> = {
     ],
   },
   meditation: { steps: [] },
+  weekly_happiness: { steps: [] },
 };
 
 /**
@@ -82,7 +84,7 @@ export function GuideCard({
   onClose,
   lastPageLink,
 }: {
-  content: RestRecordContent;
+  content: RestGuideContent;
   first: boolean;
   onClose: () => void;
   /** 마지막 장 버튼 아래의 글자 버튼 — 3분 명상이 출처로 가는 길이다 */
@@ -182,10 +184,10 @@ export function GuideCard({
 /**
  * 장의 **예시 칸** — 글 대신 보여 준다. 그림 칸이 있으면 칸마다 무엇(작게) · 동작(크게)을,
  * 예시 글이 있으면 점선 쪽지 → 상자 · 보물함을, 고르는 길이 있으면 같은 크기의 그림 · 이름 카드를
- * 나란히 세우고, 그 아래 알약을 둔다.
+ * 나란히 세우고, 그 아래 알약을 둔다. 기록장 줄이 있으면 쉼터 화면과 같은 청록 선으로 칸을 나눈다.
  */
 function Example({
-  example: { note, steps = [], chips = [], choices = [] },
+  example: { note, steps = [], chips = [], choices = [], rows = [] },
   art,
 }: {
   example: RestGuideExample;
@@ -236,6 +238,26 @@ function Example({
               </View>
               <Text variant="label1" color={labelColor.normal}>
                 {c}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {rows.length > 0 ? (
+        <View style={styles.ledger}>
+          {rows.map((row) => (
+            <View key={row.label} style={styles.ledgerRow}>
+              <Text
+                variant="caption1"
+                color={weeklyHappiness.color.text}
+                numberOfLines={1}
+                style={styles.ledgerLabel}
+              >
+                {row.label}
+              </Text>
+              <View style={styles.ledgerDivider} />
+              <Text variant="body2" color={labelColor.normal} style={styles.ledgerEntry}>
+                {row.entry}
               </Text>
             </View>
           ))}
@@ -318,6 +340,24 @@ const styles = StyleSheet.create({
     height: G.choiceArt.height,
   },
   choiceImage: { width: G.choiceArt.width / 2, height: G.choiceArt.height },
+  ledger: {
+    borderTopWidth: G.ledger.topLine,
+    borderTopColor: weeklyHappiness.color.line,
+  },
+  ledgerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: G.ledger.rowHeight,
+    borderBottomWidth: G.ledger.line,
+    borderBottomColor: weeklyHappiness.color.line,
+  },
+  ledgerLabel: { width: G.ledger.labelWidth, textAlign: "center" },
+  ledgerDivider: {
+    width: G.ledger.line,
+    height: G.ledger.divider,
+    backgroundColor: weeklyHappiness.color.line,
+  },
+  ledgerEntry: { flex: 1, paddingHorizontal: space.sm },
   chips: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: space.sm },
   chip: {
     borderRadius: radius.full,

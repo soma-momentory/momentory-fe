@@ -2,6 +2,7 @@ import type { RestRecordContent } from "./restRecord";
 import { BODY_RELEASE_PHASE_LABEL, BODY_RELEASE_SECONDS } from "./bodyRelease";
 import { MEDITATION_CONCEPTS } from "./meditation";
 import { TREASURE_BOX_INPUT } from "./treasureBox";
+import { WEEKLY_HAPPINESS_CATEGORIES } from "./weeklyHappiness";
 import { WORRY_BOX_CHOICES, WORRY_BOX_INPUT } from "./worryBox";
 
 /**
@@ -30,15 +31,26 @@ export type RestGuideExample = {
   chips?: readonly string[];
   /** 고르는 길 — 그림 · 이름 카드가 나란히 선다(걱정상자의 맡겨두기 · 흘려보내기) */
   choices?: readonly string[];
+  /** 칸마다 적은 기록장 줄 — 칸 이름 · 적은 글(주간 행복) */
+  rows?: readonly { label: string; entry: string }[];
 };
 
 export type RestGuidePage = { text: string; example?: RestGuideExample };
 
 export type RestGuide = { pages: readonly [RestGuidePage, RestGuidePage, RestGuidePage] };
 
+/**
+ * 설명 카드가 있는 쉼터 — 이용 기록이 남는 쉼터(서버 계약)에 주간 행복을 더한 것이다.
+ * 주간 행복은 아직 서버에 남기지 않아 `RestRecordContent` 에 넣지 않는다(`weeklyHappiness.ts`).
+ */
+export type RestGuideContent = RestRecordContent | "weekly_happiness";
+
 const seconds = (phase: keyof typeof BODY_RELEASE_SECONDS) => `${BODY_RELEASE_SECONDS[phase]}초`;
 
-export const REST_GUIDES: Record<RestRecordContent, RestGuide> = {
+/** 주간 행복 예시에 쓰는 칸 — 예시 글이 짧아 작은 기기에서도 한 줄에 드는 셋 */
+const WEEKLY_GUIDE_KEYS: readonly string[] = ["food", "place", "rest"];
+
+export const REST_GUIDES: Record<RestGuideContent, RestGuide> = {
   wish: {
     pages: [
       {
@@ -116,6 +128,21 @@ export const REST_GUIDES: Record<RestRecordContent, RestGuide> = {
       },
       { text: "안내 음성과 자막을 따라가요.\n음성은 끌 수 있어요." },
       { text: "잠시 멈춰 지금의 나를 살펴봐요.\n불편하면 언제든 멈춰도 괜찮아요." },
+    ],
+  },
+  // 다시 꺼내 본다고 말하지 않는다 — 적은 글이 아직 저장되지 않는다(`weeklyHappiness.ts`)
+  weekly_happiness: {
+    pages: [
+      {
+        text: "한 주 동안 좋았던 일을\n칸마다 한 줄씩 적어봐요.",
+        example: {
+          rows: WEEKLY_HAPPINESS_CATEGORIES.filter((c) => WEEKLY_GUIDE_KEYS.includes(c.key)).map(
+            (c) => ({ label: c.label, entry: c.placeholder }),
+          ),
+        },
+      },
+      { text: "칸을 누르면 바로 적을 수 있어요.\n생각나는 칸만 적어도 괜찮아요." },
+      { text: "그냥 지나갔던 한 주에도\n좋았던 일이 있었다는 걸 알게 돼요." },
     ],
   },
 };

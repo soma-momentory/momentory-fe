@@ -4,14 +4,22 @@ import WeeklyHappinessScreen from "@/../app/rest/weekly-happiness";
 import { REST_THEMES } from "@/components/rest/restThemes";
 import { RestLedgerArt } from "@/components/rest/weekly/RestLedgerArt";
 import { keepWords } from "@/features/letter/model/letter";
+import { markGuideSeen, readGuideSeen } from "@/features/rest/data/guideMemory";
 import { REST_CONTENTS } from "@/features/rest/model/contents";
 import { recommendRest } from "@/features/rest/model/recommend";
+import { REST_GUIDES } from "@/features/rest/model/restGuide";
 import {
   WEEKLY_HAPPINESS_CATEGORIES,
   shiftWeek,
   weekRangeLabel,
 } from "@/features/rest/model/weeklyHappiness";
 import { clock, fixedClock, setClock } from "@/lib/clock";
+
+// 처음 들어온 경우는 아래 「설명 카드」에서 본다 — 나머지는 이미 본 쉼터로 둔다
+jest.mock("@/features/rest/data/guideMemory", () => ({
+  readGuideSeen: jest.fn(() => Promise.resolve(true)),
+  markGuideSeen: jest.fn(() => Promise.resolve()),
+}));
 
 const real = clock;
 
@@ -85,6 +93,49 @@ describe("주간 행복 — 화면", () => {
 
     await fireEvent.press(r.getByRole("button", { name: "다음 주" }));
     expect(r.getByDisplayValue("마라탕")).toBeTruthy();
+  });
+});
+
+describe("주간 행복 — 설명 카드", () => {
+  const guide = REST_GUIDES.weekly_happiness;
+  const row = guide.pages[0].example!.rows![0]!;
+
+  it("처음 들어오면 카드가 뜨고 1장에 기록장 예시가 있으며, 닫으면 빈 칸이 남는다", async () => {
+    jest.mocked(readGuideSeen).mockResolvedValueOnce(false);
+    const r = await render(<WeeklyHappinessScreen />);
+
+    expect(await r.findByTestId("rest-guide-card")).toBeTruthy();
+    expect(jest.mocked(markGuideSeen)).toHaveBeenCalledWith("weekly_happiness");
+    expect(r.getByText(guide.pages[0].text)).toBeTruthy();
+    expect(r.getByText(row.entry)).toBeTruthy();
+
+    await fireEvent.press(r.getByRole("button", { name: "다음" }));
+    expect(r.getByText(guide.pages[1].text)).toBeTruthy();
+    expect(r.queryByText(row.entry)).toBeNull();
+
+    await fireEvent.press(r.getByRole("button", { name: "다음" }));
+    expect(r.getByText(guide.pages[2].text)).toBeTruthy();
+
+    await fireEvent.press(r.getByRole("button", { name: "시작할게요" }));
+    expect(r.queryByTestId("rest-guide-card")).toBeNull();
+    expect(r.queryByText(row.entry)).toBeNull();
+  });
+
+  it("이미 본 뒤에는 뜨지 않고, 「?」 원이 같은 카드를 다시 연다", async () => {
+    const r = await render(<WeeklyHappinessScreen />);
+    expect(r.queryByTestId("rest-guide-card")).toBeNull();
+
+    await fireEvent.press(r.getByLabelText("설명 보기"));
+    expect(r.getByTestId("rest-guide-card")).toBeTruthy();
+    expect(r.getByText(guide.pages[0].text)).toBeTruthy();
+  });
+
+  it("예시 줄은 실제 칸 이름과 입력칸 예시를 그대로 쓴다", () => {
+    for (const { label, entry } of guide.pages[0].example!.rows!) {
+      expect(WEEKLY_HAPPINESS_CATEGORIES).toContainEqual(
+        expect.objectContaining({ label, placeholder: entry }),
+      );
+    }
   });
 });
 
