@@ -30,8 +30,6 @@ module.exports = [
       "android/**",
       "ios/**",
       "expo-env.d.ts",
-      // Claude Design 다운로드 원본 — 생성된 런타임·디자인 스냅샷은 수정/린트하지 않는다.
-      "design-imports/**",
       // 새 디자인 반입 스냅샷 — 직접 수정 금지 대상이라 린트하지 않는다 (docs/design/IMPORT.md)
       "docs/design/prototype/**",
     ],
