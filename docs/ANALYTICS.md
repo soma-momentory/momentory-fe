@@ -194,13 +194,14 @@ worry_box, treasure_box, meditation, wish)로 가른다. 시간은 모두 전면
 - rest_content_completed 는 끝까지 한 때 한 번이다 — 감각연못은 마지막 감각을 찾은 순간(sense_pond_finished
   와 같은 때), 몸에 힘 빼기는 네 부위를 다 한 순간, 걱정상자는 맡겨두기/흘려보내기를 고른 순간이다.
   오늘의 보물함은 보물함이 닫히는 연출이 끝난 순간이다(저장 성공 여부와 상관없이).
-  소원 연꽃은 처음 같이 빌거나 소원을 띄운 순간이다. 3분 명상은 3분이 다 찬 순간이다(meditation_ended
-  reason=natural 과 같은 때) — 「여기서 멈추기」로 일찍 마친 판은 끝까지 한 것으로 세지 않는다.
+  소원 연꽃은 처음 같이 빌거나 소원을 띄운 순간이다. 3분 명상은 3분이 다 차거나 「여기서 멈추기」를 누른
+  순간이다(meditation_ended 와 같은 때) — 일찍 멈춰도 같은 기분 쪽지로 가므로 끝까지 한 것으로 센다(이용 기록의
+  completed 와 같은 기준 · 2026-11-05 사용자 결정). 3분을 채웠는지는 meditation_ended 의 reason 으로 가른다.
   끝까지 간 판은 떠나도 rest_content_exited 를 보내지 않는다.
 - rest_content_exited 의 stage 는 **나간 자리**다. 감각연못 intro(시작 전)/see/hear/feel(2026-11-04 부터 시작 화면이 생겨 intro 가 있다. 그 전에는 들어오자마자 나가도 see 였으므로, 예전 see 와 비교할 때는 새 앱의 intro + see 를 합쳐 본다), 몸에 힘 빼기 intro(시작 전)/
   hands/shoulders/face/legs(하던 부위), 걱정상자 write(쓰다가)/handing(건네는 연출 중)/boxed(고르기 전),
-  오늘의 보물함 write(쓰다가)/tucking(담는 연출 중), 3분 명상 ready(풍경 고르기 · 시작 전)/meditating(시작한 뒤 —
-  「여기서 멈추기」로 일찍 마치고 기분 쪽지에서 떠난 판도 meditating 이다), 소원 연꽃 pond(연못)/wish_card(소원 한 장)/rules(이용 규칙)/write(쓰다가)/confirm(띄우기 전 확인).
+  오늘의 보물함 write(쓰다가)/tucking(담는 연출 중), 3분 명상 ready(풍경 고르기 · 시작 전)/meditating(시작한 뒤
+  마치기 전 — 시스템 뒤로가기 등), 소원 연꽃 pond(연못)/wish_card(소원 한 장)/rules(이용 규칙)/write(쓰다가)/confirm(띄우기 전 확인).
   화면이 닫힐 때 보내므로, 쉼 콘텐츠 화면에서 앱을 강제 종료하면 빠질 수 있다 — 그때는 screen_left
   (exit=background)의 마지막 화면으로 본다.
 - 걱정상자는 쓴 걱정을 **계측으로 보내지 않는다.** worry_box_handed 는 글자 수(chars)만 싣는다. 걱정 원문은

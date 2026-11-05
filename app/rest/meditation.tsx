@@ -118,7 +118,8 @@ export default function MeditationScreen() {
         duration_ms: Math.round(stayed),
         voice_enabled: voiceOn,
       });
-      if (reason === "natural") rest.complete();
+      // 일찍 멈춰도 같은 기분 쪽지까지 갔으니 끝까지 한 판이다 — 이용 기록과 같은 기준(3분을 채웠는지는 reason 으로 본다)
+      rest.complete();
     },
     [clock, conceptId, rest, voiceOn],
   );
