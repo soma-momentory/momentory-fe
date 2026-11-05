@@ -6,7 +6,7 @@ import { useEffectiveFontScale } from "@/components/ds/Text";
 import { homeV2, meditation, restRecommendSize } from "@/design/ds";
 import type { RestContent, RestContentId } from "@/features/rest/model/contents";
 
-const PHOTOS: Record<RestContentId, number> = {
+export const REST_PHOTOS: Record<RestContentId, number> = {
   wish: require("../../../assets/rest/wish.webp"),
   sensePond: require("../../../assets/rest/rest-records.webp"),
   worryBox: require("../../../assets/rest/worries.webp"),
@@ -56,7 +56,7 @@ export function RestPolaroid({
         ]}
       >
         <Image
-          source={PHOTOS[item.id]}
+          source={REST_PHOTOS[item.id]}
           style={styles.photoImage}
           contentFit={item.id === "bodyRelease" ? "contain" : "cover"}
         />

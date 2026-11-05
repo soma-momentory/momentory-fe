@@ -183,7 +183,7 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 (2026-08-09 PR #46 부터 · 리포트는 08-24 · 구글은 08-25 · 회고 v2 는 08-28).
 **화면이 읽는 도메인은 전부 서버가 정본이다.** 계약에 있는데 아직 안 붙인 것은
 여섯뿐이다(하루 메모 셋 · 단건 조회 셋 — [`docs/api/README.md`](docs/api/README.md)).
-주간 리포트는 `GET /reports/weekly` 한 번이 마음 일곱 칸 · 요약 멘트 · 일정 · 바람카드 ·
+주간 리포트는 `GET /api/v2/reports/weekly` 한 번이 공책 한 권(표지 · 안쪽 장 · AI 글)과
 일기 셈을 한 벌로 준다 — 화면은 **아무것도 세지 않는다**.
 **서버 호출은 `src/lib/http.ts` 하나를 지난다** — `authedRequest` 가 Bearer 주입 ·
 타임아웃 · 안전 파싱을 맡고 **던지지 않고 `{ ok, error }` 로 닫는다.** 응답의
@@ -284,16 +284,10 @@ src/components/archive/{DayScheduleList, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionCardSection, DiaryEmotionRow, WishCardFields}.tsx
                                           ← WishCardFields = 쉼터(R2)와 일기 상세(A3)가
                                             **같은 항목·같은 말**로 바람카드를 그린다
-src/components/report/{WeekMoodSummary, WeekEmotionCard, WeekEmotionStack, WeekGround,
-                       WeekWishCard, WeekCountList, WeekPickerSheet}.tsx
-                                          ← 한 주 요약 한 문장(카드가 아니다 · 날짜 줄 아래) ·
-                                            감정 더미 일곱(하루의 감정을 쌓는다 · WeekGround 가
-                                            그 아래 모래 언덕을 깐다) ·
-                                            바람카드(찾은 바람 알약 + 실천한 것) ·
-                                            이번 주 기록(일정·일기 셈).
-                                            **제목은 감정 카드에만 둔다**(2026-09-12) —
-                                            나머지는 첫 줄이 곧 제 이름이다.
-                                            비율(도넛·%)을 만들지 않는다 — 세는 값은 서버 것이다
+src/features/report/ui/book/{WeeklyBookView, Notebook, BookPages, parts, NotebookPickerSheet}.tsx
+                                          ← 주간 리포트 공책 — 표지(라벨 · 스티커 · 말풍선) · 스프링 · 색인 탭 ·
+                                            넘어가는 장. 끝난 주만 연다. %·완료율을 만들지 않는다 — 세는 값은
+                                            서버 것이다. 감정 도넛은 횟수로만 허용(DESIGN.md 「리포트」 2026-11-04)
 src/components/rest/{RestActionCard, RestCardPressable, RestContentGrid, RestPolaroid,
                       RestThemeCard, RestThemeGrid, RestWishPreview}.tsx + restThemes.ts + pond/
                                           ← pond/ 는 감각연못 장면 조각(배경·수면·물결·
@@ -325,12 +319,12 @@ src/features/calendar/{model/*, data/{calendarSyncApi,syncStateStore}.ts}
                                             foregroundSync 하나가 안다
 src/features/archive/model/{archive,monthSchedules}.ts
                                           ← 세는 것만. 연속 일수를 세지 않는다
-src/features/report/{model/{report,weeklyReport}.ts, data/weeklyReportApi.ts}
-                                          ← 주간 리포트는 `GET /reports/weekly` 한 번이
-                                            일곱 칸 · 요약 멘트 · 일정 · 카드 · 일기 셈을
-                                            한 벌로 준다 — 화면은 **아무것도 세지 않는다**.
+src/features/report/{model/{report,weeklyBook}.ts, data/weeklyBookApi.ts}
+                                          ← 주간 리포트는 `GET /api/v2/reports/weekly` 한 번이
+                                            공책 한 권(표지 · 안쪽 장 · AI 글)을 한 벌로
+                                            준다 — 화면은 **아무것도 세지 않는다**. 끝난 주만
+                                            열고, 일기 3일 미만인 주는 표지 한 장이다.
                                             report.ts 에 남은 것은 홈의 이번 주 감정 줄 계산뿐.
-                                            **리포트는 처음부터 열려 있다**(PRODUCT.md 32)
 src/features/rest/model/{cards,contents,sensePond}.ts
                                           ← 쉼터가 보는 것(바람카드) · 쉼 콘텐츠 넷 ·
                                             감각연못 진행(3-2-1)

@@ -19,7 +19,14 @@ import {
   type ScheduleEmotion,
   type ScheduleRow,
 } from "./db";
-import { currentWeather, deliverLetters, diaryOn, diaryWeatherLine, weeklyReport } from "./derive";
+import {
+  currentWeather,
+  deliverLetters,
+  diaryOn,
+  diaryWeatherLine,
+  weeklyBook,
+  weeklyReport,
+} from "./derive";
 import { isEmotionKey, startSession, takeTurn, type RetroCtx } from "./retro";
 import { LAB_USER_ID, LATEST_ONBOARDING_VERSION, profileFor } from "./seed";
 import { addDays, dayOfIso, isDay, isHhmm } from "./time";
@@ -733,6 +740,12 @@ const ROUTES: Route[] = [
   }),
 
   // ── 주간 리포트 ──
+  route("GET", "/api/v2/reports/weekly", (ctx, req) => {
+    const date = req.query.get("date");
+    if (date != null && !isDay(date)) return invalid();
+    return json(weeklyBook(ctx.db, date, ctx.today));
+  }),
+
   route("GET", "/api/v1/reports/weekly", (ctx, req) => {
     const date = req.query.get("date") ?? ctx.today;
     if (!isDay(date)) return invalid();

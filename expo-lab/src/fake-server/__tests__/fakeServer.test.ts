@@ -35,7 +35,7 @@ import {
 import { sendInquiry } from "@/features/my/data/inquiryApi";
 import { completeOnboardingV2 } from "@/features/onboarding/data/completeOnboardingApi";
 import { fetchOnboardingOptions } from "@/features/onboarding/data/optionsApi";
-import { fetchWeeklyReport } from "@/features/report/data/weeklyReportApi";
+import { fetchWeeklyBook } from "@/features/report/data/weeklyBookApi";
 import { addRestRecord, fetchRestRecords } from "@/features/rest/data/restRecordApi";
 import { addTreasure, fetchTreasures } from "@/features/rest/data/treasureApi";
 import { fetchWorries, keepWorry } from "@/features/rest/data/worryApi";
@@ -194,10 +194,10 @@ describe.each(datasets.map((d) => d.id))("데이터 세트 %s", (datasetId) => {
     const archive = await loadArchive(monthsBackFrom(TODAY, 4));
     expect(archive.ok).toBe(true);
 
-    const report = await fetchWeeklyReport(sundayOf(TODAY));
+    const report = await fetchWeeklyBook(null);
     expect(report.ok).toBe(true);
     if (report.ok) expect(report.data.days).toHaveLength(7);
-    const lastWeek = await fetchWeeklyReport(addDays(sundayOf(TODAY), -7));
+    const lastWeek = await fetchWeeklyBook(addDays(sundayOf(TODAY), -7));
     expect(lastWeek.ok).toBe(true);
 
     const letters = await fetchLetters(7);
@@ -598,17 +598,17 @@ describe("저장 · 초기화 · 지연 · 실패", () => {
   });
 
   it("failPaths 는 500, latencyMs 만큼 늦게 답하고, 요청마다 알린다", async () => {
-    install({ datasetId: "normal", failPaths: ["/api/v1/reports"], latencyMs: 60 });
+    install({ datasetId: "normal", failPaths: ["/api/v2/reports"], latencyMs: 60 });
     const seen: string[] = [];
     const off = onFakeRequest((e) => seen.push(`${e.method} ${e.path} ${e.status}`));
-    const report = await fetchWeeklyReport(sundayOf(TODAY));
+    const report = await fetchWeeklyBook(sundayOf(TODAY));
     expect(report).toEqual({ ok: false, code: "server" });
     const started = Date.now();
     expect((await fetchSchedules(TODAY)).ok).toBe(true);
     expect(Date.now() - started).toBeGreaterThanOrEqual(50);
     off();
     expect(seen).toEqual([
-      `GET /api/v1/reports/weekly?date=${sundayOf(TODAY)} 500`,
+      `GET /api/v2/reports/weekly?date=${sundayOf(TODAY)} 500`,
       `GET /api/v1/schedules?date=${TODAY} 200`,
     ]);
   });
