@@ -288,7 +288,7 @@ src/features/report/ui/book/{WeeklyBookView, Notebook, BookPages, parts, Noteboo
                                           ← 주간 리포트 공책 — 표지(라벨 · 스티커 · 말풍선) · 스프링 · 색인 탭 ·
                                             넘어가는 장. 끝난 주만 연다. %·완료율을 만들지 않는다 — 세는 값은
                                             서버 것이다. 감정 도넛은 횟수로만 허용(DESIGN.md 「리포트」 2026-11-04)
-src/components/rest/{RestActionCard, RestCardPressable, RestContentGrid, RestPolaroid,
+src/components/rest/{RestActionCard, RestPaperSheet, RestCardPressable, RestContentGrid, RestPolaroid,
                       RestThemeCard, RestThemeGrid, RestWishPreview}.tsx + restThemes.ts + pond/
                                           ← pond/ 는 감각연못 장면 조각(배경·수면·물결·
                                             감각 판·카피바라·「꾸욱」). 판정은 그리지 않는다
