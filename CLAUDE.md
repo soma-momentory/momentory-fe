@@ -244,7 +244,7 @@ app/letter/{_layout, index, [date], time}.tsx
                     데이터는 `features/letter/` · 서버 `/api/v1/letters` · 홈 상단 편지 아이콘이 옛 알림함 자리다
 app/diary/{_layout, [id]/index}.tsx = A3 · A3-c
                   ← `[id]/edit`(A4)은 2026-08-20 에 지웠다(DESIGN.md N2 · PRODUCT.md #24·26)
-app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, treasures, body-release, meditation, records}.tsx
+app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, treasures, body-release, meditation, weekly-happiness, records}.tsx
                   = R2(날짜별 바람카드) · 감각연못 · 걱정상자(+ 맡겨둔 걱정) · 오늘의 보물함(+ 지난 보물) · 몸에 힘 빼기 · 3분 명상
                     · 쉼터별 이용 기록(`?content=`)
                   ← 쉼 콘텐츠 넷이 모두 화면을 가졌다(2026-10-05). 쓴 글을 서버에 남기는 것은 보물함
@@ -288,7 +288,8 @@ src/features/report/ui/book/{WeeklyBookView, Notebook, BookPages, parts, Noteboo
                                           ← 주간 리포트 공책 — 표지(라벨 · 스티커 · 말풍선) · 스프링 · 색인 탭 ·
                                             넘어가는 장. 끝난 주만 연다. %·완료율을 만들지 않는다 — 세는 값은
                                             서버 것이다. 감정 도넛은 횟수로만 허용(DESIGN.md 「리포트」 2026-11-04)
-src/components/rest/{RestActionCard, RestCardPressable, RestContentGrid, RestPolaroid}.tsx + pond/
+src/components/rest/{RestActionCard, RestCardPressable, RestContentGrid, RestPolaroid,
+                      RestThemeCard, RestThemeGrid, RestWishPreview}.tsx + restThemes.ts + pond/
                                           ← pond/ 는 감각연못 장면 조각(배경·수면·물결·
                                             감각 판·카피바라·「꾸욱」). 판정은 그리지 않는다
 src/features/emotion/model/emotion.ts     ← **감정 10종의 도메인 정본** — id·이름·EmotionId.

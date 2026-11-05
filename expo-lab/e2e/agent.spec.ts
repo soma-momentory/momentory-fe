@@ -484,7 +484,8 @@ test("시안 비교 — 기존 + 시안 3대 · 이름 · 상태 · 꺼진 화�
   await expect
     .poll(() => calls.some((c) => c.method === "POST" && c.path === "/workspaces/home-s2/preview"))
     .toBe(true);
-  expect(calls.some((c) => c.path === "/workspaces/home-s1/preview")).toBe(false);
+  // 켜져 있는 시안 1 은 「방금 봤다」고 알릴 뿐 프레임은 그대로다(위) · 아직 만드는 시안 3 은 켜지 않는다
+  expect(calls.some((c) => c.path === "/workspaces/home-s3/preview")).toBe(false);
   await expect(page.getByTestId("lab-frame-V2")).toHaveAttribute("src", `${VARIANT_URL}/home`, {
     timeout: 15_000,
   });
@@ -524,7 +525,10 @@ test("최종 A/B — 「이 시안으로 확정」이 검사 · 저장 · 검토
   await page.getByRole("button", { name: "저장하고 검토 요청 올리기" }).click();
   await expect(page.getByTestId("variant-confirmed")).toContainText("확정했어요 — 시안 1");
   await expect(page.getByTestId("variant-confirmed")).toContainText("검토 요청 #77 열기");
-  const steps = calls.filter((c) => c.method === "POST").map((c) => c.path);
+  // 시안 비교를 열 때의 미리보기 알림은 빼고, 확정의 차례만 본다
+  const steps = calls
+    .filter((c) => c.method === "POST" && !c.path.endsWith("/preview"))
+    .map((c) => c.path);
   expect(steps).toEqual([
     "/workspaces/home-s1/check",
     "/workspaces/home-s1/commit",

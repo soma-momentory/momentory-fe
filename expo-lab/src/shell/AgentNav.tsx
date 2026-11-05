@@ -9,7 +9,7 @@
  * 「AI에게 맡기기」 서버가 없는 Lab(작업 공간의 미리보기 서버 · `MOMENTORY_LAB_AGENT=off`)에서는 묶음이
  * 비고 단추만 남는다 — 단추는 오른쪽 패널의 「새 화면 만들기」를 열 뿐이라 거기서 한 줄로 알린다.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AGENT_API } from "../agent/client";
 import { statusText } from "../agent/WorkspaceCard";
@@ -18,6 +18,8 @@ import { shellColor } from "./theme";
 
 const POLL_MS = 10_000;
 const BUSY_POLL_MS = 2500;
+/** 미리보기가 켜지는 동안 — 준비된 시안을 바로 띄운다. 켜는 동안만이라 AI 실행 중 폴링은 늘지 않는다 */
+const PREVIEW_POLL_MS = 1000;
 
 const ellipsis = {
   display: "block",
@@ -32,7 +34,9 @@ const ellipsis = {
  */
 export function useLabWorkspaces() {
   const [list, setList] = useState<WorkspaceSummary[]>([]);
+  const reading = useRef(0);
   const refresh = useCallback(async () => {
+    reading.current += 1;
     try {
       const res = await fetch(`${AGENT_API}/workspaces`, { cache: "no-store" });
       if (!res.ok) return setList([]);
@@ -40,23 +44,25 @@ export function useLabWorkspaces() {
       setList((data.workspaces ?? []).filter((w) => !w.broken));
     } catch {
       setList([]);
+    } finally {
+      reading.current -= 1;
     }
   }, []);
-  const busy = list.some(
-    (w) =>
-      w.status === "working" ||
-      w.status === "starting" ||
-      w.status === "checking" ||
-      w.preview?.status === "starting",
-  );
+  const previewStarting = list.some((w) => w.preview?.status === "starting");
+  const busy =
+    previewStarting ||
+    list.some((w) => w.status === "working" || w.status === "starting" || w.status === "checking");
+  const pollMs = previewStarting ? PREVIEW_POLL_MS : busy ? BUSY_POLL_MS : POLL_MS;
   useEffect(() => {
     const first = setTimeout(() => void refresh(), 0);
-    const timer = setInterval(() => void refresh(), busy ? BUSY_POLL_MS : POLL_MS);
+    const timer = setInterval(() => {
+      if (reading.current === 0) void refresh();
+    }, pollMs);
     return () => {
       clearTimeout(first);
       clearInterval(timer);
     };
-  }, [refresh, busy]);
+  }, [refresh, pollMs]);
   return { workspaces: list, refresh };
 }
 

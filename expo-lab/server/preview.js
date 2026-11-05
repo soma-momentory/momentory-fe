@@ -19,6 +19,7 @@ const { IS_WIN, killTree } = require("./proc");
 
 const PORT_START = 8100;
 const PORT_END = 8199;
+const READY_POLL_MS = 500;
 
 /** @param {number} port @returns {Promise<boolean>} */
 function isPortFree(port) {
@@ -135,9 +136,9 @@ class PreviewServer {
         this.stop("failed");
         return;
       }
-      setTimeout(tick, 1500).unref?.();
+      setTimeout(tick, READY_POLL_MS).unref?.();
     };
-    setTimeout(tick, 1500).unref?.();
+    setTimeout(tick, READY_POLL_MS).unref?.();
   }
 
   /** @param {PreviewState["status"]} [as] @param {boolean} [sync] */

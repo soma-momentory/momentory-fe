@@ -38,6 +38,7 @@ describe("해시 상태", () => {
       navOpen: false,
       sideOpen: false,
       group: "gmhxyz12",
+      todayDiary: true,
     };
     const hash = serializeHash(state);
     expect(hash.startsWith("#/screens?route=/diary/%5Bid%5D")).toBe(true);
@@ -161,6 +162,38 @@ describe("가상 시각", () => {
     expect(statusBarClock("2026-11-03T21:30:00+09:00", REAL)).toBe("9:30");
     expect(statusBarClock("2026-11-03T00:05:00+09:00", REAL)).toBe("12:05");
     expect(statusBarClock(null, REAL)).toBe("2:05");
+  });
+});
+
+describe("쉼 추천 시트의 오늘 일기", () => {
+  const SHEET = "/rest?afterDiary=1";
+
+  it("시트 줄을 고르면 켜지고 다른 화면을 고르면 꺼진다 · 해시로 돌아온다", () => {
+    const sheet = withRoute(DEFAULT_STATE, SHEET);
+    expect(sheet).toMatchObject({ route: SHEET, todayDiary: true });
+    expect(serializeHash(sheet)).toContain("today=1");
+    expect(parseHash(serializeHash(sheet))).toEqual(sheet);
+    expect(withRoute(sheet, "/rest").todayDiary).toBe(false);
+    expect(serializeHash(DEFAULT_STATE)).not.toContain("today=");
+  });
+
+  it("손으로 적은 주소에 today 가 없어도 시트 줄이면 켠다", () => {
+    const hash = `#/screens?route=${encodeURIComponent(SHEET)}`;
+    expect(parseHash(hash)).toMatchObject({ route: SHEET, todayDiary: true });
+  });
+
+  it("프레임 설정에 실리고 시트 주소로 연다 — 끈 프레임에는 키도 싣지 않는다", () => {
+    const sheet = withRoute(DEFAULT_STATE, SHEET);
+    const [solo] = framesFor(sheet, noSample, REAL);
+    expect(solo).toMatchObject({ href: SHEET, config: { todayDiary: true } });
+    const [plain] = framesFor(withRoute(sheet, "/rest"), noSample, REAL);
+    expect(plain!.href).toBe("/rest");
+    expect(plain!.config).not.toHaveProperty("todayDiary");
+  });
+
+  it("모든 화면에서는 시트 칸에만 켠다", () => {
+    const grid = framesFor({ ...DEFAULT_STATE, layout: "grid" }, noSample, REAL);
+    expect(grid.filter((f) => f.config.todayDiary).map((f) => f.route.path)).toEqual([SHEET]);
   });
 });
 

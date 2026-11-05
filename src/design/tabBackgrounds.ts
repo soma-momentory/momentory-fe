@@ -12,7 +12,7 @@ export const tabBackgroundAssets = {
 
 export const tabBackgroundByTab = {
   홈: "warm-ivory",
-  쉼터: "soft-olive",
+  쉼터: "warm-ivory",
   보관함: "warm-ivory",
   리포트: "warm-ivory",
   마이: "warm-ivory",

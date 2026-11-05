@@ -335,6 +335,55 @@ test("프레임 주소 — os= · 프리셋 실패 주소 · 두 단계 열기�
   assert.equal(recordsUrl.searchParams.get("content"), "sense_pond");
 });
 
+test("시트 줄(screenOf) — 그 라우트와 다른 칸으로 찍고 오늘 일기를 싣는다", async () => {
+  const lab = await loadLabModules(repoRoot);
+  const rest = lab.shellRoutes.find((route) => route.path === "/rest");
+  const sheet = lab.shellRoutes.find((route) => route.screenOf === "/rest");
+  const shots = planShots({
+    selections: [
+      { route: rest, href: null },
+      { route: sheet, href: null },
+    ],
+    devices: [DEVICES[0]],
+    datasets: ["normal"],
+    textScales: [1],
+    now: "2026-11-02T21:30:00+09:00",
+    sample: () => ({}),
+    resolveHref: lab.resolveHref,
+  });
+  assert.equal(new Set(shots.map((shot) => shot.id)).size, 2);
+  const url = new URL(buildFrameUrl("http://x", shots[1]));
+  assert.equal(url.pathname, "/rest");
+  assert.equal(url.searchParams.get("afterDiary"), "1");
+  assert.equal(url.searchParams.get("todayDiary"), "1");
+  assert.equal(new URL(buildFrameUrl("http://x", shots[0])).searchParams.has("todayDiary"), false);
+});
+
+test("시트 줄(screenOf) — --routes 로 고르면 일반 쉼터가 아니라 시트를 찍는다", async () => {
+  const lab = await loadLabModules(repoRoot);
+  const sheet = lab.shellRoutes.find((route) => route.screenOf === "/rest");
+  const { picked, unknown } = selectRoutes(lab.shellRoutes, [sheet.path, "/rest"]);
+  assert.deepEqual(unknown, []);
+  assert.equal(picked.length, 2);
+  assert.equal(picked[0].route, sheet);
+  assert.equal(picked[1].route.path, "/rest");
+
+  const shots = planShots({
+    selections: picked,
+    devices: [DEVICES[0]],
+    datasets: ["normal"],
+    textScales: [1],
+    now: "2026-11-02T21:30:00+09:00",
+    sample: () => ({}),
+    resolveHref: lab.resolveHref,
+  });
+  const url = new URL(buildFrameUrl("http://x", shots[0]));
+  assert.equal(url.pathname, "/rest");
+  assert.equal(url.searchParams.get("afterDiary"), "1");
+  assert.equal(url.searchParams.get("todayDiary"), "1");
+  assert.equal(new URL(buildFrameUrl("http://x", shots[1])).searchParams.has("afterDiary"), false);
+});
+
 /* ── 화소 비교 ── */
 
 function png(width, height, paint) {

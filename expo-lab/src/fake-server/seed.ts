@@ -31,7 +31,7 @@ import {
   type RestMood,
   type ScheduleRow,
 } from "./db";
-import { addDays, dayOf, kstIso, kstMoment } from "./time";
+import { addDays, dayOf, dayOfIso, kstIso, kstMoment } from "./time";
 
 /** 가짜 서버의 사용자 id — 로그인 응답 · `/users/me` 가 같은 값을 준다 */
 export const LAB_USER_ID = 7;
@@ -182,6 +182,27 @@ const longTheme = (base: Theme): Theme => ({
       "해 보니 아침이 덜 급했고, 커피를 마시는 동안 오늘 할 일을 천천히 떠올릴 수 있어서 좋았다. 다음 주에도 이어 가 보고 싶다.",
   },
 });
+
+/**
+ * 오늘 일기가 없으면 직접 쓴 일기 한 편을 넣는다(`LabFrameConfig.todayDiary`). 넣었으면 `true`.
+ * 저장본을 다시 읽을 때마다 부른다 — 시드와 달리 **그날의 「오늘」**을 따라가야 해서다(다음 날 · 「하루 넘기기」).
+ */
+export function ensureTodayDiary(db: FakeDb, nowMs: number): boolean {
+  const today = dayOf(nowMs);
+  if (db.diaries.some((d) => dayOfIso(d.createdAt) === today)) return false;
+  const theme = THEMES[0]!;
+  db.diaries.push({
+    id: nextId(db),
+    retrospectId: null,
+    primaryEmotion: theme.emotions[0],
+    emotions: [theme.emotions[0]],
+    original: SPECS[db.datasetId]?.long ? LONG.diary : theme.diary,
+    createdAt: new Date(nowMs).toISOString(),
+    weather: null,
+    letterPending: true,
+  });
+  return true;
+}
 
 /** 데이터 세트 하나를 「오늘 = today」 기준으로 심는다 */
 const WISHES = [

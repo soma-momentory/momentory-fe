@@ -43,6 +43,7 @@ import { sendTurn, startRetro, type Reply } from "@/features/retro/data/retroApi
 
 import { DEFAULT_FRAME_CONFIG, LAB_API_BASE_URL, type LabFrameConfig } from "../../lab-contract";
 import {
+  createFakeServer,
   datasets,
   installedFakeServer,
   installFakeServer,
@@ -127,6 +128,50 @@ async function runRetro(first = "회의에서 의견을 냈는데 금방 묻혔�
   const last = await turn({ optionIds: ["1"] });
   return { ok: true as const, sessionId, replies, last };
 }
+
+describe("오늘 쓴 일기 — config.todayDiary (쉼 추천 시트)", () => {
+  const TODAY_NOW = "2026-11-03T21:30:00+09:00";
+  const NEXT_DAY = "2026-11-04T21:30:00+09:00";
+  const days = (server: ReturnType<typeof createFakeServer>) =>
+    server.db().diaries.map((d) => d.createdAt);
+  const memoryStorage = () => {
+    const items = new Map<string, string>();
+    return {
+      getItem: (k: string) => items.get(k) ?? null,
+      setItem: (k: string, v: string) => void items.set(k, v),
+      removeItem: (k: string) => void items.delete(k),
+    };
+  };
+
+  it.each(["empty", "normal", "many", "long-copy"])("%s 에 오늘 일기를 심는다", (datasetId) => {
+    const base = config({ datasetId, now: TODAY_NOW });
+    const on = createFakeServer({ ...base, todayDiary: true }, { storage: memoryStorage() });
+    const today = on.db().diaries.filter((d) => d.letterPending);
+    expect(today).toHaveLength(1);
+    expect(today[0]).toMatchObject({ retrospectId: null, emotions: ["frustrated"] });
+    expect(today[0]!.original.length).toBeGreaterThan(0);
+  });
+
+  it("다른 저장 키를 써서 같은 데이터 세트의 다른 화면에 일기가 번지지 않는다", () => {
+    const storage = memoryStorage();
+    const base = config({ datasetId: "normal", now: TODAY_NOW });
+    const on = createFakeServer({ ...base, todayDiary: true }, { storage });
+    const off = createFakeServer(base, { storage });
+    expect(storageKey({ ...base, todayDiary: true })).toBe(`${storageKey(base)}:today-diary`);
+    expect(days(on)).toHaveLength(days(off).length + 1);
+  });
+
+  it("다음 날 다시 읽으면 그날의 일기를 새로 넣는다", () => {
+    const storage = memoryStorage();
+    const base = config({ datasetId: "normal", todayDiary: true });
+    const first = createFakeServer({ ...base, now: TODAY_NOW }, { storage });
+    const before = days(first).length;
+    const again = createFakeServer({ ...base, now: TODAY_NOW }, { storage });
+    expect(days(again)).toHaveLength(before);
+    const next = createFakeServer({ ...base, now: NEXT_DAY }, { storage });
+    expect(days(next)).toHaveLength(before + 1);
+  });
+});
 
 describe.each(datasets.map((d) => d.id))("데이터 세트 %s", (datasetId) => {
   beforeEach(() => install({ datasetId }));
