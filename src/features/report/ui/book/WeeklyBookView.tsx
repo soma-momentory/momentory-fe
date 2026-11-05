@@ -201,7 +201,12 @@ export function WeeklyBookView({
             </Text>
           ) : (
             <>
-              <BabaOnRug width={120} />
+              <Bubble size={17} lineHeight={24} testID="book-loading">
+                리포트를 정리하고 있어요
+              </Bubble>
+              <View style={styles.loadingBaba}>
+                <BabaOnRug width={120} />
+              </View>
               <Spinner />
             </>
           )}
@@ -253,13 +258,13 @@ export function WeeklyBookView({
         <Pressable
           testID="book-past"
           accessibilityRole="button"
-          accessibilityLabel="예전 공책"
+          accessibilityLabel="지난 리포트"
           onPress={onOpenPast}
           hitSlop={8}
           style={[styles.past, { top: insets.top + 2 }]}
         >
           <Text style={hand(15, 22)} color={homeV2.color.muted}>
-            예전 공책
+            지난 리포트
           </Text>
           <Icon name="chevron-right" size={16} color={homeV2.color.muted} />
         </Pressable>
@@ -267,7 +272,7 @@ export function WeeklyBookView({
         <Pressable
           testID="book-exit"
           accessibilityRole="button"
-          accessibilityLabel="공책 덮기"
+          accessibilityLabel="리포트 닫기"
           onPress={() => go(-1)}
           hitSlop={8}
           style={[styles.exit, { top: insets.top + 2 }]}
@@ -359,7 +364,11 @@ export function WeeklyBookView({
             testID="book-cover"
           >
             <KraftFace>
-              <Cover book={book} label={empty ? "이번 주 공책" : range.label} width={closedWidth} />
+              <Cover
+                book={book}
+                label={empty ? "이번 주 리포트" : range.label}
+                width={closedWidth}
+              />
             </KraftFace>
           </Leaf>
         </Notebook>
@@ -375,7 +384,7 @@ export function WeeklyBookView({
           />
           {hasHint ? (
             <Text testID="book-hint" style={[hand(15, 20), styles.hint]} color={homeV2.color.muted}>
-              {keepWords("한 주에 3일 이상 일기를 쓰면, 리포트가 생겨요")}
+              {keepWords("한 주에 3일 이상 일기를 쓰면, 리포트가 펼쳐져요")}
             </Text>
           ) : null}
         </Animated.View>
@@ -436,11 +445,11 @@ function Cover({ book, label, width }: { book: WeeklyBook; label: string; width:
     <View style={styles.cover}>
       <View style={styles.label}>
         <View style={styles.labelLine} />
-        {!empty && !crisis ? (
+        {book.newest && !empty && !crisis ? (
           <View style={styles.newTag}>
             <MaskingTape color={reportBook.color.tagTape} edge="notched" />
             <Text style={hand(14, 18)} color={homeV2.color.ink}>
-              {book.newest ? "새 공책" : "예전 공책"}
+              새 리포트
             </Text>
           </View>
         ) : null}
@@ -470,7 +479,7 @@ function Cover({ book, label, width }: { book: WeeklyBook; label: string; width:
           </View>
         ))}
       </View>
-      {book.restCount > 0 && !crisis ? (
+      {book.restCount > 0 && !crisis && !empty ? (
         <Text style={[hand(15, 20), styles.coverRest]} color={homeV2.color.ink}>
           쉼터에 {book.restCount}번 다녀왔어요
         </Text>
@@ -483,7 +492,7 @@ function Cover({ book, label, width }: { book: WeeklyBook; label: string; width:
         >
           {keepWords(
             empty
-              ? "일기를 쓰면 일요일에 공책이 도착해요"
+              ? "일기를 쓰면 일요일에 리포트가 도착해요"
               : small
                 ? book.coverLine.replace(/\n/g, " ")
                 : book.coverLine,
@@ -557,6 +566,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   centerText: { textAlign: "center" },
+  loadingBaba: { marginTop: -24 },
   past: {
     position: "absolute",
     right: 16,

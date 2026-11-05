@@ -29,7 +29,7 @@ export function NotebookPickerSheet({
             {i > 0 ? <ListDivider /> : null}
             <ListCell
               title={option.range}
-              description={`일기 ${option.diaryCount}일`}
+              description={`일기 ${option.diaryCount}편`}
               trailing={
                 option.weekStart === current ? (
                   <Icon name="check" size={20} color={primary.normal} />
