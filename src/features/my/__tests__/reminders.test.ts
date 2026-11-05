@@ -4,6 +4,7 @@ import { useDiary } from "@/features/diary/model/diary";
 import { useLetters } from "@/features/letter/model/letter";
 import {
   plannedReminders,
+  reminderHref,
   RETRO_DAYS_AHEAD,
   startReminderSync,
   syncReminders,
@@ -115,6 +116,46 @@ describe("무엇이 예약돼야 하는가 — 회고", () => {
     expect(plannedReminders().filter((r) => r.kind === "retro")).toEqual([]);
     // 껐다는 이유로 값을 지우지 않는다 (M3.md)
     expect(useSettings.getState().notify.retro.time).toBe("21:30");
+  });
+});
+
+describe("무엇이 예약돼야 하는가 — 공책 도착", () => {
+  const report = () => plannedReminders().filter((r) => r.kind === "report");
+
+  it("이번 주에 일기가 있으면 다음 일요일 오전 10시에 한 번", () => {
+    useDiary.setState({ diaries: [diaryOn("2026-07-27")] });
+    expect(report().map((r) => r.key)).toEqual(["report.2026-08-02"]);
+    const [arrival] = report();
+    expect(arrival != null && "at" in arrival ? arrival.at.getHours() : null).toBe(10);
+  });
+
+  it("이번 주에 일기가 없으면 알리지 않는다", () => {
+    useDiary.setState({ diaries: [diaryOn("2026-07-20")] });
+    expect(report()).toEqual([]);
+  });
+
+  it("일요일 10시 전에는 지난주 일기로 오늘 알린다", () => {
+    setClock(fixedClock("2026-08-02T09:00:00"));
+    useDiary.setState({ diaries: [diaryOn("2026-07-29")] });
+    expect(report().map((r) => r.key)).toEqual(["report.2026-08-02"]);
+  });
+
+  it("일요일 10시가 지나면 그 주 일기만 다음 일요일을 예약한다", () => {
+    setClock(fixedClock("2026-08-02T11:00:00"));
+    useDiary.setState({ diaries: [diaryOn("2026-07-29")] });
+    expect(report()).toEqual([]);
+  });
+
+  it("회고 알림을 끄면 함께 꺼진다", () => {
+    useDiary.setState({ diaries: [diaryOn("2026-07-27")] });
+    useSettings.getState().toggle("retro");
+    expect(report()).toEqual([]);
+  });
+
+  it("문구에 일기 내용이 없고, 눌렀을 때 리포트로 간다", async () => {
+    useDiary.setState({ diaries: [diaryOn("2026-07-27")] });
+    expect(report()[0]?.title).toBe("지난주 리포트가 도착했어요");
+    await expect(reminderHref("report")).resolves.toBe("/report");
   });
 });
 

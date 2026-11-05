@@ -1,6 +1,7 @@
 import { track } from "@/features/analytics";
 import { useAuth } from "@/features/auth/model/auth";
 import { useDiary } from "@/features/diary/model/diary";
+import { weekStartOf } from "@/features/home/model/day";
 import { useLetters } from "@/features/letter/model/letter";
 import { useSettings } from "@/features/my/model/settings";
 import { addDays, clock, momentOf } from "@/lib/clock";
@@ -65,6 +66,8 @@ const CONTENT = {
   daily: { title: "지금 이 순간", body: "떠오른 게 있다면 한 줄만 남겨두세요." },
   // 편지 내용은 넣지 않는다 — 예약할 때는 편지가 아직 없을 수 있다(PRD 3)
   letter: { title: "바바의 편지가 와 있어요", body: "어제 이야기를 읽고 바바가 편지를 썼어요." },
+  // 공책 내용은 넣지 않는다 — 잠금 화면에 일기 이야기가 보이지 않게 한다
+  report: { title: "지난주 리포트가 도착했어요", body: "바바가 한 주를 적어 뒀어요." },
   retroUnread: { title: "안 본 바바의 편지가 있어요", body: "읽고 오늘 이야기도 들려줘요." },
 } as const;
 
@@ -73,6 +76,9 @@ export const letterActionContent = (title: string) => ({
   title: "오늘 해 보기로 한 일",
   body: title,
 });
+
+/** 공책 도착 알림 시각 — 일요일 오전 10시 */
+export const REPORT_ARRIVAL_HOUR = 10;
 
 /** 회고 알림을 며칠 앞까지 하루씩 예약하는가 — 위 머리말 */
 export const RETRO_DAYS_AHEAD = 14;
@@ -135,6 +141,22 @@ export function plannedReminders(): Reminder[] {
     }
   }
 
+  // 끝난 주에 일기가 있을 때만 일요일 아침에 공책 도착을 알린다. 끄는 스위치는 회고 알림과 같다
+  if (retro != null) {
+    const thisSunday = weekStartOf(today);
+    const beforeArrival = today === thisSunday && clock.now().getHours() < REPORT_ARRIVAL_HOUR;
+    const arrival = beforeArrival ? thisSunday : addDays(thisSunday, 7);
+    const weekStart = addDays(arrival, -7);
+    if ([...written].some((day) => day >= weekStart && day < arrival)) {
+      planned.push({
+        key: `report.${arrival}`,
+        kind: "report",
+        at: momentOf(arrival, REPORT_ARRIVAL_HOUR, 0),
+        ...CONTENT.report,
+      });
+    }
+  }
+
   return planned;
 }
 
@@ -156,7 +178,8 @@ const parsed = (setting: { enabled: boolean; time: string | null }) => {
 export async function reminderHref(
   kind: ReminderKind,
   data: Record<string, string> = {},
-): Promise<`/diary/${string}` | `/letter/${string}` | "/retro/confirm" | null> {
+): Promise<`/diary/${string}` | `/letter/${string}` | "/retro/confirm" | "/report" | null> {
+  if (kind === "report") return "/report";
   if ((kind === "letter" || kind === "letter_action") && data.date != null) {
     return `/letter/${data.date}?source=notification`;
   }

@@ -126,7 +126,7 @@ const notificationSource = choice("onboarding", "my");
  * 민감 정보라 외부 분석 도구로 내보내지 않는다(2026-09-28). 그 단계도 other 에 섞인다.
  */
 const retroPhase = choice("diary_chat", "await_branch", "emotion_exploration", "other");
-const reminderKey = choice("retro", "daily", "weekly", "letter", "letter_action");
+const reminderKey = choice("retro", "daily", "weekly", "letter", "letter_action", "report");
 const inputKind = choice("text", "selection");
 const scheduleSource = choice("manual", "calendar");
 const onboardingFailure = choice(
