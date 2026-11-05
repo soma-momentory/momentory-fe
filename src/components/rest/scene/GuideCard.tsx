@@ -95,7 +95,14 @@ export function GuideCard({
   const [page, setPage] = useState(0);
   const [veil] = useState(() => new Animated.Value(0));
   const [rise] = useState(() => new Animated.Value(0));
-  const current = guide.pages[page]!;
+  const [heights, setHeights] = useState<Record<number, number>>({});
+  const tallest = Math.max(0, ...Object.values(heights));
+  const labelOf = (i: number) =>
+    i === guide.pages.length - 1
+      ? first
+        ? REST_GUIDE_CLOSE.first
+        : REST_GUIDE_CLOSE.again
+      : REST_GUIDE_NEXT;
   const last = page === guide.pages.length - 1;
 
   useEffect(() => {
@@ -124,60 +131,113 @@ export function GuideCard({
       ]}
     >
       <Animated.View style={[StyleSheet.absoluteFill, styles.dim, { opacity: veil }]} />
-      <Animated.View
-        style={[
-          styles.card,
-          {
-            opacity: rise.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] }),
-            transform: [
-              { translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [space.xl, 0] }) },
-            ],
-          },
-        ]}
-      >
-        {current.example != null ? <Example example={current.example} art={ART[content]} /> : null}
-        <View style={styles.body}>
-          <View style={styles.bubble}>
-            <Text variant="body1ReadingHandLg" color={labelColor.normal} style={styles.bubbleText}>
-              {current.text}
-            </Text>
-            <Svg width={G.tail.width} height={G.tail.height} style={styles.tail} accessible={false}>
-              <Path
-                d={`M0 0 H${G.tail.width} L${G.tail.width / 2} ${G.tail.height} Z`}
-                fill={retroDiary.question}
-              />
-            </Svg>
-          </View>
-          <Image source={BABA} style={styles.baba} contentFit="contain" accessible={false} />
-        </View>
-        <View style={styles.footer}>
-          <View style={styles.dots} accessible={false}>
-            {guide.pages.map((_, i) => (
-              <View key={i} style={[styles.dot, i === page ? styles.dotOn : null]} />
-            ))}
-          </View>
-          <Button
-            label={
-              last ? (first ? REST_GUIDE_CLOSE.first : REST_GUIDE_CLOSE.again) : REST_GUIDE_NEXT
-            }
-            labelVariant="headline1"
-            fill
-            onPress={last ? onClose : () => setPage(page + 1)}
-          />
-          {last && lastPageLink != null ? (
-            <View style={styles.link}>
-              <Button
-                label={lastPageLink.label}
-                labelVariant="label1"
-                variant="text"
-                size="small"
-                onPress={lastPageLink.onPress}
-              />
+      {/* 가장 긴 장만큼 자리를 잡고 카드를 그 바닥에 붙인다 — 장을 넘겨도 바바 · 점 · 버튼이 그 자리에 있다 */}
+      <View testID="rest-guide-seat" style={[styles.seat, { minHeight: tallest }]}>
+        {/* 낭독기 · 키보드에서 뺀다 — 웹은 `aria-hidden` 만 듣고, 버튼은 비활성이어야 Tab 이 들어오지 않는다 */}
+        <View pointerEvents="none" aria-hidden style={styles.measure}>
+          {guide.pages.map((_, i) => (
+            <View
+              key={i}
+              testID={`rest-guide-measure-${i}`}
+              style={[styles.card, styles.measureCard]}
+              onLayout={({ nativeEvent }) => {
+                const { height } = nativeEvent.layout;
+                setHeights((all) => (all[i] === height ? all : { ...all, [i]: height }));
+              }}
+            >
+              <GuidePage content={content} page={i} label={labelOf(i)} link={lastPageLink} />
             </View>
-          ) : null}
+          ))}
         </View>
-      </Animated.View>
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              opacity: rise.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] }),
+              transform: [
+                {
+                  translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [space.xl, 0] }),
+                },
+              ],
+            },
+          ]}
+        >
+          <GuidePage
+            content={content}
+            page={page}
+            label={labelOf(page)}
+            onPress={last ? onClose : () => setPage(page + 1)}
+            link={lastPageLink}
+          />
+        </Animated.View>
+      </View>
     </View>
+  );
+}
+
+const noop = () => {};
+
+/** 카드 한 장의 내용 — 보이는 장과 높이를 재는 장이 같은 것을 그린다. `onPress` 가 없으면 재는 장이다 */
+function GuidePage({
+  content,
+  page,
+  label,
+  onPress,
+  link,
+}: {
+  content: RestGuideContent;
+  page: number;
+  label: string;
+  onPress?: () => void;
+  link?: { label: string; onPress: () => void };
+}) {
+  const measuring = onPress == null;
+  const { pages } = REST_GUIDES[content];
+  const current = pages[page]!;
+  return (
+    <>
+      {current.example != null ? <Example example={current.example} art={ART[content]} /> : null}
+      <View style={styles.body}>
+        <View style={styles.bubble}>
+          <Text variant="body1ReadingHandLg" color={labelColor.normal} style={styles.bubbleText}>
+            {current.text}
+          </Text>
+          <Svg width={G.tail.width} height={G.tail.height} style={styles.tail} accessible={false}>
+            <Path
+              d={`M0 0 H${G.tail.width} L${G.tail.width / 2} ${G.tail.height} Z`}
+              fill={retroDiary.question}
+            />
+          </Svg>
+        </View>
+        <Image source={BABA} style={styles.baba} contentFit="contain" accessible={false} />
+      </View>
+      <View style={styles.footer}>
+        <View style={styles.dots} accessible={false}>
+          {pages.map((_, i) => (
+            <View key={i} style={[styles.dot, i === page ? styles.dotOn : null]} />
+          ))}
+        </View>
+        <Button
+          label={label}
+          labelVariant="headline1"
+          fill
+          disabled={measuring}
+          onPress={onPress ?? noop}
+        />
+        {page === pages.length - 1 && link != null ? (
+          <View style={styles.link}>
+            <Button
+              label={link.label}
+              labelVariant="label1"
+              variant="text"
+              size="small"
+              disabled={measuring}
+              onPress={measuring ? noop : link.onPress}
+            />
+          </View>
+        ) : null}
+      </View>
+    </>
   );
 }
 
@@ -283,6 +343,10 @@ const G = restGuideSize;
 const styles = StyleSheet.create({
   overlay: { justifyContent: "center", paddingHorizontal: space.xl },
   dim: { backgroundColor: G.dim },
+  seat: { justifyContent: "flex-end" },
+  // 높이를 재는 장들 — 카드와 같은 폭으로 겹쳐 두고 보이지 않게 한다
+  measure: { position: "absolute", top: 0, left: 0, right: 0, opacity: 0 },
+  measureCard: { position: "absolute", top: 0, left: 0, right: 0 },
   card: {
     borderRadius: radius.xlarge,
     backgroundColor: background.elevated,

@@ -1,7 +1,9 @@
 import { fireEvent, render } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 
 import WeeklyHappinessScreen from "@/../app/rest/weekly-happiness";
 import { REST_THEMES } from "@/components/rest/restThemes";
+import { GuideCard } from "@/components/rest/scene/GuideCard";
 import { RestLedgerArt } from "@/components/rest/weekly/RestLedgerArt";
 import { keepWords } from "@/features/letter/model/letter";
 import { markGuideSeen, readGuideSeen } from "@/features/rest/data/guideMemory";
@@ -128,6 +130,45 @@ describe("주간 행복 — 설명 카드", () => {
     await fireEvent.press(r.getByLabelText("설명 보기"));
     expect(r.getByTestId("rest-guide-card")).toBeTruthy();
     expect(r.getByText(guide.pages[0].text)).toBeTruthy();
+  });
+
+  it("가장 긴 장만큼 자리를 잡아, 장을 넘겨도 카드 바닥과 버튼이 움직이지 않는다", async () => {
+    const r = await render(<WeeklyHappinessScreen />);
+    await fireEvent.press(r.getByLabelText("설명 보기"));
+
+    const hidden = { includeHiddenElements: true };
+    const measure = (page: number, height: number) =>
+      fireEvent(r.getByTestId(`rest-guide-measure-${page}`, hidden), "layout", {
+        nativeEvent: { layout: { height } },
+      });
+    await measure(0, 500);
+    await measure(1, 320);
+    await measure(2, 340);
+
+    const seat = () => StyleSheet.flatten(r.getByTestId("rest-guide-seat").props.style);
+    expect(seat()).toMatchObject({ minHeight: 500, justifyContent: "flex-end" });
+
+    await fireEvent.press(r.getByRole("button", { name: "다음" }));
+    expect(seat()).toMatchObject({ minHeight: 500, justifyContent: "flex-end" });
+  });
+
+  it("높이를 재는 장은 낭독기에 없고, 그 안의 버튼은 꺼져 있다", async () => {
+    const r = await render(
+      <GuideCard
+        content="meditation"
+        first
+        onClose={jest.fn()}
+        lastPageLink={{ label: "참고한 실습 보기", onPress: jest.fn() }}
+      />,
+    );
+    // 보이는 1장의 「다음」 하나만 잡히고, 재는 장의 버튼은 숨겨져 있다
+    expect(r.getAllByRole("button")).toHaveLength(1);
+    expect(r.queryByText("참고한 실습 보기")).toBeNull();
+
+    const measured = r.getByText("참고한 실습 보기", { includeHiddenElements: true });
+    let node = measured.parent;
+    while (node != null && node.props.accessibilityState?.disabled == null) node = node.parent;
+    expect(node?.props.accessibilityState).toMatchObject({ disabled: true });
   });
 
   it("예시 줄은 실제 칸 이름과 입력칸 예시를 그대로 쓴다", () => {
