@@ -194,11 +194,13 @@ worry_box, treasure_box, meditation, wish)로 가른다. 시간은 모두 전면
 - rest_content_completed 는 끝까지 한 때 한 번이다 — 감각연못은 마지막 감각을 찾은 순간(sense_pond_finished
   와 같은 때), 몸에 힘 빼기는 네 부위를 다 한 순간, 걱정상자는 맡겨두기/흘려보내기를 고른 순간이다.
   오늘의 보물함은 보물함이 닫히는 연출이 끝난 순간이다(저장 성공 여부와 상관없이).
-  소원 연꽃은 처음 같이 빌거나 소원을 띄운 순간이다.
+  소원 연꽃은 처음 같이 빌거나 소원을 띄운 순간이다. 3분 명상은 3분이 다 찬 순간이다(meditation_ended
+  reason=natural 과 같은 때) — 「여기서 멈추기」로 일찍 마친 판은 끝까지 한 것으로 세지 않는다.
   끝까지 간 판은 떠나도 rest_content_exited 를 보내지 않는다.
 - rest_content_exited 의 stage 는 **나간 자리**다. 감각연못 intro(시작 전)/see/hear/feel(2026-11-04 부터 시작 화면이 생겨 intro 가 있다. 그 전에는 들어오자마자 나가도 see 였으므로, 예전 see 와 비교할 때는 새 앱의 intro + see 를 합쳐 본다), 몸에 힘 빼기 intro(시작 전)/
   hands/shoulders/face/legs(하던 부위), 걱정상자 write(쓰다가)/handing(건네는 연출 중)/boxed(고르기 전),
-  오늘의 보물함 write(쓰다가)/tucking(담는 연출 중), 소원 연꽃 pond(연못)/wish_card(소원 한 장)/rules(이용 규칙)/write(쓰다가)/confirm(띄우기 전 확인).
+  오늘의 보물함 write(쓰다가)/tucking(담는 연출 중), 3분 명상 ready(풍경 고르기 · 시작 전)/meditating(시작한 뒤 —
+  「여기서 멈추기」로 일찍 마치고 기분 쪽지에서 떠난 판도 meditating 이다), 소원 연꽃 pond(연못)/wish_card(소원 한 장)/rules(이용 규칙)/write(쓰다가)/confirm(띄우기 전 확인).
   화면이 닫힐 때 보내므로, 쉼 콘텐츠 화면에서 앱을 강제 종료하면 빠질 수 있다 — 그때는 screen_left
   (exit=background)의 마지막 화면으로 본다.
 - 걱정상자는 쓴 걱정을 **계측으로 보내지 않는다.** worry_box_handed 는 글자 수(chars)만 싣는다. 걱정 원문은
@@ -289,7 +291,7 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 
 - 로그인 응답에는 신규 가입 여부가 없다. onboarding_required=true에는 미완료 재로그인도 포함되므로 signup_completed를 만들지 않았다. 발표에서는 “온보딩이 필요한 로그인/온보딩 완료”라고 표기한다.
 - 날짜 관련 이벤트는 **보관함 조회 날짜·월·기간 변경**이다. 현재 없는 일기 작성일 수정 기능은 추가하지 않았다.
-- 쉼 콘텐츠는 화면이 있는 넷(감각연못 · 몸에 힘 빼기 · 걱정상자 · 오늘의 보물함)을 `rest_content_*` 로 계측한다.
+- 쉼 콘텐츠는 화면이 있는 여섯(감각연못 · 몸에 힘 빼기 · 걱정상자 · 오늘의 보물함 · 3분 명상 · 소원 연꽃)을 `rest_content_*` 로 계측한다.
   쉼 추천의 content 는 감정에서 나온 값이다(위 「쉼 추천」 — 감정 코드 · 이름 대신 실은 유일한 파생값). 새 쉼 콘텐츠는 화면을 만들 때 `useRestContentAnalytics` 를 붙이고 content · stage 값을 더한다.
 - 자동 수집/세션 리플레이를 쓰지 않는다. 이메일, 닉네임, SNS ID, 인증 토큰, 일기·일정·대화·바람 원문, 감정/욕구 코드·이름, 검색어, 알림 설정 시각은 속성 허용 목록에 없다. 알림은 권한 허용 여부와, 예약한 알림을 눌러 연 사실(종류만)만 보낸다.
 - 신원 복원 전 이벤트는 최대 50개, SDK 초기화 전 작업은 최대 200개만 메모리에 둔다. 넘치는 이벤트는 버리되 신원 변경은 보존한다. SDK 초기화가 실패하면 그 실행의 analytics만 비활성화한다.

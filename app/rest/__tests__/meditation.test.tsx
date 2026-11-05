@@ -500,4 +500,59 @@ describe("3분 명상", () => {
     });
     expect(addRestRecord).toHaveBeenCalledWith("meditation", { completed: false });
   });
+
+  describe("계측", () => {
+    const sent = () => jest.mocked(track).mock.calls.map(([name, props]) => [name, props]);
+    const leave = async (r: Awaited<ReturnType<typeof render>>) => {
+      await r.unmount();
+      await act(async () => {
+        await Promise.resolve();
+      });
+    };
+
+    it("3분을 다 채우면 열기 · 시작 · 마침 · 끝까지를 보내고, 떠나도 나간 자리는 보내지 않는다", async () => {
+      const r = await render(<MeditationScreen />);
+      await fireEvent.press(r.getByLabelText("시작하기"));
+      await pass(181_000);
+      await leave(r);
+
+      expect(sent()).toEqual([
+        ["rest_content_opened", { content: "meditation", entry: "direct", diary_today: false }],
+        ["meditation_started", { concept: "wave" }],
+        [
+          "meditation_ended",
+          { concept: "wave", reason: "natural", duration_ms: 180_000, voice_enabled: true },
+        ],
+        ["rest_content_completed", { content: "meditation", duration_ms: expect.any(Number) }],
+      ]);
+    }, 60_000);
+
+    it("시작 전에 떠나면 ready 에서 나간 것이다", async () => {
+      const r = await render(<MeditationScreen />);
+      await leave(r);
+
+      expect(sent()).toEqual([
+        ["rest_content_opened", { content: "meditation", entry: "direct", diary_today: false }],
+        [
+          "rest_content_exited",
+          { content: "meditation", stage: "ready", duration_ms: expect.any(Number) },
+        ],
+      ]);
+    });
+
+    it("「여기서 멈추기」로 일찍 마치면 끝까지로 세지 않고, 떠날 때 meditating 에서 나간 것이다", async () => {
+      const r = await render(<MeditationScreen />);
+      await fireEvent.press(r.getByLabelText("시작하기"));
+      await pass(10_000);
+      await fireEvent.press(r.getByLabelText("멈추기"));
+      await fireEvent.press(r.getByLabelText("여기서 멈추기"));
+      await leave(r);
+
+      expect(sent().map(([name]) => name)).not.toContain("rest_content_completed");
+      expect(sent()).toContainEqual([
+        "rest_content_exited",
+        { content: "meditation", stage: "meditating", duration_ms: expect.any(Number) },
+      ]);
+    });
+  });
 });
