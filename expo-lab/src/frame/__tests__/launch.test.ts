@@ -48,6 +48,12 @@ describe("frame launch", () => {
     });
   });
 
+  it("reads todayDiary and leaves it out by default", () => {
+    expect(configFromQuery("?todayDiary=1").todayDiary).toBe(true);
+    expect(configFromQuery("?todayDiary=0")).not.toHaveProperty("todayDiary");
+    expect(configFromQuery("")).not.toHaveProperty("todayDiary");
+  });
+
   it("lets the device decide the platform and ignores unknown values", () => {
     const config = configFromQuery(
       "?device=iphone-se-3&platform=android&dataset=nope&now=garbage&latency=-3",

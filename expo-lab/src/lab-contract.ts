@@ -47,6 +47,11 @@ export type LabFrameConfig = {
    * 뜰 때 셸에 메시지를 보낼 곳이고, 셸이 보낸 메시지를 믿는 기준이다. 없으면 프레임 자신의 출처(같은 서버)
    */
   shellOrigin?: string;
+  /**
+   * 오늘 쓴 일기가 있는 상태로 연다 — 일기를 쓴 날에만 뜨는 쉼 추천 시트를 볼 때 쓴다. 이 값이 켜진 프레임은
+   * **가짜 DB 를 따로 쓰므로**(저장 키 끝의 `:today-diary`) 같은 데이터 세트의 다른 화면에는 그 일기가 보이지 않는다
+   */
+  todayDiary?: boolean;
 };
 
 export type LabPlatform = "ios" | "android";
@@ -124,7 +129,7 @@ export type LabKeyboardMessage = Extract<ShellToFrameMessage, { type: "lab:keybo
 
 /**
  * 가짜 DB 는 프레임마다 localStorage 에 남는다(새로고침해도 유지).
- * 키 = `${FAKE_DB_STORAGE_PREFIX}${frameId}:${datasetId}`. 초기화는 `lab:resetData`.
+ * 키 = `${FAKE_DB_STORAGE_PREFIX}${frameId}:${datasetId}`(`todayDiary` 면 끝에 `:today-diary`). 초기화는 `lab:resetData`.
  * 세션(SecureStore 대체) 키도 프레임마다 따로다 = `${FRAME_STORAGE_PREFIX}${frameId}:<키>`.
  */
 export const FAKE_DB_STORAGE_PREFIX = "momentory.lab.db:";

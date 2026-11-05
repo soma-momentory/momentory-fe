@@ -8,7 +8,7 @@ jest.mock("expo-router", () => ({ router: { replace: jest.fn() } }));
 describe("선택한 탭별 종이 배경", () => {
   it.each([
     ["홈", "warm-ivory"],
-    ["쉼터", "soft-olive"],
+    ["쉼터", "warm-ivory"],
     ["보관함", "warm-ivory"],
     ["리포트", "warm-ivory"],
     ["마이", "warm-ivory"],

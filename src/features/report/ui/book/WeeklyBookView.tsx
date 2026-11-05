@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 
 import { BottomSheet, EmotionPebble, Icon, Spinner, Text } from "@/components/ds";
 import { MaskingTape } from "@/components/ds/MaskingTape";
@@ -101,6 +102,8 @@ export function WeeklyBookView({
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [at, setAt] = useState(-1);
+  // 그림이 많아 첫 화면이 밀린다 — 지금 장과 앞뒤 장만 그리고, 한 번 그린 장은 남겨 넘길 때 비지 않게 한다
+  const [drawn, setDrawn] = useState<ReadonlySet<number>>(() => new Set([0]));
   const [sheet, setSheet] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [open] = useState(() => new Animated.Value(0));
@@ -116,6 +119,7 @@ export function WeeklyBookView({
     const target = Math.max(-1, Math.min(last, next));
     if (target === at) return;
     setAt(target);
+    setDrawn((prev) => new Set([...prev, target - 1, target, target + 1]));
     const page = target < 0 ? "cover" : (pages[target] ?? "cover");
     onTurn(page);
     if (page !== "cover" && page !== "closing") {
@@ -197,7 +201,12 @@ export function WeeklyBookView({
             </Text>
           ) : (
             <>
-              <BabaOnRug width={120} />
+              <Bubble size={17} lineHeight={24} testID="book-loading">
+                리포트를 정리하고 있어요
+              </Bubble>
+              <View style={styles.loadingBaba}>
+                <BabaOnRug width={120} />
+              </View>
               <Spinner />
             </>
           )}
@@ -249,13 +258,13 @@ export function WeeklyBookView({
         <Pressable
           testID="book-past"
           accessibilityRole="button"
-          accessibilityLabel="예전 공책"
+          accessibilityLabel="지난 리포트"
           onPress={onOpenPast}
           hitSlop={8}
           style={[styles.past, { top: insets.top + 2 }]}
         >
           <Text style={hand(15, 22)} color={homeV2.color.muted}>
-            예전 공책
+            지난 리포트
           </Text>
           <Icon name="chevron-right" size={16} color={homeV2.color.muted} />
         </Pressable>
@@ -263,7 +272,7 @@ export function WeeklyBookView({
         <Pressable
           testID="book-exit"
           accessibilityRole="button"
-          accessibilityLabel="공책 덮기"
+          accessibilityLabel="리포트 닫기"
           onPress={() => go(-1)}
           hitSlop={8}
           style={[styles.exit, { top: insets.top + 2 }]}
@@ -301,31 +310,50 @@ export function WeeklyBookView({
                 accessibilityElementsHidden={i !== at}
                 importantForAccessibility={i === at ? "auto" : "no-hide-descendants"}
               >
-                {page !== "closing" ? (
-                  <View style={styles.pageHead}>
-                    <TapeTitle>{BOOK_PAGE_TITLES[page]}</TapeTitle>
-                    <Text style={[hand(14, 18), styles.dateField]} color={homeV2.color.muted}>
-                      {range.field}
-                    </Text>
-                  </View>
+                {drawn.has(i) ? (
+                  <>
+                    {page !== "closing" ? (
+                      <View style={styles.pageHead}>
+                        <TapeTitle>{BOOK_PAGE_TITLES[page]}</TapeTitle>
+                        <Text style={[hand(14, 18), styles.dateField]} color={homeV2.color.muted}>
+                          {range.field}
+                        </Text>
+                      </View>
+                    ) : null}
+                    <BookPageBody
+                      page={page}
+                      book={book}
+                      size={pageSizeOf(openHeight)}
+                      active={i === at}
+                      reduceMotion={reduceMotion}
+                    />
+                    <View style={styles.pageFoot}>
+                      <Text
+                        style={hand(14, 18)}
+                        color={homeV2.color.muted}
+                        testID={`book-page-no-${i}`}
+                      >
+                        {i + 1} / {pages.length}
+                      </Text>
+                    </View>
+                    <Svg
+                      style={styles.corner}
+                      width={CORNER}
+                      height={CORNER}
+                      viewBox={`0 0 ${CORNER} ${CORNER}`}
+                      pointerEvents="none"
+                    >
+                      {/* 접혀 올라간 자리에는 아래 장이 보이고, 접힌 귀는 금 안쪽으로 눕는다 */}
+                      <Path d={`M${CORNER} 0V${CORNER}H0Z`} fill={reportBook.color.pageLine} />
+                      <Path d={`M0 0H${CORNER}L0 ${CORNER}Z`} fill={reportBook.color.curl} />
+                      <Path
+                        d={`M${CORNER} 0L0 ${CORNER}`}
+                        stroke={reportBook.color.fold}
+                        strokeWidth={1}
+                      />
+                    </Svg>
+                  </>
                 ) : null}
-                <BookPageBody
-                  page={page}
-                  book={book}
-                  size={pageSizeOf(openHeight)}
-                  active={i === at}
-                  reduceMotion={reduceMotion}
-                />
-                <View style={styles.pageFoot}>
-                  <Text
-                    style={hand(14, 18)}
-                    color={homeV2.color.muted}
-                    testID={`book-page-no-${i}`}
-                  >
-                    {i + 1} / {pages.length}
-                  </Text>
-                </View>
-                <View style={styles.corner} />
               </View>
             </Leaf>
           ))}
@@ -336,7 +364,11 @@ export function WeeklyBookView({
             testID="book-cover"
           >
             <KraftFace>
-              <Cover book={book} label={empty ? "이번 주 공책" : range.label} width={closedWidth} />
+              <Cover
+                book={book}
+                label={empty ? "이번 주 리포트" : range.label}
+                width={closedWidth}
+              />
             </KraftFace>
           </Leaf>
         </Notebook>
@@ -352,7 +384,7 @@ export function WeeklyBookView({
           />
           {hasHint ? (
             <Text testID="book-hint" style={[hand(15, 20), styles.hint]} color={homeV2.color.muted}>
-              {keepWords("한 주에 3일 이상 일기를 쓰면, 리포트가 생겨요")}
+              {keepWords("한 주에 3일 이상 일기를 쓰면, 리포트가 펼쳐져요")}
             </Text>
           ) : null}
         </Animated.View>
@@ -413,11 +445,11 @@ function Cover({ book, label, width }: { book: WeeklyBook; label: string; width:
     <View style={styles.cover}>
       <View style={styles.label}>
         <View style={styles.labelLine} />
-        {!empty && !crisis ? (
+        {book.newest && !empty && !crisis ? (
           <View style={styles.newTag}>
             <MaskingTape color={reportBook.color.tagTape} edge="notched" />
             <Text style={hand(14, 18)} color={homeV2.color.ink}>
-              {book.newest ? "새 공책" : "예전 공책"}
+              새 리포트
             </Text>
           </View>
         ) : null}
@@ -447,7 +479,7 @@ function Cover({ book, label, width }: { book: WeeklyBook; label: string; width:
           </View>
         ))}
       </View>
-      {book.restCount > 0 && !crisis ? (
+      {book.restCount > 0 && !crisis && !empty ? (
         <Text style={[hand(15, 20), styles.coverRest]} color={homeV2.color.ink}>
           쉼터에 {book.restCount}번 다녀왔어요
         </Text>
@@ -460,7 +492,7 @@ function Cover({ book, label, width }: { book: WeeklyBook; label: string; width:
         >
           {keepWords(
             empty
-              ? "일기를 쓰면 일요일에 공책이 도착해요"
+              ? "일기를 쓰면 일요일에 리포트가 도착해요"
               : small
                 ? book.coverLine.replace(/\n/g, " ")
                 : book.coverLine,
@@ -522,6 +554,9 @@ function DiarySheet({
   );
 }
 
+/** 장 오른쪽 아래 귀가 접힌 크기 */
+const CORNER = 22;
+
 const styles = StyleSheet.create({
   center: {
     flex: 1,
@@ -531,6 +566,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   centerText: { textAlign: "center" },
+  loadingBaba: { marginTop: -24 },
   past: {
     position: "absolute",
     right: 16,
@@ -577,12 +613,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     bottom: 0,
-    width: 0,
-    height: 0,
-    borderTopWidth: 22,
-    borderLeftWidth: 22,
-    borderTopColor: "transparent",
-    borderLeftColor: reportBook.color.curl,
   },
   cta: { position: "absolute", left: 16, right: 16, gap: 6, paddingBottom: 18 },
   hint: { textAlign: "center" },

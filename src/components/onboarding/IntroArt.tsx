@@ -109,11 +109,13 @@ function BabaSays({ children, large }: { children: string; large?: boolean }) {
   );
 }
 
-// 소원 연꽃은 소개 그림에 넣지 않는다 — 남의 글이 있어야 뜻이 통한다
-const REST_PREVIEW = REST_CONTENTS.filter((c) => c.id !== "wish").map((c) => ({
-  ...c,
-  route: undefined,
-}));
+// 소원 연꽃은 소개 그림에 넣지 않는다 — 남의 글이 있어야 뜻이 통한다 · 주간 행복은 아직 디자인만이다
+const REST_PREVIEW = REST_CONTENTS.filter((c) => c.id !== "wish" && c.id !== "weeklyHappiness").map(
+  (c) => ({
+    ...c,
+    route: undefined,
+  }),
+);
 
 const WEEK: { day: string; pebble?: EmotionId; note?: string }[] = [
   { day: "월", pebble: P.anxious, note: "자소서" },

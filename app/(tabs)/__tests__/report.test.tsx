@@ -78,7 +78,7 @@ describe("W1 · 공책", () => {
     expect(api.fetchWeeklyBook).toHaveBeenCalledWith(null);
     expect(view.getByTestId("book-range").props.children).toBe("7월 19일 ~ 25일");
     expect(shown(view.getByTestId("book-cover-line").props.children)).toBe("표지 문장이에요");
-    expect(view.getByText("새 공책")).toBeTruthy();
+    expect(view.getByText("새 리포트")).toBeTruthy();
   });
 
   it("펼쳐서 끝까지 넘기면 인사가 나오고 닫으면 표지로 돌아온다", async () => {
@@ -117,7 +117,7 @@ describe("W1 · 공책", () => {
 
     expect(view.getByText("수요일 일기 보기")).toBeTruthy();
     expect(shown(view.getByTestId("book-hint").props.children)).toBe(
-      "한 주에 3일 이상 일기를 쓰면, 리포트가 생겨요",
+      "한 주에 3일 이상 일기를 쓰면, 리포트가 펼쳐져요",
     );
     await fireEvent.press(view.getByTestId("book-cta"));
     expect(router.push).toHaveBeenCalledWith("/diary/d1");
@@ -171,10 +171,10 @@ describe("W1 · 공책", () => {
     const view = await render(<Report />);
     await waitFor(() => view.getByTestId("book-cover-line"));
     expect(shown(view.getByTestId("book-cover-line").props.children)).toBe(
-      "일기를 쓰면 일요일에 공책이 도착해요",
+      "일기를 쓰면 일요일에 리포트가 도착해요",
     );
-    expect(view.getByTestId("book-range").props.children).toBe("이번 주 공책");
-    expect(view.queryByText("새 공책")).toBeNull();
+    expect(view.getByTestId("book-range").props.children).toBe("이번 주 리포트");
+    expect(view.queryByText("새 리포트")).toBeNull();
     await fireEvent.press(view.getByTestId("book-cta"));
     expect(router.push).toHaveBeenCalledWith("/retro/confirm");
   });
@@ -192,7 +192,7 @@ describe("W1 · 공책", () => {
     });
     const view = await render(<Report />);
     await waitFor(() => view.getByTestId("book-cta"));
-    expect(view.queryByText("새 공책")).toBeNull();
+    expect(view.queryByText("새 리포트")).toBeNull();
     expect(view.queryByText(/쉼터에/)).toBeNull();
 
     await fireEvent.press(view.getByTestId("book-cta"));

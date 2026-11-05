@@ -76,6 +76,25 @@ test("라우트 목록은 앱 순서의 접힌 묶음이고, ＋ 로 펼치며 �
   await expect(tree.locator("section")).toHaveCount(1);
 });
 
+test("쉼 추천 시트 줄 — 쉼터 콘텐츠에 있고, 오늘 일기와 일기 완료 표시로 쉼터를 연다", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByTestId("route-section-rest").click();
+  const row = page.getByTestId("route-tree").locator('[data-route="/rest?afterDiary=1"]');
+  await expect(row).toContainText("쉼 추천 시트");
+  await row.click();
+  await expect(row).toHaveAttribute("aria-current", "page");
+  await expect(page).toHaveURL(/today=1/);
+  await expect(page.getByTestId("lab-frame-solo")).toHaveAttribute("src", "/rest?afterDiary=1");
+  expect(await frameConfig(page, "solo")).toMatchObject({ todayDiary: true, signedIn: true });
+
+  // 다른 줄을 고르면 오늘 일기가 빠진 설정으로 새로 뜬다
+  await page.locator('[data-route="/rest/worry-box"]').click();
+  await expect(page).not.toHaveURL(/today=1/);
+  expect(await frameConfig(page, "solo")).not.toHaveProperty("todayDiary");
+});
+
 test("로그인 전 화면을 고르면 세션 없는 new-user 프레임으로 다시 뜬다", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("route-section-entry").click();
@@ -451,6 +470,40 @@ test("로그인 전 화면은 신규 사용자 상태로만 — 한 줄로 알�
 
 test.describe("실제 앱 프레임이 필요한 검사 (갈래 A·B 합친 뒤)", () => {
   test.skip(!process.env.LAB_FRAMES, "LAB_FRAMES=1 일 때만 — 프레임 부트스트랩이 있어야 한다");
+
+  test("쉼 추천 시트 — 목록에서 고르면 시트가 뜨고, 줄이 그대로이며, 닫아도 다시 고르면 또 뜬다", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.getByTestId("route-section-rest").click();
+    const row = page.locator('[data-route="/rest?afterDiary=1"]');
+    await row.click();
+    const app = page.frameLocator('[data-testid="lab-frame-solo"]');
+    const accept = app.getByText("지금 해 볼게요");
+    await expect(accept).toBeVisible({ timeout: 60_000 });
+    await expect(app.getByText("답답한 날엔, 이걸 해 봐요")).toBeVisible();
+    // 프레임이 /rest 를 알린 뒤에도 쉼터 줄로 옮겨 가지 않는다(셸의 0.4초 뒤까지 본다)
+    await page.waitForTimeout(1000);
+    await expect(row).toHaveAttribute("aria-current", "page");
+    await expect(row.getByTestId("route-badge-solo")).toBeVisible();
+
+    await app.getByText("다른 쉼터 둘러보기").click();
+    await expect(accept).toBeHidden();
+    await row.click();
+    await expect(accept).toBeVisible();
+  });
+
+  test("쉼 추천 시트를 본 뒤 쉼터 줄로 가면 시트도 오늘 일기도 없다", async ({ page }) => {
+    await page.goto("/#/screens?route=/rest%3FafterDiary%3D1");
+    const app = page.frameLocator('[data-testid="lab-frame-solo"]');
+    await expect(app.getByText("지금 해 볼게요")).toBeVisible({ timeout: 60_000 });
+    await page.getByTestId("route-section-tabs").click();
+    await page.locator('[data-route="/rest"]').click();
+    await expect(page).not.toHaveURL(/today=1/);
+    await expect(app.getByText("쉼터").first()).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(1500);
+    await expect(app.getByText("지금 해 볼게요")).toHaveCount(0);
+  });
 
   test("프레임이 준비되면 목록에 현재 화면 배지가 붙고, 고르면 lab:navigate 로 옮긴다", async ({
     page,

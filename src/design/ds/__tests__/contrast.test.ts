@@ -10,6 +10,8 @@ import {
   status,
   withAlpha,
   restScene,
+  restThemeCard,
+  weeklyHappiness,
 } from "@/design/ds";
 import { EMOTIONS } from "@/features/emotion/model/emotion";
 
@@ -198,5 +200,24 @@ describe("홈 v2 — 종이 위 글자와 체크", () => {
 describe("일기 방식 선택", () => {
   it("AI 대화 버튼의 아이보리 글씨는 확정된 갈색 바탕에서 4.5 이상이다", () => {
     expect(contrast(retroDiary.paper, retroDiary.methodTalk)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("주간 행복", () => {
+  const paper = homeV2.color.paper;
+
+  it("글자는 종이 위 4.5 를 넘고, 선은 3 을 넘는다", () => {
+    expect(contrast(weeklyHappiness.color.text, paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(weeklyHappiness.color.entry, paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(weeklyHappiness.color.placeholder, paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(weeklyHappiness.color.line, paper)).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("쉼터 테마 카드", () => {
+  it("이름과 시간이 얹히는 종이는 잉크 글자 4.5 를 넘는다", () => {
+    for (const paper of Object.values(restThemeCard.paper)) {
+      expect(contrast(homeV2.color.ink, paper)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });

@@ -5,9 +5,11 @@ import {
   groupProgress,
   memberProgress,
   pickGroup,
+  previewsToOpen,
   shouldStartPreview,
   slotState,
   variantGroups,
+  type OpenedPreviews,
 } from "../../agent/variants";
 import { framesFor, variantSpecs } from "../frameSpecs";
 import { DEFAULT_STATE, LAYOUTS, parseHash, serializeHash } from "../hashState";
@@ -214,5 +216,28 @@ describe("시안 묶음", () => {
     const failed = member(1, { preview: { ...off, status: "failed", error: "포트 없음" } });
     expect(shouldStartPreview(failed)).toBe(false);
     expect(slotState(failed)).toMatchObject({ label: "실패", note: "포트 없음", canStart: true });
+  });
+
+  it("묶음을 오가면 꺼진 시안을 다시 켠다 — 같은 묶음을 보는 동안은 한 번씩만", () => {
+    const opened: OpenedPreviews = { groupId: null, ids: new Set() };
+    const ids = (group: Parameters<typeof previewsToOpen>[0]) =>
+      previewsToOpen(group, opened).map((m) => m.id);
+    const off = member(1, { preview: null });
+    const a = { id: "a", members: [off] };
+    const b = { id: "b", members: [member(2, { preview: null })] };
+
+    expect(ids(a)).toEqual(["home-s1"]);
+    expect(ids(a)).toEqual([]); // 폴링마다 다시 켜지 않는다
+    expect(ids(b)).toEqual(["home-s2"]);
+    expect(ids(a)).toEqual(["home-s1"]); // B 를 켜는 사이 꺼졌다
+  });
+
+  it("켜져 있는 시안도 묶음을 열 때 알린다 — 지금 보는 것이 가장 먼저 꺼지지 않게", () => {
+    const opened: OpenedPreviews = { groupId: null, ids: new Set() };
+    const failed = member(3, {
+      preview: { status: "failed", port: null, url: null, ready: false, error: "포트 없음" },
+    });
+    const group = { id: "a", members: [member(1), member(2, { status: "working" }), failed] };
+    expect(previewsToOpen(group, opened).map((m) => m.id)).toEqual(["home-s1", "home-s2"]);
   });
 });

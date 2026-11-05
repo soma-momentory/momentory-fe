@@ -5,6 +5,7 @@
  *            &now=2026-11-03T21:30:00%2B09:00&latency=1000&fail=/api/v1/reports&scale=1.3
  *            &zoom=1.5&repeat=0&signedIn=0&panel=agent&nav=0&side=0
  *            &bdata=many&blatency=60000&bfail=/api/v1/reports     ← A/B 의 「B 화면 상태」(없으면 A와 같게)
+ *            &today=1                                              ← 오늘 쓴 일기가 있는 프레임(쉼 추천 시트의 프리셋)
  *            &layout=variants&group=g1abc                          ← 「시안 비교」 · 보는 시안 묶음(A/B 에서도 남아
  *                                                                     「다른 시안 다시 보기」가 그 묶음으로 돌아간다)
  *
@@ -119,6 +120,11 @@ export type ShellState = {
   sideOpen: boolean;
   /** 「시안 비교」로 보는 시안 묶음 id — null 이면 이 화면의 가장 새 묶음 */
   group: string | null;
+  /**
+   * 오늘 쓴 일기가 있는 프레임(`LabFrameConfig.todayDiary`) — 세션 · 데이터 세트처럼 화면을 **고를 때** 프리셋으로
+   * 정한다. 프레임 안에서 다른 화면으로 옮겨 가도 그대로라 프레임이 새로 뜨지 않는다
+   */
+  todayDiary: boolean;
 };
 
 export const DEFAULT_STATE: ShellState = {
@@ -139,6 +145,7 @@ export const DEFAULT_STATE: ShellState = {
   navOpen: true,
   sideOpen: true,
   group: null,
+  todayDiary: false,
 };
 
 const HASH_PREFIX = "#/screens";
@@ -171,7 +178,15 @@ export function withRoute(state: ShellState, path: string): ShellState {
   const b = state.b
     ? { ...state.b, dataset: datasetFor(route.preset.dataset, state.b.dataset) }
     : null;
-  return { ...state, route: route.path, signedIn: route.preset.signedIn, dataset, failPaths, b };
+  return {
+    ...state,
+    route: route.path,
+    signedIn: route.preset.signedIn,
+    dataset,
+    failPaths,
+    b,
+    todayDiary: route.preset.todayDiary === true,
+  };
 }
 
 const readPaths = (raw: string | null) =>
@@ -235,6 +250,7 @@ export function parseHash(hash: string): ShellState {
     navOpen: p.get("nav") !== "0",
     sideOpen: p.get("side") !== "0",
     group: readGroup(p.get("group")),
+    todayDiary: p.get("today") === "1" || findRoute(route)?.preset.todayDiary === true,
   };
 }
 
@@ -262,6 +278,7 @@ export function serializeHash(state: ShellState): string {
   if (!state.navOpen) p.set("nav", "0");
   if (!state.sideOpen) p.set("side", "0");
   if (state.group) p.set("group", state.group);
+  if (state.todayDiary) p.set("today", "1");
   // 「/」 와 「,」 는 그대로 둬도 해시에서 안전하다 — 사람이 읽기 쉽게 되돌린다
   return `${HASH_PREFIX}?${p.toString().replace(/%2F/g, "/").replace(/%2C/g, ",")}`;
 }

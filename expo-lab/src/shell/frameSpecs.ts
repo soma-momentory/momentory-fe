@@ -102,6 +102,7 @@ type Overrides = {
   signedIn?: boolean;
   failPaths?: readonly string[];
   latencyMs?: number;
+  todayDiary?: boolean;
 };
 
 function buildSpec(
@@ -125,6 +126,7 @@ function buildSpec(
     failPaths: o.failPaths ?? state.failPaths,
     repeatToday: state.repeatToday,
     ...(state.textScale !== 1 ? { textScale: state.textScale } : {}),
+    ...((o.todayDiary ?? state.todayDiary) ? { todayDiary: true } : {}),
   };
   return {
     frameId: o.frameId,
@@ -181,6 +183,7 @@ export function framesFor(state: ShellState, sample: SampleParamsFor, realMs: nu
             route: item,
             signedIn: item.preset.signedIn,
             failPaths: item.preset.failPaths ?? state.failPaths,
+            todayDiary: item.preset.todayDiary === true,
             dataset:
               item.preset.dataset ?? (state.dataset === "new-user" ? "normal" : state.dataset),
           },

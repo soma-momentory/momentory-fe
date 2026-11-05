@@ -30,7 +30,6 @@ export const reportBook = {
     ringShine: "#F1E9DB",
     hole: "#3F2C1F",
     shadow: "#48291A",
-    empty: "#E4DACA",
     faded: "#D9CDB8",
     fieldLine: "#BFB09A",
     curl: "#EFE6D6",

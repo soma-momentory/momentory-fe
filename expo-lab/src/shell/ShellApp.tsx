@@ -41,8 +41,9 @@ import {
   groupBusy,
   groupProgress,
   pickGroup,
-  shouldStartPreview,
+  previewsToOpen,
   variantGroups,
+  type OpenedPreviews,
   type VariantGroupView,
 } from "../agent/variants";
 import { resetFakeData, sampleParams } from "../fake-server";
@@ -77,7 +78,7 @@ import {
 } from "./hashState";
 import { LabFrame } from "./LabFrame";
 import { LENS_POWER, LENS_SIZE, MagnifierLayer, type MagnifierTarget } from "./Magnifier";
-import { findRoute, matchPathname, shellRoutes, type ShellRoute } from "./routes";
+import { findRoute, isOnScreenOf, matchPathname, shellRoutes, type ShellRoute } from "./routes";
 import { RouteTree } from "./RouteTree";
 import { StageToolbar } from "./StageToolbar";
 import { stateLabel, ToolbarStatePicker, useDetectedPaths } from "./ScreenStatePicker";
@@ -367,6 +368,8 @@ export function ShellApp() {
       const pathname = frameBus.get(frameId).pathname;
       const route = pathname ? matchPathname(pathname) : undefined;
       if (!pathname || !route) return;
+      // 시트 줄(`screenOf`)은 그 라우트 주소에 있는 동안 지금 화면이다 — 쉼터 줄로 옮겨 가지 않는다
+      if (isOnScreenOf(s.route, pathname)) return;
       if (route.path === s.route && !syncRef.current) return;
       goTo(
         { ...s, route: route.path },
@@ -625,20 +628,17 @@ export function ShellApp() {
       { history: "push", navigate: true, target, force: true },
     );
   };
-  // 시안 비교가 열리면 꺼져 있는 시안의 수정 결과 화면을 켠다(실행이 끝난 것만 · 한 번씩).
+  // 시안 비교가 열리면 꺼져 있는 시안의 수정 결과 화면을 켠다(실행이 끝난 것만 · 묶음을 열 때마다 한 번씩).
   // 서버가 한꺼번에 띄우는 수는 `maxPreviews` 로 막는다
-  const startedPreviews = useRef(new Set<string>());
+  const openedPreviews = useRef<OpenedPreviews>({ groupId: null, ids: new Set() });
   useEffect(() => {
     if (state.layout !== "variants") {
-      startedPreviews.current.clear();
+      openedPreviews.current = { groupId: null, ids: new Set() };
       return;
     }
     if (!group) return;
-    const todo = group.members.filter(
-      (m) => shouldStartPreview(m) && !startedPreviews.current.has(m.id),
-    );
+    const todo = previewsToOpen(group, openedPreviews.current);
     if (!todo.length) return;
-    for (const m of todo) startedPreviews.current.add(m.id);
     void (async () => {
       for (const m of todo) await defaultAgentClient.startPreview(m.id);
       void refreshWorkspaces();

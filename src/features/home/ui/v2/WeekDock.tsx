@@ -88,7 +88,13 @@ export function WeekDock({ days, today }: Props) {
 }
 
 /** 그날의 조약돌 한 알 — 일곱 칸과 날짜 옆 쪽지가 같은 그림을 쓴다. `null` 이면 기록 없음 */
-export function DayPebble({ day, size }: { day: WeekDay | null; size: number }) {
+export function DayPebble({
+  day,
+  size,
+}: {
+  day: Pick<WeekDay, "emotions" | "written"> | null;
+  size: number;
+}) {
   const first = day?.emotions[0] ?? null;
   if (first != null) return <EmotionPebble id={first} size={size} />;
   if (day?.written) return <WrittenPebble size={size} />;

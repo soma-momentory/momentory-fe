@@ -20,6 +20,8 @@ export type RoutePreset = {
   dataset: DatasetId | null;
   /** 이 화면을 붙잡아 두려고 실패시킬 주소(예: 스플래시) */
   failPaths?: readonly string[];
+  /** 오늘 쓴 일기가 있는 상태로 연다(`LabFrameConfig.todayDiary`) */
+  todayDiary?: boolean;
 };
 
 export type ShellRoute = GeneratedRoute &
@@ -43,7 +45,7 @@ const generatedByPath = new Map(generatedRoutes.map((route) => [route.path, rout
 
 const titled: ShellRoute[] = routeSections.flatMap((section) =>
   section.routes.flatMap((meta) => {
-    const generated = generatedByPath.get(meta.path);
+    const generated = generatedByPath.get(meta.screenOf ?? meta.path);
     if (!generated) return [];
     return [
       {
@@ -57,7 +59,7 @@ const titled: ShellRoute[] = routeSections.flatMap((section) =>
   }),
 );
 
-const titledPaths = new Set(titled.map((route) => route.path));
+const titledPaths = new Set(titled.map((route) => route.screenOf ?? route.path));
 
 /** `app/` 에 생겼는데 메타가 없는 라우트 — 테스트가 막지만, 셸에서도 「제목 없음」으로 보인다 */
 const untitled: ShellRoute[] = generatedRoutes
@@ -103,6 +105,22 @@ export function matchPathname(pathname: string): ShellRoute | undefined {
     );
   });
 }
+
+/** 프레임이 이 주소(`/rest`)에 있는 동안 목록의 이 줄(`/rest?afterDiary=1` · `screenOf`)이 지금 화면인가 */
+export function isOnScreenOf(routePath: string, pathname: string): boolean {
+  const screenOf = findRoute(routePath)?.screenOf;
+  return screenOf != null && pathname.split(/[?#]/)[0] === screenOf;
+}
+
+/**
+ * 프레임을 새로 붙일 때 열 주소 — 보통은 서 있던 주소, 시트 줄(`screenOf`)이면 시트가 다시 뜨는 주소다
+ * (앱이 표시를 지워 프레임이 알린 주소에는 검색 조건이 없다)
+ */
+export const restartPath = (
+  route: Pick<ShellRoute, "path">,
+  href: string,
+  pathname: string | null,
+): string | null => (pathname != null && isOnScreenOf(route.path, pathname) ? href : pathname);
 
 /** 실제로 열 주소 — 동적 조각은 가짜 서버가 알려 준 id, 없으면 자리표시 값 */
 export function resolveHref(
