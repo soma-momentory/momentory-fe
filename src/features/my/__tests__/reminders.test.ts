@@ -154,7 +154,7 @@ describe("무엇이 예약돼야 하는가 — 공책 도착", () => {
 
   it("문구에 일기 내용이 없고, 눌렀을 때 리포트로 간다", async () => {
     useDiary.setState({ diaries: [diaryOn("2026-07-27")] });
-    expect(report()[0]?.title).toBe("지난주 공책이 도착했어요");
+    expect(report()[0]?.title).toBe("지난주 리포트가 도착했어요");
     await expect(reminderHref("report")).resolves.toBe("/report");
   });
 });
