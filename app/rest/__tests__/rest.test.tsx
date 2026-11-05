@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
+import { render, fireEvent, waitFor, act, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import Rest from "../../(tabs)/rest";
@@ -397,7 +397,23 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
 
     expect(getByText("상황")).toBeTruthy();
     expect(getByText("작은 행동")).toBeTruthy();
-    expect(getByText(card.situation)).toBeTruthy();
+    expect(getByText(keepWords(card.situation))).toBeTruthy();
+  });
+
+  it("쪽지가 다섯 항목을 다 품는다 — 화면 전체가 스크롤해서 잘리지 않는다", async () => {
+    const r = await render(<RestCards />);
+    const note = r.getByTestId("rest-card-note");
+
+    expect(within(note).getByText("작은 행동")).toBeTruthy();
+  });
+
+  it("문구는 클립과 압정이고, 뒤로가기는 앞 화면으로 돌아간다", async () => {
+    const r = await render(<RestCards />);
+
+    expect(r.getByTestId("rest-card-clip", { includeHiddenElements: true })).toBeTruthy();
+    expect(r.getByTestId("rest-calendar-pin", { includeHiddenElements: true })).toBeTruthy();
+    await fireEvent.press(r.getByLabelText("뒤로"));
+    expect(router.back).toHaveBeenCalled();
   });
 
   it("카드 없는 날도 고를 수 있고, 그 자리에 「바람카드가 없어요」를 보여준다", async () => {
@@ -405,7 +421,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     const r = await render(<RestCards />);
 
     // 처음엔 최신 카드(27일)를 보여준다
-    expect(r.getByText("10분 걷기")).toBeTruthy();
+    expect(r.getByText(keepWords("10분 걷기"))).toBeTruthy();
 
     // 카드가 없는 15일을 골라도 잠기지 않고, 카드 자리에 없다는 문구가 뜬다
     await fireEvent.press(r.getByLabelText("15일"));
@@ -426,7 +442,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     useDiary.setState({ actionCards: [{ ...seedOneCard(), targetAction: null }] });
     const r = await render(<RestCards />);
 
-    expect(r.getByText("내일 아침 바바가 골라 올게요")).toBeTruthy();
+    expect(r.getByText(keepWords("내일 아침 바바가 골라 올게요"))).toBeTruthy();
     // 누를 대상이 없다 — 상태 줄과 「했어요」를 함께 숨긴다
     expect(r.queryByText("아직 하지 않았어요")).toBeNull();
     expect(r.queryByText("했어요")).toBeNull();
@@ -439,8 +455,8 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     const r = await render(<RestCards />);
 
     // 감정 · 바람 같은 다른 빈 칸도 같은 말이라 여럿이다 — 작은 행동 칸이 그중 하나다
-    expect(r.getAllByText("아직 정하지 않음")).toHaveLength(4);
-    expect(r.queryByText("내일 아침 바바가 골라 올게요")).toBeNull();
+    expect(r.getAllByText(keepWords("아직 정하지 않음"))).toHaveLength(4);
+    expect(r.queryByText(keepWords("내일 아침 바바가 골라 올게요"))).toBeNull();
     expect(r.queryByText("했어요")).toBeNull();
   });
 
@@ -565,7 +581,7 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     });
     const r = await render(<RestCards />);
 
-    expect(r.getByText("생각보다 개운했다")).toBeTruthy();
+    expect(r.getByText(keepWords("생각보다 개운했다"))).toBeTruthy();
     expect(r.queryByLabelText("느낀 점")).toBeNull();
     // 버튼은 없다 — 글이 곧 버튼이다
     expect(r.queryByText("고치기")).toBeNull();

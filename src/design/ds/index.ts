@@ -27,7 +27,6 @@ import { typography } from "./typography";
 export {
   background,
   bodyRelease,
-  cardFrame,
   chatChoiceSelected,
   color,
   emotion,
@@ -87,6 +86,7 @@ export {
 // 홈 v2 한 화면만의 종이 · 손글씨 결(HD-3) — 글로벌 color · typography 와 섞지 않는다
 export { homeV2 } from "./homeV2";
 export { reportBook } from "./reportBook";
+export { restCards } from "./restCards";
 export { restThemeCard } from "./restThemeCard";
 export { weeklyHappiness } from "./weeklyHappiness";
 

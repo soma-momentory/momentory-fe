@@ -1,8 +1,9 @@
 import { StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ds";
-import { label as labelColor, space } from "@/design/ds";
+import { label as labelColor, restCards, space } from "@/design/ds";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
+import { keepWords } from "@/features/letter/model/letter";
 
 /**
  * 바람 카드의 본문 항목 — 쉼터 카드(R2)와 일기 상세(A3)가 함께 쓴다. 회고 완료 화면(`done`)의 카드와
@@ -17,10 +18,8 @@ import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
  * 기본은 **두 줄**(라벨 위 · 값 아래)이다. 일기 상세는 화면이 통째로 스크롤해서
  * 세로를 넉넉히 쓸 수 있고, 두 줄이 역할과 내용을 또렷하게 가른다.
  *
- * 쉼터 카드(`R2`)만 `inline` 로 **한 줄**(`상황: 헌터헌터 시청`)을 쓴다. 그 카드는
- * 달력 위 **정해진 자리**에 다 들어와야 해서(`app/rest/cards/index.tsx`) 두 줄이면
- * 다섯 항목이 자리를 넘어 카드 안이 스크롤됐다. 값이 길어 접히는 항목은 여전히
- * 두 줄이 되지만, 라벨이 자기 줄을 차지하지 않는 만큼이 그대로 줄어든다.
+ * 쉼터 카드(`R2`)만 `inline` 로 **이어 쓴다**(`상황: 헌터헌터 시청`). 쪽지 위 공책 줄 한 칸에 항목 하나씩
+ * 적는 모양이고, 값이 길면 라벨 아래로 이어져 접힌다(2026-11-05 · 값은 `ds/restCards.ts`).
  */
 type Props = {
   situation: string;
@@ -33,10 +32,7 @@ type Props = {
   smallAction: string | null;
   /** 긍정 감정이면 라벨 워딩이 바뀐다 */
   positive: boolean;
-  /**
-   * 라벨과 값을 **한 줄**에 붙인다(`상황: …`). 높이가 정해진 자리에 쓸 때만 켠다 —
-   * 위 머리말 「배치가 둘이다」.
-   */
+  /** 라벨과 값을 공책 줄 한 칸에 이어 쓴다(`상황: …`) — 위 머리말 「배치가 둘이다」 */
   inline?: boolean;
   /** 일기 상세처럼 카드 전체 높이를 줄여야 할 때 항목 사이 여백만 한 단계 줄인다. */
   compact?: boolean;
@@ -54,21 +50,6 @@ const UNSET = "아직 정하지 않음";
  * 편지에서 고르면 서버가 카드의 `targetAction` 을 채운다 — 그때까지 이 줄이 자리를 지킨다.
  */
 export const ACTION_FROM_LETTER = "내일 아침 바바가 골라 올게요";
-
-/**
- * 한 줄 배치가 쓰는 단 — 두 줄 배치보다 **한 단계 크다**(2026-09-06 · 약 1.2배).
- *
- * 값 15 → **18**(꼭 1.2배) · 라벨 13 → **15**(1.15배). **새 숫자를 만들지 않고**
- * 12단 안에서 가장 가까운 것을 골랐다(`CLAUDE.md` 「색·크기·시간을 하드코딩하지
- * 않는다」) — 라벨의 1.2배인 15.6 은 스케일에 없다. 16(`body1`)이 배율로는 더
- * 가깝지만 값 18 과 2pt 밖에 안 벌어져 라벨이 값과 대등해 보인다.
- *
- * ⚠ 값 두 단이 **하나로 합쳐졌다.** 원래 「작은 행동」만 16(`body1`)으로 1pt 컸는데
- * 18 로 올리면서 같아졌다 — 1pt 차이는 이 크기에서 신호가 되지 못한다. 그 항목은
- * 이제 **색**(`label.strong`)으로만 도드라진다.
- */
-const INLINE_LABEL = "body2";
-const INLINE_VALUE = "headline1";
 
 export function WishCardFields({
   situation,
@@ -114,32 +95,34 @@ function Field({
   strong?: boolean;
 }) {
   const valueColor = strong ? labelColor.strong : labelColor.normal;
-  const valueVariant = inline ? INLINE_VALUE : strong ? "body1" : "body2";
-  const labelVariant = inline ? INLINE_LABEL : "label2";
+  const valueVariant = strong ? "body1" : "body2";
 
   /**
-   * 한 줄 — 라벨을 **값 Text 안에 중첩**한다.
+   * 이어 쓰기 — 라벨을 **값 Text 안에 중첩**한다.
    *
    * 나란한 두 `Text` 를 `flexDirection: row` 로 두면, 값이 길어 접힐 때 라벨 아래가
    * 아니라 **라벨 오른쪽 폭 안에서만** 접혀 줄이 좁아진다. 중첩하면 값이 라벨 아래로
    * 자연스럽게 이어지고, 낭독기도 「상황: 헌터헌터 시청」을 **한 문장**으로 읽는다.
    *
-   * 라벨과 값은 **각자 노드로 남긴다** — 합쳐 한 문자열로 두면 둘의 색·크기를 나눌
-   * 수 없고, 「라벨이 있다 · 값이 있다」를 따로 확인하던 자리도 사라진다.
-   * 값 노드에 바깥과 **같은 단**을 다시 주는 이유는 `Text` 의 `variant` 기본값이
-   * `body1` 이라, 비워 두면 중첩된 값만 크기가 달라지기 때문이다.
+   * 「작은 행동」은 이름에 꿀색 형광을 긋는다 — 글자색이 아니라 면이 생겨 색이 약한 눈에도 갈린다.
    */
   if (inline) {
     return (
-      <Text variant={valueVariant} color={valueColor}>
-        <Text variant={labelVariant} color={labelColor.alternative}>
-          {label}
+      <View style={styles.ruled}>
+        <Text style={styles.ruledValue} color={restCards.color.ink}>
+          <Text
+            style={[styles.ruledLabel, strong ? styles.ruledLabelStrong : null]}
+            color={strong ? restCards.color.ink : restCards.color.muted}
+          >
+            {label}
+          </Text>
+          {": "}
+          {/* 어절로 줄을 바꾼다 — 「만났 / 다」처럼 낱말 가운데서 접히지 않게 */}
+          <Text style={styles.ruledValue} color={restCards.color.ink}>
+            {keepWords(value)}
+          </Text>
         </Text>
-        {": "}
-        <Text variant={valueVariant} color={valueColor}>
-          {value}
-        </Text>
-      </Text>
+      </View>
     );
   }
 
@@ -160,13 +143,14 @@ const styles = StyleSheet.create({
   fields: { gap: space.lg },
   fieldsCompact: { gap: space.md },
   field: { gap: space.xs },
-  /**
-   * 한 줄 배치의 항목 간격. 두 줄(`space.lg` 16)보다 훨씬 좁다 — 항목이 한 줄이라
-   * 이웃과 섞일 위험이 적고, **다섯 항목이 정해진 자리에 들어오는 것**이 이 배치의
-   * 목적이라 아낀 세로를 여기서 한 번 더 아낀다.
-   *
-   * 줄 간격은 이미 행간이 만든다 — 18 단의 행간이 26 이라 글자 사이에 8 이 이미
-   * 들어 있고, 여기 8 은 **그 위에 더하는 값**이다.
-   */
-  fieldsInline: { gap: space.sm },
+  fieldsInline: { gap: 0 },
+  // 공책 줄 — 항목 하나가 한 칸이다
+  ruled: {
+    paddingVertical: restCards.size.fieldPaddingY,
+    borderBottomWidth: 1,
+    borderBottomColor: restCards.color.rule,
+  },
+  ruledValue: { fontFamily: restCards.font.regular, ...restCards.type.fieldValue },
+  ruledLabel: { fontFamily: restCards.font.regular, ...restCards.type.fieldLabel },
+  ruledLabelStrong: { backgroundColor: restCards.color.highlight },
 });

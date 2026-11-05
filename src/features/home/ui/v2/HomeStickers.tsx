@@ -19,7 +19,7 @@ import { DayPebble } from "./WeekDock";
  */
 
 /** 손으로 오린 종이 윤곽 — 칸 크기에 맞춰 늘어난다 */
-const PAPER_OUTLINE =
+export const PAPER_OUTLINE =
   "M6 4 C34 2 58 5 88 3 C118 2 142 5 164 4 C168 5 169 12 168 30 C167 52 170 78 168 104 C167 108 162 108 150 107 C120 109 92 106 62 108 C40 109 20 107 7 107 C3 106 2 100 3 84 C4 62 1 36 3 12 C3 7 4 5 6 4 Z";
 
 function DiaryNote({

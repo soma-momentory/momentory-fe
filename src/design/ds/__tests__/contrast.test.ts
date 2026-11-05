@@ -9,6 +9,7 @@ import {
   retroDiary,
   status,
   withAlpha,
+  restCards,
   restScene,
   restThemeCard,
   weeklyHappiness,
@@ -200,6 +201,23 @@ describe("홈 v2 — 종이 위 글자와 체크", () => {
 describe("일기 방식 선택", () => {
   it("AI 대화 버튼의 아이보리 글씨는 확정된 갈색 바탕에서 4.5 이상이다", () => {
     expect(contrast(retroDiary.paper, retroDiary.methodTalk)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("날짜별 바람카드 — 쪽지 위 글자", () => {
+  it("글자는 종이와 형광 위 4.5 를 넘는다", () => {
+    const { ink, muted, paper, highlight } = restCards.color;
+    expect(contrast(ink, paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(muted, paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(ink, highlight)).toBeGreaterThanOrEqual(4.5);
+    // 카드 없는 날의 날짜 · 요일
+    expect(contrast(label.neutral, paper)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("문구(클립 · 압정 윤곽)는 종이 위 3 을 넘어 보인다", () => {
+    const { clip, ink, paper } = restCards.color;
+    expect(contrast(clip, paper)).toBeGreaterThanOrEqual(3);
+    expect(contrast(ink, paper)).toBeGreaterThanOrEqual(3);
   });
 });
 
