@@ -1,5 +1,7 @@
 # Task 002: P5 알림함 FE 독립 구현 — 제안 계약 어댑터 · 세션 격리 store · 알림 팝오버
 
+> 상태 (2026-11-06 대조): **대체됨** — #185·#186 으로 들어간 FE 알림함(`features/notifications`)은 2026-10-27 바바의 편지(#206)가 걷어 냈다. 서버 알림함(BE `#76` · dev)은 팀원 확인 뒤 정리한다.
+
 > 복구 기록: 아래 Task 본문은 원본 Harness 작성 시점의 BE `main` 상태를 기록한다.
 > 후속 PR 후보는 BE `dev` d77d023의 `NotificationController`·DTO·OpenAPI 테스트와
 > 대조했다. 이 커밋의 운영 배포 및 FE OpenAPI 스냅샷 반입은 확인되지 않았다.

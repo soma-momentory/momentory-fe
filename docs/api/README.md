@@ -12,12 +12,18 @@ MOMENTORY_API=http://127.0.0.1:8080 npm run sync:api   # 주소를 직접 줄 �
 받고 나면 늘어난 · 사라진 엔드포인트를 줄로 찍어준다. **그 줄을 PR 본문에 옮겨 적는다** —
 계약이 언제 무엇 때문에 바뀌었는지는 diff 만으로는 안 보인다.
 
-> ✅ **2026-09-12 — 다시 대조했다** (BE `d456a98` 「회고 채팅 v2」). **스냅샷은 서버와 같다** —
-> `openapi.json` 의 오퍼레이션 **33개**가 BE 컨트롤러의 매핑 33개와 하나도 어긋나지 않는다.
-> 그중 **27개가 붙어 있고**, 안 붙은 여섯은 아래 표에 있다. 이 문서의 표들은 그 대조에서
-> 나왔다 — 이번에도 낡아 있던 것은 스냅샷이 아니라 이 README 였다.
+> ✅ **2026-11-06 — 다시 대조했다** (스냅샷 `5601378` · BE `dev` `50cd4c9` · BE `main` `ca3bc87`).
+> **스냅샷은 개발 서버와 같다** — `openapi.json` 의 오퍼레이션 **68개**가 BE `dev` 컨트롤러 매핑과
+> 하나도 어긋나지 않는다. 그중 **56개가 붙어 있고**, 안 붙은 열둘은 아래 표에 있다.
+> (같은 날 재반입: 주간 행복 두 갈래 `GET /api/v1/weekly-happiness` · `PUT …/{weekStart}` — BE `#91` `e5ee310` · FE `#258`.)
 >
-> 이전 대조: 2026-08-21(26개 · BE `40da034`) · 2026-08-24 재반입(32개).
+> ⚠ **스냅샷은 운영이 아니라 `dev` 다.** 운영(`https://api.momentory.co.kr` = BE `main` `ca3bc87` ·
+> 2026-10-14)에는 그중 **41개**만 있다. BE `#76`~`#91` 은 `dev`(`https://dev.momentory.co.kr`)에만 있다.
+> 그래서 **FE main 이 부르는 56개 중 22개는 운영에 없다**(아래 표의 「운영」 칸). 특히 새 온보딩의
+> `PUT /api/v2/users/me/onboarding` 이 운영에 없어, **BE `dev → main` 반영 전에 FE main 을 운영
+> 빌드로 내면 새 가입자가 온보딩을 마치지 못한다.** 출시 순서는 BE 먼저다.
+>
+> 이전 대조: 2026-08-21(26개 · BE `40da034`) · 2026-08-24 재반입(32개) · 2026-09-12(33개 · BE `d456a98`).
 
 ## 왜 받아서 커밋하는가
 
@@ -55,25 +61,41 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 화면은 서버 모양을 보지 않는다. **`src/features/<도메인>/data/` 의 어댑터가 경계**이고,
 각 어댑터 파일 머리의 JSDoc 이 그 엔드포인트에 대한 이 저장소 쪽 기록이다.
 
-| 어댑터                                                  | 엔드포인트                                                                                                                                                                 |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/features/auth/data/kakaoAuthApi.ts`                | `POST /api/v1/auth/kakao`                                                                                                                                                  |
-| `src/features/auth/data/appleAuthApi.ts`                | `POST /api/v1/auth/apple`                                                                                                                                                  |
-| `src/features/auth/data/googleAuthApi.ts`               | `POST /api/v1/auth/google`                                                                                                                                                 |
-| `src/features/auth/data/reissueApi.ts`                  | `POST /api/v1/auth/reissue`                                                                                                                                                |
-| `src/features/auth/data/logoutApi.ts`                   | `POST /api/v1/auth/logout`                                                                                                                                                 |
-| `src/features/auth/data/meApi.ts`                       | `GET /api/v1/users/me`                                                                                                                                                     |
-| `src/features/auth/data/withdrawApi.ts`                 | `DELETE /api/v1/users/me`                                                                                                                                                  |
-| `src/features/onboarding/data/optionsApi.ts`            | `GET /api/v1/onboarding/options`                                                                                                                                           |
-| `src/features/onboarding/data/completeOnboardingApi.ts` | `PUT /api/v1/users/me/onboarding`                                                                                                                                          |
-| `src/features/retro/data/retroApi.ts`                   | `POST /api/v1/retrospect` · `POST …/{id}/messages`                                                                                                                         |
-| `src/features/home/data/scheduleApi.ts`                 | `GET`·`POST /api/v1/schedules` · `GET …/period` · `PATCH`·`DELETE …/{id}` · `PATCH …/{id}/visibility` · `PATCH …/order` · `PUT …/{id}/completion`                          |
-| `src/features/calendar/data/calendarSyncApi.ts`         | `POST /api/v1/schedules/sync`                                                                                                                                              |
-| `src/features/diary/data/diaryApi.ts`                   | `GET /api/v1/diaries` · `DELETE …/{id}` · `PUT …/by-retrospect/{retrospectId}` · `GET /api/v1/action-cards` · `PUT …/{id}/completion` · `DELETE /api/v1/action-cards/{id}` |
-| `src/features/report/data/weeklyReportApi.ts`           | `GET /api/v1/reports/weekly`                                                                                                                                               |
-| `src/features/rest/data/treasureApi.ts`                 | `POST /api/v1/treasures` · `GET /api/v1/treasures` (`?date=` 그날 · 없으면 전부)                                                                                           |
-| `src/features/rest/data/worryApi.ts`                    | `POST /api/v1/worries` · `GET /api/v1/worries` (맡겨둔 걱정 전부 · 최신순)                                                                                                 |
-| `src/features/rest/data/restRecordApi.ts`               | `POST /api/v1/rest-records` · `GET /api/v1/rest-records?content=` (쉼터별 · 최신순)                                                                                        |
+「운영」 칸: ✅ = BE `main`(운영)에도 있다 · 🟡 = BE `dev` 에만 있다(2026-11-06 · `git diff origin/main origin/dev`).
+
+| 어댑터                                                  | 엔드포인트                                                                                                                                                                                                          | 운영                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `src/features/auth/data/kakaoAuthApi.ts`                | `POST /api/v1/auth/kakao`                                                                                                                                                                                           | ✅                                                        |
+| `src/features/auth/data/appleAuthApi.ts`                | `POST /api/v1/auth/apple`                                                                                                                                                                                           | ✅                                                        |
+| `src/features/auth/data/googleAuthApi.ts`               | `POST /api/v1/auth/google`                                                                                                                                                                                          | ✅                                                        |
+| `src/features/auth/data/reissueApi.ts`                  | `POST /api/v1/auth/reissue`                                                                                                                                                                                         | ✅                                                        |
+| `src/features/auth/data/logoutApi.ts`                   | `POST /api/v1/auth/logout`                                                                                                                                                                                          | ✅                                                        |
+| `src/features/auth/data/meApi.ts`                       | `GET /api/v1/users/me`                                                                                                                                                                                              | ✅                                                        |
+| `src/features/auth/data/withdrawApi.ts`                 | `DELETE /api/v1/users/me`                                                                                                                                                                                           | ✅                                                        |
+| `src/features/onboarding/data/optionsApi.ts`            | `GET /api/v1/onboarding/options`                                                                                                                                                                                    | ✅                                                        |
+| `src/features/onboarding/data/completeOnboardingApi.ts` | `PUT /api/v1/users/me/onboarding`(마이 편집) · `PUT /api/v2/users/me/onboarding`(새 온보딩 · BE `#79`)                                                                                                              | v1 ✅ · **v2 🟡**                                         |
+| `src/features/retro/data/retroApi.ts`                   | `POST /api/v1/retrospect` · `POST …/{id}/messages`                                                                                                                                                                  | ✅                                                        |
+| `src/features/home/data/scheduleApi.ts`                 | `GET`·`POST /api/v1/schedules` · `GET …/period` · `PATCH`·`DELETE …/{id}` · `PATCH …/{id}/visibility` · `PATCH …/order` · `PUT …/{id}/completion`                                                                   | ✅                                                        |
+| `src/features/calendar/data/calendarSyncApi.ts`         | `POST /api/v1/schedules/sync`                                                                                                                                                                                       | ✅                                                        |
+| `src/features/diary/data/diaryApi.ts`                   | `GET /api/v1/diaries` · `DELETE …/{id}` · `PUT …/by-retrospect/{retrospectId}` · `GET /api/v1/action-cards` · `PUT …/{id}/completion` · `DELETE /api/v1/action-cards/{id}`                                          | ✅                                                        |
+| 〃                                                      | `POST /api/v1/diaries` · `PUT /api/v1/diaries/{id}` (직접 일기 쓰기 · 아래 절)                                                                                                                                      | 🟡                                                        |
+| `src/features/diary/data/diaryWeather.ts`               | `PUT /api/v1/diaries/{id}/weather`                                                                                                                                                                                  | ✅                                                        |
+| `src/features/home/data/weatherApi.ts`                  | `POST /api/v1/weather/current` (BE `#77`)                                                                                                                                                                           | 🟡                                                        |
+| `src/features/letter/data/letterApi.ts`                 | `GET /api/v1/letters` · `GET …/{date}` · `POST …/{id}/open` · `PUT …/{id}/action` · `PUT /api/v1/users/me/letter-time` (BE `#80`)                                                                                   | 🟡                                                        |
+| `src/features/report/data/weeklyBookApi.ts`             | `GET /api/v2/reports/weekly` (BE `#88`)                                                                                                                                                                             | 🟡                                                        |
+| `src/features/rest/data/treasureApi.ts`                 | `POST /api/v1/treasures` · `GET /api/v1/treasures` (`?date=` 그날 · 없으면 전부)                                                                                                                                    | ✅                                                        |
+| `src/features/rest/data/worryApi.ts`                    | `POST /api/v1/worries` · `GET /api/v1/worries` (맡겨둔 걱정 전부 · 최신순)                                                                                                                                          | ✅                                                        |
+| `src/features/rest/data/restRecordApi.ts`               | `POST /api/v1/rest-records` · `GET /api/v1/rest-records?content=` (쉼터별 · 최신순)                                                                                                                                 | ✅ · ⚠ `MEDITATION`·`WISH`·`WEEKLY_HAPPINESS` 는 🟡(아래) |
+| `src/features/rest/data/wishApi.ts`                     | `/api/v1/wishes` 열 개 — `GET …/pond` · `POST …/rules-agreement` · `POST …/review` · `POST` · `GET …/mine` · `POST …/{id}/join` · `POST`·`DELETE …/{id}/report` · `DELETE …/{id}` · `PUT …/{id}/outcome` (BE `#86`) | 🟡                                                        |
+| `src/features/rest/data/weeklyHappinessApi.ts`          | `GET /api/v1/weekly-happiness?weekStart=` · `PUT …/{weekStart}`(이번 주만 · 그 주를 통째로 바꾼다) (BE `#91`)                                                                                                       | 🟡                                                        |
+| `src/features/my/data/inquiryApi.ts`                    | `POST /api/v1/inquiries`                                                                                                                                                                                            | ✅                                                        |
+
+> ⚠ **쉼터 이용 기록의 `content` 값 셋은 운영 DB 가 받지 않는다.** 운영 `rest_records` 의 CHECK 는
+> `SENSE_POND`·`WORRY_BOX`·`TREASURE_BOX`·`BODY_RELEASE` 넷뿐이고(`V26`), `MEDITATION`(`V35`) ·
+> `WISH`(`V36`) · `WEEKLY_HAPPINESS`(`V38`)는 `dev` 마이그레이션이다. 경로는 운영에 있어도 그 셋은 실패한다.
+
+> 2026-11-06: 옛 표의 `src/features/report/data/weeklyReportApi.ts` → `GET /api/v1/reports/weekly` 는
+> **파일이 없다** — 2026-11-04 스프링 공책(`e86f3e7`)에서 `weeklyBookApi.ts` + v2 로 바뀌었다.
 
 > ✅ **`DELETE /api/v1/action-cards/{id}` 는 붙었다** (2026-08-24 계약 반입 → 연결).
 > 이것이 [`PRODUCT.md` 「상류와 차이」](../PRODUCT.md) #25 를 닫았다 — 지운 카드 id 를
@@ -83,21 +105,23 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 > ⚠ **옛 표의 마지막 줄(`src/features/diary/data/retrospectDiaryApi.ts` →
 > `GET /api/v1/retrospect/{id}/diary`)은 둘 다 없다.** 엔드포인트는 2026-08-20 에
 > 서버에서 사라졌고(`TASKS.md` 「남은 API 연결」), 파일은 `diaryApi.ts` 로 대체됐다.
-> **BE 코드에는 그 경로를 가리키는 javadoc 이 아직 여섯 군데 남아 있다**
-> (`ActionCardController` · `ActionCardResponse` · `ActionCardView` · `DiaryController` ·
-> `DiaryResponse` · `DiaryView`) — 매핑은 없으므로 **출처 표시로만 읽는다.**
-> BE 에 정리를 제기할 자리다.
+> **BE 코드에는 그 경로를 가리키는 javadoc 이 아직 남아 있다** — 2026-11-06 `dev` 기준 세 군데
+> (`ActionCardController` · `DiaryController` · `DiaryResponse` · 2026-09-12 에는 여섯).
+> 매핑은 없으므로 **출처 표시로만 읽는다.** BE 에 정리를 제기할 자리다.
 
-## 아직 붙지 않은 것 — 여섯 (2026-09-12)
+## 아직 붙지 않은 것 — 열둘 (2026-11-06)
 
 `openapi.json` 에는 있고 어댑터가 없다. 순서는 [`docs/TASKS.md`](../TASKS.md) 「남은 API 연결」을 본다.
 
-| 엔드포인트                                | 왜 없나                                                                                                                                                               |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`·`PUT`·`DELETE /api/v1/memos/{date}` | **붙이지 않기로 했다**(2026-08-11 제품 결정) — 서버는 날짜당 하나(`{ content }`)인데 스키마 `Moment` 는 여럿이다. 그 뒤 순간 화면(`12-d`)까지 사라져 부를 자리가 없다 |
-| `GET /api/v1/diaries/{id}`                | 월별 목록(`GET /api/v1/diaries`)이 본문까지 그대로 채워 줘서 부를 자리가 없다                                                                                         |
-| `GET /api/v1/diaries/all`                 | 같은 이유 — 보관함은 **달 단위**로 받아 뒤로 훑는다(`diary.ts` 의 창)                                                                                                 |
-| `GET /api/v1/action-cards/{id}`           | 같은 이유. 카드는 `retrospectId` 로 일기와 조인해 목록에서 세운다                                                                                                     |
+| 엔드포인트                                                                         | 운영 | 왜 없나                                                                                                                                                               |
+| ---------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`·`PUT`·`DELETE /api/v1/memos/{date}`                                          | ✅   | **붙이지 않기로 했다**(2026-08-11 제품 결정) — 서버는 날짜당 하나(`{ content }`)인데 스키마 `Moment` 는 여럿이다. 그 뒤 순간 화면(`12-d`)까지 사라져 부를 자리가 없다 |
+| `GET /api/v1/diaries/{id}`                                                         | ✅   | 월별 목록(`GET /api/v1/diaries`)이 본문까지 그대로 채워 줘서 부를 자리가 없다                                                                                         |
+| `GET /api/v1/diaries/all`                                                          | ✅   | 같은 이유 — 보관함은 **달 단위**로 받아 뒤로 훑는다(`diary.ts` 의 창). ⚠ 마이 「일기 N일 기록」을 전체 기간으로 세려고 **FE PR #257 이 붙인다**(머지 전)              |
+| `GET /api/v1/action-cards/{id}`                                                    | ✅   | 같은 이유. 카드는 `retrospectId` 로 일기와 조인해 목록에서 세운다                                                                                                     |
+| `GET /api/v1/reports/weekly`                                                       | ✅   | v2(`/api/v2/reports/weekly`)로 바꿨다(2026-11-04). 운영 서버에는 v2 가 아직 없다                                                                                      |
+| `GET /api/v1/letters/current`                                                      | 🟡   | 쓰지 않는다 — 홈 아이콘은 목록 첫 칸으로 점을 달고, 누르면 그 날짜를 연다(`letterApi.ts` 머리말)                                                                      |
+| `GET /api/v1/notifications` · `GET …/unread` · `PATCH …/{id}/read` · `POST …/read` | 🟡   | FE 알림함을 지웠다(2026-10-27 · 편지 아이콘이 그 자리) — BE `#76` 은 남아 있다                                                                                        |
 
 ## 경계가 갈리는 자리 — 알고 붙였다
 
@@ -119,25 +143,43 @@ BE `DayBoundary.toLocalDate()` 가 프론트 `clock.today()` 와 같은 규칙�
 ## 오류 코드 — 서버가 실제로 내는 것 전부
 
 `ApiErrorResponse` 는 `{ code, message }` 하나뿐이고 코드는 아래가 전부다
-(BE `*ExceptionHandler` 전수 대조 · **2026-09-12 갱신** — 애플·구글이 붙으면서 열두 개가 늘었다).
+(BE `*ExceptionHandler` · `JsonAuthenticationEntryPoint` · `JsonAccessDeniedHandler` 전수 대조 ·
+**2026-11-06 갱신** — `dev` 기준. 「운영」 칸은 BE `main` 에 그 코드가 있는지다).
 
-| 코드                                                                                                                         | 상태  | 언제                                                                     |
-| ---------------------------------------------------------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------------ |
-| `INVALID_REQUEST`                                                                                                            | `400` | 검증 실패 전반 · 잘못된 연·월 · 일정 순서 · 캘린더 화해 요청             |
-| `KAKAO_EMAIL_CONSENT_REQUIRED` · `KAKAO_EMAIL_UNAVAILABLE`                                                                   | `400` | 카카오계정 이메일 동의가 없거나 인증된 이메일이 없다                     |
-| `APPLE_EMAIL_UNAVAILABLE` · `GOOGLE_EMAIL_UNAVAILABLE`                                                                       | `400` | 〃 (애플 · 구글)                                                         |
-| `AUTHENTICATION_REQUIRED`                                                                                                    | `401` | 토큰의 사용자를 서버가 못 찾을 때                                        |
-| `KAKAO_TOKEN_INVALID` · `KAKAO_APP_ID_MISMATCH` · `KAKAO_USER_ID_MISMATCH`                                                   | `401` | 카카오 인증 실패 세 갈래                                                 |
-| `APPLE_TOKEN_INVALID` · `APPLE_NONCE_MISMATCH` · `APPLE_CLIENT_ID_MISMATCH`                                                  | `401` | 애플 인증 실패 세 갈래 (nonce 재생 방지 포함)                            |
-| `GOOGLE_TOKEN_INVALID` · `GOOGLE_CLIENT_ID_MISMATCH`                                                                         | `401` | 구글 인증 실패 두 갈래 (`aud`·`azp` 대조)                                |
-| `REFRESH_TOKEN_INVALID` · `REFRESH_TOKEN_REVOKED` · `REFRESH_TOKEN_EXPIRED`                                                  | `401` | 갱신 실패 세 갈래                                                        |
-| `ACCESS_DENIED`                                                                                                              | `403` | 인증은 됐는데 권한이 없다 (`JsonAccessDeniedHandler`)                    |
-| `SCHEDULE_NOT_FOUND` · `DIARY_NOT_FOUND` · `ACTION_CARD_NOT_FOUND` · `DAILY_MEMO_NOT_FOUND` · `RETROSPECT_SESSION_NOT_FOUND` | `404` | 없거나 **남의 것**일 때 — 소유권 실패도 404 다(존재를 흘리지 않는다)     |
-| `ALREADY_RETROSPECTED_TODAY`                                                                                                 | `409` | 오늘(**04:00 경계**) 이미 회고를 마쳤다 — `retroApi.ts` 가 안내로 받는다 |
-| `APPLE_REVOKE_UNAVAILABLE`                                                                                                   | `500` | 탈퇴 때 애플 연결 해제 설정(`.p8`)이 없다 — ⛔ 발급 대기 중              |
-| `KAKAO_API_SERVER_ERROR` · `KAKAO_API_RESPONSE_ERROR`                                                                        | `502` | 카카오 쪽 오류                                                           |
-| `APPLE_API_RESPONSE_ERROR` · `GOOGLE_API_RESPONSE_ERROR`                                                                     | `502` | 애플 · 구글 응답을 처리할 수 없다                                        |
-| `KAKAO_API_NETWORK_ERROR` · `APPLE_API_NETWORK_ERROR` · `GOOGLE_API_NETWORK_ERROR`                                           | `503` | 그 서비스에 닿지 못함                                                    |
+| 코드                                                                                                                         | 상태  | 운영 | 언제                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------- | ----- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `INVALID_REQUEST`                                                                                                            | `400` | ✅   | 검증 실패 전반 · 잘못된 연·월 · 일정 순서 · 캘린더 화해 요청 · 조회 기간 · 잘못된 감정 키                                         |
+| `KAKAO_EMAIL_CONSENT_REQUIRED` · `KAKAO_EMAIL_UNAVAILABLE`                                                                   | `400` | ✅   | 카카오계정 이메일 동의가 없거나 인증된 이메일이 없다                                                                              |
+| `APPLE_EMAIL_UNAVAILABLE` · `GOOGLE_EMAIL_UNAVAILABLE`                                                                       | `400` | ✅   | 〃 (애플 · 구글)                                                                                                                  |
+| `INVALID_COORDINATE`                                                                                                         | `400` | 🟡   | 홈 날씨 좌표가 범위 밖 (`CurrentWeatherExceptionHandler`)                                                                         |
+| `LETTER_ACTION_NOT_FOUND`                                                                                                    | `400` | 🟡   | 편지에 없는 작은 일 자리를 골랐다                                                                                                 |
+| `WISH_REVIEW_INVALID`                                                                                                        | `400` | 🟡   | 소원 띄우기의 심사 토큰이 없거나 글과 맞지 않는다(토큰 30분)                                                                      |
+| `WEEKLY_HAPPINESS_INVALID_WEEK_START` · `WEEKLY_HAPPINESS_FUTURE_WEEK`                                                       | `400` | 🟡   | 주간 행복 — `weekStart` 가 일요일이 아니다 · 아직 오지 않은 주                                                                    |
+| `WEEKLY_HAPPINESS_PAST_WEEK`                                                                                                 | `400` | 🟡   | 주간 행복 PUT 만 — 지난 주는 읽기만 된다(일요일 04:00 경계). FE 는 「이번 주 기록장은 닫혔어요」 한 줄                            |
+| `INVALID_CURSOR`                                                                                                             | `400` | 🟡   | 알림함 커서 — FE 는 부르지 않는다                                                                                                 |
+| `AUTHENTICATION_REQUIRED`                                                                                                    | `401` | ✅   | 토큰이 없거나 무효 · 토큰의 사용자를 서버가 못 찾을 때                                                                            |
+| `KAKAO_TOKEN_INVALID` · `KAKAO_APP_ID_MISMATCH` · `KAKAO_USER_ID_MISMATCH`                                                   | `401` | ✅   | 카카오 인증 실패 세 갈래                                                                                                          |
+| `APPLE_TOKEN_INVALID` · `APPLE_NONCE_MISMATCH` · `APPLE_CLIENT_ID_MISMATCH`                                                  | `401` | ✅   | 애플 인증 실패 세 갈래 (nonce 재생 방지 포함)                                                                                     |
+| `GOOGLE_TOKEN_INVALID` · `GOOGLE_CLIENT_ID_MISMATCH`                                                                         | `401` | ✅   | 구글 인증 실패 두 갈래 (`aud`·`azp` 대조)                                                                                         |
+| `REFRESH_TOKEN_INVALID` · `REFRESH_TOKEN_REVOKED` · `REFRESH_TOKEN_EXPIRED`                                                  | `401` | ✅   | 갱신 실패 세 갈래                                                                                                                 |
+| `ACCESS_DENIED`                                                                                                              | `403` | ✅   | 인증은 됐는데 권한이 없다 (`JsonAccessDeniedHandler`)                                                                             |
+| `WISH_RULES_REQUIRED`                                                                                                        | `403` | 🟡   | 소원 연못 이용 규칙에 아직 동의하지 않았다                                                                                        |
+| `SCHEDULE_NOT_FOUND` · `DIARY_NOT_FOUND` · `ACTION_CARD_NOT_FOUND` · `DAILY_MEMO_NOT_FOUND` · `RETROSPECT_SESSION_NOT_FOUND` | `404` | ✅   | 없거나 **남의 것**일 때 — 소유권 실패도 404 다(존재를 흘리지 않는다). `SCHEDULE_NOT_FOUND` 는 편지 작은 일에 붙인 일정에서도 난다 |
+| `LETTER_NOT_FOUND` · `WISH_NOT_FOUND` · `NOTIFICATION_NOT_FOUND`                                                             | `404` | 🟡   | 〃 (편지 · 소원 · 알림함)                                                                                                         |
+| `ALREADY_RETROSPECTED_TODAY`                                                                                                 | `409` | ✅   | 오늘(**04:00 경계**) 이미 일기가 있다 — 회고 시작(`retroApi.ts` 가 안내로 받는다) · 🟡 직접 일기 쓰기                             |
+| `DIARY_WEATHER_DATE_MISMATCH`                                                                                                | `409` | ✅   | 지난 일기에 지금 날씨를 붙이려 했다                                                                                               |
+| `ONBOARDING_REQUIRED`                                                                                                        | `409` | 🟡   | 온보딩 전이라 프로필이 없다 — `PUT /users/me/letter-time`                                                                         |
+| `LETTER_ACTION_LOCKED`                                                                                                       | `409` | 🟡   | 더 바꿀 수 없는 편지의 작은 일을 고치려 했다                                                                                      |
+| `WISH_DAILY_LIMIT`                                                                                                           | `409` | 🟡   | 오늘(04:00 경계) 이미 소원을 띄웠다 — 지운 소원도 그날 몫을 돌려주지 않는다                                                       |
+| `TOO_MANY_REQUESTS`                                                                                                          | `429` | 🟡   | 홈 날씨 — 사용자별 1분 요청 제한                                                                                                  |
+| `APPLE_REVOKE_UNAVAILABLE`                                                                                                   | `500` | ✅   | 탈퇴 때 애플 연결 해제 설정(`.p8`)이 없다 — ⛔ 발급 대기 중                                                                       |
+| `KAKAO_API_SERVER_ERROR` · `KAKAO_API_RESPONSE_ERROR`                                                                        | `502` | ✅   | 카카오 쪽 오류                                                                                                                    |
+| `APPLE_API_SERVER_ERROR` · `APPLE_API_RESPONSE_ERROR` · `GOOGLE_API_SERVER_ERROR` · `GOOGLE_API_RESPONSE_ERROR`              | `502` | ✅   | 애플 · 구글 쪽 오류 · 응답을 처리할 수 없다 (`*_SERVER_ERROR` 둘은 2026-09-12 표에서 빠져 있었다)                                 |
+| `WEATHER_UPSTREAM_FAILED`                                                                                                    | `502` | 🟡   | 홈 날씨 — MET Norway 응답 실패                                                                                                    |
+| `KAKAO_API_NETWORK_ERROR` · `APPLE_API_NETWORK_ERROR` · `GOOGLE_API_NETWORK_ERROR`                                           | `503` | ✅   | 그 서비스에 닿지 못함                                                                                                             |
+| `WEATHER_UNAVAILABLE`                                                                                                        | `503` | ✅   | 날씨를 못 가져왔다 — 일기 날씨(운영) · 🟡 홈 날씨 기능 꺼짐                                                                       |
+| `WISH_REVIEW_UNAVAILABLE`                                                                                                    | `503` | 🟡   | 소원 심사(Gemini)가 답하지 못했거나 고친 글을 믿을 수 없다                                                                        |
+| `WEATHER_UPSTREAM_TIMEOUT`                                                                                                   | `504` | 🟡   | 홈 날씨 — MET Norway 시간 초과                                                                                                    |
 
 ⚠ **화면은 이 코드를 그대로 보여주지 않는다.** 어댑터가 사용자가 할 수 있는 일 기준으로
 몇 갈래(`network` · `server` · `unauthorized` …)로 접고, 화면은 **한 줄 안내**로 흡수한다
@@ -166,6 +208,8 @@ access token 수명은 **30분**(`jwt.access-token-expiration: 30m`), refresh �
   AI 완료와 직접 저장이 사용자 행 잠금을 공유해 동시 저장도 하루 한 장만 남긴다.
 
 OpenAPI 생성물은 이 기능이 반영된 서버에서 `npm run sync:api`로 반입한다.
+(2026-11-06 대조: 이미 반입돼 있다 — 스냅샷에 `POST /api/v1/diaries` · `PUT /api/v1/diaries/{id}` 가 있다.
+운영 BE `main` 에는 아직 없고 `V33`·`V34` 도 `dev` 에만 있다.)
 
 직접 작성 요청은 `DiaryCreateRequest`(본문·선택 감정), id 기반 본문 수정은 `DiaryWriteRequest`(본문만)를 사용한다.
 선택 감정은 기존 10종 키만 허용하며, 잘못된 키는 400 `INVALID_REQUEST` / `감정을 확인해주세요.`로 거절한다.

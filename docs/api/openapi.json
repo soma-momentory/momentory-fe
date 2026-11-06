@@ -16,6 +16,10 @@
       "description": "행동 카드 보관함 API"
     },
     {
+      "name": "Weekly Happiness",
+      "description": "쉼터 주간 행복 API"
+    },
+    {
       "name": "Treasures",
       "description": "쉼터 오늘의 보물함 API"
     },
@@ -195,6 +199,150 @@
         "responses": {
           "204": {
             "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/weekly-happiness/{weekStart}": {
+      "put": {
+        "tags": [
+          "Weekly Happiness"
+        ],
+        "summary": "이번 주 주간 행복 저장",
+        "description": "이번 주(일요일 04:00 KST 경계)의 기록장을 통째로 바꾼다. 보낸 칸은 적거나 고치고, 보내지 않았거나 비운(공백뿐인) 칸은 지운다. 같은 요청을 다시 보내도 결과가 같다. 쓰는 것은 이번 주뿐이다 — 지난 주는 읽기만 하고, 아직 오지 않은 주도 안 된다.",
+        "operationId": "replaceWeek",
+        "parameters": [
+          {
+            "name": "weekStart",
+            "in": "path",
+            "description": "이번 주의 일요일",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-11-01"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeeklyHappinessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "저장 성공 — 저장한 뒤의 기록장",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyHappinessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "invalidDateFormat": {
+                    "description": "invalidDateFormat",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "malformedRequestBody": {
+                    "description": "malformedRequestBody",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "entriesRequired": {
+                    "description": "entriesRequired",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "적은 칸 목록을 보내주세요."
+                    }
+                  },
+                  "categoryRequired": {
+                    "description": "categoryRequired",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "칸을 골라주세요."
+                    }
+                  },
+                  "duplicateCategory": {
+                    "description": "duplicateCategory",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "같은 칸을 두 번 보낼 수 없습니다."
+                    }
+                  },
+                  "contentTooLong": {
+                    "description": "contentTooLong",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "주간 행복 한 칸은 최대 100자입니다."
+                    }
+                  },
+                  "WEEKLY_HAPPINESS_INVALID_WEEK_START": {
+                    "description": "WEEKLY_HAPPINESS_INVALID_WEEK_START",
+                    "value": {
+                      "code": "WEEKLY_HAPPINESS_INVALID_WEEK_START",
+                      "message": "주의 첫날(일요일) 날짜를 보내주세요."
+                    }
+                  },
+                  "WEEKLY_HAPPINESS_FUTURE_WEEK": {
+                    "description": "WEEKLY_HAPPINESS_FUTURE_WEEK",
+                    "value": {
+                      "code": "WEEKLY_HAPPINESS_FUTURE_WEEK",
+                      "message": "아직 오지 않은 주입니다."
+                    }
+                  },
+                  "WEEKLY_HAPPINESS_PAST_WEEK": {
+                    "description": "WEEKLY_HAPPINESS_PAST_WEEK",
+                    "value": {
+                      "code": "WEEKLY_HAPPINESS_PAST_WEEK",
+                      "message": "지난 주는 고칠 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4432,6 +4580,98 @@
         ]
       }
     },
+    "/api/v1/weekly-happiness": {
+      "get": {
+        "tags": [
+          "Weekly Happiness"
+        ],
+        "summary": "한 주의 주간 행복 조회",
+        "description": "그 주(일~토 · 일요일 04:00 KST 에 바뀐다)에 적은 칸을 칸 순서대로 돌려준다. 적은 칸이 없으면 빈 배열이다. firstWeekStart 는 적은 칸이 하나라도 있는 가장 이른 주다.",
+        "operationId": "getWeek",
+        "parameters": [
+          {
+            "name": "weekStart",
+            "in": "query",
+            "description": "그 주의 일요일",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-11-01"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyHappinessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 주",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "invalidDateFormat": {
+                    "description": "invalidDateFormat",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "WEEKLY_HAPPINESS_INVALID_WEEK_START": {
+                    "description": "WEEKLY_HAPPINESS_INVALID_WEEK_START",
+                    "value": {
+                      "code": "WEEKLY_HAPPINESS_INVALID_WEEK_START",
+                      "message": "주의 첫날(일요일) 날짜를 보내주세요."
+                    }
+                  },
+                  "WEEKLY_HAPPINESS_FUTURE_WEEK": {
+                    "description": "WEEKLY_HAPPINESS_FUTURE_WEEK",
+                    "value": {
+                      "code": "WEEKLY_HAPPINESS_FUTURE_WEEK",
+                      "message": "아직 오지 않은 주입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -5618,6 +5858,104 @@
         "required": [
           "outcome"
         ]
+      },
+      "WeeklyHappinessEntryRequest": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "칸",
+            "enum": [
+              "MOMENT",
+              "FOOD",
+              "CONTENT",
+              "PLACE",
+              "PERSON",
+              "PROUD",
+              "REST"
+            ],
+            "example": "FOOD"
+          },
+          "content": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "적은 글(최대 100자) — 비우면 그 칸을 지운다",
+            "example": "오랜만에 먹은 마라탕",
+            "maxLength": 100,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "category"
+        ]
+      },
+      "WeeklyHappinessRequest": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "description": "적은 칸들 — 칸마다 한 번씩. 빈 배열이면 그 주를 모두 비운다",
+            "items": {
+              "$ref": "#/components/schemas/WeeklyHappinessEntryRequest"
+            }
+          }
+        },
+        "required": [
+          "entries"
+        ]
+      },
+      "WeeklyHappinessEntryResponse": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "칸",
+            "enum": [
+              "MOMENT",
+              "FOOD",
+              "CONTENT",
+              "PLACE",
+              "PERSON",
+              "PROUD",
+              "REST"
+            ],
+            "example": "FOOD"
+          },
+          "content": {
+            "type": "string",
+            "description": "적은 글",
+            "example": "오랜만에 먹은 마라탕"
+          }
+        }
+      },
+      "WeeklyHappinessResponse": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "format": "date",
+            "description": "그 주의 일요일(KST · 일요일 04:00 에 주가 바뀐다)",
+            "example": "2026-11-01"
+          },
+          "entries": {
+            "type": "array",
+            "description": "적은 칸들 — 비운 칸은 오지 않는다",
+            "items": {
+              "$ref": "#/components/schemas/WeeklyHappinessEntryResponse"
+            }
+          },
+          "firstWeekStart": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "적은 칸이 하나라도 있는 가장 이른 주 — 아무 주에도 적지 않았으면 null",
+            "example": "2026-10-11"
+          }
+        }
       },
       "CompleteOnboardingRequest": {
         "type": "object",

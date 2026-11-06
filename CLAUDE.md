@@ -2,23 +2,27 @@
 
 모멘토리 앱의 React Native 프론트. 상류 MVP 는 **40화면**이었다 (2026-08-06 v2 개정 — 30 → 40).
 그 뒤 **회고 채팅 v2**(2026-08-28 · `C1`·`C3` 가 사라지고 행동카드가 바람카드로)와
-**쉼터**(탭 하나 + 감각연못)가 들어오면서 **화면 ID 와 라우트가 더는 1:1 이 아니다.**
-지금 있는 것은 **라우트 31개**이고(아래 「지금 어디까지 왔나」), 화면 ID ↔ 라우트
+**쉼터**(탭 하나 + 쉼 콘텐츠 일곱)·**온보딩 v2**(로그인 전 소개 12장)·**바바의 편지**가 들어오면서
+**화면 ID 와 라우트가 더는 1:1 이 아니다.**
+지금 있는 것은 **라우트 61개**이고(아래 「지금 어디까지 왔나」), 화면 ID ↔ 라우트
 매핑의 정본은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표다.
 
-> 📌 **2026-09-12 — BE(`momentory-be` `d456a98`)와 FE(`80d1b89`) 코드를 대조해 문서를 한 바퀴 맞췄다.**
-> 그 대조에서 바뀐 사실 여덟(자세한 것은 각 문서):
+> 📌 **2026-11-06 — BE(`momentory-be` `dev` `50cd4c9`)와 FE(`main` `4ac1a52`) 코드를 대조해 문서를 한 바퀴 맞췄다.**
+> (그 전 대조는 2026-09-12 · BE `d456a98` / FE `80d1b89`.) 지금 사실(자세한 것은 각 문서):
 >
-> | 무엇                | 지금                                                                                                                                             |
-> | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-> | 회고                | **v2** — 일기 작성 → 감정 탐색. 시작 감정을 고르지 않는다(`C3` 삭제) · 분기점은 2026-10-27 에 빠졌다                                             |
-> | 감정                | **10종** (화남 9 · 답답함 10 분리 · 긍정→부정 재번호) — 9종이라 적힌 문서는 낡은 것                                                              |
-> | 탭                  | **5칸** — 홈 · 쉼터 · 보관함 · 리포트 · 마이                                                                                                     |
-> | 하루 경계           | **FE·BE 둘 다 04:00 KST** (BE `DayBoundary` · `#45`) — 「자정~4시가 갈린다」는 옛 서술이다                                                       |
-> | 행동(바람)카드 삭제 | **서버 계약이 생겼다** — `DELETE /api/v1/action-cards/{id}`. 기기 묘비(`deletedCardStore`) 삭제                                                  |
-> | 온보딩 완료 플래그  | **서버가 정본** — `GET /api/v1/users/me`. 껐다 켜도 온보딩이 되풀이되지 않는다                                                                   |
-> | 계측                | **Amplitude 가 main 에 있다** — `src/features/analytics/` · [`docs/ANALYTICS.md`](docs/ANALYTICS.md)                                             |
-> | 출시                | 스토어 제출 이력이 있다 — iOS `buildNumber 7` · Android `versionCode 10`(1.3.0 · 2026-10-14 · 둘 다 `app.config.ts` · 이력은 `docs/SETUP.md` §8) |
+> | 무엇                | 지금                                                                                                                                                                                                                                                                                                                                                               |
+> | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+> | **배포 차이**       | ⚠ **FE main 이 운영에 없는 BE API 에 기댄다.** 운영(`api.momentory.co.kr`)은 BE `main` `ca3bc87`(2026-10-14), 개발(`dev.momentory.co.kr`)은 `dev`. 편지 · 날씨 · 온보딩 v2 · 소원 · 명상 · 주간 리포트 v2 등(BE #76~#90)은 **dev 에만** 있다 — 다음 스토어 출시 전에 BE dev → main 릴리스가 먼저다. `.env` 는 dev, 출시 빌드는 운영 주소만 받는다(`app.config.ts`) |
+> | 회고                | **v2** — 일기 작성 → 감정 탐색(사건이 둘이면 사이에 사건 고르기) · 감정 · 바람에서 끝난다. 시작 감정을 고르지 않는다(`C3` 삭제) · 분기점 · 작은 행동은 2026-10-27 에 빠졌다(작은 행동은 다음 날 편지에서). AI 없이 **직접 쓰기**(`retro/write`)도 있다                                                                                                             |
+> | 홈                  | **v2** — `app/(tabs)/home.tsx` 가 `HomeV2View` 를 그린다 · 지금 날씨 스티커 · 편지 아이콘 · 배경음악. 옛 `HomeView` 계열은 테스트와 함께 남은 죽은 코드다                                                                                                                                                                                                          |
+> | 쉼터                | 쉼 콘텐츠 **일곱** — 감각연못 · 걱정상자 · 보물함 · 몸에 힘 빼기 · 3분 명상 · 주간 행복(이번 주만 쓰고 지난 주는 읽기만 · 2026-11-06 저장) · 소원 연꽃(`features/rest/model/contents.ts`) + 이용 기록                                                                                                                                                              |
+> | 감정                | **10종** (화남 9 · 답답함 10 분리 · 긍정→부정 재번호) — 9종이라 적힌 문서는 낡은 것                                                                                                                                                                                                                                                                                |
+> | 탭                  | **5칸** — 홈 · 쉼터 · 보관함 · 리포트 · 마이                                                                                                                                                                                                                                                                                                                       |
+> | 하루 경계           | **FE·BE 둘 다 04:00 KST** (BE `DayBoundary` · `#45`) — 「자정~4시가 갈린다」는 옛 서술이다                                                                                                                                                                                                                                                                         |
+> | 행동(바람)카드 삭제 | **서버 계약이 생겼다** — `DELETE /api/v1/action-cards/{id}`. 기기 묘비(`deletedCardStore`) 삭제                                                                                                                                                                                                                                                                    |
+> | 온보딩              | **v2**(2026-10-25) — 로그인 전 소개(`app/intro/`) → 로그인 → 질문(`app/(onboarding)/`). 완료 판정은 **서버가 정본** — `GET /api/v1/users/me` 의 `onboardingVersion`                                                                                                                                                                                                |
+> | 계측                | **Amplitude 가 main 에 있다** — `src/features/analytics/` · [`docs/ANALYTICS.md`](docs/ANALYTICS.md)                                                                                                                                                                                                                                                               |
+> | 출시                | 마지막 스토어 제출 — iOS `buildNumber 7` · Android `versionCode 10`(1.3.0 · 2026-10-14 · 운영 서버 · 둘 다 `app.config.ts` · 이력은 `docs/SETUP.md` §8)                                                                                                                                                                                                            |
 
 **이 저장소만으로 개발·검증이 전부 된다** — 화면 스펙·상태 기계·문안은 저장소 안
 [`docs/spec/`](docs/spec/SNAPSHOT.md)(동결 스냅샷 · 직접 수정 금지), 시각 값과
@@ -141,6 +145,8 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 ✅ **전환이 끝났다** (2026-08-20 · `PLAN.md` A-16). `theme.ts` · `tokens.mvp.ts` ·
 `paper.ts` 와 `scripts/sync-theme.mjs`·`sync:theme`·`check:theme` 이 **전부 삭제됐다**.
 이제 `src/design/` 에는 `ds/` 하나뿐이고, 화면은 전부 3세대다.
+(2026-11-06 대조: 그 뒤 `ds/` 옆에 `tabBackgrounds.ts` 와 `studioDesign.ts` · `studioApproved.json` ·
+`studioAssets.ts` 가 더 생겼다 — 아래 「지금 어디까지 왔나」 트리.)
 
 ⚠ **디자인 파일에 제품 규칙을 넣지 않는다.** 토큰이 지워질 때 규칙이 조용히 사라진다 —
 실제로 `tokens.mvp.ts` 안에 일정 접기(5) · 「기타」 12자 · 일기 500자가 섞여 있었고
@@ -154,14 +160,14 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 >
 > 지운 것과 그 자리에 남은 것:
 >
-> | 지운 샘플                                                      | 지금                                                                        |
-> | -------------------------------------------------------------- | --------------------------------------------------------------------------- |
-> | 일기 12편 · 행동 카드 (보관함·쉼터·리포트)                     | 서버 `GET /diaries` — `useDiary.load()`                                     |
-> | 프로필 한 벌 (닉네임 「지현」 · 나이 · 관심사 · 캘린더 연결됨) | 서버 `GET /users/me` · 온보딩 완료 — 그전에는 **빈 값**                     |
-> | 순간 2개 (`Moment`)                                            | **없앴다** — 만드는 화면도 읽는 화면도 없다(타입만 남김)                    |
-> | 날씨 「맑음 · 27℃」                                            | **없앴다** — 계약에 날씨가 없다                                             |
-> | 주간 해석 두 주치 (`W1`)                                       | 서버 `GET /reports/weekly` — 2026-08-24 에 붙었다(그전까지 **비어 있었다**) |
-> | 지난달 감정 집계 (`monthChange`)                               | **없앴다** — 부르는 화면이 없었다                                           |
+> | 지운 샘플                                                      | 지금                                                                      |
+> | -------------------------------------------------------------- | ------------------------------------------------------------------------- |
+> | 일기 12편 · 행동 카드 (보관함·쉼터·리포트)                     | 서버 `GET /diaries` — `useDiary.load()`                                   |
+> | 프로필 한 벌 (닉네임 「지현」 · 나이 · 관심사 · 캘린더 연결됨) | 서버 `GET /users/me` · 온보딩 완료 — 그전에는 **빈 값**                   |
+> | 순간 2개 (`Moment`)                                            | **없앴다** — 만드는 화면도 읽는 화면도 없다(타입만 남김)                  |
+> | 날씨 「맑음 · 27℃」                                            | **없앴다** — 계약에 날씨가 없다 (→ 지금은 서버 날씨가 붙었다 · 아래 트리) |
+> | 주간 해석 두 주치 (`W1`)                                       | 서버 `GET /reports/weekly` — 2026-08-24 에 붙었다(→ 지금은 `v2` 공책)     |
+> | 지난달 감정 집계 (`monthChange`)                               | **없앴다** — 부르는 화면이 없었다                                         |
 >
 > **화면 테스트가 쓰던 재료만** [`src/testing/fixtures.ts`](src/testing/fixtures.ts) 로
 > 옮겼다 — 앱 코드가 그걸 import 하면 린터가 막는다(샘플이 조용히 되살아나는 길).
@@ -180,9 +186,13 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 
 ⚠ **도메인이 전부 붙었다** — 인증(소셜 셋·갱신·로그아웃·탈퇴) · 온보딩 · 일정 ·
 기기 캘린더 화해 · 회고 대화(v2) · 일기 · 바람카드(수정·완료·삭제) · 프로필 · 주간 리포트
-(2026-08-09 PR #46 부터 · 리포트는 08-24 · 구글은 08-25 · 회고 v2 는 08-28).
-**화면이 읽는 도메인은 전부 서버가 정본이다.** 계약에 있는데 아직 안 붙인 것은
-여섯뿐이다(하루 메모 셋 · 단건 조회 셋 — [`docs/api/README.md`](docs/api/README.md)).
+(2026-08-09 PR #46 부터 · 리포트는 08-24 · 구글은 08-25 · 회고 v2 는 08-28) · 그 뒤로
+쉼터 기록(보물 · 걱정 · 이용 기록 · 소원) · 문의 · 편지 · 날씨(홈 · 일기) · 온보딩 v2 · 리포트 v2.
+**화면이 읽는 도메인은 전부 서버가 정본이다.** 계약(`openapi.json`)의 68개 중 56개가 붙었고,
+안 붙인 12개는 하루 메모 셋(붙이지 않기로 했다) · 단건 조회 둘(`diaries/{id}` · `action-cards/{id}` —
+월별 목록이 다 채운다) · `diaries/all` · `letters/current` · 옛 `GET /api/v1/reports/weekly`(v2 로 옮겼다) ·
+알림함 넷(FE 알림함은 2026-10-27 에 지웠다)이다 — [`docs/api/README.md`](docs/api/README.md).
+⚠ 붙은 56개 중 **22개는 아직 운영 서버에 없다**(BE dev 에만 · 위 「배포 차이」).
 주간 리포트는 `GET /api/v2/reports/weekly` 한 번이 공책 한 권(표지 · 안쪽 장 · AI 글)과
 일기 셈을 한 벌로 준다 — 화면은 **아무것도 세지 않는다**.
 **서버 호출은 `src/lib/http.ts` 하나를 지난다** — `authedRequest` 가 Bearer 주입 ·
@@ -192,33 +202,37 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 
 ## 지금 어디까지 왔나
 
-**화면은 전부 있고, 도메인도 전부 서버에서 온다** (2026-09-12 대조).
-라우트 31개 — 진입 2 · 온보딩 9 · 탭 5 · 홈 시트 2 · 회고 4 · 일기 1 · 쉼터 2 · 마이 6.
+**화면은 전부 있고, 도메인도 전부 서버에서 온다** (2026-11-06 대조).
+라우트 61개 — 진입 2 · 소개 12 · 온보딩 12 · 탭 5 · 홈 시트 2 · 회고 5 · 편지 3 · 일기 1 ·
+쉼터 12 · 마이 7 (`_layout` · `+native-intent` 제외 · Lab 의 `routes.generated.ts` 도 61개다).
 화면 ID ↔ 라우트 매핑은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표가 정본이다.
-검증은 **76 스위트 / 1,137 테스트**가 통과하는 상태다(2026-09-22).
+검증은 **155 스위트 / 2,024 테스트**가 통과하는 상태다(2026-11-06).
 
 ⚠ **「화면 완료」와 「MVP 완료」는 다르다.** 붙은 것과 남은 것:
 
-| 붙었다                                                                                   | 남았다                                                        |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| 소셜 셋 다 실제 로그인 (카카오 08-07 · 애플 08-24 · 구글 08-25) · 갱신 · 로그아웃 · 탈퇴 | 애플 `.p8` — 그전까지 **탈퇴가 연결 해제 없이** 지나간다      |
-| HTTPS (`https://api.momentory.co.kr` · 08-25)                                            | 영속 저장(MMKV) — 회고·온보딩 초안이 아직 메모리다            |
-| 온보딩 · 일정 · 캘린더 화해 · 회고 v2 · 일기 · 바람카드 · 주간 리포트 · 프로필           | 아웃박스(M3-3) — 멱등성 규약이 서버에 없다(`DISCUSSION` §1-1) |
-| OS 권한 둘 다 (알림 08-11 · 캘린더 08-20 — 읽고 서버로 화해)                             | 회고 **재개**(§1-2) · 마이 전체 기간 집계(계약 없음)          |
-| 계측 (Amplitude · 09-05 · main)                                                          | 앱 잠금 게이트 · M6(invariants 전수 · E2E · 배포)             |
+| 붙었다                                                                                            | 남았다                                                                                             |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 소셜 셋 다 실제 로그인 (카카오 08-07 · 애플 08-24 · 구글 08-25) · 갱신 · 로그아웃 · 탈퇴          | ⚠ **BE dev → main 릴리스** — 편지 · 날씨 · 온보딩 v2 · 소원 · 명상 · 리포트 v2 가 운영 서버에 없다 |
+| HTTPS (`https://api.momentory.co.kr` · 08-25 · 개발은 `dev.momentory.co.kr`)                      | 애플 `.p8` — 그전까지 **탈퇴가 연결 해제 없이** 지나간다                                           |
+| 온보딩 v2 · 일정 · 캘린더 화해 · 회고 v2(+ 직접 쓰기) · 일기 · 바람카드 · 주간 리포트 v2 · 프로필 | 영속 저장(MMKV) — 회고·온보딩 초안이 아직 메모리다                                                 |
+| 바바의 편지(10-27) · 홈 v2 · 날씨(홈 · 일기 — `expo-location`) · 홈 배경음악(11-05)               | 아웃박스(M3-3) — 멱등성 규약이 서버에 없다(`DISCUSSION` §1-1)                                      |
+| 쉼 콘텐츠 일곱 + 이용 기록 · 문의(10-13)                                                          | 회고 **재개**(§1-2 — `GET /retrospect/{id}` 가 없다) · 마이 전체 기간 집계(`diaries/all` 미연결)   |
+| OS 권한 셋 (알림 08-11 · 캘린더 08-20 · 위치 — 날씨) · 계측 (Amplitude · 09-05 · main)            | 홈 v2 정리(옛 `HomeView` 계열 삭제) · 앱 잠금 게이트 · M6(invariants 전수 · E2E · 배포)            |
 
 목록의 정본은 [`docs/TASKS.md`](docs/TASKS.md) 「화면 40장이 끝난 뒤 남은 것」이다.
 
-**아직 갈 곳이 없는 줄은 눌리지 않게 둔다** — 지금 남은 것은 **연결 관리** 하나다.
+**아직 갈 곳이 없는 줄은 눌리지 않게 둔다** — 옛 「연결 관리」 줄은 시안에서 빠졌고,
+「캘린더 연동」 줄(2026-09-28)은 **연결되지 않았을 때만** 눌린다(해제는 두지 않는다 · `app/(tabs)/my.tsx` 머리말).
 눌리는데 아무 일도 없는 줄을 만들지 않는다(`TASKS.md` 「마이의 편집 경로」).
 ⚠ **회원 탈퇴는 2026-08-23 에 붙었다**(`DELETE /api/v1/users/me` · 확인 시트에서
 「회원탈퇴」를 따라 써야 실행된다).
 ⚠ **약관·문의는 2026-08-21 에 갈 곳이 생겼다** — 랜딩 페이지의 웹 문서를 앱 안
 브라우저로 연다(`src/lib/links.ts` · `TASKS.md` 「2026-08-21 · 약관·문의」).
-지금 있는 것은 아래와 같다 — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
+문의는 2026-10-13 부터 앱 안 화면이다(`app/my/inquiry.tsx`).
+지금 있는 것은 아래와 같다(2026-11-06 대조) — 문서의 목표 구조를 이미 있는 것으로 착각하지 말 것.
 
 ```
-app/_layout.tsx  app/index.tsx (S0)  app/(auth)/login.tsx (S1)
+app/_layout.tsx  app/+native-intent.ts  app/index.tsx (S0)  app/(auth)/login.tsx (S1)
 app/intro/{start, feelings, blur, ruminate, blank, help, schedule, talk, diary, rest, letter, report}.tsx
                   = 온보딩 v2 로그인 전(시작 · 문제 5 · 소개) — 인증 없이 열린다(2026-10-25)
 app/(onboarding)/{_layout, mood, why, day-end, diary-history, goal, reading, name, about, calendar, notify, research, now}.tsx
@@ -233,8 +247,9 @@ app/(tabs)/{_layout, home, rest, archive, report, my}.tsx
 app/home/{_layout, schedule/[id], schedule/new}.tsx
                   = 12-c · 12-e — 투명 모달 시트
                   (12-d 순간 입력은 2026-08-14 삭제 — PRODUCT.md #18)
-app/retro/{_layout, confirm, talk, draft, done}.tsx
+app/retro/{_layout, confirm, talk, write, draft, done}.tsx
                   = C2 · C4* · C6 · C7 — **회고 채팅 v2** (2026-08-28)
+                  ← write = 「직접 쓰기」 — 오늘 일정을 옆에 두고 빈 일기장에 쓴다. AI 세션을 열지 않는다
                   ← `intro`(C1)·`emotion`(C3) 은 **없다**: v2 는 시작 감정을 묻지 않고
                     일기 작성부터 연다. talk 하나가 두 국면(일기 작성 → 감정 탐색)을
                     다 그린다(사건이 둘이면 사이에 사건 고르기) — 무엇을 그릴지는 서버의 `phase` 가 정한다.
@@ -244,13 +259,16 @@ app/letter/{_layout, index, [date], time}.tsx
                     데이터는 `features/letter/` · 서버 `/api/v1/letters` · 홈 상단 편지 아이콘이 옛 알림함 자리다
 app/diary/{_layout, [id]/index}.tsx = A3 · A3-c
                   ← `[id]/edit`(A4)은 2026-08-20 에 지웠다(DESIGN.md N2 · PRODUCT.md #24·26)
-app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, treasures, body-release, meditation, weekly-happiness, records}.tsx
+app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, treasures, body-release, meditation,
+          weekly-happiness, wish, wish-mine, records}.tsx
                   = R2(날짜별 바람카드) · 감각연못 · 걱정상자(+ 맡겨둔 걱정) · 오늘의 보물함(+ 지난 보물) · 몸에 힘 빼기 · 3분 명상
-                    · 쉼터별 이용 기록(`?content=`)
-                  ← 쉼 콘텐츠 넷이 모두 화면을 가졌다(2026-10-05). 쓴 글을 서버에 남기는 것은 보물함
-                    (`features/rest/data/treasureApi.ts` · `/api/v1/treasures`)과 걱정상자에서
-                    **맡겨둔** 걱정(`worryApi.ts` · `/api/v1/worries` · 2026-10-13) 둘이다.
-                    나갈 때 기분 쪽지 · 이용 기록은 넷 공통이다(2026-10-08 · `MoodExit` ·
+                    · 주간 행복 · 소원 연꽃(+ 내 소원) · 쉼터별 이용 기록(`?content=`)
+                  ← 쉼 콘텐츠는 **일곱**이고 모두 화면이 있다(`features/rest/model/contents.ts` ·
+                    명상 · 소원은 2026-11-04). 쓴 글을 서버에 남기는 것은 보물함
+                    (`features/rest/data/treasureApi.ts` · `/api/v1/treasures`) · 걱정상자에서
+                    **맡겨둔** 걱정(`worryApi.ts` · `/api/v1/worries` · 2026-10-13) · 소원(`wishApi.ts` ·
+                    `/api/v1/wishes` — 심사 뒤 띄운다)이다.
+                    나갈 때 기분 쪽지 · 이용 기록은 공통이다(2026-10-08 · `MoodExit` ·
                     `useRestRecord` · `/api/v1/rest-records` · DESIGN.md 「쉼 콘텐츠 공통 규칙」 7-1)
 app/my/{_layout, profile, nickname, age, gender, interests, rest, inquiry}.tsx
                   = 기본 정보 목록 + 항목별 수정 다섯 + 문의하기(2026-10-13 · 그 전엔 Notion 폼 ·
@@ -259,17 +277,22 @@ app/my/{_layout, profile, nickname, age, gender, interests, rest, inquiry}.tsx
                     M1·M2(회고 프로필)·M3(알림 설정) 셋뿐이고, 목록+다섯 라우트는 구현이
                     나눈 것이다(2026-08-20 · PLAN.md A-10). 알림 설정은 화면이 아니라
                     **시트**라 `app/(tabs)/my.tsx` 안에서 열린다
-src/design/ds/{color,typography,metrics,pond,index}.ts
+src/design/ds/{color,typography,metrics,index}.ts + 화면별 값 파일
+                (pond · pondScene · homeV2 · diaryPaper · letterPaper · reportBook · restScene · wishScene … 20여 개)
                                           ← **토큰 정본** — 여기만 hex 를 든다.
                                             다크 없음(N1) · 시안 값 여섯은 대비 보정됨
                                             (contrast.test.ts 가 고정한다) ·
-                                            `pond.ts` 는 감각연못 장면 전용 값
+                                            화면별 파일은 그 장면 전용 값
+src/design/tabBackgrounds.ts              ← 탭 종이 배경 매핑(지금은 다섯 탭 모두 따뜻한 아이보리)
+src/design/{studioDesign.ts, studioApproved.json, studioAssets.ts}
+                                          ← 홈 v2 · 쉼터 · 보관함 · 마이 화면이 읽는 승인된 장식 값 · 그림 표(Expo Lab 과 함께 쓴다)
 src/components/ds/                        ← **공용 컴포넌트.** 새 화면은 여기서 조립한다
   Text Screen GridBackground Button IconButton SocialButton Card TextField SearchField
   Chip ChoiceGrid ListCell SectionHeader TopNavigation BottomNavigation TabScreen
   BottomSheet Modal Menu Toast ToastHost Spinner Slider WheelPicker Calendar
   ViewSwitcher SelectLift EmotionDot EmotionPebble EmotionSticker WeekEmptyDot
-  ChatBubble ChatDock ChatScaffold
+  ChatBubble ChatDock ChatScaffold MaskingTape NotchedTapeLabel TabPaperBackground DesignViewport
+  (+ voiceInput · scrollLock · singleLineInput · columnWidth — 컴포넌트가 아닌 도우미)
   icons/{Icon.tsx, paths.ts, GoogleMark.tsx}
                                           ← 아이콘은 Wanted 세트를 그대로 옮긴 것 —
                                             **없는 글리프를 만들지 않는다**(person 없음 → nav-my-page).
@@ -281,35 +304,50 @@ src/components/onboarding/{OnboardingParts, IntroScreen, IntroArt, QuestionScree
 src/components/my/BasicInfoEditor.tsx     ← 기본 정보 다섯 화면이 공유하는 껍데기
                                             (상단바 · 저장 · 실패 한 줄)
 src/components/archive/{DayScheduleList, DiaryPreviewCard, EmotionFilter}.tsx
-src/components/diary/{ActionCardSection, DiaryEmotionRow, WishCardFields}.tsx
+src/components/diary/{ActionCardSection, DiaryEmotionRow, WishCardFields, DiaryPaper, DiaryNotebook, DiaryMemo,
+                      WeatherCredit}.tsx + diaryPhotos.ts
                                           ← WishCardFields = 쉼터(R2)와 일기 상세(A3)가
-                                            **같은 항목·같은 말**로 바람카드를 그린다
+                                            **같은 항목·같은 말**로 바람카드를 그린다.
+                                            DiaryPaper = 회고 · 직접 쓰기 · 일기 상세의 줄 공책
+src/components/weather/{WeatherIntroSheet, WeatherCreditSheet}.tsx   ← 날씨 첫 안내 · 출처 시트
+src/components/entry/{SplashLoader, SplashLogo}.tsx  src/components/RouteStatusBar.tsx
 src/features/report/ui/book/{WeeklyBookView, Notebook, BookPages, parts, NotebookPickerSheet}.tsx
                                           ← 주간 리포트 공책 — 표지(라벨 · 스티커 · 말풍선) · 스프링 · 색인 탭 ·
                                             넘어가는 장. 끝난 주만 연다. %·완료율을 만들지 않는다 — 세는 값은
                                             서버 것이다. 감정 도넛은 횟수로만 허용(DESIGN.md 「리포트」 2026-11-04)
 src/components/rest/{RestActionCard, RestPaperSheet, RestCardPressable, RestContentGrid, RestPolaroid,
-                      RestThemeCard, RestThemeGrid, RestWishPreview}.tsx + restThemes.ts + pond/
-                                          ← pond/ 는 감각연못 장면 조각(배경·수면·물결·
-                                            감각 판·카피바라·「꾸욱」). 판정은 그리지 않는다
+                      RestRecommendSheet, RestThemeCard, RestThemeGrid, RestWishPreview}.tsx + restThemes.ts
+                    + {pond, scene, worry, treasure, body, meditation, weekly, wish}/
+                                          ← 콘텐츠마다 장면 조각 폴더 하나. pond/ 는 감각연못(배경·수면·물결·
+                                            감각 판·카피바라·「꾸욱」) · scene/ 은 공통(상단 단추 · 설명 카드 ·
+                                            나갈 때 기분 쪽지 `MoodExit`). 판정은 그리지 않는다
 src/features/emotion/model/emotion.ts     ← **감정 10종의 도메인 정본** — id·이름·EmotionId.
                                             **색은 여기 두지 않는다**(디자인 몫).
                                             번호는 서버 enum 두 벌과 맞물려 있다 —
                                             retro `EMOTION_KEYS`(소문자 키)와 home
                                             `SCHEDULE_EMOTIONS`(대문자). ⚠ 일정 enum 은
                                             아직 `ANGRY_FRUSTRATED` 하나라 9·10 이 같은 코드다
-src/features/home/{model/{day,dayRollover,types}.ts, data/scheduleApi.ts, ui/*}
+src/features/home/{model/{day,dayRollover,presentation,types,weather,useHomeWeather}.ts,
+                   data/{scheduleApi,weatherApi,weatherIntroMemory}.ts, ui/v2/*, ui/*}
                                           ← day.ts 가 MAX_VISIBLE_SCHEDULES(5) 도 든다 —
                                             「5개까지 펼치고 접는다」는 디자인이 아니라 제품 규칙.
-                                            dayRollover = 04:00 에 하루가 넘어갈 때 하는 일
-src/features/retro/{model/retro.ts, data/retroApi.ts, ui/{RetroBaba,RetroRug}.tsx}
+                                            dayRollover = 04:00 에 하루가 넘어갈 때 하는 일.
+                                            **운영 홈은 `ui/v2/HomeV2View`** 다. `ui/` 의 옛 `HomeView` ·
+                                            `GrassButton` · `HomeCapybara` · `WeekEmotionStrip` 은 테스트만 남은 죽은 코드다.
+                                            날씨 = `POST /api/v1/weather/current`(좌표는 본문에만) — 실패는 전부 「스티커 없음」
+src/features/letter/{model/{letter,actionReminder}.ts, data/letterApi.ts, ui/{LetterPaper,LetterPreviewCard}.tsx}
+                                          ← 바바의 편지 · 작은 일 고르기와 그 알림 한 번(고른 순간 예약)
+src/features/retro/{model/retro.ts, data/retroApi.ts,
+                    ui/{RetroBaba,RetroBabaPeek,RetroRug,RetroOnsen,RetroDiaryBackground,RetroMethodChoices,
+                        RetroStickerChoices,RetroScheduleSticker}.tsx}
                                           ← **대화는 서버가 주도한다** — store 는 세션 id ·
                                             버블 · 서버의 마지막 응답 · 완료 시 일기와
                                             **바람카드**만 든다. 시작 감정(`startEmotion`)은
                                             v2 에서 사라졌다
-src/features/diary/{model/{diary,types,selectors,deleteToast}.ts, data/diaryApi.ts}
+src/features/diary/{model/{diary,types,selectors,deleteToast,useDiaryWeather}.ts, data/{diaryApi,diaryWeather}.ts}
                                           ← 회고가 남기는 것: Diary + ActionCard(바람카드).
                                             deleteToast = 일기·바람카드가 **같은 삭제 문안**을 쓴다.
+                                            diaryWeather = 오늘 일기에 날씨를 남긴다(「묻고 → 위치」).
                                             ⚠ 옛 `deletedCardStore`(지운 카드의 기기 묘비)는
                                             **사라졌다** — 서버에 삭제 계약이 생겼다(2026-08-24)
 src/features/calendar/{model/*, data/{calendarSyncApi,syncStateStore}.ts}
@@ -317,29 +355,35 @@ src/features/calendar/{model/*, data/{calendarSyncApi,syncStateStore}.ts}
                                             좁히고(normalize) 해시로 「보낼 것이 있나」를
                                             서버에 묻지 않고 판정한다. 언제 도는지는
                                             foregroundSync 하나가 안다
-src/features/archive/model/{archive,monthSchedules}.ts
+src/features/archive/{model/{archive,monthSchedules}.ts, ui/ArchiveView.tsx}
                                           ← 세는 것만. 연속 일수를 세지 않는다
-src/features/report/{model/{report,weeklyBook}.ts, data/weeklyBookApi.ts}
+src/features/report/{model/{report,weeklyBook}.ts, data/{weeklyBookApi,hintMemory}.ts}
                                           ← 주간 리포트는 `GET /api/v2/reports/weekly` 한 번이
                                             공책 한 권(표지 · 안쪽 장 · AI 글)을 한 벌로
                                             준다 — 화면은 **아무것도 세지 않는다**. 끝난 주만
                                             열고, 일기 3일 미만인 주는 표지 한 장이다.
                                             report.ts 에 남은 것은 홈의 이번 주 감정 줄 계산뿐.
-src/features/rest/model/{cards,contents,sensePond}.ts
-                                          ← 쉼터가 보는 것(바람카드) · 쉼 콘텐츠 넷 ·
-                                            감각연못 진행(3-2-1)
+src/features/rest/{model/{cards,contents,recommend,restRecord,restGuide,sensePond,worryBox,treasureBox,
+                           bodyRelease,meditation,meditationAudio,weeklyHappiness,wish}.ts + use*.ts,
+                   data/{treasureApi,worryApi,wishApi,restRecordApi,storeReview,recommendMemory,guideMemory,
+                         deviceStorage}.ts, ui/RestHubView.tsx}
+                                          ← 쉼터가 보는 것(바람카드) · 쉼 콘텐츠 일곱 · 쉼 추천 ·
+                                            이용 기록 · 콘텐츠별 진행(감각연못 3-2-1 …).
+                                            deviceStorage = AsyncStorage 를 부르는 기기 기억의 단일 통로
 src/features/music/{model/{tracks,music,musicPlayer}.ts, data/musicMemory.ts, ui/MusicDialog.tsx}
                                           ← 홈 배경음악(2026-11-05) — 고른 곡과 재생 중인가 둘이 store 의 전부다.
                                             실제 소리는 `providers.tsx` 에 건 `musicPlayer` 가 낸다(탭을 옮겨도 이어진다)
-src/features/my/{model/{settings,reminders,basicInfo}.ts, ui/ReminderRoute.tsx}
+src/features/my/{model/{settings,reminders,basicInfo,calendarLink}.ts, data/inquiryApi.ts,
+                 ui/{MyMainView,ReminderRoute}.tsx}
                                           ← 알림/프로필 설정 · **설정 ↔ OS 예약 화해** ·
                                             기본 정보(한 항목만 고쳐도 **통째로 보낸다** —
                                             서버가 덮어쓰는 PUT 이라 · 알림 시트도 같은 길) ·
+                                            마이에서 캘린더 잇기 · 문의 보내기 ·
                                             알림을 누르면 부른 화면으로 옮긴다
-src/features/onboarding/{model/{draft,completion,options,conversation,submit}.ts,
+src/features/onboarding/{model/{flow,draft,completion,options,submit}.ts,
                          data/{optionsApi,completeOnboardingApi}.ts}
-                                          ← 답안 초안 · 완료 플래그(진입 분기 · **정본은 서버**) ·
-                                            선택지(**서버 코드를 그대로 든다**) · 대화 파생 ·
+                                          ← 온보딩 v2 순서 · 문구(flow) · 답안 초안 · 완료 플래그(진입 분기 ·
+                                            **정본은 서버**) · 선택지(**서버 코드를 그대로 든다**) ·
                                             서버 커밋(온보딩과 마이가 같은 PUT 을 지난다)
 src/features/auth/{model/auth.ts,
                    data/{kakaoSdk,kakaoAuthApi,appleSdk,appleAuthApi,googleSdk,googleAuthApi,
@@ -356,7 +400,8 @@ src/features/auth/{model/auth.ts,
                                             구글: idToken 하나 · **nonce 가 없다**(무료 모듈에
                                             넘길 자리가 없어 서버가 aud + azp 로 조인다) ·
                                             탈퇴 시 연결 해제는 앱이 한다(revokeAccess)
-src/features/analytics/{index,client,amplitude,events,observation,
+src/features/analytics/{index,client,amplitude,events,observation,activeClock,
+                        restContent,sensePond,useRestContentAnalytics,useSensePondAnalytics,
                         AnalyticsObserver,AnalyticsResource}.tsx
                                           ← **계측의 단일 통로**(2026-09-05 · Amplitude).
                                             키가 비면 꺼진다 · 개발 빌드는 기본 차단.
@@ -381,6 +426,8 @@ src/lib/calendar.ts     ← 기기 캘린더의 단일 통로 — 권한 · 범�
                           externalId 정규화. 던지지 않는다(실패하면 빈 목록).
                           ⚠ **서버로 간다**(2026-08-20) — `POST /schedules/sync` 화해.
                           플랫폼 차이는 여기서만
+src/lib/location.ts     ← 기기 위치의 단일 통로 — `expo-location` 을 부르는 곳은 여기 하나다(홈 · 일기 날씨).
+                          던지지 않는다 · 좌표는 소수 둘째 자리까지만 나간다 · 로그에 남기지 않는다
 src/lib/audio.ts        ← 소리의 단일 통로 — `expo-audio` 를 보는 곳은 여기 하나다. 던지지 않는다
 src/lib/audioClaim.ts   ← 「지금은 내가 소리를 쓴다」는 표시 — 명상 음성 · 마이크가 표시하면 배경음악이 비켜 선다
 src/lib/toast.ts        ← 토스트의 단일 통로 — 「끝난 일을 알리는 한 줄」이 뜨는 자리 하나.
@@ -400,7 +447,7 @@ src/lib/dayChange.ts    ← **하루가 넘어간 순간**(04:00)의 단일 통�
                           잡는다(둘 다 있어야 한 쪽을 안 놓친다). **날짜를 들고 있지
                           않다** — 정본은 `clock.today()` 이고 여기는 「바뀌었다」만 말한다
 src/lib/clock.ts        ← 시각의 단일 공급자 — SystemClock(04:00 하루 경계) ·
-                          fixedClock(테스트). ⚠ **서버도 같은 04:00 경계다**
+                          SampleClock · fixedClock(테스트). ⚠ **서버도 같은 04:00 경계다**
                           (BE `DayBoundary` · 2026-09 대조)
 src/lib/day.ts          ← 날짜 표기. 계산은 clock.ts 가 한다
 src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳은 전부 이걸 쓴다
@@ -411,7 +458,7 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
 아래는 **구조를 이해하는 데 필요한 것**만이다:
 
 - 런타임 골격 — expo-router(라우팅) · **Zustand**(클라이언트 상태) ·
-  react-native-svg(그라디언트) · expo-image(일러스트) · expo-font(Pretendard)
+  react-native-svg(그라디언트) · expo-image(일러스트) · expo-font(교보손글씨 — 앱 전체 서체 · Pretendard 네 굵기)
 - 소셜 로그인 — **@react-native-seoul/kakao-login**(카카오) ·
   **expo-apple-authentication** + **expo-crypto**(`S1` 애플 로그인 — **iOS 전용** ·
   서버 교환·nonce 까지 연결됨 2026-08-24) ·
@@ -424,15 +471,18 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
   **expo-store-review**(스토어 별점 창 — 쉼터를 「나아졌어요」로 마치고 나올 때 · 120일 간격 ·
   `features/rest/data/storeReview.ts` · 2026-10-13) ·
   **expo-speech-recognition**(회고 입력의 음성 입력 — OS 인식기라 외부 STT 가 없다 ·
-  `src/components/ds/voiceInput.ts`)
+  `src/components/ds/voiceInput.ts`) ·
+  **expo-location**(홈 · 일기 날씨 — 「사용 중에만」 · 백그라운드 위치 없음 · `src/lib/location.ts` · 2026-10-07) ·
+  **expo-audio**(3분 명상 음성 · 홈 배경음악 — `src/lib/audio.ts`)
 - 계측 — **@amplitude/analytics-react-native** + **@react-native-async-storage/async-storage**
-  (2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔다. 앱 코드가 직접 쓰는 곳은
-  **쉼터의 기기 기억 둘**과 홈 배경음악이다 — 쉼 추천 `recommendMemory.ts` · 설명 카드를 본 쉼터 `guideMemory.ts`
-  (둘 다 `features/rest/data/` · `deviceStorage.ts` 를 지난다 · 2026-10-12) · 틀어 둔 배경음악 `features/music/data/musicMemory.ts`(2026-11-05))
+  (2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔다. 앱 코드는 전부
+  `features/rest/data/deviceStorage.ts` 하나를 지나 쓴다 — 쉼 추천 `recommendMemory.ts` · 설명 카드를 본 쉼터
+  `guideMemory.ts`(2026-10-12) · 별점 창 간격 `storeReview.ts` · 틀어 둔 배경음악 `features/music/data/musicMemory.ts`(2026-11-05) ·
+  홈 날씨 첫 안내 `features/home/data/weatherIntroMemory.ts` · 리포트 「3일」 안내 `features/report/data/hintMemory.ts`)
 
 네이티브 모듈이 섞여 있어 **dev client 재빌드 필요**.
 ⚠ **`08` 회고 시간 선택은 외부 피커 모듈이 아니다** — `src/components/ds/WheelPicker.tsx`
-의 3열 자체 구현을 쓴다(`app/(onboarding)/notify.tsx` · `app/(tabs)/my.tsx`).
+의 3열 자체 구현을 쓴다(`app/(onboarding)/notify.tsx` · `app/(tabs)/my.tsx` · `app/letter/time.tsx`).
 **아직 없는 것: TanStack Query · MMKV · Reanimated · MSW.**
 도입 시점은 `docs/ARCHITECTURE.md §1` 「도입 예정」 표에 있다.
 
@@ -450,6 +500,7 @@ CI 와 로컬 검증의 정본은 [`docs/CONTRIBUTING.md` 「품질 게이트」
 | ----------------- | ------------------------------------------------------------------------------------------------------------------- |
 | 아웃박스(M3-3)    | 멱등성 규약 — `DISCUSSION.md` §1-1. 계약의 **모양**은 닫혔다                                                        |
 | M3 (첫 로컬 쓰기) | [`docs/DATA-SECURITY.md`](docs/DATA-SECURITY.md) ✅ 초안 — **팀 결정 둘**(§5-1 나이·성별 · §5-2 감정 동의)만 남았다 |
+| 다음 스토어 출시  | BE `dev` → `main` 릴리스 — FE main 이 기대는 API(BE #76~#90)가 운영 서버에 없다(`docs/SETUP.md` §6)                 |
 
 서버 API 계약은 [`docs/api/openapi.json`](docs/api/README.md) 에 있다 —
 개발 서버에서 받은 **반입 스냅샷**이라 직접 고치지 않는다(`npm run sync:api`).

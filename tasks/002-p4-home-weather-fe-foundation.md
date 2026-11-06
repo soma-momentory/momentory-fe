@@ -1,5 +1,7 @@
 # Task 002: P4 홈 날씨 FE 기반 — 위치 통로 · 날씨 API 어댑터 · 상태 훅 · 스티커 매핑 (화면 연결 없음)
 
+> 상태 (2026-11-06 대조): ✅ **FE 완료 · 운영 홈에 연결됨**(#184·#186 · `useHomeWeather`). ⛔ BE `#77`(`POST /api/v1/weather/current`)은 **dev 에만** 있다 — 운영 배포 대기. FE `docs/api/openapi.json`(개발 서버 반입)에는 들어와 있다.
+
 > 복구 기록: 아래 Task 본문은 원본 Harness 작성 시점의 BE `main` 상태를 기록한다.
 > 후속 PR 후보는 BE `dev` d77d023의 `CurrentWeatherController`·DTO·OpenAPI 테스트와
 > 대조했다. 이 커밋의 운영 배포 및 FE OpenAPI 스냅샷 반입은 확인되지 않았다.
