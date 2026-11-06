@@ -1,35 +1,36 @@
-"""걱정상자의 그림 다섯 장을 앱 자산으로 만든다 (2026-10-05).
+"""걱정상자의 그림을 앱 자산으로 만든다 (2026-10-05 · 2026-11-06 카피바라 · 숲 교체).
 
-`assets/worry-box/source/`(이력에 담지 않는다)의 다섯 장을 읽는다 — `sit.webp` 말고는
-ChatGPT 로 생성했고, 배경을 뺀 셋은 순수 초록(#00FF00) 위에 그렸다. 걷어 내는 법은 몸에 힘 빼기와
-같다(`keyout-body-release.py` 머리말 — 초록 세기로 알파를 내고, 섞인 가장자리는 배경색을
-빼서 되살리고, 남은 초록은 누른다).
+`assets/worry-box/source/`(이력에 담지 않는다)의 그림을 읽는다. 카피바라 두 장은 홈의 바바
+(`assets/home/v2/baba-composite.png`)를 참고 그림으로 붙여 ChatGPT 로 그렸고, 순수 초록(#00FF00)
+위에 있다. 걷어 내는 법은 몸에 힘 빼기와 같다(`keyout-body-release.py` 머리말 — 초록 세기로 알파를
+내고, 섞인 가장자리는 배경색을 빼서 되살리고, 남은 초록은 누른다).
 
-| 원본          | 무엇                                     | 만드는 것                                   |
-| ------------- | ---------------------------------------- | ------------------------------------------- |
-| `forest.webp` | 저녁 숲속 오솔길                         | `forest.webp`                               |
-| `poses.webp`  | 2×2 — (받기) · 쪽지 들기 · 넣기 · 곁에서 쉬기 | `capybara-{hold,put,rest}.webp` — 받기는 쓰지 않는다 |
-| `walk.webp`   | 상자를 인 뒷모습 두 걸음                 | `capybara-walk{1,2}.webp`                   |
-| `box.webp`    | 열린 상자 뒤판 · 앞판 · 닫힌 상자        | `box-{back,front,closed}.webp`              |
-| `sit.webp`    | 두 손을 배에 얹은 기본 앉은 자세(흰 바탕) | `capybara-sit.webp`                         |
+| 원본          | 무엇                                           | 만드는 것                              |
+| ------------- | ---------------------------------------------- | -------------------------------------- |
+| `forest.webp` | 숲속 오솔길(납작한 그림체 · 사용자 제공)        | `forest.webp`                          |
+| `poses.webp`  | 2×2 — 앉기 · 쪽지 들기 · 넣기 · 곁에서 쉬기     | `capybara-{sit,hold,put,rest}.webp`    |
+| `walk.webp`   | 상자를 인 뒷모습 두 걸음                       | `capybara-walk{1,2}.webp`              |
+| `box.webp`    | 열린 상자 뒤판 · 앞판 · 닫힌 상자               | `box-{back,front,closed}.webp`         |
 
-⚠ **처음 자세는 따로 받은 그림이다** (2026-10-07 · 사용자 제공). 처음에는 몸에 힘 빼기의
-기본 포즈를 빌려 오른발을 왼발을 뒤집어 덮어 썼는데, 두 발이 다 정면인 그림으로 바꿨다.
-이 그림만 **흰 바탕**이라 초록 대신 흰색을 걷어 낸다(`keyout_white`). 같은 캐릭터라
-이어지고, 머리 폭이 다른 포즈(390)의 두 배로 그려져 있어서 절반으로 줄인다(`SIT_SCALE`).
-그 그림은 생성 그림보다 옅은 주황이라, 다음 포즈로 넘어갈 때 색이 바뀌지 않게 **부위마다
-생성 그림의 색으로 옮긴다**(`recolor` · `SIT_TO_POSES`).
+⚠ **2026-11-06 — 카피바라를 홈의 바바로 바꿨다.** 그 전에는 주황빛 카피바라였고 처음 자세만 따로 받은
+흰 바탕 그림이라 색을 옮겨 맞췄다(`recolor`). 이제 네 자세가 한 장에서 나와 그럴 일이 없다.
+상자 원본(`box.webp`)은 지금 기기에 없다 — 없으면 상자 세 장은 그대로 두고 뒤판의 뚜껑만 지운다.
+열린 상자에는 **뚜껑이 없다**(2026-11-06) — 뒤판 위에 세워 두었던 뚜껑을 지우고 윗변을 둥글게 다시 그었다(`drop_lid`).
 
 ## 같은 상자에 맞춘다
 
+- 새 그림은 옛 그림보다 작게 그려져 있어 `SCALE` 로 키운다 — 앉은 자세의 키가 옛 그림(577px)과 같다.
+  그래서 화면의 카피바라 크기(`worryBoxSize.capybara`)는 그대로다
 - 앉은 포즈 넷은 **발밑을 바닥에, 두 발의 가운데를 가운데에** 맞춘다. 넣기 포즈는 몸을
   돌려 머리가 옆으로 가 있어서, 머리가 아니라 발로 맞춰야 갈아 끼울 때 몸이 미끄러지지 않는다
-- 뒷모습 둘은 같은 폭의 더 높은 상자에 같은 방식으로 맞춘다(크기는 그대로 — 앉은 포즈와
-  몸 폭이 같다)
+- 뒷모습 둘은 같은 폭의 더 높은 상자에 **몸 전체의 가운데**로 맞춘다(같은 배율 — 앉은 포즈와
+  몸 폭이 같다). 새 그림은 앞으로 내딛은 발이 걸음마다 왼쪽 · 오른쪽으로 바뀌어서, 발로 맞추면
+  걸음마다 몸이 옆으로 튄다
 - 상자 셋은 **바닥과 가로 가운데**를 맞춘다. 그래서 앞판이 뒤판의 아랫부분을 정확히 덮고,
   쪽지가 그 사이로 내려가면 상자 안에 들어간 것으로 보인다
 
-다시 만들 때: `python3 scripts/keyout-worry-box.py` (Pillow · numpy 필요). 빌드에 끼지 않는다.
+다시 만들 때: `uv run --no-project --with numpy --with pillow python scripts/keyout-worry-box.py`.
+빌드에 끼지 않는다.
 """
 
 from pathlib import Path
@@ -43,27 +44,21 @@ SRC = ROOT / "source"
 KEEP, DROP = 60, 200
 
 # 상자 크기(가로 × 세로) — 가장 넓은 · 가장 높은 것을 여유 있게 담는다. 앉은 포즈와 뒷모습은
-# 폭이 같아야 화면에서 같은 크기로 보인다(뒷모습은 발이 팔 가운데에 있지 않아 560 이 필요했다)
+# 폭이 같아야 화면에서 같은 크기로 보인다. ⚠ 바꾸면 `ds/worryBox.ts` 의 `capybaraAspect` 도 바꾼다
 SIT_BOX = (560, 600)
-WALK_BOX = (560, 830)
+WALK_BOX = (560, 880)
 CHEST_BOX = (420, 410)
-# 처음 자세 그림을 다른 포즈 크기로 맞추는 배율 — 머리 폭 390 ÷ 780
-SIT_SCALE = 390 / 780
-# 흰 바탕 걷어 내기 — 이보다 밝으면 바탕 후보, 외곽선(진한 갈색)에 닿는 띠의 폭(px)
-WHITE_MIN, EDGE_BAND = 240, 7
+# 새 카피바라 그림을 옛 그림 크기로 맞추는 배율 — 앉은 자세의 키 577 ÷ 525(2026-11-06)
+SCALE = 577 / 525
+# 열린 상자 뒤판에서 세워 둔 뚜껑을 지우는 줄 — 이보다 위가 뚜껑이고, 이 줄부터가 뚜껑과
+# 뒷벽이 함께 쓰는 외곽선이다(2026-11-06 · 사용자 요청 「처음 상자의 뚜껑을 없애」)
+LID_CUT = 176
+# 뚜껑을 지운 윗변의 마감 — 외곽선 굵기 · 모서리 둥글기(블러 시그마) · 슈퍼샘플 · 새로 그리는 줄의 끝.
+# 그냥 자르면 뚜껑 외곽선의 양 끝이 날개처럼 튀어나오고 모서리가 각졌다(2026-11-06 · 사용자 피드백)
+RIM, RIM_ROUND, RIM_SS, RIM_TO = 10, 7, 4, 230
+RIM_INK = (78, 27, 8)
 # 발의 가운데를 잴 때 보는 아래쪽 줄 수
 FEET_ROWS = 80
-# 처음 자세를 다른 포즈의 색에 맞춘다 — 부위마다 (처음 자세의 색, 생성 그림의 색).
-# 둘 다 그림에서 잰 부위의 평균이다(2026-10-07)
-SIT_TO_POSES = [
-    ((232, 165, 104), (241, 156, 90)),  # 몸
-    ((204, 135, 93), (215, 131, 84)),  # 배 · 발바닥
-    ((232, 142, 103), (237, 134, 86)),  # 볼
-    ((146, 88, 64), (162, 89, 61)),  # 귀 · 주둥이 · 손발
-    ((73, 26, 6), (81, 30, 10)),  # 외곽선
-]
-# 부위 색 사이를 얼마나 부드럽게 잇는지 — 가장자리 · 명암이 끊기지 않게
-RECOLOR_SIGMA = 18
 
 
 def keyout(name: str, src: Path = SRC) -> np.ndarray:
@@ -97,36 +92,46 @@ def place(piece: np.ndarray, size: tuple[int, int], center_on_feet: bool) -> np.
     return box
 
 
-def keyout_white(name: str) -> np.ndarray:
-    """흰 바탕을 걷어 낸다 — 가장자리에서 이어진 밝은 곳만 바탕이다(몸 안의 밝은 곳은 남는다).
-    바탕에 닿는 띠는 외곽선과 흰색이 섞인 것이라, 흰색을 빼서 외곽선 색과 알파를 되살린다"""
-    img = Image.open(SRC / f"{name}.webp").convert("RGB")
-    rgb = np.asarray(img).astype(np.float32)
-    light = Image.fromarray(np.where(rgb.min(axis=2) >= WHITE_MIN, 255, 0).astype(np.uint8)).copy()
-    w, h = light.size
-    for corner in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
-        if light.getpixel(corner) == 255:
-            ImageDraw.floodfill(light, corner, 128)
-    bg = np.asarray(light) == 128
-    band = np.asarray(Image.fromarray(bg.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(EDGE_BAND))) > 0
-    band &= ~bg
-    # 띠 안: 밝을수록 투명하다 — 외곽선의 밝기(그림에서 잰 평균 37)까지가 0 → 1
-    a = np.where(bg, 0.0, 1.0)
-    a[band] = np.clip((255 - rgb[band].mean(axis=1)) / (255 - 37), 0, 1)
-    safe = np.maximum(a, 0.05)[..., None]
-    fg = np.where(band[..., None], (rgb - (1 - a)[..., None] * 255) / safe, rgb)
-    return np.dstack([np.clip(fg, 0, 255), a * 255]).astype(np.uint8)
+def scaled(piece: np.ndarray) -> np.ndarray:
+    """알파를 곱한 채로 키운다 — 가장자리에 초록 · 검은 테가 생기지 않게"""
+    img = Image.fromarray(piece).convert("RGBa")
+    img = img.resize((round(img.width * SCALE), round(img.height * SCALE)), Image.LANCZOS)
+    return np.asarray(img.convert("RGBA"))
 
 
-def recolor(arr: np.ndarray, pairs: list) -> np.ndarray:
-    """부위 색마다 옮길 만큼을 가까운 정도로 섞어 더한다 — 알파는 그대로"""
-    rgb = arr[..., :3].astype(np.float32)
-    src = np.array([s for s, _ in pairs], np.float32)
-    shift = np.array([t for _, t in pairs], np.float32) - src
-    d2 = ((rgb[..., None, :] - src) ** 2).sum(-1)
-    w = np.exp(-(d2 - d2.min(-1, keepdims=True)) / (2 * RECOLOR_SIGMA**2))
-    out = rgb + (w[..., None] * shift).sum(-2) / w.sum(-1, keepdims=True)
-    return np.dstack([np.clip(out, 0, 255).round(), arr[..., 3]]).astype(np.uint8)
+def _rim_shape(h: int, w: int, lf, rf, inset: int) -> np.ndarray:
+    """옆벽의 바깥 선 둘 · 윗변으로 둘러싼 모양을 inset 만큼 안으로 들이고 위 모서리를 둥글린다"""
+    img = Image.new("L", (w * RIM_SS, h * RIM_SS), 0)
+    top, bottom = LID_CUT + inset, h + 50
+    k = float(np.sqrt(1 + lf[0] ** 2))  # 기울어진 변을 안으로 inset 만큼 옮기는 가로 거리
+    pts = [
+        (np.polyval(lf, bottom) + inset * k, bottom),
+        (np.polyval(lf, top) + inset * k, top),
+        (np.polyval(rf, top) - inset * k, top),
+        (np.polyval(rf, bottom) - inset * k, bottom),
+    ]
+    ImageDraw.Draw(img).polygon([(x * RIM_SS, y * RIM_SS) for x, y in pts], fill=255)
+    # 흐리게 한 뒤 반으로 자르면 볼록한 모서리만 둥글어지고 곧은 변은 제자리다
+    sigma = max(RIM_ROUND - inset * 0.3, 2) * RIM_SS
+    img = img.filter(ImageFilter.GaussianBlur(sigma)).point(lambda v: 255 if v >= 128 else 0)
+    return np.asarray(img.resize((w, h), Image.LANCZOS)).astype(np.float32) / 255
+
+
+def drop_lid(back: np.ndarray) -> np.ndarray:
+    """열린 상자 뒤판에서 뚜껑을 지우고 윗변을 둥글게 마감한다 — 남는 것은 뒷벽 · 옆벽 · 바닥이다.
+    옆벽의 바깥 선을 그림에서 재서 위로 잇고, 위 모서리를 둥글린 외곽선을 새로 긋는다.
+    이미 마감한 그림에 다시 해도 같다"""
+    a = back.astype(np.float32)
+    h, w = a.shape[:2]
+    ys = np.arange(LID_CUT + 30, LID_CUT + 90)
+    lf = np.polyfit(ys, [np.where(a[y, :, 3] > 128)[0].min() for y in ys], 1)
+    rf = np.polyfit(ys, [np.where(a[y, :, 3] > 128)[0].max() + 1 for y in ys], 1)
+    outer = _rim_shape(h, w, lf, rf, 0)[:RIM_TO, :, None]
+    inner = _rim_shape(h, w, lf, rf, RIM)[:RIM_TO, :, None]
+    out = a.copy()
+    out[:RIM_TO, :, :3] = a[:RIM_TO, :, :3] * inner + np.array(RIM_INK, np.float32) * (1 - inner)
+    out[:RIM_TO, :, 3] = outer[..., 0] * 255
+    return np.clip(out, 0, 255).astype(np.uint8)
 
 
 def save(arr: np.ndarray, name: str) -> None:
@@ -137,25 +142,29 @@ def main() -> None:
     Image.open(SRC / "forest.webp").convert("RGB").save(ROOT / "forest.webp", quality=86)
 
     poses = keyout("poses")
+    half = poses.shape[0] // 2
     for name, (y0, y1, x0, x1) in {
-        "hold": (0, 768, 512, 1024),
-        "put": (768, 1536, 0, 512),
-        "rest": (768, 1536, 512, 1024),
+        "sit": (0, half, 0, half),
+        "hold": (0, half, half, None),
+        "put": (half, None, 0, half),
+        "rest": (half, None, half, None),
     }.items():
-        save(place(poses[y0:y1, x0:x1], SIT_BOX, center_on_feet=True), f"capybara-{name}")
-
-    sit = Image.fromarray(keyout_white("sit")).convert("RGBa")
-    sit = sit.resize((round(sit.width * SIT_SCALE), round(sit.height * SIT_SCALE)), Image.LANCZOS)
-    sit = place(np.asarray(sit.convert("RGBA")), SIT_BOX, center_on_feet=True)
-    save(recolor(sit, SIT_TO_POSES), "capybara-sit")
+        save(place(scaled(poses[y0:y1, x0:x1]), SIT_BOX, center_on_feet=True), f"capybara-{name}")
 
     walk = keyout("walk")
-    save(place(walk[:, :768], WALK_BOX, center_on_feet=True), "capybara-walk1")
-    save(place(walk[:, 768:], WALK_BOX, center_on_feet=True), "capybara-walk2")
+    mid = walk.shape[1] // 2
+    save(place(scaled(walk[:, :mid]), WALK_BOX, center_on_feet=False), "capybara-walk1")
+    save(place(scaled(walk[:, mid:]), WALK_BOX, center_on_feet=False), "capybara-walk2")
 
-    chest = keyout("box")
-    for name, (x0, x1) in {"back": (0, 520), "front": (520, 1010), "closed": (1010, 1536)}.items():
-        save(place(chest[:, x0:x1], CHEST_BOX, center_on_feet=False), f"box-{name}")
+    if (SRC / "box.webp").exists():
+        chest = keyout("box")
+        for name, (x0, x1) in {"back": (0, 520), "front": (520, 1010), "closed": (1010, 1536)}.items():
+            piece = place(chest[:, x0:x1], CHEST_BOX, center_on_feet=False)
+            save(drop_lid(piece) if name == "back" else piece, f"box-{name}")
+    else:
+        # 상자 원본이 없을 때도 뚜껑은 지운다 — 이미 지운 그림에 다시 해도 같다
+        back = np.asarray(Image.open(ROOT / "box-back.webp").convert("RGBA"))
+        save(drop_lid(back), "box-back")
 
 
 if __name__ == "__main__":

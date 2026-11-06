@@ -39,7 +39,8 @@ export const REST_THEMES: Record<RestContentId, RestTheme> = {
       source: require("../../../assets/worry-box/box-closed.webp"),
       width: 72,
       height: 70,
-      bottom: 6,
+      // 오솔길 위로 올려 앉힌다 — 6 은 이름 칸에 붙어 낮아 보였다(2026-11-06 · 사용자 요청)
+      bottom: 22,
     },
   },
   treasureBox: {
