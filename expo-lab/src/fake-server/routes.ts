@@ -199,6 +199,8 @@ const REST_CONTENTS: readonly RestContent[] = [
   "BODY_RELEASE",
   "MEDITATION",
   "WISH",
+  // 받기만 한다 — 샘플 기록(`copy.ts` 의 REST_CONTENTS · seed)에는 넣지 않아 다른 쉼터의 샘플이 그대로다
+  "WEEKLY_HAPPINESS",
 ];
 const REST_MOODS: readonly RestMood[] = ["BETTER", "SAME", "UNSURE"];
 const INQUIRY_CATEGORIES = ["BUG", "SUGGESTION", "ACCOUNT", "ETC"];
