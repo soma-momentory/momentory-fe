@@ -13,7 +13,7 @@ import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Text } from "@/components/ds";
 import { homeV2, reportBook } from "@/design/ds";
 import type { EmotionId } from "@/features/emotion/model/emotion";
-import { Rug } from "@/features/home/ui/v2/Rug";
+import { Rug, RUG_ASPECT } from "@/features/home/ui/v2/Rug";
 
 const { color, font } = reportBook;
 const BABA_COMPOSITE = require("../../../../../assets/home/v2/baba-composite.png");
@@ -95,11 +95,13 @@ function Sticker({
   width,
   height,
   pad,
+  testID,
 }: {
   source: number;
   width: number;
   height: number;
   pad: number;
+  testID?: string;
 }) {
   const out = width * pad;
   return (
@@ -109,6 +111,7 @@ function Sticker({
       importantForAccessibility="no-hide-descendants"
     >
       <Image
+        testID={testID}
         source={source}
         resizeMode="contain"
         style={[
@@ -131,19 +134,60 @@ export function PebbleSticker({ id, size }: { id: EmotionId | null; size: number
   );
 }
 
+/**
+ * 그림이 상자 안에서 실제로 차지하는 몸 — 가로 범위와 발끝 높이(상자 위에서부터). 러그는 이것에 맞춘다.
+ */
+type BabaBody = { left: number; width: number; feet: number };
+
+/**
+ * 바바 아래 러그 자리 — 홈 히어로와 같은 결(`DESIGN.md` 「리포트」 2026-11-06). 가로 가운데를 몸과 맞추고, 몸보다
+ * 넉넉히 넓게 깔고, 발끝이 러그 앞쪽에 얹히게 한다. 상자는 러그 아래 끝까지다 — 러그가 상자 밖으로 새어 표지
+ * 가장자리를 넘지 않게.
+ */
+function rugUnder(body: BabaBody) {
+  const width = body.width * reportBook.size.rug.perBody;
+  const height = width * RUG_ASPECT;
+  const top = body.feet - height * reportBook.size.rug.feet;
+  return { left: body.left + (body.width - width) / 2, top, width, height, bottom: top + height };
+}
+
+/** 스티커 바바(`baba.png`)의 불투명 범위 — 픽셀. 그림은 흰 테두리 여백(`pad`)을 빼고 436 × 600 상자에 맞는다 */
+const STICKER_ART = {
+  width: 436,
+  height: 600,
+  pad: 10,
+  top: 14,
+  left: 15,
+  right: 441,
+  feet: 606,
+} as const;
+
 export function BabaSticker({ width }: { width: number }) {
-  const height = (width * 600) / 436;
+  const unit = width / STICKER_ART.width;
+  const height = STICKER_ART.height * unit;
+  const rug = rugUnder({
+    left: (STICKER_ART.left - STICKER_ART.pad) * unit,
+    width: (STICKER_ART.right - STICKER_ART.left) * unit,
+    feet: (STICKER_ART.feet - STICKER_ART.pad) * unit,
+  });
   return (
-    <View style={{ width, height: height * 0.86 }}>
+    <View testID="book-baba-sticker" style={{ width, height: rug.bottom }}>
       <View
+        testID="book-baba-rug"
         style={[
           styles.babaRug,
-          { height: width * 0.4, width: width * 1.44, left: -width * 0.22, bottom: -width * 0.06 },
+          { left: rug.left, top: rug.top, width: rug.width, height: rug.height },
         ]}
       >
         <Rug />
       </View>
-      <Sticker source={BABA_STICKER} width={width} height={height} pad={10 / 436} />
+      <Sticker
+        source={BABA_STICKER}
+        width={width}
+        height={height}
+        pad={STICKER_ART.pad / STICKER_ART.width}
+        testID="book-baba-sticker-art"
+      />
     </View>
   );
 }
@@ -159,28 +203,70 @@ const compositeBox = (width: number) => ({
   height: width * 0.9468,
 });
 
+/** 합친 그림(`baba-composite.png`)의 불투명 범위 — 픽셀 */
+const COMPOSITE_ART = { width: 436, top: 11, left: 12, right: 424, feet: 589 } as const;
+
 /** 속지 위의 바바 — 홈과 같은 그림을 스티커 없이 앉힌다 */
 export function BabaOnRug({ width }: { width: number }) {
-  const scale = width / homeV2.size.baba.width;
+  const box = compositeBox(width);
+  const unit = box.width / COMPOSITE_ART.width;
+  const rug = rugUnder({
+    left: box.left + COMPOSITE_ART.left * unit,
+    width: (COMPOSITE_ART.right - COMPOSITE_ART.left) * unit,
+    feet: box.top + COMPOSITE_ART.feet * unit,
+  });
   return (
     <View
-      style={{ width, height: homeV2.size.baba.height * scale * 0.86 }}
+      testID="book-baba-on-rug"
+      style={{ width, height: rug.bottom }}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
       <View
-        style={[styles.babaRug, { height: width * 0.34, width: width * 1.18, left: -width * 0.09 }]}
+        testID="book-baba-rug"
+        style={[
+          styles.babaRug,
+          { left: rug.left, top: rug.top, width: rug.width, height: rug.height },
+        ]}
       >
         <Rug />
       </View>
-      <Image
-        source={BABA_COMPOSITE}
-        resizeMode="contain"
-        style={[styles.layer, compositeBox(width)]}
-      />
+      <Image source={BABA_COMPOSITE} resizeMode="contain" style={[styles.layer, box]} />
     </View>
   );
 }
+
+/**
+ * 말풍선 바로 아래에 앉힐 때의 위 여백 — 말풍선 아래 끝에서 그림의 귀 끝까지 `reportBook.size.bubbleGap` 을
+ * 띄운다. 상자 위쪽의 투명 여백만큼은 끌어올리고, 그 이상은 겹치지 않는다.
+ */
+export const babaStickerGap = (width: number) =>
+  reportBook.size.bubbleGap - ((STICKER_ART.top - STICKER_ART.pad) * width) / STICKER_ART.width;
+
+/** 스티커 바바 상자의 높이 ÷ 폭 — 러그 아래 끝까지 */
+const STICKER_HEIGHT_PER_WIDTH = (() => {
+  const unit = 1 / STICKER_ART.width;
+  return rugUnder({
+    left: (STICKER_ART.left - STICKER_ART.pad) * unit,
+    width: (STICKER_ART.right - STICKER_ART.left) * unit,
+    feet: (STICKER_ART.feet - STICKER_ART.pad) * unit,
+  }).bottom;
+})();
+
+/**
+ * 말풍선 아래 `room` 높이 안에 띄움(`babaStickerGap`)까지 넣어 앉힐 수 있는 가장 큰 스티커 바바 폭. 화면이 낮거나
+ * 글씨가 커서 말풍선이 길어져도 말풍선이 바바나 위의 스티커를 덮지 않게 바바를 줄이는 데 쓴다.
+ */
+export const babaStickerFit = (room: number) =>
+  (room - reportBook.size.bubbleGap) /
+  (STICKER_HEIGHT_PER_WIDTH - (STICKER_ART.top - STICKER_ART.pad) / STICKER_ART.width);
+
+export const babaOnRugGap = (width: number) => {
+  const box = compositeBox(width);
+  return (
+    reportBook.size.bubbleGap - (box.top + (COMPOSITE_ART.top * box.width) / COMPOSITE_ART.width)
+  );
+};
 
 const BUBBLE =
   "M28 22 C55 12 77 0 106 5 C129 9 153 9 178 13 C210 14 219 34 216 58 C214 82 186 102 128 106 C127 116 122 128 114 139 C108 128 102 116 100 108 C80 110 50 106 29 103 C10 100 5 79 4 62 C2 47 11 35 28 22 Z";
@@ -302,7 +388,7 @@ export function PaperButton({
 const styles = StyleSheet.create({
   rule: { position: "absolute", left: 0, right: 0, height: 1, backgroundColor: color.rule },
   layer: { position: "absolute", left: 0, top: 0 },
-  babaRug: { position: "absolute", bottom: 0 },
+  babaRug: { position: "absolute" },
   bubble: {
     alignSelf: "stretch",
     paddingTop: 16,

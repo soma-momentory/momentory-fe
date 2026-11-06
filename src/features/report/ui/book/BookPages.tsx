@@ -28,7 +28,7 @@ import {
   type RestRecordContent,
 } from "@/features/rest/model/restRecord";
 
-import { BabaOnRug, Bubble, CutPaper, hand, PebbleSticker, Ruled } from "./parts";
+import { BabaOnRug, babaOnRugGap, Bubble, CutPaper, hand, PebbleSticker, Ruled } from "./parts";
 
 const { color } = reportBook;
 const ink = homeV2.color.ink;
@@ -120,6 +120,8 @@ export function BookPageBody({
 }
 
 const BABA_ROOM = 112;
+/** 마지막 인사 바바의 폭 */
+const CLOSING_BABA = 130;
 const FADE_HEIGHT = 28;
 
 /**
@@ -684,8 +686,13 @@ function Closing({
       >
         {keepWords(`${first}\n${second}`)}
       </Bubble>
-      <Animated.View style={[styles.closingBaba, { transform: [{ translateY: hop }] }]}>
-        <BabaOnRug width={130} />
+      <Animated.View
+        style={[
+          styles.closingBaba,
+          { marginTop: babaOnRugGap(CLOSING_BABA), transform: [{ translateY: hop }] },
+        ]}
+      >
+        <BabaOnRug width={CLOSING_BABA} />
       </Animated.View>
       {book.helpResources.length > 0 ? <HelpLines lines={book.helpResources} /> : null}
     </View>
@@ -787,5 +794,5 @@ const styles = StyleSheet.create({
     borderTopColor: color.rule,
   },
   closing: { flex: 1, justifyContent: "center", paddingHorizontal: 24 },
-  closingBaba: { alignSelf: "center", marginTop: -18 },
+  closingBaba: { alignSelf: "center" },
 });

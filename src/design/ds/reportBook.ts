@@ -57,5 +57,12 @@ export const reportBook = {
   size: {
     rings: { pitch: 28, width: 34, out: 15 },
     tab: { width: 15, onWidth: 21, height: 32, pitch: 42, top: 30 },
+    /**
+     * 바바 아래 러그 — 홈 히어로와 같은 결(2026-11-06). 폭은 그림이 실제로 차지하는 몸 폭의 `perBody` 배이고,
+     * 발끝은 러그 위 가장자리에서 러그 높이의 `feet` 만큼 내려온 자리에 얹힌다.
+     */
+    rug: { perBody: 1.8, feet: 0.9 },
+    /** 말풍선 아래 끝에서 바바 귀 끝까지 — 꼬리가 머리에 닿지 않게 띄운다(2026-11-06) */
+    bubbleGap: 8,
   },
 } as const;
