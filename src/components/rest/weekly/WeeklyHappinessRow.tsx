@@ -14,6 +14,8 @@ const ENTRY_MIN_HEIGHT = size.entry.lineHeight + size.entryPaddingY * 2;
  * 예시 글은 **적으려고 누른 칸에만** 뜬다 — 일곱 칸에 깔아 두면 이미 채워진 기록장처럼 보였다.
  *
  * 누른 칸을 어디까지 올릴지는 화면이 정한다 — 줄은 자기 자리(`onLayout`)와 눌렸다는 것(`onFocus`)만 알린다.
+ *
+ * `editable=false` 는 지난 주 · 받아 오는 중인 장이다 — 글만 보이고 눌러도 적기 시작하지 않는다(2026-11-06).
  */
 export function WeeklyHappinessRow({
   label,
@@ -22,6 +24,7 @@ export function WeeklyHappinessRow({
   onChangeText,
   onFocus,
   onLayout,
+  editable = true,
 }: {
   label: string;
   placeholder: string;
@@ -29,6 +32,7 @@ export function WeeklyHappinessRow({
   onChangeText: (text: string) => void;
   onFocus?: () => void;
   onLayout?: (event: LayoutChangeEvent) => void;
+  editable?: boolean;
 }) {
   const input = useRef<TextInput>(null);
   const [focused, setFocused] = useState(false);
@@ -37,7 +41,8 @@ export function WeeklyHappinessRow({
   return (
     <Pressable
       accessible={false}
-      onPress={() => input.current?.focus()}
+      onPress={editable ? () => input.current?.focus() : undefined}
+      disabled={!editable}
       onLayout={onLayout}
       testID={`weekly-happiness-row-${label}`}
       style={[styles.row, focused && styles.rowFocused]}
@@ -52,6 +57,7 @@ export function WeeklyHappinessRow({
         ref={input}
         accessibilityLabel={label}
         value={value}
+        editable={editable}
         onChangeText={onChangeText}
         placeholder={focused ? placeholder : undefined}
         placeholderTextColor={color.placeholder}
