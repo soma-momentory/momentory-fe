@@ -128,15 +128,19 @@ fix: 아웃박스 재생에 멱등 키를 더한다
 **이 표가 정본이다. `.github/workflows/ci.yml` 과 어긋나면 이 표와 ci.yml 을 같이 고친다.**
 전 단계가 **상류 폴더 없이** 돈다.
 
-| 순서 | 명령                         | 무엇을 잡나                                      |
-| ---- | ---------------------------- | ------------------------------------------------ |
-| 1    | `npm ci`                     | 앱·Expo Web Lab lockfile 과 동일한 트리          |
-| 2    | `npm run typecheck`          | 기존 앱 타입 오류                                |
-| 3    | `npm run typecheck:expo-lab` | Expo Web Lab 타입 오류                           |
-| 4    | `npm run lint`               | 규칙 위반 — **경고도 실패** (`--max-warnings 0`) |
-| 5    | `npm run format:check`       | Prettier 서식                                    |
-| 6    | `npm run test -- --ci`       | 화면 규칙·store·라우팅 테스트                    |
-| 7    | 시크릿 추적 검사             | `.env`·키 파일이 이력에 들어갔는지               |
+| 순서 | 명령                         | 무엇을 잡나                                                                        |
+| ---- | ---------------------------- | ---------------------------------------------------------------------------------- |
+| 1    | `npm ci`                     | 앱·Expo Web Lab lockfile 과 동일한 트리                                            |
+| 2    | `npm run typecheck`          | 기존 앱 타입 오류                                                                  |
+| 3    | `npm run typecheck:expo-lab` | Expo Web Lab 타입 오류                                                             |
+| 4    | `npm run lint`               | 규칙 위반 — **경고도 실패** (`--max-warnings 0`)                                   |
+| 5    | `npm run format:check`       | Prettier 서식                                                                      |
+| 6    | `npm run test -- --ci`       | 화면 규칙·store·라우팅 테스트                                                      |
+| 7    | 시크릿 추적 검사             | `.env`·키 파일이 이력에 들어갔는지                                                 |
+| 별도 | `npm run test:visual`        | Expo Lab 셸 Playwright(`expo-lab/e2e/`) — CI 의 `design-studio-visual` 잡(Windows) |
+
+1~7 은 `check` 잡(ubuntu)이고, `test:visual` 은 같은 워크플로의 다른 잡이라 따로 돈다
+(실패하면 `test-results/` 를 아티팩트로 올린다).
 
 로컬에서 PR 전에 같은 것을 돌린다:
 
@@ -151,14 +155,16 @@ AI 에이전트(Claude Code · Codex)가 이 문서의 규칙을 **산문이 아
 특히 사람이 지켜보지 않는 Lab 「AI에게 맡기기」 실행에서. 설명·판정 표·실측은
 [`.claude/hooks/README.md`](../.claude/hooks/README.md) 「저장소 규칙 훅」이 정본이고, 여기는 요약이다.
 
-| 언제                  | 무엇                                                                                                            |
-| --------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 편집 **전**           | 거부 — `docs/spec/**` · `docs/api/openapi.json` · `ios/` `android/` · `.env*`(견본 제외) · `harness/runs/**`    |
-| 명령 **전**           | 거부 — `gh pr merge` · main 으로 가는 push · main 에서 `reset --hard` · `git clean -x` · node_modules 재귀 삭제 |
-| 편집 **뒤**           | 그 파일만 prettier · `src/design/ds/**` 면 대비 테스트 · 새 `app/**` 화면이면 Lab 라우트 목록 확인              |
-| 권한 묻기·대기 (선택) | Windows 토스트 — `MOMENTORY_NOTIFY=1` 일 때만                                                                   |
+| 언제                   | 무엇                                                                                                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 편집 **전**            | 거부 — `docs/spec/**` · `docs/api/openapi.json` · `ios/` `android/` · `.env*`(견본 제외) · `harness/runs/**`                             |
+| 명령 **전**            | 거부 — `gh pr merge` · main 으로 가는 push · main 에서 `reset --hard` · `git clean -x` · node_modules 재귀 삭제                          |
+| 편집 **뒤**            | 그 파일만 prettier · `src/design/ds/**` 면 대비 테스트 · 새 `app/**` 화면이면 Lab 라우트 목록 확인                                       |
+| 권한 묻기·대기 (선택)  | Windows 토스트 — `MOMENTORY_NOTIFY=1` 일 때만                                                                                            |
+| 턴 끝 (Claude Code 만) | Codex 자동 리뷰 게이트 — 바뀐 것이 있으면 typecheck · lint · test 뒤 Codex read-only 리뷰 · Codex 가 없으면 건너뛴다(`codex-review.mjs`) |
 
 - 설정: Claude Code `.claude/settings.json` · Codex `.codex/hooks.json`(같은 스크립트 · 판정은 `.claude/hooks/lib/rules.mjs` 하나).
+  리뷰 게이트(`Stop`)는 Claude Code 쪽에만 걸려 있다 — 설명은 같은 README 머리 「Codex 자동 리뷰 게이트」.
 - **끄기는 사람만** — `MOMENTORY_GUARD=0` · `MOMENTORY_POST_EDIT=0` 으로 에이전트를 다시 띄운다.
 - Lab 러너는 `MOMENTORY_LAB_RUN=1` 을 넘기고, Codex 는 `--dangerously-bypass-hook-trust` 로 돌린다
   (검토 안 된 프로젝트 훅은 `codex exec` 가 조용히 건너뛴다).
@@ -264,6 +270,10 @@ npm run format         # prettier 쓰기 (format:check — 검사만, CI 용)
 
 # 가끔 쓰는 것
 npm run sync:api       # 서버 OpenAPI 계약 재반입 (docs/api/README.md)
+npm run lab:web        # Expo Lab (8085) — expo-lab/README.md
+npm run lab:routes     # app/ 이 바뀌면 Lab 라우트 목록 다시 쓰기 (jest 가 어긋남을 잡는다)
+npm run lab:verify     # 바뀐 화면의 Lab 전·후 비교
+npm run test:visual    # Lab 셸 Playwright (CI 의 design-studio-visual 잡)
 scripts/screen-sweep.sh  # 화면 크기·글꼴 배율 다섯 벌 훑기 (판정하지 않는다 — 눈으로 대조)
 ```
 
@@ -273,6 +283,7 @@ scripts/screen-sweep.sh  # 화면 크기·글꼴 배율 다섯 벌 훑기 (판�
 
 | 날짜       | 변경                                                                                                                                                                                                                                                 |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-06 | **코드 대조.** 품질 게이트 표에 CI 의 `test:visual`(Lab Playwright) 잡을, 「AI 훅」에 Claude Code `Stop` 리뷰 게이트를, 「명령」에 Lab 명령을 더했다                                                                                                 |
 | 2026-11-02 | **AI 훅 신설.** 생성물·반입물 편집 · main push · PR 머지 · node_modules 연결 삭제를 에이전트 훅(`.claude/settings.json` · `.codex/hooks.json`)이 실행 전에 거부하고, 편집 뒤 서식·대비·Lab 라우트를 확인한다(「AI 훅」)                              |
 | 2026-09-12 | **문서 일괄 대조.** 토큰 정본을 `theme.ts`/`tokens.mvp.ts` 에서 `src/design/ds/` 로 고치고, 생성물 표에 `docs/api/openapi.json` 을 추가, 삭제된 상류 명령(`sync:theme`·`check:theme`) 흔적 제거                                                      |
 | 2026-08-07 | **자급형 전환.** 커밋 type 접두 필수화(과거 이력은 불변), 품질 게이트 표 신설(CI 서술 정본화), 상류 참조를 `docs/spec/` 스냅샷으로 교체, 반입 체크리스트를 SNAPSHOT.md 로 이관. "부모 저장소 관행을 따른다"는 상속 선언을 이 문서 자체 규정으로 대체 |

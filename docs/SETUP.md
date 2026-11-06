@@ -2,7 +2,7 @@
 
 처음 오는 사람이 **앱을 화면에 띄우기까지**. 30분쯤 걸리고, 대부분은 네이티브 빌드 대기 시간이다.
 
-> 막히면 아래 「자주 막히는 곳」부터 본다. 여기 적힌 6개는 전부 실제로 겪은 것이다.
+> 막히면 아래 「자주 막히는 곳」부터 본다. 여기 적힌 여덟 개는 전부 실제로 겪은 것이다.
 
 ---
 
@@ -11,7 +11,7 @@
 **앱 스토어의 Expo Go 앱으로는 이 프로젝트를 열 수 없다.** 두 가지 이유가 겹친다.
 
 1. Expo Go 는 보통 최신 SDK 하나만 담는다. 기기의 Expo Go 가 낡으면 `Project is incompatible with this version of Expo Go` 가 뜬다.
-2. 더 근본적으로, **M2 부터 카카오 로그인·캘린더·알림·생체인증이 들어온다.** 이건 Expo Go 에 없는 네이티브 모듈이라 어차피 못 돈다.
+2. 더 근본적으로, **카카오·구글 로그인 · 캘린더 · 알림 · 위치(날씨) · 음성 입력 같은 네이티브 모듈이 들어 있다**(목록은 `package.json` · `app.config.ts` 의 `plugins`). Expo Go 에 없는 것들이라 어차피 못 돈다.
 
 그래서 처음부터 **dev client**(우리 네이티브 모듈이 들어간 개발용 앱)를 빌드해서 쓴다.
 한 번 빌드해두면 JS 변경은 그대로 리로드되므로, 네이티브 의존성을 추가할 때만 다시 빌드한다.
@@ -114,11 +114,12 @@ npm run ios
 
 ```bash
 npm start              # Metro 만 띄운다 (이미 dev client 가 설치돼 있을 때)
-npm run typecheck
+npm run typecheck      # Lab 까지 보려면 npm run typecheck:expo-lab
 npm run lint           # 경고도 실패다 (--max-warnings 0)
 npm run format:check   # Prettier 검사 (고치려면 npm run format)
 npm run test           # 감시 모드는 npm run test:watch
 npm run sync:api       # 서버 API 계약 재반입 — docs/api/README.md (서버가 떠 있을 때만)
+npm run lab:web        # Expo Lab — 웹에서 실제 앱 전 화면을 가짜 서버로 (8085 · expo-lab/README.md)
 ```
 
 ⚠ `check:theme` 은 **더 이상 없다**(3세대 이관 때 삭제 · `CONTRIBUTING.md` 「생성물」).
@@ -188,6 +189,9 @@ npm start   # 잠깐 띄웠다 끄면 .expo/types 가 갱신된다
 **받지 못해도 개발은 막히지 않는다** — `docs/api/openapi.json` 이 커밋돼 있다.
 
 ### 글자가 Pretendard 가 아닌 것 같다
+
+> 먼저 — **앱 서체는 대부분 교보손글씨다**(`KyoboHandwriting2025lyb.ttf`). Pretendard 는 로그인 화면 등
+> `ds/typography.ts` 의 `gothic` 을 쓰는 자리뿐이다(`assets/fonts/README.md`). 아래는 Pretendard 자리인데 굵기가 안 바뀔 때다.
 
 `fontWeight` 로 굵기를 지정했을 가능성이 높다. **Android 는 `fontWeight` 로 OTF 굵기를 안 바꾼다.**
 
@@ -485,6 +489,12 @@ MOMENTORY_BUILD_ENV=production npx expo prebuild --platform ios --clean
 ```
 
 개발 빌드는 `.env`의 `MOMENTORY_BUILD_ENV=development`를 그대로 사용한다.
+
+> ⚠ **두 서버가 다른 BE 를 돌린다** (2026-11-06 대조). 운영 `api.momentory.co.kr` = BE `main`
+> (`ca3bc87` · 2026-10-14), 개발 `dev.momentory.co.kr` = BE `dev`(`50cd4c9`). 팀 `.env` 는 개발 주소다.
+> FE `main` 은 **dev 에만 있는 API**(편지 · 홈 날씨 · 온보딩 v2 · 소원 · 명상 · 주간 리포트 v2 등 · BE #76~#90)에
+> 기대므로, 지금 FE 로 출시 빌드를 만들면 그 화면들이 운영 서버에서 비거나 실패한다.
+> **다음 스토어 출시 전에 BE dev → main 릴리스가 먼저다.**
 
 ACM 인증서(Amazon RSA 2048 M04 · 2027-03-09 만료). **IP 가 아니라 도메인**이라
 iOS ATS 문제도 함께 사라졌다 — 예고대로 **`.env` 한 줄**로 끝났다

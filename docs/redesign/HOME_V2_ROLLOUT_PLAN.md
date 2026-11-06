@@ -1,6 +1,13 @@
 # 홈 v2 운영 적용 계획 — 날씨 · 알림함 FE/BE 계약과 단계별 구현
 
-> 상태: **P0~P2 main 반영 · P3 운영 홈 전환은 `feat/home-v2-p3`에서 구현** (2026-10-15). P4~P6 은 남았다.
+> 상태 (**2026-11-06 대조** · FE `4ac1a52` · BE dev `50cd4c9`): **P0~P3 main 반영**(P3 #183 · 2026-10-15 — 운영 홈 = `HomeV2View`).
+> **P4 날씨는 FE 가 붙었고**(`useHomeWeather` → `POST /api/v1/weather/current`) BE `#77` 은 **dev 에만** 있다 — 운영(BE main `ca3bc87`) 배포 대기.
+> **P5 는 대체됐다**(2026-10-27 — 바바의 편지가 FE 알림함 자리를 가져갔다 · 서버 알림함 `#76` 정리는 팀원 확인 대기).
+> **P6 은 남았다** — 옛 `HomeView` · `GrassButton` · `HomeCapybara` · `WeekEmotionStrip` 은 서로와 테스트만 부른다.
+> 그 뒤 홈은 2026-11-03 에 **다이어리 한 페이지**로 다시 짜였다(`PRODUCT.md` 차이 55) · Gaegu 는 2026-11-01 에 지웠다 —
+> 아래 §2 배치 · §2.6 서체 서술은 계획 당시 기록이다. 상태 표는 [`docs/TASKS.md`](../TASKS.md) 「홈 v2 운영 적용」.
+>
+> (이전 상태 줄: P0~~P2 main 반영 · P3 운영 홈 전환은 `feat/home-v2-p3`에서 구현 (2026-10-15). P4~~P6 은 남았다.)
 > P0(정본 문서) · P1(토큰 · Gaegu · 바바) · P2(공유 뷰 · Expo Lab)는 Task `tasks/001-home-v2-p1-p2-shared-view.md`에서 진행했다. 계획 작성은 Task `tasks/001-home-v2-production-rollout-plan.md`를 따른다.
 > 이 문서를 처음 쓸 때는 코드 · 정본을 바꾸지 않았고, 정본 문서는 §8 목록을 따라 구현 단계(P0~~P6)에서 함께 고친다. BE(`momentory-be`)는 이 저장소에 없으므로 §4 · §5 의 서버
 > 계약은 **제안**이고, **확정은 BE 배포 후 `npm run sync:api` 로 반입된 `docs/api/openapi.json` 이

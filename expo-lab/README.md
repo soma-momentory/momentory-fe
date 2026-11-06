@@ -148,7 +148,7 @@ npm run lab:routes                                   # src/shell/routes.generate
 node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest 가 부른다)
 ```
 
-`routes.generated.ts`(자동 · 57개) + `routeMeta.ts`(손 · 제목 · 묶음 · 순서 · 주의 · 라우트가 아닌 시트 줄 하나) = `routes.ts`. 새 라우트가 `app/` 에 생기면 `src/shell/__tests__/routes.test.ts` 가 「제목 없음」으로 깨진다 — `routeMeta.ts` 에 한 줄을 더한다.
+`routes.generated.ts`(자동 · 61개 · 2026-11-06) + `routeMeta.ts`(손 · 제목 · 묶음 · 순서 · 주의 · 라우트가 아닌 시트 줄 하나) = `routes.ts`. 새 라우트가 `app/` 에 생기면 `src/shell/__tests__/routes.test.ts` 가 「제목 없음」으로 깨진다 — `routeMeta.ts` 에 한 줄을 더한다.
 
 **프리셋** — 바로 열었을 때 의미 있게 보이도록:
 
@@ -175,7 +175,7 @@ node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest
 
 흐름으로만 닿거나 가드 · 사용자 입력에 기대는 라우트는 프레임 위에 한 줄로 알린다(`hint`): `/retro/draft`(회고를 끝까지 — 가짜 서버 대본: 자유 입력 → 사건 고르기 → 감정 → 바람 → 완료) · `/retro/confirm`·`/retro/write`(오늘 일기가 있으면 `/retro/talk` 로 — 하루 넘기기로 새 날에서) · `/retro/done`(바람카드는 흐름에서만) · `/reading`(약 5초짜리 화면 — 끝나면 스스로 `/name` 으로) · `/about`·`/notify`(이름 단계에서 쓴 이름이 문장에 들어간다) · 소개의 감춘 두 장(`schedule` · `letter`). 앱은 진입 가드 때문에 「/ → 목적지」처럼 주소를 잠깐 거치므로 셸은 0.4초 동안 그대로인 **마지막 주소**를 프레임의 현재 화면으로 본다.
 
-**차갑게 열기 점검(2026-11-02)** — 57개 라우트를 모두 바로 열어 본 것과 앱에서 그 화면을 여는 앞 화면(`router.push` 를 부르는 화면)부터 차례로 옮겨 온 것을 글자 · 입력값으로 견줬다. 달랐던 열 개에 `openVia` 를 새로 달았고(같은 칸을 쓰는 성별 수정도 함께 · 원래 있던 셋은 그대로 맞았다), 흐름 · 입력에 기대는 넷은 `hint` 로 알린다. 나머지는 같았다. 새 라우트를 더하면 같은 방식으로 견주고, 앞 화면이 받아 두는 데이터를 쓰면 `openVia` 를 단다.
+**차갑게 열기 점검(2026-11-02)** — 그때 있던 57개 라우트를 모두 바로 열어 본 것과 앱에서 그 화면을 여는 앞 화면(`router.push` 를 부르는 화면)부터 차례로 옮겨 온 것을 글자 · 입력값으로 견줬다. 달랐던 열 개에 `openVia` 를 새로 달았고(같은 칸을 쓰는 성별 수정도 함께 · 원래 있던 셋은 그대로 맞았다), 흐름 · 입력에 기대는 넷은 `hint` 로 알린다. 나머지는 같았다. 새 라우트를 더하면 같은 방식으로 견주고, 앞 화면이 받아 두는 데이터를 쓰면 `openVia` 를 단다.
 
 ## 기기 외형 — 실제 기기처럼
 
@@ -199,7 +199,7 @@ node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest
 - **iOS**: 공식 외형 자산이 없어 SVG/CSS 로 그린다 — 정확한 화면 크기 · 화면 모서리 · 섬/노치 · 옆 버튼 · 홈 인디케이터(134×5 · 아래 8) · SE 는 홈 버튼과 각진 화면.
 - 상태바(시각은 프레임의 가상 시각 · 12시간제 · 앞자리 0 없음) · 가림 · 하단 막대는 iframe **위에** 그리고 누르기는 통과한다. 글자색은 프레임의 `lab:statusBar` 를 따른다(기본 어두운 글자).
 
-- **탭 종이 배경**(2026-11-02 #215 · #217): 홈 · 보관함 · 리포트 · 마이는 아이보리, 쉼터는 올리브 — 앱이 `../src/design/tabBackgrounds.ts` 매핑과 `../assets/backgrounds/` 두 장으로 그린다. 프레임은 실제 앱이라 그대로 보인다. 옛 Lab 의 「배경 비교」 화면(`#backgrounds` · 옛 Mock 미리보기 위에 만든 것)은 이 셸로 옮기면서 뺐다 — 배경은 이미 확정됐고, 바꿀 일이 생기면 「AI에게 맡기기」에 그림과 함께 맡긴다(`src/design/tabBackgrounds.ts` · HANDOFF.md 절차 3).
+- **탭 종이 배경**(2026-11-02 #215 · #217): 그때는 홈 · 보관함 · 리포트 · 마이가 아이보리, 쉼터가 올리브였고 지금(2026-11-06)은 다섯 탭 모두 아이보리다 — 앱이 `../src/design/tabBackgrounds.ts` 매핑과 `../assets/backgrounds/` 두 장으로 그린다. 프레임은 실제 앱이라 그대로 보인다. 옛 Lab 의 「배경 비교」 화면(`#backgrounds` · 옛 Mock 미리보기 위에 만든 것)은 이 셸로 옮기면서 뺐다 — 배경은 이미 확정됐고, 바꿀 일이 생기면 「AI에게 맡기기」에 그림과 함께 맡긴다(`src/design/tabBackgrounds.ts` · HANDOFF.md 절차 3).
 
 ## 검증
 

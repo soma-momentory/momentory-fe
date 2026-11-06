@@ -1,6 +1,6 @@
 # Momentory Codex 검수 스킬
 
-저장소 루트에서 Codex를 열면 `.agents/skills/`의 전용 스킬 세 개가 요청에 따라 선택된다. `AGENTS.md`는 이 세 검수 작업의 경로만 안내한다. 디자인·제품 결정은 `docs/DESIGN.md`, `src/design/ds/`, 화면 스펙과 실제 구현을 확인한다. 감사 요청은 읽기 전용이다.
+저장소 루트에서 Codex를 열면 `.agents/skills/`의 스킬이 요청에 따라 선택된다 — 지금은 **16개**(모멘토리 전용 9 · 외부 7, 아래 두 표). 처음 설치한 것은 전용 셋이었고 아래 「설치 목록」은 그때의 기록이다. `AGENTS.md`는 주 스킬을 고르는 경로를 안내한다. 디자인·제품 결정은 `docs/DESIGN.md`, `src/design/ds/`, 화면 스펙과 실제 구현을 확인한다. 감사 요청은 읽기 전용이다.
 
 ## 설치 목록
 
@@ -45,6 +45,8 @@
 | `방금 수정한 화면 QA 해줘` / `프론트 성능 점검해줘`                | `momentory-screen-qa`    |
 
 자동 선택이 애매하면 `$momentory-design-audit`처럼 이름을 지정한다. 외부 자료를 직접 보고 싶으면 `$expo-design-system`, `$ux-writing`, `$vercel-react-native-skills`로 부른다. 스킬 목록이 표시되지 않으면 저장소 루트에서 새 Codex 세션을 열거나 Codex를 다시 시작한다.
+
+> (2026-11-06 대조: 지금 Lab 은 **포트 8085 고정**이고 `#studio` 주소 · 화면별 Mock 은 2026-11-02 에 빠졌다 — 실제 앱 라우트를 `http://localhost:8085/#/screens?route=/home` 처럼 연다. 현재 사용법은 [`expo-lab/README.md`](../expo-lab/README.md). 아래 이 절과 2026-10-22 기록의 8081 · `#studio/…` · Mock 서술은 그때의 기록이다.)
 
 Expo Lab은 `npm run lab:web`으로 띄우고 기본 8081에서 `http://localhost:8081/#studio/home-main`을 연다. 화면 비교는 Lab의 Mock과 운영 앱 라우트·데이터 차이를 구분해 보고한다. QA 명령은 범위에 따라 `npm run typecheck`, `npm run typecheck:expo-lab`, `npm run lint`, 관련 Jest, `EXPO_LAB_PORT=8081 npx playwright test ...`를 사용한다. Windows PowerShell에서는 Playwright 실행 전 `$env:EXPO_LAB_PORT='8081'`로 지정한다.
 
@@ -190,6 +192,8 @@ Maestro 준비 순서: Android 에뮬레이터와 테스트용 네이티브 빌�
 합성 문장 `오늘도 꼭 일기를 써야 해요.`를 같은 요청으로 두 번 재작성했다. 자연어 자동 선택은 **`오늘도 일기를 써볼까요?`**(입력 45,336·출력 278토큰), `$momentory-ux-writing` 명시 호출은 **`오늘도 일기를 쓰고 싶다면, 편하게 남겨보세요.`**(입력 22,958·출력 341토큰)로 답했다. 둘 다 `일기`를 보존하고 강요를 줄였다. 자동 실행은 스킬 파일만 읽었고 프로젝트 전체 검색·디자인 문서 로딩은 없었다. 명시 실행은 저장소 파일을 열지 않았다. 한 쌍의 실행 비용 차이는 세션·캐시 상태도 포함하므로 일반적 절감률로 해석하지 않는다. 단문 요청은 현재 `AGENTS.md` 규칙대로 제공 문장만 다루며, 실제 화면 문구 감사 때만 관련 파일을 읽는다.
 
 ### 서체 통일 계획 (이번 작업에서는 코드 변경 없음)
+
+> (2026-11-06 대조: 2026-11-01 사용자 요청으로 홈 v2 도 교보손글씨로 통일했고 Gaegu 파일은 지웠다 — `src/design/ds/homeV2.ts` 머리말. 아래 Gaegu 서술은 그 전 기록이다.)
 
 현재 `src/design/ds/typography.ts`의 일반 텍스트 단은 모두 **교보손글씨**이고 로그인 문구만 Pretendard로 덮는다. 홈 v2는 `src/design/ds/homeV2.ts`의 Gaegu를 사용한다. 교보손글씨 명시 단은 `title1Hand`·`title3Hand`·`tapeHand`·`label1Hand`(진입 워드마크, 쉼터·보관함·마이 제목, 메모지·날짜), `body1ReadingHand`·`body1ReadingHandLg`(일기 본문·상세, 쉼터 느낀 점, 리포트 감정 요약)이며, 일반 `body*`·`caption*`·버튼 라벨도 현재는 교보손글씨로 해석된다. 홈 v2 밖의 쉼터·보관함·마이 일부 장식 문구는 이미 Gaegu를 직접 쓴다.
 

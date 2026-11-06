@@ -5,6 +5,12 @@
 > 그 키가 들어간 **새 네이티브 빌드**에서 실기기 이벤트 도착 확인.
 > ⚠ **Play 데이터 보안 양식도 함께 고쳐야 한다** — 「앱 상호작용」과 「기기 또는 기타 ID」가
 > 수집으로 바뀐다([`PLAY-DATA-SAFETY.md`](PLAY-DATA-SAFETY.md) 「분석 도구」).
+>
+> 🔎 **2026-11-06 — 이 사전을 허용 목록(`src/features/analytics/events.ts`)과 실제 `track(` 호출에 다시 맞췄다.**
+> 바뀐 것: `report_page_viewed` 추가 · `wish_card_viewed` 의 source 는 `cards` 하나(`trail` 은 허용 목록에 없다) ·
+> 화면명 `retro_write` 추가 · `wish_card_trail` 제거 · `reminder_opened` 에 `report` · 쉼 콘텐츠에 `weekly_happiness`.
+> 허용 목록에만 있고 **보내는 곳이 없는 이벤트**는 둘이다 — `onboarding_step_completed` · `onboarding_options_selected`(둘 다 폐기).
+> ⚠ 실제 키가 운영 빌드(1.3.0)에 들어갔는지는 이 저장소에서 확인할 수 없다(`.env` 는 커밋하지 않는다).
 
 2026-09-05 사용자 승인: **FE만 구현, 하나의 PR**. 기존 API와 화면 동작은 유지한다.
 페이지 체류 시간과 알림 설정·예약 계측은 제외한다. 캘린더 접근 권한은 알림 권한과 별개다.
@@ -33,7 +39,10 @@ FE는 main 기준이다. MOMENTORY_BUILD_ENV=production은 기존 네이티브 �
 
 모든 사용자 식별은 SecureStore 세션의 **서비스 내부 사용자 ID 문자열**이다.
 이메일·SNS ID를 사용하지 않는다. 아래 속성 외에는 런타임에서 버린다.
+⚠ **아래 속성은 전부 필수다** — 하나라도 빠지거나 허용 값 밖이면 속성만 버리는 것이 아니라 **이벤트 전체를
+버린다**(`sanitizeEvent` 가 `null`). 새 속성을 더할 때 호출부가 늘 채우는지 함께 본다.
 SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 버전, OS/플랫폼 등이다.
+광고 ID · App Set ID · IDFV · 통신사 · 국가 · 제조사 · 기기 모델 · 언어 · IP 주소는 끄고, 이벤트마다 `ip: "0.0.0.0"` 을 싣는다(`amplitude.ts`).
 자동 화면/클릭/네트워크 수집과 세션 리플레이는 사용하지 않는다.
 
 | 이벤트                        | 발생 지점/의미                                                   | 이벤트 속성                                                                                               |
@@ -70,7 +79,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | voice_input_started           | 회고 입력창의 마이크로 음성 인식이 시작됨                        | retrospect_id                                                                                             |
 | voice_permission_result       | 마이크 권한 팝업의 응답                                          | granted                                                                                                   |
 | voice_input_failed            | 음성 인식 실패 (아래)                                            | code: no_speech/network/unavailable/other                                                                 |
-| reminder_opened               | 예약한 알림을 눌러 앱을 엶                                       | reminder: retro/daily/weekly/letter/letter_action                                                         |
+| reminder_opened               | 예약한 알림을 눌러 앱을 엶                                       | reminder: retro/daily/weekly/letter/letter_action/report                                                  |
 | retrospect_completed          | done=true이면서 phase=complete인 정상 응답                       | retrospect_id                                                                                             |
 | retrospect_request_failed     | 시작/턴 API 실패 또는 응답 검증 실패                             | operation: start/turn, 고정 code                                                                          |
 | wish_card_created             | 정상 완료 응답에 실제 wishCardId가 있음                          | retrospect_id, wish_card_id                                                                               |
@@ -85,7 +94,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | diary_edit_started            | 회고 완료 화면에서 직접 고치기 시작                              | retrospect_id                                                                                             |
 | diary_edit_finished           | 직접 고치기를 마치고 읽기로 돌아감                               | retrospect_id, duration_ms, chars_delta                                                                   |
 | wish_card_open_clicked        | 쉼터의 바람카드 보기 클릭                                        | source: rest                                                                                              |
-| wish_card_viewed              | 선택 카드 데이터가 실제 표시됨                                   | wish_card_id, source: cards/trail                                                                         |
+| wish_card_viewed              | 선택 카드 데이터가 실제 표시됨                                   | wish_card_id, source: cards (trail 은 2026-11-06 허용 목록에 없다)                                        |
 | wish_card_completion_changed  | 해봤어요/되돌리기 API 성공                                       | wish_card_id, completed                                                                                   |
 | wish_card_deleted             | 바람카드 삭제 성공                                               | wish_card_id                                                                                              |
 | sense_pond_step_completed     | 감각연못 한 단계의 목표를 채움                                   | step, duration_ms 외 2개 (아래)                                                                           |
@@ -124,6 +133,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | letter_notification_scheduled | 편지 알림을 새로 예약                                            | kind: morning/action/unread_night                                                                         |
 | report_week_selected          | 다른 주 선택                                                     | week_start                                                                                                |
 | weekly_report_viewed          | 선택 주와 일치하는 리포트가 ready로 표시됨                       | week_start                                                                                                |
+| report_page_viewed            | 주간 리포트 공책의 한 장이 펼쳐짐(2026-11-04)                    | week_start, page: cover/review/words/feelEvents/okMoments/restMoods/done/closing                          |
 | logout_clicked                | 마이 로그아웃 클릭                                               | 없음                                                                                                      |
 | logout_completed              | 기기의 로그인 상태를 비움                                        | 없음                                                                                                      |
 | withdrawal_opened             | 탈퇴 확인 시트 열기                                              | 없음                                                                                                      |
@@ -133,9 +143,13 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | withdrawal_failed             | 서버 계정 삭제 실패 응답                                         | 없음                                                                                                      |
 
 화면명은 login, home, archive, rest, report, my, onboarding, schedule_new,
-schedule_detail, retro_talk, retro_draft, retro_confirm, retro_done, diary_detail,
-wish_cards, wish_card_trail, sense_pond, body_release, worry_box, worry_list, treasure_box, meditation, wish_pond, wish_mine, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다.
-온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다.
+schedule_detail, retro_talk, retro_draft, retro_write(직접 일기 쓰기 · 2026-11-01), retro_confirm, retro_done, diary_detail,
+wish_cards, sense_pond, body_release, worry_box, worry_list, treasure_box, meditation, wish_pond, wish_mine, treasure_list, rest_records, profile 및 고정 프로필 편집 화면명이다
+(정본은 `events.ts` 의 `screen` · 라우트 대응은 `observation.ts`).
+⚠ 2026-11-06 기준 **화면명이 없어 screen_viewed · screen_left 가 오지 않는 라우트**: 편지 셋(`letter/index` · `letter/[date]` ·
+`letter/time`) · 주간 행복(`rest/weekly-happiness`) · 문의하기(`my/inquiry`). 편지 · 문의는 전용 이벤트(letter_opened · inquiry_submitted)로만 본다.
+온보딩 단계명은 welcome, nickname, age, gender, interests, rest, retroTime, calendar, done이다
+(2026-11-06 대조: **옛 판의 이름이다** — 지금 보내는 단계명은 아래 「2026-09-28 계측 보강」의 v2 목록이다).
 retroTime 단계에서는 진행 여부와 알림 권한 허용 여부(notify_permission_result)를 알 수 있다.
 설정 시각·예약 성공은 수집하지 않는다. 마이 M2 에서는 꺼진 알림을 켤 때 묻는 결과만 남는다.
 
@@ -185,6 +199,9 @@ step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단
 **쉼 콘텐츠 공통 계측**(2026-10-05 · `rest_content_*`)은 모든 쉼 콘텐츠가 같이 쓴다 — 얼마나 들어오고,
 얼마나 끝까지 가고, 못 끝내면 어디서 나가는지를 같은 이벤트로 보고 content(sense_pond, body_release,
 worry_box, treasure_box, meditation, wish)로 가른다. 시간은 모두 전면 시계로 잰다.
+⚠ 허용 목록의 content 에는 weekly_happiness(주간 행복 · 2026-11-06)도 있지만, 그 화면은 `useRestContentAnalytics` 를
+붙이지 않아 **`rest_content_*` 를 보내지 않는다** — 오는 것은 rest_guide_opened · rest_records_viewed 뿐이다. 쓴 글은 기기에도
+서버에도 남지 않고, 서버 이용 기록(`rest_records`)에 「했다 + 기분」만 남는다.
 
 - rest_content_opened 의 entry 는 쉼터에 **어떻게 들어왔나**다. 회고 완료 화면(retro_done)에서 쉼터
   묶음(쉼터 탭 · 바람카드 · 쉼 콘텐츠 · 그 안의 이용 기록과 지난 목록)으로 들어온 방문은 after_diary 이고(2026-10-12 부터 바람카드가 없는
@@ -269,7 +286,7 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 
 | 질문                             | 차트 구성                                                                             |
 | -------------------------------- | ------------------------------------------------------------------------------------- |
-| 온보딩 어디서 이탈하는가?        | step별 viewed → completed의 고유 사용자 퍼널. 같은 전환 기간을 적용                   |
+| 온보딩 어디서 이탈하는가?        | step별 viewed → 다음 step viewed 고유 사용자 퍼널. 같은 전환 기간을 적용              |
 | 첫 회고까지 도달하는가?          | onboarding_completed → 사용자의 최초 retrospect_started → retrospect_completed        |
 | AI 대화를 얼마나 쓰는가?         | retrospect_turn_succeeded의 고유 사용자/턴 수, retrospect_id별 분포                   |
 | 어느 질문에서 오래 걸리는가?     | retrospect_turn_timed의 think_ms 중앙값을 phase·turn_no별로                           |
@@ -294,6 +311,10 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 - 로그인 응답에는 신규 가입 여부가 없다. onboarding_required=true에는 미완료 재로그인도 포함되므로 signup_completed를 만들지 않았다. 발표에서는 “온보딩이 필요한 로그인/온보딩 완료”라고 표기한다.
 - 날짜 관련 이벤트는 **보관함 조회 날짜·월·기간 변경**이다. 현재 없는 일기 작성일 수정 기능은 추가하지 않았다.
 - 쉼 콘텐츠는 화면이 있는 여섯(감각연못 · 몸에 힘 빼기 · 걱정상자 · 오늘의 보물함 · 3분 명상 · 소원 연꽃)을 `rest_content_*` 로 계측한다.
+  일곱째인 주간 행복은 아직 붙이지 않았다(위 「쉼 콘텐츠 공통 계측」).
+- 2026-11-06 기준 **계측이 없는 새 기능**: 직접 일기 쓰기의 저장(retro_write 는 화면 조회뿐) · 홈 날씨 · 홈 배경음악.
+  빠뜨린 것인지 일부러인지는 정해진 기록이 없다.
+- 소원 연꽃의 소원 글은 **다른 사용자에게 보이는 글**이지만 계측에는 글자 수(chars)와 심사 결과만 간다. 작성자 · 소원 id 는 싣지 않는다.
   쉼 추천의 content 는 감정에서 나온 값이다(위 「쉼 추천」 — 감정 코드 · 이름 대신 실은 유일한 파생값). 새 쉼 콘텐츠는 화면을 만들 때 `useRestContentAnalytics` 를 붙이고 content · stage 값을 더한다.
 - 자동 수집/세션 리플레이를 쓰지 않는다. 이메일, 닉네임, SNS ID, 인증 토큰, 일기·일정·대화·바람 원문, 감정/욕구 코드·이름, 검색어, 알림 설정 시각은 속성 허용 목록에 없다. 알림은 권한 허용 여부와, 예약한 알림을 눌러 연 사실(종류만)만 보낸다.
 - 신원 복원 전 이벤트는 최대 50개, SDK 초기화 전 작업은 최대 200개만 메모리에 둔다. 넘치는 이벤트는 버리되 신원 변경은 보존한다. SDK 초기화가 실패하면 그 실행의 analytics만 비활성화한다.

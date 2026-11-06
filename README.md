@@ -1,8 +1,9 @@
 # momentory-fe
 
-모멘토리 앱의 React Native 프론트엔드 — 열고 → 여섯 가지 묻고 → 담고 →
-밤에 돌아보고 → 일기가 남고 → 다시 읽는다. 상류 MVP 는 40화면이었고, 회고 채팅 v2 와
-쉼터가 들어온 지금은 **라우트 31개**다(매핑: [`docs/PRODUCT.md`](docs/PRODUCT.md)).
+모멘토리 앱의 React Native 프론트엔드 — 열고 → 몇 가지 묻고 → 담고 →
+밤에 돌아보고 → 일기가 남고 → 다음 날 편지를 받고 → 다시 읽는다. 상류 MVP 는 40화면이었고,
+회고 채팅 v2 · 쉼터 · 온보딩 v2 · 바바의 편지가 들어온 지금은 **라우트 61개**다
+(매핑: [`docs/PRODUCT.md`](docs/PRODUCT.md)).
 
 **이 저장소 하나만 clone 하면 개발·실행·검증이 전부 된다.** 화면 스펙·값·상태 기계는
 [`docs/spec/`](docs/spec/SNAPSHOT.md)에 반입돼 있고, 토큰과 폰트는 커밋돼 있다.
@@ -23,7 +24,8 @@ npm start
 PR 을 열기 전 검증 — 전부 이 저장소만으로 돈다:
 
 ```bash
-npm run typecheck && npm run lint && npm run format:check && npm test
+npm run typecheck && npm run typecheck:expo-lab
+npm run lint && npm run format:check && npm test
 ```
 
 (`check:theme` 은 3세대 이관이 끝나면서 2026-08-20 에 사라졌다 — `PLAN.md` A-16.)
@@ -70,24 +72,31 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 - [`docs/ANALYTICS.md`](docs/ANALYTICS.md) — Amplitude 이벤트 사전 · 수집 경계
 - [`docs/DATA-SECURITY.md`](docs/DATA-SECURITY.md) · [`docs/PLAY-DATA-SAFETY.md`](docs/PLAY-DATA-SAFETY.md) — 기기 저장 정책 · Play 양식 답안
 - [`docs/archive/CODE-REVIEW.md`](docs/archive/CODE-REVIEW.md) — 2026-08-07 코드 리뷰 **기록**
-- [`assets/fonts/README.md`](assets/fonts/README.md) — Pretendard 출처·해시·라이선스
-- [`CLAUDE.md`](CLAUDE.md) — AI 도구용 길잡이. 규칙을 소유하지 않고 위 문서를 가리킨다
+- [`assets/fonts/README.md`](assets/fonts/README.md) — 교보손글씨 · Pretendard 출처·해시·라이선스
+- [`expo-lab/README.md`](expo-lab/README.md) — Expo Lab(`npm run lab:web` · 8085) — 웹에서 실제 앱 전 화면을 가짜 서버로 띄운다
+- [`CLAUDE.md`](CLAUDE.md) · [`AGENTS.md`](AGENTS.md) — AI 도구용 길잡이(Claude Code · Codex). 규칙을 소유하지 않고 위 문서를 가리킨다
 
-## 진행 — 화면·서버 연결 완료 · 출시 준비 중 (2026-09-12)
+## 진행 — 화면·서버 연결 완료 · 다음 출시 준비 중 (2026-11-06)
 
 **M0~M5 완료.** 셋업 · 공용 컴포넌트 · 화면 전부 · **3세대 디자인 이관**(2026-08-20) ·
-**서버 연결**(2026-08-09~) · **회고 채팅 v2**(2026-08-28) · **쉼터·감각연못**(2026-09-03~) ·
-**계측**(Amplitude · 2026-09-05). 검증은 **76 스위트 / 1,137 테스트**가 통과한다.
+**서버 연결**(2026-08-09~) · **회고 채팅 v2**(2026-08-28) · **쉼터·감각연못**(2026-09-03~ · 지금 쉼 콘텐츠 일곱) ·
+**계측**(Amplitude · 2026-09-05) · **온보딩 v2**(2026-10-25) · **바바의 편지**(2026-10-27) · **홈 v2 · 날씨 · 배경음악**.
+검증은 **155 스위트 / 2,024 테스트**가 통과한다(2026-11-06).
 마일스톤별 상세와 남은 일은 [`docs/TASKS.md`](docs/TASKS.md)가 정본이다.
+마지막 스토어 제출은 1.3.0(iOS `buildNumber 7` · Android `versionCode 10` · 2026-10-14)이다.
 
 **화면 완료가 곧 MVP 완료는 아니다.** 남은 것:
 
+- ⚠ **BE 운영 릴리스** — 운영 서버(`api.momentory.co.kr`)는 BE `main`(2026-10-14)이라 편지 · 날씨 ·
+  온보딩 v2 · 소원 · 명상 · 주간 리포트 v2 가 **개발 서버(`dev`)에만** 있다. 다음 스토어 출시 전에 BE dev → main 이 먼저다
 - **영속 저장(MMKV)** — 온보딩 초안·회고 대화가 아직 메모리다
 - **아웃박스(M3-3)** — 서버에 멱등성 규약이 없다([`docs/DISCUSSION.md`](docs/DISCUSSION.md) §1-1)
-- **회고 재개** — 대화 이력을 되읽는 엔드포인트가 없다(§1-2)
+- **회고 재개** — 대화 이력을 되읽는 엔드포인트가 없다(§1-2 · `GET /retrospect/{id}` 없음)
 - 애플 `.p8` — 그전까지 탈퇴가 애플 연결 해제 없이 지나간다
 - 앱 잠금 게이트 · M6(invariants 전수 테스트 · E2E · 배포)
 
-> ⚠ **기기에 남는 것은 세션 토큰과 캘린더 동기화 상태뿐이다**(둘 다 `expo-secure-store`).
+> ⚠ **기기에 남는 사용자 데이터는 세션 토큰과 캘린더 동기화 상태뿐이다**(둘 다 `expo-secure-store`).
+> 그 밖에는 AsyncStorage 의 작은 표시뿐이다(쉼 추천 · 설명 카드 · 별점 창 간격 · 배경음악 · 날씨 첫 안내 ·
+> 리포트 안내 — 전부 `features/rest/data/deviceStorage.ts` 를 지난다).
 > 일기·회고·일정은 **서버가 정본**이라 앱을 껐다 켜도 남지만, 아직 **끝내지 않은** 회고
 > 대화와 온보딩 초안은 사라진다 — MMKV 가 그 시점이다.

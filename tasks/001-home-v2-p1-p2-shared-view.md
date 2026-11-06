@@ -1,5 +1,7 @@
 # Task 001: 홈 v2 P0 정본 갱신 · P1 토큰·서체·자산 · P2 공유 뷰와 Expo Lab 연결
 
+> 상태 (2026-11-06 대조): ✅ **완료** — P0~P2 는 #179(2026-10-15)로 main 에 들어갔다. 그 뒤 P3 도 운영에 들어갔다(#183). ⚠ 이 Task 의 Gaegu 는 2026-11-01 에 지웠다(#212). 지금 상태는 `docs/TASKS.md` 「홈 v2 운영 적용」.
+
 ## 요구사항
 
 [`docs/redesign/HOME_V2_ROLLOUT_PLAN.md`](../docs/redesign/HOME_V2_ROLLOUT_PLAN.md)(이하 「계획」)의
