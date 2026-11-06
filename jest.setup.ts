@@ -112,6 +112,23 @@ jest.mock("expo-speech-recognition", () => ({
   useSpeechRecognitionEvent: jest.fn(),
 }));
 
+// 소리도 네이티브다 — 앱 껍데기가 배경음악을 걸어 두므로(`lib/providers.tsx`) 모든 화면이 이 모듈을 거친다.
+// 소리를 검사하는 테스트는 각자 이 목을 바꿔 쓴다.
+jest.mock("expo-audio", () => ({
+  __esModule: true,
+  createAudioPlayer: jest.fn(() => ({
+    isLoaded: true,
+    play: jest.fn(),
+    pause: jest.fn(),
+    remove: jest.fn(),
+    release: jest.fn(),
+    seekTo: jest.fn(),
+    addListener: jest.fn(() => ({ remove: jest.fn() })),
+  })),
+  setAudioModeAsync: jest.fn(() => Promise.resolve()),
+  setIsAudioActiveAsync: jest.fn(() => Promise.resolve()),
+}));
+
 // AsyncStorage 도 네이티브다(쉼 추천의 기기 기억 · 2026-10-12 · `features/rest/data/recommendMemory`).
 // 라이브러리가 주는 인메모리 목을 쓴다 — 패키지 바깥 경로가 아니라 공개된 `jest/` 진입점이라
 // 버전이 올라도 빗나가지 않는다. 기억을 검사하는 테스트가 `setItem` 으로 미리 심고 `clear` 로 비운다.

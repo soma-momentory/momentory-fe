@@ -328,6 +328,9 @@ src/features/report/{model/{report,weeklyBook}.ts, data/weeklyBookApi.ts}
 src/features/rest/model/{cards,contents,sensePond}.ts
                                           ← 쉼터가 보는 것(바람카드) · 쉼 콘텐츠 넷 ·
                                             감각연못 진행(3-2-1)
+src/features/music/{model/{tracks,music,musicPlayer}.ts, data/musicMemory.ts, ui/MusicDialog.tsx}
+                                          ← 홈 배경음악(2026-11-05) — 고른 곡과 재생 중인가 둘이 store 의 전부다.
+                                            실제 소리는 `providers.tsx` 에 건 `musicPlayer` 가 낸다(탭을 옮겨도 이어진다)
 src/features/my/{model/{settings,reminders,basicInfo}.ts, ui/ReminderRoute.tsx}
                                           ← 알림/프로필 설정 · **설정 ↔ OS 예약 화해** ·
                                             기본 정보(한 항목만 고쳐도 **통째로 보낸다** —
@@ -378,6 +381,8 @@ src/lib/calendar.ts     ← 기기 캘린더의 단일 통로 — 권한 · 범�
                           externalId 정규화. 던지지 않는다(실패하면 빈 목록).
                           ⚠ **서버로 간다**(2026-08-20) — `POST /schedules/sync` 화해.
                           플랫폼 차이는 여기서만
+src/lib/audio.ts        ← 소리의 단일 통로 — `expo-audio` 를 보는 곳은 여기 하나다. 던지지 않는다
+src/lib/audioClaim.ts   ← 「지금은 내가 소리를 쓴다」는 표시 — 명상 음성 · 마이크가 표시하면 배경음악이 비켜 선다
 src/lib/toast.ts        ← 토스트의 단일 통로 — 「끝난 일을 알리는 한 줄」이 뜨는 자리 하나.
                           `components/ds/ToastHost` 가 `providers.tsx` 에서 라우트 위에
                           그린다. **문안을 모른다**(삭제 문안은
@@ -422,8 +427,8 @@ src/lib/time.ts         ← "21:30" ↔ "밤 9:30" — 시각을 말하는 곳�
   `src/components/ds/voiceInput.ts`)
 - 계측 — **@amplitude/analytics-react-native** + **@react-native-async-storage/async-storage**
   (2026-09-05 — AsyncStorage 는 Amplitude 가 요구해서 들어왔다. 앱 코드가 직접 쓰는 곳은
-  **쉼터의 기기 기억 둘**이다 — 쉼 추천 `recommendMemory.ts` · 설명 카드를 본 쉼터 `guideMemory.ts`
-  (둘 다 `features/rest/data/` · `deviceStorage.ts` 를 지난다 · 2026-10-12))
+  **쉼터의 기기 기억 둘**과 홈 배경음악이다 — 쉼 추천 `recommendMemory.ts` · 설명 카드를 본 쉼터 `guideMemory.ts`
+  (둘 다 `features/rest/data/` · `deviceStorage.ts` 를 지난다 · 2026-10-12) · 틀어 둔 배경음악 `features/music/data/musicMemory.ts`(2026-11-05))
 
 네이티브 모듈이 섞여 있어 **dev client 재빌드 필요**.
 ⚠ **`08` 회고 시간 선택은 외부 피커 모듈이 아니다** — `src/components/ds/WheelPicker.tsx`

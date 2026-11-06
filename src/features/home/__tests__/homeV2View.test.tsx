@@ -47,6 +47,8 @@ const baseModel = (patch: Partial<HomeV2ViewModel> = {}): HomeV2ViewModel => ({
   retroReminderTime: null,
   weather: null,
   hasUnreadLetter: false,
+  musicTrackId: null,
+  musicPlaying: false,
   ...patch,
 });
 
@@ -62,6 +64,9 @@ const actions = (): HomeV2ViewActions => ({
   onOpenLetter: jest.fn(),
   onOpenNotificationSettings: jest.fn(),
   onOpenWeatherInfo: jest.fn(),
+  onSelectMusic: jest.fn(),
+  onToggleMusic: jest.fn(),
+  onSkipMusic: jest.fn(),
 });
 
 const frame = (body: ReactNode, overlay: ReactNode) => (
@@ -84,6 +89,79 @@ const openWeek = (r: Awaited<ReturnType<typeof show>>) =>
   fireEvent.press(r.getByRole("button", { name: /이번 주 감정 보기/ }));
 
 describe("홈 v2 — 표시 전용", () => {
+  it("멈춰 있으면 음악 아이콘이 꺼짐으로 읽히고, 틀고 있으면 곡 이름까지 읽힌다", async () => {
+    const off = await show(baseModel({ musicTrackId: "noise-night-sea", musicPlaying: false }));
+    expect(off.getByRole("button", { name: "배경음악, 꺼짐" })).toBeTruthy();
+    await off.unmount();
+
+    const on = await show(baseModel({ musicTrackId: "noise-night-sea", musicPlaying: true }));
+    expect(on.getByRole("button", { name: "배경음악, 밤바다 켜짐" })).toBeTruthy();
+  });
+
+  it("음악 아이콘을 누르면 맨 위 조작 줄과 곡 여덟이 있는 창이 가운데 열리고, 고른 곡이 체크된다", async () => {
+    const r = await show(baseModel({ musicTrackId: "noise-night-sea", musicPlaying: true }));
+    await fireEvent.press(r.getByRole("button", { name: /배경음악/ }));
+
+    expect(r.getByText("백색소음")).toBeTruthy();
+    expect(r.getByText("음악")).toBeTruthy();
+    // 「끄기」 줄은 없다 — 끄는 것은 일시정지다
+    expect(r.getAllByRole("radio")).toHaveLength(8);
+    expect(r.queryByRole("radio", { name: "끄기" })).toBeNull();
+    expect(r.getByRole("radio", { name: "밤바다", checked: true })).toBeTruthy();
+    const controls = within(r.getByTestId("music-dialog-controls"));
+    expect(controls.getAllByRole("button").map((b) => b.props.accessibilityLabel)).toEqual([
+      "이전 곡",
+      "일시정지",
+      "다음 곡",
+    ]);
+    // 조작 줄 위에 지금 곡의 제목이 선다
+    expect(within(r.getByTestId("music-dialog-now")).getByText("밤바다")).toBeTruthy();
+    // 바텀 시트가 아니라 가운데 창이다
+    expect(r.queryByTestId("ds-bottom-sheet")).toBeNull();
+  });
+
+  it("멈춰 있으면 가운데 버튼이 「재생」이고, 조작 버튼은 각자의 일을 올린다", async () => {
+    const a = actions();
+    const r = await show(baseModel({ musicTrackId: "noise-cafe", musicPlaying: false }), a);
+    await fireEvent.press(r.getByRole("button", { name: /배경음악/ }));
+
+    await fireEvent.press(r.getByRole("button", { name: "재생" }));
+    expect(a.onToggleMusic).toHaveBeenCalledTimes(1);
+    await fireEvent.press(r.getByRole("button", { name: "이전 곡" }));
+    expect(a.onSkipMusic).toHaveBeenLastCalledWith("previous");
+    await fireEvent.press(r.getByRole("button", { name: "다음 곡" }));
+    expect(a.onSkipMusic).toHaveBeenLastCalledWith("next");
+  });
+
+  it("고른 곡이 없으면 지금 곡 자리가 그렇다고 말한다", async () => {
+    const r = await show();
+    await fireEvent.press(r.getByRole("button", { name: /배경음악/ }));
+    expect(
+      within(r.getByTestId("music-dialog-now")).getByText("아직 고른 곡이 없어요"),
+    ).toBeTruthy();
+  });
+
+  it("곡을 고르면 창이 닫히지 않은 채 그 곡을 올린다", async () => {
+    const a = actions();
+    const r = await show(baseModel(), a);
+    await fireEvent.press(r.getByRole("button", { name: /배경음악/ }));
+
+    await fireEvent.press(r.getByRole("radio", { name: "벽난로 옆" }));
+    expect(a.onSelectMusic).toHaveBeenLastCalledWith("noise-fireplace");
+    expect(r.getByRole("radio", { name: "벽난로 옆" })).toBeTruthy();
+  });
+
+  it("음악 창은 ✕ 로도 딤으로도 닫힌다", async () => {
+    const r = await show();
+    await fireEvent.press(r.getByRole("button", { name: /배경음악/ }));
+    await fireEvent.press(r.getAllByRole("button", { name: "닫기" }).at(-1)!);
+    expect(r.queryByTestId("music-dialog-overlay")).toBeNull();
+
+    await fireEvent.press(r.getByRole("button", { name: /배경음악/ }));
+    await fireEvent.press(r.getAllByRole("button", { name: "닫기" })[0]!);
+    expect(r.queryByTestId("music-dialog-overlay")).toBeNull();
+  });
+
   it("표시 전용이다 — store · router · 계측을 import 하지 않는다(모듈 목킹 없이 렌더)", async () => {
     const r = await show();
     expect(r.getByText("10월 14일")).toBeTruthy();

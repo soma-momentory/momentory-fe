@@ -810,15 +810,17 @@ describe("Toast", () => {
 });
 
 describe("아이콘 세트", () => {
-  it("35개가 다 있고 전부 path 를 든다 — 빈 글리프를 만들지 않는다", async () => {
+  it("41개가 다 있고 전부 path 를 든다 — 빈 글리프를 만들지 않는다", async () => {
     // Wanted 반입 26 + `list`(2026-08-24) − `logo-apple`(애플 공식 아트워크로 옮김)
     //   + `logout`(로그아웃 exit 글리프 · 세트에 없어 직접 그림) = 27
     //   + 쉼터 콘텐츠 넷(`wave` `box` `treasure` `capybara-rest` · 2026-09-02 직접 그림) = 31
     //   + `mic` `pulse`(회고 음성 입력 · 2026-09-29 직접 그림) = 33
     //   + `settings`(알림함 설정 · 2026-10-16 직접 그림) = 34
     //   + `mail`(바바의 편지 입구 · 2026-10-27 직접 그림) = 35
+    //   + `music` · `music-off`(홈 배경음악 · 2026-11-05 직접 그림) = 37
+    //   + `play` `pause` `rewind` `fast-forward`(배경음악 조작 · 2026-11-06 직접 그림) = 41
     const names = Object.keys(ICON_PATHS) as IconName[];
-    expect(names).toHaveLength(35);
+    expect(names).toHaveLength(41);
     for (const n of names) {
       expect(ICON_PATHS[n].length).toBeGreaterThan(0);
       for (const p of ICON_PATHS[n]) expect(p.d.startsWith("M")).toBe(true);

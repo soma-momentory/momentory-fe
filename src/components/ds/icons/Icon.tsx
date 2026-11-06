@@ -43,7 +43,7 @@ export function Icon({ name, size: px = size.icon.lg, color = label.normal }: Pr
           <Path
             key={i}
             d={p.d}
-            fill="none"
+            fill={"filled" in p && p.filled ? color : "none"}
             stroke={color}
             strokeWidth={1.8}
             strokeLinecap="round"

@@ -38,6 +38,10 @@ export type HomeV2ViewModel = {
   weather: HomeWeatherView | null;
   /** 열 수 있는 새 편지를 아직 안 열었을 때만 `true` — 서버 편지 목록의 첫 칸(바바의 편지 PRD 4-1) */
   hasUnreadLetter: boolean;
+  /** 고른 곡 — 한 번도 고르지 않았으면 `null`. 일시정지해도 남는다 */
+  musicTrackId: string | null;
+  /** 지금 틀고 있는가 */
+  musicPlaying: boolean;
 };
 
 /** 모든 부작용은 호출자가 처리한다. 이 뷰는 store · API · 라우터 · 계측을 모른다 */
@@ -56,6 +60,10 @@ export type HomeV2ViewActions = {
   onOpenNotificationSettings: () => void;
   /** 날씨 스티커를 누르면 출처 · 갱신 시각(HW-5 · P4) */
   onOpenWeatherInfo: () => void;
+  /** 배경음악 창 — 곡 고르기 · 재생/일시정지 · 앞뒤 곡 */
+  onSelectMusic: (trackId: string) => void;
+  onToggleMusic: () => void;
+  onSkipMusic: (direction: "previous" | "next") => void;
 };
 
 export type HomeV2ViewProps = {

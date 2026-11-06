@@ -11,6 +11,7 @@ import { useDiary } from "@/features/diary/model/diary";
 import { testDiaryData } from "@/testing/fixtures";
 import { useRetro } from "@/features/retro/model/retro";
 import { readRecommendationMemory } from "@/features/rest/data/recommendMemory";
+import { isAudioClaimed } from "@/lib/audioClaim";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 jest.mock("expo-router", () => ({
@@ -429,6 +430,26 @@ describe("계측 — 어느 질문에서 오래 걸렸는가", () => {
     expect(speech.ExpoSpeechRecognitionModule.abort).toHaveBeenCalled();
     await emit("result", { isFinal: true, results: [{ transcript: "늦은 결과" }] });
     expect(sent("retrospect_turn_timed")[0]).toMatchObject({ voice_used: true });
+  });
+
+  it("듣는 동안 배경음악을 세워 두고, 듣기가 끝나면 돌려준다", async () => {
+    const speech = jest.requireMock("expo-speech-recognition");
+    const r = await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+    expect(isAudioClaimed()).toBe(false);
+
+    await act(async () => {
+      await fireEvent.press(r.getByLabelText("음성으로 입력"));
+    });
+    expect(isAudioClaimed()).toBe(true);
+
+    await act(() => {
+      const calls = jest.mocked(speech.useSpeechRecognitionEvent).mock.calls;
+      calls
+        .filter(([n]: [string]) => n === "end")
+        .at(-1)![1](null);
+    });
+    expect(isAudioClaimed()).toBe(false);
   });
 
   it("마지막으로 알아들은 뒤 조용한 시간이 차야 듣기를 멈춘다", async () => {

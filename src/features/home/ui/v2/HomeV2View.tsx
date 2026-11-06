@@ -14,6 +14,8 @@ import {
   remainingLabel,
   visibleSchedules,
 } from "@/features/home/model/presentation";
+import { musicTrack } from "@/features/music/model/tracks";
+import { MusicDialog } from "@/features/music/ui/MusicDialog";
 
 import { DatePaper, datePaperExtraFor } from "./DatePaper";
 import { HeroCard } from "./HeroCard";
@@ -56,7 +58,7 @@ export function HomeV2View({
   const [menu, setMenu] = useState<{ id: string; top: number; anchorTop: number } | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<"schedule" | "week" | null>(null);
+  const [sheet, setSheet] = useState<"schedule" | "week" | "music" | null>(null);
   const fontScale = useEffectiveFontScale(1.5);
 
   const shown = visibleSchedules(model.schedules);
@@ -106,6 +108,7 @@ export function HomeV2View({
           ];
 
   const unread = model.hasUnreadLetter;
+  const playing = model.musicPlaying ? musicTrack(model.musicTrackId) : null;
   const scheduleState = empty ? "0개" : remainingLabel(model.schedules);
 
   const body = (
@@ -119,16 +122,27 @@ export function HomeV2View({
         <View testID="home-v2-page" style={styles.page}>
           <View style={[styles.header, { height: layout.minTouch + datePaperExtraFor(fontScale) }]}>
             <DatePaper today={model.today} fontScale={fontScale} />
-            <View>
+            <View style={styles.headerActions}>
               <IconButton
-                name="mail"
-                size={homeV2.size.mail.icon}
-                accessibilityLabel={unread ? "바바의 편지, 새 편지 있음" : "바바의 편지"}
+                name={playing != null ? "music" : "music-off"}
+                size={homeV2.size.music.icon}
+                accessibilityLabel={
+                  playing != null ? `배경음악, ${playing.name} 켜짐` : "배경음악, 꺼짐"
+                }
                 color={homeV2.color.ink}
-                onPress={actions.onOpenLetter}
+                onPress={() => setSheet("music")}
               />
-              {/* 점은 장식이 아니라 상태다 — 그래서 이름도 함께 바뀐다(위). 숫자는 세지 않는다 */}
-              {unread ? <View testID="home-v2-unread-dot" style={styles.dot} /> : null}
+              <View>
+                <IconButton
+                  name="mail"
+                  size={homeV2.size.mail.icon}
+                  accessibilityLabel={unread ? "바바의 편지, 새 편지 있음" : "바바의 편지"}
+                  color={homeV2.color.ink}
+                  onPress={actions.onOpenLetter}
+                />
+                {/* 점은 장식이 아니라 상태다 — 그래서 이름도 함께 바뀐다(위). 숫자는 세지 않는다 */}
+                {unread ? <View testID="home-v2-unread-dot" style={styles.dot} /> : null}
+              </View>
             </View>
           </View>
 
@@ -213,6 +227,16 @@ export function HomeV2View({
           <WeekDock days={model.week} today={model.today} />
         </BottomSheet>
       ) : null}
+      {sheet === "music" ? (
+        <MusicDialog
+          current={model.musicTrackId}
+          playing={model.musicPlaying}
+          onSelect={actions.onSelectMusic}
+          onToggle={actions.onToggleMusic}
+          onSkip={actions.onSkipMusic}
+          onDismiss={closeSheet}
+        />
+      ) : null}
       {menu != null && menuActions.length > 0 ? (
         <Menu
           actions={menuActions}
@@ -266,6 +290,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
+  headerActions: { flexDirection: "row" },
   dot: {
     position: "absolute",
     top: 9,

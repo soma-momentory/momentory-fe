@@ -41,6 +41,7 @@ export {
   overlay,
   pond,
   meditation,
+  musicPaper,
   primary,
   raisedShadow,
   restMood,

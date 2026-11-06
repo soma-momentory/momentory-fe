@@ -517,6 +517,13 @@ export const onboardingArt = {
   turn: "#E6EFDF",
 } as const;
 
+/**
+ * 홈 배경음악 창의 종이 (2026-11-06 · 사용자가 준 그림 `assets/backgrounds/kraft-paper.webp`).
+ * `surface` 는 그 그림의 평균색 — 그림이 뜨기 전 · 못 뜰 때 같은 바탕이 되고, 대비 검수의 기준이다.
+ * 옅은 글자(`label.neutral` 4.09 · `label.alternative` 3.20)는 이 위에서 AA 에 못 미쳐 쓰지 않는다.
+ */
+export const musicPaper = { surface: "#DECBB4" } as const;
+
 export const color = {
   background,
   label,

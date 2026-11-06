@@ -1,5 +1,7 @@
 import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from "expo-audio";
 
+import { claimAudio } from "./audioClaim";
+
 /**
  * 앱에 들어 있는 소리 하나 — `expo-audio` 를 보는 곳은 여기 하나다(`appState.ts` 와 같은 자리).
  *
@@ -70,6 +72,9 @@ export function createSound(
   };
 }
 
+/** 안내 음성을 듣는 동안 배경음악을 세워 두는 표시 — 명상을 다시 시작하면 들어오고 나가기가 짝을 이루지 않는 때가 있어 하나만 둔다 */
+let releaseListeningClaim: (() => void) | null = null;
+
 /**
  * 안내 음성을 듣는 동안의 오디오 세션 — 무음 스위치가 켜져 있어도 들리고, 다른 앱의 음악은 멈춘다.
  * 백그라운드 재생은 켜지 않는다(앱이 뒤로 가면 멈추는 것이 규칙이다).
@@ -77,6 +82,7 @@ export function createSound(
  * ⚠ 끝나기를 기다린 뒤에 재생한다 — 세션을 닫아 둔 상태의 `play` 는 안드로이드에서 그냥 버려진다.
  */
 export async function enterListeningSession() {
+  releaseListeningClaim ??= claimAudio();
   try {
     await setIsAudioActiveAsync(true);
     await setAudioModeAsync({
@@ -90,7 +96,37 @@ export async function enterListeningSession() {
   }
 }
 
-/** 세션을 닫아 멈춰 뒀던 다른 앱의 음악이 돌아오게 한다 */
+/**
+ * 세션을 닫아 멈춰 뒀던 다른 앱의 음악이 돌아오게 한다.
+ *
+ * ⚠ 표시는 세션이 닫힌 **뒤에** 거둔다 — 배경음악이 먼저 돌아오면 늦게 닫히는 세션이 음악까지 멈춘다.
+ */
 export function leaveListeningSession() {
-  void setIsAudioActiveAsync(false).catch(() => undefined);
+  const release = releaseListeningClaim;
+  releaseListeningClaim = null;
+  void setIsAudioActiveAsync(false)
+    .catch(() => undefined)
+    .finally(() => release?.());
+}
+
+/**
+ * 배경음악의 오디오 세션 — 다른 앱의 소리를 멈추지 않고 함께 난다. 앱이 뒤로 가면 멈춘다.
+ *
+ * `respectSilentSwitch` 면 무음 스위치를 따른다. 사용자가 방금 고른 곡이 아니라 앱이 기억으로 틀어 주는 곡이
+ * 그렇다 — 회의 중에 앱을 열었는데 무음 스위치를 넘어 소리가 나면 안 된다.
+ *
+ * ⚠ 끝나기를 기다린 뒤에 재생한다(`enterListeningSession` 과 같다).
+ */
+export async function enterMusicSession({ respectSilentSwitch }: { respectSilentSwitch: boolean }) {
+  try {
+    await setIsAudioActiveAsync(true);
+    await setAudioModeAsync({
+      playsInSilentMode: !respectSilentSwitch,
+      interruptionMode: "mixWithOthers",
+      allowsRecording: false,
+      shouldPlayInBackground: false,
+    });
+  } catch {
+    // 세션을 못 바꿔도 기본 세션으로 재생을 시도한다
+  }
 }

@@ -11,7 +11,8 @@
  *
  * ⚠ **없는 글리프를 임의로 대신하지 않는다**(`DESIGN.md` §10) — `person` 은 없고
  * `nav-my-page` 를 쓴다. 알림 설정용 `settings` 는 운영 홈 통합에서 직접 추가한
- * 선 글리프다. 같은 24 그리드·획 두께·색 토큰을 쓴다.
+ * 선 글리프다. 같은 24 그리드·획 두께·색 토큰을 쓴다. 홈 배경음악의 `music` · `music-off` 도
+ * 직접 그렸다(2026-11-05 · 세트에 음악 글리프가 없다) — 사용자가 준 그림을 테두리만 그린 선 글리프다(11-06).
  */
 export type IconPath = {
   d: string;
@@ -24,6 +25,8 @@ export type IconPath = {
    * 맞추려고만 쓴다.
    */
   stroke?: true;
+  /** `stroke` 와 함께 쓰면 선 안을 같은 색으로 채운다 — 모서리가 둥근 채운 모양(배경음악 조작 버튼) */
+  filled?: true;
 };
 
 export const ICON_PATHS = {
@@ -251,6 +254,50 @@ export const ICON_PATHS = {
     { d: "M3.8 7 L12 13 L20.2 7", stroke: true },
   ],
   // 마이크(2026-09-29) — 회고 입력의 음성 입력 버튼. Wanted 세트에 없어 `logout` 처럼 직접 그렸다.
+  // 이은 두 음표 (2026-11-06 · 사용자가 준 그림 · 줄은 수평). 24 그리드 한가운데(12, 12)에 놓인다.
+  // 켜짐은 안을 칠하고, 꺼짐은 같은 자리에 테두리만 긋고 빗금을 더한다 — 둘이 같은 크기로 겹친다
+  music: [
+    // 수평으로 이은 줄과 기둥 둘
+    { d: "M10.2 4.2 H20.2 V7.2 H10.2 Z", stroke: true, filled: true },
+    { d: "M10.2 16.83 V4.2", stroke: true },
+    { d: "M20.2 16.83 V4.2", stroke: true },
+    // 비스듬한 머리 둘 — 기둥이 머리 오른쪽 끝에 닿는다
+    {
+      d: "M10.1 16.22 A3.3 2.4 -20 1 1 3.9 18.48 A3.3 2.4 -20 1 1 10.1 16.22 Z",
+      stroke: true,
+      filled: true,
+    },
+    {
+      d: "M20.1 16.22 A3.3 2.4 -20 1 1 13.9 18.48 A3.3 2.4 -20 1 1 20.1 16.22 Z",
+      stroke: true,
+      filled: true,
+    },
+  ],
+  // 꺼진 음악 — 테두리만 + 빗금. 빗금은 한가운데보다 오른쪽 아래로 1.5 비켜 음표 위에 고르게 걸린다(11-06 사용자 요청).
+  // 켜짐과 꺼짐이 색이 아니라 모양으로 갈린다
+  "music-off": [
+    // 줄은 위아래 두 선으로 테두리만 긋는다
+    { d: "M10.2 16.83 V4.2 H20.2 V16.83", stroke: true },
+    { d: "M10.2 7.2 H20.2", stroke: true },
+    { d: "M10.1 16.22 A3.3 2.4 -20 1 1 3.9 18.48 A3.3 2.4 -20 1 1 10.1 16.22 Z", stroke: true },
+    { d: "M20.1 16.22 A3.3 2.4 -20 1 1 13.9 18.48 A3.3 2.4 -20 1 1 20.1 16.22 Z", stroke: true },
+    { d: "M4.5 4.5 L22.5 22.5", stroke: true },
+  ],
+  // 배경음악 조작 — 채운 모양에 둥근 모서리 (2026-11-06 · 사용자가 준 그림)
+  play: [{ d: "M8 5.5 L18.5 12 L8 18.5 Z", stroke: true, filled: true }],
+  pause: [
+    { d: "M7 5 H9.6 V19 H7 Z", stroke: true, filled: true },
+    { d: "M14.4 5 H17 V19 H14.4 Z", stroke: true, filled: true },
+  ],
+  // ◁◁ — 뒤 삼각형의 끝이 앞 삼각형의 등에 닿는다
+  rewind: [
+    { d: "M11.2 6.5 L3.5 12 L11.2 17.5 Z", stroke: true, filled: true },
+    { d: "M20.5 6.5 L12.8 12 L20.5 17.5 Z", stroke: true, filled: true },
+  ],
+  "fast-forward": [
+    { d: "M12.8 6.5 L20.5 12 L12.8 17.5 Z", stroke: true, filled: true },
+    { d: "M3.5 6.5 L11.2 12 L3.5 17.5 Z", stroke: true, filled: true },
+  ],
   mic: [
     // 머리 — 위아래가 둥근 캡슐
     { d: "M9 6 A3 3 0 0 1 15 6 V11 A3 3 0 0 1 9 11 Z", stroke: true },
