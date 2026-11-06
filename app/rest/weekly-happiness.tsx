@@ -34,7 +34,6 @@ import {
   WEEKLY_HAPPINESS_CATEGORIES,
   WEEKLY_HAPPINESS_DONE_CTA,
   WEEKLY_HAPPINESS_LEAVE,
-  WEEKLY_HAPPINESS_RECORDS_LIVE,
   WEEKLY_HAPPINESS_TITLE,
   WEEKLY_HAPPINESS_WEEKS_BACK,
   shiftWeek,
@@ -68,9 +67,8 @@ export default function WeeklyHappinessScreen() {
   // 「다 적었어요」를 눌렀다 — 기록장 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
   const [asking, setAsking] = useState(false);
   const written = hasWritten(entries);
-  // 이용 기록 — 한 칸이라도 적은 판부터 남긴다(들어왔다 바로 나간 판은 소음이다).
-  // ⚠ 서버가 아직 받지 않아 보내지 않는다 — 기분 쪽지는 뜬다(`WEEKLY_HAPPINESS_RECORDS_LIVE`)
-  const record = useRestRecord("weekly_happiness", written, WEEKLY_HAPPINESS_RECORDS_LIVE);
+  // 이용 기록 — 한 칸이라도 적은 판부터 남긴다(들어왔다 바로 나간 판은 소음이다)
+  const record = useRestRecord("weekly_happiness", written);
 
   /**
    * 누른 칸을 화면 위쪽으로 올린다 — **바로 윗줄이 보이는 자리**까지(첫 칸이면 주 막대가 보이게).
@@ -176,15 +174,13 @@ export default function WeeklyHappinessScreen() {
           {/* 글과 함께 스크롤된다 — 키보드로 밀려 올라간 글자를 가리지 않게 */}
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
           <SceneGuideButton top={insets.top + space.sm} onPress={guide.show} />
-          {/* 이 쉼터를 한 기록 — 다른 쉼터와 같은 시계 원. 서버가 받기 전에는 늘 빈 기록이라 두지 않는다 */}
-          {WEEKLY_HAPPINESS_RECORDS_LIVE ? (
-            <SceneCornerButton
-              top={insets.top + space.sm}
-              label={REST_RECORDS_LINK}
-              icon="clock"
-              onPress={() => router.push("/rest/records?content=weekly_happiness")}
-            />
-          ) : null}
+          {/* 이 쉼터를 한 기록 — 다른 쉼터와 같은 시계 원 */}
+          <SceneCornerButton
+            top={insets.top + space.sm}
+            label={REST_RECORDS_LINK}
+            icon="clock"
+            onPress={() => router.push("/rest/records?content=weekly_happiness")}
+          />
           <Text color={color.text} style={styles.title} accessibilityRole="header">
             {WEEKLY_HAPPINESS_TITLE}
           </Text>

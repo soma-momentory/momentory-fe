@@ -14,7 +14,6 @@ import { recommendRest } from "@/features/rest/model/recommend";
 import { REST_GUIDES } from "@/features/rest/model/restGuide";
 import {
   WEEKLY_HAPPINESS_CATEGORIES,
-  WEEKLY_HAPPINESS_RECORDS_LIVE,
   shiftWeek,
   weekRangeLabel,
 } from "@/features/rest/model/weeklyHappiness";
@@ -195,7 +194,7 @@ describe("주간 행복 — 누른 칸을 올린다", () => {
   });
 });
 
-describe("주간 행복 — 끝맺음 · 이용 기록(서버 대기)", () => {
+describe("주간 행복 — 끝맺음 · 이용 기록", () => {
   it("한 칸도 적지 않으면 「다 적었어요」가 눌리지 않고, 그냥 나가도 기록이 남지 않는다", async () => {
     const r = await render(<WeeklyHappinessScreen />);
     expect(r.getByRole("button", { name: "다 적었어요" }).props.accessibilityState).toMatchObject({
@@ -217,27 +216,32 @@ describe("주간 행복 — 끝맺음 · 이용 기록(서버 대기)", () => {
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
   });
 
-  // 서버 `RestContent` 에 WEEKLY_HAPPINESS 가 생기면 `WEEKLY_HAPPINESS_RECORDS_LIVE` 를 켜고 이 묶음을 뒤집는다
-  it("서버가 아직 받지 않아 기분을 골라도, 적다가 나가도 아무것도 보내지 않는다", async () => {
-    expect(WEEKLY_HAPPINESS_RECORDS_LIVE).toBe(false);
-    const done = await render(<WeeklyHappinessScreen />);
-    await fireEvent.changeText(done.getByLabelText("맛있었던 음식"), "마라탕");
-    await fireEvent.press(done.getByRole("button", { name: "다 적었어요" }));
-    await fireEvent.press(done.getByRole("button", { name: "나아졌어요" }));
-    await done.unmount();
+  it("마치면 고른 기분 하나가 남는다 — 적은 글은 보내지 않는다", async () => {
+    const r = await render(<WeeklyHappinessScreen />);
+    await fireEvent.changeText(r.getByLabelText("맛있었던 음식"), "마라탕");
+    await fireEvent.press(r.getByRole("button", { name: "다 적었어요" }));
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    await r.unmount();
     await flush();
-
-    const left = await render(<WeeklyHappinessScreen />);
-    await fireEvent.changeText(left.getByLabelText("좋았던 장소"), "산책했던 공원");
-    await left.unmount();
-    await flush();
-
-    expect(addRestRecord).not.toHaveBeenCalled();
+    expect(addRestRecord).toHaveBeenCalledTimes(1);
+    expect(addRestRecord).toHaveBeenCalledWith("weekly_happiness", {
+      completed: true,
+      mood: "same",
+    });
   });
 
-  it("서버가 받기 전에는 늘 빈 기록이라 오른쪽 위 기록 원이 없다", async () => {
+  it("적다가 그냥 나가면 「잠깐 들렀어요」로 남는다", async () => {
     const r = await render(<WeeklyHappinessScreen />);
-    expect(r.queryByRole("button", { name: "지난 기록 보기" })).toBeNull();
+    await fireEvent.changeText(r.getByLabelText("좋았던 장소"), "산책했던 공원");
+    await r.unmount();
+    await flush();
+    expect(addRestRecord).toHaveBeenCalledWith("weekly_happiness", { completed: false });
+  });
+
+  it("오른쪽 위 시계 원이 주간 행복 기록으로 간다", async () => {
+    const r = await render(<WeeklyHappinessScreen />);
+    await fireEvent.press(r.getByRole("button", { name: "지난 기록 보기" }));
+    expect(router.push).toHaveBeenCalledWith("/rest/records?content=weekly_happiness");
   });
 });
 

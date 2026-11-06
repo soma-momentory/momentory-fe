@@ -139,7 +139,13 @@ export type LetterRow = {
 };
 
 export type RestContent =
-  "SENSE_POND" | "WORRY_BOX" | "TREASURE_BOX" | "BODY_RELEASE" | "MEDITATION" | "WISH";
+  | "SENSE_POND"
+  | "WORRY_BOX"
+  | "TREASURE_BOX"
+  | "BODY_RELEASE"
+  | "MEDITATION"
+  | "WISH"
+  | "WEEKLY_HAPPINESS";
 export type RestMood = "BETTER" | "SAME" | "UNSURE";
 
 export type RestRecordRow = {

@@ -9,20 +9,11 @@ import { addDays } from "@/lib/clock";
  *
  * 끝맺음 · 이용 기록은 다른 쉼터와 같다(2026-11-06) — 「다 적었어요」를 누르면 기분을 묻고, 「했다 + 기분」만
  * 남긴다(적은 글은 보내지 않는다 · `useRestRecord`). 한 칸이라도 적은 뒤 그냥 나가면 「잠깐 들렀어요」다.
- * ⚠ 단 **서버로 보내기 · 기록 원은 `WEEKLY_HAPPINESS_RECORDS_LIVE` 가 켜질 때까지 꺼져 있다** — 아래 참조.
+ * 서버 `RestContent` 의 `WEEKLY_HAPPINESS`(BE #90)로 남는다.
  *
  * 주는 앱의 다른 주와 같은 **일~토**다(`features/home/model/day.ts` 의 `weekStartOf`).
  */
 export const WEEKLY_HAPPINESS_TITLE = "주간 행복";
-
-/**
- * 이용 기록을 서버에 남기고 오른쪽 위 기록 원을 보이는가.
- *
- * ⚠ **꺼 둔다** — 서버 `RestContent`(`docs/api/openapi.json` 의 `RestRecordRequest.content` · 조회 `content`)에
- * `WEEKLY_HAPPINESS` 가 아직 없어 보내면 400 으로 거절되고, 기록 화면은 늘 비어 보인다(2026-11-06 · Codex 리뷰).
- * 기분 쪽지는 그대로 뜬다 — 고른 답만 보내지 않는다. 서버가 받게 되면(`npm run sync:api` 로 계약 확인) 켠다.
- */
-export const WEEKLY_HAPPINESS_RECORDS_LIVE = false;
 
 /** 기록장 맨 아래 — 누르면 기분 쪽지가 뜬다. 한 칸이라도 적어야 눌린다 */
 export const WEEKLY_HAPPINESS_DONE_CTA = "다 적었어요";
