@@ -277,11 +277,14 @@ export function ReflectionButton({
   onPress,
   label = "일기 작성하기",
   testID = "studio-home-cta",
+  compact = false,
 }: {
   color: string;
   onPress: () => void;
   label?: string;
   testID?: string;
+  /** 줄 안에 놓는 작은 라벨(쉼터 바람카드의 「했어요」) — 기본은 화면 폭 전체다 */
+  compact?: boolean;
 }) {
   const gridId = `label-grid-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
@@ -290,7 +293,7 @@ export function ReflectionButton({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={styles.cta}
+      style={[styles.cta, compact ? styles.ctaCompact : null]}
     >
       {({ pressed }) => (
         <>
@@ -301,7 +304,11 @@ export function ReflectionButton({
           </View>
           <View
             testID="home-v2-cta-face"
-            style={[styles.ctaFace, pressed ? styles.ctaFacePressed : null]}
+            style={[
+              styles.ctaFace,
+              compact ? styles.ctaFaceCompact : null,
+              pressed ? styles.ctaFacePressed : null,
+            ]}
           >
             <View
               pointerEvents="none"
@@ -335,7 +342,10 @@ export function ReflectionButton({
                 />
               </Svg>
             </View>
-            <Text style={styles.ctaText} color={homeV2.color.white}>
+            <Text
+              style={[styles.ctaText, compact ? styles.ctaTextCompact : null]}
+              color={homeV2.color.white}
+            >
               {label}
             </Text>
           </View>
@@ -409,6 +419,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ctaFacePressed: { transform: [{ translateY: CTA.depth }] },
+  ctaCompact: { marginTop: 0, marginHorizontal: 0 },
+  ctaFaceCompact: { minHeight: 44, paddingHorizontal: 22 },
+  ctaTextCompact: { fontSize: 18, lineHeight: 24 },
   ctaText: {
     fontFamily: homeV2.font.bold,
     fontSize: CTA.fontSize,

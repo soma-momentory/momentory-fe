@@ -36,6 +36,40 @@ beforeEach(() => {
   mockWindow.mockReturnValue({ fontScale: 1, width: 393, height: 852, scale: 3 });
 });
 
+describe("쉼터 달력의 읽기 값(readable)", () => {
+  const readable = (selectedDate: string | null = "2026-07-13") =>
+    render(
+      <Calendar
+        month="2026-07"
+        selectedDate={selectedDate}
+        onSelect={jest.fn()}
+        onMonthStep={jest.fn()}
+        readable
+        markOf={(date) => (date === "2026-07-20" ? { emphasized: true, dotColor: "red" } : {})}
+      />,
+    );
+
+  it("보관함과 같은 크기로 날짜와 요일을 그리고, 고른 날은 알약이다", async () => {
+    const r = await readable();
+    expect(flatten(r.getByText("20").props.style).fontSize).toBe(archiveType.date.fontSize);
+    expect(flatten(r.getByText("월").props.style).fontSize).toBe(archiveType.weekday.fontSize);
+    expect(r.getAllByTestId("date-pill")).toHaveLength(1);
+  });
+
+  it("카드 있는 날만 진하고, 고른 날은 흰 글자다", async () => {
+    const r = await readable();
+    expect(flatten(r.getByText("20").props.style).color).toBe(labelColor.strong);
+    expect(flatten(r.getByText("21").props.style).color).toBe(labelColor.neutral);
+    expect(flatten(r.getByText("13").props.style).color).toBe(labelColor.onFill);
+  });
+
+  it("옵션을 주지 않으면 옛 점 모드 그대로다 — 알약도 읽기 값도 없다", async () => {
+    const r = await render(calendar(false));
+    expect(r.queryByTestId("date-pill")).toBeNull();
+    expect(flatten(r.getByText("20").props.style).fontSize).not.toBe(archiveType.date.fontSize);
+  });
+});
+
 describe("보관함 달력의 읽기 값", () => {
   it("날짜가 가장 크고 요일이 그다음이며, 둘 다 읽히는 색이다", async () => {
     const r = await renderCalendar(true);

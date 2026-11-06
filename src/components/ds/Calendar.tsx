@@ -101,6 +101,11 @@ type Props = {
    * 큰 글씨에서는 머리글과 날짜 줄이 함께 자라 점과 얼굴을 누르지 않는다.
    */
   compactDateSticker?: boolean;
+  /**
+   * **점 모드의 읽기 값**(쉼터 `R2` · 2026-11-05) — 요일 · 날짜 · 고른 날 알약을 보관함과 같게 그리고,
+   * 날짜 아래에는 점만 둔다. 카드 없는 날의 날짜는 한 단 옅다. 없으면 전과 같다.
+   */
+  readable?: boolean;
   /** 월 이동 UI를 화면 제목 옆에 배치할 때 달력 안의 중복 행을 숨긴다. */
   showMonthControls?: boolean;
   /**
@@ -129,6 +134,7 @@ export function Calendar({
   markOf,
   dateSticker = false,
   compactDateSticker = false,
+  readable = false,
   showMonthControls = true,
   reserveRows,
 }: Props) {
@@ -149,16 +155,15 @@ export function Calendar({
       : Math.max(STICKER_MIN, Math.min(STICKER_MAX, Math.round(cell - STICKER_GUTTER)));
   const schedDotTop = compactDateSticker ? 0 : SCHED_DOT_TOP;
   const fontScale = useEffectiveFontScale();
-  const headHeight = compactDateSticker ? Math.ceil(COMPACT_HEAD_HEIGHT * fontScale) : HEAD_HEIGHT;
-  const dateRow = compactDateSticker
-    ? Math.ceil(archiveType.date.lineHeight * fontScale)
-    : DATE_ROW;
-  const pillTop = compactDateSticker ? Math.round(COMPACT_PILL_TOP * fontScale) : PILL_DROP;
+  const reading = compactDateSticker || readable;
+  const headHeight = reading ? Math.ceil(COMPACT_HEAD_HEIGHT * fontScale) : HEAD_HEIGHT;
+  const dateRow = reading ? Math.ceil(archiveType.date.lineHeight * fontScale) : DATE_ROW;
+  const pillTop = reading ? Math.round(COMPACT_PILL_TOP * fontScale) : PILL_DROP;
   const pill = {
-    width: compactDateSticker
+    width: reading
       ? Math.min(cell ?? Infinity, Math.round(COMPACT_PILL_WIDTH * fontScale))
       : DATE_PILL_WIDTH,
-    height: compactDateSticker ? dateRow - pillTop : DATE_ROW,
+    height: reading ? dateRow - pillTop : DATE_ROW,
     top: pillTop,
   };
 
@@ -183,7 +188,9 @@ export function Calendar({
       SCHED_DOT +
       STICKER_GAP +
       stickerSize
-    : CELL_HEIGHT;
+    : readable
+      ? dateRow + READABLE_DOT_TOP + DOT + READABLE_CELL_PAD
+      : CELL_HEIGHT;
   const reservedGridHeight =
     reserveRows == null ? null : headHeight + reserveRows * (cellHeight + ROW_GAP);
 
@@ -198,7 +205,11 @@ export function Calendar({
             onPress={() => onMonthStep(-1)}
             style={styles.monthButton}
           />
-          <Text variant="label1" color={labelColor.strong}>
+          <Text
+            variant="label1"
+            color={labelColor.strong}
+            style={readable ? archiveType.diaryTitle : null}
+          >
             {formatKoreanMonth(month)}
           </Text>
           <IconButton
@@ -218,9 +229,9 @@ export function Calendar({
         {WEEKDAYS.map((d) => (
           <View key={d} style={[styles.head, { height: headHeight }, cellSize]}>
             <Text
-              variant={compactDateSticker ? "label1" : "caption2"}
-              color={compactDateSticker ? labelColor.neutral : labelColor.assistive}
-              style={compactDateSticker ? archiveType.weekday : null}
+              variant={reading ? "label1" : "caption2"}
+              color={reading ? labelColor.neutral : labelColor.assistive}
+              style={reading ? archiveType.weekday : null}
             >
               {d}
             </Text>
@@ -234,7 +245,7 @@ export function Calendar({
             style={[
               styles.cell,
               cellSize,
-              dateSticker ? [styles.cellSticker, { height: cellHeight }] : null,
+              dateSticker || readable ? [styles.cellSticker, { height: cellHeight }] : null,
             ]}
           />
         ))}
@@ -253,13 +264,14 @@ export function Calendar({
               accessibilityLabel={mark.label == null ? `${day}일` : `${day}일, ${mark.label}`}
               accessibilityState={{ selected, disabled: mark.disabled === true }}
               disabled={mark.disabled === true}
+              hitSlop={readable ? READABLE_HIT_SLOP : undefined}
               onPress={() => onSelect(date)}
               style={[
                 styles.cell,
                 cellSize,
-                dateSticker ? [styles.cellSticker, { height: cellHeight }] : null,
+                dateSticker || readable ? [styles.cellSticker, { height: cellHeight }] : null,
                 // 스티커 모드의 선택 표시는 칸의 링이 아니라 **날짜 알약**이다(아래)
-                !dateSticker && selected ? styles.cellSelected : null,
+                !dateSticker && !readable && selected ? styles.cellSelected : null,
               ]}
             >
               {dateSticker ? (
@@ -298,6 +310,35 @@ export function Calendar({
                   </View>
                   <View style={[styles.stickerSlot, { width: stickerSize, height: stickerSize }]}>
                     {mark.sticker}
+                  </View>
+                </>
+              ) : readable ? (
+                // 읽기 값의 점 모드(쉼터 R2) — 보관함과 같은 날짜 · 알약 아래에 점 하나
+                <>
+                  <View style={[styles.datePill, { width: pill.width, height: dateRow }]}>
+                    {selected ? <PillFill {...pill} /> : null}
+                    <Text
+                      variant="label1"
+                      color={
+                        selected
+                          ? labelColor.onFill
+                          : mark.emphasized === true
+                            ? labelColor.strong
+                            : labelColor.neutral
+                      }
+                      style={[styles.dateNum, styles.dateNumCompact]}
+                      numberOfLines={1}
+                    >
+                      {day}
+                    </Text>
+                  </View>
+                  <View style={styles.readableDot}>
+                    <Dot
+                      size={DOT}
+                      color={mark.dotColor}
+                      hollow={mark.dotHollow === true}
+                      borderWidth={DOT_BORDER}
+                    />
                   </View>
                 </>
               ) : (
@@ -454,6 +495,11 @@ const DIGIT_NUDGE = 1;
  * 글자를 올리지 않는 이유: 알약이 없는 날의 숫자와 **같은 줄에 서 있어야** 한다.
  */
 const PILL_DROP = 1.7;
+/** 읽기 값의 점 모드 — 날짜와 점 사이 · 칸 아래 남기는 자리 */
+const READABLE_DOT_TOP = 3;
+/** 칸 42 + 줄 간격 2 = 44 — 터치 목표를 위아래 `hitSlop` 1 로 채운다 */
+const READABLE_CELL_PAD = 11;
+const READABLE_HIT_SLOP = { top: 1, bottom: 1 };
 /** 보관함 요일 머리글 높이 — `archiveType.weekday` 의 행간이 들어가는 값 */
 const COMPACT_HEAD_HEIGHT = 24;
 /** 보관함의 고른 날 알약 폭 — 두 자리 숫자(폭 21)의 좌우에 5 남짓 남긴다 */
@@ -553,4 +599,5 @@ const styles = StyleSheet.create({
   // 점 모드(쉼터 행동 카드) — 날짜 아래 점의 자리. 숫자에 조금 더 붙게 위로 당긴다.
   // 원 자체는 `Dot`(SVG)이 그리고, 여기는 위치만 잡는다
   dotSlot: { marginTop: -3 },
+  readableDot: { marginTop: READABLE_DOT_TOP },
 });

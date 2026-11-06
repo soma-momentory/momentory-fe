@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 
 import { homeV2 } from "@/design/ds";
 
@@ -10,6 +10,7 @@ import { Text, useEffectiveFontScale } from "./Text";
 export function NotchedTapeLabel({
   children,
   style,
+  textStyle,
   fontScale,
   testID,
   color = homeV2.color.weekday,
@@ -19,6 +20,8 @@ export function NotchedTapeLabel({
   /** 글자 오른쪽에 함께 붙는 것(보관함 기간의 `›`) — 없으면 글자만 가운데에 선다 */
   trailing?: ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** 글자 크기를 띠에 맞게 바꿀 때 — 없으면 홈 요일 값이다 */
+  textStyle?: StyleProp<TextStyle>;
   fontScale?: number;
   testID?: string;
   color?: string;
@@ -36,7 +39,7 @@ export function NotchedTapeLabel({
       ]}
     >
       <MaskingTape color={color} edge="notched" />
-      <Text style={styles.text} color={homeV2.color.ink}>
+      <Text style={[styles.text, textStyle]} color={homeV2.color.ink}>
         {children}
       </Text>
       {/* 뷰로 감싼다 — 웹에서 맨 SVG 는 절대 배치된 테이프 아래에 깔려 보이지 않는다 */}
