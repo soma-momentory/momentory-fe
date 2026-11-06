@@ -46,7 +46,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xl2,
     backgroundColor: meditation.dimAsk,
   },
-  wrap: { alignSelf: "stretch", maxWidth: meditationSize.stopCard, width: "100%" },
+  // alignSelf: "stretch" 를 두면 maxWidth 에 걸리는 넓은 화면에서 카드가 왼쪽에 붙는다
+  wrap: { maxWidth: meditationSize.stopCard, width: "100%" },
   shadow: {
     position: "absolute",
     left: 0,
