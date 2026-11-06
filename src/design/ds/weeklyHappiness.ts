@@ -16,7 +16,7 @@ export const weeklyHappiness = {
     text: "#287070",
     /** 적은 글 — 시안의 펜 색 */
     entry: "#1F1F22",
-    /** 비어 있는 칸의 예시 글 */
+    /** 적으려고 누른 빈 칸에만 뜨는 예시 글 */
     placeholder: "#6F675C",
     /** 지금 적고 있는 칸 */
     focus: withAlpha(line, 0.08),
@@ -47,17 +47,19 @@ export const weeklyHappiness = {
     bottom: 40,
   },
   motion: { pageMs: 380 },
-  /** 쉼터 칸의 작은 기록장 그림 */
+  /** 쉼터 칸의 그림 — 화면 윗부분을 창 폭에 맞춰 줄인 값. 세 번째 줄이 창 끝에 걸려 아래로 이어져 보인다 */
   art: {
-    paper: "#FBFAF6",
     rows: 3,
+    paddingX: 10,
+    paddingTop: 7,
+    line: 1,
+    weekBarTopLine: 1.5,
+    weekBarHeight: 25,
+    weekPaddingX: 3,
+    week: { fontSize: 11, lineHeight: 14 },
     rowHeight: 24,
-    paddingX: 12,
-    labelWidth: 26,
-    labelHeight: 5,
-    divider: 12,
-    gap: 7,
-    entryWidths: ["82%", "58%", "70%"],
-    entryHeight: 3,
+    labelWidth: 56,
+    label: { fontSize: 10, lineHeight: 13 },
+    dividerMarginY: 6,
   },
 } as const;

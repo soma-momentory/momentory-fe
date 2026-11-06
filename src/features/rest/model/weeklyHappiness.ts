@@ -5,7 +5,7 @@ import { addDays } from "@/lib/clock";
  *
  * ⚠ **아직 저장하지 않는다.** 서버 계약이 없어 적은 글은 화면이 떠 있는 동안 메모리에만 있다.
  * 그래서 쉼터 칸도 개발 빌드(`__DEV__` · Lab 포함)에만 보인다(`contents.ts`). 서버가 붙으면 `data/` 어댑터를
- * 더하고, 설명 카드 · 계측 · 이용 기록을 `DESIGN.md` 「새 쉼터 체크리스트」대로 붙인다.
+ * 더하고, 계측 · 이용 기록을 `DESIGN.md` 「새 쉼터 체크리스트」대로 붙인다.
  *
  * 주는 앱의 다른 주와 같은 **일~토**다(`features/home/model/day.ts` 의 `weekStartOf`).
  */

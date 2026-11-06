@@ -15,10 +15,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen, Text } from "@/components/ds";
 import { TabPaperBackground } from "@/components/ds/TabPaperBackground";
 import { useReducedMotion } from "@/components/rest/pond/useReducedMotion";
-import { SCENE_BACK_SIZE, SceneBackButton } from "@/components/rest/scene/SceneChrome";
+import { GuideCard } from "@/components/rest/scene/GuideCard";
+import {
+  SCENE_BACK_SIZE,
+  SceneBackButton,
+  SceneGuideButton,
+} from "@/components/rest/scene/SceneChrome";
 import { WeeklyHappinessRow } from "@/components/rest/weekly/WeeklyHappinessRow";
 import { homeV2, space, weeklyHappiness } from "@/design/ds";
 import { weekStartOf } from "@/features/home/model/day";
+import { useRestGuide } from "@/features/rest/model/useRestGuide";
 import {
   WEEKLY_HAPPINESS_CATEGORIES,
   WEEKLY_HAPPINESS_TITLE,
@@ -41,6 +47,7 @@ const { color, motion, size } = weeklyHappiness;
 export default function WeeklyHappinessScreen() {
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
+  const guide = useRestGuide("weekly_happiness");
   const [thisWeek] = useState(() => weekStartOf(clock.today()));
   const [week, setWeek] = useState(thisWeek);
   const [entries, setEntries] = useState<Record<string, WeeklyHappinessEntries>>({});
@@ -102,6 +109,7 @@ export default function WeeklyHappinessScreen() {
         >
           {/* 글과 함께 스크롤된다 — 키보드로 밀려 올라간 글자를 가리지 않게 */}
           <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneGuideButton top={insets.top + space.sm} onPress={guide.show} />
           <Text color={color.text} style={styles.title} accessibilityRole="header">
             {WEEKLY_HAPPINESS_TITLE}
           </Text>
@@ -137,6 +145,9 @@ export default function WeeklyHappinessScreen() {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {guide.open ? (
+        <GuideCard content="weekly_happiness" first={guide.first} onClose={guide.close} />
+      ) : null}
     </Screen>
   );
 }

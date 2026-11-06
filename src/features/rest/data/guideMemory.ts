@@ -1,4 +1,4 @@
-import type { RestRecordContent } from "../model/restRecord";
+import type { RestGuideContent } from "../model/restGuide";
 import { storage } from "./deviceStorage";
 
 /**
@@ -22,12 +22,12 @@ const readSeen = async (): Promise<string[] | null> => {
 };
 
 /** 못 읽으면 `null` — 부르는 쪽은 그때 **띄우지 않는다**(못 남기면 들어올 때마다 뜬다) */
-export async function readGuideSeen(content: RestRecordContent): Promise<boolean | null> {
+export async function readGuideSeen(content: RestGuideContent): Promise<boolean | null> {
   const seen = await readSeen();
   return seen == null ? null : seen.includes(content);
 }
 
-export async function markGuideSeen(content: RestRecordContent): Promise<void> {
+export async function markGuideSeen(content: RestGuideContent): Promise<void> {
   try {
     const seen = (await readSeen()) ?? [];
     if (!seen.includes(content)) await storage().setItem(KEY, JSON.stringify([...seen, content]));

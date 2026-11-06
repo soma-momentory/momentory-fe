@@ -9,7 +9,10 @@ import { WEEKLY_HAPPINESS_MAX_LENGTH } from "@/features/rest/model/weeklyHappine
 const { color, size } = weeklyHappiness;
 const ENTRY_MIN_HEIGHT = size.entry.lineHeight + size.entryPaddingY * 2;
 
-/** 기록장의 한 줄 — 왼쪽 칸 이름 · 세로 선 · 오른쪽에 적는 글. 줄 어디를 눌러도 적기 시작한다 */
+/**
+ * 기록장의 한 줄 — 왼쪽 칸 이름 · 세로 선 · 오른쪽에 적는 글. 줄 어디를 눌러도 적기 시작한다.
+ * 예시 글은 **적으려고 누른 칸에만** 뜬다 — 일곱 칸에 깔아 두면 이미 채워진 기록장처럼 보였다.
+ */
 export function WeeklyHappinessRow({
   label,
   placeholder,
@@ -42,7 +45,7 @@ export function WeeklyHappinessRow({
         accessibilityLabel={label}
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
+        placeholder={focused ? placeholder : undefined}
         placeholderTextColor={color.placeholder}
         maxLength={WEEKLY_HAPPINESS_MAX_LENGTH}
         multiline
@@ -56,7 +59,7 @@ export function WeeklyHappinessRow({
         onContentSizeChange={({ nativeEvent }) =>
           setMinHeight(Math.max(ENTRY_MIN_HEIGHT, nativeEvent.contentSize.height))
         }
-        style={[styles.entry, { minHeight }]}
+        style={[styles.entry, value === "" && styles.entryEmpty, { minHeight }]}
       />
     </Pressable>
   );
@@ -92,4 +95,6 @@ const styles = StyleSheet.create({
     lineHeight: size.entry.lineHeight,
     color: color.entry,
   },
+  /** 예시 글은 적은 글(굵게)보다 가늘다 — 입력칸의 글꼴을 따라가서 비었을 때 바꾼다 */
+  entryEmpty: { fontFamily: homeV2.font.regular },
 });

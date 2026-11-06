@@ -118,6 +118,8 @@ export const restGuideSize = {
   choiceArt: { width: 80, height: 44 },
   /** 적는 쉼터의 예시 줄 끝에 서는 상자 · 보물함 */
   target: 54,
+  /** 기록장 예시(주간 행복) — 색은 `weeklyHappiness.color` 를 함께 쓴다 */
+  ledger: { rowHeight: 38, labelWidth: 88, line: 1, topLine: 1.5, divider: 18 },
   /** 장 표시 점 */
   dot: 6,
 } as const;

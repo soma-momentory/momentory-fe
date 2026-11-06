@@ -4,7 +4,7 @@ import { Keyboard } from "react-native";
 import { track } from "@/features/analytics";
 
 import { markGuideSeen, readGuideSeen } from "../data/guideMemory";
-import type { RestRecordContent } from "./restRecord";
+import type { RestGuideContent } from "./restGuide";
 
 /**
  * 쉼터 설명 카드가 떠 있나 (2026-10-12 · 사용자와 정함).
@@ -15,7 +15,7 @@ import type { RestRecordContent } from "./restRecord";
  * `settled` 는 「처음인지 알아봤고 카드가 닫혀 있다」다. 저절로 흘러가는 것(감각연못의 소개 한 호흡)은
  * 이때부터 시계를 잰다 — 카드를 읽는 동안 소개가 지나가 버리지 않게. 기억을 못 읽으면 띄우지 않는다.
  */
-export function useRestGuide(content: RestRecordContent) {
+export function useRestGuide(content: RestGuideContent) {
   const [state, setState] = useState<"checking" | "first" | "again" | "closed">("checking");
 
   useEffect(() => {
