@@ -7,6 +7,7 @@ import BodyReleaseScreen from "../body-release";
 import RestRecordsScreen from "../records";
 
 import { MoodExit } from "@/components/rest/scene/MoodExit";
+import { track } from "@/features/analytics";
 import { addRestRecord, fetchRestRecords } from "@/features/rest/data/restRecordApi";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
 
@@ -17,6 +18,11 @@ import { useRestRecord } from "@/features/rest/model/useRestRecord";
 jest.mock("@/features/rest/data/restRecordApi", () => ({
   addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
   fetchRestRecords: jest.fn(),
+}));
+
+jest.mock("@/features/analytics", () => ({
+  ...jest.requireActual("@/features/analytics"),
+  track: jest.fn(),
 }));
 
 jest.mock("expo-router", () => ({
@@ -118,6 +124,7 @@ describe("쉼터 기록 화면", () => {
     await flush();
 
     expect(fetchRestRecords).toHaveBeenCalledWith("worry_box");
+    expect(track).toHaveBeenCalledWith("rest_records_viewed", { content: "worry_box" });
     expect(r.getByText("걱정상자 기록")).toBeTruthy();
     const tree = JSON.stringify(r.toJSON());
     const at = ["10월 8일", "나아졌어요", "잠깐 들렀어요", "10월 6일", "잘 모르겠어요"].map((o) =>

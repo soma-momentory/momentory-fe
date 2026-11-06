@@ -177,6 +177,7 @@ describe("W1 · 공책", () => {
     expect(view.queryByText("새 리포트")).toBeNull();
     await fireEvent.press(view.getByTestId("book-cta"));
     expect(router.push).toHaveBeenCalledWith("/retro/confirm");
+    expect(track).toHaveBeenCalledWith("retro_cta_clicked", { source: "report" });
   });
 
   it("위기 주는 눌러서 걸 수 있는 번호를 앞뒤로 두고 활기차게라고 하지 않는다", async () => {

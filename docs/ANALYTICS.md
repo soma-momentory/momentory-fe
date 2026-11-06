@@ -66,7 +66,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | retrospect_turn_succeeded     | 대화 턴 API 성공                                                 | retrospect_id, input_kind: text/selection                                                                 |
 | retrospect_turn_timed         | 대화 턴 성공, 화면에서 잰 시간                                   | retrospect_id, phase, turn_no 외 (아래)                                                                   |
 | retrospect_exited             | 회고가 끝나기 전에 닫음                                          | retrospect_id, phase, turn_no                                                                             |
-| retro_cta_clicked             | 홈의 지금 하루 돌아보기 클릭                                     | source: home                                                                                              |
+| retro_cta_clicked             | 홈의 지금 하루 돌아보기 · 리포트의 오늘 일기 쓰기 클릭           | source: home/report                                                                                       |
 | voice_input_started           | 회고 입력창의 마이크로 음성 인식이 시작됨                        | retrospect_id                                                                                             |
 | voice_permission_result       | 마이크 권한 팝업의 응답                                          | granted                                                                                                   |
 | voice_input_failed            | 음성 인식 실패 (아래)                                            | code: no_speech/network/unavailable/other                                                                 |
@@ -108,6 +108,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | wish_report_undone            | 신고를 되돌림                                                    | 없음                                                                                                      |
 | wish_followup_answered        | 지나간 소원에 답함                                               | outcome(came_true, not_yet)                                                                               |
 | rest_guide_opened             | 쉼터의 「?」 원을 눌러 설명 카드를 다시 엶                       | content                                                                                                   |
+| rest_records_viewed           | 쉼터의 이용 기록 화면을 엶                                       | content                                                                                                   |
 | worry_box_handed              | 걱정상자에 걱정을 맡김                                           | chars (글자 수만)                                                                                         |
 | worry_box_choice_selected     | 걱정상자의 맡겨두기/흘려보내기 선택                              | choice: keep/release                                                                                      |
 | treasure_box_tucked           | 오늘의 보물함에 보물을 담음                                      | chars (글자 수만)                                                                                         |
@@ -186,7 +187,7 @@ step, duration_ms, longest_gap_ms, hold_cancels를 싣는다. duration_ms는 단
 worry_box, treasure_box, meditation, wish)로 가른다. 시간은 모두 전면 시계로 잰다.
 
 - rest_content_opened 의 entry 는 쉼터에 **어떻게 들어왔나**다. 회고 완료 화면(retro_done)에서 쉼터
-  묶음(쉼터 탭 · 바람카드 · 쉼 콘텐츠)으로 들어온 방문은 after_diary 이고(2026-10-12 부터 바람카드가 없는
+  묶음(쉼터 탭 · 바람카드 · 쉼 콘텐츠 · 그 안의 이용 기록과 지난 목록)으로 들어온 방문은 after_diary 이고(2026-10-12 부터 바람카드가 없는
   회고는 retro_done 을 거치지 않으므로 일기 확인 retro_draft 에서 곧장 온 방문도 after_diary 다), 그 묶음 안에서 옮겨 다니는
   동안 이어진다. 묶음 밖으로 나갔다 다시 들어오면 direct 다. diary_today 는 그 날(04:00 경계) 쓴 일기가
   이미 있는지다 — 일기를 쓰고 곧장 온 것(after_diary)과, 일기를 쓴 날 나중에 따로 온 것(direct · true)과,

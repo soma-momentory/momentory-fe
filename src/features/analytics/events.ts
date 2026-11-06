@@ -234,7 +234,7 @@ export const events = {
     voice_used: bool,
   },
   retrospect_exited: { retrospect_id: id, phase: retroPhase, turn_no: count },
-  retro_cta_clicked: { source: choice("home") },
+  retro_cta_clicked: { source: choice("home", "report") },
   voice_input_started: { retrospect_id: id },
   voice_permission_result: { granted: bool },
   voice_input_failed: { code: choice("no_speech", "network", "unavailable", "other") },
@@ -287,6 +287,8 @@ export const events = {
   rest_content_exited: { content: restContent, stage: restStage, duration_ms: millis },
   /** 쉼터의 「?」 원을 눌러 설명 카드를 다시 열었다 — 처음 저절로 뜬 것은 보내지 않는다 */
   rest_guide_opened: { content: restContent },
+  /** 어느 쉼터의 이용 기록을 열었나 — `screen_viewed` 에는 쉼터 이름이 없다. 기록 내용 · 기분은 싣지 않는다 */
+  rest_records_viewed: { content: restContent },
   /** 소원 연꽃(2026-11-04) — 글은 보내지 않는다. 글자 수와 결과만 싣는다 */
   wish_rules_agreed: {},
   wish_joined: { position: count, author: choice("user", "baba") },
