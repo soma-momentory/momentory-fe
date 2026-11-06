@@ -16,6 +16,7 @@ import { hasUnreadLetter, useLetters } from "@/features/letter/model/letter";
 import type { HomeWeather } from "@/features/home/model/weather";
 import { HomeV2View } from "@/features/home/ui/v2/HomeV2View";
 import { toHomeWeatherView } from "@/features/home/ui/v2/weatherStickers";
+import { useMusic } from "@/features/music/model/music";
 import { useSettings } from "@/features/my/model/settings";
 import { weekDays, weekEnd } from "@/features/report/model/report";
 
@@ -33,6 +34,11 @@ export default function Home() {
   const authStatus = useAuth((state) => state.status);
   const letterUserId = useLetters((state) => state.userId);
   const letters = useLetters((state) => state.summaries);
+  const musicTrackId = useMusic((state) => state.trackId);
+  const musicPlaying = useMusic((state) => state.playing);
+  const selectMusic = useMusic((state) => state.select);
+  const toggleMusic = useMusic((state) => state.toggle);
+  const skipMusic = useMusic((state) => state.skip);
   const weather = useHomeWeather();
   const [weatherInfoFor, setWeatherInfoFor] = useState<HomeWeather | null>(null);
   const [weatherIntroReadyFor, setWeatherIntroReadyFor] = useState<number | null>(null);
@@ -101,6 +107,8 @@ export default function Home() {
             retroNotify.enabled && retroNotify.time != null ? retroNotify.time : null,
           weather: weatherView,
           hasUnreadLetter: unreadLetter,
+          musicTrackId,
+          musicPlaying,
         }}
         actions={{
           onToggleDone: toggleDone,
@@ -127,6 +135,9 @@ export default function Home() {
           onOpenWeatherInfo: () => {
             if (weatherView != null) setWeatherInfoFor(currentWeather);
           },
+          onSelectMusic: selectMusic,
+          onToggleMusic: toggleMusic,
+          onSkipMusic: skipMusic,
         }}
         weatherIntroSheet={
           homeFocused && weather.status === "intro" && weatherIntroReadyFor === letterUserId ? (

@@ -4,6 +4,7 @@ import {
   homeV2,
   interaction,
   label,
+  musicPaper,
   primary,
   retroRug,
   retroDiary,
@@ -219,5 +220,12 @@ describe("쉼터 테마 카드", () => {
     for (const paper of Object.values(restThemeCard.paper)) {
       expect(contrast(homeV2.color.ink, paper)).toBeGreaterThanOrEqual(4.5);
     }
+  });
+});
+
+describe("홈 배경음악 창의 종이", () => {
+  it("창의 글자(제목 · 곡 이름 · 묶음 이름)는 종이 위에서 본문 AA 를 넘는다", () => {
+    expect(contrast(label.strong, musicPaper.surface)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(label.normal, musicPaper.surface)).toBeGreaterThanOrEqual(4.5);
   });
 });

@@ -6,6 +6,8 @@ import {
   type ExpoSpeechRecognitionErrorCode,
 } from "expo-speech-recognition";
 
+import { claimAudio } from "@/lib/audioClaim";
+
 /**
  * 입력창의 음성 입력(2026-09-29) — **OS 음성 인식기**(iOS `SFSpeechRecognizer` · Android
  * `SpeechRecognizer`)가 말을 글자로 바꾼다. 외부 STT API 도 서버 작업도 없다.
@@ -107,6 +109,12 @@ export function useVoiceInput({
   const busy = useRef(false);
   /** 보내기로 끊은 뒤 늦게 도착한 결과를 버린다 */
   const active = useRef(false);
+  /** 듣는 동안 배경음악을 세워 둔다 — 마이크가 음악까지 받아 적지 않게 */
+  const releaseAudio = useRef<(() => void) | null>(null);
+  const giveBackAudio = () => {
+    releaseAudio.current?.();
+    releaseAudio.current = null;
+  };
 
   useSpeechRecognitionEvent("start", () => {
     setListening(true);
@@ -117,6 +125,7 @@ export function useVoiceInput({
     clearTimeout(silence.current);
     active.current = false;
     setListening(false);
+    giveBackAudio();
   });
   useSpeechRecognitionEvent("result", (event) => {
     if (!active.current) return;
@@ -129,6 +138,7 @@ export function useVoiceInput({
   });
   useSpeechRecognitionEvent("error", (event) => {
     setListening(false);
+    giveBackAudio();
     const code = voiceFailure(event.error);
     if (code == null) return;
     onEvent?.({ type: "failed", code });
@@ -139,6 +149,8 @@ export function useVoiceInput({
     () => () => {
       clearTimeout(silence.current);
       ExpoSpeechRecognitionModule.abort();
+      releaseAudio.current?.();
+      releaseAudio.current = null;
     },
     [],
   );
@@ -157,6 +169,7 @@ export function useVoiceInput({
     }
     base.current = value;
     active.current = true;
+    releaseAudio.current ??= claimAudio();
     ExpoSpeechRecognitionModule.start({
       lang: "ko-KR",
       interimResults: true,

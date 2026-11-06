@@ -34,6 +34,7 @@ import { useWeeklyBook } from "@/features/report/model/weeklyBook";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
 import { useDraft } from "@/features/onboarding/model/draft";
+import { useMusic } from "@/features/music/model/music";
 import { clearGuideMemory } from "@/features/rest/data/guideMemory";
 import { clearRecommendationMemory } from "@/features/rest/data/recommendMemory";
 import { useRetro } from "@/features/retro/model/retro";
@@ -390,6 +391,8 @@ const clearUserScopedStores = (userId?: number) => {
   void clearRecommendationMemory();
   // 설명 카드를 본 쉼터도 그 사람의 것이다 — 다음 사람도 처음 들어간 쉼터에서 카드를 본다
   void clearGuideMemory();
+  // 틀어 둔 배경음악도 그 사람의 것이다 — 다음 사람의 앱이 소리부터 내지 않게
+  useMusic.getState().reset();
 };
 
 /**

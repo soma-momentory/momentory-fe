@@ -10,6 +10,7 @@ import { AnalyticsObserver } from "@/features/analytics/AnalyticsObserver";
 import { ToastHost } from "@/components/ds";
 import { startCalendarForegroundSync } from "@/features/calendar/model/foregroundSync";
 import { startDayRollover } from "@/features/home/model/dayRollover";
+import { startBackgroundMusic } from "@/features/music/model/musicPlayer";
 import { startReminderSync } from "@/features/my/model/reminders";
 import { ReminderRoute } from "@/features/my/ui/ReminderRoute";
 
@@ -71,6 +72,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
   // 새벽 4:00 에 하루가 넘어가는 것도 여기서 지킨다 — 밤새 켜 둔 앱이 어제 날짜와
   // 어제 일정을 든 채로 남지 않게(`features/home/model/dayRollover.ts`).
   useEffect(() => startDayRollover(), []);
+
+  // 배경음악도 여기서 낸다 — 홈에서 켜지만 탭을 옮겨도 이어져야 한다(`features/music/model/musicPlayer.ts`).
+  useEffect(() => startBackgroundMusic(), []);
 
   // 폰트를 기다리는 동안은 스플래시가 떠 있다. 여기서 무언가를 그리면
   // 시스템 서체로 한 번 그렸다가 바뀌며 깜빡인다.

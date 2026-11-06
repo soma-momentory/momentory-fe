@@ -120,6 +120,8 @@ export const homeV2 = {
     dock: { pebble: 34 },
     bell: { dot: 8 },
     mail: { icon: 28 },
+    /** 편지 아이콘 옆이라 크기를 맞춘다 */
+    music: { icon: 28 },
   },
   /** 종이 조각 · 스티커의 기울기 — 장식 */
   tilt: {

@@ -1,6 +1,12 @@
-import { createAudioPlayer } from "expo-audio";
+import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync } from "expo-audio";
 
-import { createSound } from "../audio";
+import {
+  createSound,
+  enterListeningSession,
+  enterMusicSession,
+  leaveListeningSession,
+} from "../audio";
+import { isAudioClaimed } from "../audioClaim";
 
 jest.mock("expo-audio", () => ({
   createAudioPlayer: jest.fn(),
@@ -45,5 +51,50 @@ describe("소리 하나", () => {
 
     expect(player.play).not.toHaveBeenCalled();
     expect(player.release).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("오디오 세션", () => {
+  it("안내 음성을 듣는 동안 배경음악을 세워 두고, 세션이 닫힌 뒤에야 돌려준다", async () => {
+    await enterListeningSession();
+    expect(isAudioClaimed()).toBe(true);
+
+    let closeSession: () => void = () => undefined;
+    (setIsAudioActiveAsync as jest.Mock).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        closeSession = resolve;
+      }),
+    );
+    leaveListeningSession();
+    // 음악이 먼저 돌아오면 늦게 닫히는 세션이 음악까지 멈춘다
+    expect(isAudioClaimed()).toBe(true);
+
+    closeSession();
+    await new Promise(process.nextTick);
+    expect(isAudioClaimed()).toBe(false);
+  });
+
+  it("세션을 닫다 실패해도 배경음악을 돌려준다", async () => {
+    await enterListeningSession();
+    (setIsAudioActiveAsync as jest.Mock).mockReturnValueOnce(Promise.reject(new Error("native")));
+    leaveListeningSession();
+    await new Promise(process.nextTick);
+    expect(isAudioClaimed()).toBe(false);
+  });
+
+  it("배경음악은 다른 앱의 소리를 멈추지 않고, 뒤로 가면 멈춘다", async () => {
+    await enterMusicSession({ respectSilentSwitch: true });
+    expect(setAudioModeAsync).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        playsInSilentMode: false,
+        interruptionMode: "mixWithOthers",
+        shouldPlayInBackground: false,
+      }),
+    );
+
+    await enterMusicSession({ respectSilentSwitch: false });
+    expect(setAudioModeAsync).toHaveBeenLastCalledWith(
+      expect.objectContaining({ playsInSilentMode: true }),
+    );
   });
 });
