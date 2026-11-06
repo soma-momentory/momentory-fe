@@ -62,5 +62,7 @@ export const reportBook = {
      * 발끝은 러그 위 가장자리에서 러그 높이의 `feet` 만큼 내려온 자리에 얹힌다.
      */
     rug: { perBody: 1.8, feet: 0.9 },
+    /** 말풍선 아래 끝에서 바바 귀 끝까지 — 꼬리가 머리에 닿지 않게 띄운다(2026-11-06) */
+    bubbleGap: 8,
   },
 } as const;

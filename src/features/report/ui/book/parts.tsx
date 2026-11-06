@@ -152,7 +152,15 @@ function rugUnder(body: BabaBody) {
 }
 
 /** 스티커 바바(`baba.png`)의 불투명 범위 — 픽셀. 그림은 흰 테두리 여백(`pad`)을 빼고 436 × 600 상자에 맞는다 */
-const STICKER_ART = { width: 436, height: 600, pad: 10, left: 15, right: 441, feet: 606 } as const;
+const STICKER_ART = {
+  width: 436,
+  height: 600,
+  pad: 10,
+  top: 14,
+  left: 15,
+  right: 441,
+  feet: 606,
+} as const;
 
 export function BabaSticker({ width }: { width: number }) {
   const unit = width / STICKER_ART.width;
@@ -196,7 +204,7 @@ const compositeBox = (width: number) => ({
 });
 
 /** 합친 그림(`baba-composite.png`)의 불투명 범위 — 픽셀 */
-const COMPOSITE_ART = { width: 436, left: 12, right: 424, feet: 589 } as const;
+const COMPOSITE_ART = { width: 436, top: 11, left: 12, right: 424, feet: 589 } as const;
 
 /** 속지 위의 바바 — 홈과 같은 그림을 스티커 없이 앉힌다 */
 export function BabaOnRug({ width }: { width: number }) {
@@ -227,6 +235,38 @@ export function BabaOnRug({ width }: { width: number }) {
     </View>
   );
 }
+
+/**
+ * 말풍선 바로 아래에 앉힐 때의 위 여백 — 말풍선 아래 끝에서 그림의 귀 끝까지 `reportBook.size.bubbleGap` 을
+ * 띄운다. 상자 위쪽의 투명 여백만큼은 끌어올리고, 그 이상은 겹치지 않는다.
+ */
+export const babaStickerGap = (width: number) =>
+  reportBook.size.bubbleGap - ((STICKER_ART.top - STICKER_ART.pad) * width) / STICKER_ART.width;
+
+/** 스티커 바바 상자의 높이 ÷ 폭 — 러그 아래 끝까지 */
+const STICKER_HEIGHT_PER_WIDTH = (() => {
+  const unit = 1 / STICKER_ART.width;
+  return rugUnder({
+    left: (STICKER_ART.left - STICKER_ART.pad) * unit,
+    width: (STICKER_ART.right - STICKER_ART.left) * unit,
+    feet: (STICKER_ART.feet - STICKER_ART.pad) * unit,
+  }).bottom;
+})();
+
+/**
+ * 말풍선 아래 `room` 높이 안에 띄움(`babaStickerGap`)까지 넣어 앉힐 수 있는 가장 큰 스티커 바바 폭. 화면이 낮거나
+ * 글씨가 커서 말풍선이 길어져도 말풍선이 바바나 위의 스티커를 덮지 않게 바바를 줄이는 데 쓴다.
+ */
+export const babaStickerFit = (room: number) =>
+  (room - reportBook.size.bubbleGap) /
+  (STICKER_HEIGHT_PER_WIDTH - (STICKER_ART.top - STICKER_ART.pad) / STICKER_ART.width);
+
+export const babaOnRugGap = (width: number) => {
+  const box = compositeBox(width);
+  return (
+    reportBook.size.bubbleGap - (box.top + (COMPOSITE_ART.top * box.width) / COMPOSITE_ART.width)
+  );
+};
 
 const BUBBLE =
   "M28 22 C55 12 77 0 106 5 C129 9 153 9 178 13 C210 14 219 34 216 58 C214 82 186 102 128 106 C127 116 122 128 114 139 C108 128 102 116 100 108 C80 110 50 106 29 103 C10 100 5 79 4 62 C2 47 11 35 28 22 Z";

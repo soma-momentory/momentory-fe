@@ -34,7 +34,10 @@ import { BookPageBody, pageSizeOf } from "./BookPages";
 import { KraftFace, Leaf, Notebook } from "./Notebook";
 import {
   BabaOnRug,
+  babaOnRugGap,
   BabaSticker,
+  babaStickerFit,
+  babaStickerGap,
   Bubble,
   hand,
   PaperButton,
@@ -78,6 +81,10 @@ const CLOSED = { aspect: 1.73, sideGap: 80, tilt: "-1.2deg" } as const;
 const OPENED = { left: 36, right: 30 } as const;
 /** 표지 안쪽 여백(바느질 · 고무줄을 피한다) */
 const COVER_PAD = { left: 40, right: 36 } as const;
+/** 표지 바바를 줄여도 이보다 작게 하지 않는다 */
+const COVER_BABA_MIN = 72;
+/** 불러오는 중 바바의 폭 */
+const LOADING_BABA = 120;
 
 const rangeOf = (book: WeeklyBook) => {
   const [, sm = "", sd = ""] = book.startDate.split("-").map(Number).map(String);
@@ -204,8 +211,8 @@ export function WeeklyBookView({
               <Bubble size={17} lineHeight={24} testID="book-loading">
                 리포트를 정리하고 있어요
               </Bubble>
-              <View style={styles.loadingBaba}>
-                <BabaOnRug width={120} />
+              <View style={{ marginTop: babaOnRugGap(LOADING_BABA) }}>
+                <BabaOnRug width={LOADING_BABA} />
               </View>
               <Spinner />
             </>
@@ -439,7 +446,13 @@ function Cover({ book, label, width }: { book: WeeklyBook; label: string; width:
     short ? 36 : 32,
     Math.floor((inner - 4 * Math.max(0, written.length - 1)) / Math.max(1, written.length)),
   );
-  const babaWidth = Math.min(short ? 96 : 112, width * 0.34);
+  // 말풍선 아래 남는 높이에 맞춰 바바를 줄인다 — 말풍선이 바바나 위의 스티커를 덮지 않게
+  const [talkBox, setTalkBox] = useState({ talk: 0, bubble: 0 });
+  const fullBaba = Math.min(short ? 96 : 112, width * 0.34);
+  const babaWidth =
+    talkBox.talk > 0
+      ? Math.max(COVER_BABA_MIN, Math.min(fullBaba, babaStickerFit(talkBox.talk - talkBox.bubble)))
+      : fullBaba;
   const small = width < 260;
   return (
     <View style={styles.cover}>
@@ -484,21 +497,35 @@ function Cover({ book, label, width }: { book: WeeklyBook; label: string; width:
           쉼터에 {book.restCount}번 다녀왔어요
         </Text>
       ) : null}
-      <View style={styles.talk}>
-        <Bubble
-          size={small ? 15 : short ? 16 : 17}
-          lineHeight={small ? 21 : short ? 22 : 24}
-          testID="book-cover-line"
+      <View
+        style={styles.talk}
+        onLayout={(e) => {
+          const talk = e.nativeEvent.layout.height;
+          setTalkBox((box) => (box.talk === talk ? box : { ...box, talk }));
+        }}
+      >
+        <View
+          style={styles.talkBubble}
+          onLayout={(e) => {
+            const bubble = e.nativeEvent.layout.height;
+            setTalkBox((box) => (box.bubble === bubble ? box : { ...box, bubble }));
+          }}
         >
-          {keepWords(
-            empty
-              ? "일기를 쓰면 일요일에 리포트가 도착해요"
-              : small
-                ? book.coverLine.replace(/\n/g, " ")
-                : book.coverLine,
-          )}
-        </Bubble>
-        <View style={styles.coverBaba}>
+          <Bubble
+            size={small ? 15 : short ? 16 : 17}
+            lineHeight={small ? 21 : short ? 22 : 24}
+            testID="book-cover-line"
+          >
+            {keepWords(
+              empty
+                ? "일기를 쓰면 일요일에 리포트가 도착해요"
+                : small
+                  ? book.coverLine.replace(/\n/g, " ")
+                  : book.coverLine,
+            )}
+          </Bubble>
+        </View>
+        <View style={[styles.coverBaba, { marginTop: babaStickerGap(babaWidth) }]}>
           <BabaSticker width={babaWidth} />
         </View>
       </View>
@@ -566,7 +593,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   centerText: { textAlign: "center" },
-  loadingBaba: { marginTop: -24 },
   past: {
     position: "absolute",
     right: 16,
@@ -669,7 +695,8 @@ const styles = StyleSheet.create({
   stickerDay: { alignItems: "center", gap: 1 },
   coverRest: { textAlign: "center", marginTop: 6 },
   talk: { flex: 1, minHeight: 0, justifyContent: "flex-end", marginLeft: -9, marginRight: -4 },
-  coverBaba: { alignSelf: "center", marginTop: -16 },
+  talkBubble: { alignSelf: "stretch" },
+  coverBaba: { alignSelf: "center" },
   sheet: { gap: 6 },
   sheetRow: {
     flexDirection: "row",
