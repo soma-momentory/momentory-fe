@@ -311,6 +311,30 @@ export const monthsBackFrom = (today: string, count: number): ArchiveMonth[] => 
   return out;
 };
 
+/**
+ * 지금까지 일기가 남은 **날짜 전부** — `GET /api/v1/diaries/all` (운영 · dev 둘 다 있다).
+ *
+ * 마이의 「일기 N일 기록」이 보관함 창(최근 12개월) 밖까지 세려고 부른다. 서버는 본문까지
+ * 통째로 주지만 여기서는 **날짜만** 꺼내 돌려준다 — 같은 날 두 편이어도 하루다.
+ * 실패하거나 모양이 어긋나면 `null`(던지지 않는다). 어긋난 항목 하나는 버리고 나머지를 센다.
+ */
+export const fetchAllDiaryDates = async (options?: {
+  signal?: AbortSignal;
+}): Promise<string[] | null> => {
+  const result = await authedRequest<unknown>("GET", `${DIARIES_PATH}/all`, undefined, {
+    timeoutMs: ARCHIVE_TIMEOUT_MS,
+    signal: options?.signal,
+  });
+  if (!result.ok || !isObject(result.data) || !Array.isArray(result.data.diaries)) return null;
+
+  const dates = new Set<string>();
+  for (const raw of result.data.diaries) {
+    const diary = toDiary(raw);
+    if (diary != null) dates.add(diary.date);
+  }
+  return [...dates].sort();
+};
+
 // ── 쓰기 ────────────────────────────────────────────────────────────────
 
 /** 실패 사유 — **코드**다. 화면 문구는 store 가 정한다(`scheduleApi.ts` 와 같은 결) */
