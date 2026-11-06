@@ -25,7 +25,7 @@ import { DIARY_BODY_MAX_LENGTH } from "./types";
  * 서버에서 뒤로 훑는 달 수 — 요청 수의 상한이다. 새 앱은 이 창 안에 기록이 다
  * 들어온다. BE 에 가입일/전체 조회가 생기면 실제 범위로 바꾼다(`diaryApi.ts`).
  */
-const ARCHIVE_MONTHS = 12;
+export const ARCHIVE_MONTHS = 12;
 
 /**
  * 회고를 마치면 남는 것 — `Diary` 한 장 + `ActionCard` 한 장.

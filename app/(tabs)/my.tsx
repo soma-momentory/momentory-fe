@@ -16,10 +16,11 @@ import {
 import { label as labelColor, primary, space } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { CALENDAR_NOTICE } from "@/features/calendar/model/notice";
-import { useDiary } from "@/features/diary/model/diary";
+
 import { saveLetterPreference } from "@/features/letter/model/letter";
 import { saveRetroReminder } from "@/features/my/model/basicInfo";
 import { adoptGrantedCalendar, linkCalendar } from "@/features/my/model/calendarLink";
+import { useRecordedDays } from "@/features/my/model/recordedDays";
 import { useProfile, useSettings, type NotifySetting } from "@/features/my/model/settings";
 import { MyMainView } from "@/features/my/ui/MyMainView";
 import { onForeground } from "@/lib/appState";
@@ -85,7 +86,6 @@ export default function My() {
   const { openNotificationSettings } = useLocalSearchParams<{
     openNotificationSettings?: string;
   }>();
-  const diaries = useDiary((s) => s.diaries);
   const nickname = useProfile((s) => s.nickname);
   const retro = useSettings((s) => s.notify.retro);
   const signOut = useAuth((s) => s.signOut);
@@ -188,8 +188,8 @@ export default function My() {
     setLinkingCalendar(false);
   };
 
-  // 연속 일수가 아니라 **기록이 남은 날 수**다 — 같은 날 두 편을 써도 하루다
-  const recordedDays = new Set(diaries.map((d) => d.date)).size;
+  // 연속 일수가 아니라 **기록이 남은 날 수**다 — 전체 기간 · 같은 날 두 편이어도 하루(`recordedDays.ts`)
+  const recordedDays = useRecordedDays();
   const notifyValue = retro.enabled ? `매일 ${formatKoreanTime(retro.time ?? "21:30")}` : "꺼짐";
 
   /**
