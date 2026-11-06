@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Screen, Text } from "@/components/ds";
+import { TabPaperBackground } from "@/components/ds/TabPaperBackground";
 import { MoodMark } from "@/components/rest/scene/MoodMark";
 import { SCENE_BACK_SIZE, SceneBackButton, SceneCard } from "@/components/rest/scene/SceneChrome";
 import { track } from "@/features/analytics";
@@ -37,13 +38,15 @@ import { toHHMM } from "@/lib/time";
  * 그 쉼터의 그림을 옅게 깔아 같은 공간으로 읽히게 한다(「지난 보물」과 같은 결).
  * 못 받아 오면 비어 있다는 말만 한다(`RULES.md` 4).
  */
-const BACKGROUNDS: Record<RestRecordContent, number> = {
+// 주간 행복은 장면이 아니라 기록장이라 그림이 없다 — 그 화면과 같은 쉼터 종이를 깐다
+const BACKGROUNDS: Record<RestRecordContent, number | null> = {
   sense_pond: require("../../assets/sensory-pond/pond.webp"),
   worry_box: require("../../assets/worry-box/forest.webp"),
   treasure_box: require("../../assets/treasure-box/meadow.webp"),
   body_release: require("../../assets/body-release/sky.webp"),
   meditation: require("../../assets/meditation/wave.webp"),
   wish: require("../../assets/wish/pond-night.webp"),
+  weekly_happiness: null,
 };
 
 export default function RestRecordsScreen() {
@@ -67,16 +70,23 @@ export default function RestRecordsScreen() {
   }, [content]);
 
   const days = useMemo(() => groupRecordsByDay(all ?? []), [all]);
+  const background = BACKGROUNDS[content];
 
   return (
     <Screen grid={false} padded={false} edges={[]}>
-      <Image
-        source={BACKGROUNDS[content]}
-        contentFit="cover"
-        transition={0}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={[StyleSheet.absoluteFill, styles.veil]} />
+      {background == null ? (
+        <TabPaperBackground tab="쉼터" />
+      ) : (
+        <>
+          <Image
+            source={background}
+            contentFit="cover"
+            transition={0}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[StyleSheet.absoluteFill, styles.veil]} />
+        </>
+      )}
       <ScrollView
         contentContainerStyle={[
           styles.content,
