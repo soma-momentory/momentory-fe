@@ -17,7 +17,7 @@
 
 | 출처                                                                     | 무엇                                                                                     |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `design-imports/claude-home/홈화면 시안 3개 검토/홈화면 시안 v2.dc.html` | Claude Design 홈 v2 원본(5a~5f 상태). 반입물이라 고치지 않는다                           |
+| `design-imports/claude-home/홈화면 시안 3개 검토/홈화면 시안 v2.dc.html` | Claude Design 홈 v2 원본(5a~5f 상태). 2026-11-05 에 지웠다 — 깃 기록 `9bbe605` 에 있다   |
 | `expo-lab/src/claude-home/{HomeView,tokens,scenarios,MockPreview}.ts(x)` | v2 의 RN 번역 — 값의 1차 근거. Lab 전용(`MockPreview.tsx:9` 「운영 앱에서 import 금지」) |
 | `app/(tabs)/home.tsx` + `src/features/home/ui/HomeView.tsx`              | 지금 운영 홈 — v2 로 바꿀 대상                                                           |
 

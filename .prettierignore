@@ -8,7 +8,6 @@ android/
 ios/
 expo-env.d.ts
 package-lock.json
-design-imports/
 
 # 상류 반입 스냅샷 — 포맷하면 본문 바이트가 바뀌어 SNAPSHOT.md 의 sha256 대조가 깨진다.
 docs/spec/

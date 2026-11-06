@@ -21,7 +21,7 @@ Expo Lab 의 「운영판 v2」 변형이 같은 파일을 그린다.
 
 - 같은 캔버스(170 × 227 자리 · `contain`)에 **위 순서로 겹쳐** 한 마리가 된다 — `ui/v2/Baba.tsx` 의
   `LAYERS` 배열이 이 표와 같은 순서다. 아홉 장 합계 약 155KB.
-- **출처**: Claude Design `design-imports/claude-home/홈화면 시안 3개 검토/Baba.dc.html`
+- **출처**: Claude Design `Baba.dc.html`(`design-imports/` 는 2026-11-05 에 지웠다 — 원본은 깃 기록 `9bbe605`)
   (v2 시안 `홈화면 시안 v2.dc.html` 이 부르는 컴포넌트). Lab 사본 `expo-lab/assets/claude-home/baba/` 를
   그대로 복사했다. Lab 사본과 「시안 원본」 변형은 2026-11-02 Expo Lab 전 화면 전환 때 지웠다(이 폴더가 이제 유일한 사본이다).
 - ⚠ **`base-ears-front.webp` 는 옮기지 않았다.** 원본 `Baba.dc.html` 에서 이 장은 **모자
