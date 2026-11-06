@@ -12,24 +12,20 @@
   ],
   "tags": [
     {
-      "name": "Authentication",
-      "description": "인증 API"
-    },
-    {
       "name": "ActionCards",
       "description": "행동 카드 보관함 API"
     },
     {
-      "name": "Schedules",
-      "description": "홈 일정 API"
-    },
-    {
-      "name": "Rest Records",
-      "description": "쉼터 이용 기록 API"
-    },
-    {
       "name": "Treasures",
       "description": "쉼터 오늘의 보물함 API"
+    },
+    {
+      "name": "Wishes",
+      "description": "쉼터 소원 빌기 — 하루 하나, 익명으로 7일 떠 있는 소원 API"
+    },
+    {
+      "name": "Letters",
+      "description": "바바의 편지 API"
     },
     {
       "name": "Onboarding",
@@ -44,8 +40,32 @@
       "description": "사용자 API"
     },
     {
+      "name": "Inquiries",
+      "description": "문의하기 API"
+    },
+    {
+      "name": "Authentication",
+      "description": "인증 API"
+    },
+    {
+      "name": "Schedules",
+      "description": "홈 일정 API"
+    },
+    {
+      "name": "Rest Records",
+      "description": "쉼터 이용 기록 API"
+    },
+    {
+      "name": "Worries",
+      "description": "쉼터 걱정상자 — 맡겨둔 걱정 API"
+    },
+    {
       "name": "Reports",
       "description": "주간 리포트 API"
+    },
+    {
+      "name": "Weather",
+      "description": "현재 위치의 날씨"
     },
     {
       "name": "Retrospect",
@@ -54,16 +74,143 @@
     {
       "name": "Daily Memos",
       "description": "하루 메모 API"
+    },
+    {
+      "name": "Notifications",
+      "description": "서버 공지·운영 소식 알림함"
     }
   ],
   "paths": {
+    "/api/v2/users/me/onboarding": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "새 온보딩 완료",
+        "description": "받은 항목만 고친다. 관심사 · 쉬는 방법 · 기타 설명은 받지 않고, 있던 값을 그대로 둔다.",
+        "operationId": "complete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteOnboardingV2Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "온보딩 저장 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteOnboardingV2Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "validationError": {
+                    "description": "validationError",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "nickname은 필수입니다."
+                    }
+                  },
+                  "unreadableRequest": {
+                    "description": "unreadableRequest",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wishes/{wishId}/outcome": {
+      "put": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "지나간 소원에 답하기",
+        "description": "「그 소원, 어떻게 됐어요?」에 답한다.",
+        "operationId": "answer",
+        "parameters": [
+          {
+            "name": "wishId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Answer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me/onboarding": {
       "put": {
         "tags": [
           "Users"
         ],
         "summary": "온보딩 완료 또는 갱신",
-        "operationId": "complete",
+        "operationId": "complete_1",
         "requestBody": {
           "content": {
             "application/json": {
@@ -124,6 +271,121 @@
                     "value": {
                       "code": "AUTHENTICATION_REQUIRED",
                       "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/letter-time": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "편지 알림 시각 저장",
+        "description": "처음 일기를 저장할 때 · 알림 설정에서 고른 바바의 편지 알림 시각과 켜기 여부를 프로필에 저장한다.",
+        "operationId": "updateLetterTime",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LetterTimeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "저장 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LetterTimeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "letterTimeRequired": {
+                    "description": "letterTimeRequired",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "letterTime은 필수입니다."
+                    }
+                  },
+                  "letterTimeFormat": {
+                    "description": "letterTimeFormat",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "letterTime은 HH:mm 형식이어야 합니다."
+                    }
+                  },
+                  "notificationEnabledRequired": {
+                    "description": "notificationEnabledRequired",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "notificationEnabled는 필수입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증이 없거나 유효하지 않음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "온보딩 전이라 프로필이 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "ONBOARDING_REQUIRED": {
+                    "description": "ONBOARDING_REQUIRED",
+                    "value": {
+                      "code": "ONBOARDING_REQUIRED",
+                      "message": "온보딩을 먼저 마쳐 주세요."
                     }
                   }
                 }
@@ -509,6 +771,419 @@
         ]
       }
     },
+    "/api/v1/letters/{id}/action": {
+      "put": {
+        "tags": [
+          "Letters"
+        ],
+        "summary": "작은 일 고르기",
+        "description": "작은 일 하나를 고르거나 바꾸고 「언제」를 남긴다. position 이 null 이면 선택을 푼다. 고른 일은 그 일기의 바람카드 「작은 행동」에도 옮겨 적고, 해 본 일이 기록된 뒤(밤 회고 답 · 쉼터 「했어요」)에는 바꿀 수 없다(409).",
+        "operationId": "chooseAction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 12
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseLetterActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "저장 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LetterResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "positionRange": {
+                    "description": "positionRange",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "작은 일 칸은 0부터 2까지입니다."
+                    }
+                  },
+                  "whenLabelTooLong": {
+                    "description": "whenLabelTooLong",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "「언제」는 최대 30자입니다."
+                    }
+                  },
+                  "LETTER_ACTION_NOT_FOUND": {
+                    "description": "LETTER_ACTION_NOT_FOUND",
+                    "value": {
+                      "code": "LETTER_ACTION_NOT_FOUND",
+                      "message": "편지에 그 작은 일이 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "편지 또는 일정 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "LETTER_NOT_FOUND": {
+                    "description": "LETTER_NOT_FOUND",
+                    "value": {
+                      "code": "LETTER_NOT_FOUND",
+                      "message": "편지를 찾을 수 없습니다."
+                    }
+                  },
+                  "SCHEDULE_NOT_FOUND": {
+                    "description": "SCHEDULE_NOT_FOUND",
+                    "value": {
+                      "code": "SCHEDULE_NOT_FOUND",
+                      "message": "일정을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "해 본 일이 이미 기록됨",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "LETTER_ACTION_LOCKED": {
+                    "description": "LETTER_ACTION_LOCKED",
+                    "value": {
+                      "code": "LETTER_ACTION_LOCKED",
+                      "message": "이미 해 본 작은 일은 바꿀 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/diaries/{id}": {
+      "get": {
+        "tags": [
+          "Diaries"
+        ],
+        "summary": "일기 단건 조회",
+        "operationId": "getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일기 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "DIARY_NOT_FOUND": {
+                    "description": "DIARY_NOT_FOUND",
+                    "value": {
+                      "code": "DIARY_NOT_FOUND",
+                      "message": "일기를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Diaries"
+        ],
+        "summary": "일기 본문 수정 — 일기 id 기준",
+        "operationId": "updateOriginal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryWriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "저장 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 본문",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "bodyRequired": {
+                    "description": "bodyRequired",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "일기 본문을 입력해주세요."
+                    }
+                  },
+                  "bodyTooLong": {
+                    "description": "bodyTooLong",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "일기는 500자까지 쓸 수 있어요."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일기 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "DIARY_NOT_FOUND": {
+                    "description": "DIARY_NOT_FOUND",
+                    "value": {
+                      "code": "DIARY_NOT_FOUND",
+                      "message": "일기를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Diaries"
+        ],
+        "summary": "일기 삭제",
+        "description": "일기 한 벌만 지운다 — 행동 카드는 자기 보관함에 남고 회고 세션도 남긴다.",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "삭제 성공"
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일기 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "DIARY_NOT_FOUND": {
+                    "description": "DIARY_NOT_FOUND",
+                    "value": {
+                      "code": "DIARY_NOT_FOUND",
+                      "message": "일기를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/diaries/{id}/weather": {
       "put": {
         "tags": [
@@ -878,6 +1553,475 @@
                     "value": {
                       "code": "ACTION_CARD_NOT_FOUND",
                       "message": "행동 카드를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/worries": {
+      "get": {
+        "tags": [
+          "Worries"
+        ],
+        "summary": "맡겨둔 걱정 목록 조회",
+        "description": "맡겨둔 걱정 전부를 최신순으로 돌려준다.",
+        "operationId": "getWorries",
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorryListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Worries"
+        ],
+        "summary": "걱정 맡겨두기",
+        "description": "「잠시 맡겨둘게요」를 고른 걱정 한 줄을 지금이 속한 하루(KST · 04:00 경계)에 남긴다. 「흘려보낼게요」를 고른 걱정은 보내지 않는다.",
+        "operationId": "keepWorry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "맡겨두기 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "malformedRequestBody": {
+                    "description": "malformedRequestBody",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "contentRequiredOrBlank": {
+                    "description": "contentRequiredOrBlank",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "걱정 내용을 입력해주세요."
+                    }
+                  },
+                  "contentTooLong": {
+                    "description": "contentTooLong",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "걱정 내용은 최대 100자입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wishes": {
+      "post": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "소원 띄우기",
+        "description": "심사가 돌려준 글과 표로 띄운다. 글이 다르거나 30분이 지난 표는 400 WISH_REVIEW_INVALID.",
+        "operationId": "post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FloatingWish"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wishes/{wishId}/report": {
+      "post": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "소원 신고",
+        "description": "그 작성자의 소원이 나에게 더 보이지 않는다. 서로 다른 3명이 신고하면 연못에서 내린다.",
+        "operationId": "report",
+        "parameters": [
+          {
+            "name": "wishId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "신고 되돌리기",
+        "description": "잘못 눌렀을 때. 이미 내려간 소원을 다시 올리지는 않는다.",
+        "operationId": "undoReport",
+        "parameters": [
+          {
+            "name": "wishId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wishes/{wishId}/join": {
+      "post": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "같이 빌기",
+        "description": "떠 있는 남의 소원에 같이 빈다. 여러 번 불러도 한 번만 남는다.",
+        "operationId": "join",
+        "parameters": [
+          {
+            "name": "wishId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wishes/rules-agreement": {
+      "post": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "이용 규칙 동의",
+        "description": "첫 소원 전에 한 번. 심사와 띄우기는 동의 뒤에만 된다(403 WISH_RULES_REQUIRED).",
+        "operationId": "agreeToRules",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wishes/review": {
+      "post": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "소원 심사",
+        "description": "띄우기 전에 글을 살핀다. 아무것도 저장하지 않는다. PASS·EDITED 면 띄울 글과 표를, REJECTED 면 안내 한 줄을, CRISIS 면 빈 값을 돌려준다. 오늘 이미 띄웠으면 409 WISH_DAILY_LIMIT, AI 가 실패하면 503 WISH_REVIEW_UNAVAILABLE.",
+        "operationId": "review",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Review"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WishReview"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/weather/current": {
+      "post": {
+        "tags": [
+          "Weather"
+        ],
+        "summary": "현재 위치의 날씨 조회",
+        "description": "좌표는 HTTPS 요청 본문으로만 받으며 저장하지 않는다. 조회는 상태를 바꾸지 않아 재시도할 수 있다.",
+        "operationId": "current",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurrentWeatherRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "날씨 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentWeatherResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "좌표가 올바르지 않습니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_COORDINATE": {
+                    "description": "INVALID_COORDINATE",
+                    "value": {
+                      "code": "INVALID_COORDINATE",
+                      "message": "좌표가 올바르지 않습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증이 필요합니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "요청이 너무 많습니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "TOO_MANY_REQUESTS": {
+                    "description": "TOO_MANY_REQUESTS",
+                    "value": {
+                      "code": "TOO_MANY_REQUESTS",
+                      "message": "요청이 너무 많습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "날씨 제공자 응답이 올바르지 않습니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "WEATHER_UPSTREAM_FAILED": {
+                    "description": "WEATHER_UPSTREAM_FAILED",
+                    "value": {
+                      "code": "WEATHER_UPSTREAM_FAILED",
+                      "message": "날씨를 가져오지 못했어요."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "날씨 기능을 사용할 수 없습니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "WEATHER_UNAVAILABLE": {
+                    "description": "WEATHER_UNAVAILABLE",
+                    "value": {
+                      "code": "WEATHER_UNAVAILABLE",
+                      "message": "날씨 기능을 사용할 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "날씨 제공자 응답 시간이 초과되었습니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "WEATHER_UPSTREAM_TIMEOUT": {
+                    "description": "WEATHER_UPSTREAM_TIMEOUT",
+                    "value": {
+                      "code": "WEATHER_UPSTREAM_TIMEOUT",
+                      "message": "날씨를 가져오지 못했어요."
                     }
                   }
                 }
@@ -1477,6 +2621,25 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "다른 작성 경로에서 오늘 일기를 이미 저장함",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "ALREADY_RETROSPECTED_TODAY": {
+                    "description": "ALREADY_RETROSPECTED_TODAY",
+                    "value": {
+                      "code": "ALREADY_RETROSPECTED_TODAY",
+                      "message": "오늘은 이미 회고를 완료했어요. 회고는 하루에 한 번만 할 수 있어요."
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1506,7 +2669,10 @@
                 "SENSE_POND",
                 "WORRY_BOX",
                 "TREASURE_BOX",
-                "BODY_RELEASE"
+                "BODY_RELEASE",
+                "MEDITATION",
+                "WISH",
+                "WEEKLY_HAPPINESS"
               ]
             },
             "example": "WORRY_BOX"
@@ -1656,6 +2822,473 @@
                     "value": {
                       "code": "AUTHENTICATION_REQUIRED",
                       "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/read": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "표시된 알림 읽음 처리",
+        "description": "요청한 ID만 처리하며 보이지 않는 ID는 건너뛴다.",
+        "operationId": "markRead",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadNotificationsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "읽음 처리"
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/letters/{id}/open": {
+      "post": {
+        "tags": [
+          "Letters"
+        ],
+        "summary": "편지 열람 기록",
+        "description": "처음 연 시각을 남긴다. 여러 번 불러도 처음 값만 남는다.",
+        "operationId": "open",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 12
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "기록 성공"
+          },
+          "400": {
+            "description": "잘못된 경로 값",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "편지 없음(아직 열리지 않은 날짜 · 남의 편지 포함)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "LETTER_NOT_FOUND": {
+                    "description": "LETTER_NOT_FOUND",
+                    "value": {
+                      "code": "LETTER_NOT_FOUND",
+                      "message": "편지를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/inquiries": {
+      "post": {
+        "tags": [
+          "Inquiries"
+        ],
+        "summary": "문의 보내기",
+        "description": "앱 안에서 쓴 문의를 남긴다. 답변은 메일로 하므로 받을 이메일은 선택이다. 기기 정보(운영체제 · 버전 · 앱 버전)는 앱이 채운다.",
+        "operationId": "addInquiry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InquiryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "접수 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquiryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "malformedRequestBody": {
+                    "description": "malformedRequestBody",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "categoryRequired": {
+                    "description": "categoryRequired",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "문의 종류를 골라주세요."
+                    }
+                  },
+                  "contentRequiredOrBlank": {
+                    "description": "contentRequiredOrBlank",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "문의 내용을 입력해주세요."
+                    }
+                  },
+                  "contentTooLong": {
+                    "description": "contentTooLong",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "문의 내용은 최대 2000자입니다."
+                    }
+                  },
+                  "invalidReplyEmail": {
+                    "description": "invalidReplyEmail",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "이메일 형식이 올바르지 않습니다."
+                    }
+                  },
+                  "deviceInfoTooLong": {
+                    "description": "deviceInfoTooLong",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "기기 정보는 최대 30자입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/diaries": {
+      "get": {
+        "tags": [
+          "Diaries"
+        ],
+        "summary": "월별 일기 목록 조회",
+        "description": "연·월(KST 기준)에 작성된 일기를 최신순으로 돌려준다.",
+        "operationId": "getMonthly",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 2026
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 8
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 연·월",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Diaries"
+        ],
+        "summary": "오늘 일기 직접 쓰기 — 본문·선택 감정·사건 저장",
+        "description": "본문은 그대로 저장하고, 채팅과 같은 추출기로 사건을 최대 두 개 추출해 보관한다. 사진 감정은 사용자가 선택한 값만 저장한다.",
+        "operationId": "write",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "저장 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 본문",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "bodyRequired": {
+                    "description": "bodyRequired",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "일기 본문을 입력해주세요."
+                    }
+                  },
+                  "invalidEmotion": {
+                    "description": "invalidEmotion",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "감정을 확인해주세요."
+                    }
+                  },
+                  "bodyTooLong": {
+                    "description": "bodyTooLong",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "일기는 500자까지 쓸 수 있어요."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "오늘 일기 존재",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "ALREADY_RETROSPECTED_TODAY": {
+                    "description": "ALREADY_RETROSPECTED_TODAY",
+                    "value": {
+                      "code": "ALREADY_RETROSPECTED_TODAY",
+                      "message": "오늘은 이미 회고를 완료했어요. 회고는 하루에 한 번만 할 수 있어요."
                     }
                   }
                 }
@@ -2637,6 +4270,168 @@
         ]
       }
     },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "알림 하나 읽음 처리",
+        "description": "같은 알림을 다시 읽음 처리해도 성공한다.",
+        "operationId": "markRead_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "읽음 처리"
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "알림을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "NOTIFICATION_NOT_FOUND": {
+                    "description": "NOTIFICATION_NOT_FOUND",
+                    "value": {
+                      "code": "NOTIFICATION_NOT_FOUND",
+                      "message": "알림을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v2/reports/weekly": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "주간 리포트 v2 조회",
+        "description": "그 주(일~토, KST)의 공책 한 권을 돌려준다. date 는 그 주에 속한 아무 날이다. 생략하면 일기가 남은 가장 최근의 끝난 주를 연다. 그 주를 처음 열면 AI 글을 만드느라 몇 초 걸릴 수 있다.",
+        "operationId": "getWeekly",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "조회할 주에 속한 아무 날",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-10-28"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyReportV2Response"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wishes/pond": {
+      "get": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "연못 조회",
+        "description": "남의 소원을 무작위로 최대 10장 돌려준다. 내 소원과 내가 신고한 사람의 소원은 빠지고, 5장보다 적으면 바바의 소원(author=BABA · 음수 id)으로 채운다. 호출할 때마다 다른 소원이 나온다.",
+        "operationId": "pond",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pond"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wishes/mine": {
+      "get": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "내 소원 조회",
+        "description": "떠 있는 소원과 지나간 소원. 같이 빈 사람 수는 돌려주지 않고 있었는지만 알린다. postedToday 는 오늘 몫을 썼는지다(지운 소원도 몫을 쓴 것이다).",
+        "operationId": "mine",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyWishes"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -2865,7 +4660,7 @@
         ],
         "summary": "주간 리포트 조회",
         "description": "그 주(일~토, KST)의 마음 일곱 칸과 요약 멘트, 일정·행동 카드·일기 셈을 돌려준다. date 는 그 주에 속한 아무 날이나 넣으면 되고, 서버가 해당 주의 일요일로 맞춘다. 생략하면 오늘(KST)이 속한 주다.",
-        "operationId": "getWeekly",
+        "operationId": "getWeekly_1",
         "parameters": [
           {
             "name": "date",
@@ -2981,34 +4776,209 @@
         ]
       }
     },
-    "/api/v1/diaries": {
+    "/api/v1/notifications": {
       "get": {
         "tags": [
-          "Diaries"
+          "Notifications"
         ],
-        "summary": "월별 일기 목록 조회",
-        "description": "연·월(KST 기준)에 작성된 일기를 최신순으로 돌려준다.",
-        "operationId": "getMonthly",
+        "summary": "알림함 목록",
+        "description": "발행 시각·ID 최신순. 일반 공지는 가입 이후 발행분을 90일 동안 표시한다.",
+        "operationId": "list",
         "parameters": [
           {
-            "name": "year",
+            "name": "cursor",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "example": 2026
+              "type": "string"
+            }
           },
           {
-            "name": "month",
+            "name": "size",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32"
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "알림 목록",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 크기 또는 커서",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "INVALID_CURSOR": {
+                    "description": "INVALID_CURSOR",
+                    "value": {
+                      "code": "INVALID_CURSOR",
+                      "message": "알림 목록 커서가 올바르지 않습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/unread": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "읽지 않은 알림 여부",
+        "description": "현재 보이는 알림 가운데 읽지 않은 항목이 있는지만 반환한다.",
+        "operationId": "unread",
+        "responses": {
+          "200": {
+            "description": "읽지 않음 여부",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/letters": {
+      "get": {
+        "tags": [
+          "Letters"
+        ],
+        "summary": "편지 목록",
+        "description": "옆으로 넘겨 보기 · 홈 아이콘 점 표시용 — 열 수 있는 편지의 날짜를 최신순으로 준다. 편지를 만들지 않아 바로 돌아온다. 내용은 날짜별 조회로 한 통씩 불러온다.",
+        "operationId": "getLetters",
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LetterListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/letters/{date}": {
+      "get": {
+        "tags": [
+          "Letters"
+        ],
+        "summary": "날짜별 편지",
+        "description": "그 날짜 일기의 편지. 아직 열리지 않은 날짜(오늘 · 미래)는 404.",
+        "operationId": "getByDate",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "일기 날짜 yyyy-MM-dd",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
             },
-            "example": 8
+            "example": "2026-10-26"
           }
         ],
         "responses": {
@@ -3017,13 +4987,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiaryListResponse"
+                  "$ref": "#/components/schemas/LetterResponse"
                 }
               }
             }
           },
           "400": {
-            "description": "잘못된 연·월",
+            "description": "잘못된 경로 값",
             "content": {
               "application/json": {
                 "schema": {
@@ -3059,6 +5029,25 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "편지 없음(아직 열리지 않은 날짜 · 남의 편지 포함)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "LETTER_NOT_FOUND": {
+                    "description": "LETTER_NOT_FOUND",
+                    "value": {
+                      "code": "LETTER_NOT_FOUND",
+                      "message": "편지를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3068,103 +5057,27 @@
         ]
       }
     },
-    "/api/v1/diaries/{id}": {
+    "/api/v1/letters/current": {
       "get": {
         "tags": [
-          "Diaries"
+          "Letters"
         ],
-        "summary": "일기 단건 조회",
-        "operationId": "getOne",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            },
-            "example": 1
-          }
-        ],
+        "summary": "지금 열 편지",
+        "description": "열 수 있는 가장 최근 편지를 준다(오래된 편지여도 준다). 받은 날과 그다음 날이면 isNew 가 true 다. 편지가 한 통도 없으면 204. 아직 만들지 못한 편지면 그 자리에서 만들어 보통 2~3초, 드물게 16초쯤 걸릴 수 있으니, 홈 아이콘의 점은 이 API 대신 편지 목록의 첫 칸(isNew · openedAt)으로 정한다.",
+        "operationId": "getCurrent",
         "responses": {
           "200": {
             "description": "조회 성공",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiaryResponse"
+                  "$ref": "#/components/schemas/LetterResponse"
                 }
               }
             }
           },
-          "401": {
-            "description": "인증 필요",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "AUTHENTICATION_REQUIRED": {
-                    "description": "AUTHENTICATION_REQUIRED",
-                    "value": {
-                      "code": "AUTHENTICATION_REQUIRED",
-                      "message": "인증이 필요합니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "일기 없음",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "DIARY_NOT_FOUND": {
-                    "description": "DIARY_NOT_FOUND",
-                    "value": {
-                      "code": "DIARY_NOT_FOUND",
-                      "message": "일기를 찾을 수 없습니다."
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "Diaries"
-        ],
-        "summary": "일기 삭제",
-        "description": "일기 한 벌만 지운다 — 행동 카드는 자기 보관함에 남고 회고 세션도 남긴다.",
-        "operationId": "delete",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            },
-            "example": 1
-          }
-        ],
-        "responses": {
           "204": {
-            "description": "삭제 성공"
+            "description": "편지가 한 통도 없음"
           },
           "401": {
             "description": "인증 필요",
@@ -3186,18 +5099,18 @@
             }
           },
           "404": {
-            "description": "일기 없음",
+            "description": "편지를 만드는 사이 일기가 지워짐",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiErrorResponse"
                 },
                 "examples": {
-                  "DIARY_NOT_FOUND": {
-                    "description": "DIARY_NOT_FOUND",
+                  "LETTER_NOT_FOUND": {
+                    "description": "LETTER_NOT_FOUND",
                     "value": {
-                      "code": "DIARY_NOT_FOUND",
-                      "message": "일기를 찾을 수 없습니다."
+                      "code": "LETTER_NOT_FOUND",
+                      "message": "편지를 찾을 수 없습니다."
                     }
                   }
                 }
@@ -3488,10 +5401,224 @@
           }
         ]
       }
+    },
+    "/api/v1/wishes/{wishId}": {
+      "delete": {
+        "tags": [
+          "Wishes"
+        ],
+        "summary": "내 소원 지우기",
+        "description": "연못에서 사라지고 본문을 비운다. 그날의 몫은 돌아오지 않는다.",
+        "operationId": "delete_2",
+        "parameters": [
+          {
+            "name": "wishId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "CompleteOnboardingV2Request": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "description": "닉네임",
+            "example": "하늘",
+            "maxLength": 10,
+            "minLength": 0
+          },
+          "age": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "나이. 건너뛰면 null",
+            "example": 25,
+            "maximum": 120,
+            "minimum": 1
+          },
+          "gender": {
+            "type": "string",
+            "description": "성별. 건너뛰면 UNSPECIFIED",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "UNSPECIFIED"
+            ],
+            "example": "FEMALE"
+          },
+          "reflectionTime": {
+            "type": "string",
+            "description": "회고 시간",
+            "example": "22:30",
+            "minLength": 1,
+            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "notificationEnabled": {
+            "type": "boolean",
+            "description": "푸시 알림 수신 선호 여부",
+            "example": true
+          },
+          "calendarIntegrationEnabled": {
+            "type": "boolean",
+            "description": "프론트가 보고한 캘린더 연동 성공 여부",
+            "example": false
+          },
+          "moodChange": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "하루에 기분이 몇 번쯤 바뀌나요? 건너뛰면 null",
+            "enum": [
+              "RARELY",
+              "FEW_TIMES",
+              "VERY_OFTEN"
+            ],
+            "example": "FEW_TIMES"
+          },
+          "knowWhy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "내 기분이 왜 그런지, 잘 아는 편인가요? 건너뛰면 null",
+            "enum": [
+              "MOSTLY",
+              "SOMETIMES",
+              "NOT_SURE"
+            ],
+            "example": "SOMETIMES"
+          },
+          "dayEnd": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "하루가 끝나면, 주로 어떤 편인가요? 건너뛰면 null",
+            "enum": [
+              "TIRED_SLEEP",
+              "OVERTHINK",
+              "OKAY"
+            ],
+            "example": "TIRED_SLEEP"
+          },
+          "diaryHistory": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "일기를 써 본 적 있나요? 건너뛰면 null",
+            "enum": [
+              "REGULARLY",
+              "STOPPED",
+              "RARELY"
+            ],
+            "example": "STOPPED"
+          },
+          "goals": {
+            "type": "array",
+            "description": "바바와 해 보고 싶은 것. 비어도 된다",
+            "example": [
+              "KNOW_WHEN_TIRED"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "KNOW_WHEN_TIRED",
+                "FIND_TIRED_REASON",
+                "WRAPUP_HABIT",
+                "DIARY_HABIT",
+                "REST_ON_HARD_DAYS"
+              ]
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "calendarIntegrationEnabled",
+          "gender",
+          "goals",
+          "nickname",
+          "notificationEnabled",
+          "reflectionTime"
+        ]
+      },
+      "CompleteOnboardingV2Response": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "사용자 ID",
+            "example": 1
+          },
+          "onboardingRequired": {
+            "type": "boolean",
+            "description": "온보딩 필요 여부",
+            "example": false
+          },
+          "onboardingVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "사용자가 마친 온보딩 판",
+            "example": 2
+          }
+        }
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "description": "API 오류 응답",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "클라이언트가 오류 종류를 식별하는 애플리케이션 오류 코드",
+            "example": "INVALID_REQUEST"
+          },
+          "message": {
+            "type": "string",
+            "description": "사용자에게 전달되는 오류 설명",
+            "example": "잘못된 요청입니다."
+          }
+        }
+      },
+      "Answer": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "description": "지나간 소원에 답하기",
+            "enum": [
+              "CAME_TRUE",
+              "NOT_YET"
+            ],
+            "example": "CAME_TRUE"
+          }
+        },
+        "required": [
+          "outcome"
+        ]
+      },
       "CompleteOnboardingRequest": {
         "type": "object",
         "properties": {
@@ -3525,7 +5652,7 @@
           },
           "interestAreas": {
             "type": "array",
-            "description": "관심 분야",
+            "description": "관심 분야. 비어도 된다",
             "example": [
               "CAREER",
               "RELATIONSHIP"
@@ -3543,7 +5670,6 @@
                 "OTHER"
               ]
             },
-            "minItems": 1,
             "uniqueItems": true
           },
           "otherInterestDetail": {
@@ -3645,19 +5771,39 @@
           }
         }
       },
-      "ApiErrorResponse": {
+      "LetterTimeRequest": {
         "type": "object",
-        "description": "API 오류 응답",
         "properties": {
-          "code": {
+          "letterTime": {
             "type": "string",
-            "description": "클라이언트가 오류 종류를 식별하는 애플리케이션 오류 코드",
-            "example": "INVALID_REQUEST"
+            "description": "편지 알림 시각",
+            "example": "08:30",
+            "minLength": 1,
+            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
           },
-          "message": {
+          "notificationEnabled": {
+            "type": "boolean",
+            "description": "편지 알림 켜기 여부. 「알림 없이 볼게요」면 false",
+            "example": true
+          }
+        },
+        "required": [
+          "letterTime",
+          "notificationEnabled"
+        ]
+      },
+      "LetterTimeResponse": {
+        "type": "object",
+        "properties": {
+          "letterTime": {
             "type": "string",
-            "description": "사용자에게 전달되는 오류 설명",
-            "example": "잘못된 요청입니다."
+            "description": "편지 알림 시각",
+            "example": "08:30"
+          },
+          "notificationEnabled": {
+            "type": "boolean",
+            "description": "편지 알림 켜기 여부",
+            "example": true
           }
         }
       },
@@ -3751,25 +5897,191 @@
           }
         }
       },
-      "DiaryWeatherRequest": {
+      "ChooseLetterActionRequest": {
         "type": "object",
         "properties": {
-          "latitude": {
-            "type": "number",
-            "example": 37.57,
-            "maximum": 90,
-            "minimum": -90
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "고를 칸 0~2. null 이면 선택을 푼다",
+            "example": 1,
+            "maximum": 2,
+            "minimum": 0
           },
-          "longitude": {
-            "type": "number",
-            "example": 126.98,
-            "maximum": 180,
-            "minimum": -180
+          "whenLabel": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "고른 「언제」 칩의 말",
+            "example": "점심 뒤",
+            "maxLength": 30,
+            "minLength": 0
+          },
+          "scheduleId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "일정 칩을 골랐을 때 그 일정 ID",
+            "example": 41
+          },
+          "remindAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "알림 시각(ISO-8601). 없으면 알림 없이",
+            "example": "2026-10-27T03:30:00Z"
+          }
+        }
+      },
+      "Action": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "format": "int32",
+            "description": "칸 번호 0~2",
+            "example": 0
+          },
+          "title": {
+            "type": "string",
+            "description": "승인된 행동 제목 그대로",
+            "example": "5분 동안 숨을 들이쉬고 길게 내쉬기"
+          },
+          "source": {
+            "type": "string",
+            "description": "CATALOG: AI 가 연결표에서 고름 · FALLBACK: 연결표 순서대로 채움",
+            "enum": [
+              "CATALOG",
+              "FALLBACK"
+            ],
+            "example": "CATALOG"
+          },
+          "chosen": {
+            "type": "boolean",
+            "description": "고른 일인가. 한 편지에 하나만 true",
+            "example": false
+          },
+          "whenLabel": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "고른 「언제」 칩의 말",
+            "example": "점심 뒤"
+          },
+          "scheduleId": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "일정 칩을 골랐을 때 그 일정 ID"
+          },
+          "remindAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "고른 알림 시각. 없으면 알림 없이"
+          }
+        }
+      },
+      "LetterResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "편지 ID",
+            "example": 12
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "편지의 출처 일기 날짜(04:00 경계). 그다음 날부터 열린다",
+            "example": "2026-10-26"
+          },
+          "status": {
+            "type": "string",
+            "description": "READY: AI 편지 · FALLBACK: 기본 편지 · QUIET: 조용한 편지",
+            "enum": [
+              "READY",
+              "FALLBACK",
+              "QUIET"
+            ],
+            "example": "READY"
+          },
+          "quote": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "AI 편지면 어제 사용자가 한 말 그대로(원문 대조를 통과하지 못하면 null), 기본 편지면 일기 첫 문장. 조용한 편지면 null",
+            "example": "발표 전에 손이 계속 떨렸어요"
+          },
+          "insight": {
+            "type": "string",
+            "description": "바바가 알아챈 관점(조용한 편지면 고정 문구)",
+            "example": "떨렸던 건 그만큼 잘하고 싶었기 때문이었을지도 몰라요."
+          },
+          "tonightQuestion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "오늘 밤 첫 질문 예고. 조용한 편지면 null",
+            "example": "오늘 밤엔 발표 뒤 마음부터 물어볼게요."
+          },
+          "actions": {
+            "type": "array",
+            "description": "오늘 해 볼 작은 일(최대 3개). 조용한 편지면 빈 목록",
+            "items": {
+              "$ref": "#/components/schemas/Action"
+            }
+          },
+          "helplines": {
+            "type": "array",
+            "description": "도움받을 곳. 조용한 편지에만 있고 나머지는 빈 목록",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isNew": {
+            "type": "boolean",
+            "description": "받은 날 · 그다음 날이면 true. 홈 아이콘 점은 isNew 이고 openedAt 이 없을 때 단다",
+            "example": true
+          },
+          "openedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "처음 연 시각. 아직 안 열었으면 null"
+          }
+        }
+      },
+      "DiaryWriteRequest": {
+        "type": "object",
+        "properties": {
+          "original": {
+            "type": "string",
+            "description": "직접 쓴 일기 본문",
+            "maxLength": 500,
+            "minLength": 0
           }
         },
         "required": [
-          "latitude",
-          "longitude"
+          "original"
         ]
       },
       "DiaryResponse": {
@@ -3784,7 +6096,7 @@
           "retrospectId": {
             "type": "integer",
             "format": "int64",
-            "description": "그날의 회고 id — 행동 카드 조회에 쓴다",
+            "description": "그날의 회고 id — 직접 쓴 일기는 생략",
             "example": 10
           },
           "primaryEmotion": {
@@ -3819,6 +6131,27 @@
             "example": "맑음 · 22℃"
           }
         }
+      },
+      "DiaryWeatherRequest": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "example": 37.57,
+            "maximum": 90,
+            "minimum": -90
+          },
+          "longitude": {
+            "type": "number",
+            "example": 126.98,
+            "maximum": 180,
+            "minimum": -180
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
       },
       "DiaryUpdateRequest": {
         "type": "object",
@@ -3877,6 +6210,209 @@
           "reflection": {
             "type": "string",
             "description": "느낀 점 — 해본 뒤에만"
+          }
+        }
+      },
+      "WorryRequest": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "맡겨둘 걱정 한 줄(최대 100자)",
+            "example": "내일 발표가 잘 안될까 봐 걱정돼요",
+            "maxLength": 100,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "WorryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "걱정 id",
+            "example": 1
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "속한 하루(KST · 04:00 경계)",
+            "example": "2026-10-13"
+          },
+          "content": {
+            "type": "string",
+            "description": "맡겨둔 걱정 한 줄",
+            "example": "내일 발표가 잘 안될까 봐 걱정돼요"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "맡긴 시각",
+            "example": "2026-10-13T11:23:47.850Z"
+          }
+        }
+      },
+      "Post": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "심사가 돌려준 글 그대로",
+            "example": "내일 면접에서 떨지 않으면 좋겠어요",
+            "maxLength": 120,
+            "minLength": 0
+          },
+          "reviewToken": {
+            "type": "string",
+            "description": "심사가 돌려준 표",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "content",
+          "reviewToken"
+        ]
+      },
+      "FloatingWish": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "content": {
+            "type": "string"
+          },
+          "daysLeft": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "joinedByOthers": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "심사할 소원(최대 120자)",
+            "example": "내일 면접에서 떨지 않으면 좋겠어요",
+            "maxLength": 120,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "WishReview": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "EDITED",
+              "REJECTED",
+              "CRISIS"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "reviewToken": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "CurrentWeatherRequest": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "example": 37.57,
+            "maximum": 90,
+            "minimum": -90
+          },
+          "longitude": {
+            "type": "number",
+            "example": 126.98,
+            "maximum": 180,
+            "minimum": -180
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ]
+      },
+      "CurrentWeatherResponse": {
+        "type": "object",
+        "properties": {
+          "condition": {
+            "$ref": "#/components/schemas/WeatherCondition"
+          },
+          "symbolCode": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "temperatureC": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "forecastTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceUrl": {
+            "type": "string"
+          },
+          "licenseUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "WeatherCondition": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "family": {
+            "type": "string"
+          },
+          "intensity": {
+            "type": "string"
+          },
+          "showers": {
+            "type": "boolean"
+          },
+          "thunder": {
+            "type": "boolean"
+          },
+          "daylight": {
+            "type": "string"
+          },
+          "windy": {
+            "type": "boolean"
           }
         }
       },
@@ -4280,7 +6816,10 @@
               "SENSE_POND",
               "WORRY_BOX",
               "TREASURE_BOX",
-              "BODY_RELEASE"
+              "BODY_RELEASE",
+              "MEDITATION",
+              "WISH",
+              "WEEKLY_HAPPINESS"
             ],
             "example": "WORRY_BOX"
           },
@@ -4324,7 +6863,10 @@
               "SENSE_POND",
               "WORRY_BOX",
               "TREASURE_BOX",
-              "BODY_RELEASE"
+              "BODY_RELEASE",
+              "MEDITATION",
+              "WISH",
+              "WEEKLY_HAPPINESS"
             ],
             "example": "WORRY_BOX"
           },
@@ -4359,6 +6901,143 @@
             "example": "2026-10-08T11:23:47.850Z"
           }
         }
+      },
+      "ReadNotificationsRequest": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 19,
+              "minLength": 0,
+              "pattern": "[0-9]+"
+            },
+            "maxItems": 50,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "ids"
+        ]
+      },
+      "InquiryRequest": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "문의 종류",
+            "enum": [
+              "BUG",
+              "SUGGESTION",
+              "ACCOUNT",
+              "ETC"
+            ],
+            "example": "BUG"
+          },
+          "content": {
+            "type": "string",
+            "description": "문의 내용(최대 2000자)",
+            "example": "일기를 저장하면 앱이 꺼져요.",
+            "maxLength": 2000,
+            "minLength": 0
+          },
+          "replyEmail": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "email",
+            "description": "답변 받을 이메일 — 선택",
+            "example": "momentory@example.com",
+            "maxLength": 254,
+            "minLength": 0
+          },
+          "platform": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "보낸 기기의 운영체제 — 앱이 채운다",
+            "enum": [
+              "IOS",
+              "ANDROID"
+            ],
+            "example": "IOS"
+          },
+          "osVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "운영체제 버전 — 앱이 채운다",
+            "example": "18.6",
+            "maxLength": 30,
+            "minLength": 0
+          },
+          "appVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "앱 버전 — 앱이 채운다",
+            "example": "1.2.0",
+            "maxLength": 30,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "category",
+          "content"
+        ]
+      },
+      "InquiryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "문의 id",
+            "example": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "받은 시각",
+            "example": "2026-10-13T11:23:47.850Z"
+          }
+        }
+      },
+      "DiaryCreateRequest": {
+        "type": "object",
+        "properties": {
+          "original": {
+            "type": "string",
+            "description": "직접 쓴 일기 본문",
+            "maxLength": 500,
+            "minLength": 0
+          },
+          "emotion": {
+            "type": "string",
+            "description": "사용자가 선택한 감정 키. 선택하지 않으면 생략",
+            "enum": [
+              "happy",
+              "proud",
+              "calm",
+              "tired",
+              "stuck",
+              "lethargic",
+              "anxious",
+              "depressed",
+              "angry",
+              "frustrated"
+            ],
+            "pattern": "happy|proud|calm|tired|stuck|lethargic|anxious|depressed|angry|frustrated"
+          }
+        },
+        "required": [
+          "original"
+        ]
       },
       "RefreshTokenReissueRequest": {
         "type": "object",
@@ -4598,6 +7277,412 @@
           "scheduleIds"
         ]
       },
+      "Day": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "written": {
+            "type": "boolean"
+          },
+          "emotion": {
+            "type": "string",
+            "description": "대표 감정 키 — 없으면 null",
+            "example": "calm"
+          }
+        }
+      },
+      "Done": {
+        "type": "object",
+        "properties": {
+          "completedCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "perDay": {
+            "type": "array",
+            "description": "일요일부터 토요일까지 요일별 마친 수",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "linked": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinkedTask"
+            }
+          }
+        }
+      },
+      "EmotionEvents": {
+        "type": "object",
+        "properties": {
+          "emotion": {
+            "type": "string",
+            "example": "anxious"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LinkedTask": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "OkMoment": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "emotion": {
+            "type": "string",
+            "example": "calm"
+          },
+          "event": {
+            "type": "string"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "betterRest": {
+            "type": "string",
+            "description": "그날 「나아졌어요」를 고른 쉼터 — 없으면 null",
+            "example": "BODY_RELEASE"
+          }
+        }
+      },
+      "Rest": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "better": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "same": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "unsure": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "places": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RestPlace"
+            }
+          },
+          "soFar": {
+            "$ref": "#/components/schemas/RestSoFar"
+          }
+        }
+      },
+      "RestPlace": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "example": "WORRY_BOX"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "better": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "same": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "unsure": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "RestSoFar": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "null 이면 쉼터 전체를 합친 값"
+          },
+          "answered": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "better": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "WeeklyReportV2Response": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "주 시작일(일요일, KST)",
+            "example": "2026-10-25"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "주 종료일(토요일, KST)",
+            "example": "2026-10-31"
+          },
+          "newest": {
+            "type": "boolean",
+            "description": "가장 최근에 끝난 주인가"
+          },
+          "diaryCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "그 주에 일기를 남긴 날 수",
+            "example": 6
+          },
+          "detailed": {
+            "type": "boolean",
+            "description": "안쪽 장이 열리는 주인가(일기 3일 이상)"
+          },
+          "tone": {
+            "type": "string",
+            "description": "마지막 인사의 말투",
+            "enum": [
+              "NORMAL",
+              "HARD",
+              "CRISIS"
+            ]
+          },
+          "helpResources": {
+            "type": "array",
+            "description": "위기 안내가 나온 주의 도움받을 곳 — 그 밖에는 빈 목록",
+            "items": {
+              "type": "string"
+            }
+          },
+          "days": {
+            "type": "array",
+            "description": "일요일부터 토요일까지 일곱 칸",
+            "items": {
+              "$ref": "#/components/schemas/Day"
+            }
+          },
+          "restCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "끝까지 한 쉼터 횟수",
+            "example": 4
+          },
+          "coverLine": {
+            "type": "string",
+            "description": "표지 문장"
+          },
+          "review": {
+            "type": "string",
+            "description": "바바가 본 한 주 — 없으면 null"
+          },
+          "goodWords": {
+            "type": "string",
+            "description": "바바가 본 한 주 끝의 좋은 말 — 없으면 null"
+          },
+          "okLine": {
+            "type": "string",
+            "description": "괜찮았던 순간의 공통점 문장 — 없으면 null"
+          },
+          "words": {
+            "type": "array",
+            "description": "내가 남겼던 말 — 사용자가 직접 쓴 문장만",
+            "items": {
+              "$ref": "#/components/schemas/Word"
+            }
+          },
+          "emotions": {
+            "type": "array",
+            "description": "감정과 있었던 일 — 많이 나온 순",
+            "items": {
+              "$ref": "#/components/schemas/EmotionEvents"
+            }
+          },
+          "okMoments": {
+            "type": "array",
+            "description": "괜찮았던 순간",
+            "items": {
+              "$ref": "#/components/schemas/OkMoment"
+            }
+          },
+          "rest": {
+            "$ref": "#/components/schemas/Rest",
+            "description": "쉬어 간 곳"
+          },
+          "done": {
+            "$ref": "#/components/schemas/Done",
+            "description": "해낸 일"
+          }
+        }
+      },
+      "Word": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "label": {
+            "type": "string",
+            "description": "문장 위에 붙는 이름 — 없으면 null",
+            "example": "편지에서 고른 산책 10분"
+          },
+          "fromLetter": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "WorryListResponse": {
+        "type": "object",
+        "properties": {
+          "worries": {
+            "type": "array",
+            "description": "맡겨둔 걱정 목록",
+            "items": {
+              "$ref": "#/components/schemas/WorryResponse"
+            }
+          }
+        }
+      },
+      "Pond": {
+        "type": "object",
+        "properties": {
+          "rulesAgreed": {
+            "type": "boolean"
+          },
+          "postedToday": {
+            "type": "boolean"
+          },
+          "hasFloatingWish": {
+            "type": "boolean"
+          },
+          "floatingCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "wishes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PondWish"
+            }
+          }
+        }
+      },
+      "PondWish": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "content": {
+            "type": "string"
+          },
+          "daysLeft": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "light": {
+            "type": "boolean"
+          },
+          "joined": {
+            "type": "boolean"
+          },
+          "author": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "BABA"
+            ]
+          }
+        }
+      },
+      "MyWishes": {
+        "type": "object",
+        "properties": {
+          "postedToday": {
+            "type": "boolean"
+          },
+          "floating": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FloatingWish"
+            }
+          },
+          "past": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PastWish"
+            }
+          }
+        }
+      },
+      "PastWish": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "content": {
+            "type": "string"
+          },
+          "endReason": {
+            "type": "string",
+            "enum": [
+              "EXPIRED",
+              "REPORTED"
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "CAME_TRUE",
+              "NOT_YET"
+            ]
+          }
+        }
+      },
       "Profile": {
         "type": "object",
         "properties": {
@@ -4706,6 +7791,19 @@
             "type": "boolean",
             "description": "푸시 알림 수신 선호 여부",
             "example": true
+          },
+          "letterTime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "바바의 편지 알림 시각. 아직 고르지 않았으면 없다(앱은 08:30 으로 본다)",
+            "example": "08:30"
+          },
+          "letterNotificationEnabled": {
+            "type": "boolean",
+            "description": "바바의 편지 알림 켜기 여부",
+            "example": true
           }
         }
       },
@@ -4725,8 +7823,20 @@
           },
           "onboardingRequired": {
             "type": "boolean",
-            "description": "온보딩 필요 여부",
+            "description": "온보딩 필요 여부. 한 번도 안 했을 때만 true 다",
             "example": true
+          },
+          "onboardingVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "사용자가 마친 온보딩 판. 0 은 아직 안 함",
+            "example": 1
+          },
+          "latestOnboardingVersion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "지금 앱이 보여 주는 온보딩 판. onboardingVersion 이 이보다 낮으면 새 앱이 온보딩을 다시 보여 준다",
+            "example": 2
           },
           "profile": {
             "type": "null",
@@ -4972,6 +8082,107 @@
           },
           "label": {
             "type": "string"
+          }
+        }
+      },
+      "NotificationListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "NotificationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "link": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "UnreadResponse": {
+        "type": "object",
+        "properties": {
+          "hasUnread": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "편지 ID",
+            "example": 12
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "편지의 출처 일기 날짜",
+            "example": "2026-10-26"
+          },
+          "isNew": {
+            "type": "boolean",
+            "description": "받은 날 · 그다음 날이면 true",
+            "example": true
+          },
+          "openedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "처음 연 시각. 아직 안 열었으면 null"
+          }
+        }
+      },
+      "LetterListResponse": {
+        "type": "object",
+        "properties": {
+          "letters": {
+            "type": "array",
+            "description": "열 수 있는 편지, 최신순. 내용은 날짜별 조회로 한 통씩 불러온다",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
           }
         }
       },
