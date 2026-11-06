@@ -78,9 +78,14 @@ export default function Report() {
               router.push(`/diary/${id}`);
             }}
             writeLabel={todayDiary == null ? "오늘 일기 쓰기" : "오늘 일기 보기"}
-            onWriteDiary={() =>
-              router.push(todayDiary == null ? "/retro/confirm" : `/diary/${todayDiary.id}`)
-            }
+            onWriteDiary={() => {
+              if (todayDiary != null) {
+                router.push(`/diary/${todayDiary.id}`);
+                return;
+              }
+              track("retro_cta_clicked", { source: "report" });
+              router.push("/retro/confirm");
+            }}
             onTurn={onTurn}
           />
           {picking ? (

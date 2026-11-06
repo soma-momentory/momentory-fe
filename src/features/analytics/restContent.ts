@@ -47,15 +47,20 @@ export function createRestContentTracker(
   };
 }
 
-/** 쉼터 묶음 — 쉼터 탭과 그 안에서 여는 화면들. 여기 안에서 옮겨 다니는 동안은 한 번의 방문이다 */
+/** 쉼터 묶음 — 쉼터 탭과 그 안에서 여는 화면들(기록 · 지난 목록 포함). 여기 안에서 옮겨 다니는 동안은 한 번의 방문이다 */
 const REST_FAMILY: ReadonlySet<ScreenName> = new Set([
   "rest",
   "wish_cards",
   "sense_pond",
   "body_release",
   "worry_box",
+  "worry_list",
+  "treasure_box",
+  "treasure_list",
   "meditation",
   "wish_pond",
+  "wish_mine",
+  "rest_records",
 ]);
 
 /**

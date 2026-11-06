@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen, Text } from "@/components/ds";
 import { MoodMark } from "@/components/rest/scene/MoodMark";
 import { SCENE_BACK_SIZE, SceneBackButton, SceneCard } from "@/components/rest/scene/SceneChrome";
+import { track } from "@/features/analytics";
 import { fetchRestRecords, type RestRecord } from "@/features/rest/data/restRecordApi";
 import {
   REST_RECORD_INCOMPLETE,
@@ -50,6 +51,10 @@ export default function RestRecordsScreen() {
   const param = useLocalSearchParams<{ content?: string }>().content;
   const content: RestRecordContent = isRestRecordContent(param) ? param : "sense_pond";
   const [all, setAll] = useState<RestRecord[] | null>(null);
+
+  useEffect(() => {
+    track("rest_records_viewed", { content });
+  }, [content]);
 
   useEffect(() => {
     let alive = true;
