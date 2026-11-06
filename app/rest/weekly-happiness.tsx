@@ -30,27 +30,27 @@ import { weekStartOf } from "@/features/home/model/day";
 import { REST_RECORDS_LINK } from "@/features/rest/model/restRecord";
 import { useRestGuide } from "@/features/rest/model/useRestGuide";
 import { useRestRecord } from "@/features/rest/model/useRestRecord";
+import { useWeeklyHappiness } from "@/features/rest/model/useWeeklyHappiness";
 import {
   WEEKLY_HAPPINESS_CATEGORIES,
   WEEKLY_HAPPINESS_DONE_CTA,
   WEEKLY_HAPPINESS_LEAVE,
+  WEEKLY_HAPPINESS_LOAD_FAILED,
+  WEEKLY_HAPPINESS_READ_ONLY,
   WEEKLY_HAPPINESS_TITLE,
-  WEEKLY_HAPPINESS_WEEKS_BACK,
   shiftWeek,
   hasWritten,
   weekRangeLabel,
-  type WeeklyHappinessEntries,
-  type WeeklyHappinessKey,
 } from "@/features/rest/model/weeklyHappiness";
 import { clock } from "@/lib/clock";
 
 const { color, motion, size } = weeklyHappiness;
 
 /**
- * 주간 행복 (2026-11-04 · 디자인만) — 주를 넘기며 일곱 칸에 좋았던 일을 적는다.
+ * 주간 행복 (2026-11-04 · 저장 2026-11-06) — 이번 주의 좋았던 일을 일곱 칸에 적는다.
  *
- * ⚠ **적은 글은 저장되지 않는다** — 서버 계약이 없어 이 화면이 떠 있는 동안 메모리에만 있다.
- * 쉼터 칸이 개발 빌드에만 보이는 까닭이다(`features/rest/model/weeklyHappiness.ts`).
+ * **이번 주만 적고, 지난 주는 읽기만** 한다 — 주 막대의 화살표로 지난 장을 넘겨 보지만 칸이 열리지 않는다.
+ * 넘겨 볼 수 있는 한계는 적은 칸이 있는 첫 주다. 글은 서버에 남는다(`useWeeklyHappiness`).
  *
  * 끝맺음은 다른 쉼터와 같다(2026-11-06) — 맨 아래 「다 적었어요」 → 기분 쪽지(`MoodExit`) → 쉼터.
  * 이용 기록은 오른쪽 위 시계 원에서 본다. 남는 것은 「했다 + 기분」뿐이다(`useRestRecord`).
@@ -61,14 +61,16 @@ export default function WeeklyHappinessScreen() {
   const guide = useRestGuide("weekly_happiness");
   const [thisWeek] = useState(() => weekStartOf(clock.today()));
   const [week, setWeek] = useState(thisWeek);
-  const [entries, setEntries] = useState<Record<string, WeeklyHappinessEntries>>({});
+  const book = useWeeklyHappiness(thisWeek);
   const [page] = useState(() => new Animated.Value(1));
   const [direction, setDirection] = useState<1 | -1>(1);
   // 「다 적었어요」를 눌렀다 — 기록장 위에 기분 쪽지가 뜨고, 고른 뒤에야 실제로 나간다
   const [asking, setAsking] = useState(false);
-  const written = hasWritten(entries);
-  // 이용 기록 — 한 칸이라도 적은 판부터 남긴다(들어왔다 바로 나간 판은 소음이다)
-  const record = useRestRecord("weekly_happiness", written);
+  const thisWeekEntries = book.weeks[thisWeek]?.entries ?? {};
+  const written = hasWritten(thisWeekEntries);
+  // 이용 기록 — **이번에 들어와** 한 칸이라도 적은 판부터 남긴다(읽기만 하고 나간 판은 소음이다)
+  const [typed, setTyped] = useState(false);
+  const record = useRestRecord("weekly_happiness", typed && written);
 
   /**
    * 누른 칸을 화면 위쪽으로 올린다 — **바로 윗줄이 보이는 자리**까지(첫 칸이면 주 막대가 보이게).
@@ -111,15 +113,27 @@ export default function WeeklyHappinessScreen() {
     if (Keyboard.isVisible()) reveal(index);
   };
 
-  const firstWeek = shiftWeek(thisWeek, -WEEKLY_HAPPINESS_WEEKS_BACK);
-  const canGoBack = week > firstWeek;
+  // 적은 칸이 있는 첫 주까지만 거슬러 간다 — 아무것도 적지 않았으면 지난 장이 없다
+  const canGoBack = book.firstWeekStart != null && week > book.firstWeekStart;
   const canGoForward = week < thisWeek;
   const { from, to } = weekRangeLabel(week);
-  const weekEntries = entries[week] ?? {};
+  const shown = book.weeks[week];
+  const weekEntries = shown?.entries ?? {};
+  const isPast = week < thisWeek;
+  const editable = !isPast && book.canWrite;
+  // 주 막대 아래 한 줄 — 못 받았으면 그 말, 지난 장이면 읽기만 된다는 말, 이번 장이면 저장 실패 · 닫힘
+  const line =
+    shown?.status === "failed"
+      ? WEEKLY_HAPPINESS_LOAD_FAILED
+      : isPast
+        ? WEEKLY_HAPPINESS_READ_ONLY
+        : book.notice;
 
   const go = (weeks: 1 | -1) => {
+    const next = shiftWeek(week, weeks);
+    book.ensure(next);
     setDirection(weeks);
-    setWeek((w) => shiftWeek(w, weeks));
+    setWeek(next);
     if (reduced) return;
     page.setValue(0);
     Animated.timing(page, {
@@ -130,8 +144,10 @@ export default function WeeklyHappinessScreen() {
     }).start();
   };
 
-  const write = (key: WeeklyHappinessKey, text: string) =>
-    setEntries((all) => ({ ...all, [week]: { ...all[week], [key]: text } }));
+  const leave = (to: () => void) => {
+    void book.flush();
+    to();
+  };
 
   const paged = {
     opacity: page,
@@ -172,14 +188,14 @@ export default function WeeklyHappinessScreen() {
           ]}
         >
           {/* 글과 함께 스크롤된다 — 키보드로 밀려 올라간 글자를 가리지 않게 */}
-          <SceneBackButton top={insets.top + space.sm} onPress={() => router.back()} />
+          <SceneBackButton top={insets.top + space.sm} onPress={() => leave(() => router.back())} />
           <SceneGuideButton top={insets.top + space.sm} onPress={guide.show} />
           {/* 이 쉼터를 한 기록 — 다른 쉼터와 같은 시계 원 */}
           <SceneCornerButton
             top={insets.top + space.sm}
             label={REST_RECORDS_LINK}
             icon="clock"
-            onPress={() => router.push("/rest/records?content=weekly_happiness")}
+            onPress={() => leave(() => router.push("/rest/records?content=weekly_happiness"))}
           />
           <Text color={color.text} style={styles.title} accessibilityRole="header">
             {WEEKLY_HAPPINESS_TITLE}
@@ -208,6 +224,16 @@ export default function WeeklyHappinessScreen() {
             </Animated.View>
             <WeekArrow glyph="〉" label="다음 주" disabled={!canGoForward} onPress={() => go(1)} />
           </View>
+          {line != null ? (
+            <Text
+              variant="label1Hand"
+              color={color.text}
+              style={styles.line}
+              accessibilityLiveRegion="polite"
+            >
+              {line}
+            </Text>
+          ) : null}
           <Animated.View
             style={paged}
             onLayout={(e) => {
@@ -220,7 +246,11 @@ export default function WeeklyHappinessScreen() {
                 label={category.label}
                 placeholder={category.placeholder}
                 value={weekEntries[category.key] ?? ""}
-                onChangeText={(text) => write(category.key, text)}
+                editable={editable}
+                onChangeText={(text) => {
+                  setTyped(true);
+                  book.write(category.key, text);
+                }}
                 onFocus={() => focusRow(index)}
                 onLayout={(e) => {
                   spots.current.rows[index] = e.nativeEvent.layout.y;
@@ -236,7 +266,10 @@ export default function WeeklyHappinessScreen() {
               disabled={!written}
               onPress={() => {
                 Keyboard.dismiss();
-                setAsking(true);
+                // 남긴 뒤에 기분을 묻는다 — 못 남겼으면 한 줄이 뜨고 기록장에 머문다(주가 닫혔으면 그대로 나간다)
+                void book.flush().then((result) => {
+                  if (result !== "failed") setAsking(true);
+                });
               }}
             />
           </View>
@@ -312,4 +345,5 @@ const styles = StyleSheet.create({
   },
   arrowDisabled: { opacity: size.arrowDisabledOpacity },
   done: { paddingTop: size.doneTop },
+  line: { paddingTop: space.sm, paddingHorizontal: size.titlePaddingX },
 });

@@ -217,6 +217,8 @@ export type FakeDb = {
   restRecords: RestRecordRow[];
   treasures: NoteRow[];
   worries: NoteRow[];
+  /** 주간 행복 — 주(일요일) → 칸(서버 대문자 코드) → 글 */
+  weeklyHappiness: Record<string, Record<string, string>>;
   wishes: WishRow[];
   wishRulesAgreed: boolean;
   wishPostedToday: boolean;
@@ -224,7 +226,7 @@ export type FakeDb = {
   retroSessions: RetroSessionRow[];
 };
 
-export const DB_SCHEMA = 2;
+export const DB_SCHEMA = 3;
 
 export const nextId = (db: FakeDb): number => db.seq++;
 
@@ -240,6 +242,7 @@ export const emptyDb = (datasetId: string, user: UserRow): FakeDb => ({
   restRecords: [],
   treasures: [],
   worries: [],
+  weeklyHappiness: {},
   wishes: [],
   wishRulesAgreed: false,
   wishPostedToday: false,

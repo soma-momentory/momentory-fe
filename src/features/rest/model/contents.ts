@@ -1,13 +1,13 @@
 /**
- * 쉼터의 **쉼 콘텐츠** 여섯 가지 (2026-09-02 · 3분 명상과 소원 연꽃은 2026-11-04).
+ * 쉼터의 **쉼 콘텐츠** 일곱 가지 (2026-09-02 · 3분 명상 · 소원 연꽃 · 주간 행복은 2026-11-04).
  *
  * `R1` 진입 화면에서 바람카드 아래 두 칸씩 보여 주는 항목이다. 이름·설명은 제품
  * 문안이라 디자인이 아니라 **도메인**에 둔다(`CLAUDE.md` 「디자인 파일에 제품 규칙을
  * 넣지 않는다」). 순서는 화면에 놓이는 순서 그대로다 — 왼쪽 위부터 읽는 순서.
  *
- * 화면이 생긴 콘텐츠만 `route` 를 든다 — 감각연못은 2026-09-03 에 첫 단계가
- * 생겼다(`app/rest/sense-pond.tsx`). 나머지 셋은 아직 화면이 없어 `route` 가 없고
- * 격자에서 눌리지 않는다(`RestContentGrid`).
+ * 화면이 생긴 콘텐츠만 `route` 를 든다 — 지금은 일곱 모두 화면이 있다. `route` 가 없는
+ * 칸은 격자에서 눌리지 않는다(`RestContentGrid`). 주간 행복은 적은 글이 저장되기
+ * 전까지(2026-11-06) 개발 빌드에만 보였다.
  */
 import type { IconName } from "@/components/ds";
 
@@ -98,19 +98,14 @@ export const REST_CONTENTS: readonly RestContent[] = [
     icon: "wave",
     route: "/rest/meditation",
   },
-  // ⚠ 디자인만 들어왔다 — 적은 글이 저장되지 않아 출시 빌드에는 내보내지 않는다(`model/weeklyHappiness.ts`)
-  ...(__DEV__
-    ? [
-        {
-          id: "weeklyHappiness" as const,
-          title: "주간 행복",
-          duration: "2분",
-          description: "한 주의 좋았던 일을\n칸마다 적어봐요",
-          icon: "wave" as const,
-          route: "/rest/weekly-happiness" as const,
-        },
-      ]
-    : []),
+  {
+    id: "weeklyHappiness",
+    title: "주간 행복",
+    duration: "2분",
+    description: "한 주의 좋았던 일을\n칸마다 적어봐요",
+    icon: "wave",
+    route: "/rest/weekly-happiness",
+  },
   {
     id: "wish",
     title: "소원 연꽃",
