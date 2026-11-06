@@ -2,7 +2,8 @@
 
 이 문서가 **저장소 작업 규칙의 정본**이다 — 커밋·브랜치·PR·품질 게이트·시크릿·의존성·생성물.
 다른 문서(README·CLAUDE.md 등)는 여기를 링크하고 규칙을 다시 적지 않는다.
-제품·디자인 규칙의 정본은 [`docs/spec/`](spec/SNAPSHOT.md) 스냅샷이다.
+제품·디자인 규칙의 정본은 [`docs/DESIGN.md`](DESIGN.md)(디자인 SSOT)와 [`docs/spec/`](spec/SNAPSHOT.md)(동결 스냅샷)이다 —
+둘이 부딪히면 **문안까지 `DESIGN.md` 가 이긴다**(결정 N0 · N6). `DESIGN.md` 가 말하지 않는 것은 `docs/spec/screens/` 에서 찾는다.
 
 ## 저장소 구조
 
@@ -11,43 +12,28 @@
 **토큰([`src/design/ds/`](../src/design/ds/index.ts))과 폰트·자산은 커밋돼 있다.**
 디자인 값·규칙의 SSOT 는 [`docs/DESIGN.md`](DESIGN.md) 다(2026-08-20 3세대 전환).
 
-설계 상류(momentory — 리모트 없는 로컬 저장소)에 접근할 일은
-**재반입뿐**이고, 상류 접근 담당자의 몫이다
-(절차: [spec/SNAPSHOT.md](spec/SNAPSHOT.md)). 상류 폴더가 없어서 실패하는
-일반 개발 절차는 없어야 한다 — 있다면 그것이 버그다.
+**상류(설계 저장소)는 더 이상 전제하지 않는다**(2026-08-14 D8 · [`PLAN.md`](../PLAN.md) §0). 재반입은
+폐기됐고, 상류 폴더 없이 개발·검증이 전부 돈다 — 상류가 없어서 실패하는 절차가 있다면 그것이 버그다.
 
-## 상류 동기화 — 클로드 디자인 → 피그마 → 구현
+## 스펙과 디자인 — 결정은 이 저장소에서 닫는다
 
-세 단계가 **같은 정본 하나**를 본다. 정본을 복사하면 한쪽만 고쳐졌을 때
-어느 쪽이 맞는지 알 수 없게 된다.
-
-```
-① 클로드 디자인 ──번들──▶ 상류 09_MVP/ ← 정본
-                              │
-        ② 피그마 (상류 flows) ┤ (정본의 figma 번역)
-        ③ 구현 (이 저장소)    ┘ (정본의 RN 번역 — docs/spec/ 스냅샷을 지나서)
-```
-
-| 무엇의 정본                      | 어디                                                                         |
-| -------------------------------- | ---------------------------------------------------------------------------- |
-| 화면이 무엇인가 (규칙·문안·상태) | [`docs/spec/`](spec/SNAPSHOT.md) — `RULES.md` + `screens/<ID>.md` + JSON 2개 |
-| 값 (색·크기·반경·여백) · 시각    | [`docs/DESIGN.md`](DESIGN.md) — **디자인 SSOT**(2026-08-20~)                 |
-| RN 토큰                          | [`src/design/ds/`](../src/design/ds/index.ts) — 코드가 쓰는 값, 여기만 hex   |
+| 무엇의 정본                      | 어디                                                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| 시각 · 화면 흐름 · 문안          | [`docs/DESIGN.md`](DESIGN.md) — **디자인 SSOT**(2026-08-20~ · 이 저장소가 소유하고 고친다)             |
+| 화면별 규칙 · 상태 · 남은 문안   | [`docs/spec/`](spec/SNAPSHOT.md) — `RULES.md` + `screens/<ID>.md` + JSON 2개 · **동결 · 손 수정 금지** |
+| RN 토큰                          | [`src/design/ds/`](../src/design/ds/index.ts) — 코드가 쓰는 값, 여기만 hex                             |
+| 화면 ID ↔ 라우트 · 스펙과의 차이 | [`docs/PRODUCT.md`](PRODUCT.md) — 라우트 표 · 「상류와 차이」 대장                                     |
 
 ### 구현이 스펙과 다르게 가야 할 때
 
 RN 제약이든 스펙의 모순 발견이든, **화면 코드에 조용히 반영하고 끝내지 않는다.**
 
-1. [`docs/PRODUCT.md` 「상류와 차이」](PRODUCT.md)에 기록한다 — 차이·근거·임시 기록 자리·닫히는 조건.
-2. 상류 접근 담당자가 상류 `06_운영문서/OPEN-ISSUES.md` 에 R-항목으로 제기한다.
-   선례: `R-40`·`R-41`·`R-42`·`R-43` — 전부 이 저장소가 제기해 상류가 닫았다.
-3. 임시 기록 자리는 둘뿐이다 — **값**이면 `src/design/ds/`(이름을 먼저 만들고 쓴다),
-   **동작·범위**면 `TASKS.md` 해당 절.
-   ⚠ **2026-08-14 이후 상류 제기는 전제하지 않는다**(`PLAN.md` §0) — 2 번은 기록이고,
-   실제로는 이 저장소가 `DESIGN.md` 에 결정을 적어 닫는다.
-4. 상류가 닫으면 임시 기록을 지운다. 지우지 않으면 정본이 둘이 된다.
+1. [`docs/PRODUCT.md` 「상류와 차이」](PRODUCT.md)에 번호를 매겨 기록한다 — 차이 · 근거 · 닫히는 조건.
+2. 결정을 [`docs/DESIGN.md`](DESIGN.md) 해당 절에 적는다 — 이것이 새 정본이다. 값이면 `src/design/ds/` 에
+   **이름을 먼저 만들고** 쓴다. 동작·범위면 [`TASKS.md`](TASKS.md) 해당 절에도 남긴다.
+3. `docs/spec/` 은 고치지 않는다 — 스냅샷과 다른 점은 1 의 대장이 말한다.
 
-상류가 개정판을 냈을 때의 재반입 체크리스트는 [spec/SNAPSHOT.md](spec/SNAPSHOT.md)에 있다 (담당자 전용).
+(2026-08-14 전에는 상류 `OPEN-ISSUES.md` 에 R-항목으로 제기했다 — 선례 `R-40`~`R-43`. 지금은 기록일 뿐이다.)
 
 ## 커밋
 
@@ -106,8 +92,11 @@ fix: 아웃박스 재생에 멱등 키를 더한다
   작업 대장이다. 트래커를 도입하면 그때 재론한다.
 - **브랜치 하나 = PR 하나.** 머지된 브랜치는 재사용하지 않고 지운다
   (초기 `setup/m0` 이 PR 10개를 소비한 전례가 반례다 — 이력 추적이 어려워진다).
-- 브랜치를 main 에 맞출 때는 **rebase** 를 쓴다(브랜치는 개인 소유 전제).
-  둘 이상이 같이 쓰는 브랜치만 merge 로 당긴다. **main 의 이력은 어떤 경우에도 재작성하지 않는다.**
+- 브랜치를 main 에 맞출 때는 **rebase** 가 기본이다(브랜치는 개인 소유 전제). PR 을 연 뒤나
+  둘 이상이 같이 쓰는 브랜치는 main 을 **merge 로 당긴다** — 리뷰 중인 커밋을 갈아엎지 않는다.
+  **main 의 이력은 어떤 경우에도 재작성하지 않는다.**
+- 머지된 브랜치는 로컬 · 원격 둘 다 지운다(`gh pr merge --delete-branch`). Expo Lab 「AI에게 맡기기」의
+  `workspace/*` 브랜치는 작업 공간(worktree)이 쓰는 동안 지우지 않는다.
 
 ## PR · 리뷰 · 머지
 
@@ -115,7 +104,11 @@ fix: 아웃박스 재생에 멱등 키를 더한다
 - 본문은 [PR 템플릿](../.github/PULL_REQUEST_TEMPLATE.md)의 8항목을 채운다.
 - **머지 조건**: CI(아래 품질 게이트) 통과 + 리뷰 승인 1.
   1인 작업 구간에서는 스스로 템플릿 체크를 다 채우는 것으로 갈음한다.
+  ⚠ **GitHub 가 강제하지 않는다** — 비공개 저장소 · 무료 요금제라 브랜치 보호를 걸 수 없다(2026-11-06 확인).
+  지키는 것은 사람과 훅이다: **머지는 사람이 한다** — 에이전트의 `gh pr merge` 와 main 으로 가는 push 는
+  훅이 막는다(아래 「AI 훅」).
 - **머지 방식은 GitHub merge commit** — squash·rebase 머지를 쓰지 않는다.
+  ⚠ BE 저장소(`momentory-be`)는 반대로 **squash 만** 받는다 — 두 저장소를 오갈 때 헷갈리지 않는다.
 - 리뷰에서 함께 보는 것:
   - 화면 변경이면 [`docs/spec/screens/<ID>.md`](spec/) 의 규칙과 대조했는가
   - 스펙과 어긋나는 부분이 [`PRODUCT.md` 「상류와 차이」](PRODUCT.md)에 기록됐는가
@@ -135,12 +128,15 @@ fix: 아웃박스 재생에 멱등 키를 더한다
 | 3    | `npm run typecheck:expo-lab` | Expo Web Lab 타입 오류                                                             |
 | 4    | `npm run lint`               | 규칙 위반 — **경고도 실패** (`--max-warnings 0`)                                   |
 | 5    | `npm run format:check`       | Prettier 서식                                                                      |
-| 6    | `npm run test -- --ci`       | 화면 규칙·store·라우팅 테스트                                                      |
+| 6    | `npm run test -- --ci`       | 화면 규칙·store·라우팅 테스트 · Lab 라우트 목록이 `app/` 과 맞는지                 |
 | 7    | 시크릿 추적 검사             | `.env`·키 파일이 이력에 들어갔는지                                                 |
 | 별도 | `npm run test:visual`        | Expo Lab 셸 Playwright(`expo-lab/e2e/`) — CI 의 `design-studio-visual` 잡(Windows) |
 
 1~7 은 `check` 잡(ubuntu)이고, `test:visual` 은 같은 워크플로의 다른 잡이라 따로 돈다
-(실패하면 `test-results/` 를 아티팩트로 올린다).
+(실패하면 `test-results/` 를 아티팩트로 올린다). 두 잡 모두 PR 과 main push 에 돈다.
+
+**CI 에 없는 검사** — 바꿨을 때 손으로 돌린다: AI 훅(`node --test ".claude/hooks/__tests__/*.test.mjs"`) ·
+Lab 에이전트 서버(`npm run test:lab-agent`).
 
 로컬에서 PR 전에 같은 것을 돌린다:
 
@@ -177,19 +173,23 @@ AI 에이전트(Claude Code · Codex)가 이 문서의 규칙을 **산문이 아
 
 ### ① 공개 식별자 — 커밋만 안 할 뿐, 비밀이 아니다
 
-|                          |                                                     |
-| ------------------------ | --------------------------------------------------- |
-| 카카오 네이티브 앱 키    | `EXPO_PUBLIC_KAKAO_APP_KEY`                         |
-| 구글 OAuth 클라이언트 ID | `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID`                    |
-| Firebase 설정            | `google-services.json` · `GoogleService-Info.plist` |
+|                          |                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------- |
+| 서버 주소                | `EXPO_PUBLIC_API_BASE_URL` — `.env` 는 개발 서버, 출시 빌드는 운영 주소만 받는다 |
+| 카카오 네이티브 앱 키    | `EXPO_PUBLIC_KAKAO_APP_KEY`                                                      |
+| 구글 OAuth 클라이언트 ID | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` · `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`          |
+| Amplitude 키             | `EXPO_PUBLIC_AMPLITUDE_API_KEY` · `EXPO_PUBLIC_AMPLITUDE_ALLOW_DEVELOPMENT`      |
+| 빌드 구분                | `MOMENTORY_BUILD_ENV` — `app.config.ts` 가 읽는다(앱 번들에 싣지 않는다)         |
+| Firebase 설정            | `google-services.json` · `GoogleService-Info.plist`                              |
 
 **`EXPO_PUBLIC_` 접두가 붙은 값은 앱 번들에 그대로 박힌다.** APK 를 풀면 누구나 읽을 수 있으므로
 **보호되고 있다고 생각하면 안 된다.** 이 값들의 안전은 값을 숨기는 데서 오지 않고,
 플랫폼 쪽 설정(패키지명·서명 지문·리다이렉트 URI 허용목록)에서 온다.
 
-저장소에 넣지 않는 이유는 기밀이라서가 아니라 **환경마다 다르고(dev/staging/prod) 남의 프로젝트에
+저장소에 넣지 않는 이유는 기밀이라서가 아니라 **환경마다 다르고(dev/prod) 남의 프로젝트에
 붙는 것을 막기 위해서**다. `app.config.ts` 가 env 에서 읽고, 공유되는 것은 `.env.example` 뿐이다.
-빌드 환경(EAS)에는 **빌드 환경 변수**로 넣는다.
+**EAS 는 쓰지 않는다** — 출시 빌드는 로컬에서 만들고, 값은 그 기기의 `.env` 에서 온다
+([`SETUP.md`](SETUP.md) §8).
 
 ### ② 진짜 시크릿 — 앱에 넣지 않는다
 
@@ -200,11 +200,15 @@ DB 접속 정보 · 서드파티 API 시크릿 · LLM 키 같은 것. **클라�
 ### ③ 서명 키 — 유출되면 앱을 위조당한다
 
 `*.jks` `*.p8` `*.p12` `*.key` `*.pem` `*.keystore` `*.mobileprovision`.
-EAS 가 관리하게 두고 로컬에 내려받지 않는다. 받았다면 저장소 밖에 둔다.
+**저장소 밖에 둔다** — Android 업로드 키스토어는 `~/keys/`, 비밀번호 · 별칭은 `~/.gradle/gradle.properties` 의
+`MOMENTORY_RELEASE_*` 이고 저장소는 **이름만** 참조한다(`plugins/withReleaseSigning.ts` · [`SETUP.md`](SETUP.md) §8).
+`/android` 안에 두면 `expo prebuild --clean` 이 지운다. 업로드 키를 잃으면 같은 앱을 갱신하기 어렵다 — 따로 백업한다.
+애플 `.p8`(로그인 연결 해제용)은 서버 몫이라 앱 저장소에 오지 않는다.
 
 세 등급 모두 `.gitignore` 에 있고, CI 가 매 PR 마다 추적 여부를 검사한다.
-**로그·계측에도 남기지 않는 것**: 일기·순간·회고의 본문과 자유 텍스트, 토큰 —
-감정은 `emotion_id` 숫자만 보낸다([ARCHITECTURE.md](ARCHITECTURE.md) §6).
+**로그·계측에도 남기지 않는 것**: 사용자가 쓴 글 전부(일기 · 회고 · 보물 · 걱정 · 소원 · 주간 행복 · 문의 · 편지의
+작은 일) · AI 가 쓴 글 · 이름 · 토큰 — 감정은 숫자 id 만 보낸다. 허용 목록은 `src/features/analytics/events.ts` 가
+타입과 런타임 둘로 막는다([ANALYTICS.md](ANALYTICS.md) · [ARCHITECTURE.md](ARCHITECTURE.md) §6).
 
 ## 의존성
 
@@ -226,11 +230,12 @@ Expo SDK 57 트리의 peer 충돌(expo 가 고정한 `react@19.2.3` vs `react-do
 
 직접 고치면 다음 생성 때 덮인다. **소스를 고치고 다시 만든다.**
 
-| 생성물·반입물           | 소스                            | 다시 만들기                                           |
-| ----------------------- | ------------------------------- | ----------------------------------------------------- |
-| `docs/spec/**`          | 상류 `09_MVP/` 등               | ⚠ 재반입은 폐기됐다 ([SNAPSHOT.md](spec/SNAPSHOT.md)) |
-| `docs/api/openapi.json` | 개발 서버 `/v3/api-docs`        | `npm run sync:api` ([api/README.md](api/README.md))   |
-| `ios/` `android/`       | `app.config.ts` + config plugin | `npx expo prebuild --clean`                           |
+| 생성물·반입물                            | 소스                            | 다시 만들기                                           |
+| ---------------------------------------- | ------------------------------- | ----------------------------------------------------- |
+| `docs/spec/**`                           | 상류 `09_MVP/` 등               | ⚠ 재반입은 폐기됐다 ([SNAPSHOT.md](spec/SNAPSHOT.md)) |
+| `docs/api/openapi.json`                  | 개발 서버 `/v3/api-docs`        | `npm run sync:api` ([api/README.md](api/README.md))   |
+| `ios/` `android/`                        | `app.config.ts` + config plugin | `npx expo prebuild --clean`                           |
+| `expo-lab/src/shell/routes.generated.ts` | `app/` 라우트 파일              | `npm run lab:routes` (어긋나면 jest 가 잡는다)        |
 
 ⚠ 옛 생성물 `theme.ts` 와 그 검사(`check:theme`)는 **3세대 이관이 끝나면서 사라졌다**
 (`PLAN.md` A-16) — 지금 토큰은 손으로 쓰는 `src/design/ds/` 하나다.
@@ -246,14 +251,19 @@ CI 와 새 개발자가 같은 빌드를 만들 수 없다.
 
 - **색을 리터럴로 쓰지 않는다.** `no-restricted-syntax` 가 hex 를 막는다.
   예외는 `src/design/` 과 `app.config.ts` 뿐이다.
-- 글자색은 semantic 6종만 — `text.strong` `text.body` `text.caption`
-  `text.legal` `text.accent` `text.onDark` (`src/design/ds/color.ts`)
-- 폰트는 `fontWeight` 가 아니라 **파일 이름**으로 지정한다
-  (`fontFamily: "Pretendard-Bold"`). Android 에서 `fontWeight` 로는 OTF 굵기가 안 바뀐다.
+- 글자색은 `label` **여섯 단**만 — `strong` `normal` `neutral` `alternative` `assistive`(플레이스홀더 전용)
+  `disabled` · 색 면 위 글자는 `onFill` (`src/design/ds/color.ts` · 새 단을 만들지 않는다).
+  브랜드 초록 `primary.normal` 에는 글자를 얹지 않는다 — 글자가 얹히는 면(주 CTA)은 `primary.heavy` 다.
+  대비 보정 값은 `ds/__tests__/contrast.test.ts` 가 고정한다
+- 폰트는 `fontWeight` 가 아니라 **파일 이름**으로 지정한다 — 앱 전체 서체는 교보손글씨
+  (`"KyoboHandwriting2025lyb"` · `ds/typography.ts`)이고 Pretendard(`"Pretendard-Bold"` 등)는 로그인 화면 몫이다.
+  Android 에서 `fontWeight` 로는 굵기가 안 바뀐다.
 - **앱 코드는 고정값을 읽지 않는다** — 목 데이터는 2026-08-21 에 전부 지웠고
   (`src/mocks/sample.ts`), 남은 것은 **테스트 전용** `src/testing/fixtures.ts` 뿐이다.
   `no-restricted-imports` 가 `app/**`·`src/**`(테스트 제외)의 그 import 를 막는다 —
   데이터는 `src/features/<도메인>/` 의 store·`data/` 를 지난다.
+- **앱은 Expo Lab 을 import 하지 않는다** — `no-restricted-imports` 가 `**/expo-lab/**` 를 막는다(Lab 이 앱을 빌려 쓰는 한 방향).
+- 서버 호출은 `src/lib/http.ts` 의 `authedRequest` 하나를 지난다 — 자기 `fetch` 래퍼를 만들지 않는다(린터가 아니라 리뷰가 본다).
 - 경고도 실패다 — `npm run lint` 는 `--max-warnings 0` 으로 돈다.
 
 ## 명령
@@ -263,7 +273,7 @@ CI 와 새 개발자가 같은 빌드를 만들 수 없다.
 npm start              # Expo 개발 서버 (dev client)
 npm run android        # dev client 빌드·설치 (네이티브 변경 시)
 npm run ios            # 〃 iOS
-npm run typecheck      # tsc --noEmit
+npm run typecheck      # tsc --noEmit  (typecheck:expo-lab — Lab 워크스페이스)
 npm run lint           # eslint (경고 0)
 npm run test           # jest        (test:watch — 감시 모드)
 npm run format         # prettier 쓰기 (format:check — 검사만, CI 용)
@@ -274,6 +284,8 @@ npm run lab:web        # Expo Lab (8085) — expo-lab/README.md
 npm run lab:routes     # app/ 이 바뀌면 Lab 라우트 목록 다시 쓰기 (jest 가 어긋남을 잡는다)
 npm run lab:verify     # 바뀐 화면의 Lab 전·후 비교
 npm run test:visual    # Lab 셸 Playwright (CI 의 design-studio-visual 잡)
+npm run lab:skins      # Lab 기기 외형 그림 연결
+npm run test:lab-agent # Lab 「AI에게 맡기기」 서버 테스트 (CI 밖)
 scripts/screen-sweep.sh  # 화면 크기·글꼴 배율 다섯 벌 훑기 (판정하지 않는다 — 눈으로 대조)
 ```
 
@@ -281,9 +293,10 @@ scripts/screen-sweep.sh  # 화면 크기·글꼴 배율 다섯 벌 훑기 (판�
 
 ## 변경 이력
 
-| 날짜       | 변경                                                                                                                                                                                                                                                 |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-06 | **코드 대조.** 품질 게이트 표에 CI 의 `test:visual`(Lab Playwright) 잡을, 「AI 훅」에 Claude Code `Stop` 리뷰 게이트를, 「명령」에 Lab 명령을 더했다                                                                                                 |
-| 2026-11-02 | **AI 훅 신설.** 생성물·반입물 편집 · main push · PR 머지 · node_modules 연결 삭제를 에이전트 훅(`.claude/settings.json` · `.codex/hooks.json`)이 실행 전에 거부하고, 편집 뒤 서식·대비·Lab 라우트를 확인한다(「AI 훅」)                              |
-| 2026-09-12 | **문서 일괄 대조.** 토큰 정본을 `theme.ts`/`tokens.mvp.ts` 에서 `src/design/ds/` 로 고치고, 생성물 표에 `docs/api/openapi.json` 을 추가, 삭제된 상류 명령(`sync:theme`·`check:theme`) 흔적 제거                                                      |
-| 2026-08-07 | **자급형 전환.** 커밋 type 접두 필수화(과거 이력은 불변), 품질 게이트 표 신설(CI 서술 정본화), 상류 참조를 `docs/spec/` 스냅샷으로 교체, 반입 체크리스트를 SNAPSHOT.md 로 이관. "부모 저장소 관행을 따른다"는 상속 선언을 이 문서 자체 규정으로 대체 |
+| 날짜       | 변경                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-06 | **두 번째 대조.** 상류 동기화 절을 「결정은 이 저장소에서 닫는다」로 바꿨다(상류 전제 폐기 · D8). EAS 서술을 걷어 냈다 — 출시 빌드는 로컬 · 서명 키는 `~/keys` · `~/.gradle`(SETUP §8). 글자색을 3세대 `label` 여섯 단으로, 서체를 교보손글씨로 고쳤다. 머지 조건을 GitHub 가 강제하지 않는다는 것 · BE 는 squash 라는 것 · 머지된 브랜치를 지운다는 것을 적었다. 값 ① 에 서버 주소 · Amplitude · 빌드 구분을, 생성물에 Lab 라우트 목록을, 명령에 Lab 명령을 더했다 |
+| 2026-11-06 | **코드 대조.** 품질 게이트 표에 CI 의 `test:visual`(Lab Playwright) 잡을, 「AI 훅」에 Claude Code `Stop` 리뷰 게이트를, 「명령」에 Lab 명령을 더했다                                                                                                                                                                                                                                                                                                                |
+| 2026-11-02 | **AI 훅 신설.** 생성물·반입물 편집 · main push · PR 머지 · node_modules 연결 삭제를 에이전트 훅(`.claude/settings.json` · `.codex/hooks.json`)이 실행 전에 거부하고, 편집 뒤 서식·대비·Lab 라우트를 확인한다(「AI 훅」)                                                                                                                                                                                                                                             |
+| 2026-09-12 | **문서 일괄 대조.** 토큰 정본을 `theme.ts`/`tokens.mvp.ts` 에서 `src/design/ds/` 로 고치고, 생성물 표에 `docs/api/openapi.json` 을 추가, 삭제된 상류 명령(`sync:theme`·`check:theme`) 흔적 제거                                                                                                                                                                                                                                                                     |
+| 2026-08-07 | **자급형 전환.** 커밋 type 접두 필수화(과거 이력은 불변), 품질 게이트 표 신설(CI 서술 정본화), 상류 참조를 `docs/spec/` 스냅샷으로 교체, 반입 체크리스트를 SNAPSHOT.md 로 이관. "부모 저장소 관행을 따른다"는 상속 선언을 이 문서 자체 규정으로 대체                                                                                                                                                                                                                |
