@@ -161,6 +161,36 @@ const yearMonth = (q: URLSearchParams): { year: number; month: number } | null =
     : null;
 };
 
+const WEEKLY_HAPPINESS_CODES: readonly string[] = [
+  "MOMENT",
+  "FOOD",
+  "CONTENT",
+  "PLACE",
+  "PERSON",
+  "PROUD",
+  "REST",
+];
+
+/** `YYYY-MM-DD` 의 요일 — 0 = 일요일 */
+const weekdayOf = (day: string) => new Date(`${day}T00:00:00Z`).getUTCDay();
+const isSunday = (day: string) => weekdayOf(day) === 0;
+const sundayOf = (day: string) => addDays(day, -weekdayOf(day));
+
+const weeklyHappinessDto = (ctx: Ctx, weekStart: string) => {
+  const week = ctx.db.weeklyHappiness[weekStart] ?? {};
+  const written = Object.keys(ctx.db.weeklyHappiness)
+    .filter((w) => Object.keys(ctx.db.weeklyHappiness[w] ?? {}).length > 0)
+    .sort();
+  return {
+    weekStart,
+    entries: WEEKLY_HAPPINESS_CODES.filter((c) => week[c] != null).map((c) => ({
+      category: c,
+      content: week[c],
+    })),
+    firstWeekStart: written[0] ?? null,
+  };
+};
+
 const byOrder = (a: ScheduleRow, b: ScheduleRow) =>
   a.date.localeCompare(b.date) || a.displayOrder - b.displayOrder || a.id - b.id;
 
@@ -860,6 +890,52 @@ const ROUTES: Route[] = [
       return json({ [kind]: newestFirst(ctx.db[kind]).map(noteDto) });
     }),
   ]),
+
+  // ── 주간 행복 — 이번 주만 쓰고 지난 주는 읽기만(BE `WeeklyHappinessController`) ──
+  route("GET", "/api/v1/weekly-happiness", (ctx, req) => {
+    const weekStart = req.query.get("weekStart");
+    if (!isDay(weekStart) || !isSunday(weekStart)) {
+      return error(
+        400,
+        "WEEKLY_HAPPINESS_INVALID_WEEK_START",
+        "주의 첫날(일요일) 날짜를 보내주세요.",
+      );
+    }
+    if (weekStart > sundayOf(ctx.today)) {
+      return error(400, "WEEKLY_HAPPINESS_FUTURE_WEEK", "아직 오지 않은 주입니다.");
+    }
+    return json(weeklyHappinessDto(ctx, weekStart));
+  }),
+  route("PUT", "/api/v1/weekly-happiness/:weekStart", (ctx, req, [weekStart]) => {
+    if (!isDay(weekStart) || !isSunday(weekStart)) {
+      return error(
+        400,
+        "WEEKLY_HAPPINESS_INVALID_WEEK_START",
+        "주의 첫날(일요일) 날짜를 보내주세요.",
+      );
+    }
+    const thisWeek = sundayOf(ctx.today);
+    if (weekStart > thisWeek) {
+      return error(400, "WEEKLY_HAPPINESS_FUTURE_WEEK", "아직 오지 않은 주입니다.");
+    }
+    if (weekStart < thisWeek) {
+      return error(400, "WEEKLY_HAPPINESS_PAST_WEEK", "지난 주는 고칠 수 없습니다.");
+    }
+    const b = req.body;
+    if (!isObject(b) || !Array.isArray(b.entries)) return invalid();
+    const next: Record<string, string> = {};
+    for (const item of b.entries) {
+      if (!isObject(item) || typeof item.category !== "string") return invalid();
+      if (!WEEKLY_HAPPINESS_CODES.includes(item.category)) return invalid();
+      if (item.category in next) return invalid("같은 칸을 두 번 보낼 수 없습니다.");
+      const text = typeof item.content === "string" ? item.content.trim() : "";
+      if (text.length > 100) return invalid("주간 행복 한 칸은 최대 100자입니다.");
+      if (text !== "") next[item.category] = text;
+    }
+    ctx.db.weeklyHappiness[weekStart] = next;
+    ctx.wrote = true;
+    return json(weeklyHappinessDto(ctx, weekStart));
+  }),
 
   // ── 소원 연꽃 ──
   route("GET", "/api/v1/wishes/pond", (ctx) => {
