@@ -65,7 +65,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | retrospect_started            | 회고 시작 API 성공                                               | retrospect_id                                                                                             |
 | retrospect_turn_succeeded     | 대화 턴 API 성공                                                 | retrospect_id, input_kind: text/selection                                                                 |
 | retrospect_turn_timed         | 대화 턴 성공, 화면에서 잰 시간                                   | retrospect_id, phase, turn_no 외 (아래)                                                                   |
-| retrospect_exited             | 회고가 끝나기 전에 닫음                                          | retrospect_id, phase, turn_no                                                                             |
+| retrospect_exited             | 회고가 끝나기 전에 ✕ 또는 안드로이드 뒤로 가기로 나감            | retrospect_id, phase, turn_no                                                                             |
 | retro_cta_clicked             | 홈의 지금 하루 돌아보기 · 리포트의 오늘 일기 쓰기 클릭           | source: home/report                                                                                       |
 | voice_input_started           | 회고 입력창의 마이크로 음성 인식이 시작됨                        | retrospect_id                                                                                             |
 | voice_permission_result       | 마이크 권한 팝업의 응답                                          | granted                                                                                                   |

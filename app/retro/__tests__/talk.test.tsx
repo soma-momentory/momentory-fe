@@ -1,5 +1,5 @@
 import { render, fireEvent, act, waitFor, within } from "@testing-library/react-native";
-import { Keyboard } from "react-native";
+import { BackHandler, Keyboard } from "react-native";
 
 import RetroTalk from "../talk";
 
@@ -572,6 +572,26 @@ describe("계측 — 어느 질문에서 오래 걸렸는가", () => {
     expect(sent("retrospect_exited")).toEqual([
       { retrospect_id: "7", phase: "diary_chat", turn_no: 0 },
     ]);
+  });
+
+  it("안드로이드 뒤로 가기로 나가도 같은 이탈을 남기고, 나가는 동작은 막지 않는다", async () => {
+    const add = jest.spyOn(BackHandler, "addEventListener");
+    await render(<RetroTalk />);
+    await waitFor(() => expect(mockStart).toHaveBeenCalled());
+    const handlers = add.mock.calls.filter(([name]) => name === "hardwareBackPress");
+    const handler = handlers[handlers.length - 1]?.[1];
+    expect(handler).toBeDefined();
+
+    let handled: boolean | null | undefined;
+    await act(async () => {
+      handled = handler?.({} as never);
+    });
+
+    expect(handled).toBe(false);
+    expect(sent("retrospect_exited")).toEqual([
+      { retrospect_id: "7", phase: "diary_chat", turn_no: 0 },
+    ]);
+    add.mockRestore();
   });
 
   it("위기 안내 중이었다는 사실은 이름으로 보내지 않는다 — other 에 섞는다", async () => {
