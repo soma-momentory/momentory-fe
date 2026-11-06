@@ -128,12 +128,12 @@ WCAG AA 미달이라 보정했다(`PLAN.md` A-5 표 · `ds/color.ts` 머리말).
 아래는 **자주 어기게 되는 것 다섯 개**의 요약일 뿐이다. 판단이 갈리면 위 두 문서를 본다.
 
 1. **색·크기·시간을 하드코딩하지 않는다.** 린터가 hex 를 막는다 — `src/design/` 을 쓴다
-2. 글자색은 semantic 6종만 (`text.strong` `body` `caption` `legal` `accent` `onDark`).
-   `primary #C2703D` 는 **장식 전용**이고 글자가 얹히는 면은 `primaryDeep` 이다
+2. 글자색은 `label` 여섯 단만 (`strong` `normal` `neutral` `alternative` `assistive` `disabled` · 색 면 위는 `onFill`).
+   브랜드 초록 `primary.normal` 에는 글자를 얹지 않고, 글자가 얹히는 면(주 CTA)은 `primary.heavy` 다
 3. **선택 상태를 색만으로 표시하지 않는다** — 테두리 굵기(1→2px)와 글자 굵기를 함께 바꾼다
 4. **오류·거부·실패는 한 줄 안내로 흡수한다** — 모달·재시도·경고 아이콘 금지.
    **숫자로 압박하지 않는다** — 진행률·연속 일수·점수·배지 금지
-5. 폰트는 `fontFamily: "Pretendard-Bold"` 처럼 **파일 이름**으로 (Android 는 `fontWeight` 가 안 먹는다)
+5. 폰트는 **파일 이름**으로 — 앱은 `"KyoboHandwriting2025lyb"`(`ds/typography.ts`) · 로그인만 `"Pretendard-Bold"` 등 (Android 는 `fontWeight` 가 안 먹는다)
 
 ## 생성물·반입물 — 직접 고치지 말 것
 
