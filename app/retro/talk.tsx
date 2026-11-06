@@ -3,6 +3,7 @@ import { captureAnalytics, track } from "@/features/analytics";
 import { router } from "expo-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  BackHandler,
   Keyboard,
   Pressable,
   ScrollView,
@@ -302,6 +303,23 @@ export default function RetroTalk() {
     void settleRecommendation(today, "skipped");
     void postponeStoreReview();
   }, [safetyHold, today]);
+  // 끝나기 전에 나간다 — 어느 단계, 몇 번째 턴에서 그만뒀는가. ✕ 와 안드로이드 뒤로 가기가 같이 쓴다
+  const recordExit = () => {
+    if (sessionId == null || done) return;
+    track("retrospect_exited", {
+      retrospect_id: String(sessionId),
+      phase: timedPhase(lastReply?.phase),
+      turn_no: turnNo.current,
+    });
+  };
+  // 뒤로 가기는 기록만 남기고 막지 않는다 — 나가는 동작은 그대로다
+  useEffect(() => {
+    const listener = BackHandler.addEventListener("hardwareBackPress", () => {
+      recordExit();
+      return false;
+    });
+    return () => listener.remove();
+  });
   const options = lastReply?.options ?? null;
   const noSession = sessionId == null;
   const startTerminal = startErrorCode === "already_today";
@@ -332,14 +350,7 @@ export default function RetroTalk() {
       backdrop={<RetroDiaryBackground />}
       onConversationPress={Keyboard.dismiss}
       onLeadingPress={() => {
-        // 끝나기 전에 나간다 — 어느 단계, 몇 번째 턴에서 그만뒀는가
-        if (sessionId != null && !done) {
-          track("retrospect_exited", {
-            retrospect_id: String(sessionId),
-            phase: timedPhase(lastReply?.phase),
-            turn_no: turnNo.current,
-          });
-        }
+        recordExit();
         router.replace("/home");
       }}
       companion={<RetroBaba />}
