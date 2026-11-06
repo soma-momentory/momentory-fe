@@ -13,12 +13,13 @@ MOMENTORY_API=http://127.0.0.1:8080 npm run sync:api   # 주소를 직접 줄 �
 계약이 언제 무엇 때문에 바뀌었는지는 diff 만으로는 안 보인다.
 
 > ✅ **2026-11-06 — 다시 대조했다** (스냅샷 `5601378` · BE `dev` `50cd4c9` · BE `main` `ca3bc87`).
-> **스냅샷은 개발 서버와 같다** — `openapi.json` 의 오퍼레이션 **66개**가 BE `dev` 컨트롤러 매핑
-> 66개와 하나도 어긋나지 않는다. 그중 **54개가 붙어 있고**, 안 붙은 열둘은 아래 표에 있다.
+> **스냅샷은 개발 서버와 같다** — `openapi.json` 의 오퍼레이션 **68개**가 BE `dev` 컨트롤러 매핑과
+> 하나도 어긋나지 않는다. 그중 **56개가 붙어 있고**, 안 붙은 열둘은 아래 표에 있다.
+> (같은 날 재반입: 주간 행복 두 갈래 `GET /api/v1/weekly-happiness` · `PUT …/{weekStart}` — BE `#91` `e5ee310` · FE `#258`.)
 >
 > ⚠ **스냅샷은 운영이 아니라 `dev` 다.** 운영(`https://api.momentory.co.kr` = BE `main` `ca3bc87` ·
-> 2026-10-14)에는 그중 **41개**만 있다. BE `#76`~`#90` 은 `dev`(`https://dev.momentory.co.kr`)에만 있다.
-> 그래서 **FE main 이 부르는 54개 중 20개는 운영에 없다**(아래 표의 「운영」 칸). 특히 새 온보딩의
+> 2026-10-14)에는 그중 **41개**만 있다. BE `#76`~`#91` 은 `dev`(`https://dev.momentory.co.kr`)에만 있다.
+> 그래서 **FE main 이 부르는 56개 중 22개는 운영에 없다**(아래 표의 「운영」 칸). 특히 새 온보딩의
 > `PUT /api/v2/users/me/onboarding` 이 운영에 없어, **BE `dev → main` 반영 전에 FE main 을 운영
 > 빌드로 내면 새 가입자가 온보딩을 마치지 못한다.** 출시 순서는 BE 먼저다.
 >
@@ -86,6 +87,7 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 | `src/features/rest/data/worryApi.ts`                    | `POST /api/v1/worries` · `GET /api/v1/worries` (맡겨둔 걱정 전부 · 최신순)                                                                                                                                          | ✅                                                        |
 | `src/features/rest/data/restRecordApi.ts`               | `POST /api/v1/rest-records` · `GET /api/v1/rest-records?content=` (쉼터별 · 최신순)                                                                                                                                 | ✅ · ⚠ `MEDITATION`·`WISH`·`WEEKLY_HAPPINESS` 는 🟡(아래) |
 | `src/features/rest/data/wishApi.ts`                     | `/api/v1/wishes` 열 개 — `GET …/pond` · `POST …/rules-agreement` · `POST …/review` · `POST` · `GET …/mine` · `POST …/{id}/join` · `POST`·`DELETE …/{id}/report` · `DELETE …/{id}` · `PUT …/{id}/outcome` (BE `#86`) | 🟡                                                        |
+| `src/features/rest/data/weeklyHappinessApi.ts`          | `GET /api/v1/weekly-happiness?weekStart=` · `PUT …/{weekStart}`(이번 주만 · 그 주를 통째로 바꾼다) (BE `#91`)                                                                                                       | 🟡                                                        |
 | `src/features/my/data/inquiryApi.ts`                    | `POST /api/v1/inquiries`                                                                                                                                                                                            | ✅                                                        |
 
 > ⚠ **쉼터 이용 기록의 `content` 값 셋은 운영 DB 가 받지 않는다.** 운영 `rest_records` 의 CHECK 는
@@ -115,7 +117,7 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 | ---------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`·`PUT`·`DELETE /api/v1/memos/{date}`                                          | ✅   | **붙이지 않기로 했다**(2026-08-11 제품 결정) — 서버는 날짜당 하나(`{ content }`)인데 스키마 `Moment` 는 여럿이다. 그 뒤 순간 화면(`12-d`)까지 사라져 부를 자리가 없다 |
 | `GET /api/v1/diaries/{id}`                                                         | ✅   | 월별 목록(`GET /api/v1/diaries`)이 본문까지 그대로 채워 줘서 부를 자리가 없다                                                                                         |
-| `GET /api/v1/diaries/all`                                                          | ✅   | 같은 이유 — 보관함은 **달 단위**로 받아 뒤로 훑는다(`diary.ts` 의 창)                                                                                                 |
+| `GET /api/v1/diaries/all`                                                          | ✅   | 같은 이유 — 보관함은 **달 단위**로 받아 뒤로 훑는다(`diary.ts` 의 창). ⚠ 마이 「일기 N일 기록」을 전체 기간으로 세려고 **FE PR #257 이 붙인다**(머지 전)              |
 | `GET /api/v1/action-cards/{id}`                                                    | ✅   | 같은 이유. 카드는 `retrospectId` 로 일기와 조인해 목록에서 세운다                                                                                                     |
 | `GET /api/v1/reports/weekly`                                                       | ✅   | v2(`/api/v2/reports/weekly`)로 바꿨다(2026-11-04). 운영 서버에는 v2 가 아직 없다                                                                                      |
 | `GET /api/v1/letters/current`                                                      | 🟡   | 쓰지 않는다 — 홈 아이콘은 목록 첫 칸으로 점을 달고, 누르면 그 날짜를 연다(`letterApi.ts` 머리말)                                                                      |
@@ -152,6 +154,8 @@ BE `DayBoundary.toLocalDate()` 가 프론트 `clock.today()` 와 같은 규칙�
 | `INVALID_COORDINATE`                                                                                                         | `400` | 🟡   | 홈 날씨 좌표가 범위 밖 (`CurrentWeatherExceptionHandler`)                                                                         |
 | `LETTER_ACTION_NOT_FOUND`                                                                                                    | `400` | 🟡   | 편지에 없는 작은 일 자리를 골랐다                                                                                                 |
 | `WISH_REVIEW_INVALID`                                                                                                        | `400` | 🟡   | 소원 띄우기의 심사 토큰이 없거나 글과 맞지 않는다(토큰 30분)                                                                      |
+| `WEEKLY_HAPPINESS_INVALID_WEEK_START` · `WEEKLY_HAPPINESS_FUTURE_WEEK`                                                       | `400` | 🟡   | 주간 행복 — `weekStart` 가 일요일이 아니다 · 아직 오지 않은 주                                                                    |
+| `WEEKLY_HAPPINESS_PAST_WEEK`                                                                                                 | `400` | 🟡   | 주간 행복 PUT 만 — 지난 주는 읽기만 된다(일요일 04:00 경계). FE 는 「이번 주 기록장은 닫혔어요」 한 줄                            |
 | `INVALID_CURSOR`                                                                                                             | `400` | 🟡   | 알림함 커서 — FE 는 부르지 않는다                                                                                                 |
 | `AUTHENTICATION_REQUIRED`                                                                                                    | `401` | ✅   | 토큰이 없거나 무효 · 토큰의 사용자를 서버가 못 찾을 때                                                                            |
 | `KAKAO_TOKEN_INVALID` · `KAKAO_APP_ID_MISMATCH` · `KAKAO_USER_ID_MISMATCH`                                                   | `401` | ✅   | 카카오 인증 실패 세 갈래                                                                                                          |
