@@ -177,6 +177,22 @@ describe("주간 행복 — 누른 칸을 올린다", () => {
     await act(async () => listeners.keyboardDidShow?.());
     expect(scrollTo()).toHaveBeenLastCalledWith({ y: 52, animated: true });
   });
+
+  it("키보드가 떠 있는 동안 창이 줄면 한 번 더 맞춘다 — 안드로이드는 창이 줄기 전에 DidShow 가 온다", async () => {
+    jest.spyOn(Keyboard, "isVisible").mockReturnValue(true);
+    const r = await render(<WeeklyHappinessScreen />);
+    await lay(r);
+    const scroll = r.getByTestId("weekly-happiness-scroll");
+    // 창이 줄기 전 — 글(400)이 창(400)과 같아 올릴 여유가 없다
+    await fireEvent(scroll, "contentSizeChange", 360, 400);
+    const last = WEEKLY_HAPPINESS_CATEGORIES[WEEKLY_HAPPINESS_CATEGORIES.length - 1]!;
+    await fireEvent(r.getByLabelText(last.label), "focus");
+    expect(scrollTo()).toHaveBeenLastCalledWith({ y: 0, animated: true });
+
+    // 키보드만큼 창이 줄었다 → 이제 끝까지(400 − 150) 올린다
+    await fireEvent(scroll, "layout", { nativeEvent: { layout: { height: 150 } } });
+    expect(scrollTo()).toHaveBeenLastCalledWith({ y: 250, animated: true });
+  });
 });
 
 describe("주간 행복 — 끝맺음 · 이용 기록(서버 대기)", () => {

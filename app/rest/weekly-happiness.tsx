@@ -5,7 +5,6 @@ import {
   Easing,
   Keyboard,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -78,6 +77,9 @@ export default function WeeklyHappinessScreen() {
    * 아래 칸을 누를 때마다 손으로 끌어 올려야 했다(2026-11-06 · 사용자 피드백). 키보드가 다 오른 뒤
    * (`keyboardDidShow`) 줄어든 화면 기준으로 올리고, 키보드가 이미 떠 있으면 누르는 즉시 올린다.
    * 끝 칸은 더 올릴 수 없는 만큼만 간다 — 스크롤 끝을 넘겨 빈 종이를 보이지 않는다.
+   *
+   * 키보드가 떠 있는 동안 스크롤 창 높이가 바뀌면 한 번 더 맞춘다 — 안드로이드는 `keyboardDidShow` 가
+   * 창이 줄기(`KeyboardAvoidingView` 여백) **전에** 와서, 그때 재면 올릴 여유가 아직 없다(2026-11-06 · Lab Pixel).
    */
   const scroll = useRef<ScrollView>(null);
   const spots = useRef({ weekBar: 0, list: 0, rows: [] as number[], viewport: 0, content: 0 });
@@ -148,15 +150,15 @@ export default function WeeklyHappinessScreen() {
   return (
     <Screen grid={false} padded={false} edges={[]}>
       <TabPaperBackground tab="쉼터" />
-      <KeyboardAvoidingView
-        style={styles.fill}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      {/* **안드로이드도 피한다** — edge-to-edge 에서는 창이 줄지 않아 키보드가 아래 칸을 덮고, 스크롤할
+          여유도 생기지 않아 누른 칸을 올릴 수 없었다(2026-11-06 · Lab 에서 Pixel 로 확인 · 걱정상자와 같은 판단) */}
+      <KeyboardAvoidingView style={styles.fill} behavior="padding">
         <ScrollView
           ref={scroll}
           testID="weekly-happiness-scroll"
           onLayout={(e) => {
             spots.current.viewport = e.nativeEvent.layout.height;
+            if (focusedRow.current != null && Keyboard.isVisible()) reveal(focusedRow.current);
           }}
           onContentSizeChange={(_, height) => {
             spots.current.content = height;
