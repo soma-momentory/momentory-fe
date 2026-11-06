@@ -43,6 +43,8 @@ export const weeklyHappiness = {
     entry: { fontSize: 19, lineHeight: 28 },
     /** 주를 넘길 때 글이 밀려오는 거리 */
     slide: 28,
+    /** 마지막 칸과 「다 적었어요」 사이 */
+    doneTop: 32,
     /** 맨 아래 숨 쉴 자리 */
     bottom: 40,
   },

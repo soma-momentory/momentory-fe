@@ -32,6 +32,7 @@ const REST_CONTENTS: Record<string, RestRecordContent> = {
   BODY_RELEASE: "body_release",
   MEDITATION: "meditation",
   WISH: "wish",
+  WEEKLY_HAPPINESS: "weekly_happiness",
 };
 
 export type WeekTone = "NORMAL" | "HARD" | "CRISIS";

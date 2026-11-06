@@ -43,6 +43,7 @@ const CONTENTS = [
   "body_release",
   "meditation",
   "wish",
+  "weekly_happiness",
 ] as const;
 const MOODS = ["better", "same", "unsure"] as const;
 

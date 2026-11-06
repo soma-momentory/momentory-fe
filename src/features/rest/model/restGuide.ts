@@ -39,11 +39,8 @@ export type RestGuidePage = { text: string; example?: RestGuideExample };
 
 export type RestGuide = { pages: readonly [RestGuidePage, RestGuidePage, RestGuidePage] };
 
-/**
- * 설명 카드가 있는 쉼터 — 이용 기록이 남는 쉼터(서버 계약)에 주간 행복을 더한 것이다.
- * 주간 행복은 아직 서버에 남기지 않아 `RestRecordContent` 에 넣지 않는다(`weeklyHappiness.ts`).
- */
-export type RestGuideContent = RestRecordContent | "weekly_happiness";
+/** 설명 카드가 있는 쉼터 — 이용 기록이 남는 쉼터와 같다(주간 행복도 2026-11-06 부터 기록이 남는다) */
+export type RestGuideContent = RestRecordContent;
 
 const seconds = (phase: keyof typeof BODY_RELEASE_SECONDS) => `${BODY_RELEASE_SECONDS[phase]}초`;
 

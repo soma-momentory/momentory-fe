@@ -1,7 +1,9 @@
-import { fireEvent, render } from "@testing-library/react-native";
-import { StyleSheet } from "react-native";
+import { act, fireEvent, render } from "@testing-library/react-native";
+import { router } from "expo-router";
+import { Keyboard, ScrollView, StyleSheet } from "react-native";
 
 import WeeklyHappinessScreen from "@/../app/rest/weekly-happiness";
+import { addRestRecord } from "@/features/rest/data/restRecordApi";
 import { REST_THEMES } from "@/components/rest/restThemes";
 import { GuideCard } from "@/components/rest/scene/GuideCard";
 import { RestLedgerArt } from "@/components/rest/weekly/RestLedgerArt";
@@ -12,6 +14,7 @@ import { recommendRest } from "@/features/rest/model/recommend";
 import { REST_GUIDES } from "@/features/rest/model/restGuide";
 import {
   WEEKLY_HAPPINESS_CATEGORIES,
+  WEEKLY_HAPPINESS_RECORDS_LIVE,
   shiftWeek,
   weekRangeLabel,
 } from "@/features/rest/model/weeklyHappiness";
@@ -22,6 +25,22 @@ jest.mock("@/features/rest/data/guideMemory", () => ({
   readGuideSeen: jest.fn(() => Promise.resolve(true)),
   markGuideSeen: jest.fn(() => Promise.resolve()),
 }));
+
+jest.mock("@/features/rest/data/restRecordApi", () => ({
+  addRestRecord: jest.fn(() => Promise.resolve({ ok: true, data: null })),
+  fetchRestRecords: jest.fn(),
+}));
+
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  useLocalSearchParams: jest.fn(() => ({})),
+  Stack: jest.fn(() => null),
+  Redirect: jest.fn(() => null),
+}));
+
+beforeEach(() => jest.clearAllMocks());
+
+const flush = () => act(async () => {});
 
 const real = clock;
 
@@ -95,6 +114,114 @@ describe("주간 행복 — 화면", () => {
 
     await fireEvent.press(r.getByRole("button", { name: "다음 주" }));
     expect(r.getByDisplayValue("마라탕")).toBeTruthy();
+  });
+});
+
+describe("주간 행복 — 누른 칸을 올린다", () => {
+  const scrollTo = () =>
+    jest.mocked((ScrollView.prototype as unknown as { scrollTo: jest.Mock }).scrollTo);
+
+  /** 화면 400 · 글 900 · 주 막대 120 · 칸들은 목록(180) 안에서 60씩 */
+  const lay = async (r: Awaited<ReturnType<typeof render>>) => {
+    const scroll = r.getByTestId("weekly-happiness-scroll");
+    await fireEvent(scroll, "layout", { nativeEvent: { layout: { height: 400 } } });
+    await fireEvent(scroll, "contentSizeChange", 360, 900);
+    for (const [i, c] of WEEKLY_HAPPINESS_CATEGORIES.entries()) {
+      await fireEvent(r.getByTestId(`weekly-happiness-row-${c.label}`), "layout", {
+        nativeEvent: { layout: { y: i * 60 } },
+      });
+    }
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it("키보드가 떠 있을 때 칸을 누르면 바로 윗줄이 보이는 자리까지 올린다", async () => {
+    jest.spyOn(Keyboard, "isVisible").mockReturnValue(true);
+    const r = await render(<WeeklyHappinessScreen />);
+    await lay(r);
+
+    await fireEvent(r.getByLabelText(WEEKLY_HAPPINESS_CATEGORIES[3].label), "focus");
+    // 윗줄(세 번째 칸 · 120)이 화면 위 숨(8) 아래에 온다 — 목록 자리는 재지 않았으니 0
+    expect(scrollTo()).toHaveBeenLastCalledWith({ y: 112, animated: true });
+  });
+
+  it("끝 칸은 스크롤 끝까지만 올린다", async () => {
+    jest.spyOn(Keyboard, "isVisible").mockReturnValue(true);
+    const r = await render(<WeeklyHappinessScreen />);
+    await lay(r);
+    const scroll = r.getByTestId("weekly-happiness-scroll");
+    await fireEvent(scroll, "contentSizeChange", 360, 600);
+
+    const last = WEEKLY_HAPPINESS_CATEGORIES[WEEKLY_HAPPINESS_CATEGORIES.length - 1]!;
+    await fireEvent(r.getByLabelText(last.label), "focus");
+    expect(scrollTo()).toHaveBeenLastCalledWith({ y: 200, animated: true });
+  });
+
+  it("키보드가 아직 없으면 누를 때는 두고, 키보드가 다 오른 뒤에 올린다", async () => {
+    jest.spyOn(Keyboard, "isVisible").mockReturnValue(false);
+    const listeners: Record<string, () => void> = {};
+    jest.spyOn(Keyboard, "addListener").mockImplementation((event, fn) => {
+      listeners[event] = fn as () => void;
+      return { remove: jest.fn() } as unknown as ReturnType<typeof Keyboard.addListener>;
+    });
+    jest.spyOn(globalThis, "requestAnimationFrame").mockImplementation((fn) => {
+      fn(0);
+      return 0;
+    });
+    const r = await render(<WeeklyHappinessScreen />);
+    await lay(r);
+
+    await fireEvent(r.getByLabelText(WEEKLY_HAPPINESS_CATEGORIES[2].label), "focus");
+    expect(scrollTo()).not.toHaveBeenCalled();
+
+    await act(async () => listeners.keyboardDidShow?.());
+    expect(scrollTo()).toHaveBeenLastCalledWith({ y: 52, animated: true });
+  });
+});
+
+describe("주간 행복 — 끝맺음 · 이용 기록(서버 대기)", () => {
+  it("한 칸도 적지 않으면 「다 적었어요」가 눌리지 않고, 그냥 나가도 기록이 남지 않는다", async () => {
+    const r = await render(<WeeklyHappinessScreen />);
+    expect(r.getByRole("button", { name: "다 적었어요" }).props.accessibilityState).toMatchObject({
+      disabled: true,
+    });
+    await r.unmount();
+    await flush();
+    expect(addRestRecord).not.toHaveBeenCalled();
+  });
+
+  it("적고 「다 적었어요」를 누르면 기분을 묻고, 고르면 쉼터로 돌아간다", async () => {
+    const r = await render(<WeeklyHappinessScreen />);
+    await fireEvent.changeText(r.getByLabelText("맛있었던 음식"), "마라탕");
+    await fireEvent.press(r.getByRole("button", { name: "다 적었어요" }));
+
+    expect(r.getByText("기분이 나아졌나요?")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "그대로예요" }));
+    await fireEvent.press(r.getByRole("button", { name: "쉼터로 돌아가기" }));
+    expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest");
+  });
+
+  // 서버 `RestContent` 에 WEEKLY_HAPPINESS 가 생기면 `WEEKLY_HAPPINESS_RECORDS_LIVE` 를 켜고 이 묶음을 뒤집는다
+  it("서버가 아직 받지 않아 기분을 골라도, 적다가 나가도 아무것도 보내지 않는다", async () => {
+    expect(WEEKLY_HAPPINESS_RECORDS_LIVE).toBe(false);
+    const done = await render(<WeeklyHappinessScreen />);
+    await fireEvent.changeText(done.getByLabelText("맛있었던 음식"), "마라탕");
+    await fireEvent.press(done.getByRole("button", { name: "다 적었어요" }));
+    await fireEvent.press(done.getByRole("button", { name: "나아졌어요" }));
+    await done.unmount();
+    await flush();
+
+    const left = await render(<WeeklyHappinessScreen />);
+    await fireEvent.changeText(left.getByLabelText("좋았던 장소"), "산책했던 공원");
+    await left.unmount();
+    await flush();
+
+    expect(addRestRecord).not.toHaveBeenCalled();
+  });
+
+  it("서버가 받기 전에는 늘 빈 기록이라 오른쪽 위 기록 원이 없다", async () => {
+    const r = await render(<WeeklyHappinessScreen />);
+    expect(r.queryByRole("button", { name: "지난 기록 보기" })).toBeNull();
   });
 });
 

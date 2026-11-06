@@ -41,6 +41,7 @@ const CONTENT_IDS: Record<RestRecordContent, RestContentId> = {
   body_release: "bodyRelease",
   meditation: "meditation",
   wish: "wish",
+  weekly_happiness: "weeklyHappiness",
 };
 const restName = (content: RestRecordContent) =>
   REST_CONTENTS.find((c) => c.id === CONTENT_IDS[content])?.title ?? "";
