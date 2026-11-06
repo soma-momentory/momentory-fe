@@ -3,9 +3,8 @@ export const myPaper = {
   title: "#E9D6BF",
   profileTape: "#EDDDC8",
   profile: "#FBF6EA",
-  settings: "#FFFDF7",
-  support: "#F5F9EE",
-  account: "#FDF4EF",
+  /** 앱 설정 · 지원 · 계정 세 묶음이 함께 쓰는 흰 종이(2026-11-06 — 지원 연두 · 계정 분홍을 걷었다) */
+  group: "#FFFDF7",
   settingsDot: "#F8E7A2",
   supportDot: "#DCE8D0",
   accountDot: "#F6D3C8",

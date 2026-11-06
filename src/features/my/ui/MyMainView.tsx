@@ -277,9 +277,9 @@ function SettingRow({
 }
 
 const GROUP_PAPER = {
-  settings: { backgroundColor: paper.settings, transform: [{ rotate: "-0.8deg" }] },
-  support: { backgroundColor: paper.support, transform: [{ rotate: "0.7deg" }] },
-  account: { backgroundColor: paper.account, transform: [{ rotate: "-0.5deg" }] },
+  settings: { backgroundColor: paper.group, transform: [{ rotate: "-0.8deg" }] },
+  support: { backgroundColor: paper.group, transform: [{ rotate: "0.7deg" }] },
+  account: { backgroundColor: paper.group, transform: [{ rotate: "-0.5deg" }] },
 } as const;
 
 const DOTS = {
