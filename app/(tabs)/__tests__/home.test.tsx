@@ -544,7 +544,7 @@ describe("하단 탭", () => {
     const sizeOf = (tab: typeof home): number =>
       Number(flatten(within(tab!).getByText(/./).props.style).fontSize);
     /**
-     * 활성 `label1`(14) / 비활성 `caption1`(12) — `DESIGN.md` §10.
+     * 활성 `body1`(16) / 비활성 `caption1`(14) — `DESIGN.md` §10 · 앱 최소 글자 14(2026-11-07).
      *
      * 예전에는 **굵기**로 갈랐다(`label2` 600 vs `caption1` 500). 앱 서체가 교보손글씨
      * 하나로 가면서 웨이트가 사라져(2026-09-06 · `ds/typography.ts`) 그 신호가 색만

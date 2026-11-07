@@ -19,8 +19,9 @@ import { Text } from "./Text";
  *
  * 앱 서체가 교보손글씨 하나로 가면서(`ds/typography.ts`) 굵기가 사라졌다 —
  * `label2`(600) → `caption1`(500) 은 이제 **같은 글자로 그려져** 색 차이만 남는다.
- * 그래서 신호를 **크기 단차**로 옮겼다: 활성 `label1`(14) · 비활성 `caption1`(12).
+ * 그래서 신호를 **크기 단차**로 옮겼다: 활성 `body1`(16) · 비활성 `caption1`(14).
  * 옛 짝(13 vs 12)은 1pt 라 굵기가 없으면 눈에 잡히지 않아 2pt 로 벌렸다.
+ * 2026-11-07 에 앱 최소 글자가 14 가 되면서(`caption1` 12 → 14) 활성도 14 → 16 으로 올려 단차를 지켰다.
  *
  * ⚠ **이 자리를 색만 남기고 되돌리지 않는다.** 되돌리려면 밑줄·점 같은 **다른
  * 채널**을 대신 두어야 한다.
@@ -56,10 +57,10 @@ export function BottomNavigation<T extends string>({ items, active, onPress }: P
               size={24}
               color={on ? labelColor.normal : interaction.inactive}
             />
-            {/* 크기가 함께 바뀐다 — caption1(12) → label1(14). 위 머리말 참고 */}
+            {/* 크기가 함께 바뀐다 — caption1(14) → body1(16). 위 머리말 참고 */}
             <Text
               key={`${item.name}-${fontScale}`}
-              variant={on ? "label1" : "caption1"}
+              variant={on ? "body1" : "caption1"}
               color={on ? labelColor.normal : interaction.inactive}
               style={styles.tabLabel}
             >

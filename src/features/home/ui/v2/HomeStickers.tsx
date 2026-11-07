@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     columnGap: 6,
   },
   title: { fontFamily: homeV2.font.bold, fontSize: 16, lineHeight: 20 },
-  state: { fontFamily: homeV2.font.regular, fontSize: 13, lineHeight: 18 },
+  state: { fontFamily: homeV2.font.regular, fontSize: 14, lineHeight: 20 },
   noteBody: { flex: 1, marginTop: 3 },
   // 공책 줄 — 글자 아래로 얇은 줄이 지나간다
   line: {
@@ -263,8 +263,8 @@ const styles = StyleSheet.create({
   day: { alignItems: "center", gap: 2 },
   dayName: {
     fontFamily: homeV2.font.regular,
-    fontSize: 13,
-    lineHeight: 16,
+    fontSize: 14,
+    lineHeight: 18,
     paddingHorizontal: 2,
     borderRadius: 4,
   },
