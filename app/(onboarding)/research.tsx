@@ -118,7 +118,7 @@ export default function Research() {
                 y={161}
                 fill={labelColor.alternative}
                 fontFamily={fontFamily.hand}
-                fontSize={10.5}
+                fontSize={14}
               >
                 그날
               </SvgText>
@@ -127,7 +127,7 @@ export default function Research() {
                 y={161}
                 fill={labelColor.alternative}
                 fontFamily={fontFamily.hand}
-                fontSize={10.5}
+                fontSize={14}
                 textAnchor="end"
               >
                 일주일

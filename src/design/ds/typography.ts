@@ -241,19 +241,27 @@ export const text = {
   body2Reading: style("regular", 15, 24),
   /** 14/20 600 — 입력 라벨, 섹션 제목. ⚠ **버튼은 `buttonLabel`** 이다 */
   label1: style("semibold", 14, 20),
-  /** 13/18 600 — 칩, 카드 라벨. ⚠ **작은 버튼은 `buttonLabelSmall`** 이다 */
-  label2: style("semibold", 13, 18),
+  /**
+   * 14/20 600 — 칩, 카드 라벨. ⚠ **작은 버튼은 `buttonLabelSmall`** 이다.
+   * 원래 13/18 — 2026-11-07 에 14 로 올렸다(손글씨 최소 14 · `DESIGN.md` §2 · 사용자 결정)
+   */
+  label2: style("semibold", 14, 20),
   /**
    * `label1` × 버튼 보정 — **Large·Medium 버튼 라벨**. iOS 에서만 `label1` 보다 크고
    * 안드로이드에서는 `label1` 과 **같은 값**이다(`BUTTON_BOOST` 머리말).
    */
   buttonLabel: style("semibold", 14 * BUTTON_BOOST, 20 * BUTTON_BOOST),
   /** `label2` × 버튼 보정 — **Small 버튼 라벨**. 안드로이드에서는 `label2` 와 같다 */
-  buttonLabelSmall: style("semibold", 13 * BUTTON_BOOST, 18 * BUTTON_BOOST),
-  /** 12/16 500 — 메타, 헬퍼, 탭 라벨 */
-  caption1: style("medium", 12, 16),
-  /** 11/14 600 — 최소 캡션, 약관. **이보다 작게 쓰지 않는다** */
-  caption2: style("semibold", 11, 14),
+  buttonLabelSmall: style("semibold", 14 * BUTTON_BOOST, 20 * BUTTON_BOOST),
+  /**
+   * 14/20 500 — 메타, 헬퍼, 탭 라벨.
+   * ⚠ **앱의 최소 글자는 14다**(2026-11-07 · 사용자 결정) — 앱 전체가 손글씨라 `DESIGN.md` §2
+   * 「손글씨는 14/20 이 가장 작은 자리」를 모든 단에 건다. 원래 12/16 · `caption2` 는 11/14 였다.
+   * 이름은 쓰는 자리의 **역할 기록**으로 남긴다 — 크기 위계는 이제 14 위에서만 선다
+   */
+  caption1: style("medium", 14, 20),
+  /** 14/20 600 — 최소 캡션, 약관. 원래 11/14 — `caption1` 머리말 */
+  caption2: style("semibold", 14, 20),
 } as const;
 
 export type TextToken = keyof typeof text;
