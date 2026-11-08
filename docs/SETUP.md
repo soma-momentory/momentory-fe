@@ -486,9 +486,25 @@ Xcode로 App Store 배포용 iOS 프로젝트를 만들 때는 운영 검증을 
 
 ```bash
 MOMENTORY_BUILD_ENV=production npx expo prebuild --platform ios --clean
+npm run check:ios-release   # 운영 introspect + 생성된 ios/app/Info.plist 의 권한 검사 — 아래
 ```
 
 개발 빌드는 `.env`의 `MOMENTORY_BUILD_ENV=development`를 그대로 사용한다.
+
+> ⚠ **출시 prebuild 뒤에는 `npm run check:ios-release` 를 돌린다** (2026-11-08 · 1.4.0 Build 8).
+> `scripts/check-ios-release-plist.mjs` 가 운영 설정으로 `expo config --type introspect` 를 돌리고,
+> 생성된 `ios/app/Info.plist` 가 있으면 그것도 본다 — Expo Dev Launcher 의 로컬 네트워크 문구 ·
+> `_expo._tcp` · 위치 Always · Motion · Reminders · Face ID 가 **없고**, 위치 「사용 중」 · 마이크 ·
+> 음성 인식 · 캘린더 · 사진이 **있고**, 그 밖의 `*UsageDescription` 이 없고, 번들 ID 와 운영 API 호스트가
+> 맞는지. 버전 · 빌드 번호는 찍어 준다.
+>
+> 왜 생겼나 — 1.4.0 Build 8 prebuild 의 `Info.plist` 에 dev launcher 문구와 `expo-location` 의 영문 기본
+> 문구(Always · Motion)가 남아 있었다. 원인 둘: ① config-plugins 는 mod 를 **등록 역순**으로 돌려서
+> `plugins` 배열 **맨 뒤**에 둔 `withoutDevLauncherNetwork` 가 `expo-dev-client` 보다 먼저 돌았다(지운 자리에
+> 다시 넣었다 — 플러그인이 `nextMod` 를 먼저 돌린 뒤 지우도록 고쳤다 · `plugins/withoutDevLauncherNetwork.ts`
+> 머리말) ② `expo-location` 플러그인은 `locationAlwaysPermission` · `locationAlwaysAndWhenInUsePermission` ·
+> `motionUsagePermission` 을 **`false` 로 명시하지 않으면** 기본 문구를 넣는다(`app.config.ts`). 둘 다 자동
+> 심사가 Reminders 때 걸었던 「쓰지 않는 자원의 일반 문구」와 같은 종류다.
 
 > ✅ **두 서버의 API 가 다시 같다** (2026-11-08 BE dev → main 릴리스). 운영 `api.momentory.co.kr` = BE `main`,
 > 개발 `dev.momentory.co.kr` = BE `dev` 이고 둘의 경로가 같다(55개 · `/v3/api-docs` 대조). 팀 `.env` 는 개발 주소다.

@@ -280,6 +280,7 @@ npm run format         # prettier 쓰기 (format:check — 검사만, CI 용)
 
 # 가끔 쓰는 것
 npm run sync:api       # 서버 OpenAPI 계약 재반입 (docs/api/README.md)
+npm run check:ios-release  # 출시 prebuild 뒤 iOS Info.plist 권한 검사 (docs/SETUP.md §6 「API 서버」 아래)
 npm run lab:web        # Expo Lab (8085) — expo-lab/README.md
 npm run lab:routes     # app/ 이 바뀌면 Lab 라우트 목록 다시 쓰기 (jest 가 어긋남을 잡는다)
 npm run lab:verify     # 바뀐 화면의 Lab 전·후 비교
