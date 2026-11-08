@@ -166,7 +166,8 @@ export function BodyReleaseScene({ breath, progress, pose, sway, finished }: Pro
       pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={StyleSheet.absoluteFill}
+      // 언덕은 꼭대기를 발밑에 맞추느라 화면보다 넓어진다(2026-11-08 그림은 더 납작해 더 넓다) — 장면 밖은 자른다
+      style={[StyleSheet.absoluteFill, styles.clip]}
     >
       <Image source={SKY} contentFit="cover" transition={0} style={StyleSheet.absoluteFill} />
 
@@ -345,6 +346,7 @@ export function BodyReleaseScene({ breath, progress, pose, sway, finished }: Pro
 }
 
 const styles = StyleSheet.create({
+  clip: { overflow: "hidden" },
   sun: { position: "absolute", left: "50%", width: SUN, height: SUN, marginLeft: -SUN / 2 },
   hill: { position: "absolute" },
   ring: {

@@ -29,6 +29,14 @@ export type RestContent = {
    * 의미 단위로 끊는다(2026-09-02).
    */
   description: string;
+  /**
+   * **이 쉼이 필요한 순간의 속말** — 쉼터 칸이 이름 아래에 「」로 적는다(2026-11-08 · 사용자 요청
+   * 「뭐 할 때 좋은지 몰라 고르기 어렵다」 → 「정말 필요하다 느끼게」). 조건(「~할 때」)이 아니라
+   * **그 순간 사용자가 속으로 하는 말**이다 — 읽고 「지금 내 얘기네」가 되면 고른다.
+   * 감정 추천(`recommend.ts` `REST_BY_EMOTION`)과 같은 짝을 말한다. 재촉 · 진단하지 않는다.
+   * 반 폭 칸에서 「」까지 한 줄에 들어가게 **8자 안쪽**으로 쓴다
+   */
+  whenGood: string;
   /** 카드 우상단의 작은 시각 포인트 — 기능 메뉴가 아니라 **공간**으로 읽히게 */
   icon: IconName;
   /**
@@ -61,6 +69,7 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "sensePond",
     title: "감각연못",
+    whenGood: "머리가 복잡해",
     duration: "1~2분",
     description: "보이는 것과 들리는 소리를\n하나씩 찾아봐요",
     icon: "wave",
@@ -69,6 +78,7 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "worryBox",
     title: "걱정상자",
+    whenGood: "자꾸 걱정돼",
     duration: "1~2분",
     description: "걱정을 적고\n잠시 상자에 맡겨봐요",
     icon: "box",
@@ -77,6 +87,7 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "treasureBox",
     title: "오늘의 보물함",
+    whenGood: "오늘 좀 좋았어",
     duration: "1~2분",
     description: "오늘 잘한 일이나\n소중한 순간을 담아봐요",
     icon: "treasure",
@@ -85,6 +96,7 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "bodyRelease",
     title: "몸에 힘 빼기",
+    whenGood: "몸이 뻐근해",
     duration: "약 1분",
     description: "몸에 힘을 줬다가\n천천히 풀어봐요",
     icon: "capybara-rest",
@@ -93,6 +105,7 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "meditation",
     title: "3분 명상",
+    whenGood: "잠깐 쉬고 싶어",
     duration: "3분",
     description: "마음에 맞는 풍경에서\n잠시 머물러봐요",
     icon: "wave",
@@ -101,6 +114,7 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "weeklyHappiness",
     title: "주간 행복",
+    whenGood: "이번 주 어땠지",
     duration: "2분",
     description: "한 주의 좋았던 일을\n칸마다 적어봐요",
     icon: "wave",
@@ -109,6 +123,7 @@ export const REST_CONTENTS: readonly RestContent[] = [
   {
     id: "wish",
     title: "소원 연꽃",
+    whenGood: "응원이 필요해",
     duration: "1분",
     description: "다른 사람 소원을 같이 빌고\n내 소원도 띄워봐요",
     icon: "wave",

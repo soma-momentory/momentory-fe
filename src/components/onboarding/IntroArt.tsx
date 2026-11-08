@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 
 import { EmotionPebble, Text } from "@/components/ds";
-import { RestContentGrid } from "@/components/rest/RestContentGrid";
+import { RestThemeGrid } from "@/components/rest/RestThemeGrid";
 import {
   background,
   elevation,
@@ -109,13 +109,16 @@ function BabaSays({ children, large }: { children: string; large?: boolean }) {
   );
 }
 
-// 소원 연꽃은 소개 그림에 넣지 않는다 — 남의 글이 있어야 뜻이 통한다 · 주간 행복은 아직 디자인만이다
-const REST_PREVIEW = REST_CONTENTS.filter((c) => c.id !== "wish" && c.id !== "weeklyHappiness").map(
-  (c) => ({
-    ...c,
-    route: undefined,
-  }),
-);
+// 한 줄 둘만 — 칸이 「언제 좋은지」까지 적으면서 두 줄이면 아래 제목 · 설명이 화면 밖으로 밀렸다(2026-11-08)
+const REST_PREVIEW = REST_CONTENTS.slice(0, 2).map((c) => ({ ...c, route: undefined }));
+
+function RestPreview() {
+  return (
+    <View style={styles.restWrap}>
+      <RestThemeGrid items={REST_PREVIEW} />
+    </View>
+  );
+}
 
 const WEEK: { day: string; pebble?: EmotionId; note?: string }[] = [
   { day: "월", pebble: P.anxious, note: "자소서" },
@@ -328,12 +331,8 @@ const ART: Record<IntroId, () => React.ReactNode> = {
     </View>
   ),
 
-  // 쉼터 탭의 미리보기 카드를 그대로 쓴다 — 누를 수 없게 갈 곳(route)만 뺀다
-  rest: () => (
-    <View style={styles.restWrap}>
-      <RestContentGrid items={REST_PREVIEW} />
-    </View>
-  ),
+  // 지금 쉼터 탭의 테마 카드를 그대로 쓴다 — 누를 수 없게 갈 곳(route)만 뺀다
+  rest: () => <RestPreview />,
 
   letter: () => (
     <View style={styles.diaryPage}>

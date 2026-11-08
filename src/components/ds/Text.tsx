@@ -3,6 +3,7 @@ import { StyleSheet, Text as RNText, useWindowDimensions, type TextProps } from 
 
 import { label as labelColor, maxFontScale, text, type TextToken } from "@/design/ds";
 import { typeScale } from "@/design/ds/typography";
+import { keepWordsIn } from "@/lib/keepWords";
 import { DesignViewportContext } from "./DesignViewport";
 
 /**
@@ -28,6 +29,12 @@ import { DesignViewportContext } from "./DesignViewport";
  * 하기 때문이다(홈 머리의 날짜 정렬).
  *
  * `...rest` **앞에** 두어, 특정 화면이 필요하면 prop 으로 덮을 수 있게 남긴다.
+ *
+ * ## 한글은 어절에서만 접는다 (2026-11-08)
+ *
+ * iOS · Android 는 한글을 음절마다 끊어 「언제 지⏎치고」처럼 갈린다. 화면마다 `keepWords` 를
+ * 걸던 것을 **여기 한 곳**으로 모았다 — 글자 children 에 단어 결합 문자를 넣는다(`@/lib/keepWords`).
+ * 테스트 환경에서는 `jest.setup.ts` 가 이 걸음을 끈다(글자로 찾는 테스트가 그대로 돈다).
  */
 type Props = TextProps & {
   variant?: TextToken;
@@ -51,6 +58,7 @@ export function Text({
   color = labelColor.normal,
   maxFontSizeMultiplier,
   style,
+  children,
   ...rest
 }: Props) {
   const previewScale = useContext(PreviewFontScaleContext);
@@ -82,6 +90,8 @@ export function Text({
       maxFontSizeMultiplier={maxFontSizeMultiplier ?? (active ? 1.5 : maxFontScale)}
       {...rest}
       style={[token, active && { includeFontPadding: false }, { color }, style, scaled]}
-    />
+    >
+      {keepWordsIn(children)}
+    </RNText>
   );
 }

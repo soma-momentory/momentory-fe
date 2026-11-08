@@ -382,18 +382,21 @@ export default function MeditationScreen() {
         />
       ) : null}
       {guide.open ? (
-        <GuideCard
-          content="meditation"
-          first={guide.first}
-          onClose={guide.close}
-          lastPageLink={{
-            label: REST_GUIDE_MEDITATION_INFO,
-            onPress: () => {
-              guide.close();
-              setInfoOpen(true);
-            },
-          }}
-        />
+        // 설명 카드는 정보 창 아래에 그대로 둔다 — 정보 창의 X 가 그 카드로 돌아오게(2026-11-08 · 사용자 요청).
+        // 정보 창이 떠 있는 동안은 `display: none` 으로 접는다 — 장(page)은 그대로 남고, 낭독기 · Tab(웹 포함)에서
+        // 빠진다. 모달 자리도 정보 창에 넘긴다(모달 둘이 서로를 가리지 않게)
+        <View
+          pointerEvents="box-none"
+          style={[StyleSheet.absoluteFill, infoOpen ? styles.folded : null]}
+          accessibilityViewIsModal={!infoOpen}
+        >
+          <GuideCard
+            content="meditation"
+            first={guide.first}
+            onClose={guide.close}
+            lastPageLink={{ label: REST_GUIDE_MEDITATION_INFO, onPress: () => setInfoOpen(true) }}
+          />
+        </View>
       ) : null}
       {infoOpen ? (
         <MeditationInfoSheet concept={concept} onClose={() => setInfoOpen(false)} />
@@ -411,6 +414,7 @@ export default function MeditationScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, minHeight: 0 },
+  folded: { display: "none" },
   title: { alignItems: "center", gap: space.xs, paddingHorizontal: space.xl3 },
   onScene: {
     textAlign: "center",

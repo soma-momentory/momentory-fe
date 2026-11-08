@@ -34,6 +34,10 @@
 덮고, 그래도 남는 옛 발끝은 그 아래만 덮는다(`mirror_right_foot`). (걱정상자의 처음 자세도
 이 그림을 빌려 같은 방식으로 고쳤는데, 2026-10-07 에 두 발이 다 정면인 그림으로 바꿨다.)
 
+⚠ 2026-11-08 — `sky.webp` · `hill.webp` 는 납작한 카툰 그림(ai-gateway `gemini-2.5-flash-image`)으로 바꿔
+자산에 바로 넣었다(언덕은 흰 바탕을 가장자리에서 걷어 냈다 · 꼭대기 값은 `ds/bodyRelease.ts`).
+이 스크립트를 다시 돌리면 옛 노을 그림으로 돌아간다 — 원본을 새 그림으로 바꾼 뒤에 돌린다.
+
 다시 만들 때: `python3 scripts/keyout-body-release.py` (Pillow · numpy 필요).
 빌드에 끼지 않는다.
 """

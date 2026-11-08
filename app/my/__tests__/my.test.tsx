@@ -52,9 +52,9 @@ describe("M3 · 기본 정보 수정 목록", () => {
     expect(r.getByText("지현")).toBeTruthy();
     expect(r.getByText("25세")).toBeTruthy();
     expect(r.getByText("여성")).toBeTruthy();
-    // 여러 개인 것은 접는다 — 무엇인지를 먼저 말하고 나머지는 수로 센다
-    expect(r.getByText("인간관계 외 1개")).toBeTruthy();
-    expect(r.getByText("🎵 음악 듣기 외 1개")).toBeTruthy();
+    // 온보딩이 묻지 않는 둘은 목록에서 뺐다(2026-11-08)
+    expect(r.queryByText("관심 분야")).toBeNull();
+    expect(r.queryByText("쉬는 방법")).toBeNull();
   });
 
   it("항목을 누르면 그 항목만 고치는 화면으로 간다", async () => {
@@ -64,8 +64,6 @@ describe("M3 · 기본 정보 수정 목록", () => {
       ["닉네임", "/my/nickname"],
       ["나이", "/my/age"],
       ["성별", "/my/gender"],
-      ["관심 분야", "/my/interests"],
-      ["쉬는 방법", "/my/rest"],
     ] as const;
 
     for (const [label, href] of routes) {

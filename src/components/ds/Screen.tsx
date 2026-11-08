@@ -39,8 +39,8 @@ type Props = {
   proportional?: boolean;
   /** Extra space below the system safe area, in design points. */
   topGap?: number;
-  /** 기본 `normal`. 구분 영역이 필요한 화면만 `alternative` */
-  surface?: "normal" | "alternative" | "transparent";
+  /** 기본 `normal`. 구분 영역이 필요한 화면만 `alternative` · 로그인은 스플래시와 같은 `splash` */
+  surface?: "normal" | "alternative" | "splash" | "transparent";
   /** 좌우 20 패딩. 탭바·하단 바처럼 전체 폭이 필요하면 `false` */
   padded?: boolean;
   /** 격자를 끈다 — 시안에서 격자가 없는 면(시트 내부 등) */

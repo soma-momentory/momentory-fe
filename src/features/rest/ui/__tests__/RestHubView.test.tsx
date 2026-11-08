@@ -24,6 +24,29 @@ describe("RestHubView", () => {
     }
   });
 
+  const previewProps = {
+    summary: "",
+    contents: REST_CONTENTS,
+    onOpenCards: () => {},
+    onOpenContent: () => {},
+  };
+
+  it("쪽지 미리보기 — 최근 카드 글이 있으면 적는다", async () => {
+    const screen = await render(
+      <RestHubView {...previewProps} wishPreview="차분하게 말하고 싶었다" />,
+    );
+    expect(
+      screen.getByTestId("rest-wish-preview-text", { includeHiddenElements: true }).props.children,
+    ).toBe("차분하게 말하고 싶었다");
+  });
+
+  it("쪽지 미리보기 — 카드가 없으면 빈 줄이다(예시 문장을 짓지 않는다)", async () => {
+    const screen = await render(<RestHubView {...previewProps} wishPreview={null} />);
+    expect(
+      screen.queryByTestId("rest-wish-preview-text", { includeHiddenElements: true }),
+    ).toBeNull();
+  });
+
   it("카드의 기존 누름 효과 뒤에 호출자가 준 콜백을 호출한다", async () => {
     const onOpenCards = jest.fn();
     const onOpenContent = jest.fn();

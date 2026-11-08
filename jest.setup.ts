@@ -136,3 +136,11 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
+
+// 공용 `Text` 는 한글 글자 사이에 단어 결합 문자를 넣는다(`@/lib/keepWords` · 어절 줄바꿈). 테스트에서는
+// 그 걸음만 끈다 — 켜 두면 `getByText("…")` 처럼 글자로 찾는 테스트가 전부 어긋난다.
+// `keepWords` 자체는 그대로다(직접 거는 화면 · 그 테스트). 걸음의 동작은 `src/lib/__tests__/keepWords.test.ts` 가 본다.
+jest.mock("@/lib/keepWords", () => ({
+  ...jest.requireActual("@/lib/keepWords"),
+  keepWordsIn: (children: unknown) => children,
+}));

@@ -20,6 +20,8 @@ module.exports = [
     ignores: [
       // 에이전트 작업 폴더(저장소 사본) — 사본을 다시 검사하지 않는다
       ".claude/worktrees/**",
+      // 스킬이 들고 오는 다른 프로젝트용 템플릿(Next.js 등) — 앱 코드가 아니다
+      ".claude/skills/*/template/**",
       "node_modules/**",
       ".expo/**",
       "dist/**",

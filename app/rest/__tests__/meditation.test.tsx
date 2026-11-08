@@ -307,7 +307,6 @@ describe("3분 명상", () => {
     await fireEvent.press(r.getByRole("button", { name: "다음" }));
     await fireEvent.press(r.getByRole("button", { name: "참고한 실습 보기" }));
 
-    expect(r.queryByTestId("rest-guide-card")).toBeNull();
     expect(r.getByText("콘텐츠 정보")).toBeTruthy();
     expect(r.getByText("작은 모닥불: 나에게 엄격해질 때")).toBeTruthy();
     expect(r.getByLabelText("작은 모닥불 정보 보기").props.accessibilityState.selected).toBe(true);
@@ -325,6 +324,9 @@ describe("3분 명상", () => {
 
     await fireEvent.press(r.getByLabelText("닫기"));
     expect(r.queryByText("콘텐츠 정보")).toBeNull();
+    // 정보 창을 닫으면 설명 카드의 마지막 장으로 돌아온다
+    expect(r.getByRole("button", { name: "참고한 실습 보기" })).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "알겠어요" }));
     await pass(1_000);
     expect(clockText(r)).toBe("00:04 / 03:00");
   });

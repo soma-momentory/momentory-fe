@@ -11,7 +11,10 @@ export const restThemeCard = {
     /** 칸 사이 */
     gap: 14,
     captionPaddingX: 12,
-    captionPaddingY: 9,
+    captionPaddingY: 10,
+    /** 이름 ↔ 속말 · 속말 ↔ 시간 — 세 줄이 한 덩어리로 붙어 보이지 않게(2026-11-08) */
+    whenGoodMarginTop: 2,
+    durationMarginTop: 4,
     noteMarginTop: 3,
     notePaddingX: 5,
   },
@@ -25,21 +28,17 @@ export const restThemeCard = {
     linkTilt: "-1deg",
     underline: "#E3B65A",
     preview: {
-      seatWidth: 118,
-      seatHeight: 106,
-      width: 80,
-      height: 88,
+      // 손글씨 14 세 줄이 들어가게 키웠다(2026-11-08 · 최근 카드 글을 적는다)
+      seatWidth: 132,
+      seatHeight: 116,
+      width: 104,
+      height: 98,
       radius: 8,
       padding: 5,
-      sceneHeight: 46,
-      sceneRadius: 4,
       lineHeight: 4,
       lineGap: 5,
       frontTilt: "4deg",
       backTilt: "-7deg",
-      tapeTop: -9,
-      tapeWidth: 40,
-      tapeHeight: 15,
     },
   },
   paper: {

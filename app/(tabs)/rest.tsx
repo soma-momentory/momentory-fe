@@ -52,6 +52,9 @@ export default function Rest() {
   const latest = latestCardDay(all);
   const { date: today } = useTodayContext();
   const hasToday = cardOn(all, today) != null;
+  // 오른쪽 쪽지에 적는 글 — 가장 최근 카드의 바랐던 모습, 없으면 작은 행동
+  const latestCard = latest == null ? null : cardOn(all, latest);
+  const wishPreview = latestCard?.desiredState ?? latestCard?.targetAction ?? null;
   const recommend = useRestRecommendation(today, restRecommendMotion.delay, afterDiary === "1");
   useEffect(() => {
     // 이번 완료 진입에만 적용한다. 이후 일반 탭 진입까지 반복 표시하지 않는다.
@@ -98,6 +101,7 @@ export default function Rest() {
     >
       <RestHubView
         summary={summary}
+        wishPreview={wishPreview}
         contents={contents}
         onOpenCards={open}
         onOpenContent={(item) => {

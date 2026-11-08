@@ -490,11 +490,10 @@ MOMENTORY_BUILD_ENV=production npx expo prebuild --platform ios --clean
 
 개발 빌드는 `.env`의 `MOMENTORY_BUILD_ENV=development`를 그대로 사용한다.
 
-> ⚠ **두 서버가 다른 BE 를 돌린다** (2026-11-06 대조). 운영 `api.momentory.co.kr` = BE `main`
-> (`ca3bc87` · 2026-10-14), 개발 `dev.momentory.co.kr` = BE `dev`(`50cd4c9`). 팀 `.env` 는 개발 주소다.
-> FE `main` 은 **dev 에만 있는 API**(편지 · 홈 날씨 · 온보딩 v2 · 소원 · 명상 · 주간 리포트 v2 등 · BE #76~#90)에
-> 기대므로, 지금 FE 로 출시 빌드를 만들면 그 화면들이 운영 서버에서 비거나 실패한다.
-> **다음 스토어 출시 전에 BE dev → main 릴리스가 먼저다.**
+> ✅ **두 서버의 API 가 다시 같다** (2026-11-08 BE dev → main 릴리스). 운영 `api.momentory.co.kr` = BE `main`,
+> 개발 `dev.momentory.co.kr` = BE `dev` 이고 둘의 경로가 같다(55개 · `/v3/api-docs` 대조). 팀 `.env` 는 개발 주소다.
+> (2026-11-06 에는 편지 · 날씨 · 온보딩 v2 · 소원 · 명상 · 주간 리포트 v2 등 BE #76~#91 이 dev 에만 있어 출시가 막혀 있었다.)
+> **FE 가 새 API 에 기대는 출시는 앞으로도 BE 릴리스가 먼저다.**
 
 ACM 인증서(Amazon RSA 2048 M04 · 2027-03-09 만료). **IP 가 아니라 도메인**이라
 iOS ATS 문제도 함께 사라졌다 — 예고대로 **`.env` 한 줄**로 끝났다
