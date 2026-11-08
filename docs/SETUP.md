@@ -494,9 +494,9 @@ npm run check:ios-release   # 운영 introspect + 생성된 ios/app/Info.plist �
 > ⚠ **출시 prebuild 뒤에는 `npm run check:ios-release` 를 돌린다** (2026-11-08 · 1.4.0 Build 8).
 > `scripts/check-ios-release-plist.mjs` 가 운영 설정으로 `expo config --type introspect` 를 돌리고,
 > 생성된 `ios/app/Info.plist` 가 있으면 그것도 본다 — Expo Dev Launcher 의 로컬 네트워크 문구 ·
-> `_expo._tcp` · 위치 Always · Motion · Reminders · Face ID 가 **없고**, 위치 「사용 중」 · 마이크 ·
-> 음성 인식 · 캘린더 · 사진이 **있고**, 그 밖의 `*UsageDescription` 이 없고, 번들 ID 와 운영 API 호스트가
-> 맞는지. 버전 · 빌드 번호는 찍어 준다.
+> `_expo._tcp` · 위치 Always · Reminders · Face ID 가 **없고**, 위치 「사용 중」 · 마이크 ·
+> 음성 인식 · 캘린더 · 사진 · Motion(아래) 이 **있고**, 그 밖의 `*UsageDescription` 이 없고, 번들 ID 와
+> 운영 API 호스트가 맞는지. 버전 · 빌드 번호는 찍어 준다.
 >
 > 왜 생겼나 — 1.4.0 Build 8 prebuild 의 `Info.plist` 에 dev launcher 문구와 `expo-location` 의 영문 기본
 > 문구(Always · Motion)가 남아 있었다. 원인 둘: ① config-plugins 는 mod 를 **등록 역순**으로 돌려서
@@ -505,6 +505,17 @@ npm run check:ios-release   # 운영 introspect + 생성된 ios/app/Info.plist �
 > 머리말) ② `expo-location` 플러그인은 `locationAlwaysPermission` · `locationAlwaysAndWhenInUsePermission` ·
 > `motionUsagePermission` 을 **`false` 로 명시하지 않으면** 기본 문구를 넣는다(`app.config.ts`). 둘 다 자동
 > 심사가 Reminders 때 걸었던 「쓰지 않는 자원의 일반 문구」와 같은 종류다.
+>
+> **`NSMotionUsageDescription` 은 예외다 — 빼면 안 된다** (2026-11-09). Motion 까지 뺀 Build 8 이
+> App Store Connect 업로드에서 **ITMS-90683(purpose string 누락)** 으로 막혔다. 앱은 움직임 정보를 쓰지
+> 않지만 `expo-location` 네이티브 모듈이 `CMMotionActivityManager` 를 참조해(`LocationModule.swift` ·
+> `Providers/MotionActivityStreamer.swift` · `Requesters/MotionActivityPermissionRequester.swift`) 바이너리에
+> CoreMotion 이 링크되고, 애플은 **참조만으로** 문구를 요구한다. 그래서 `app.config.ts` 의
+> `motionUsagePermission` 에 **거짓 목적이 아니라 사실**(「움직임 정보를 수집하지 않는다 · 구성 요소에 포함된
+> 항목이라 표시될 뿐 · 실제로 요청하지 않는다」)을 적는다 — 부르는 코드가 없어 사용자에게 이 창은 뜨지 않는다.
+> 참조 자체를 없애는 길은 pod 소스 패치뿐이다(`patch-package` 로 위 Swift 셋과 `LocationModule.swift` 의
+> motion 등록부를 들어내기) — SDK 를 올릴 때마다 다시 맞춰야 하고 모듈 정의 본체를 건드려서 **출시 직전에는
+> 하지 않는다.** 위치 Always 둘은 그대로 `false` 다 — 그쪽은 참조가 아니라 요청 코드가 있어야 걸린다.
 
 > ✅ **두 서버의 API 가 다시 같다** (2026-11-08 BE dev → main 릴리스). 운영 `api.momentory.co.kr` = BE `main`,
 > 개발 `dev.momentory.co.kr` = BE `dev` 이고 둘의 경로가 같다(55개 · `/v3/api-docs` 대조). 팀 `.env` 는 개발 주소다.

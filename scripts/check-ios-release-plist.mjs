@@ -8,8 +8,9 @@
 //
 // 잣대:
 //   - 개발 도구 · 미사용 권한이 **없어야** 한다 — Expo Dev Launcher 의 로컬 네트워크 · `_expo._tcp` ·
-//     위치 Always · Motion · Reminders · Face ID
-//   - 쓰는 권한은 **있어야** 한다 — 위치 「사용 중」 · 마이크 · 음성 인식 · 캘린더 · 사진
+//     위치 Always · Reminders · Face ID
+//   - 쓰는 권한은 **있어야** 한다 — 위치 「사용 중」 · 마이크 · 음성 인식 · 캘린더 · 사진.
+//     Motion 도 있어야 한다 — 쓰지 않지만 expo-location 바이너리의 CoreMotion 참조 때문에 애플이 요구한다
 //   - 그 밖의 `*UsageDescription` 은 허용 목록 밖이면 실패다(새 문구가 조용히 들어오는 길을 막는다)
 //   - 번들 ID `kr.momentory.app` · 운영 API 호스트. 버전 · 빌드 번호는 **찍기만** 한다(정본은 app.config.ts)
 //
@@ -42,7 +43,6 @@ const FORBIDDEN_KEYS = [
   "NSLocalNetworkUsageDescription", // expo-dev-launcher
   "NSLocationAlwaysUsageDescription", // expo-location 기본값 — 백그라운드 위치를 쓰지 않는다
   "NSLocationAlwaysAndWhenInUseUsageDescription",
-  "NSMotionUsageDescription", // expo-location 기본값 — 움직임 감지를 쓰지 않는다
   "NSRemindersUsageDescription", // expo-calendar 기본값 — 2026-08 반려 원인
   "NSRemindersFullAccessUsageDescription",
   "NSFaceIDUsageDescription", // expo-secure-store 기본값 — Face ID 를 요청하지 않는다
@@ -56,6 +56,9 @@ const REQUIRED_KEYS = [
   "NSCalendarsUsageDescription", // 일정 읽기
   "NSCalendarsFullAccessUsageDescription",
   "NSPhotoLibraryUsageDescription",
+  // 앱은 움직임을 쓰지 않지만 expo-location 바이너리가 CoreMotion 을 참조해 애플이 요구한다 —
+  // 빼면 업로드가 ITMS-90683 으로 막힌다(2026-11-09 · 1.4.0 Build 8). 문구는 「쓰지 않는다」는 사실을 적는다
+  "NSMotionUsageDescription",
 ];
 
 /** `*UsageDescription` 중 있어도 되는 것 전부 — 여기 없는 문구가 보이면 실패다 */
