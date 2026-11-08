@@ -1,6 +1,8 @@
 # Momentory Codex 작업 안내
 
-제품·디자인 판단은 `docs/DESIGN.md`, 저장소 작업 규칙은 `docs/CONTRIBUTING.md`를 따른다. `docs/spec/`은 동결 스냅샷이다. 기존 미커밋 변경을 보존한다.
+제품·디자인 판단은 `docs/DESIGN.md`, 저장소 작업 규칙은 `docs/CONTRIBUTING.md`를 따른다. 코드가 어디에 무엇이 있는지는 `NAV.md`(코드를 읽는 목차)를 먼저 본다. AI 가 지킬 규칙·작업 방식은 `CLAUDE.md`와 같다. `docs/spec/`은 동결 스냅샷이다. 기존 미커밋 변경을 보존한다.
+
+새 파일·폴더·라우트를 만들거나 모듈의 역할을 바꾸면 같은 변경에서 `NAV.md`를 고친다(빠지면 `scripts/__tests__/navMap.test.ts`가 깨진다). 시각·문안은 `docs/DESIGN.md`, 스펙과 다르게 간 것은 `docs/PRODUCT.md` 「상류와 차이」, API는 `docs/api/README.md`, 계측은 `docs/ANALYTICS.md`에 함께 적는다. 머지는 사용자 승인 뒤에만 한다.
 
 검수 요청에는 프로젝트 로컬 스킬을 선택한다. 문구·모멘토리 톤은 `$momentory-ux-writing`, 타이포그래피·화면 간 디자인 일관성은 `$momentory-design-audit`, 수정 화면 QA·프론트 성능은 `$momentory-screen-qa`를 사용한다. 범위가 겹칠 때만 함께 사용한다. 감사 요청만으로 제품 코드를 수정하지 않는다.
 

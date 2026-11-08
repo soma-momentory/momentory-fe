@@ -6,7 +6,7 @@
   "runCommand": "node harness/run.mjs",
   "taskDir": "tasks",
   "taskTemplate": "tasks/TASK_TEMPLATE.md",
-  "entryDocs": ["docs/CONTRIBUTING.md", "CLAUDE.md"],
+  "entryDocs": ["docs/CONTRIBUTING.md", "CLAUDE.md", "NAV.md"],
   "referenceDocs": [
     "docs/spec/RULES.md",
     "docs/DESIGN.md",

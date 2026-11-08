@@ -22,6 +22,10 @@
   - `src/lib/http.ts` 를 두고 자기 fetch 래퍼를 만듦
   - 시각·날짜가 `src/lib/clock.ts` 를 지나지 않음
   - 생성물·동결 파일 직접 수정 (`src/design/theme.ts` · `docs/spec/**` · `docs/design/**` · `ios/` · `android/`)
+- 문서 정본 누락 (P2) — 동작·규칙·계약이 바뀌었는데 그 정본 문서가 그대로인 경우만:
+  `NAV.md`(코드 목차)의 설명이 틀려짐 · 시각/문안 규칙 → `docs/DESIGN.md` · 스펙과 어긋남 →
+  `docs/PRODUCT.md` 「상류와 차이」 · 붙인 API → `docs/api/README.md` · 이벤트 → `docs/ANALYTICS.md`.
+  내부 리팩터링·테스트만 바뀐 변경은 해당 없다. 파일 이름 누락은 `scripts/__tests__/navMap.test.ts` 가 잡는다
 - UI 변경이면 디자인 SSOT 위반. SSOT 후보는 아래 「디자인 SSOT」 목록에 있다 —
   존재하는 것만 읽고, 없는 경로는 무시한다.
 
