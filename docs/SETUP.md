@@ -584,7 +584,7 @@ prebuild 뒤에 `.env` 만 바꾸면 네이티브에는 반영되지 않는다.
 #    MOMENTORY_BUILD_ENV=production
 # 1. app.config.ts 의 version · android.versionCode 를 올린다(아래 「versionCode」)
 npx expo config --type public --json | jq '{version, versionCode: .android.versionCode, api: .extra.apiBaseUrl}'
-#    → 1.3.0 · 10 · https://api.momentory.co.kr 처럼 셋이 맞는지 눈으로 본다
+#    → 1.4.0 · 11 · https://api.momentory.co.kr 처럼 셋이 맞는지 눈으로 본다
 npx expo prebuild -p android --clean --no-install   # /android 를 지우고 다시 만든다
 echo "sdk.dir=$HOME/Library/Android/sdk" > android/local.properties
 cd android
@@ -634,7 +634,8 @@ Play 는 같은 값을 두 번 받지 않고, 심사 반려 뒤 재업로드도 
 | 7           | 1.2.0   | 2026-10-06   | `momentory-1.2.0-vc7.aab`                                                      |
 | 8           | 1.1.2   | 2026-10-06   | `momentory-android-1.1.2-vc8.aab`                                              |
 | 9           | 1.2.0   | 2026-10-09   | `momentory-android-1.2.0-vc9.aab` — Play 에 올라가 번호가 소비됐다             |
-| **10**      | 1.3.0   | 2026-10-14   | `momentory-android-1.3.0-vc10.aab` — **운영 서버**(`api.momentory.co.kr`) 빌드 |
+| 10          | 1.3.0   | 2026-10-14   | `momentory-android-1.3.0-vc10.aab` — **운영 서버**(`api.momentory.co.kr`) 빌드 |
+| **11**      | 1.4.0   | 2026-11-08   | `momentory-android-1.4.0-vc11.aab` — 운영 서버 · iOS `buildNumber 8`           |
 
 ### 지문 셋 — 하나라도 빠지면 그 빌드에서만 로그인이 실패한다
 

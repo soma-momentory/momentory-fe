@@ -161,7 +161,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "모멘토리",
   slug: "momentory",
-  version: "1.3.0",
+  version: "1.4.0",
   orientation: "portrait",
   scheme: "momentory", // 회고 알림 → 딥링크
   icon: "./assets/icon.png",
@@ -196,8 +196,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * `2` = Reminders·Face ID 권한 문구를 뺀 재제출 빌드(2026-08-28).
      * ⚠ **다음 업로드 전에 반드시 올린다.** 아카이브를 다시 만들 때마다가 아니라,
      * App Store Connect 에 **올릴 때마다**다.
+     *
+     * `8` = 1.4.0(2026-11-08).
      */
-    buildNumber: "7",
+    buildNumber: "8",
     infoPlist: {
       NSPhotoLibraryUsageDescription:
         "모멘토리에서 사용자가 선택한 사진을 첨부하거나 저장할 수 있도록 사진 보관함 접근 권한을 사용합니다.",
@@ -227,7 +229,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     //
     // 이력은 `docs/SETUP.md` §8 「versionCode」 표에 둔다 — 여기 숫자와 그 표를 같이 올린다.
     // `10` = 1.3.0 · 운영 서버(`api.momentory.co.kr`) · 2026-10-14. 9 는 10-09 의 1.2.0 빌드가 썼다.
-    versionCode: 10,
+    // `11` = 1.4.0 · 운영 서버 · 2026-11-08.
+    versionCode: 11,
   },
 
   // ⚠ 플러그인의 유일한 출처. `npx expo install` 이 app.json 을 만들어 여기 목록을
