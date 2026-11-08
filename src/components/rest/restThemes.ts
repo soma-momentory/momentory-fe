@@ -74,9 +74,3 @@ export const REST_THEMES: Record<RestContentId, RestTheme> = {
     position: "78%",
   },
 };
-
-/** 바람카드 미리보기의 그림 — 콘텐츠가 아니라서 표 밖에 둔다. 쉼터의 다른 칸에 없는 장면이다 */
-export const REST_WISH_SCENE = {
-  scene: require("../../../assets/meditation/sunlight.webp"),
-  position: "42%",
-} as const;

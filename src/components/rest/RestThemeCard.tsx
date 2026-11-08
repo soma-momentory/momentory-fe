@@ -48,7 +48,12 @@ export function RestThemeCard({ item }: { item: RestContent }) {
         <Text variant="headline1" style={styles.title}>
           {keepWords(item.title)}
         </Text>
-        <Text variant="body1" style={styles.duration}>
+        {/* 이 쉼이 필요한 순간의 속말 — 고르는 데 필요한 말이라 이름 바로 아래에 둔다 */}
+        <Text variant="body2" style={styles.whenGood}>
+          {`「${item.whenGood}」`}
+        </Text>
+        {/* 시간은 덧붙이는 정보라 한 단 작고 옅게 — 세 줄이 같은 무게로 붙어 읽기 어려웠다(2026-11-08) */}
+        <Text variant="caption1" style={styles.duration}>
           {item.duration.replace(/^약 /, "")}
         </Text>
         {item.note != null ? (
@@ -78,7 +83,18 @@ const styles = StyleSheet.create({
   subjectSeat: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   caption: { paddingHorizontal: size.captionPaddingX, paddingVertical: size.captionPaddingY },
   title: { fontFamily: font.bold, color: colors.ink, textAlign: "center" },
-  duration: { fontFamily: font.regular, color: colors.ink, textAlign: "center" },
+  whenGood: {
+    marginTop: size.whenGoodMarginTop,
+    fontFamily: font.regular,
+    color: colors.ink,
+    textAlign: "center",
+  },
+  duration: {
+    marginTop: size.durationMarginTop,
+    fontFamily: font.regular,
+    color: colors.muted,
+    textAlign: "center",
+  },
   note: {
     alignSelf: "center",
     marginTop: size.noteMarginTop,

@@ -244,6 +244,8 @@ describe("쉼터 테마 카드", () => {
   it("이름과 시간이 얹히는 종이는 잉크 글자 4.5 를 넘는다", () => {
     for (const paper of Object.values(restThemeCard.paper)) {
       expect(contrast(homeV2.color.ink, paper)).toBeGreaterThanOrEqual(4.5);
+      // 시간 줄은 옅은 갈색(muted)이다
+      expect(contrast(homeV2.color.muted, paper)).toBeGreaterThanOrEqual(4.5);
     }
   });
 });

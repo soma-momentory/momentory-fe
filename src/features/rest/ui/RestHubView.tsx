@@ -15,6 +15,8 @@ import { REST_CONTENTS_PROMPT, type RestContent } from "@/features/rest/model/co
 type Props = {
   design?: StudioDesign;
   summary: string;
+  /** 가장 최근 바람카드의 글 — 오른쪽 쪽지에 적는다. 카드가 없으면 비운다 */
+  wishPreview?: string | null;
   contents: readonly RestContent[];
   onOpenCards: () => void;
   onOpenContent: (content: RestContent) => void;
@@ -28,6 +30,7 @@ const MORE_SLACK = 24;
 /** Production and Expo Lab share this display-only view. Navigation and recommendation stay in adapters. */
 export function RestHubView({
   summary,
+  wishPreview,
   contents,
   onOpenCards,
   onOpenContent,
@@ -134,7 +137,7 @@ export function RestHubView({
                 </View>
               </View>
             </View>
-            <RestWishPreview />
+            <RestWishPreview text={wishPreview} />
           </View>
         </RestCardPressable>
 
