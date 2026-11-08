@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet } from "react-native";
 
 import { Card, ListCell, ListDivider, Screen, TopNavigation } from "@/components/ds";
 import { space } from "@/design/ds";
-import { ageText, labelsOf, summarize, NOT_CHOSEN } from "@/features/my/model/basicInfo";
+import { ageText, NOT_CHOSEN } from "@/features/my/model/basicInfo";
 import { useProfile } from "@/features/my/model/settings";
 import { useOnboardingOptions } from "@/features/onboarding/model/options";
 
@@ -25,14 +25,12 @@ import { useOnboardingOptions } from "@/features/onboarding/model/options";
  * **닉네임도 여기 안에 있다** — 시안이 마이 상단의 진입점을 없앴다(`My.dc.html`
  * 「판단이 필요한 부분」). 온보딩에서 답한 것은 전부 이 목록에 있다(`my.invariants`).
  *
- * 값은 **한 줄로 자른다.** 관심 분야·쉬는 방법처럼 여러 개인 것은
- * 「일·직장생활 외 1개」로 접는다(`summarize`).
+ * **관심 분야 · 쉬는 방법은 뺐다**(2026-11-08 · 사용자 요청) — 온보딩 v2 가 묻지 않아 새 가입자는
+ * 늘 「선택 안 함」이었다. `/my/interests` · `/my/rest` 라우트는 남아 있지만 여기서 가는 길은 없다.
  */
 export default function BasicInfoList() {
   const profile = useProfile();
   const genders = useOnboardingOptions((s) => s.genders);
-  const interestAreas = useOnboardingOptions((s) => s.interestAreas);
-  const restMethods = useOnboardingOptions((s) => s.restMethods);
 
   // 온보딩을 거치지 않고 여기로 바로 올 수 있다 — 그때도 서버 목록을 쓴다.
   // 이미 받았으면 아무 일도 하지 않는다
@@ -74,20 +72,6 @@ export default function BasicInfoList() {
             title="성별"
             value={genderLabel}
             onPress={() => router.push("/my/gender")}
-            chevron
-          />
-          <ListDivider />
-          <ListCell
-            title="관심 분야"
-            value={summarize(labelsOf(interestAreas, profile.interests))}
-            onPress={() => router.push("/my/interests")}
-            chevron
-          />
-          <ListDivider />
-          <ListCell
-            title="쉬는 방법"
-            value={summarize(labelsOf(restMethods, profile.restMethods))}
-            onPress={() => router.push("/my/rest")}
             chevron
           />
         </Card>
