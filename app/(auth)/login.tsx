@@ -1,8 +1,10 @@
 import { Platform, StyleSheet, View } from "react-native";
 
 import { Screen, SocialButton, Text } from "@/components/ds";
+import { Baba } from "@/components/onboarding/OnboardingParts";
+import { Rug, RUG_ASPECT } from "@/features/home/ui/v2/Rug";
 import { routeAfterSignIn, startQuestions } from "@/components/onboarding/startQuestions";
-import { gothic, label as labelColor, space, status } from "@/design/ds";
+import { label as labelColor, space, status } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 import { openExternalLink, type ExternalLink } from "@/lib/links";
 
@@ -32,7 +34,9 @@ import { openExternalLink, type ExternalLink } from "@/lib/links";
  */
 
 /**
- * 개발 통로 — **워드마크를 길게 누른다.** 개발 빌드에서만 열린다.
+ * 개발 통로 — **「SNS 로그인」 줄을 길게 누른다.** 개발 빌드에서만 열린다.
+ *
+ * (2026-11-08 — 로고가 눌리지 않는 스플래시 그림이 되어 워드마크에서 이 줄로 옮겼다.)
  *
  * ⚠ **자리를 옮겼다** (구글 로그인 연결). 전에는 Google 줄이 이 통로였다 —
  * 그 줄에 SDK 가 없어서 비어 있었기 때문이다. 이제 세 줄이 전부 실제 SDK 와
@@ -51,6 +55,11 @@ import { openExternalLink, type ExternalLink } from "@/lib/links";
  * **로컬에서 이것이 유일한 로그인 통로다** — 카카오는 콘솔에 이 빌드의 키 해시가
  * 있어야 하고, 구글은 SHA-1 이, 애플은 iOS 기기가 필요하다.
  */
+/** 가운데 바바의 키 — 이 화면에서만 쓰는 값이라 스케일에 올리지 않는다 */
+const BABA_SIZE = 180;
+/** 러그 폭 — 홈처럼 바바보다 넓게 */
+const RUG_WIDTH = 200;
+
 const skipAuth = async () => {
   if (!__DEV__) return;
   // 지난 시도의 실패 안내는 지운다 — 남아 있으면 방금 한 것의 결과로 읽힌다
@@ -108,25 +117,29 @@ export default function Login() {
   };
 
   return (
-    <Screen>
-      {/* 로고 영역이 남은 높이를 다 차지하고 **광학 중앙**에 온다 —
-          아래 96 을 비워 시각적 무게를 위로 올린다 (`Login.dc.html` 「수직 균형」) */}
+    // 스플래시와 같은 베이지 면 · 격자 없음(2026-11-08 · 사용자 요청)
+    <Screen surface="splash" grid={false}>
+      {/* 남은 높이의 한가운데에 「모멘토리」 · 태그라인 · 홈의 바바 — 바바는 글자와 SNS 로그인 사이에 앉는다
+          (2026-11-08 · 사용자 요청 「위가 비어 보인다」). 글자는 전부 교보 손글씨다 */}
       <View style={styles.hero}>
-        <Text
-          variant="wordmarkHand"
-          color={labelColor.strong}
-          // 개발 통로 — 릴리스에서는 `skipAuth` 가 즉시 되돌아간다(위 머리말).
-          // `onPress` 를 주지 않으므로 짧게 눌러도 아무 일도 없다
-          onLongPress={skipAuth}
-        >
+        <Text variant="wordmarkHand" color={labelColor.strong}>
           모멘토리
         </Text>
-        {/* 앱은 손글씨 하나로 갔지만 **로그인만 고딕이다**(2026-09-06 · `ds/typography.ts`
-            의 `gothic`). 워드마크는 원래부터 손글씨(`wordmarkHand`)라 그대로 둔다 —
-            넘기는 굵기는 그 단이 원래 쓰던 것이다(`body2Reading` = Regular) */}
-        <Text variant="body2Reading" color={labelColor.neutral} style={gothic.regular}>
+        <Text variant="label1Hand" color={labelColor.neutral}>
           오늘을 돌아보고, 내일을 조금 다르게.
         </Text>
+        <View style={styles.baba}>
+          {/* 홈처럼 발밑에 연노랑 러그를 깐다(2026-11-08 · 사용자 요청) — 장식이라 낭독기는 읽지 않는다 */}
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.rug}
+          >
+            <Rug />
+          </View>
+          <Baba size={BABA_SIZE} />
+        </View>
       </View>
 
       {/*
@@ -138,7 +151,13 @@ export default function Login() {
         (카카오 「카카오 로그인」 · 구글 「로그인」 변형 · 애플 `sign-in` 의 `ko_KR`).
       */}
       <View style={styles.sns}>
-        <Text variant="body2" color={labelColor.neutral} style={gothic.medium}>
+        <Text
+          variant="body2"
+          color={labelColor.neutral}
+          // 개발 통로 — 릴리스에서는 `skipAuth` 가 즉시 되돌아간다(위 머리말).
+          // `onPress` 를 주지 않으므로 짧게 눌러도 아무 일도 없다
+          onLongPress={skipAuth}
+        >
           SNS 로그인
         </Text>
         <View style={styles.snsRow}>
@@ -174,8 +193,8 @@ export default function Login() {
       {signInError ? (
         <Text
           variant="caption1"
-          color={status.negative}
-          style={[styles.centered, gothic.medium]}
+          color={status.negativeOnSplash}
+          style={styles.centered}
           accessibilityLiveRegion="polite"
           accessibilityRole="alert"
         >
@@ -184,14 +203,15 @@ export default function Login() {
       ) : null}
 
       <View style={styles.legal}>
+        {/* 베이지 면 위라 `alternative`(3.9)는 AA 미달 — `neutral`(4.96)로 올린다 */}
         <Text
           variant="caption2"
-          color={labelColor.alternative}
-          style={[styles.centered, gothic.semibold]}
+          color={labelColor.neutral}
+          style={[styles.centered, styles.legalText]}
         >
           로그인하면 <LegalLink label="이용약관" link="terms" />과{" "}
-          <LegalLink label="개인정보 처리방침" link="privacy" />에 동의하게 돼요. 마이에서 언제든
-          다시 확인할 수 있어요.
+          <LegalLink label="개인정보 처리방침" link="privacy" />에 동의하게 돼요.
+          {"\n"}마이에서 언제든 다시 확인할 수 있어요.
         </Text>
       </View>
     </Screen>
@@ -220,7 +240,7 @@ function LegalLink({ label, link }: { label: string; link: ExternalLink }) {
       color={labelColor.neutral}
       accessibilityRole="link"
       onPress={() => void openExternalLink(link)}
-      style={[styles.legalLink, gothic.semibold]}
+      style={[styles.legalText, styles.legalLink]}
     >
       {label}
     </Text>
@@ -228,14 +248,15 @@ function LegalLink({ label, link }: { label: string; link: ExternalLink }) {
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    // 워드마크 ↔ 태그라인. 시안은 11 이지만 `DESIGN.md` §3 의 10단 스케일이 이긴다
-    gap: space.md,
-    // 광학 중앙 — 이 화면에서만 쓰는 값이라 스케일에 올리지 않는다
-    paddingBottom: 96,
+  hero: { flex: 1, alignItems: "center", justifyContent: "center", gap: space.sm },
+  // 글자 묶음과 바바 사이 — 태그라인에 붙어 보이지 않게 띄운다
+  baba: { marginTop: space.xl3, alignItems: "center" },
+  // 러그 가운데가 바바 발밑에 오게 — 아래로 높이의 40% 를 내린다
+  rug: {
+    position: "absolute",
+    bottom: -RUG_WIDTH * RUG_ASPECT * 0.4,
+    width: RUG_WIDTH,
+    height: RUG_WIDTH * RUG_ASPECT,
   },
   // 「SNS 로그인」 한 줄 아래에 둥근 네모 셋이 가로로 선다(`DESIGN.md` 「로그인」)
   sns: { alignItems: "center", gap: space.lg },
@@ -244,6 +265,8 @@ const styles = StyleSheet.create({
   // 약관은 버튼보다 좁게 — 좌우 20(Screen) + 12 = 32 (`Login.dc.html`)
   // 위 48 — 버튼 줄이 약관에 붙어 화면 아래로 몰려 보였다(2026-10-13 사용자 요청 「조금 올려」)
   legal: { paddingTop: space.xl5, paddingHorizontal: space.md },
+  // 약관 줄만 caption2(14)에서 1 작게(2026-11-08 · 사용자 요청 12 → 13) — 최소 14 규칙의 이 화면 예외
+  legalText: { fontSize: 13, lineHeight: 19 },
   // 누를 수 있다는 신호를 색 하나에 맡기지 않는다
   legalLink: { textDecorationLine: "underline" },
 });

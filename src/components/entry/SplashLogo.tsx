@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Animated, Image, StyleSheet, View } from "react-native";
 
-import { motion, space } from "@/design/ds";
+import { Text } from "@/components/ds";
+import { label, motion, space, text } from "@/design/ds";
 
 /**
  * 네이티브 스플래시가 그림을 그리는 크기 — `app.config.ts` `expo-splash-screen` 의 `imageWidth`.
@@ -17,16 +18,13 @@ const FACE_SIZE = (SPLASH_IMAGE_SIZE * FACE_CANVAS) / CANVAS;
 /** 얼굴과 워드마크 사이 */
 const WORDMARK_GAP = space.lg;
 /**
- * 워드마크 폭 — 얼굴 아래에 한 장으로 두던 때(약 115)의 **두 배**(2026-10-06 · 사용자 요청).
- * 높이는 그림 비율(540 × 76)을 따른다.
+ * 얼굴 가운데가 화면 가운데에서 **위로** 떨어진 거리. `splash-icon.png` 에 얼굴이 이만큼(캔버스 86)
+ * 올라가 그려져 있어 **그림을 다시 만들기 전에는 바꾸지 않는다** — 옛 `Momentory` 그림 워드마크
+ * (230 × 540:76)의 높이로 잰 값이다.
  */
-const WORDMARK_WIDTH = 230;
-const WORDMARK_HEIGHT = (WORDMARK_WIDTH * 76) / 540;
-/**
- * 얼굴 가운데가 화면 가운데에서 **위로** 떨어진 거리 — 얼굴 + 워드마크 묶음의 가운데가 화면
- * 가운데에 오게 하는 값이다. `splash-icon.png` 도 얼굴을 이만큼(캔버스 86) 올려 그렸다.
- */
-const FACE_LIFT = (WORDMARK_GAP + WORDMARK_HEIGHT) / 2;
+const FACE_LIFT = (WORDMARK_GAP + (230 * 76) / 540) / 2;
+/** 워드마크 줄 높이 — 교보 손글씨 「모멘토리」(`wordmarkHand`) */
+const WORDMARK_HEIGHT = text.wordmarkHand.lineHeight;
 
 /** 묶음(얼굴 위 끝 ~ 워드마크 아래 끝)의 절반 높이 — 그 아래에 무언가를 둘 때 기준이다 */
 export const SPLASH_LOGO_HALF_HEIGHT = (FACE_SIZE + WORDMARK_GAP + WORDMARK_HEIGHT) / 2;
@@ -47,6 +45,8 @@ type Props = {
  * 가운데에 오도록 얼굴을 `FACE_LIFT` 만큼 **위로 올려** 그려 두었다(`splash-icon.png`). 여기서는
  * 그 그림을 같은 크기(288)로 화면 가운데에 그대로 깔고 — 얼굴이 한 픽셀도 움직이지 않는다 —
  * 얼굴 아래에 워드마크를 서서히 띄운다.
+ *
+ * 워드마크는 그림(`Momentory`)이 아니라 **교보 손글씨 「모멘토리」 글자**다(2026-11-08 · 사용자 요청).
  */
 export function SplashLogo({ onFaceShown }: Props) {
   const [wordmarkOpacity] = useState(() => new Animated.Value(0));
@@ -73,13 +73,14 @@ export function SplashLogo({ onFaceShown }: Props) {
         onLoad={shown}
         onError={shown}
       />
-      <Animated.Image
-        source={require("../../../assets/splash-wordmark.png")}
+      <Animated.View
         style={[styles.wordmark, { opacity: wordmarkOpacity }]}
         testID="splash-wordmark"
-        resizeMode="contain"
-        fadeDuration={0}
-      />
+      >
+        <Text variant="wordmarkHand" color={label.strong}>
+          모멘토리
+        </Text>
+      </Animated.View>
     </View>
   );
 }
@@ -92,8 +93,9 @@ const styles = StyleSheet.create({
   wordmark: {
     position: "absolute",
     top: "50%",
-    width: WORDMARK_WIDTH,
-    height: WORDMARK_HEIGHT,
+    left: 0,
+    right: 0,
+    alignItems: "center",
     marginTop: -FACE_LIFT + FACE_SIZE / 2 + WORDMARK_GAP,
   },
 });

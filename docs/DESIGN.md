@@ -420,7 +420,6 @@ CTA 위계: 주 행동만 Solid Primary. 보조는 Outlined, 3순위는 Text But
 | `android-icon-monochrome.png`  | 같은 마크·배율. 안드로이드는 **알파만 봐요**(아래 ⚠)                                                                                                         |
 | `adaptiveIcon.backgroundColor` | `#F2E4DC` — 로고의 면. 베이지를 그리는 건 이 배경층 하나뿐이에요                                                                                             |
 | `splash-icon.png`              | **앱 아이콘만** · 정사각 1024 · 얼굴은 폭 41% · 가운데보다 86 위(묶음이 화면 가운데에 오게 · 그 자리에서 안쪽 66% 원에 드는 최대) · 바탕은 `#EFE0C6` 로 채움 |
-| `splash-wordmark.png`          | `Momentory` 워드마크 · 540×76 · 투명 — `S0` 가 얼굴 아래 폭 230 으로 띄워요                                                                                  |
 | `favicon.png`                  | 196 · **카피바라만** — 16~32px 에서 글자는 못 읽어요                                                                                                         |
 
 ⚠ **안드로이드 전경만 배율이 다른 건 실수가 아니에요.** 런처는 108dp 중 **안쪽

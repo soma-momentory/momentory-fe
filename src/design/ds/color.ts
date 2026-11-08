@@ -109,6 +109,11 @@ export const status = {
   cautionary: "#A15E20",
   /** 삭제 — 글자(4.52)와 **흰 글자가 얹히는 면**(4.99) 둘 다 이 값 하나다 */
   negative: "#B94C30",
+  /**
+   * 스플래시 면(`background.splash`) 위 오류 글자 — `negative` 는 그 베이지에서 3.90 이라 한 톤 짙게(5.13).
+   * 로그인 실패 한 줄이 쓴다(2026-11-08 · 로그인이 스플래시 면으로 바뀌었다)
+   */
+  negativeOnSplash: "#9E3D26",
 } as const;
 
 /**

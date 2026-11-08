@@ -144,6 +144,13 @@ describe("감정 9색", () => {
  * 회고 대화의 **러그**(아이보리 면) — 화면 바닥까지 깔려 독의 오류 한 줄이 늘 그 위에 얹힌다.
  * 러그 색을 짙게 바꾸면 여기가 먼저 깨진다(갈색 러그였을 때는 `neutral` 이 2.5 까지 떨어졌다).
  */
+describe("로그인 — 스플래시 면 위 글자", () => {
+  it("실패 한 줄 · 약관 · 「SNS 로그인」이 베이지 면에서 4.5 를 넘는다", () => {
+    expect(contrast(status.negativeOnSplash, background.splash)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(label.neutral, background.splash)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 describe("회고 러그 위의 글자", () => {
   it("오류 한 줄(label.neutral)은 러그 면에서 4.5 를 넘는다", () => {
     expect(contrast(label.neutral, retroRug.fill)).toBeGreaterThanOrEqual(4.5);

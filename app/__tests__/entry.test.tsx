@@ -153,7 +153,7 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     expect(jest.mocked(router.replace)).not.toHaveBeenCalled();
   });
 
-  it("얼굴 · 워드마크 · 기다림 표시만 그린다 — 글자·버튼·퍼센트가 없다", async () => {
+  it("얼굴 · 워드마크 · 기다림 표시만 그린다 — 다른 글자·버튼·퍼센트가 없다", async () => {
     // 얼굴은 네이티브 스플래시를 이어받고, 워드마크와 기다림 표시는 그 아래에 더해진다(`index.tsx` 머리말)
     const { getByLabelText, getByTestId, queryByText } = await render(<Splash />);
 
@@ -162,7 +162,8 @@ describe("S0 · 진입 판정 — 세 갈래", () => {
     expect(getByTestId("splash-wordmark")).toBeTruthy();
     expect(getByTestId("splash-waiting")).toBeTruthy();
     expect(queryByText(/로딩|불러오는/)).toBeNull();
-    expect(queryByText("모멘토리")).toBeNull();
+    // 워드마크는 교보 손글씨 글자다(2026-11-08 · 그림 `Momentory` 에서 바꿨다)
+    expect(queryByText("모멘토리")).toBeTruthy();
     expect(queryByText(/%/)).toBeNull();
     expect(queryByText(/카카오 로그인|Google 계정으로 로그인|Apple로 로그인/)).toBeNull();
   });

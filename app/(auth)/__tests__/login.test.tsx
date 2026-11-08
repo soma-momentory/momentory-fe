@@ -265,24 +265,24 @@ describe("Google 버튼 — 실제 로그인에 연결돼 있다", () => {
   });
 });
 
-describe("개발 통로 — 버튼이 아니라 워드마크에 있다", () => {
-  it("워드마크를 길게 누르면 가짜 세션으로 질문에 들어간다", async () => {
+describe("개발 통로 — 버튼이 아니라 「SNS 로그인」 줄에 있다", () => {
+  it("「SNS 로그인」 줄을 길게 누르면 가짜 세션으로 질문에 들어간다", async () => {
     const dev = jest.fn(async () => {});
     useAuth.setState({ signInDev: dev });
     const { getByText } = await render(<Login />);
 
-    await fireEvent(getByText("모멘토리"), "longPress");
+    await fireEvent(getByText("SNS 로그인"), "longPress");
 
     await waitFor(() => expect(dev).toHaveBeenCalledTimes(1));
     expect(replace).toHaveBeenCalledWith("/mood");
   });
 
-  it("짧게 누르면 아무 일도 없다 — 워드마크는 버튼이 아니다", async () => {
+  it("짧게 누르면 아무 일도 없다 — 그 줄은 버튼이 아니다", async () => {
     const dev = jest.fn(async () => {});
     useAuth.setState({ signInDev: dev });
     const { getByText } = await render(<Login />);
 
-    await fireEvent.press(getByText("모멘토리"));
+    await fireEvent.press(getByText("SNS 로그인"));
 
     expect(dev).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
@@ -296,13 +296,13 @@ describe("개발 통로 — 버튼이 아니라 워드마크에 있다", () => {
 });
 
 describe("Momentory DS 이관 — 구조가 바뀌었다", () => {
-  it("브랜드는 워드마크 + 태그라인 한 줄이다 — 캐릭터·제목 2줄·소개 3덩어리는 사라졌다", async () => {
+  it("브랜드는 바바 + 워드마크 + 태그라인 한 줄이다 — 제목 2줄·소개 3덩어리는 사라졌다", async () => {
     const { getByText, queryByText, queryByLabelText } = await render(<Login />);
 
     expect(getByText("모멘토리")).toBeTruthy();
     expect(getByText("오늘을 돌아보고, 내일을 조금 다르게.")).toBeTruthy();
 
-    // 반입 패키지가 캐릭터 일러스트를 전부 뺐다 (EXPORT_MANIFEST §5)
+    // 가운데 바바는 장식이라 낭독기가 「바바」로 읽지 않는다
     expect(queryByLabelText("바바")).toBeNull();
     expect(queryByText(/돌아보는 작은 쉼터/)).toBeNull();
     expect(queryByText(/매일 쓰지 않아도/)).toBeNull();
