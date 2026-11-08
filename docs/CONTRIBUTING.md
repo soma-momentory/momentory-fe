@@ -114,23 +114,23 @@ fix: 아웃박스 재생에 멱등 키를 더한다
   - 스펙과 어긋나는 부분이 [`PRODUCT.md` 「상류와 차이」](PRODUCT.md)에 기록됐는가
   - **`docs/spec/` 이 바뀌었으면** 재반입 절차([SNAPSHOT.md](spec/SNAPSHOT.md))를 거쳤는가 — 손 수정은 반려
   - `package.json`·`providers.tsx` 등 「둘이 부딪히는 곳」([TASKS.md](TASKS.md))을 건드리면 사전 공유했는가
-- PR 은 작게 — 컴포넌트 2~~3개 또는 화면 2~~3장이 한 PR ([TASKS.md](TASKS.md) 분담 규칙).
+- PR 은 작게 — 컴포넌트 두세 개 또는 화면 두세 장이 한 PR ([TASKS.md](TASKS.md) 분담 규칙).
 
 ## 품질 게이트
 
 **이 표가 정본이다. `.github/workflows/ci.yml` 과 어긋나면 이 표와 ci.yml 을 같이 고친다.**
 전 단계가 **상류 폴더 없이** 돈다.
 
-| 순서 | 명령                         | 무엇을 잡나                                                                        |
-| ---- | ---------------------------- | ---------------------------------------------------------------------------------- |
-| 1    | `npm ci`                     | 앱·Expo Web Lab lockfile 과 동일한 트리                                            |
-| 2    | `npm run typecheck`          | 기존 앱 타입 오류                                                                  |
-| 3    | `npm run typecheck:expo-lab` | Expo Web Lab 타입 오류                                                             |
-| 4    | `npm run lint`               | 규칙 위반 — **경고도 실패** (`--max-warnings 0`)                                   |
-| 5    | `npm run format:check`       | Prettier 서식                                                                      |
-| 6    | `npm run test -- --ci`       | 화면 규칙·store·라우팅 테스트 · Lab 라우트 목록이 `app/` 과 맞는지                 |
-| 7    | 시크릿 추적 검사             | `.env`·키 파일이 이력에 들어갔는지                                                 |
-| 별도 | `npm run test:visual`        | Expo Lab 셸 Playwright(`expo-lab/e2e/`) — CI 의 `design-studio-visual` 잡(Windows) |
+| 순서 | 명령                         | 무엇을 잡나                                                                                                                  |
+| ---- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `npm ci`                     | 앱·Expo Web Lab lockfile 과 동일한 트리                                                                                      |
+| 2    | `npm run typecheck`          | 기존 앱 타입 오류                                                                                                            |
+| 3    | `npm run typecheck:expo-lab` | Expo Web Lab 타입 오류                                                                                                       |
+| 4    | `npm run lint`               | 규칙 위반 — **경고도 실패** (`--max-warnings 0`)                                                                             |
+| 5    | `npm run format:check`       | Prettier 서식                                                                                                                |
+| 6    | `npm run test -- --ci`       | 화면 규칙·store·라우팅 테스트 · Lab 라우트 목록이 `app/` 과 맞는지 · 코드 지도(`NAV.md`)에 새 폴더·통로·라우트 수가 적혔는지 |
+| 7    | 시크릿 추적 검사             | `.env`·키 파일이 이력에 들어갔는지                                                                                           |
+| 별도 | `npm run test:visual`        | Expo Lab 셸 Playwright(`expo-lab/e2e/`) — CI 의 `design-studio-visual` 잡(Windows)                                           |
 
 1~7 은 `check` 잡(ubuntu)이고, `test:visual` 은 같은 워크플로의 다른 잡이라 따로 돈다
 (실패하면 `test-results/` 를 아티팩트로 올린다). 두 잡 모두 PR 과 main push 에 돈다.
@@ -151,13 +151,13 @@ AI 에이전트(Claude Code · Codex)가 이 문서의 규칙을 **산문이 아
 특히 사람이 지켜보지 않는 Lab 「AI에게 맡기기」 실행에서. 설명·판정 표·실측은
 [`.claude/hooks/README.md`](../.claude/hooks/README.md) 「저장소 규칙 훅」이 정본이고, 여기는 요약이다.
 
-| 언제                   | 무엇                                                                                                                                     |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 편집 **전**            | 거부 — `docs/spec/**` · `docs/api/openapi.json` · `ios/` `android/` · `.env*`(견본 제외) · `harness/runs/**`                             |
-| 명령 **전**            | 거부 — `gh pr merge` · main 으로 가는 push · main 에서 `reset --hard` · `git clean -x` · node_modules 재귀 삭제                          |
-| 편집 **뒤**            | 그 파일만 prettier · `src/design/ds/**` 면 대비 테스트 · 새 `app/**` 화면이면 Lab 라우트 목록 확인                                       |
-| 권한 묻기·대기 (선택)  | Windows 토스트 — `MOMENTORY_NOTIFY=1` 일 때만                                                                                            |
-| 턴 끝 (Claude Code 만) | Codex 자동 리뷰 게이트 — 바뀐 것이 있으면 typecheck · lint · test 뒤 Codex read-only 리뷰 · Codex 가 없으면 건너뛴다(`codex-review.mjs`) |
+| 언제                   | 무엇                                                                                                                                                                                                                              |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 편집 **전**            | 거부 — `docs/spec/**` · `docs/api/openapi.json` · `ios/` `android/` · `.env*`(견본 제외) · `harness/runs/**` · `harness/parallel-runs/**` · Lab 무인 실행이면 훅·설정(`.claude/settings.json` · `.claude/hooks/**` · `.codex/**`) |
+| 명령 **전**            | 거부 — `gh pr merge` · main 으로 가는 push · main 에서 `reset --hard` · `git clean -x` · node_modules 재귀 삭제                                                                                                                   |
+| 편집 **뒤**            | 그 파일만 prettier · `src/design/ds/**` 면 대비 테스트 · 새 `app/**` 화면이면 Lab 라우트 목록 확인                                                                                                                                |
+| 권한 묻기·대기 (선택)  | Windows 토스트 — `MOMENTORY_NOTIFY=1` 일 때만                                                                                                                                                                                     |
+| 턴 끝 (Claude Code 만) | Codex 자동 리뷰 게이트 — 바뀐 것이 있으면 typecheck · lint · test 뒤 Codex read-only 리뷰 · Codex 가 없으면 건너뛴다(`codex-review.mjs`)                                                                                          |
 
 - 설정: Claude Code `.claude/settings.json` · Codex `.codex/hooks.json`(같은 스크립트 · 판정은 `.claude/hooks/lib/rules.mjs` 하나).
   리뷰 게이트(`Stop`)는 Claude Code 쪽에만 걸려 있다 — 설명은 같은 README 머리 「Codex 자동 리뷰 게이트」.
@@ -165,7 +165,7 @@ AI 에이전트(Claude Code · Codex)가 이 문서의 규칙을 **산문이 아
 - Lab 러너는 `MOMENTORY_LAB_RUN=1` 을 넘기고, Codex 는 `--dangerously-bypass-hook-trust` 로 돌린다
   (검토 안 된 프로젝트 훅은 `codex exec` 가 조용히 건너뛴다).
 - **품질 게이트(CI)에는 넣지 않았다.** 훅을 고치면 `node --test ".claude/hooks/__tests__/*.test.mjs"` 를 손으로 돌린다.
-- 훅은 가드레일이다 — 규칙의 정본은 여전히 이 문서와 `CLAUDE.md` 다. 규칙을 바꾸면 `rules.mjs` 도 함께 고친다.
+- 훅은 가드레일이다 — 규칙의 정본은 여전히 이 문서다(`CLAUDE.md` 「생성물·반입물」은 그 요약). 규칙을 바꾸면 `rules.mjs` 도 함께 고친다.
 
 ## 값을 다루는 세 등급
 
@@ -256,7 +256,7 @@ CI 와 새 개발자가 같은 빌드를 만들 수 없다.
   브랜드 초록 `primary.normal` 에는 글자를 얹지 않는다 — 글자가 얹히는 면(주 CTA)은 `primary.heavy` 다.
   대비 보정 값은 `ds/__tests__/contrast.test.ts` 가 고정한다
 - 폰트는 `fontWeight` 가 아니라 **파일 이름**으로 지정한다 — 앱 전체 서체는 교보손글씨
-  (`"KyoboHandwriting2025lyb"` · `ds/typography.ts`)이고 Pretendard(`"Pretendard-Bold"` 등)는 로그인 화면 몫이다.
+  (`"KyoboHandwriting2025lyb"` · `ds/typography.ts`)이다. Pretendard(`gothic`)는 로드만 되고 2026-11-08 로그인 개편 뒤 쓰는 화면이 없다.
   Android 에서 `fontWeight` 로는 굵기가 안 바뀐다.
 - **앱 코드는 고정값을 읽지 않는다** — 목 데이터는 2026-08-21 에 전부 지웠고
   (`src/mocks/sample.ts`), 남은 것은 **테스트 전용** `src/testing/fixtures.ts` 뿐이다.
@@ -295,6 +295,7 @@ scripts/screen-sweep.sh  # 화면 크기·글꼴 배율 다섯 벌 훑기 (판�
 
 | 날짜       | 변경                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-09 | **코드 대조.** 품질 게이트 6 에 코드 지도(`NAV.md`) 검사를, 「AI 훅」 편집 전 거부에 `harness/parallel-runs/**` 와 Lab 무인 실행의 훅·설정을 더했다                                                                                                                                                                                                                                                                                                                 |
 | 2026-11-06 | **두 번째 대조.** 상류 동기화 절을 「결정은 이 저장소에서 닫는다」로 바꿨다(상류 전제 폐기 · D8). EAS 서술을 걷어 냈다 — 출시 빌드는 로컬 · 서명 키는 `~/keys` · `~/.gradle`(SETUP §8). 글자색을 3세대 `label` 여섯 단으로, 서체를 교보손글씨로 고쳤다. 머지 조건을 GitHub 가 강제하지 않는다는 것 · BE 는 squash 라는 것 · 머지된 브랜치를 지운다는 것을 적었다. 값 ① 에 서버 주소 · Amplitude · 빌드 구분을, 생성물에 Lab 라우트 목록을, 명령에 Lab 명령을 더했다 |
 | 2026-11-06 | **코드 대조.** 품질 게이트 표에 CI 의 `test:visual`(Lab Playwright) 잡을, 「AI 훅」에 Claude Code `Stop` 리뷰 게이트를, 「명령」에 Lab 명령을 더했다                                                                                                                                                                                                                                                                                                                |
 | 2026-11-02 | **AI 훅 신설.** 생성물·반입물 편집 · main push · PR 머지 · node_modules 연결 삭제를 에이전트 훅(`.claude/settings.json` · `.codex/hooks.json`)이 실행 전에 거부하고, 편집 뒤 서식·대비·Lab 라우트를 확인한다(「AI 훅」)                                                                                                                                                                                                                                             |

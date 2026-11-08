@@ -206,6 +206,8 @@ node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest
 ```bash
 npm run typecheck:expo-lab && npm run lint && npm run format:check
 npx jest expo-lab
+npm run test:lab-agent                               # 「AI에게 맡기기」 서버(expo-lab/server/) — node --test
+npm run lab:verify -- --after <주소> --changed       # 바뀐 화면 전·후 비교(scripts/lab-verify.mjs 머리말 · 스킬 momentory-lab-verify)
 npx playwright test expo-lab/e2e/shell.spec.ts expo-lab/e2e/layout-matrix.spec.ts   # 기본 포트 8085
 LAB_FRAMES=1 npx playwright test expo-lab/e2e                        # 실제 앱 프레임까지 보는 검사
 # 「AI 수정 결과」(다른 출처 B) 검사는 두 번째 Lab 이 떠 있을 때만 돈다(LAB_PREVIEW_URL · 기본 포트 +1)

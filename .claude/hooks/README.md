@@ -71,19 +71,22 @@ Windows 에서는 `codex.cmd` 대신 `node .../@openai/codex/bin/codex.js` 를 �
 
 `codex-review.config.json`:
 
-| 키                        | 기본값      | 무엇                                                    |
-| ------------------------- | ----------- | ------------------------------------------------------- |
-| `enabled`                 | `true`      | 훅 전체 on/off                                          |
-| `model`                   | `null`      | `null` 이면 Codex 기본 모델                             |
-| `codexTimeoutMs`          | `480000`    | 리뷰 타임아웃 (넘으면 skip)                             |
-| `gateTimeoutMs`           | `600000`    | 검증 명령 하나당 타임아웃                               |
-| `maxBlocksPerSession`     | `3`         | 세션당 block 상한 (루프 방지)                           |
-| `maxPatchBytes`           | `180000`    | 패치를 이만큼만 보낸다                                  |
-| `maxUntrackedInlineBytes` | `60000`     | 새 파일 본문을 합쳐 이만큼까지 붙인다                   |
-| `runGates` / `runTests`   | `true`      | typecheck·lint / test 실행 여부                         |
-| `gates`                   | 3개         | 실제로 도는 npm 스크립트                                |
-| `excludePathspecs`        | 바이너리 등 | 리뷰에서 뺄 git pathspec                                |
-| `designSsotPaths`         | 3개         | UI 변경 시 Codex 가 볼 디자인 정본 (존재하는 것만 쓴다) |
+| 키                               | 기본값                            | 무엇                                                    |
+| -------------------------------- | --------------------------------- | ------------------------------------------------------- |
+| `enabled`                        | `true`                            | 훅 전체 on/off                                          |
+| `model`                          | `null`                            | `null` 이면 Codex 기본 모델                             |
+| `codexTimeoutMs`                 | `480000`                          | 리뷰 타임아웃 (넘으면 skip)                             |
+| `gateTimeoutMs`                  | `600000`                          | 검증 명령 하나당 타임아웃                               |
+| `maxBlocksPerSession`            | `3`                               | 세션당 block 상한 (루프 방지)                           |
+| `maxPatchBytes`                  | `180000`                          | 패치를 이만큼만 보낸다                                  |
+| `maxUntrackedInlineBytes`        | `60000`                           | 새 파일 본문을 합쳐 이만큼까지 붙인다                   |
+| `maxUntrackedInlineBytesPerFile` | `20000`                           | 새 파일 하나당 붙이는 상한                              |
+| `maxUntrackedFiles`              | `60`                              | 패치에 넣는 새 파일 개수 상한                           |
+| `codePathPattern`                | `\.(ts\|tsx\|js\|jsx\|mjs\|cjs)$` | 이 패턴의 파일이 바뀌었을 때만 게이트를 돌린다          |
+| `runGates` / `runTests`          | `true`                            | typecheck·lint / test 실행 여부                         |
+| `gates`                          | 3개                               | 실제로 도는 npm 스크립트                                |
+| `excludePathspecs`               | 바이너리 등                       | 리뷰에서 뺄 git pathspec                                |
+| `designSsotPaths`                | 3개                               | UI 변경 시 Codex 가 볼 디자인 정본 (존재하는 것만 쓴다) |
 
 환경변수로 그때그때 덮어쓸 수 있다:
 

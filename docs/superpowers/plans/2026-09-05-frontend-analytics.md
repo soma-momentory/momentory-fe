@@ -1,5 +1,7 @@
 # FE Amplitude 파일럿 구현 계획
 
+> 🗄 기록 문서 — 2026-09-05 시점의 계획이다(그 뒤 체류 시간 등이 더해졌다). 지금 계측의 정본은 `docs/ANALYTICS.md` · `src/features/analytics/events.ts`.
+
 **Goal:** 기능 이용·온보딩 이탈·재방문을 FE에서 관찰하고, 하나의 기능 브랜치와 PR로 전달한다.
 **Architecture:** 허용한 이벤트/속성만 받는 공통 클라이언트 → Amplitude React Native SDK. 화면 노출은 라우트의 고정 이름, 작업 성공은 기존 API 결과/인증 상태 전환에서 기록한다.
 **Tech Stack:** Expo 57, React Native, TypeScript, Zustand, Jest, Amplitude React Native SDK.

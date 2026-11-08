@@ -78,13 +78,13 @@ Lab 의 「＋ 새 화면 만들기」로 맡기면 넘어오는 것: 화면 이
 1. **자리를 정한다.** 들어갈 묶음에 맞춰 `app/` 아래 라우트 파일 위치를 고른다(기존 구조 · 레이아웃 가드를 따른다 — 예: 마이 세부는 `app/my/`).
    경로 · 파일 이름을 요약에 적는다.
 2. **조립은 공용 부품으로.** `src/components/ds/` 의 컴포넌트와 `src/design/ds/` 토큰으로 만든다. 새 색 · 크기가 필요하면
-   `src/design/ds/` 에 **이름을 먼저 만든다**. 화면 로직이 커지면 `src/features/<도메인>/` 의 model · data · ui 경계를 따른다(`CLAUDE.md` 「BE 는 마지막에」).
+   `src/design/ds/` 에 **이름을 먼저 만든다**. 화면 로직이 커지면 `src/features/<도메인>/` 의 model · data · ui 경계를 따른다(`CLAUDE.md` 「코드를 쓸 때의 경계」 · `NAV.md` 「1. 한 바퀴」).
 3. **데이터.** 기존 API 로 되면 기존 `data/` 어댑터를 쓴다. 서버에 아직 없는 데이터면 — 앱 쪽은 `data/` 어댑터를 새로 두되
    **Lab 가짜 서버(`expo-lab/src/fake-server/`)에 임시 응답을 더해** 화면이 Lab 에서 보이게 하고, PR 「백엔드·스펙 영향」에
    **필요한 API(경로 · 요청 · 응답 모양)** 를 표로 남긴다. 실제 서버 주소 · 계약(`docs/api/openapi.json`)은 고치지 않는다.
 4. **목록에 올린다.** `npm run lab:routes` 로 라우트 목록을 다시 만들고 `expo-lab/src/shell/routeMeta.ts` 에 한국어 제목 · 묶음을 단다
    (안 달면 동기화 테스트가 실패한다). 바로 열면 다른 화면으로 넘기는 가드가 있으면 `openVia` · `hint` 를 둔다.
-5. **문서.** 화면 ID ↔ 라우트 매핑(`docs/PRODUCT.md` 표)과 `CLAUDE.md` 「지금 어디까지 왔나」 라우트 목록에 한 줄을 더한다.
+5. **문서.** 화면 ID ↔ 라우트 매핑(`docs/PRODUCT.md` 표)과 `NAV.md` 「2. 라우트」 목록 · 라우트 수에 한 줄을 더한다(안 고치면 `scripts/__tests__/navMap.test.ts` 가 깨진다).
    스펙(`docs/spec/**`)은 동결이라 쓰지 않는다 — 새 화면의 규칙 · 문안은 `docs/DESIGN.md` 에 적는다.
 6. **테스트.** 화면 렌더 테스트 하나 이상(빈 데이터 · 보통 데이터), 새 어댑터면 형태 검증 테스트. 계측이 필요해 보이면 이벤트를
    만들지 말고 PR 「미결」에 제안만 적는다(`docs/ANALYTICS.md` 사전은 사람이 정한다).
@@ -108,7 +108,7 @@ Lab 의 「＋ 새 화면 만들기」로 맡기면 넘어오는 것: 화면 이
 - **앱에 넣기** — 그 그림을 앱에서 쓴다. 이렇게 넣는다:
   1. 자리: `assets/<영역>/`(예: `assets/rest/`, `assets/home/`) — 기존 폴더 관례를 따른다. 파일 이름은 영문 kebab-case.
   2. 손질: 사진 · 일러스트는 **WebP** 로(투명이 필요하면 알파 포함), 표시 크기의 3배 폭을 넘지 않게 줄인다. 배경을 빼야 하면
-     `scripts/keyout-*.py` 와 같은 방식의 일회성 스크립트를 쓰거나 기존 것을 고친다(빌드에 끼우지 않는다 — `CLAUDE.md` 명령 절).
+     `scripts/keyout-*.py` 와 같은 방식의 일회성 스크립트를 쓰거나 기존 것을 고친다(빌드에 끼우지 않는다 — `NAV.md` 「7. 그 밖의 폴더」).
   3. 출처: 그 폴더 `README.md` 에 한 줄 — 파일 · 출처(사용자 제공 · 날짜 · 원본 이름) · 손질 내용. README 가 없으면 만든다.
   4. 쓰기: `expo-image`/`Image` 로 `require` 한다. 장식이면 낭독기에서 숨긴다(기존 장식 이미지 컴포넌트 관례 — 예 `features/home/ui/v2/Baba.tsx`). 의미가 있으면 짧은 대체 텍스트.
   5. 화면별 값(`src/design/studioApproved.json`)이 id 로 그림을 고르는 자리(예: 쉼터 `rest.babaImage.assetId`)면 `src/design/studioAssets.ts` 에 등록하고 id 로 고른다.

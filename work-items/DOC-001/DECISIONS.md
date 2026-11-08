@@ -1,5 +1,7 @@
 # DOC-001 Team Decisions
 
+> 🗄 기록 문서 — 2026-09-22 문서 감사(DOC-001)의 팀 결정이다. 그 뒤 바뀐 것은 `docs/CONTRIBUTING.md` · `docs/SETUP.md` 가 정본이다.
+
 이 문서는 `work-items/DOC-001/SPEC.md`의 Open Questions에 대한 팀 결정이다.
 
 Codex와 Claude는 아래 결정을 현재 프로젝트 정책으로 취급한다.

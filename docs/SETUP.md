@@ -35,8 +35,8 @@ npm ci
 cp .env.example .env
 ```
 
-`.env` 값은 팀의 빌드 환경 변수에서 받는다. **비어 있어도 M1 까지는 앱이 뜬다** —
-로그인·캘린더가 들어오는 M2 부터 필요하다. 값의 성격은 [`CONTRIBUTING.md` 「값을 다루는 세 등급」](CONTRIBUTING.md) 참조.
+`.env` 값은 팀의 빌드 환경 변수에서 받는다. **비어 있어도 앱은 뜨지만** 서버 호출이 전부
+실패로 닫혀 로그인부터 막힌다(`.env.example`). 값의 성격은 [`CONTRIBUTING.md` 「값을 다루는 세 등급」](CONTRIBUTING.md) 참조.
 
 ### 이 저장소만 있으면 된다
 
@@ -593,7 +593,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home \
 cd ..
 cp android/app/build/outputs/bundle/release/app-release.aab \
    ../output/momentory-android-<version>-vc<versionCode>.aab   # 산출물은 저장소 밖 ../output 에 둔다
-# 2. .env 를 개발 주소(dev.momentory.co.kr) · MOMENTORY_BUILD_ENV 주석으로 되돌린다
+# 2. .env 를 개발 주소(dev.momentory.co.kr) · MOMENTORY_BUILD_ENV=development 로 되돌린다
 ```
 
 `--clean` 은 `/android` 를 통째로 지운다 — 키스토어가 `~/keys` 에 있는 이유다(준비물 표).
@@ -705,7 +705,7 @@ Android 의 `versionCode` 와 같은 자리다. [`app.config.ts`](../app.config.
 그 버전에서 재사용할 수 없다. 적지 않으면 Expo 가 `1` 로 만든다.
 
 `MOMENTORY_BUILD_ENV=production` 으로 prebuild 해야 배포 설정이 들어간다 —
-그때 `.env` 의 네 값이 모두 있어야 하고 **API 주소는 HTTPS 여야 한다**(`.env.example`).
+그때 `.env` 의 네 값이 모두 있어야 하고 **API 주소는 `https://api.momentory.co.kr` 여야 한다**(`app.config.ts` · 위 §6).
 
 ### 심사는 세 번이다
 

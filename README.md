@@ -77,23 +77,23 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 - [`docs/archive/CODE-REVIEW.md`](docs/archive/CODE-REVIEW.md) — 2026-08-07 코드 리뷰 **기록**
 - [`assets/fonts/README.md`](assets/fonts/README.md) — 교보손글씨 · Pretendard 출처·해시·라이선스
 - [`expo-lab/README.md`](expo-lab/README.md) — Expo Lab(`npm run lab:web` · 8085) — 웹에서 실제 앱 전 화면을 가짜 서버로 띄운다
+- [`NAV.md`](NAV.md) — 코드 지도. 라우트 · 폴더 · 단일 통로(`src/lib/`)가 어디에 무엇이 있는지
 - [`CLAUDE.md`](CLAUDE.md) · [`AGENTS.md`](AGENTS.md) — AI 도구용 길잡이(Claude Code · Codex). 규칙을 소유하지 않고 위 문서를 가리킨다
 
-## 진행 — 화면·서버 연결 완료 · 다음 출시 준비 중 (2026-11-06)
+## 진행 — 화면·서버 연결 완료 · 다음 출시 준비 중 (2026-11-09)
 
 **M0~M5 완료.** 셋업 · 공용 컴포넌트 · 화면 전부 · **3세대 디자인 이관**(2026-08-20) ·
 **서버 연결**(2026-08-09~) · **회고 채팅 v2**(2026-08-28) · **쉼터·감각연못**(2026-09-03~ · 지금 쉼 콘텐츠 일곱) ·
 **계측**(Amplitude · 2026-09-05) · **온보딩 v2**(2026-10-25) · **바바의 편지**(2026-10-27) · **홈 v2 · 날씨 · 배경음악**.
-검증은 **157 스위트 / 2,051 테스트**가 통과한다(2026-11-06 · main `6bda8b1`).
+검증은 **159 스위트 / 2,065 테스트**가 통과한다(2026-11-09 · main `967c4a8`).
 같은 날 **주간 행복 저장**(이번 주만 쓰고 지난 주는 읽기만)과 **마이 전체 기간 집계**가 붙었다.
 마일스톤별 상세와 남은 일은 [`docs/TASKS.md`](docs/TASKS.md)가 정본이다.
-마지막 스토어 제출은 1.3.0(iOS `buildNumber 7` · Android `versionCode 10` · 2026-10-14)이다.
+마지막 스토어 제출은 **1.4.0**(iOS `buildNumber 8` · Android `versionCode 11` · 운영 서버 · 2026-11-09 확인 · `app.config.ts`)이다.
+그 전 제출은 1.3.0(iOS `buildNumber 7` · Android `versionCode 10` · 2026-10-14).
 
 **화면 완료가 곧 MVP 완료는 아니다.** 남은 것:
 
-- ⚠ **BE 운영 릴리스** — 운영 서버(`api.momentory.co.kr`)는 BE `main`(2026-10-14)이라 편지 · 날씨 ·
-  온보딩 v2 · 소원 · 명상 · 주간 리포트 v2 · 주간 행복이 **개발 서버(`dev`)에만** 있다(FE 가 부르는 56개 중 22개).
-  다음 스토어 출시 전에 BE dev → main 이 먼저다
+- ~~BE 운영 릴리스~~ — ✅ 2026-11-08 BE dev → main 릴리스로 운영(`api.momentory.co.kr`)과 개발 서버의 API 경로가 같아졌다
 - **팀 결정 대기** — 소원 연꽃의 스토어 신고 · 신고 처리 절차 · 데이터 보관 기한 · 감정 기록 동의
   ([`docs/DISCUSSION.md`](docs/DISCUSSION.md) · [`docs/PLAY-DATA-SAFETY.md`](docs/PLAY-DATA-SAFETY.md) · [`docs/DATA-SECURITY.md`](docs/DATA-SECURITY.md) §5)
 - **영속 저장(MMKV)** — 온보딩 초안·회고 대화가 아직 메모리다
