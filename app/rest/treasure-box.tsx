@@ -311,6 +311,12 @@ const styles = StyleSheet.create({
   panelWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
   panel: { paddingHorizontal: space.xl, gap: space.md },
   writePanel: { gap: space.sm },
-  writeCard: { paddingVertical: space.sm, paddingHorizontal: space.lg, gap: space.xs },
+  // 걱정상자와 같이 비치지 않는다 — 장면이 비치면 적는 글에 눈이 덜 간다(2026-11-08)
+  writeCard: {
+    backgroundColor: restScene.surface,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.lg,
+    gap: space.xs,
+  },
   mid: { textAlign: "center" },
 });
