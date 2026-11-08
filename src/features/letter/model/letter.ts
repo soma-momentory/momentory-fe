@@ -110,17 +110,8 @@ export const hasUnreadLetter = (summaries: readonly LetterSummary[] | null): boo
   return latest != null && latest.isNew && latest.openedAt == null;
 };
 
-/**
- * 한글이 **어절 단위로만** 줄바꿈되게 한다 — 어절 안의 글자 사이에 단어 결합 문자(U+2060)를 넣는다.
- * iOS · Android 둘 다 기본은 한글을 음절마다 끊어서 「맞이했군요.」가 두 줄로 갈렸다(2026-10-27 사용자 요청).
- * 줄보다 긴 어절은 그래도 글자에서 끊긴다(엔진이 넘치는 단어를 강제로 자른다).
- */
-const WORD_JOINER = "\u2060";
-export const keepWords = (text: string): string =>
-  text
-    .split(/(\s+)/)
-    .map((part) => (/\s/.test(part) ? part : [...part].join(WORD_JOINER)))
-    .join("");
+/** 어절 줄바꿈 — 정본은 `@/lib/keepWords`(공용 `Text` 가 모든 글자에 건다). 옛 import 자리를 위해 다시 내보낸다 */
+export { keepWords } from "@/lib/keepWords";
 
 /** 편지는 일기 다음 날 아침에 받는다 — 「10월 15일 아침」 */
 export const receivedLabel = (date: string) => `${formatKoreanDateShort(addDays(date, 1))} 아침`;
