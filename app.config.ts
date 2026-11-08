@@ -152,7 +152,11 @@ const insecureApiPlugin: PluginEntry[] = insecureApiHost
  * (`plugins/withoutDevLauncherNetwork.ts` 머리말).
  *
  * 개발 빌드에는 붙이지 않는다 — 지우면 dev client 가 Metro 를 못 찾는다.
- * 목록의 **맨 뒤**에 둔다: 앞선 플러그인들이 넣은 키를 지우는 일이라 마지막에 돌아야 한다.
+ *
+ * ⚠ 배열의 **자리로 순서를 보장하지 않는다**(2026-11-08). config-plugins 의 mod 는 나중에
+ * 등록된 것이 먼저 돌아서, 「맨 뒤에 두면 마지막에 돈다」는 전제가 틀렸다 — 1.4.0 prebuild 에서
+ * `expo-dev-client` 가 지운 키를 도로 넣었다. 지금은 플러그인이 `nextMod` 를 먼저 돌리고 지우므로
+ * 어느 자리에 있든 모든 플러그인 다음에 돈다. 결과는 `npm run check:ios-release` 로 확인한다.
  */
 const productionCleanupPlugins: PluginEntry[] =
   buildEnvironment === "production" ? ["./plugins/withoutDevLauncherNetwork"] : [];
@@ -243,6 +247,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         // 「위치는 저장하지 않습니다」는 서버 쪽 검증(`docs/PLAY-DATA-SAFETY.md` 「위치」 V3~V10) 전에는 넣지 않는다.
         locationWhenInUsePermission:
           "홈과 일기에 지금 있는 곳의 날씨를 보여 주기 위해 위치를 사용합니다.",
+        // ⚠ Always 둘은 **`false` 로 명시해야 빠진다**(2026-11-08). 플러그인은 값을 안 주면
+        // 「Allow $(PRODUCT_NAME) to access your location」 같은 영문 기본 문구를 넣는다 —
+        // Reminders 가 반려된 것과 같은 종류(쓰지 않는 자원의 일반 문구)다.
+        // 앱은 `src/lib/location.ts` 의 「사용 중」 권한 + 현재 위치 한 번뿐이다 — 백그라운드
+        // 위치(Always)도 걸음 · 움직임(Motion)도 부르지 않는다.
+        locationAlwaysPermission: false,
+        locationAlwaysAndWhenInUsePermission: false,
+        // ⚠ Motion 은 **빼면 업로드가 막힌다**(2026-11-09 · 1.4.0 Build 8 · ITMS-90683).
+        // 앱은 움직임 정보를 쓰지 않지만 `expo-location` 네이티브 모듈(`LocationModule.swift` ·
+        // `MotionActivityStreamer` · `MotionActivityPermissionRequester`)이 `CMMotionActivityManager` 를
+        // 참조해 바이너리에 CoreMotion 이 링크되고, 애플은 그 참조만으로 문구를 요구한다.
+        // 그래서 **거짓 목적을 적지 않고** 사실을 그대로 적는다 — 호출하는 코드가 없어 이 창은 뜨지 않는다.
+        // 참조를 없애려면 pod 소스 패치가 필요하다(`docs/SETUP.md` 「NSMotionUsageDescription」).
+        motionUsagePermission:
+          "모멘토리는 움직임 정보를 수집하지 않습니다. 위치 기능에 쓰는 구성 요소에 포함된 항목이라 표시될 뿐, 실제로 요청하지 않습니다.",
         isIosBackgroundLocationEnabled: false,
         isAndroidBackgroundLocationEnabled: false,
         isAndroidForegroundServiceEnabled: false,
@@ -415,7 +434,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         ],
       },
     ],
-    // ⚠ **맨 뒤여야 한다** — 앞선 플러그인들이 넣은 키를 지우는 일이다
+    // 운영 전용 정리 — 자리와 무관하게 모든 플러그인 다음에 돈다(`productionCleanupPlugins` 머리말)
     ...productionCleanupPlugins,
   ],
 

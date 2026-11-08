@@ -25,6 +25,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "sync:api": "node scripts/sync-api.mjs",
+    "check:ios-release": "node scripts/check-ios-release-plist.mjs",
     "test": "jest",
     "test:watch": "jest --watch"
   },
