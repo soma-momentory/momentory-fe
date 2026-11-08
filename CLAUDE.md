@@ -132,4 +132,5 @@ npm run android      # dev client 빌드 — Expo Go 는 지원하지 않는다(
 npm run lab:web      # Expo Lab(8085)   ·   npm run lab:verify — 바뀐 화면 전 · 후 비교
 npm run lab:routes   # app/ 에서 Lab 라우트 목록 다시 만들기
 npm run sync:api     # 서버 OpenAPI 계약 재반입 — docs/api/README.md
+npm run check:ios-release  # 출시 prebuild 뒤 — iOS Info.plist 에 개발 도구 · 미사용 권한 문구가 없는지(docs/SETUP.md)
 ```

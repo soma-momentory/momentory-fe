@@ -204,16 +204,16 @@ src/design/{studioDesign.ts, studioApproved.json, studioAssets.ts}
 
 ## 7. 그 밖의 폴더
 
-| 어디                                 | 무엇                                                                                                                                                                   |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `plugins/`                           | Expo config plugin — 개발 서버 평문 HTTP 예외 · 릴리스 서명(+ 출시 빌드 API 주소 검사) · 투명 내비게이션 바 · 출시 빌드에서 dev launcher 네트워크 · 오버레이 권한 제거 |
-| `app.config.ts`                      | 앱 이름 · 버전 · 권한 · 플러그인. `ios/` `android/` 는 여기서 `npx expo prebuild` 로 만든다(직접 고치지 않음)                                                          |
-| `expo-lab/`                          | Expo Lab — 웹에서 실제 앱 전 화면을 가짜 서버로 띄운다(`npm run lab:web`). 앱 → Lab import 금지                                                                        |
-| `scripts/`                           | `sync-api.mjs`(계약 재반입) · `screen-sweep.sh`(화면 크기 훑기) · `keyout-*.py` `make-*.py`(자산 만들기 · 빌드에 안 낌)                                                |
-| `.claude/hooks/` · `.claude/skills/` | Claude Code 훅(보호 경로 · 저장 후 서식 · Stop 게이트 + Codex 리뷰) · 검수 스킬. `.agents/skills/` 가 Codex 사본                                                       |
-| `harness/`                           | 작업 하네스 — `tasks/` 의 Task 를 `node harness/run.mjs` 로 돌린다(`harness/README.md` · `docs/HARNESS_NAV.md`)                                                        |
-| `docs/api/openapi.json`              | 서버 계약 스냅샷 — 직접 고치지 않는다                                                                                                                                  |
-| `assets/`                            | 폰트 · 일러스트 · 소리. 폴더마다 README 가 출처를 적는다                                                                                                               |
+| 어디                                 | 무엇                                                                                                                                                                                         |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `plugins/`                           | Expo config plugin — 개발 서버 평문 HTTP 예외 · 릴리스 서명(+ 출시 빌드 API 주소 검사) · 투명 내비게이션 바 · 출시 빌드에서 dev launcher 네트워크 · 오버레이 권한 제거                       |
+| `app.config.ts`                      | 앱 이름 · 버전 · 권한 · 플러그인. `ios/` `android/` 는 여기서 `npx expo prebuild` 로 만든다(직접 고치지 않음)                                                                                |
+| `expo-lab/`                          | Expo Lab — 웹에서 실제 앱 전 화면을 가짜 서버로 띄운다(`npm run lab:web`). 앱 → Lab import 금지                                                                                              |
+| `scripts/`                           | `sync-api.mjs`(계약 재반입) · `check-ios-release-plist.mjs`(출시 prebuild 뒤 iOS 권한 문구 검사) · `screen-sweep.sh`(화면 크기 훑기) · `keyout-*.py` `make-*.py`(자산 만들기 · 빌드에 안 낌) |
+| `.claude/hooks/` · `.claude/skills/` | Claude Code 훅(보호 경로 · 저장 후 서식 · Stop 게이트 + Codex 리뷰) · 검수 스킬. `.agents/skills/` 가 Codex 사본                                                                             |
+| `harness/`                           | 작업 하네스 — `tasks/` 의 Task 를 `node harness/run.mjs` 로 돌린다(`harness/README.md` · `docs/HARNESS_NAV.md`)                                                                              |
+| `docs/api/openapi.json`              | 서버 계약 스냅샷 — 직접 고치지 않는다                                                                                                                                                        |
+| `assets/`                            | 폰트 · 일러스트 · 소리. 폴더마다 README 가 출처를 적는다                                                                                                                                     |
 
 ## 8. 의존성 — 구조를 이해하는 데 필요한 것만
 
