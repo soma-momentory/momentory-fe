@@ -10,7 +10,7 @@ const prettierConfig = require("eslint-config-prettier");
 const NO_RAW_HEX = {
   selector: "Literal[value=/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
   message:
-    "색을 리터럴로 쓰지 않는다. theme(src/design/theme.ts) 또는 tokens.mvp.ts 의 토큰을 쓴다.",
+    "색을 리터럴로 쓰지 않는다. src/design/ds/ 의 토큰을 쓴다 — 새 색은 거기에 이름부터 만든다.",
 };
 
 module.exports = [

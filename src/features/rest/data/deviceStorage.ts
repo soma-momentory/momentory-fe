@@ -2,7 +2,7 @@
  * 쉼터가 **기기에** 남기는 작은 기억의 통로 — AsyncStorage (2026-10-12).
  *
  * 쉼 추천(`recommendMemory.ts`)과 쉼터 설명 카드(`guideMemory.ts`), 홈 배경음악(`features/music/data/musicMemory.ts`)이 쓴다. 토큰이 아니라서
- * SecureStore 에 두지 않는다(`CLAUDE.md` 「SecureStore 에는 모멘토리 토큰만」).
+ * SecureStore 에 두지 않는다(SecureStore 에는 모멘토리 토큰만 — `NAV.md` 「3. 도메인」 auth).
  */
 export type Storage = typeof import("@react-native-async-storage/async-storage").default;
 

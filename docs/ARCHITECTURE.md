@@ -47,7 +47,7 @@
 | 그라디언트      | **react-native-svg** `RadialGradient`                                                                       | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다                                                                                                                                                                                                                                                        |
 | 폰트            | expo-font + 교보손글씨(앱 전체) + Pretendard 4 weight(로그인 등 `gothic`)                                   | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다)                                                                                                                                                                                                                                      |
 | 품질            | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions                                                          | CI 단계의 정본은 [`CONTRIBUTING.md` 「품질 게이트」](CONTRIBUTING.md)                                                                                                                                                                                                                                          |
-| 보안 저장       | expo-secure-store                                                                                           | M2-0 개발 세션과 인증 hydration. 읽기가 비동기라 진입 라우팅을 규정한다(§3)                                                                                                                                                                                                                                    |
+| 보안 저장       | expo-secure-store                                                                                           | M2-0 개발 세션과 인증 hydration · 캘린더 화해 상태(`calendar/data/syncStateStore.ts`). 읽기가 비동기라 진입 라우팅을 규정한다(§3)                                                                                                                                                                              |
 | 클라이언트 상태 | Zustand (작게)                                                                                              | 온보딩 초안 · 인증 판정 · 화면용 로컬 상태                                                                                                                                                                                                                                                                     |
 | 시간 선택       | **자체 `WheelPicker`** (`src/components/ds/WheelPicker.tsx`)                                                | `08` 회고 시간과 `M3` 알림 시각의 3열 피커(오전·오후 / 시 / 5분 단위). 저장소 안 컴포넌트라 외부 의존성도 네이티브 모듈도 아니다                                                                                                                                                                               |
 | OS 알림         | expo-notifications                                                                                          | `08`·`M3` 의 로컬 알림(회고·낮·주간). 경계는 `lib/notifications.ts` 하나이고 무엇을 예약할지는 `features/my/model/reminders.ts` 가 정한다. 네이티브라 dev client 재빌드 필요                                                                                                                                   |
@@ -66,16 +66,16 @@
 아래 항목은 아직 설치하지 않았다(확인은 `package.json`). **쓸 화면이 생길 때 넣는다** —
 미리 깔면 쓰지도 않는 의존성이 락파일에 굳는다.
 
-| 영역            | 선택                    | 언제 | 왜 그때인가                                                                                                                                                                                                                                                  |
-| --------------- | ----------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 애니메이션      | react-native-reanimated | M3   | 채팅 밀림 모션이 MVP 에 없음이 확인돼(`R-41`) 바텀시트·제스처가 필요한 시점으로 미뤘다 — [spec/OPEN-ISSUES-요약.md](spec/OPEN-ISSUES-요약.md)                                                                                                                |
-| 서버 상태       | TanStack Query v5       | M3-3 | ~~첫 API 호출~~ → **API 27개가 이미 붙었는데 안 넣었다**(2026-11-06 — 지금은 계약의 거의 전부가 붙었고 여전히 없다). 어댑터가 `lib/http.ts` 로 직접 부르고 store 가 상태를 든다. 실제로 필요해지는 것은 **아웃박스(persisted mutation)** 라 M3-3 으로 옮긴다 |
-| ~~목 서버~~ MSW | **넣지 않는다**         | —    | ~~BE 미확정 구간을 화면 개발이 기다리지 않게~~ → **서버가 계약을 먼저 냈다**(§4). 붙일 엔드포인트가 이미 있어 목 서버를 거칠 이유가 없다                                                                                                                     |
-| 로컬 저장       | react-native-mmkv       | M3   | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4)                                                                                                                                                                                                                |
-| ~~계측~~        | **들어왔다**            | —    | 2026-09-05 Amplitude 파일럿(`features/analytics/`). 상류 이름 규칙(`R-05`)이 아니라 **이 저장소의 허용 목록**(`events.ts`)이 정본이다                                                                                                                        |
-| ~~이미지~~      | **들어왔다**            | —    | 2026-09 일러스트가 늘면서 `expo-image` 설치                                                                                                                                                                                                                  |
-| E2E             | Maestro                 | M6   | 흐름이 다 연결된 뒤                                                                                                                                                                                                                                          |
-| 배포            | EAS Build / Update      | M6   |                                                                                                                                                                                                                                                              |
+| 영역            | 선택                    | 언제 | 왜 그때인가                                                                                                                                                                                                                                            |
+| --------------- | ----------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 애니메이션      | react-native-reanimated | M3   | 채팅 밀림 모션이 MVP 에 없음이 확인돼(`R-41`) 바텀시트·제스처가 필요한 시점으로 미뤘다 — [spec/OPEN-ISSUES-요약.md](spec/OPEN-ISSUES-요약.md)                                                                                                          |
+| 서버 상태       | TanStack Query v5       | M3-3 | ~~첫 API 호출~~ → **API 27개가 이미 붙었는데 안 넣었다**(2026-11-09 — 계약 68개 중 57개가 붙었고 여전히 없다). 어댑터가 `lib/http.ts` 로 직접 부르고 store 가 상태를 든다. 실제로 필요해지는 것은 **아웃박스(persisted mutation)** 라 M3-3 으로 옮긴다 |
+| ~~목 서버~~ MSW | **넣지 않는다**         | —    | ~~BE 미확정 구간을 화면 개발이 기다리지 않게~~ → **서버가 계약을 먼저 냈다**(§4). 붙일 엔드포인트가 이미 있어 목 서버를 거칠 이유가 없다                                                                                                               |
+| 로컬 저장       | react-native-mmkv       | M3   | 첫 로컬 쓰기. **데이터 보안 정책이 선행**(§4)                                                                                                                                                                                                          |
+| ~~계측~~        | **들어왔다**            | —    | 2026-09-05 Amplitude 파일럿(`features/analytics/`). 상류 이름 규칙(`R-05`)이 아니라 **이 저장소의 허용 목록**(`events.ts`)이 정본이다                                                                                                                  |
+| ~~이미지~~      | **들어왔다**            | —    | 2026-09 일러스트가 늘면서 `expo-image` 설치                                                                                                                                                                                                            |
+| E2E             | Maestro                 | M6   | 흐름이 다 연결된 뒤                                                                                                                                                                                                                                    |
+| 배포            | EAS Build / Update      | M6   |                                                                                                                                                                                                                                                        |
 
 ### 네이티브 기능 — **하나(앱 잠금)만 남았다** (2026-09-12)
 
@@ -121,6 +121,7 @@ app/                         # 라우트만 — 로직을 두지 않는다 (라�
   rest/                      # cards/index (R2) + 쉼 콘텐츠 일곱(sense-pond worry-box treasure-box body-release
                              #   meditation weekly-happiness wish) + worries treasures wish-mine records
   my/                        # profile(목록) + nickname age gender interests rest + inquiry(문의)
+                             #   (interests · rest 는 2026-11-08 목록에서 뺐다 — 파일만 남고 가는 길이 없다)
 src/
   design/ds/                 # 토큰 정본 — color typography metrics + 화면별 값 파일 20여 개 (여기만 hex)
   design/                    # + tabBackgrounds.ts · studioDesign.ts · studioAssets.ts (화면이 읽는 승인 값 · 그림 표)
@@ -147,6 +148,7 @@ src/
     day.ts time.ts           # 날짜·시각 표기
     calendar.ts notifications.ts location.ts audio.ts audioClaim.ts appState.ts toast.ts links.ts
                              # OS·앱 밖으로 나가는 경계 — 각각 하나씩
+    keepWords.ts             # 한글 어절 단위 줄바꿈 — 공용 Text 가 건다(2026-11-08)
 ```
 
 **Provider 를 `app/_layout.tsx` 에 두지 않는다.** 축 A·B 두 사람이 같은 줄에서
@@ -247,8 +249,8 @@ src/
      `reissueApi.ts`), 갱신마저 실패해야 `anonymous`다 — 만료된 토큰으로 `(tabs)`에
      들어가 첫 401을 보고 튕겨 나오지 않는다.
   2. **MMKV 에 로그인 여부를 미러링하지 않는다.** 미러 플래그는 로그아웃·만료·저장소 오류 뒤에 남아 인증되지 않은 사용자를 인증된 트리로 보낸다. MMKV 가 갖는 것은 `onboardingCompleted` 같은 비민감 플래그뿐이고, 그것도 인증 이후에만 읽는다.
-  3. **라우트 가드가 최종 권한을 갖는다.** `(onboarding)`에는 구현됐다. 홈을 연결할 때
-     `(tabs)`에도 같은 가드를 두어 `auth !== 'authenticated'`이면 무조건 `(auth)/login`으로
+  3. **라우트 가드가 최종 권한을 갖는다.** `(onboarding)`·`(tabs)` 두 `_layout.tsx` 에 다 있다 —
+     `auth !== 'authenticated'`이면 무조건 `(auth)/login`으로
      되돌린다 — 진입 판정 한 번으로 끝내지 않는다.
   4. **실패는 닫는 쪽으로 넘어진다.** SecureStore 읽기 오류·복호화 실패·갱신 실패는 전부 `anonymous` 다. 판단이 안 서면 로그인 화면이다.
   5. 로그아웃·계정 삭제는 SecureStore 토큰 · MMKV 캐시 · Query 캐시 · **아웃박스 큐**를 함께 비운다. 큐를 남기면 다음 사용자의 세션으로 이전 사용자의 쓰기가 재생된다.
@@ -277,18 +279,19 @@ src/
      사라지고, 다음 부트에서 어차피 로그아웃이다 — 그 사실을 그 자리에서 말한다.
   6. **갱신 (2026-08-09)** — `refreshToken` 은 만료된 access token 을 조용히 새 쌍으로
      바꾸는 데 쓰인다(위 1번). **회전한다**(한 번 쓰면 서버가 폐기) — 동시 호출은
-     `auth.ts` 의 `refreshInFlight` 로 합류해 재발급을 한 번만 보낸다. HTTPS 는 아직
-     비었다(`DISCUSSION.md` §1-6).
+     `auth.ts` 의 `refreshInFlight` 로 합류해 재발급을 한 번만 보낸다. ~~HTTPS 는 아직
+     비었다~~ → 2026-08-25 부터 HTTPS 다(`DISCUSSION.md` §1-6).
   7. **애플 (2026-08-24) — 카카오와 같은 세 칸을 지난다.** SDK → 서버 교환 →
      SecureStore. `expo-apple-authentication` 이 credential 을 주고
      (`data/appleSdk.ts` · 네이티브 · 던지지 않는다 · 네 갈래),
      `data/appleAuthApi.ts` 가 `POST /api/v1/auth/apple` 로 세션을 받아 온다
      (계약 반입 2026-08-24 · `DISCUSSION.md` §1-10).
-     ⚠ **서버로 가는 것은 `identityToken` 과 `nonce` 원문 둘뿐이다** — 서버가 이름·이메일을
+     ⚠ **서버로 가는 것은 `identityToken` · `nonce` 원문 · `authorizationCode` 셋이다**
+     (코드는 탈퇴 revoke 준비 — 아래 ✅) — 서버가 이름·이메일을
      요청 본문이 아니라 **토큰 안의 클레임**에서 읽는다. 그래서 「애플이 이름을
      첫 인가에만 준다」가 로그인을 막지 않고, **릴리스에서 애플 줄을 잠가 두었던
      이유도 사라졌다**(옛 `login.tsx` 의 `isAppleLineOpen` 은 지웠다).
-     `authorizationCode`·`fullName`·`email` 은 SDK 경계가 계속 꺼내 오지만
+     `fullName`·`email` 은 SDK 경계가 계속 꺼내 오지만
      **아무도 쓰지 않고 버린다** — 서버가 요구하게 되는 날 경계를 다시 열지
      않으려는 것이다.
      **응답이 카카오와 글자 그대로 같아서** 전송·응답 검증은
@@ -300,7 +303,7 @@ src/
      **해시는 애플에, 원문은 서버에** 보내고, 서버가 원문을 해시해 토큰의 `nonce`
      클레임과 맞춘다(§1-10 「정할 것 넷」3). 클레임이 없는 토큰도 거절한다.
      ⚠ 이것은 **다른 데서 주운 토큰의 재사용**을 막는 것이지, 요청을 통째로
-     가로챈 상대는 막지 못한다 — 그 창은 HTTPS 가 닫는다(§1-6 · 아직 평문).
+     가로챈 상대는 막지 못한다 — 그 창은 HTTPS 가 닫는다(§1-6 · 2026-08-25 부터 HTTPS).
      ✅ **탈퇴 시 애플 `revoke` 도 붙었다**(같은 절 4번). 탈퇴 시점에는 끊을
      토큰을 새로 얻을 수 없어(사용자가 그때 다시 인가하지 않는다) **로그인 때
      `authorizationCode` 를 애플 refresh token 으로 바꿔 `oauth_accounts` 에
@@ -412,7 +415,7 @@ src/
 화면에 쓰이고 기간마다 다르다는 것이 그때의 근거였다.
 
 > (2026-11-06 대조: 지금은 **`GET /api/v2/reports/weekly`** 한 번이 공책 한 권(표지 · 안쪽 장 · AI 글)과 일기 셈을
-> 준다 — `features/report/data/weeklyBookApi.ts` · BE #88 · **개발 서버에만 있다**. 아래는 v1 때의 기록이다.)
+> 준다 — `features/report/data/weeklyBookApi.ts` · BE #88 · 2026-11-08 BE 릴리스로 운영에도 있다. 아래는 v1 때의 기록이다.)
 >
 > ✅ **2026-08-24 — 주간 리포트(`W1`)는 서버가 센다.** `GET /api/v1/reports/weekly` 한 번이
 > 마음 일곱 칸 · 요약 멘트 · 일정 수/완료 수 · 바람카드 수/완료 수 · 일기 수를 한 벌로 준다
@@ -425,7 +428,8 @@ src/
 >
 > ⛔ **남은 것은 마이(`M1`)의 전체 기간 집계 하나**다 — 계약에 그 엔드포인트가 없어
 > FE 가 센다([`DISCUSSION.md`](DISCUSSION.md) §1-8). (2026-11-06: 계약에 `GET /api/v1/diaries/all` 이
-> 생겼지만 아직 붙이지 않았다.)
+> 생겼지만 아직 붙이지 않았다.) → (2026-11-09) **붙었다**(FE #257) — 마이 「일기 N일」은
+> `features/my/model/recordedDays.ts` 가 최근 창의 store 와 서버의 전체 날짜를 합쳐 센다(날 수만 · 세는 것은 여전히 FE).
 
 **시각은 `src/lib/clock.ts` 를 지난다** — 하루 경계 **04:00**. 기본은 `SystemClock` 이고
 테스트는 `SampleClock`(고정 하루 2026-07-27 · `NODE_ENV=test` 의 기본) 이나 `fixedClock` 을 끼운다
@@ -484,7 +488,9 @@ track()은 SDK 초기화·전송을 기다리지 않으며 실패를 호출자�
 백엔드/DB에는 analytics 코드를 추가하지 않는다.
 
 **보내지 않는 것**: 모든 사용자 입력 원문, 일기·회고·일정·바람 내용, 감정/욕구 코드와 이름,
-이메일/SNS ID/토큰, 알림 설정·시각. user_id는 서비스 내부 ID다. 허용 목록은 TypeScript와
+이메일/SNS ID/토큰, 알림 설정·시각. ⚠ 예외 셋(2026-11-09 `events.ts` 대조): 편지 받을 시각은 고른 칸
+(`7:30`·`8:30`·`10:00`·`custom`)으로 나가고(`letter_time_chosen`), 쉼 추천의 `content` 는 감정에서 나온 값이며
+(2026-10-12 사용자 결정), 온보딩 v2 질문 답 · 목표는 서버 코드로 나간다. user_id는 서비스 내부 ID다. 허용 목록은 TypeScript와
 런타임 검증을 함께 적용한다. 페이지 체류 시간과 알림 계측은 후속 범위다.
 
 ---
@@ -496,7 +502,7 @@ track()은 SDK 초기화·전송을 기다리지 않으며 실패를 호출자�
 > 회고는 **v2 로 갈아탔다**(M4 · `C1`·`C3` 삭제 · 행동카드 → 바람카드).
 > 9월 뒤로 마일스톤 표 밖에서 온보딩 v2 · 바바의 편지 · 홈 v2 · 날씨 · 쉼 콘텐츠 일곱이 들어왔다.
 > **남은 것은 M3-3 아웃박스**(멱등성 대기) · 앱 잠금 게이트 · **M6**(invariants 전수 · E2E · 배포)이고,
-> 출시 앞에는 ⚠ **BE dev → main 릴리스**가 있다 — 운영 BE 는 2026-10-14 판이라 위 기능의 API 가 없다.
+> ~~출시 앞에는 ⚠ **BE dev → main 릴리스**가 있다~~ → ✅ 2026-11-08 릴리스로 위 기능의 API 가 운영에도 있다.
 > 표의 옛 서술은 그때의 판단 기록으로 남긴다.
 
 | #         | 내용                                                                                             | 산출                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |

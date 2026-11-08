@@ -14,7 +14,7 @@ MOMENTORY_API=http://127.0.0.1:8080 npm run sync:api   # 주소를 직접 줄 �
 
 > ✅ **2026-11-06 — 다시 대조했다** (스냅샷 `5601378` · BE `dev` `50cd4c9` · BE `main` `ca3bc87`).
 > **스냅샷은 개발 서버와 같다** — `openapi.json` 의 오퍼레이션 **68개**가 BE `dev` 컨트롤러 매핑과
-> 하나도 어긋나지 않는다. 그중 **56개가 붙어 있고**, 안 붙은 열둘은 아래 표에 있다.
+> 하나도 어긋나지 않는다. 그중 **57개가 붙어 있고**(`GET /diaries/all` 은 FE `#257`), 안 붙은 열하나는 아래 표에 있다.
 > (같은 날 재반입: 주간 행복 두 갈래 `GET /api/v1/weekly-happiness` · `PUT …/{weekStart}` — BE `#91` `e5ee310` · FE `#258`.)
 >
 > ✅ **스냅샷은 `dev` 지만 이제 운영도 같다** (2026-11-08 BE `dev → main` 릴리스 · `/v3/api-docs` 경로 55개 일치).
@@ -75,7 +75,7 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 | `src/features/retro/data/retroApi.ts`                   | `POST /api/v1/retrospect` · `POST …/{id}/messages`                                                                                                                                                                  | ✅                                                        |
 | `src/features/home/data/scheduleApi.ts`                 | `GET`·`POST /api/v1/schedules` · `GET …/period` · `PATCH`·`DELETE …/{id}` · `PATCH …/{id}/visibility` · `PATCH …/order` · `PUT …/{id}/completion`                                                                   | ✅                                                        |
 | `src/features/calendar/data/calendarSyncApi.ts`         | `POST /api/v1/schedules/sync`                                                                                                                                                                                       | ✅                                                        |
-| `src/features/diary/data/diaryApi.ts`                   | `GET /api/v1/diaries` · `DELETE …/{id}` · `PUT …/by-retrospect/{retrospectId}` · `GET /api/v1/action-cards` · `PUT …/{id}/completion` · `DELETE /api/v1/action-cards/{id}`                                          | ✅                                                        |
+| `src/features/diary/data/diaryApi.ts`                   | `GET /api/v1/diaries` · `GET …/all` · `DELETE …/{id}` · `PUT …/by-retrospect/{retrospectId}` · `GET /api/v1/action-cards` · `PUT …/{id}/completion` · `DELETE /api/v1/action-cards/{id}`                            | ✅                                                        |
 | 〃                                                      | `POST /api/v1/diaries` · `PUT /api/v1/diaries/{id}` (직접 일기 쓰기 · 아래 절)                                                                                                                                      | 🟡                                                        |
 | `src/features/diary/data/diaryWeather.ts`               | `PUT /api/v1/diaries/{id}/weather`                                                                                                                                                                                  | ✅                                                        |
 | `src/features/home/data/weatherApi.ts`                  | `POST /api/v1/weather/current` (BE `#77`)                                                                                                                                                                           | 🟡                                                        |
@@ -88,9 +88,9 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 | `src/features/rest/data/weeklyHappinessApi.ts`          | `GET /api/v1/weekly-happiness?weekStart=` · `PUT …/{weekStart}`(이번 주만 · 그 주를 통째로 바꾼다) (BE `#91`)                                                                                                       | 🟡                                                        |
 | `src/features/my/data/inquiryApi.ts`                    | `POST /api/v1/inquiries`                                                                                                                                                                                            | ✅                                                        |
 
-> ⚠ **쉼터 이용 기록의 `content` 값 셋은 운영 DB 가 받지 않는다.** 운영 `rest_records` 의 CHECK 는
-> `SENSE_POND`·`WORRY_BOX`·`TREASURE_BOX`·`BODY_RELEASE` 넷뿐이고(`V26`), `MEDITATION`(`V35`) ·
-> `WISH`(`V36`) · `WEEKLY_HAPPINESS`(`V38`)는 `dev` 마이그레이션이다. 경로는 운영에 있어도 그 셋은 실패한다.
+> ✅ **쉼터 이용 기록의 `content` 값 셋**(`MEDITATION` `V35` · `WISH` `V36` · `WEEKLY_HAPPINESS` `V38`)은
+> 2026-11-08 릴리스(BE `main` `338f401`)에 마이그레이션이 들어갔다. 그 전(2026-11-06)에는 운영 `rest_records` 의 CHECK 가
+> `SENSE_POND`·`WORRY_BOX`·`TREASURE_BOX`·`BODY_RELEASE` 넷뿐이라 그 셋이 실패했다(`V26`).
 
 > 2026-11-06: 옛 표의 `src/features/report/data/weeklyReportApi.ts` → `GET /api/v1/reports/weekly` 는
 > **파일이 없다** — 2026-11-04 스프링 공책(`e86f3e7`)에서 `weeklyBookApi.ts` + v2 로 바뀌었다.
@@ -107,7 +107,7 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 > (`ActionCardController` · `DiaryController` · `DiaryResponse` · 2026-09-12 에는 여섯).
 > 매핑은 없으므로 **출처 표시로만 읽는다.** BE 에 정리를 제기할 자리다.
 
-## 아직 붙지 않은 것 — 열둘 (2026-11-06)
+## 아직 붙지 않은 것 — 열하나 (2026-11-06)
 
 `openapi.json` 에는 있고 어댑터가 없다. 순서는 [`docs/TASKS.md`](../TASKS.md) 「남은 API 연결」을 본다.
 
@@ -115,9 +115,8 @@ KST 자정이 아니라 04:00 이다** — BE `DayBoundary`(`BOUNDARY_HOUR = 4`,
 | ---------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`·`PUT`·`DELETE /api/v1/memos/{date}`                                          | ✅   | **붙이지 않기로 했다**(2026-08-11 제품 결정) — 서버는 날짜당 하나(`{ content }`)인데 스키마 `Moment` 는 여럿이다. 그 뒤 순간 화면(`12-d`)까지 사라져 부를 자리가 없다 |
 | `GET /api/v1/diaries/{id}`                                                         | ✅   | 월별 목록(`GET /api/v1/diaries`)이 본문까지 그대로 채워 줘서 부를 자리가 없다                                                                                         |
-| `GET /api/v1/diaries/all`                                                          | ✅   | 같은 이유 — 보관함은 **달 단위**로 받아 뒤로 훑는다(`diary.ts` 의 창). ⚠ 마이 「일기 N일 기록」을 전체 기간으로 세려고 **FE PR #257 이 붙인다**(머지 전)              |
 | `GET /api/v1/action-cards/{id}`                                                    | ✅   | 같은 이유. 카드는 `retrospectId` 로 일기와 조인해 목록에서 세운다                                                                                                     |
-| `GET /api/v1/reports/weekly`                                                       | ✅   | v2(`/api/v2/reports/weekly`)로 바꿨다(2026-11-04). 운영 서버에는 v2 가 아직 없다                                                                                      |
+| `GET /api/v1/reports/weekly`                                                       | ✅   | v2(`/api/v2/reports/weekly`)로 바꿨다(2026-11-04). v2 는 2026-11-08 릴리스로 운영에도 있다                                                                            |
 | `GET /api/v1/letters/current`                                                      | 🟡   | 쓰지 않는다 — 홈 아이콘은 목록 첫 칸으로 점을 달고, 누르면 그 날짜를 연다(`letterApi.ts` 머리말)                                                                      |
 | `GET /api/v1/notifications` · `GET …/unread` · `PATCH …/{id}/read` · `POST …/read` | 🟡   | FE 알림함을 지웠다(2026-10-27 · 편지 아이콘이 그 자리) — BE `#76` 은 남아 있다                                                                                        |
 
@@ -192,7 +191,7 @@ access token 수명은 **30분**(`jwt.access-token-expiration: 30m`), refresh �
 ⚠ **`sync:api` 는 `/v3/api-docs` 를 그대로 받는다** — 그 경로가 `PUBLIC_PATHS` 라
 토큰 없이도 받아진다. 스냅샷 갱신에 로그인이 필요 없다는 뜻이다.
 
-## 직접 일기 쓰기 (2026-11-01 · 배포 전)
+## 직접 일기 쓰기 (2026-11-01 · 2026-11-08 운영 반영)
 
 - `POST /api/v1/diaries`: `{ "original": "직접 쓴 본문", "emotion": "happy" }` → 201 `DiaryResponse`.
   인증된 사용자로 오늘(04:00 KST 경계) 일기를 생성한다. 본문은 공백 제외 한 글자 이상,
@@ -207,7 +206,7 @@ access token 수명은 **30분**(`jwt.access-token-expiration: 30m`), refresh �
 
 OpenAPI 생성물은 이 기능이 반영된 서버에서 `npm run sync:api`로 반입한다.
 (2026-11-06 대조: 이미 반입돼 있다 — 스냅샷에 `POST /api/v1/diaries` · `PUT /api/v1/diaries/{id}` 가 있다.
-운영 BE `main` 에는 아직 없고 `V33`·`V34` 도 `dev` 에만 있다.)
+그때 운영 BE `main` 에는 없었고 `V33`·`V34` 도 `dev` 에만 있었다 — 2026-11-08 릴리스로 운영에 들어갔다.)
 
 직접 작성 요청은 `DiaryCreateRequest`(본문·선택 감정), id 기반 본문 수정은 `DiaryWriteRequest`(본문만)를 사용한다.
 선택 감정은 기존 10종 키만 허용하며, 잘못된 키는 400 `INVALID_REQUEST` / `감정을 확인해주세요.`로 거절한다.

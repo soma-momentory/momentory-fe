@@ -1,6 +1,6 @@
 /**
  * DB 에서 **계산해 내는** 응답 — 주간 리포트 · 날씨 · 다음 날 편지. 서버가 세는 것을 여기서 센다
- * (앱 화면은 아무것도 세지 않는다 — `CLAUDE.md` 「주간 리포트」).
+ * (앱 화면은 아무것도 세지 않는다 — `CLAUDE.md` 「코드를 쓸 때의 경계」).
  */
 import { HELPLINES, LETTER_ACTIONS } from "./copy";
 import {

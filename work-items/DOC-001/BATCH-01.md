@@ -1,3 +1,5 @@
+> 🗄 기록 문서 — 2026-09-22 시점의 작업 묶음이다. 지금 코드의 정본은 `NAV.md` · 규칙은 `docs/CONTRIBUTING.md`.
+
 # Goal
 
 전체 문서 감사 명세인 `work-items/DOC-001/SPEC.md`에서 첫 자동화 실험에 적합한 네 가지 기계적 문서 정리만 분리해 실행 범위를 고정한다. 이 Batch는 Jest 수치, 제거된 datetimepicker 표기, dependency 정본 안내, CI 품질 게이트 표 번호만 다루며 실제 코드·설정·동작은 변경하지 않는다.

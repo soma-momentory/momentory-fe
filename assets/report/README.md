@@ -1,6 +1,10 @@
 # 리포트의 땅 — 「이번 주 감정들」 카드의 모래 언덕
 
-[`src/components/report/WeekGround.tsx`](../../src/components/report/WeekGround.tsx) 가
+> 🗄 **2026-11-09 대조: 아래 `ground.png` 는 지금 쓰는 곳이 없다.** `WeekGround.tsx` 는 2026-11-04 스프링 공책(`e86f3e7`)에서 지워졌다.
+> 지금 리포트가 이 폴더에서 읽는 것은 `kraft-grain.png`(`src/features/report/ui/book/Notebook.tsx`)와
+> `stickers/*.png`(`src/features/report/ui/book/parts.tsx`)다 — 둘의 출처 기록은 아직 없다.
+
+`src/components/report/WeekGround.tsx`(지워짐) 가
 조약돌 일곱 더미 아래에 이 한 장을 깔고, 요일 글자는 그 아래에 선다.
 
 | 파일         | 무엇                                                              |
