@@ -2,7 +2,7 @@
 
 모멘토리 앱의 React Native 프론트엔드 — 열고 → 몇 가지 묻고 → 담고 →
 밤에 돌아보고 → 일기가 남고 → 다음 날 편지를 받고 → 다시 읽는다. 상류 MVP 는 40화면이었고,
-회고 채팅 v2 · 쉼터 · 온보딩 v2 · 바바의 편지가 들어온 지금은 **라우트 61개**다
+회고 채팅 v2 · 쉼터 · 온보딩 v2 · 바바의 편지가 들어온 지금은 **라우트 57개**다
 (매핑: [`docs/PRODUCT.md`](docs/PRODUCT.md)).
 
 **이 저장소 하나만 clone 하면 개발·실행·검증이 전부 된다.** 화면 스펙·값·상태 기계는
@@ -75,7 +75,7 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 - [`docs/DATA-SECURITY.md`](docs/DATA-SECURITY.md) · [`docs/PLAY-DATA-SAFETY.md`](docs/PLAY-DATA-SAFETY.md) — 기기 저장 정책 · Play 양식 답안
 - [`.claude/hooks/README.md`](.claude/hooks/README.md) — AI 에이전트 훅(편집 · 명령 가드 · 머지 차단 · Codex 리뷰 게이트)
 - [`docs/archive/CODE-REVIEW.md`](docs/archive/CODE-REVIEW.md) — 2026-08-07 코드 리뷰 **기록**
-- [`assets/fonts/README.md`](assets/fonts/README.md) — 교보손글씨 · Pretendard 출처·해시·라이선스
+- [`assets/fonts/README.md`](assets/fonts/README.md) — 교보손글씨 출처·해시·라이선스
 - [`expo-lab/README.md`](expo-lab/README.md) — Expo Lab(`npm run lab:web` · 8085) — 웹에서 실제 앱 전 화면을 가짜 서버로 띄운다
 - [`NAV.md`](NAV.md) — 코드 지도. 라우트 · 폴더 · 단일 통로(`src/lib/`)가 어디에 무엇이 있는지
 - [`CLAUDE.md`](CLAUDE.md) · [`AGENTS.md`](AGENTS.md) — AI 도구용 길잡이(Claude Code · Codex). 규칙을 소유하지 않고 위 문서를 가리킨다
@@ -85,7 +85,7 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 **M0~M5 완료.** 셋업 · 공용 컴포넌트 · 화면 전부 · **3세대 디자인 이관**(2026-08-20) ·
 **서버 연결**(2026-08-09~) · **회고 채팅 v2**(2026-08-28) · **쉼터·감각연못**(2026-09-03~ · 지금 쉼 콘텐츠 일곱) ·
 **계측**(Amplitude · 2026-09-05) · **온보딩 v2**(2026-10-25) · **바바의 편지**(2026-10-27) · **홈 v2 · 날씨 · 배경음악**.
-검증은 **159 스위트 / 2,070 테스트**가 통과한다(2026-11-09 · main `133644c`).
+검증은 **156 스위트 / 2,052 테스트**가 통과한다(2026-11-09 · main `133644c`).
 같은 날 **주간 행복 저장**(이번 주만 쓰고 지난 주는 읽기만)과 **마이 전체 기간 집계**가 붙었다.
 마일스톤별 상세와 남은 일은 [`docs/TASKS.md`](docs/TASKS.md)가 정본이다.
 마지막 스토어 제출은 **1.4.0**(iOS `buildNumber 8` · Android `versionCode 11` · 운영 서버 · 2026-11-09 확인 · `app.config.ts`)이다.

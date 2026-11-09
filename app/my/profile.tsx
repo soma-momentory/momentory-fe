@@ -26,7 +26,7 @@ import { useOnboardingOptions } from "@/features/onboarding/model/options";
  * 「판단이 필요한 부분」). 온보딩에서 답한 것은 전부 이 목록에 있다(`my.invariants`).
  *
  * **관심 분야 · 쉬는 방법은 뺐다**(2026-11-08 · 사용자 요청) — 온보딩 v2 가 묻지 않아 새 가입자는
- * 늘 「선택 안 함」이었다. `/my/interests` · `/my/rest` 라우트는 남아 있지만 여기서 가는 길은 없다.
+ * 늘 「선택 안 함」이었다. 두 수정 화면(`/my/interests` · `/my/rest`)은 2026-11-09 에 지웠다.
  */
 export default function BasicInfoList() {
   const profile = useProfile();

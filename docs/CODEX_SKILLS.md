@@ -57,7 +57,7 @@ Expo Lab은 `npm run lab:web`으로 띄우고 기본 8081에서 `http://localhos
 - **범위:** Expo Web Design Studio의 `home-main`, B 미리보기, 375pt, 글씨 1×/1.5×. `HomeV2Preview`는 운영 `HomeV2View`를 공유하지만 데이터·라우팅은 Mock이다.
 - **확인:** 홈 Jest 27개, 앱/Expo Lab 타입 검사, ESLint 통과. `layout-matrix.spec.ts`의 홈 4개 폭 × 3개 글씨 배율도 통과했다. 이 테스트는 루트의 가로 넘침과 존재 여부를 확인하며 요소 간 겹침은 검출하지 않는다.
 - **높음 — 1.5× 겹침:** 375pt에서 히어로 카드 하단이 Lab 화면 좌표 818.8px, 고정된 `WeekDock` 상단이 800.6px으로 **약 18.3px 겹친다**. ‘오늘 일정’ 제목과 감정 버튼도 시각적으로 가까워 읽기 어렵다. `src/features/home/ui/v2/HomeV2View.tsx`의 절대 배치와 큰 글씨의 세로 확장을 함께 검토할 필요가 있다. 이번 작업에서는 수정하지 않았다.
-- **결정 필요 — 서체 기준:** 이번 요청은 본문 Pretendard·짧은 제목 Gaegu를 설명하지만, 현재 `docs/DESIGN.md` §2와 `src/design/ds/typography.ts`는 앱 대부분을 교보손글씨, 로그인만 Pretendard, 홈 v2만 Gaegu 예외로 정의한다. 향후 감사의 합격 기준을 정하기 전 이 차이를 확인해야 한다.
+- **결정 필요 — 서체 기준:** 이번 요청은 본문 Pretendard·짧은 제목 Gaegu를 설명하지만, 현재 `docs/DESIGN.md` §2와 `src/design/ds/typography.ts`는 앱 대부분을 교보손글씨, 로그인만 Pretendard, 홈 v2만 Gaegu 예외로 정의한다. 향후 감사의 합격 기준을 정하기 전 이 차이를 확인해야 한다. (→ 2026-11-09: 코드가 정했다 — 홈 v2 Gaegu 는 11-01 에, 로그인 Pretendard 는 11-08 에 빠져 앱 전체가 교보손글씨다.)
 - **문서 차이:** `docs/DESIGN.md`의 홈 v2 설명에는 운영 미적용이라고 남아 있지만 현재 `app/(tabs)/home.tsx`는 `HomeV2View`를 사용한다. 문서 갱신은 별도 작업이다.
 - **미검증:** iOS·Android 실기기 글자 배율, 스크린리더, 키보드, 성능 계측, 전체 화면 감사. Expo Web 결과를 기기 통과로 간주하지 않는다.
 

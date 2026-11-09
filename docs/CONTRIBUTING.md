@@ -256,7 +256,7 @@ CI 와 새 개발자가 같은 빌드를 만들 수 없다.
   브랜드 초록 `primary.normal` 에는 글자를 얹지 않는다 — 글자가 얹히는 면(주 CTA)은 `primary.heavy` 다.
   대비 보정 값은 `ds/__tests__/contrast.test.ts` 가 고정한다
 - 폰트는 `fontWeight` 가 아니라 **파일 이름**으로 지정한다 — 앱 전체 서체는 교보손글씨
-  (`"KyoboHandwriting2025lyb"` · `ds/typography.ts`)이다. Pretendard(`gothic`)는 로드만 되고 2026-11-08 로그인 개편 뒤 쓰는 화면이 없다.
+  (`"KyoboHandwriting2025lyb"` · `ds/typography.ts`)이다(로그인 포함 · Pretendard 는 2026-11-09 에 지웠다).
   Android 에서 `fontWeight` 로는 굵기가 안 바뀐다.
 - **앱 코드는 고정값을 읽지 않는다** — 목 데이터는 2026-08-21 에 전부 지웠고
   (`src/mocks/sample.ts`), 남은 것은 **테스트 전용** `src/testing/fixtures.ts` 뿐이다.

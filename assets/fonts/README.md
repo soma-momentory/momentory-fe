@@ -1,68 +1,31 @@
 # 폰트
 
-서체는 **둘**이다 — **로그인(`S1`)을 뺀 앱 전체**를 맡는 **교보손글씨 2025 이유빈**과,
-**로그인 한 화면만** 쓰는 **Pretendard**(`ds/typography.ts` 의 `gothic`). 정본은
+앱이 쓰는 서체는 **교보손글씨 2025 이유빈 하나**다(로그인도 2026-11-08 부터). 정본은
 `src/design/ds/typography.ts` · `docs/DESIGN.md` §2 다.
-(2026-10-15 에 홈 v2 용으로 들였던 **Gaegu** 는 2026-11-01 교보손글씨 통일 때 지웠다.)
-
----
-
-## Pretendard
-
-**로그인(`S1`) 전용**(2026-09-06 부터) — 약관·오류처럼 읽고 판단하는 글이 모인 자리라 고딕으로 남겼다.
+(2026-10-15 에 홈 v2 용으로 들였던 **Gaegu** 는 2026-11-01 교보손글씨 통일 때 지웠다.
+로그인 전용이던 **Pretendard** 4웨이트(v1.3.9 · OFL)는 쓰는 화면이 없어져 2026-11-09 에 지웠다.)
 
 ## 왜 커밋하는가
 
 체크아웃만으로 같은 빌드가 나와야 한다. 빌드 때 폰트를 내려받으면 배포본 URL 이
 바뀌거나 버전이 올라갔을 때 사람마다 다른 글자가 렌더된다.
 
-## 출처
-
-|             |                                           |
-| ----------- | ----------------------------------------- |
-| 저장소      | https://github.com/orioncactus/pretendard |
-| 릴리스      | `v1.3.9`                                  |
-| 내려받은 것 | `Pretendard-1.3.9.zip` → `public/static/` |
-| 받은 날     | 2026-08-05                                |
-
-```
-sha256(Pretendard-1.3.9.zip) = 04be351a74d6bf7d60c480a3087e51d185485d35a52023142af1df19eb8c428a
-```
-
-## 담은 것 — 4 weight
-
-`theme.typography.weights` 가 쓰는 것만 넣는다. 9종 전부 넣으면 앱 용량만 6MB 늘어난다.
-
-| 파일                      | weight | sha256                                                             |
-| ------------------------- | ------ | ------------------------------------------------------------------ |
-| `Pretendard-Regular.otf`  | 400    | `3ffbacde6ab8411f1d2db54bb9b1f0b3ee2a738932033722cf0388c06aed1c93` |
-| `Pretendard-Medium.otf`   | 500    | `d39e50e4bb52b4993b6a4eeb821a171254745bd824446af01e1f616b89fface0` |
-| `Pretendard-SemiBold.otf` | 600    | `c89bc43027dc7cde5726e96223376f8eec09302b2fc1f8147fd5b57cfc376118` |
-| `Pretendard-Bold.otf`     | 700    | `2e91915fab54df71cc9598ebf608b2bdb54c6fe3c066ac61dff0bc44fca71cc7` |
-
-RN 에서는 `fontWeight` 대신 **파일 이름으로 지정한다** — Android 는 `fontWeight` 로
-OTF 굵기를 골라주지 않아 400 과 700 이 같게 렌더된다.
-
-```tsx
-{ fontFamily: "Pretendard-Bold" }   // ○
-{ fontFamily: "Pretendard", fontWeight: "700" }   // ✗ Android 에서 안 먹는다
-```
-
-## 라이선스
-
-SIL Open Font License 1.1 — 전문은 [`LICENSE.txt`](LICENSE.txt).
-임베딩·재배포 모두 허용되고, 폰트 파일 자체를 파는 것만 금지된다.
-
----
-
 ## 교보손글씨 2025 이유빈
 
-**로그인을 뺀 앱 전체**가 쓴다(2026-09-06 · 홈 v2 는 2026-11-01). 처음(2026-08-22)에는
+**앱 전체**가 쓴다(2026-09-06 · 홈 v2 는 2026-11-01 · 로그인은 2026-11-08). 처음(2026-08-22)에는
 제목 넷에만 썼다. 웨이트가 하나뿐이라 **위계는 크기·색·자리로만** 만든다.
 
 | 파일                          | weight         | sha256                                                             |
 | ----------------------------- | -------------- | ------------------------------------------------------------------ |
 | `KyoboHandwriting2025lyb.ttf` | 단일(700 자리) | `61e8b7fa8740c3e9ade6845d0cfff3209ab2a8afd783b3ab629eda0ba47db993` |
+
+RN 에서는 서체를 **파일 이름으로 지정한다** — Android 는 `fontWeight` 로 굵기를 골라주지 않는다.
+
+```tsx
+{
+  fontFamily: "KyoboHandwriting2025lyb";
+} // ○ — 보통은 `Text` 의 variant 가 넣어 준다
+```
 
 ### 출처
 
@@ -83,5 +46,3 @@ SIL Open Font License 1.1 — 전문은 [`LICENSE.txt`](LICENSE.txt).
 - 재배포·유료양도·재판매 금지 — 폰트 파일 자체를 내주거나 파는 것
 - 불법 사이트·허위과장광고 등 공서양속에 반하는 곳에 사용 금지
 - 이 서체를 쓴 인쇄물·광고물 이미지는 **캠페인 홍보에 활용될 수 있다**
-
-(`LICENSE.txt` 는 Pretendard 의 OFL 이다 — 이 서체와 무관하다.)

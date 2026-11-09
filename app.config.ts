@@ -205,8 +205,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      */
     buildNumber: "8",
     infoPlist: {
+      // ⚠ 사진은 **빼지 않는다**(2026-11-09) — Motion 과 같은 이유다(아래 `motionUsagePermission`).
+      // 앱에는 사진을 고르거나 저장하는 기능이 없지만 `expo-image` 가 `ph://` 주소용
+      // `PhotoLibraryAssetLoader`(Photos 프레임워크)를 늘 등록해 바이너리가 사진 보관함 API 를 참조한다 —
+      // 빼면 업로드가 ITMS-90683 으로 막힐 수 있다. 그래서 없는 기능을 적지 않고 **사실**을 적는다.
+      // 부르는 코드가 없어 이 창은 뜨지 않는다(`docs/SETUP.md` 「NSMotionUsageDescription」 옆).
       NSPhotoLibraryUsageDescription:
-        "모멘토리에서 사용자가 선택한 사진을 첨부하거나 저장할 수 있도록 사진 보관함 접근 권한을 사용합니다.",
+        "모멘토리는 사진 보관함에 접근하지 않습니다. 이미지 표시에 쓰는 구성 요소에 포함된 항목이라 표시될 뿐, 실제로 요청하지 않습니다.",
     },
   },
   android: {
@@ -425,13 +430,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "expo-font",
       {
-        fonts: [
-          "./assets/fonts/Pretendard-Regular.otf",
-          "./assets/fonts/Pretendard-Medium.otf",
-          "./assets/fonts/Pretendard-SemiBold.otf",
-          "./assets/fonts/Pretendard-Bold.otf",
-          "./assets/fonts/KyoboHandwriting2025lyb.ttf",
-        ],
+        fonts: ["./assets/fonts/KyoboHandwriting2025lyb.ttf"],
       },
     ],
     // 운영 전용 정리 — 자리와 무관하게 모든 플러그인 다음에 돈다(`productionCleanupPlugins` 머리말)

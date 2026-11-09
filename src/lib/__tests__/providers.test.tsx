@@ -54,8 +54,8 @@ describe("AppProviders", () => {
       regular: "KyoboHandwriting2025lyb",
       bold: "KyoboHandwriting2025lyb",
     });
-    // 로그인용 고딕 등록도 유지한다.
-    expect(Object.keys(table)).toEqual(expect.arrayContaining(["Pretendard-Regular"]));
+    // Pretendard 는 2026-11-09 에 지웠다(로그인도 손글씨) — 다시 등록되지 않는다.
+    expect(Object.keys(table).filter((name) => name.startsWith("Pretendard"))).toEqual([]);
     expect(Object.keys(table)).toEqual(expect.arrayContaining(["KyoboHandwriting2025lyb"]));
     // Gaegu 는 2026-11-01 교보손글씨 통일 때 지웠다 — 다시 등록되지 않는다.
     expect(Object.keys(table).filter((name) => name.startsWith("Gaegu"))).toEqual([]);

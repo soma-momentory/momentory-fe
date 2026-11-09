@@ -55,7 +55,7 @@ const REQUIRED_KEYS = [
   "NSSpeechRecognitionUsageDescription",
   "NSCalendarsUsageDescription", // 일정 읽기
   "NSCalendarsFullAccessUsageDescription",
-  "NSPhotoLibraryUsageDescription",
+  "NSPhotoLibraryUsageDescription", // 사진 기능은 없지만 expo-image 바이너리가 Photos 를 참조한다 — 문구는 「접근하지 않는다」(app.config.ts)
   // 앱은 움직임을 쓰지 않지만 expo-location 바이너리가 CoreMotion 을 참조해 애플이 요구한다 —
   // 빼면 업로드가 ITMS-90683 으로 막힌다(2026-11-09 · 1.4.0 Build 8). 문구는 「쓰지 않는다」는 사실을 적는다
   "NSMotionUsageDescription",

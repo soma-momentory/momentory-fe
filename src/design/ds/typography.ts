@@ -9,7 +9,7 @@ import { Dimensions, Platform, type TextStyle } from "react-native";
  * ## 서체는 **교보손글씨 하나다** (2026-09-06)
  *
  * 그전에는 Pretendard 4웨이트가 본문을 맡고 손글씨는 제목·일기에만 썼다. 지금은
- * **로그인(`S1`)을 뺀 앱 전체**가 손글씨다.
+ * **앱 전체**가 손글씨다(로그인도 2026-11-08 부터 · Pretendard 파일은 2026-11-09 에 지웠다).
  *
  * ⚠ **웨이트로 위계를 만들 수 없다.** 교보손글씨는 파일이 하나여서 `regular` ·
  * `medium` · `semibold` · `bold` 가 **전부 같은 글자**로 그려진다 — 이름은 단이
@@ -25,21 +25,6 @@ import { Dimensions, Platform, type TextStyle } from "react-native";
 const HAND = "KyoboHandwriting2025lyb";
 
 /**
- * **로그인(`S1`) 하나만 쓰는 고딕**(2026-09-06).
- *
- * 로그인은 앱을 처음 만나는 자리이고 약관·오류 같은 **읽고 판단하는 글**이 모여
- * 있어서, 여기만 Pretendard 로 남긴다. 네 파일 다 `assets/fonts/` 에 있고
- * `src/lib/providers.tsx` 가 계속 로드한다 — 다른 화면이 집어 쓰지 않도록
- * `fontFamily` 토큰에는 올리지 않았다.
- */
-export const gothicFamily = {
-  regular: "Pretendard-Regular",
-  medium: "Pretendard-Medium",
-  semibold: "Pretendard-SemiBold",
-  bold: "Pretendard-Bold",
-} as const;
-
-/**
  * 단이 고르는 서체. **네 이름이 전부 같은 파일을 가리킨다** — 위 머리말 참고.
  * `hand` 는 원래부터 이 서체였고, 이름을 쓰던 자리(제목·일기)를 그대로 둔다.
  */
@@ -49,20 +34,6 @@ export const fontFamily = {
   semibold: HAND,
   bold: HAND,
   hand: HAND,
-} as const;
-
-/**
- * 로그인 예외를 거는 손잡이 — **크기·행간은 단 그대로 두고 서체만 되돌린다.**
- *
- * `Text` 가 `style` 을 `variant` **뒤에** 얹으므로 이것 하나만 넘기면 된다
- * (`components/ds/Text.tsx`). 부르는 쪽이 그 단의 원래 굵기를 골라 준다 —
- * `fontFamily` 가 굵기를 잃어서 단 이름만으로는 되찾을 수 없다.
- */
-export const gothic = {
-  regular: { fontFamily: gothicFamily.regular },
-  medium: { fontFamily: gothicFamily.medium },
-  semibold: { fontFamily: gothicFamily.semibold },
-  bold: { fontFamily: gothicFamily.bold },
 } as const;
 
 /**

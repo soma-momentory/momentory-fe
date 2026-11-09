@@ -148,7 +148,7 @@ npm run lab:routes                                   # src/shell/routes.generate
 node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest 가 부른다)
 ```
 
-`routes.generated.ts`(자동 · 61개 · 2026-11-06) + `routeMeta.ts`(손 · 제목 · 묶음 · 순서 · 주의 · 라우트가 아닌 시트 줄 하나) = `routes.ts`. 새 라우트가 `app/` 에 생기면 `src/shell/__tests__/routes.test.ts` 가 「제목 없음」으로 깨진다 — `routeMeta.ts` 에 한 줄을 더한다.
+`routes.generated.ts`(자동 · 57개 · 2026-11-09) + `routeMeta.ts`(손 · 제목 · 묶음 · 순서 · 주의 · 라우트가 아닌 시트 줄 하나) = `routes.ts`. 새 라우트가 `app/` 에 생기면 `src/shell/__tests__/routes.test.ts` 가 「제목 없음」으로 깨진다 — `routeMeta.ts` 에 한 줄을 더한다.
 
 **프리셋** — 바로 열었을 때 의미 있게 보이도록:
 
@@ -162,16 +162,16 @@ node expo-lab/scripts/gen-routes.mjs --check         # 어긋나면 실패 (jest
 
 **두 단계로 여는 라우트**(`routeMeta.ts` 의 `openVia`) — 차갑게 열면 앱이 스스로 다른 곳으로 보내거나, **앞 화면이 받아 두는 데이터가 비어** 실제 흐름과 다르게 보이는 화면이다. 경유 화면을 먼저 열고, 그 화면의 데이터 응답(`lab:request`)이 온 뒤 `lab:navigate`(push)로 옮긴다.
 
-| 라우트                                                   | 경유 → 기다리는 응답                           | 바로 열면                                          |
-| -------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------- |
-| `/diary/[id]`                                            | 보관함 → `/api/v1/diaries`                     | 보관함으로 돌아간다                                |
-| `/home/schedule/[id]` · `/home/schedule/new`             | 홈 → `/api/v1/schedules`                       | 시트 뒤 홈이 빈다                                  |
-| `/retro/confirm` · `/retro/write`                        | 홈 → `/api/v1/schedules`                       | 「적어둔 일정이 없네요」                           |
-| `/retro/talk`                                            | 홈 → `/api/v1/schedules`                       | 첫 인사에 닉네임 · 오늘 일정이 빠진다              |
-| `/letter`                                                | 홈 → `/api/v1/action-cards`(일기를 다 받은 뒤) | 편지마다 붙는 그날 일기 첫 줄이 빠진다             |
-| `/letter/time`                                           | 홈 → `/api/v1/schedules`                       | 지금 편지 시각 대신 기본값(8:30)                   |
-| `/rest/cards`                                            | 쉼터 → `/api/v1/action-cards`                  | 바람카드가 빈 목록                                 |
-| `/my/nickname` · `age` · `gender` · `interests` · `rest` | 기본 정보 → `/api/v1/onboarding/options`       | 프로필이 오기 전에 칸을 채워 지금 값이 비어 보인다 |
+| 라우트                                       | 경유 → 기다리는 응답                           | 바로 열면                                          |
+| -------------------------------------------- | ---------------------------------------------- | -------------------------------------------------- |
+| `/diary/[id]`                                | 보관함 → `/api/v1/diaries`                     | 보관함으로 돌아간다                                |
+| `/home/schedule/[id]` · `/home/schedule/new` | 홈 → `/api/v1/schedules`                       | 시트 뒤 홈이 빈다                                  |
+| `/retro/confirm` · `/retro/write`            | 홈 → `/api/v1/schedules`                       | 「적어둔 일정이 없네요」                           |
+| `/retro/talk`                                | 홈 → `/api/v1/schedules`                       | 첫 인사에 닉네임 · 오늘 일정이 빠진다              |
+| `/letter`                                    | 홈 → `/api/v1/action-cards`(일기를 다 받은 뒤) | 편지마다 붙는 그날 일기 첫 줄이 빠진다             |
+| `/letter/time`                               | 홈 → `/api/v1/schedules`                       | 지금 편지 시각 대신 기본값(8:30)                   |
+| `/rest/cards`                                | 쉼터 → `/api/v1/action-cards`                  | 바람카드가 빈 목록                                 |
+| `/my/nickname` · `age` · `gender`            | 기본 정보 → `/api/v1/onboarding/options`       | 프로필이 오기 전에 칸을 채워 지금 값이 비어 보인다 |
 
 흐름으로만 닿거나 가드 · 사용자 입력에 기대는 라우트는 프레임 위에 한 줄로 알린다(`hint`): `/retro/draft`(회고를 끝까지 — 가짜 서버 대본: 자유 입력 → 사건 고르기 → 감정 → 바람 → 완료) · `/retro/confirm`·`/retro/write`(오늘 일기가 있으면 `/retro/talk` 로 — 하루 넘기기로 새 날에서) · `/retro/done`(바람카드는 흐름에서만) · `/reading`(약 5초짜리 화면 — 끝나면 스스로 `/name` 으로) · `/about`·`/notify`(이름 단계에서 쓴 이름이 문장에 들어간다) · 소개의 감춘 두 장(`schedule` · `letter`). 앱은 진입 가드 때문에 「/ → 목적지」처럼 주소를 잠깐 거치므로 셸은 0.4초 동안 그대로인 **마지막 주소**를 프레임의 현재 화면으로 본다.
 

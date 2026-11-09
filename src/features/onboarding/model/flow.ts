@@ -12,12 +12,11 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
  * 온보딩하는 기존 사용자)은 로그인만 건너뛰고 나머지를 전부 본다.
  */
 
-/**
- * **「일정마다 감정」과 「바바의 편지」가 앱에 들어왔는가.** 둘 다 아직 없어서(10/25 결정)
- * 그 기능을 약속하는 소개 두 장(일정마다 마음 · 다음 날 편지)을 감추고, 관련 문구 넷을
- * 지금 기능에 맞춘다. 기능이 나오면 이 값 하나를 켜면 프로토타입 판으로 돌아간다.
+/*
+ * 2026-11-09 — 프로토타입의 소개 두 장(「일정마다 마음」 · 「다음 날 편지」)은 흐름에서 감춰 두던 것이라
+ * 지웠다. 둘을 묶던 스위치(`LETTER_AND_SCHEDULE_EMOTION_READY`)와 그 문구 갈래도 함께 지웠다 —
+ * 보이는 화면 · 문구는 그대로다. 다시 넣으려면 장을 새로 쓴다(git 이력에 프로토타입 판이 있다).
  */
-export const LETTER_AND_SCHEDULE_EMOTION_READY: boolean = false;
 
 // ── 로그인 전: 시작 · 문제 · 소개 ─────────────────────────────────────
 
@@ -28,11 +27,9 @@ export type IntroId =
   | "ruminate"
   | "blank"
   | "help"
-  | "schedule"
   | "talk"
   | "diary"
   | "rest"
-  | "letter"
   | "report";
 
 export type IntroCard = {
@@ -46,11 +43,7 @@ export type IntroCard = {
   /** 본문 끝에 굵게 붙는 한 문장 */
   emphasis?: string;
   button: string;
-  /** 앱에 아직 없는 기능을 약속하는 장 — `LETTER_AND_SCHEDULE_EMOTION_READY` 일 때만 보인다 */
-  pending?: true;
 };
-
-const READY = LETTER_AND_SCHEDULE_EMOTION_READY;
 
 const ALL_INTRO: readonly IntroCard[] = [
   {
@@ -99,20 +92,10 @@ const ALL_INTRO: readonly IntroCard[] = [
     button: "다음",
   },
   {
-    id: "schedule",
-    group: "feature",
-    title: "일정마다 마음 한 번, 10초",
-    body: "일정을 하나 끝낼 때마다, 그때 감정을 하나 골라 두면 돼요",
-    button: "다음",
-    pending: true,
-  },
-  {
     id: "talk",
     group: "feature",
     title: "밤 5분, 바바와 대화해요",
-    body: READY
-      ? "낮에 고른 감정을 보고, 바바가 먼저 물어봐요"
-      : "오늘 일정을 보고, 바바가 먼저 물어봐요",
+    body: "오늘 일정을 보고, 바바가 먼저 물어봐요",
     button: "다음",
   },
   {
@@ -130,14 +113,6 @@ const ALL_INTRO: readonly IntroCard[] = [
     button: "다음",
   },
   {
-    id: "letter",
-    group: "feature",
-    title: "다음 날 아침,\n바바가 편지를 보내요",
-    body: "어젯밤 이야기를 읽고, 오늘 해 볼 작은 일 하나를 골라 줘요",
-    button: "다음",
-    pending: true,
-  },
-  {
     id: "report",
     group: "feature",
     title: "한 주의 기록을,\n리포트로 받아봐요",
@@ -146,7 +121,7 @@ const ALL_INTRO: readonly IntroCard[] = [
   },
 ];
 
-export const INTRO_CARDS: readonly IntroCard[] = ALL_INTRO.filter((c) => READY || !c.pending);
+export const INTRO_CARDS: readonly IntroCard[] = ALL_INTRO;
 
 export const introCard = (id: IntroId): IntroCard => ALL_INTRO.find((c) => c.id === id)!;
 
@@ -262,7 +237,7 @@ export function nextQuestionHref(key: QuestionKey): QuestionHref | "/goal" {
 export const READING_LINES = [
   "알려 준 답을 살펴보는 중",
   "알림 받기 좋은 시각을 고르는 중",
-  READY ? "나에게 맞는 첫 질문을 고르는 중" : "바바에게 전하는 중",
+  "바바에게 전하는 중",
 ] as const;
 
 /** 이름 · 나이 성별 · 캘린더 · 알림 — 진행 막대 한 묶음 */
@@ -315,16 +290,6 @@ export const RESEARCH_DETAILS: readonly { title: string; body: string; source: s
     body: "감정 이름을 고르기만 해도 뇌의 감정 반응이 누그러졌어요.",
     source: "Lieberman 외, 2007 · 30명",
   },
-  // 바바 편지의 「언제」를 설명하는 항목 — 편지가 없을 때는 갈 곳 없는 약속이 된다
-  ...(READY
-    ? [
-        {
-          title: "언제 할지 정해 두면",
-          body: "「언제 · 어디서」를 정해 둔 계획은 실제로 해낼 가능성이 높았어요. 바바 편지에서 작은 일의 「언제」를 고르는 이유예요.",
-          source: "Gollwitzer · Sheeran, 2006 · 연구 94개 / Milne 외, 2002 · 91% 대 35~38%",
-        },
-      ]
-    : []),
   {
     title: "털어놓는 대화",
     body: "상대를 챗봇이라고 믿고 감정을 털어놓은 사람도, 사람이라고 믿은 사람만큼 대화 뒤 기분이 나아졌다고 답했어요.",
@@ -337,10 +302,8 @@ export const RESEARCH_NOTE =
 
 export const FIRST_RETRO = {
   bubble: "지금 5분,\n오늘 있었던 일 하나만 들려줘요",
-  title: READY ? "내일 아침, 첫 편지가 와요" : "이야기하면, 오늘 일기가 바로 생겨요",
-  body: READY
-    ? "이야기하면 오늘 일기가 바로 생기고, 내일 아침 바바의 첫 편지가 와요"
-    : "5분이면 충분해요. 밤에 하고 싶으면 그때 바바가 먼저 물어볼게요",
+  title: "이야기하면, 오늘 일기가 바로 생겨요",
+  body: "5분이면 충분해요. 밤에 하고 싶으면 그때 바바가 먼저 물어볼게요",
   now: "지금 이야기하기",
   /** 알림을 켜지 않았으면 「밤에」 바바가 부를 길이 없다 — 「다음에」로 말한다(`index.html` 7) */
   later: (notify: boolean) => (notify ? "밤에 할게요" : "다음에 할게요"),

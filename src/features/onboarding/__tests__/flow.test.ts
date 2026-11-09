@@ -6,7 +6,6 @@ import {
   INTRO_CARDS,
   introProgress,
   isValidAge,
-  LETTER_AND_SCHEDULE_EMOTION_READY,
   nextIntro,
   READING_LINES,
   RESEARCH_DETAILS,
@@ -15,7 +14,7 @@ import {
 
 /**
  * 온보딩 v2 의 순서 · 갈래 규칙(2026-10-25). 화면은 이 함수들만 따른다.
- * 10/25 결정: 「일정마다 감정」과 「바바의 편지」가 앱에 없어서 그 두 장을 감추고 문구를 맞춘다.
+ * 감춰 두던 소개 두 장(「일정마다 마음」 · 「다음 날 편지」)과 그 스위치는 2026-11-09 에 지웠다 — 보이는 흐름은 그대로다.
  */
 beforeEach(() => {
   useDraft.getState().reset();
@@ -23,8 +22,7 @@ beforeEach(() => {
   useSettings.getState().reset();
 });
 
-it("아직 없는 기능을 약속하는 소개 두 장을 감춘다 — 소개는 네 장이다", () => {
-  expect(LETTER_AND_SCHEDULE_EMOTION_READY).toBe(false);
+it("소개는 네 장이다 — 감춰 두던 「일정마다 마음」 · 「다음 날 편지」 장은 없다", () => {
   expect(INTRO_CARDS.filter((c) => c.group === "feature").map((c) => c.id)).toEqual([
     "talk",
     "diary",
@@ -39,13 +37,11 @@ it("아직 없는 기능을 약속하는 소개 두 장을 감춘다 — 소개�
   expect(RESEARCH_DETAILS.some((d) => d.body.includes("바바 편지"))).toBe(false);
 });
 
-it("다음 장은 감춘 장을 건너뛰고, 마지막 장 다음은 없다(로그인)", () => {
+it("다음 장은 순서대로, 마지막 장 다음은 없다(로그인)", () => {
   expect(nextIntro("start")).toBe("feelings");
   expect(nextIntro("help")).toBe("talk");
   expect(nextIntro("rest")).toBe("report");
   expect(nextIntro("report")).toBeNull();
-  // 감춘 장 라우트로 들어와도 앞으로 간다 — 첫 장으로 되돌아가지 않는다
-  expect(nextIntro("schedule")).toBe("talk");
 });
 
 it("건너뛰기 — 문제 장은 소개 첫 장으로, 소개 장은 끝(로그인)으로", () => {

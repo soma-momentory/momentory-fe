@@ -23,11 +23,9 @@ const step = choice(
   "ruminate",
   "blank",
   "help",
-  "schedule",
   "talk",
   "diary",
   "rest",
-  "letter",
   "report",
   "mood",
   "why",
@@ -171,8 +169,6 @@ const screen = choice(
   "profile_nickname",
   "profile_age",
   "profile_gender",
-  "profile_interests",
-  "profile_rest",
 );
 const linkSource = choice("onboarding", "my");
 const linkChoice = choice("link", "later", "settings");
