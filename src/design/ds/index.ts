@@ -71,7 +71,7 @@ export {
   type TextToken,
 } from "./typography";
 
-export { pondLayout, pondMotion } from "./pond";
+export { pondMotion } from "./pond";
 
 export {
   restGuideSize,

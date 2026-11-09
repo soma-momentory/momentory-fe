@@ -34,7 +34,6 @@ LIGHT_ELEVATION = np.radians(58)
 PAPERS = {
     # `src/design/ds/diaryMemo.ts` 의 `paper` 와 같은 값이어야 한다
     "memo-paper-ivory": (0xFA, 0xF5, 0xEC),
-    "memo-paper-lemon": (0xF5, 0xE8, 0xB8),
 }
 
 
