@@ -124,7 +124,7 @@ app/                         # 라우트만 — 로직을 두지 않는다 (라�
                              #   (interests · rest 는 2026-11-08 목록에서 빼고 2026-11-09 화면을 지웠다)
 src/
   design/ds/                 # 토큰 정본 — color typography metrics + 화면별 값 파일 20여 개 (여기만 hex)
-  design/                    # + tabBackgrounds.ts · studioDesign.ts · studioAssets.ts (화면이 읽는 승인 값 · 그림 표)
+  design/                    # + tabBackgrounds.ts · studioDesign.ts (화면이 읽는 승인 값)
   components/
     ds/                      # 공용 컴포넌트 40여 개 + icons/ — 화면은 여기서 조립한다
                              # (옛 primitives/ chat/ common/ icons/ 는 3세대 전환에서 사라졌다)

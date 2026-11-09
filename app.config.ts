@@ -368,7 +368,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 연다(iOS SFSafariViewController · Android Custom Tabs). 로그인 화면의 약관 줄과
     // 마이의 「지원」이 같은 통로(`src/lib/links.ts`)를 지난다.
     "expo-web-browser",
-    // 감각연못의 카피바라(`CapybaraFigure`) — 움직이는 WebP 를 그린다.
+    // 쉼터 장면의 움직이는 WebP 를 그린다.
     // ⚠ 이 플러그인이 하는 일은 **iOS Podfile 속성 하나**(AVIF 디코더 링크)뿐이고,
     // 움직이는 WebP 재생은 두 플랫폼 다 모듈 자체가 한다 — 그래도 `expo install` 이
     // 요구하는 줄이라 두어야 prebuild 결과가 갈리지 않는다.

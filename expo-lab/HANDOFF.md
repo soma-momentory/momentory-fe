@@ -111,7 +111,6 @@ Lab 의 「＋ 새 화면 만들기」로 맡기면 넘어오는 것: 화면 이
      `scripts/keyout-*.py` 와 같은 방식의 일회성 스크립트를 쓰거나 기존 것을 고친다(빌드에 끼우지 않는다 — `NAV.md` 「7. 그 밖의 폴더」).
   3. 출처: 그 폴더 `README.md` 에 한 줄 — 파일 · 출처(사용자 제공 · 날짜 · 원본 이름) · 손질 내용. README 가 없으면 만든다.
   4. 쓰기: `expo-image`/`Image` 로 `require` 한다. 장식이면 낭독기에서 숨긴다(기존 장식 이미지 컴포넌트 관례 — 예 `features/home/ui/v2/Baba.tsx`). 의미가 있으면 짧은 대체 텍스트.
-  5. 화면별 값(`src/design/studioApproved.json`)이 id 로 그림을 고르는 자리(예: 쉼터 `rest.babaImage.assetId`)면 `src/design/studioAssets.ts` 에 등록하고 id 로 고른다.
 - **이미지를 새로 만들지 않는다** — Lab 실행 중에는 이미지 생성 도구(학교 게이트웨이 `ask.py image` 등)를 쓰지 않는다. 비용이 들고 실행마다
   사용자 승인이 필요하다(전역 규칙). 그림이 모자라면 보고에 「필요한 그림: 무엇 · 크기 · 들어갈 곳」으로 적는다.
 

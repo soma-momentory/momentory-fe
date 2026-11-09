@@ -4,7 +4,7 @@
  * 홈 v2 는 Claude Design 시안의 모눈 종이·손글씨·종이 조각을 쓴다.
  * 서체는 2026-11-01 사용자 요청으로 교보손글씨로 통일했다(Gaegu 파일은 같은 날 지웠다). 초기 시안의 색·크기는 유지한다.
  * 결정 HD-3 — 이 결은 **홈 한 화면만의 것**이고 글로벌 DS(`color.ts` · `typography.ts`)는 그대로다.
- * 그래서 `pond.ts` · `notebook.ts` · `diaryMemo.ts` 처럼 화면 전용 묶음 하나로 둔다.
+ * 그래서 `pond.ts` · `diaryMemo.ts` 처럼 화면 전용 묶음 하나로 둔다.
  * `features/home/ui/v2/` 밖에서 쓰지 않는다.
  *
  * 값의 1차 근거는 Lab 번역(`expo-lab/src/claude-home/tokens.ts` · 2026-11-02 삭제 — 그 전 커밋에 남는다)이다 —

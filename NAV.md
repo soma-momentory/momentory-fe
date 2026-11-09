@@ -95,7 +95,7 @@ src/features/calendar/{model/*, data/{calendarSyncApi,syncStateStore}.ts}
                   ← 기기 캘린더 ↔ 서버 화해(`POST /schedules/sync`). 읽어 펴고(expand) 좁히고(normalize)
                     해시로 「보낼 것이 있나」를 판정한다. 언제 도는지는 `model/foregroundSync.ts` 하나가 안다
 src/features/retro/{model/retro.ts, data/retroApi.ts,
-                    ui/{RetroBaba,RetroBabaPeek,RetroRug,RetroOnsen,RetroDiaryBackground,RetroMethodChoices,
+                    ui/{RetroBaba,RetroBabaPeek,RetroDiaryBackground,RetroMethodChoices,
                         RetroStickerChoices,RetroScheduleSticker}.tsx}
                   ← **대화는 서버가 주도한다** — store 는 세션 id · 버블 · 서버의 마지막 응답 · 완료 시 일기와 바람카드만
 src/features/diary/{model/{diary,types,selectors,deleteToast,useDiaryWeather}.ts, data/{diaryApi,diaryWeather}.ts}
@@ -154,7 +154,7 @@ src/components/onboarding/{OnboardingParts, IntroScreen, IntroArt, QuestionScree
                                   ← 온보딩 v2 껍데기 · 그림. QuickReplies 는 마이 성별 편집도 쓴다
 src/components/my/BasicInfoEditor.tsx  ← 기본 정보 수정 화면들이 공유하는 껍데기(상단바 · 저장 · 실패 한 줄)
 src/components/archive/{DayScheduleList, DiaryPreviewCard, EmotionFilter}.tsx
-src/components/diary/{ActionCardSection, WishCardFields, DiaryPaper, DiaryNotebook, DiaryMemo,
+src/components/diary/{ActionCardSection, WishCardFields, DiaryPaper,
                       WeatherCredit}.tsx + diaryPhotos.ts
                                   ← WishCardFields = 쉼터(R2)와 일기 상세가 같은 항목 · 같은 말로 바람카드를 그린다.
                                     DiaryPaper = 회고 · 직접 쓰기 · 일기 상세의 줄 공책
@@ -174,7 +174,7 @@ src/design/ds/{color,typography,metrics,index}.ts + 화면별 값 파일(pond ·
                                   ← **토큰 정본 — hex 는 여기만 든다**(린터가 밖을 막는다). 다크 없음.
                                     대비 보정 값은 `__tests__/contrast.test.ts` 가 고정한다(`color.ts` 머리말)
 src/design/tabBackgrounds.ts      ← 탭 종이 배경 매핑
-src/design/{studioDesign.ts, studioApproved.json, studioAssets.ts}
+src/design/{studioDesign.ts, studioApproved.json}
                                   ← 홈 v2 · 쉼터 · 보관함 · 마이가 읽는 승인된 장식 값 · 그림 표(Expo Lab 과 함께 쓴다)
 ```
 

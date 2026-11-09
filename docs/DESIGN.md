@@ -584,7 +584,7 @@ CTA 위계: 주 행동만 Solid Primary. 보조는 Outlined, 3순위는 Text But
 ### 하루 돌아보기 카드 (2026-09-10 · 사용자 시안)
 
 **CTA 는 위가 잔디처럼 봉긋한 모양이에요** — 받은 시안 그림을 그대로 면으로 깔아요
-(`assets/home/cta-grass.png`). 높이·면 색·누름 스크림은 §6 그대로이고 **모양만 달라요.**
+(`assets/home/cta-grass.png` · ⚠ 옛 홈 · 2026-11-09 그림과 함께 지웠다). 높이·면 색·누름 스크림은 §6 그대로이고 **모양만 달라요.**
 폭은 **왼쪽 칸을 가로로 다 써요**(2026-09-10 · 사용자 요청) — 시안이 옆으로 긴 모양이라
 좁으면 봉우리가 눌려 뾰족해져요. 라벨은 **버튼 한가운데**에 서요. ⚠ 이건 **홈 카드 하나의 장식이에요** — DS 버튼(`components/ds/Button`)은
 안 건드렸어요. 두 번째 화면이 같은 모양을 원하면 그때 DS 로 올려요.
@@ -829,7 +829,7 @@ CTA 위계: 주 행동만 Solid Primary. 보조는 Outlined, 3순위는 Text But
 현재 단색 말풍선과 첨부 이미지 세 가지를 Expo Lab에서 비교한다. ① 얇은 베이지 윤곽선, ② 두꺼운 크림색 종이 스티커, ③ 점선 스티치다.
 `diary-bubble-comparison`은 같은 질문·답변을 네 버전으로 나란히 나열하며 짧은 글과 긴 글을 고를 수 있다. 원본 참고 이미지도 함께 표시한다.
 `diary-bubble-outline` · `diary-bubble-cutout` · `diary-bubble-stitched`는 회고 대화의 전체 배치에서 고르는 시안이다. 키보드 열기·닫기와 작성 중 답변 유지가 동일하게 동작한다.
-사용자 말풍선은 초록색 단색을 유지한다. 비교 후 사용자는 현재 단색 버전을 선택했다. 운영 기본은 단색으로 유지하며 새 후보는 Lab 비교용으로만 남긴다. 값은 `src/design/ds/retroBubbleComparison.ts`, 구현은 `expo-lab/src/retro/PreviewBubble.tsx`에 둔다.
+사용자 말풍선은 초록색 단색을 유지한다. 비교 후 사용자는 현재 단색 버전을 선택했다. 운영 기본은 단색으로 유지하며 새 후보는 Lab 비교용으로만 남긴다. 값은 `src/design/ds/retroBubbleComparison.ts`(2026-11-09 지웠다 — 단색으로 정해져 쓰는 곳이 없었다), 구현은 `expo-lab/src/retro/PreviewBubble.tsx`에 둔다.
 
 ## 쉼터
 
