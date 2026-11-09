@@ -5,6 +5,7 @@ node_modules/
 .claude/skills/*/template/
 # 앱스토어 이미지용으로 받은 외부 스킬 — 로컬에만 두고 원본 그대로 쓴다(skills-lock.json)
 .claude/skills/app-store-screenshots/
+.agents/skills/app-store-screenshots/
 .expo/
 dist/
 expo-lab/dist-*/

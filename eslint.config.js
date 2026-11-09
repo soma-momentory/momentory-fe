@@ -22,6 +22,7 @@ module.exports = [
       ".claude/worktrees/**",
       // 스킬이 들고 오는 다른 프로젝트용 템플릿(Next.js 등) — 앱 코드가 아니다
       ".claude/skills/*/template/**",
+      ".agents/skills/*/template/**",
       "node_modules/**",
       ".expo/**",
       "dist/**",
