@@ -7,7 +7,7 @@
 > 전체 설계(136화면)는 상류 `01_화면설계/` 에만 있고, 쉼터를 되살릴 때 돌아온다(담당자 경유).
 > **MVP가 원본을 대체하지 않는다.**
 >
-> (2026-11-06 대조: 그 뒤 쉼터 · 온보딩 v2 · 바바의 편지가 이 저장소에서 들어와 지금은 **라우트 61개 · 탭 5칸**이다.
+> (2026-11-06 대조: 그 뒤 쉼터 · 온보딩 v2 · 바바의 편지가 이 저장소에서 들어와 지금은 **라우트 57개 · 탭 5칸**이다.
 > 아래 §0 표는 상류 MVP 범위의 기록이고, 지금 모양은 §2 「지금 있는 것」과 [`PRODUCT.md`](PRODUCT.md) 표다.)
 
 ## 0. 무엇을 만드는가
@@ -45,7 +45,7 @@
 | 네비게이션      | **expo-router** (파일 기반)                                                                                 | `states.mvp.json` 의 machine → 라우트 그룹이 1:1. 회고 알림 → 딥링크가 공짜                                                                                                                                                                                                                                    |
 | 스타일          | **StyleSheet + `src/design/ds/` 토큰**(옛 `theme` 객체는 2026-08-20 삭제)                                   | 다크모드 없음(RULES: 크림 배경 유지), 토큰이 고정 상수 — 런타임 테마 엔진이 필요 없다. NativeWind/Tamagui 는 12.5px·자간 .145em 같은 값을 우회하게 만들어 오히려 손해                                                                                                                                          |
 | 그라디언트      | **react-native-svg** `RadialGradient`                                                                       | `.scr` 은 radial. `expo-linear-gradient` 로는 못 그린다                                                                                                                                                                                                                                                        |
-| 폰트            | expo-font + 교보손글씨(앱 전체) + Pretendard 4 weight(로그인 등 `gothic`)                                   | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다)                                                                                                                                                                                                                                      |
+| 폰트            | expo-font + 교보손글씨 하나(앱 전체 · 로그인 포함 · Pretendard 는 2026-11-09 삭제)                          | 파일 이름으로 굵기 지정 (Android 는 `fontWeight` 로 OTF 굵기가 안 바뀐다)                                                                                                                                                                                                                                      |
 | 품질            | ESLint 9 + Prettier + Jest + RNTL + GitHub Actions                                                          | CI 단계의 정본은 [`CONTRIBUTING.md` 「품질 게이트」](CONTRIBUTING.md)                                                                                                                                                                                                                                          |
 | 보안 저장       | expo-secure-store                                                                                           | M2-0 개발 세션과 인증 hydration · 캘린더 화해 상태(`calendar/data/syncStateStore.ts`). 읽기가 비동기라 진입 라우팅을 규정한다(§3)                                                                                                                                                                              |
 | 클라이언트 상태 | Zustand (작게)                                                                                              | 온보딩 초안 · 인증 판정 · 화면용 로컬 상태                                                                                                                                                                                                                                                                     |
@@ -106,12 +106,12 @@
 화면 ID 와 라우트 파일의 매핑은 [`PRODUCT.md`](PRODUCT.md) 표가 정본이다. 구조만 본다:
 
 ```
-app/                         # 라우트만 — 로직을 두지 않는다 (라우트 61개)
+app/                         # 라우트만 — 로직을 두지 않는다 (라우트 57개)
   _layout.tsx                # Stack · StatusBar (Provider 는 여기가 아니다)
   +native-intent.ts          # 앱 밖 주소 거르기 — 카카오 oauth 주소를 버린다(알림 딥링크는 그대로)
   index.tsx                  # S0 진입 분기
   (auth)/login.tsx           # S1 — 소셜 셋
-  intro/                     # 온보딩 v2 로그인 전 — 시작 · 문제 · 소개 12장 (인증 없이 열린다)
+  intro/                     # 온보딩 v2 로그인 전 — 시작 · 문제 · 소개 10장 (인증 없이 열린다)
   (onboarding)/              # 온보딩 v2 로그인 뒤 12장 + _layout — 순서는 features/onboarding/model/flow.ts
   (tabs)/                    # home rest archive report my + _layout — **탭 5칸** · 홈은 HomeV2View
   home/                      # schedule/[id] schedule/new — 투명 모달 시트
@@ -120,8 +120,8 @@ app/                         # 라우트만 — 로직을 두지 않는다 (라�
   diary/[id]/                # index (A3·A3-c) — edit(A4)는 지웠다
   rest/                      # cards/index (R2) + 쉼 콘텐츠 일곱(sense-pond worry-box treasure-box body-release
                              #   meditation weekly-happiness wish) + worries treasures wish-mine records
-  my/                        # profile(목록) + nickname age gender interests rest + inquiry(문의)
-                             #   (interests · rest 는 2026-11-08 목록에서 뺐다 — 파일만 남고 가는 길이 없다)
+  my/                        # profile(목록) + nickname age gender + inquiry(문의)
+                             #   (interests · rest 는 2026-11-08 목록에서 빼고 2026-11-09 화면을 지웠다)
 src/
   design/ds/                 # 토큰 정본 — color typography metrics + 화면별 값 파일 20여 개 (여기만 hex)
   design/                    # + tabBackgrounds.ts · studioDesign.ts · studioAssets.ts (화면이 읽는 승인 값 · 그림 표)
@@ -319,7 +319,7 @@ src/
      화면에 안내 한 줄조차 띄우지 않는다. `logoutApi.ts` 는 Bearer 를 쓰지 않으므로
      `lib/http.ts` 를 지나지 않는다(파일 주석에 근거 있음).
 
-- **onboarding** — (2026-11-06 대조: 아래는 옛 대화형 온보딩이다. 지금은 **온보딩 v2** — 로그인 전 소개 12장
+- **onboarding** — (2026-11-06 대조: 아래는 옛 대화형 온보딩이다. 지금은 **온보딩 v2** — 로그인 전 소개 10장
   `app/intro/` → 로그인 → 질문 · 목표 · 이름 · 나이 · 성별 · 캘린더 · 알림 · 지금 첫 회고 `app/(onboarding)/`.
   순서 · 문구는 `features/onboarding/model/flow.ts` 하나이고 옛 9화면은 지웠다.) 질문 여섯: 닉네임(`04`) · 기본 정보(`05-b`) · 관심 분야(`06`, 기타 입력 `06-b`/`06-c`) · 쉬는 방법(`07`, 필수·복수 — 답은 `User.restMethods` 로 **저장만**, MVP 에 보여주는 화면은 없음) · 회고 시간(`08`) · 캘린더(`09`). 진행 점 6칸이 이 여섯을 가리킨다. 완료는 `10`, 캘린더·알림을 건너뛰면 `10-b`. 답은 화면마다 서버로 보내지 않고 Zustand 초안에 쌓는다. **현재는 메모리 전용**이라 앱을 종료하면 사라지고, 데이터 보안 정책과 MMKV 도입 뒤 중간 이탈 복원을 붙인다.
 - **home** — 한 상태(`day`). `12-b`(빈 상태)는 별도 레이아웃이 아니라 **같은 카드가 초대로 바뀌는 변형**이므로 같은 컴포넌트의 prop.
@@ -467,7 +467,7 @@ src/
 
 ### 자산
 
-- **교보손글씨(앱 전체)와 Pretendard 4 weight 는 `assets/fonts/` 에 커밋돼 있다** — 출처·해시·라이선스는
+- **교보손글씨(앱 전체)는 `assets/fonts/` 에 커밋돼 있다** — 출처·해시·라이선스는
   [`assets/fonts/README.md`](../assets/fonts/README.md).
 - **캐릭터(바바·카피바라)와 일러스트는 `assets/` 에 커밋돼 있다** — 홈 카드의 카피바라 ·
   회고 화면의 빈백 바바 · 감정 조약돌 열 장 · 감정 스티커 · 감각연못 배경. 3세대 전환에서

@@ -267,7 +267,7 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 2026-09-28 계측 보강:
 
 - 온보딩 v2 단계명(2026-10-25): 로그인 전 start, feelings, blur, ruminate, blank, help, talk, diary, rest, report
-  (schedule · letter 는 기능이 나오면 보인다) · 로그인 뒤 mood, why, day_end, diary_history, goal, reading, name, about,
+  (감춰 두던 schedule · letter 장은 2026-11-09 에 지웠다 — 허용 목록에서도 뺐다) · 로그인 뒤 mood, why, day_end, diary_history, goal, reading, name, about,
   calendar, notify, research, now. 옛 welcome · nickname · age · gender · interests · retroTime · done 은 더 오지 않는다.
 - onboarding_completed 의 is_reonboarding 은 **기존 사용자가 새 판을 다시 한 것**이다 — 새 가입자와 퍼널을 섞지 않는다.
   질문 답 · 목표는 **사용자 속성이 아니라 이 이벤트의 속성**으로 보낸다(답 묶음별 재방문은 「onboarding_completed 의

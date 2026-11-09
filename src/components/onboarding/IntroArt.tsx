@@ -261,35 +261,6 @@ const ART: Record<IntroId, () => React.ReactNode> = {
     </View>
   ),
 
-  schedule: () => (
-    <View style={styles.list}>
-      {[
-        { title: "아침 산책", pebble: P.calm, done: true },
-        { title: "프젝 회의", note: "생각보다 괜찮았어", pebble: P.proud, done: true, hl: true },
-        { title: "저녁 장보기", done: false },
-      ].map((r) => (
-        <View key={r.title} style={[styles.row, r.hl && styles.rowHl]}>
-          <View style={[styles.check, r.done && styles.checkOn]} />
-          <View style={styles.rowText}>
-            <Text variant="body1" color={labelColor.strong}>
-              {r.title}
-            </Text>
-            {r.note != null ? (
-              <Text variant="caption1" color={labelColor.neutral}>
-                {r.note}
-              </Text>
-            ) : null}
-          </View>
-          {r.pebble != null ? (
-            <EmotionPebble id={r.pebble} size={28} />
-          ) : (
-            <View style={styles.emptyDot} />
-          )}
-        </View>
-      ))}
-    </View>
-  ),
-
   talk: () => (
     <View style={styles.chat}>
       <BabaSays large>오늘 「프젝 회의」는 어땠어요?</BabaSays>
@@ -333,32 +304,6 @@ const ART: Record<IntroId, () => React.ReactNode> = {
 
   // 지금 쉼터 탭의 테마 카드를 그대로 쓴다 — 누를 수 없게 갈 곳(route)만 뺀다
   rest: () => <RestPreview />,
-
-  letter: () => (
-    <View style={styles.diaryPage}>
-      <Text variant="caption1" color={labelColor.alternative}>
-        10월 15일 아침 · 바바의 편지는 AI가 써요
-      </Text>
-      <Text variant="body1ReadingHand" color={labelColor.normal}>
-        하늘님에게,{"\n"}어제 「프젝 회의」를 마치고 <Mark>「생각보다 괜찮았어」</Mark>라고 남겼죠.
-        준비한 만큼 말이 나온 날이었네요.
-      </Text>
-      <View style={styles.task}>
-        <Text variant="caption1" color={labelColor.neutral}>
-          오늘 해 볼 작은 일 하나 고를래요?
-        </Text>
-        <Text variant="body2" color={labelColor.strong}>
-          회의 끝나고 도와준 동료에게 고맙다고 말하기
-        </Text>
-      </View>
-      <View style={styles.sign}>
-        <Baba size={36} />
-        <Text variant="body1ReadingHand" color={labelColor.strong}>
-          바바가
-        </Text>
-      </View>
-    </View>
-  ),
 
   report: () => (
     <View style={styles.week}>
@@ -425,31 +370,6 @@ const styles = StyleSheet.create({
   pageLine: { height: 1.5, backgroundColor: line.neutral },
   blankPebble: { position: "absolute", right: 10, bottom: -6 },
 
-  list: { alignSelf: "stretch", gap: space.sm },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.md,
-    backgroundColor: background.elevated,
-    borderWidth: 1.5,
-    borderColor: line.neutral,
-    borderRadius: 14,
-    paddingVertical: space.md,
-    paddingHorizontal: space.md,
-  },
-  rowHl: { borderWidth: 2, borderColor: labelColor.strong },
-  rowText: { flex: 1 },
-  check: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: line.normal },
-  checkOn: { backgroundColor: primary.heavy, borderColor: primary.heavy },
-  emptyDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: line.normal,
-  },
-
   chat: { alignSelf: "stretch", gap: space.md },
   babaSays: { flexDirection: "row", alignItems: "flex-start", gap: 6, alignSelf: "stretch" },
   babaSaysLarge: { alignItems: "center", gap: space.sm },
@@ -483,8 +403,6 @@ const styles = StyleSheet.create({
   diaryPebbles: { flexDirection: "row", gap: 2 },
   diaryFoot: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   aiTag: { borderWidth: 1.5, borderColor: primary.heavy, borderRadius: 8, paddingHorizontal: 6 },
-  task: { backgroundColor: onboardingArt.sageSoft, borderRadius: 10, padding: space.sm, gap: 2 },
-  sign: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-end" },
 
   restWrap: { alignSelf: "stretch", paddingTop: space.md },
 

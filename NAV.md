@@ -37,14 +37,14 @@ app/<라우트>.tsx                 화면 — 라우트 파라미터를 읽고 
 
 ## 2. 라우트 — `app/`
 
-**라우트 61개** — 진입 2 · 소개 12 · 온보딩 12 · 탭 5 · 홈 시트 2 · 회고 5 · 편지 3 · 일기 1 · 쉼터 12 · 마이 7
+**라우트 57개** — 진입 2 · 소개 10 · 온보딩 12 · 탭 5 · 홈 시트 2 · 회고 5 · 편지 3 · 일기 1 · 쉼터 12 · 마이 5
 (`_layout` · `+native-intent` · `__tests__` 제외 · Lab 의 `expo-lab/src/shell/routes.generated.ts` 와 같다).
 화면 ID ↔ 라우트 매핑의 정본은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표다.
 
 ```
 app/index.tsx (S0)  app/(auth)/login.tsx (S1)  app/+native-intent.ts(카카오 `oauth` 복귀 주소를 버린다)
-app/intro/{start, feelings, blur, ruminate, blank, help, schedule, talk, diary, rest, letter, report}.tsx
-                  = 온보딩 v2 로그인 전 — 시작 · 문제 다섯 · 소개. 인증 없이 열린다
+app/intro/{start, feelings, blur, ruminate, blank, help, talk, diary, rest, report}.tsx
+                  = 온보딩 v2 로그인 전 — 시작 · 문제 다섯 · 소개 넷. 인증 없이 열린다
 app/(onboarding)/{_layout, mood, why, day-end, diary-history, goal, reading, name, about, calendar, notify, research, now}.tsx
                   = 온보딩 v2 로그인 뒤 — 순서 · 문구 · 기능 스위치는 `src/features/onboarding/model/flow.ts` 하나다.
                     다시 온보딩 판정은 서버 `onboardingVersion < latestOnboardingVersion`(`meApi.ts` `needsOnboarding`)
@@ -64,9 +64,8 @@ app/rest/{_layout, cards/index, sense-pond, worry-box, worries, treasure-box, tr
           weekly-happiness, wish, wish-mine, records}.tsx
                   = 날짜별 바람카드(R2) · 쉼 콘텐츠 일곱(감각연못 · 걱정상자 + 맡겨둔 걱정 · 보물함 + 지난 보물 ·
                     몸에 힘 빼기 · 3분 명상 · 주간 행복 · 소원 연꽃 + 내 소원) · 쉼터별 이용 기록(`?content=`)
-app/my/{_layout, profile, nickname, age, gender, interests, rest, inquiry}.tsx
+app/my/{_layout, profile, nickname, age, gender, inquiry}.tsx
                   = 기본 정보 목록 + 항목별 수정 · 문의하기(`POST /api/v1/inquiries`).
-                    `interests` · `rest` 는 마이 목록에서 빠져 들어갈 길이 없다(파일만 남음).
                     ⚠ 코드 주석의 `M3`~`M8` 은 스펙 번호가 아니다 — 구현이 나눈 번호다
 ```
 
@@ -88,8 +87,8 @@ src/features/onboarding/{model/{flow,draft,completion,options,submit}.ts, data/{
                     서버 커밋(온보딩과 마이가 같은 PUT 을 지난다)
 src/features/home/{model/{day,dayRollover,presentation,types,weather,useHomeWeather}.ts,
                    data/{scheduleApi,weatherApi,weatherIntroMemory}.ts, ui/v2/*, ui/*}
-                  ← 홈 · 일정. **운영 홈은 `ui/v2/HomeV2View`** — `ui/` 의 `HomeView` · `GrassButton` ·
-                    `HomeCapybara` · `WeekEmotionStrip` 은 테스트만 남은 죽은 코드다.
+                  ← 홈 · 일정. **홈은 `ui/v2/HomeV2View`** — `ui/` 에 남은 것은 v2 가 함께 쓰는 일정 조각
+                    (`ScheduleList` · `ScheduleItem` · `ScheduleEditBar` · `CheckBurst`)이다(옛 `HomeView` 계열은 2026-11-09 삭제).
                     day.ts 의 MAX_VISIBLE_SCHEDULES(5) 는 제품 규칙. dayRollover = 04:00 에 하루가 넘어갈 때 하는 일.
                     날씨 = `POST /api/v1/weather/current`(좌표는 본문에만) — 실패는 전부 「스티커 없음」
 src/features/calendar/{model/*, data/{calendarSyncApi,syncStateStore}.ts}
@@ -150,12 +149,12 @@ src/components/ds/                ← **공용 컴포넌트.** 새 화면은 여
                                   ← 아이콘은 Wanted 세트를 그대로 옮긴 것 — 없는 글리프를 만들지 않는다.
                                     WheelPicker 는 자체 3열 구현(외부 피커 모듈 없음).
                                     voiceInput = 회고 음성 입력(OS 인식기 · expo-speech-recognition)
-src/components/onboarding/{OnboardingParts, IntroScreen, IntroArt, QuestionScreen, QuickReplies, OtherReplyInput}.tsx
+src/components/onboarding/{OnboardingParts, IntroScreen, IntroArt, QuestionScreen, QuickReplies}.tsx
                           + startQuestions.ts
-                                  ← 온보딩 v2 껍데기 · 그림. QuickReplies · OtherReplyInput 은 마이 편집도 쓴다
+                                  ← 온보딩 v2 껍데기 · 그림. QuickReplies 는 마이 성별 편집도 쓴다
 src/components/my/BasicInfoEditor.tsx  ← 기본 정보 수정 화면들이 공유하는 껍데기(상단바 · 저장 · 실패 한 줄)
 src/components/archive/{DayScheduleList, DiaryPreviewCard, EmotionFilter}.tsx
-src/components/diary/{ActionCardSection, DiaryEmotionRow, WishCardFields, DiaryPaper, DiaryNotebook, DiaryMemo,
+src/components/diary/{ActionCardSection, WishCardFields, DiaryPaper, DiaryNotebook, DiaryMemo,
                       WeatherCredit}.tsx + diaryPhotos.ts
                                   ← WishCardFields = 쉼터(R2)와 일기 상세가 같은 항목 · 같은 말로 바람카드를 그린다.
                                     DiaryPaper = 회고 · 직접 쓰기 · 일기 상세의 줄 공책
@@ -219,7 +218,7 @@ src/design/{studioDesign.ts, studioApproved.json, studioAssets.ts}
 
 설치 여부와 버전의 정본은 [`package.json`](package.json) 이다. 네이티브 모듈이 섞여 있어 **dev client** 로 돌린다(Expo Go 미지원).
 
-- 골격 — expo-router · **Zustand** · react-native-svg · expo-image · expo-font(교보손글씨 · Pretendard)
+- 골격 — expo-router · **Zustand** · react-native-svg · expo-image · expo-font(교보손글씨 하나)
 - 로그인 — `@react-native-seoul/kakao-login` · `expo-apple-authentication` + `expo-crypto` · `@react-native-google-signin/google-signin`
 - 기기 — expo-secure-store(토큰) · expo-notifications · expo-calendar · expo-location · expo-audio ·
   expo-speech-recognition · expo-web-browser · expo-store-review

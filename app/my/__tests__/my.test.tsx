@@ -3,10 +3,8 @@ import { router } from "expo-router";
 
 import AgeEdit from "../age";
 import GenderEdit from "../gender";
-import InterestsEdit from "../interests";
 import NicknameEdit from "../nickname";
 import BasicInfoList from "../profile";
-import RestEdit from "../rest";
 
 import { useProfile, useSettings } from "@/features/my/model/settings";
 import { completeOnboarding } from "@/features/onboarding/data/completeOnboardingApi";
@@ -217,87 +215,5 @@ describe("M6 · 성별", () => {
     await fireEvent.press(r.getByText("여성"));
 
     expect(disabled(save(r))).toBe(true);
-  });
-});
-
-describe("M7 · 관심 분야", () => {
-  it("최대 3개 — 넷째는 눌러도 켜지지 않는다", async () => {
-    const r = await render(<InterestsEdit />);
-    // 시작이 둘(인간관계·나 자신)이라 하나 더하면 셋이다
-    await fireEvent.press(r.getByText("가족"));
-    expect(r.getByText("3개 선택됨 · 다시 누르면 선택이 해제돼요")).toBeTruthy();
-
-    await fireEvent.press(r.getByText("건강"));
-
-    expect(r.getByText("건강").parent?.props.accessibilityState.selected).toBe(false);
-  });
-
-  it("껐다 다시 켜면 같은 답이라 저장이 잠긴 채다", async () => {
-    const r = await render(<InterestsEdit />);
-
-    await fireEvent.press(r.getByText("인간관계"));
-    expect(disabled(save(r))).toBe(false);
-
-    await fireEvent.press(r.getByText("인간관계"));
-
-    expect(disabled(save(r))).toBe(true);
-  });
-
-  it("기타를 켜면 적을 자리가 열리고, 비워 두면 저장이 잠긴다", async () => {
-    // 서버가 OTHER 와 함께 직접 입력 값을 요구한다 (DISCUSSION §1-7)
-    const r = await render(<InterestsEdit />);
-
-    await fireEvent.press(r.getByText("기타"));
-
-    expect(r.getByLabelText("기타 직접 입력")).toBeTruthy();
-    expect(disabled(save(r))).toBe(true);
-  });
-
-  it("적으면 그 값이 서버로 간다", async () => {
-    const r = await render(<InterestsEdit />);
-    await fireEvent.press(r.getByText("기타"));
-
-    await fireEvent.changeText(r.getByLabelText("기타 직접 입력"), "반려동물");
-    await fireEvent.press(save(r));
-
-    await waitFor(() =>
-      expect(submit).toHaveBeenCalledWith(expect.objectContaining({ interestOther: "반려동물" })),
-    );
-  });
-
-  it("기타를 끄면 적던 값도 함께 비운다", async () => {
-    const r = await render(<InterestsEdit />);
-    await fireEvent.press(r.getByText("기타"));
-    await fireEvent.changeText(r.getByLabelText("기타 직접 입력"), "반려동물");
-
-    await fireEvent.press(r.getByText("기타"));
-
-    expect(r.queryByLabelText("기타 직접 입력")).toBeNull();
-  });
-});
-
-describe("M8 · 쉬는 방법", () => {
-  it("열다섯 개를 접지 않고 다 보인다 — 접으면 뒤쪽은 선택되지 않는다", async () => {
-    const r = await render(<RestEdit />);
-
-    expect(r.getByText("🎮 게임하기")).toBeTruthy();
-    expect(r.queryByText("＋ 더 고르기")).toBeNull();
-  });
-
-  it("상한이 없다 — 더 골라도 잠기지 않는다", async () => {
-    const r = await render(<RestEdit />);
-
-    await fireEvent.press(r.getByText("🧘 명상하기"));
-    await fireEvent.press(r.getByText("📖 독서하기"));
-    await fireEvent.press(save(r));
-
-    await waitFor(() =>
-      expect(useProfile.getState().restMethods).toEqual([
-        "LISTENING_TO_MUSIC",
-        "WALKING",
-        "MEDITATION",
-        "READING",
-      ]),
-    );
   });
 });

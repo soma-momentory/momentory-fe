@@ -89,19 +89,9 @@ export const routeSections: readonly RouteSection[] = [
       { path: "/intro/ruminate", title: "문제 3 · 혼자 되새김" },
       { path: "/intro/blank", title: "문제 4 · 첫 줄이 막힘" },
       { path: "/intro/help", title: "문제 5 · 바바가 도와줄게요" },
-      {
-        path: "/intro/schedule",
-        title: "소개 · 일정마다 마음",
-        hint: "흐름에서는 감춘 장이다(LETTER_AND_SCHEDULE_EMOTION_READY = false) — 주소로만 열린다",
-      },
       { path: "/intro/talk", title: "소개 · 밤 5분 대화" },
       { path: "/intro/diary", title: "소개 · 일기 완성" },
       { path: "/intro/rest", title: "소개 · 쉼터" },
-      {
-        path: "/intro/letter",
-        title: "소개 · 다음 날 편지",
-        hint: "흐름에서는 감춘 장이다(LETTER_AND_SCHEDULE_EMOTION_READY = false) — 주소로만 열린다",
-      },
       { path: "/intro/report", title: "소개 · 리포트" },
     ],
   },
@@ -295,18 +285,6 @@ export const routeSections: readonly RouteSection[] = [
       {
         path: "/my/gender",
         title: "성별 수정",
-        openVia: { path: "/my/profile", afterRequest: "/api/v1/onboarding/options" },
-        hint: "기본 정보를 먼저 열어 프로필 · 선택지를 받은 뒤 옮긴다(바로 열면 지금 값이 비어 보인다)",
-      },
-      {
-        path: "/my/interests",
-        title: "관심 분야 수정",
-        openVia: { path: "/my/profile", afterRequest: "/api/v1/onboarding/options" },
-        hint: "기본 정보를 먼저 열어 프로필 · 선택지를 받은 뒤 옮긴다(바로 열면 지금 값이 비어 보인다)",
-      },
-      {
-        path: "/my/rest",
-        title: "쉬는 방법 수정",
         openVia: { path: "/my/profile", afterRequest: "/api/v1/onboarding/options" },
         hint: "기본 정보를 먼저 열어 프로필 · 선택지를 받은 뒤 옮긴다(바로 열면 지금 값이 비어 보인다)",
       },

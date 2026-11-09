@@ -14,7 +14,7 @@ import { addDays } from "@/lib/clock";
  * 주차 이동 범위)은 부르는 곳이 없어져 지웠다.
  *
  * 남은 것을 쓰는 곳은 **홈의 이번 주 감정 줄**이다(`app/(tabs)/home.tsx` ·
- * `features/home/ui/WeekEmotionStrip.tsx`) — 그쪽은 로컬 일기에서 그대로 그린다.
+ * `features/home/ui/v2/WeekDock.tsx`) — 그쪽은 로컬 일기에서 그대로 그린다.
  *
  * ⚠ **리포트가 열리는 문턱(일기 7편)도 사라졌다** (2026-08-24 · 사용자 결정). 리포트는
  * 이제 처음부터 열려 있고 기록이 없는 주는 「비어 있는 한 주」로 보인다 — 그래서

@@ -31,8 +31,6 @@ const routes: Record<string, ScreenName> = {
   "my/nickname": "profile_nickname",
   "my/age": "profile_age",
   "my/gender": "profile_gender",
-  "my/interests": "profile_interests",
-  "my/rest": "profile_rest",
 };
 /** 온보딩 v2 라우트 → 단계. 소개 장은 `intro/<id>`, 로그인 뒤 화면은 `(onboarding)/<route>` 다 */
 const steps: Record<string, OnboardingStepName> = {
@@ -42,11 +40,9 @@ const steps: Record<string, OnboardingStepName> = {
   "intro/ruminate": "ruminate",
   "intro/blank": "blank",
   "intro/help": "help",
-  "intro/schedule": "schedule",
   "intro/talk": "talk",
   "intro/diary": "diary",
   "intro/rest": "rest",
-  "intro/letter": "letter",
   "intro/report": "report",
   "(onboarding)/mood": "mood",
   "(onboarding)/why": "why",
