@@ -60,9 +60,6 @@ export {
 
 export {
   fontFamily,
-  // 로그인(`S1`) 하나만 쓰는 고딕 — 다른 화면에서 부르지 않는다
-  gothic,
-  gothicFamily,
   // iOS 에서만 단을 갈아끼우는 손잡이 — 이 세션의 조정은 전부 iOS 한정이다
   iosVariant,
   maxFontScale,

@@ -188,16 +188,17 @@ npm start   # 잠깐 띄웠다 끄면 .expo/types 가 갱신된다
 직접 준다 — `MOMENTORY_API=http://127.0.0.1:8080 npm run sync:api`.
 **받지 못해도 개발은 막히지 않는다** — `docs/api/openapi.json` 이 커밋돼 있다.
 
-### 글자가 Pretendard 가 아닌 것 같다
+### 글자가 손글씨가 아닌 것 같다
 
-> 먼저 — **앱 서체는 대부분 교보손글씨다**(`KyoboHandwriting2025lyb.ttf`). Pretendard 는 로그인 화면 등
-> `ds/typography.ts` 의 `gothic` 을 쓰는 자리뿐이다(`assets/fonts/README.md`). 아래는 Pretendard 자리인데 굵기가 안 바뀔 때다.
+> **앱 서체는 교보손글씨 하나다**(`KyoboHandwriting2025lyb.ttf` · 로그인 포함 · `assets/fonts/README.md`).
+> Pretendard 는 2026-11-09 에 지웠다 — 시스템 고딕이 보이면 폰트가 안 실린 것이다.
 
-`fontWeight` 로 굵기를 지정했을 가능성이 높다. **Android 는 `fontWeight` 로 OTF 굵기를 안 바꾼다.**
+서체는 **파일 이름**으로 지정한다(보통은 `Text` 의 variant 가 넣어 준다). 굵기는 하나뿐이라 `fontWeight` 를 줘도 달라지지 않는다.
 
 ```tsx
-{ fontFamily: "Pretendard-Bold" }                  // ○
-{ fontFamily: "Pretendard", fontWeight: "700" }    // ✗
+{
+  fontFamily: "KyoboHandwriting2025lyb";
+} // ○
 ```
 
 폰트 자체가 안 실렸는지 확인하려면 `adb logcat | grep -i "unrecognized font"` —
@@ -516,6 +517,11 @@ npm run check:ios-release   # 운영 introspect + 생성된 ios/app/Info.plist �
 > 참조 자체를 없애는 길은 pod 소스 패치뿐이다(`patch-package` 로 위 Swift 셋과 `LocationModule.swift` 의
 > motion 등록부를 들어내기) — SDK 를 올릴 때마다 다시 맞춰야 하고 모듈 정의 본체를 건드려서 **출시 직전에는
 > 하지 않는다.** 위치 Always 둘은 그대로 `false` 다 — 그쪽은 참조가 아니라 요청 코드가 있어야 걸린다.
+>
+> **`NSPhotoLibraryUsageDescription` 도 같은 까닭으로 둔다** (2026-11-09). 앱에는 사진을 고르거나 저장하는 기능이
+> 없지만 `expo-image` 가 `ph://` 주소용 `PhotoLibraryAssetLoader`(`ios/Loaders/PhotoLibraryAssetLoader.swift` ·
+> `import Photos`)를 늘 등록해 바이너리가 사진 보관함 API 를 참조한다. 옛 문구(「사진을 첨부하거나 저장」)는
+> **없는 기능을 말해서** 바꿨다 — 지금은 Motion 처럼 「접근하지 않는다 · 구성 요소에 포함돼 표시될 뿐」이다.
 
 > ✅ **두 서버의 API 가 다시 같다** (2026-11-08 BE dev → main 릴리스). 운영 `api.momentory.co.kr` = BE `main`,
 > 개발 `dev.momentory.co.kr` = BE `dev` 이고 둘의 경로가 같다(55개 · `/v3/api-docs` 대조). 팀 `.env` 는 개발 주소다.

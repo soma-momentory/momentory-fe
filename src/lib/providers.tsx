@@ -99,18 +99,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({ root: { flex: 1 } });
 
 /**
- * 앱 서체는 **교보손글씨 하나**이고(2026-09-06), Pretendard 4웨이트는 **로그인
- * (`S1`) 전용**으로 남아 있다(`ds/typography.ts` 의 `gothicFamily`).
- *
- * 굵기를 `fontWeight` 가 아니라 **파일 이름**으로 고르므로 넷을 각각 등록한다
- * (Android 는 `fontWeight` 로 OTF 굵기를 골라주지 않는다).
+ * 앱 서체는 **교보손글씨 하나**다(2026-09-06 · 로그인도 2026-11-08 부터).
+ * 로그인 전용이던 Pretendard 4웨이트는 쓰는 화면이 없어져 2026-11-09 에 지웠다.
  */
 function useAppFonts() {
   const [loaded, error] = useFonts({
-    "Pretendard-Regular": require("../../assets/fonts/Pretendard-Regular.otf"),
-    "Pretendard-Medium": require("../../assets/fonts/Pretendard-Medium.otf"),
-    "Pretendard-SemiBold": require("../../assets/fonts/Pretendard-SemiBold.otf"),
-    "Pretendard-Bold": require("../../assets/fonts/Pretendard-Bold.otf"),
     // **앱 전체의 서체** — `ds/typography.ts` 의 `fontFamily` 다섯 이름이 모두 이 파일이다
     KyoboHandwriting2025lyb: require("../../assets/fonts/KyoboHandwriting2025lyb.ttf"),
   });
