@@ -19,6 +19,7 @@ import {
   DiaryScheduleMemo,
 } from "@/components/diary/DiaryPaper";
 import { label as labelColor, layout, space, status } from "@/design/ds";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { diaryPaper } from "@/design/ds/diaryPaper";
 import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
@@ -218,14 +219,14 @@ function DiaryDetailEntry({ id }: { id: string }) {
                 {error}
               </Text>
             ) : null}
-            <Button
+            <ReflectionButton
+              testID="diary-save"
               label={saving ? "저장 중…" : "수정 저장하기"}
-              fill
-              raised
               disabled={saving || !body.trim()}
               onPress={() => {
                 void save();
               }}
+              style={styles.save}
             />
             <View style={styles.secondary}>
               <Button
@@ -274,6 +275,7 @@ function DiaryDetailEntry({ id }: { id: string }) {
 const styles = StyleSheet.create({
   topActions: { flexDirection: "row", alignItems: "center" },
   weatherInfoButton: { width: 44, height: 44 },
+  save: { marginTop: 0, marginHorizontal: 0 },
   keyboard: { flex: 1, minHeight: 0 },
   input: {
     ...diaryPaper.body,

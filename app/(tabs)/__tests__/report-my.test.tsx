@@ -388,12 +388,16 @@ describe("M2 · 알림 설정 시트 — 하나의 결정만 담는다", () => {
     expect(r.queryByText("알림 시간")).toBeNull();
   });
 
-  it("딤을 누르면 고르던 값이 버려진다", async () => {
+  it.each([
+    ["딤", 0],
+    ["✕", 1],
+  ])("%s 을 누르면 고르던 값이 버려진다", async (_, which) => {
     const r = await render(<My />);
     await fireEvent.press(row(r));
     await fireEvent.press(r.getByText("10시"));
 
-    await fireEvent.press(r.getByLabelText("닫기"));
+    // 딤과 ✕ 가 같은 「닫기」다 — 닫는 길은 늘어도 닫기는 하나다(`BottomSheet`)
+    await fireEvent.press(r.getAllByLabelText("닫기")[which]!);
 
     expect(useSettings.getState().notify.retro.time).toBe("21:30");
   });

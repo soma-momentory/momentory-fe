@@ -36,12 +36,10 @@ beforeEach(() => {
  * 바뀌면 같이 깨지는 단언이었다. 새 DS 의 비활성은 `accessibilityState.disabled` 다
  * (온보딩 테스트와 같은 손잡이).
  */
-const disabled = (labelNode: { parent: unknown }) => {
-  const pressable = labelNode.parent as { props?: { accessibilityState?: { disabled?: boolean } } };
-  return pressable?.props?.accessibilityState?.disabled === true;
-};
+const disabled = (button: { props: { accessibilityState?: { disabled?: boolean } } }) =>
+  button.props.accessibilityState?.disabled === true;
 
-const save = (r: Awaited<ReturnType<typeof render>>) => r.getByText("저장");
+const save = (r: Awaited<ReturnType<typeof render>>) => r.getByRole("button", { name: "저장" });
 
 describe("M3 · 기본 정보 수정 목록", () => {
   it("지금 값을 한 줄로 보여준다", async () => {

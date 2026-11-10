@@ -11,7 +11,7 @@ import {
   TabScreen,
   Text,
   TextField,
-  WheelPicker,
+  TimeSheet,
 } from "@/components/ds";
 import { label as labelColor, primary, space } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
@@ -31,15 +31,7 @@ import {
   requestNotificationPermission,
   type NotificationPermission,
 } from "@/lib/notifications";
-import {
-  formatKoreanTime,
-  fromWheelTime,
-  toWheelTime,
-  WHEEL_HOURS,
-  WHEEL_MINUTES,
-  WHEEL_PERIODS,
-  type WheelTime,
-} from "@/lib/time";
+import { formatKoreanTime } from "@/lib/time";
 
 /**
  * `M1` · 마이 기본 + `M2` · 알림 설정 시트 (2026-08-20 · `PLAN.md` A Phase 4)
@@ -441,74 +433,7 @@ export default function My() {
   );
 }
 
-/** 시각 하나만 고르는 시트 — 회고 알림과 편지 알림이 같은 휠을 연다(`DESIGN.md` §11 「시간 선택」) */
-function TimeSheet({
-  title,
-  time,
-  onChange,
-  onDismiss,
-  onDone,
-  onTurnOff,
-}: {
-  title: string;
-  time: string;
-  onChange: (time: string) => void;
-  onDismiss: () => void;
-  onDone: () => void;
-  /** 켜져 있을 때만 — 「알림 받지 않기」 */
-  onTurnOff?: () => void;
-}) {
-  const wheel = toWheelTime(time);
-  const setWheel = (next: Partial<WheelTime>) => onChange(fromWheelTime({ ...wheel, ...next }));
-
-  return (
-    <BottomSheet title={title} onDismiss={onDismiss}>
-      <Text variant="label2" color={labelColor.alternative}>
-        알림 시간
-      </Text>
-      {/* 세 열이 하이라이트 밴드 **하나**를 공유한다 — 열마다 그리면 사이가 끊긴다 */}
-      <WheelPicker
-        columns={[
-          {
-            key: "period",
-            label: "오전 오후",
-            items: WHEEL_PERIODS,
-            value: wheel.period,
-            onChange: (period) => setWheel({ period }),
-            width: 88,
-          },
-          {
-            key: "hour",
-            label: "시",
-            items: WHEEL_HOURS,
-            value: wheel.hour,
-            onChange: (hour) => setWheel({ hour }),
-            width: 72,
-            format: (h) => `${h}시`,
-          },
-          {
-            key: "minute",
-            label: "분",
-            items: WHEEL_MINUTES,
-            value: wheel.minute,
-            onChange: (minute) => setWheel({ minute }),
-            width: 72,
-            format: (m) => `${m}분`,
-          },
-        ]}
-      />
-      <Button label="완료" fill onPress={onDone} />
-      {onTurnOff != null ? (
-        <View style={styles.secondary}>
-          <Button label="알림 받지 않기" variant="text" onPress={onTurnOff} />
-        </View>
-      ) : null}
-    </BottomSheet>
-  );
-}
-
 const styles = StyleSheet.create({
   calendarNotice: { gap: space.sm },
   calendarNoticeHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  secondary: { alignItems: "center" },
 });

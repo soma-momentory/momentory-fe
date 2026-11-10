@@ -36,7 +36,7 @@ export default function NicknameEdit() {
   return (
     <BasicInfoEditor title="닉네임" changed={changed} ready={ready} patch={{ nickname: trimmed }}>
       <TextField
-        variant="pill"
+        variant="paper"
         value={nickname}
         onChangeText={setNickname}
         placeholder="이름 또는 별명"

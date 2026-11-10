@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useEffect } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
-import { Card, ListCell, ListDivider, Screen, TopNavigation } from "@/components/ds";
+import { PaperGroup, PaperRow, Screen, TabPaperBackground, TopNavigation } from "@/components/ds";
 import { space } from "@/design/ds";
 import { ageText, NOT_CHOSEN } from "@/features/my/model/basicInfo";
 import { useProfile } from "@/features/my/model/settings";
@@ -27,6 +27,8 @@ import { useOnboardingOptions } from "@/features/onboarding/model/options";
  *
  * **관심 분야 · 쉬는 방법은 뺐다**(2026-11-08 · 사용자 요청) — 온보딩 v2 가 묻지 않아 새 가입자는
  * 늘 「선택 안 함」이었다. 두 수정 화면(`/my/interests` · `/my/rest`)은 2026-11-09 에 지웠다.
+ *
+ * 마이 탭과 같은 종이 질감 · 종이 묶음이다(2026-11-10 · 사용자 요청 — 옛 모눈 · 카드에서 바꿨다).
  */
 export default function BasicInfoList() {
   const profile = useProfile();
@@ -44,7 +46,7 @@ export default function BasicInfoList() {
       : (genders.find((o) => o.id === profile.gender)?.label ?? NOT_CHOSEN);
 
   return (
-    <Screen>
+    <Screen grid={false} backdrop={<TabPaperBackground tab="마이" />}>
       <TopNavigation
         leading="arrow-left"
         title="기본 정보 수정"
@@ -52,35 +54,30 @@ export default function BasicInfoList() {
       />
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        {/* 줄 여백은 각 줄이 만든다 — 카드는 면과 라운드만 준다 */}
-        <Card padding="none" style={styles.rows}>
-          <ListCell
+        <PaperGroup label="기본 정보">
+          <PaperRow
             title="닉네임"
             value={profile.nickname}
             onPress={() => router.push("/my/nickname")}
-            chevron
           />
-          <ListDivider />
-          <ListCell
+          <PaperRow
             title="나이"
             value={ageText(profile.age)}
             onPress={() => router.push("/my/age")}
-            chevron
+            divided
           />
-          <ListDivider />
-          <ListCell
+          <PaperRow
             title="성별"
             value={genderLabel}
             onPress={() => router.push("/my/gender")}
-            chevron
+            divided
           />
-        </Card>
+        </PaperGroup>
       </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { paddingTop: space.md, paddingBottom: space.xl },
-  rows: { paddingHorizontal: space.lg, paddingVertical: space.xs },
+  body: { paddingTop: space.lg, paddingBottom: space.xl },
 });

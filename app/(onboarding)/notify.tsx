@@ -4,25 +4,18 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
-import { BottomSheet, Button, Chip, Text, WheelPicker } from "@/components/ds";
-import { Baba, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
+import { Chip, PaperGroup, PaperRow, Text, TimeSheet } from "@/components/ds";
+import { Baba, backOr, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
 import { label as labelColor, onboardingArt, space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { defaultRetroTime, SETUP_STEPS, TIME_CHOICES } from "@/features/onboarding/model/flow";
 import { requestNotificationPermission } from "@/lib/notifications";
-import {
-  formatKoreanTime,
-  fromWheelTime,
-  toWheelTime,
-  WHEEL_HOURS,
-  WHEEL_MINUTES,
-  WHEEL_PERIODS,
-  type WheelTime,
-} from "@/lib/time";
+import { formatKoreanTime } from "@/lib/time";
 
 /**
  * 알림 — 선택. 기본 시각은 질문 3 답이 정한다(「지쳐서 바로 자요」 9시 · 나머지 10시 반).
  * 다시 온보딩하는 사람은 지금 시각이 먼저 골라져 있다. 「알림 켜기」를 누르면 OS 창이 뜬다.
+ * 칩 둘은 바로 고르는 길이고, 그 밖의 시각은 「알림 시간」 줄이 마이와 같은 휠 시트로 연다(2026-11-10).
  */
 export default function Notify() {
   const nickname = useDraft((s) => s.nickname);
@@ -30,11 +23,8 @@ export default function Notify() {
   const time = useDraft((s) => s.retroTime) ?? defaultRetroTime(dayEnd);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [asking, setAsking] = useState(false);
-  const custom = !TIME_CHOICES.some((c) => c.time === time);
 
   const pick = (t: string) => useDraft.getState().set("retroTime", t);
-  const wheel = toWheelTime(time);
-  const setWheel = (next: Partial<WheelTime>) => pick(fromWheelTime({ ...wheel, ...next }));
 
   const turnOn = async () => {
     if (asking) return;
@@ -58,7 +48,7 @@ export default function Notify() {
   return (
     <>
       <OnboardingFrame
-        onBack={() => router.back()}
+        onBack={backOr("/calendar")}
         progress={<SetupBar index={SETUP_STEPS.indexOf("notify")} count={SETUP_STEPS.length} />}
         art={
           <View style={styles.wrap}>
@@ -96,12 +86,16 @@ export default function Notify() {
                   onPress={() => pick(c.time)}
                 />
               ))}
-              <Chip
-                label={custom ? formatKoreanTime(time) : "직접 고를게요"}
-                selected={custom}
+            </View>
+            <PaperGroup>
+              <PaperRow
+                title="알림 시간"
+                icon="bell"
+                value={formatKoreanTime(time)}
+                accessibilityLabel={`알림 시간 ${formatKoreanTime(time)}, 바꾸기`}
                 onPress={() => setSheetOpen(true)}
               />
-            </View>
+            </PaperGroup>
           </View>
         }
         title={"밤에 바바가\n먼저 알림을 보내요"}
@@ -111,39 +105,13 @@ export default function Notify() {
       />
 
       {sheetOpen ? (
-        <BottomSheet title="시간 선택" onDismiss={() => setSheetOpen(false)}>
-          <WheelPicker
-            columns={[
-              {
-                key: "period",
-                label: "오전 오후",
-                items: WHEEL_PERIODS,
-                value: wheel.period,
-                onChange: (period) => setWheel({ period }),
-                width: 88,
-              },
-              {
-                key: "hour",
-                label: "시",
-                items: WHEEL_HOURS,
-                value: wheel.hour,
-                onChange: (hour) => setWheel({ hour }),
-                width: 72,
-                format: (h) => `${h}시`,
-              },
-              {
-                key: "minute",
-                label: "분",
-                items: WHEEL_MINUTES,
-                value: wheel.minute,
-                onChange: (minute) => setWheel({ minute }),
-                width: 72,
-                format: (m) => `${m}분`,
-              },
-            ]}
-          />
-          <Button label="완료" fill onPress={() => setSheetOpen(false)} />
-        </BottomSheet>
+        <TimeSheet
+          title="시간 선택"
+          time={time}
+          onChange={pick}
+          onDismiss={() => setSheetOpen(false)}
+          onDone={() => setSheetOpen(false)}
+        />
       ) : null}
     </>
   );

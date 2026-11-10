@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   Platform,
   Pressable,
@@ -68,10 +68,26 @@ function WheelColumnView({ column }: { column: WheelColumn }) {
   const ref = useRef<ScrollView>(null);
   const selected = column.items.indexOf(column.value);
 
+  // 고른 값이 가운데 선다 — 처음 열 때(웹은 `contentOffset` 을 무시한다)와 항목을 눌러 골랐을 때만.
+  // ⚠ 굴려서 정한 값에는 움직이지 않는다 — 손을 뗀 순간(`onScrollEndDrag`)에도 값이 바뀌는데,
+  // 그때 휠을 옮기면 아직 도는 관성을 끊어 손 뗀 자리로 되돌린다
+  const mounted = useRef(false);
+  const fromScroll = useRef(false);
+  useEffect(() => {
+    if (fromScroll.current) {
+      fromScroll.current = false;
+      return;
+    }
+    ref.current?.scrollTo({ y: Math.max(0, selected) * ROW, animated: mounted.current });
+    mounted.current = true;
+  }, [selected]);
+
   const onSettle = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.y / ROW);
     const next = column.items[Math.max(0, Math.min(i, column.items.length - 1))];
-    if (next != null && next !== column.value) column.onChange(next);
+    if (next == null || next === column.value) return;
+    fromScroll.current = true;
+    column.onChange(next);
   };
 
   return (

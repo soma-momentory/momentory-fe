@@ -1,8 +1,14 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
-import { Chip, Text, TextField } from "@/components/ds";
-import { Baba, Bubble, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
+import { Chip, PaperGroup, Text, TextField } from "@/components/ds";
+import {
+  Baba,
+  backOr,
+  Bubble,
+  OnboardingFrame,
+  SetupBar,
+} from "@/components/onboarding/OnboardingParts";
 import { label as labelColor, space } from "@/design/ds";
 import { UNSPECIFIED_GENDER, useDraft } from "@/features/onboarding/model/draft";
 import { isValidAge, SETUP_STEPS } from "@/features/onboarding/model/flow";
@@ -28,7 +34,7 @@ export default function About() {
 
   return (
     <OnboardingFrame
-      onBack={() => router.back()}
+      onBack={backOr("/name")}
       progress={<SetupBar index={SETUP_STEPS.indexOf("about")} count={SETUP_STEPS.length} />}
       onSkip={next}
       primary={{ label: "다음", disabled: !isValidAge(age), onPress: next }}
@@ -43,33 +49,32 @@ export default function About() {
         바바가 말을 건넬 때만 참고할게요
       </Text>
 
-      <Text variant="label1" color={labelColor.neutral} style={styles.label}>
-        나이
-      </Text>
-      <TextField
-        value={age}
-        onChangeText={(v) => set("age", v.replace(/[^0-9]/g, ""))}
-        placeholder="나이"
-        keyboardType="number-pad"
-        maxLength={3}
-        suffix="세"
-        accessibilityLabel="나이"
-        returnKeyType="done"
-      />
+      <PaperGroup label="나이" padded style={styles.group}>
+        <TextField
+          variant="paper"
+          value={age}
+          onChangeText={(v) => set("age", v.replace(/[^0-9]/g, ""))}
+          placeholder="나이"
+          keyboardType="number-pad"
+          maxLength={3}
+          suffix="세"
+          accessibilityLabel="나이"
+          returnKeyType="done"
+        />
+      </PaperGroup>
 
-      <Text variant="label1" color={labelColor.neutral} style={styles.label}>
-        성별
-      </Text>
-      <View style={styles.chips}>
-        {GENDERS.map((g) => (
-          <Chip
-            key={g.code}
-            label={g.label}
-            selected={gender === g.code}
-            onPress={() => set("gender", gender === g.code ? null : g.code)}
-          />
-        ))}
-      </View>
+      <PaperGroup label="성별" tone="support" padded style={styles.group}>
+        <View style={styles.chips}>
+          {GENDERS.map((g) => (
+            <Chip
+              key={g.code}
+              label={g.label}
+              selected={gender === g.code}
+              onPress={() => set("gender", gender === g.code ? null : g.code)}
+            />
+          ))}
+        </View>
+      </PaperGroup>
     </OnboardingFrame>
   );
 }
@@ -78,6 +83,6 @@ const styles = StyleSheet.create({
   talk: { flexDirection: "row", alignItems: "flex-end", gap: space.sm, marginTop: space.xl2 },
   bubble: { flexShrink: 1, borderBottomLeftRadius: 6 },
   desc: { marginTop: space.md },
-  label: { marginTop: space.xl2, marginBottom: space.sm },
+  group: { marginTop: space.xl },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
 });

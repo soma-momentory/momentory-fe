@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import { router, type Href } from "expo-router";
 import type { ReactNode } from "react";
 import {
   KeyboardAvoidingView,
@@ -9,7 +10,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { Button, Icon, Text } from "@/components/ds";
+import { Icon, Text } from "@/components/ds";
 import {
   background,
   elevation,
@@ -24,6 +25,7 @@ import {
 } from "@/design/ds";
 import { useScreenBottomInset } from "@/components/ds/Screen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 
 /**
  * 온보딩 v2 화면의 공통 틀(2026-10-25 · `proto-v2.html`).
@@ -113,6 +115,15 @@ export function SetupBar({ index, count }: { index: number; count: number }) {
     </View>
   );
 }
+
+/**
+ * 「‹」 — 돌아갈 기록이 없으면 **앞 단계로** 간다. 화면이 기록 없이 열리면(개발 중 새로고침 · 앱이 그 주소로
+ * 복원 · Lab 에서 바로 열기) `router.back()` 은 아무 일도 하지 않았다 — 눌리는데 아무 일도 없는 버튼이 된다.
+ */
+export const backOr = (previous: Href) => () => {
+  if (router.canGoBack()) router.back();
+  else router.replace(previous);
+};
 
 /** 밑줄 친 작은 글자 버튼 — 「건너뛰기」 · 「나중에」 */
 export function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
@@ -236,7 +247,14 @@ export function OnboardingFrame({
 
         <View style={styles.actions}>
           {main != null ? (
-            <Button label={main.label} fill disabled={main.disabled} onPress={main.onPress} />
+            // 홈 「일기 작성하기」와 같은 천 라벨 — 앱의 주 버튼은 하나의 결이다(2026-11-10)
+            <ReflectionButton
+              testID="onboarding-primary"
+              label={main.label}
+              disabled={main.disabled}
+              onPress={main.onPress}
+              style={styles.primary}
+            />
           ) : null}
           {secondary != null ? (
             <TextLink label={secondary.label} onPress={secondary.onPress} />
@@ -284,6 +302,7 @@ const styles = StyleSheet.create({
     gap: space.md,
     alignItems: "stretch",
   },
+  primary: { marginTop: 0, marginHorizontal: 0 },
   link: { alignSelf: "center", paddingVertical: space.xs },
   linkText: { textDecorationLine: "underline" },
   error: { textAlign: "center" },

@@ -12,6 +12,7 @@ import {
   space,
   text,
 } from "@/design/ds";
+import { myPaper } from "@/design/ds/myPaper";
 
 import { IconButton } from "./IconButton";
 import { singleLineInput } from "./singleLineInput";
@@ -47,8 +48,11 @@ type Props = Omit<TextInputProps, "style"> & {
   helper?: string;
   /** `maxLength` 와 함께 `n/max` 를 보인다 */
   showCounter?: boolean;
-  /** 기본 `large`(52). `pill` 은 radius Full · 패딩 11/18 */
-  variant?: "large" | "medium" | "pill";
+  /**
+   * 기본 `large`(52). `pill` 은 radius Full · 패딩 11/18.
+   * `paper` 는 종이 묶음(`PaperGroup`) 안에 쓰는 줄 — 면 없이 점선 밑줄, 포커스면 실선 2px(2026-11-10)
+   */
+  variant?: "large" | "medium" | "pill" | "paper";
   /** 값 뒤에 붙는 단위 — 나이의 「세」처럼 **입력의 일부로 읽혀야 하는** 말 */
   suffix?: string;
   /** 값이 있을 때 지우기 × 를 붙인다. 없으면 두지 않는다 */
@@ -92,7 +96,12 @@ export function TextField({
           styles.field,
           VARIANT[variant],
           multiline ? styles.multiline : null,
-          focused ? [styles.focused, { borderColor: accentColor }] : null,
+          focused
+            ? [
+                variant === "paper" ? styles.focusedPaper : styles.focused,
+                { borderColor: accentColor },
+              ]
+            : null,
         ]}
       >
         <TextInput
@@ -158,6 +167,17 @@ const VARIANT = {
     paddingVertical: 11,
     paddingHorizontal: 18,
   },
+  // 종이 위에 적는 줄 — 면 · 라운드 · 테두리 없이 밑줄 하나(마이 줄 나눔과 같은 점선)
+  paper: {
+    minHeight: size.input.medium,
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    borderRadius: 0,
+    borderBottomWidth: 1,
+    borderStyle: "dashed",
+    borderColor: myPaper.rule,
+    paddingHorizontal: space.xs,
+  },
 } as const;
 
 const styles = StyleSheet.create({
@@ -198,6 +218,8 @@ const styles = StyleSheet.create({
   },
   // 포커스는 테두리 색·두께로만 말한다 — 링을 겹쳐 그리지 않는다
   focused: { borderWidth: 1 },
+  // 색만으로 말하지 않는다 — 점선이 실선이 되고 굵어진다
+  focusedPaper: { borderBottomWidth: 2, borderStyle: "solid" },
   // 히트 44 는 유지하되 칸 높이를 밀지 않게 음수 여백으로 당긴다
   clear: { width: 24, height: 24, marginRight: -4 },
   foot: { flexDirection: "row", alignItems: "center", gap: space.sm },

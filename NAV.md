@@ -50,7 +50,8 @@ app/(onboarding)/{_layout, mood, why, day-end, diary-history, goal, reading, nam
                     다시 온보딩 판정은 서버 `onboardingVersion < latestOnboardingVersion`(`meApi.ts` `needsOnboarding`)
 app/(tabs)/{_layout, home, rest, archive, report, my}.tsx
                   = 홈 · 쉼터(R1) · 보관함(A1 · A2) · 리포트(W1) · 마이(M1 + 알림 설정 시트)
-                    탭바는 레이아웃이 아니라 화면이 그린다(`components/ds/TabScreen`) — 배경이 탭바 뒤까지 이어져서다
+                    탭바는 레이아웃이 아니라 화면이 그린다(`components/ds/TabScreen`) — 배경이 탭바 뒤까지 이어져서다.
+                    탭은 루트 스택의 바닥이다 — `(tabs)/_layout` 이 들어올 때 그 아래(소개 · 로그인 · 온보딩)를 걷는다
 app/home/{_layout, schedule/[id], schedule/new}.tsx
                   = 12-c · 12-e — 일정 보기 · 새 일정(투명 모달 시트)
 app/retro/{_layout, confirm, talk, write, draft, done}.tsx
@@ -144,6 +145,7 @@ src/components/ds/                ← **공용 컴포넌트.** 새 화면은 여
   BottomSheet Modal Menu Toast ToastHost Spinner Slider WheelPicker Calendar
   ViewSwitcher SelectLift EmotionDot EmotionPebble EmotionSticker WeekEmptyDot
   ChatBubble ChatDock ChatScaffold MaskingTape NotchedTapeLabel TabPaperBackground DesignViewport
+  PaperGroup(+ PaperRow — 마이의 종이 묶음 · 기본 정보 · 온보딩 입력) TimeSheet(마이 · 온보딩 알림 시각 휠 시트)
   (+ voiceInput · scrollLock · singleLineInput · columnWidth — 컴포넌트가 아닌 도우미)
   icons/{Icon.tsx, paths.ts, GoogleMark.tsx}
                                   ← 아이콘은 Wanted 세트를 그대로 옮긴 것 — 없는 글리프를 만들지 않는다.
@@ -151,7 +153,8 @@ src/components/ds/                ← **공용 컴포넌트.** 새 화면은 여
                                     voiceInput = 회고 음성 입력(OS 인식기 · expo-speech-recognition)
 src/components/onboarding/{OnboardingParts, IntroScreen, IntroArt, QuestionScreen, QuickReplies}.tsx
                           + startQuestions.ts
-                                  ← 온보딩 v2 껍데기 · 그림. QuickReplies 는 마이 성별 편집도 쓴다
+                                  ← 온보딩 v2 껍데기 · 그림. QuickReplies 는 마이 성별 편집도 쓴다.
+                                    주 버튼은 홈의 천 라벨(`features/home/ui/v2/HeroCard` 의 `ReflectionButton`)을 빌려 쓴다
 src/components/my/BasicInfoEditor.tsx  ← 기본 정보 수정 화면들이 공유하는 껍데기(상단바 · 저장 · 실패 한 줄)
 src/components/archive/{DayScheduleList, DiaryPreviewCard, EmotionFilter}.tsx
 src/components/diary/{ActionCardSection, WishCardFields, DiaryPaper,

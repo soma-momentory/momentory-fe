@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
-import { TextField } from "@/components/ds";
+import { PaperGroup, TextField } from "@/components/ds";
 import { Baba, Bubble, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
 import { space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
@@ -25,8 +25,9 @@ export default function Name() {
           {"반가워요!\n뭐라고 부를까요?"}
         </Bubble>
       </View>
-      <View style={styles.field}>
+      <PaperGroup padded style={styles.field}>
         <TextField
+          variant="paper"
           value={nickname}
           onChangeText={(v) => useDraft.getState().set("nickname", v)}
           placeholder="이름 또는 별명"
@@ -36,7 +37,7 @@ export default function Name() {
           returnKeyType="done"
           autoFocus={nickname.length === 0}
         />
-      </View>
+      </PaperGroup>
     </OnboardingFrame>
   );
 }

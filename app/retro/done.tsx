@@ -2,8 +2,10 @@ import { router } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { ACTION_FROM_LETTER } from "@/components/diary/WishCardFields";
-import { Button, Card, Screen, Text } from "@/components/ds";
+import { DiaryPaperBackground } from "@/components/diary/DiaryPaper";
+import { Button, PaperGroup, Screen, Text } from "@/components/ds";
 import { label as labelColor, layout, space } from "@/design/ds";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { emotionName } from "@/features/emotion/model/emotion";
 import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
 import { useTodayContext } from "@/features/home/model/day";
@@ -58,14 +60,14 @@ export default function RetroDone() {
   };
 
   return (
-    <Screen>
+    <Screen grid={false} backdrop={<DiaryPaperBackground />}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.copy}>
-          <Text variant="title3" color={labelColor.strong} style={styles.centered}>
+          <Text variant="title3Hand" color={labelColor.strong} style={styles.centered}>
             오늘의 일기를 저장했어요.
           </Text>
           {wishCard != null ? (
@@ -77,7 +79,7 @@ export default function RetroDone() {
 
         {/* 바람 카드 — 감정 탐색을 거친 경우에만. 비운 항목은 숨긴다 */}
         {wishCard != null ? (
-          <Card padding="loose" style={styles.card}>
+          <PaperGroup padded>
             <View style={styles.cardHead}>
               <Text variant="headline1" color={labelColor.strong}>
                 {`${formatKoreanDateShort(today)} 카드`}
@@ -137,7 +139,7 @@ export default function RetroDone() {
                 {wishCard.smallAction ?? ACTION_FROM_LETTER}
               </Text>
             </View>
-          </Card>
+          </PaperGroup>
         ) : null}
       </ScrollView>
       <View style={styles.dock}>
@@ -145,7 +147,12 @@ export default function RetroDone() {
           `/rest` 가 아니라 `/(tabs)/rest` 다 — `/rest` 는 (tabs)·(onboarding) 두 그룹에 같은
           경로가 있어 온보딩으로 샌다. 감각연못의 「쉼터로 돌아가기」와 같은 주소다.
         */}
-        <Button label="쉼터로 가기" fill raised onPress={() => leave("/(tabs)/rest")} />
+        <ReflectionButton
+          testID="retro-done-rest"
+          label="쉼터로 가기"
+          onPress={() => leave("/(tabs)/rest")}
+          style={styles.primary}
+        />
         {wishCard != null ? (
           <View style={styles.secondary}>
             {/*
@@ -170,7 +177,6 @@ const styles = StyleSheet.create({
   copy: { alignItems: "center", gap: space.sm },
   centered: { textAlign: "center" },
 
-  card: { gap: 14 },
   cardHead: {
     flexDirection: "row",
     alignItems: "baseline",
@@ -181,5 +187,6 @@ const styles = StyleSheet.create({
 
   // 주 버튼과 보조 버튼 사이 — 같은 짝을 쓰는 화면이 전부 같은 값이다(`layout.dockActionGap`)
   dock: { gap: layout.dockActionGap },
+  primary: { marginTop: 0, marginHorizontal: 0 },
   secondary: { alignItems: "center" },
 });

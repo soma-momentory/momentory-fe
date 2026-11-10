@@ -1,7 +1,7 @@
 import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { MaskingTape } from "@/components/ds/MaskingTape";
-import { Icon, Text, type IconName } from "@/components/ds";
+import { PaperGroup, PaperRow, Text } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
 import { myPaper as paper } from "@/design/ds/myPaper";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
@@ -27,8 +27,6 @@ type Props = {
   onSignOut: () => void;
   onOpenWithdraw: () => void;
 };
-
-type Tone = "settings" | "support" | "account";
 
 /** 운영과 Lab이 같은 종이 카드·설정 행을 그린다. 값과 동작은 각 어댑터가 전달한다. */
 export function MyMainView({
@@ -126,8 +124,8 @@ export function MyMainView({
         </Text>
       </View>
 
-      <Group label="앱 설정" tone="settings" note={settingsNote}>
-        <SettingRow
+      <PaperGroup label="앱 설정" tone="settings" note={settingsNote}>
+        <PaperRow
           title="알림 설정"
           icon="bell"
           value={notifyValue}
@@ -135,7 +133,7 @@ export function MyMainView({
           onPress={onOpenNotificationSettings}
         />
         {letterValue != null ? (
-          <SettingRow
+          <PaperRow
             title="바바의 편지 알림"
             icon="mail"
             value={letterValue}
@@ -144,7 +142,7 @@ export function MyMainView({
             divided
           />
         ) : null}
-        <SettingRow
+        <PaperRow
           title="캘린더 연동"
           icon="calendar"
           value={calendarOn ? "연결됨" : "연결 안 함"}
@@ -152,30 +150,30 @@ export function MyMainView({
           onPress={calendarOn ? undefined : onOpenCalendarLink}
           divided
         />
-        <SettingRow
+        <PaperRow
           title="기본 정보 수정"
           icon="nav-my-page"
           tone="settings"
           onPress={onOpenProfile}
           divided
         />
-      </Group>
+      </PaperGroup>
 
-      <Group label="지원" tone="support">
-        <SettingRow title="문의하기" icon="send" tone="support" onPress={onOpenInquiry} />
-        <SettingRow title="이용약관" icon="document" tone="support" onPress={onOpenTerms} divided />
-        <SettingRow
+      <PaperGroup label="지원" tone="support">
+        <PaperRow title="문의하기" icon="send" tone="support" onPress={onOpenInquiry} />
+        <PaperRow title="이용약관" icon="document" tone="support" onPress={onOpenTerms} divided />
+        <PaperRow
           title="개인정보 처리방침"
           icon="document"
           tone="support"
           onPress={onOpenPrivacy}
           divided
         />
-      </Group>
+      </PaperGroup>
 
-      <Group label="계정" tone="account">
-        <SettingRow title="로그아웃" icon="logout" tone="account" onPress={onSignOut} />
-      </Group>
+      <PaperGroup label="계정" tone="account">
+        <PaperRow title="로그아웃" icon="logout" tone="account" onPress={onSignOut} />
+      </PaperGroup>
 
       <View style={styles.leave}>
         <Pressable
@@ -198,113 +196,6 @@ export function MyMainView({
     </ScrollView>
   );
 }
-
-function Group({
-  label,
-  tone,
-  note,
-  children,
-}: {
-  label: string;
-  tone: Tone;
-  note?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.group}>
-      <View style={styles.groupHeading}>
-        <View style={[styles.headingHighlight, HIGHLIGHTS[tone]]} />
-        <Text variant="body1ReadingHandLg" color={labelColor.strong}>
-          {label}
-        </Text>
-      </View>
-      <View style={[styles.groupCard, GROUP_PAPER[tone]]}>
-        <View pointerEvents="none" style={[styles.tape, TAPES[tone]]}>
-          <MaskingTape color={TAPE_COLORS[tone]} />
-        </View>
-        {children}
-      </View>
-      {note != null ? (
-        <Text variant="caption1" color={labelColor.alternative} style={styles.groupNote}>
-          {note}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-function SettingRow({
-  title,
-  icon,
-  value,
-  tone,
-  onPress,
-  divided = false,
-}: {
-  title: string;
-  icon: IconName;
-  value?: string;
-  tone: Tone;
-  onPress?: () => void;
-  divided?: boolean;
-}) {
-  const content = (
-    <>
-      <View style={[styles.iconDot, DOTS[tone]]}>
-        <Icon name={icon} size={16} color={labelColor.neutral} />
-      </View>
-      <Text variant="body1ReadingHandLg" color={labelColor.normal} style={styles.rowTitle}>
-        {title}
-      </Text>
-      {value != null ? (
-        <Text variant="body1ReadingHand" color={labelColor.neutral} style={styles.rowValue}>
-          {value}
-        </Text>
-      ) : null}
-      {onPress != null ? (
-        <Icon name="chevron-right" size={16} color={labelColor.alternative} />
-      ) : null}
-    </>
-  );
-  const rowStyle = [styles.row, divided ? styles.rowDivided : null];
-
-  if (onPress == null) return <View style={rowStyle}>{content}</View>;
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={rowStyle}>
-      {content}
-    </Pressable>
-  );
-}
-
-const GROUP_PAPER = {
-  settings: { backgroundColor: paper.group, transform: [{ rotate: "-0.8deg" }] },
-  support: { backgroundColor: paper.group, transform: [{ rotate: "0.7deg" }] },
-  account: { backgroundColor: paper.group, transform: [{ rotate: "-0.5deg" }] },
-} as const;
-
-const DOTS = {
-  settings: { backgroundColor: paper.settingsDot },
-  support: { backgroundColor: paper.supportDot },
-  account: { backgroundColor: paper.accountDot },
-} as const;
-
-const HIGHLIGHTS = {
-  settings: { backgroundColor: paper.settingsDot },
-  support: { backgroundColor: paper.supportTape },
-  account: { backgroundColor: paper.accountTape },
-} as const;
-
-const TAPE_COLORS = {
-  settings: paper.settingsDot,
-  support: paper.supportTape,
-  account: paper.accountTape,
-} as const;
-
-const TAPES = {
-  settings: { transform: [{ rotate: "-4deg" }] },
-  support: { transform: [{ rotate: "3deg" }] },
-  account: { transform: [{ rotate: "-2deg" }] },
-} as const;
 
 const styles = StyleSheet.create({
   body: { gap: 18, paddingTop: space.lg, paddingBottom: space.xl },
@@ -358,30 +249,5 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   recordedCaption: { textAlign: "center", marginTop: 2 },
-  group: { gap: 8 },
-  groupHeading: { alignSelf: "flex-start", marginLeft: 4, paddingHorizontal: 2 },
-  headingHighlight: { position: "absolute", left: 0, right: 0, bottom: 4, height: 9 },
-  groupCard: {
-    borderRadius: 9,
-    paddingHorizontal: 12,
-    shadowColor: paper.shadow,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  tape: { position: "absolute", top: -7, right: 17, width: 46, height: 14, opacity: 0.8 },
-  groupNote: { marginLeft: 4 },
-  row: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48, paddingVertical: 8 },
-  rowDivided: { borderTopWidth: 1, borderColor: paper.rule, borderStyle: "dashed" },
-  iconDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowTitle: { flex: 1, minWidth: 0 },
-  rowValue: { maxWidth: "42%", textAlign: "right", flexShrink: 1 },
   leave: { alignItems: "center", gap: space.xs, paddingTop: space.xs },
 });
