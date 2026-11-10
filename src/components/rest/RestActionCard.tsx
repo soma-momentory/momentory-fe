@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Button, Icon, IconButton, Text } from "@/components/ds";
 import { WishCardFields } from "@/components/diary/WishCardFields";
 import { RestPaperClip, RestPaperSheet } from "@/components/rest/RestPaperSheet";
-import { fill, homeV2, primary, radius, restCards, size, space, status } from "@/design/ds";
+import { homeV2, layout, restCards, space, status } from "@/design/ds";
 import type { ActionCard } from "@/features/diary/model/types";
 import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { keepWords } from "@/features/letter/model/letter";
@@ -53,9 +53,6 @@ type Props = {
  */
 const NOTE_MAX = 24;
 
-/** 느낀 점 저장 버튼 지름 */
-const NOTE_BUTTON = 28;
-const NOTE_INPUT_PAD = 2;
 const NOTE_INPUT_LINE = restCards.type.reflection.lineHeight;
 const NOTE_INPUT_LINES = 2;
 /** 한 줄(24)일 때도 터치 목표 44 — 글 자체가 고치는 버튼이다 */
@@ -75,7 +72,7 @@ export function RestActionCard({
   const saved = card.reflection != null && card.reflection.length > 0;
   const [draft, setDraft] = useState("");
   /**
-   * 느낀 점을 **적는 중**인지. 수행하면 체크와 「느낀 점 적기」만 서고, 적겠다고 누른 사람에게만 자리를 연다.
+   * 느낀 점을 **적는 중**인지. 「했어요」를 누르면 바로 열리고, 「나중에 적을게요」로 닫는다.
    *
    * ⚠ **기기에만 있다.** 계약에 「적는 중」을 담을 자리가 없다 — 앱을 다시 열면 닫힌 채로 시작한다.
    * 날짜를 옮길 때는 `key={card.id}` 가 카드마다 갈라 준다(`app/rest/cards/index.tsx`).
@@ -101,8 +98,10 @@ export function RestActionCard({
   };
 
   const toggle = () => {
-    // 되돌리면 적던 것도 함께 지운다 — 남겨 두면 다음 수행의 초안으로 읽힌다
-    setOpen(false);
+    // 되돌리면 적던 것도 함께 지운다 — 남겨 두면 다음 수행의 초안으로 읽힌다.
+    // 「했어요」는 곧바로 메모 자리를 연다(2026-11-10) — 2026-09-06 에 걷었던 것은 **닫을 길이 없어서**였고,
+    // 지금은 「나중에 적을게요」가 닫는다
+    setOpen(!card.done);
     setDraft("");
     onToggleDone();
   };
@@ -151,34 +150,9 @@ export function RestActionCard({
           고르기 전에는 「했어요」를 누를 대상이 없다. 작은 행동 없이 이미 「했어요」를 누른 예전 카드는
           「수행 취소」가 남아야 하니 그대로 둔다 */}
       {card.done || (card.targetAction ?? "").length > 0 ? (
-        <View style={styles.foot}>
-          {writing ? (
-            <View style={styles.noteInput}>
-              <TextInput
-                value={draft}
-                onChangeText={setDraft}
-                placeholder="느낀 점을 남겨보세요…"
-                placeholderTextColor={color.muted}
-                accessibilityLabel="느낀 점"
-                multiline
-                // 넘치면 자르는 대신 **애초에 막는다** — 위 `NOTE_MAX` 주석
-                maxLength={NOTE_MAX}
-                style={styles.noteField}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={empty ? "느낀 점 없이 넘어가기" : "느낀 점 저장"}
-                onPress={save}
-                hitSlop={8}
-                style={[styles.send, empty ? styles.sendIdle : styles.sendReady]}
-              >
-                <Icon name="send" size={16} color={empty ? color.muted : homeV2.color.white} />
-              </Pressable>
-            </View>
-          ) : (
-            /* **체크 옆 한 자리가 상태에 따라 셋으로 바뀐다** — 수행 전에는 「아직 하지 않았어요」,
-               수행하면 「느낀 점 적기」, 적고 나면 그 느낀 점. 「수행했어요」라는 글자는 두지 않는다 —
-               체크와 「수행 취소」가 이미 말하고 있다 */
+        <>
+          <View style={styles.foot}>
+            {/* **왼쪽은 상태, 오른쪽은 행동** — 「수행했어요」라는 글자는 두지 않는다(체크와 「수행 취소」가 말한다) */}
             <View style={styles.statusSide}>
               <Icon
                 name={card.done ? "circle-check" : "clock"}
@@ -189,48 +163,106 @@ export function RestActionCard({
                 <Text style={styles.status} color={color.muted}>
                   아직 하지 않았어요
                 </Text>
-              ) : saved ? (
-                /* 적어 둔 느낀 점을 누르면 고친다 — 따로 「고치기」 버튼을 두지 않는다 */
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="느낀 점 고치기"
-                  onPress={openNote}
-                  hitSlop={NOTE_HIT_SLOP}
-                  style={styles.noteSaid}
-                >
-                  <Text style={styles.reflection} color={color.ink}>
-                    {keepWords(card.reflection ?? "")}
-                  </Text>
-                </Pressable>
-              ) : (
+              ) : null}
+            </View>
+            {card.done ? (
+              // 되돌리기는 보조 행동이라 「했어요」(천 라벨)보다 가볍게 — 일기 저장 화면의 「직접 고치기」와 같은
+              // 작은 글자 버튼이다(2026-11-10 · 사용자 요청 — 옛 외곽선 버튼을 걷었다)
+              <Button
+                label="수행 취소"
+                labelVariant="label1"
+                variant="text"
+                size="small"
+                onPress={toggle}
+              />
+            ) : (
+              <ReflectionButton
+                compact
+                testID="rest-card-done"
+                color={homeV2.color.green}
+                label="했어요"
+                onPress={toggle}
+              />
+            )}
+          </View>
+
+          {/*
+            해 본 뒤의 **메모 자리** — 쪽지 아래 공책 줄에 손으로 적는 자리다(2026-11-10 · 사용자 요청
+            「했어요만 누르는 느낌 — 진짜 글을 써야 할 것 같았으면」). 셋 중 하나가 선다:
+            적는 중 = 물음 · 줄 친 입력 · 남기기 / 비었음 = 연필과 빈 줄(누르면 적는다) / 적었음 = 그 글(누르면 고친다)
+          */}
+          {!card.done ? null : writing ? (
+            <View style={styles.memo}>
+              <View style={styles.memoAsk}>
+                <Icon name="pencil" size={16} color={color.ink} />
+                <Text style={styles.status} color={color.ink}>
+                  해 보니 어땠나요?
+                </Text>
+              </View>
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                placeholder="느낀 점을 한 줄 남겨 보세요"
+                placeholderTextColor={color.muted}
+                accessibilityLabel="느낀 점"
+                multiline
+                autoFocus
+                // 넘치면 자르는 대신 **애초에 막는다** — 위 `NOTE_MAX` 주석
+                maxLength={NOTE_MAX}
+                style={styles.memoField}
+              />
+              <Text style={styles.memoCount} color={color.muted}>
+                {`${draft.length}/${NOTE_MAX}`}
+              </Text>
+              <View style={styles.memoActions}>
                 <Button
-                  label="느낀 점 적기"
+                  label="나중에 적을게요"
                   labelVariant="label1"
                   variant="text"
                   size="small"
-                  onPress={openNote}
+                  accessibilityLabel="느낀 점 없이 넘어가기"
+                  onPress={() => {
+                    setOpen(false);
+                    setDraft("");
+                  }}
                 />
-              )}
+                <ReflectionButton
+                  compact
+                  testID="rest-card-note-save"
+                  color={homeV2.color.green}
+                  label="남기기"
+                  disabled={empty}
+                  onPress={save}
+                />
+              </View>
             </View>
-          )}
-          {card.done ? (
-            <Button
-              label="수행 취소"
-              labelVariant="label1"
-              variant="outlined"
-              size="small"
-              onPress={toggle}
-            />
+          ) : saved ? (
+            /* 적어 둔 느낀 점을 누르면 고친다 — 따로 「고치기」 버튼을 두지 않는다 */
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="느낀 점 고치기"
+              onPress={openNote}
+              hitSlop={NOTE_HIT_SLOP}
+              style={styles.memoLine}
+            >
+              <Icon name="pencil" size={16} color={color.muted} />
+              <Text style={styles.reflection} color={color.ink}>
+                {keepWords(card.reflection ?? "")}
+              </Text>
+            </Pressable>
           ) : (
-            <ReflectionButton
-              compact
-              testID="rest-card-done"
-              color={homeV2.color.green}
-              label="했어요"
-              onPress={toggle}
-            />
+            <Pressable
+              accessibilityRole="button"
+              onPress={openNote}
+              style={({ pressed }) => [styles.memoLine, pressed ? styles.memoLinePressed : null]}
+            >
+              <Icon name="pencil" size={16} color={color.muted} />
+              <Text style={styles.status} color={color.muted}>
+                느낀 점 적기
+              </Text>
+            </Pressable>
           )}
-        </View>
+        </>
       ) : null}
     </RestPaperSheet>
   );
@@ -275,51 +307,41 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   status: { flexShrink: 1, fontFamily: font.regular, ...type.status },
-  noteSaid: { flexShrink: 1 },
-  reflection: { fontFamily: font.regular, ...type.reflection },
+  reflection: { flexShrink: 1, fontFamily: font.regular, ...type.reflection },
 
-  noteInput: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    minWidth: 0,
-    gap: space.sm,
-    minHeight: size.button.small,
-    paddingVertical: NOTE_INPUT_PAD,
-    paddingLeft: 10,
-    paddingRight: NOTE_INPUT_PAD,
-    borderRadius: radius.medium,
-    borderWidth: 1,
-    borderColor: primary.normal,
-    backgroundColor: homeV2.color.white,
-  },
-  noteField: {
-    /**
-     * ⚠ **`flex: 1` 이 아니라 `width: 0` + `flexGrow` 다.** 안드로이드의 여러 줄 `TextInput` 은 내용 폭을
-     * 고유 폭으로 보고해서, 글이 길어지면 줄 전체를 밀어 오른쪽 버튼이 쪽지 밖으로 나갔다(2026-09-06 실기기).
-     */
-    width: 0,
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 0,
-    minHeight: NOTE_BUTTON,
-    maxHeight: NOTE_INPUT_LINE * NOTE_INPUT_LINES,
-    paddingVertical: 0,
+  // 메모 자리 — 쪽지의 공책 줄과 같은 줄(`color.rule`)을 그어 「여기 적는다」가 보이게 한다
+  memo: { gap: space.sm, marginTop: space.md },
+  memoAsk: { flexDirection: "row", alignItems: "center", gap: space.xs },
+  memoField: {
+    minHeight: NOTE_INPUT_LINE * NOTE_INPUT_LINES,
+    paddingVertical: space.xs,
     paddingHorizontal: 0,
-    textAlignVertical: "center",
+    textAlignVertical: "top",
+    borderBottomWidth: 1,
+    borderStyle: "dashed",
+    borderBottomColor: color.rule,
     fontFamily: font.regular,
     ...type.reflection,
     color: color.ink,
   },
-  send: {
-    width: NOTE_BUTTON,
-    height: NOTE_BUTTON,
-    borderRadius: radius.full,
+  memoCount: { alignSelf: "flex-end", fontFamily: font.regular, ...type.status },
+  memoActions: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-end",
+    gap: space.md,
   },
-  sendReady: { backgroundColor: primary.heavy },
-  sendIdle: { backgroundColor: fill.normal },
+  memoLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
+    // 줄 자체가 누르는 자리다 — 최소 터치 44(`layout.minTouch`)를 줄 높이로 지킨다
+    minHeight: layout.minTouch,
+    marginTop: space.sm,
+    paddingBottom: space.xs,
+    borderBottomWidth: 1,
+    borderStyle: "dashed",
+    borderBottomColor: color.rule,
+  },
+  memoLinePressed: { opacity: 0.55 },
 });

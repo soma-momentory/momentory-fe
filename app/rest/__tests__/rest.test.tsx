@@ -484,12 +484,11 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
   });
 
   /**
-   * 2026-09-06 개정 — 예전에는 「했어요」가 **입력창까지 열었다.**
-   *
-   * 대부분은 적지 않고 넘어가는데 카드가 늘 입력창을 물고 있어서 닫을 길이 없었다.
-   * 지금은 **체크와 「느낀 점 적기」**만 서고, 적겠다고 누른 사람에게만 자리를 연다.
+   * 2026-11-10 개정 — 「했어요」가 다시 **메모 자리를 곧바로 연다**(사용자 요청 「했어요만 누르는 느낌 —
+   * 진짜 글을 써야 할 것 같았으면」). 2026-09-06 에 걷었던 이유는 **닫을 길이 없어서**였다 —
+   * 지금은 「나중에 적을게요」가 닫고, 닫으면 연필과 빈 줄(「느낀 점 적기」)이 남는다.
    */
-  it("[했어요] 를 누르면 체크와 [느낀 점 적기] 가 서고, 입력창은 아직 열리지 않는다", async () => {
+  it("[했어요] 를 누르면 체크와 함께 메모 자리가 바로 열리고, [나중에 적을게요] 로 닫힌다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({
         ...c,
@@ -503,25 +502,20 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     await fireEvent.press(r.getByText("했어요"));
 
     expect(latest().done).toBe(true);
-    // 「수행했어요」라는 글자는 두지 않는다 — 그 자리를 「느낀 점 적기」가 쓴다
-    // (체크와 오른쪽 「수행 취소」가 이미 수행을 말한다 · 2026-09-06)
+    // 「수행했어요」라는 글자는 두지 않는다 — 체크와 오른쪽 「수행 취소」가 이미 수행을 말한다(2026-09-06)
     expect(r.queryByText("수행했어요")).toBeNull();
-    expect(r.getByText("느낀 점 적기")).toBeTruthy();
-    expect(r.queryByLabelText("느낀 점")).toBeNull();
+    // 물음과 줄 친 입력이 바로 선다 — 비어 있으면 「남기기」는 잠긴다
+    expect(r.getByText("해 보니 어땠나요?")).toBeTruthy();
+    expect(r.getByLabelText("느낀 점")).toBeTruthy();
+    expect(r.getByRole("button", { name: "남기기" }).props.accessibilityState?.disabled).toBe(true);
     // 화면을 옮기지 않는다 — 카드 안에서 끝난다
     expect(jest.mocked(router.push)).not.toHaveBeenCalled();
 
-    // 누르면 그때 자리가 열린다
-    await fireEvent.press(r.getByText("느낀 점 적기"));
-    expect(r.getByLabelText("느낀 점")).toBeTruthy();
-    /**
-     * ⚠ 적는 동안에는 **아래 줄이 비어 있다**(2026-09-06). 예전에는 「남기지 않아도
-     * 괜찮아요.」가 있었는데, 그 줄이 자리를 차지하는 바람에 입력창이 위로 밀려
-     * 올라갔다 — 지금은 그 자리가 입력창이 아래로 자랄 자리다. 남겨도 된다는 말은
-     * **빈 채로 눌리는 보내기 버튼**이 대신한다.
-     */
-    expect(r.queryByText("남기지 않아도 괜찮아요.")).toBeNull();
-    expect(r.getByLabelText("느낀 점 없이 넘어가기")).toBeTruthy();
+    // 닫을 길이 있다 — 닫으면 다시 적으러 들어갈 빈 줄이 남는다
+    await fireEvent.press(r.getByLabelText("느낀 점 없이 넘어가기"));
+    expect(r.queryByLabelText("느낀 점")).toBeNull();
+    expect(latest().reflection).toBeNull();
+    expect(r.getByText("느낀 점 적기")).toBeTruthy();
   });
 
   it("느낀 점은 선택이다 — 적어서 보내면 그대로 남는다", async () => {
@@ -536,16 +530,13 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
 
     await fireEvent.press(r.getByText("느낀 점 적기"));
     await fireEvent.changeText(r.getByLabelText("느낀 점"), "생각보다 개운했다");
-    await fireEvent.press(r.getByLabelText("느낀 점 저장"));
+    await fireEvent.press(r.getByRole("button", { name: "남기기" }));
 
     expect(latest().reflection).toBe("생각보다 개운했다");
   });
 
-  /**
-   * 열어 놓고 마음이 바뀌면 **빈 채로 보내 닫는다** — 보내기는 비어 있어도 눌린다.
-   * 서버로 가는 것은 없고 자리만 처음으로 돌아간다.
-   */
-  it("열었다가 빈 채로 보내면 아무것도 남기지 않고 닫힌다", async () => {
+  /** 열어 놓고 마음이 바뀌면 「나중에 적을게요」로 닫는다 — 서버로 가는 것은 없고 자리만 처음으로 돌아간다 */
+  it("열었다가 [나중에 적을게요] 를 누르면 아무것도 남기지 않고 닫힌다", async () => {
     useDiary.setState({
       actionCards: useDiary.getState().actionCards.map((c) => ({
         ...c,
@@ -556,7 +547,8 @@ describe("R2 · 날짜별 카드 — 상태와 행동을 나눈다", () => {
     const r = await render(<RestCards />);
 
     await fireEvent.press(r.getByText("느낀 점 적기"));
-    await fireEvent.press(r.getByLabelText("느낀 점 없이 넘어가기"));
+    await fireEvent.changeText(r.getByLabelText("느낀 점"), "적다 말았다");
+    await fireEvent.press(r.getByText("나중에 적을게요"));
 
     expect(r.queryByLabelText("느낀 점")).toBeNull();
     expect(latest().reflection).toBeNull();
