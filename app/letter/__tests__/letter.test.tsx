@@ -245,8 +245,12 @@ describe("편지 전체 화면", () => {
     expect(native.scheduleNotificationAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         identifier: "momentory.once.letter-action.12",
-        content: expect.objectContaining({ body: "점심 뒤 한 바퀴 걷기" }),
+        // 잠금 화면에 고른 제목(일기 사건이 들어갈 수 있다)을 싣지 않는다 — 고정 문구다
+        content: expect.objectContaining({ body: "오늘 해 보기로 한 일이 있어요." }),
       }),
+    );
+    expect(JSON.stringify(jest.mocked(native.scheduleNotificationAsync).mock.calls)).not.toContain(
+      "점심 뒤 한 바퀴 걷기",
     );
     expect(track).toHaveBeenCalledWith(
       "letter_action_chosen",

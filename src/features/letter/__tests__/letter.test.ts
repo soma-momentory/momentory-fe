@@ -3,6 +3,7 @@ import { fetchLetters, toLetter, toSummary } from "@/features/letter/data/letter
 import {
   daysAfterBucket,
   hasUnreadLetter,
+  helplineParts,
   keepWords,
   receivedLabel,
   remindAtOf,
@@ -164,5 +165,29 @@ describe("편지 목록 store", () => {
     await useLetters.getState().refresh();
 
     expect(hasUnreadLetter(useLetters.getState().summaries)).toBe(false);
+  });
+});
+
+describe("helplineParts — 도움받을 곳의 번호만 눌러서 건다", () => {
+  test("서버 문구의 번호를 모두 찾고 「24시간」은 번호로 보지 않는다", () => {
+    expect(helplineParts("자살예방 상담전화 109 (24시간)")).toEqual([
+      { text: "자살예방 상담전화 ", tel: false },
+      { text: "109", tel: true },
+      { text: " (24시간)", tel: false },
+    ]);
+    expect(helplineParts("정신건강 상담 1577-0199").filter((p) => p.tel)).toEqual([
+      { text: "1577-0199", tel: true },
+    ]);
+    expect(
+      helplineParts("경찰 112 · 응급 119")
+        .filter((p) => p.tel)
+        .map((p) => p.text),
+    ).toEqual(["112", "119"]);
+  });
+
+  test("번호가 없는 줄은 글 한 조각이다", () => {
+    expect(helplineParts("믿을 수 있는 가까운 사람에게 지금 마음을 전해보세요.")).toEqual([
+      { text: "믿을 수 있는 가까운 사람에게 지금 마음을 전해보세요.", tel: false },
+    ]);
   });
 });

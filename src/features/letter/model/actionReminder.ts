@@ -1,7 +1,7 @@
 import { track } from "@/features/analytics";
 import { chooseLetterAction, type Letter } from "@/features/letter/data/letterApi";
 import { actionReminderKey, remindAtOf, type WhenChoice } from "@/features/letter/model/letter";
-import { letterActionContent } from "@/features/my/model/reminders";
+import { LETTER_ACTION_CONTENT } from "@/features/my/model/reminders";
 import { clock } from "@/lib/clock";
 import {
   cancelOneOff,
@@ -59,7 +59,7 @@ async function syncActionReminder(letter: Letter): Promise<void> {
     kind: "letter_action",
     at,
     data: { date: letter.date },
-    ...letterActionContent(chosen.title),
+    ...LETTER_ACTION_CONTENT,
   });
   track("letter_notification_scheduled", { kind: "action" });
 }

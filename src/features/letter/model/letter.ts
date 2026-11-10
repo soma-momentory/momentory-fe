@@ -114,6 +114,17 @@ export const hasUnreadLetter = (summaries: readonly LetterSummary[] | null): boo
 export { keepWords } from "@/lib/keepWords";
 
 /** 편지는 일기 다음 날 아침에 받는다 — 「10월 15일 아침」 */
+/**
+ * 조용한 편지의 도움받을 곳 한 줄을 글과 전화번호 조각으로 나눈다 — 번호만 눌러서 바로 건다.
+ * 문구는 서버가 준 그대로다(「자살예방 상담전화 109 (24시간)」 · 「경찰 112 · 응급 119」). 「24시간」의
+ * 두 자리 숫자는 번호가 아니다.
+ */
+export const helplineParts = (line: string): { text: string; tel: boolean }[] =>
+  line
+    .split(/(\d{3,4}(?:-\d{4})?)/)
+    .map((text, i) => ({ text, tel: i % 2 === 1 }))
+    .filter((part) => part.text !== "");
+
 export const receivedLabel = (date: string) => `${formatKoreanDateShort(addDays(date, 1))} 아침`;
 
 /** 계측의 `days_after` — 받은 날 0, 그다음 날 1, 그 뒤는 2+ */

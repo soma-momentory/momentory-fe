@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, View, type TextLayoutLine } from "react-native";
+import { Linking, Pressable, StyleSheet, View, type TextLayoutLine } from "react-native";
 
 import { Chip, Spinner, Text } from "@/components/ds";
 import { Baba } from "@/components/onboarding/OnboardingParts";
@@ -17,7 +17,12 @@ import {
 import { diaryMemo } from "@/design/ds/diaryMemo";
 import { letterPaper } from "@/design/ds/letterPaper";
 import type { Letter } from "@/features/letter/data/letterApi";
-import { keepWords, receivedLabel, type WhenChoice } from "@/features/letter/model/letter";
+import {
+  helplineParts,
+  keepWords,
+  receivedLabel,
+  type WhenChoice,
+} from "@/features/letter/model/letter";
 
 /**
  * 편지 한 통(PRD 4-2) — 표시 전용이다. 고르기 · 저장은 화면(`app/letter/[date].tsx`)이 한다.
@@ -88,9 +93,27 @@ export function LetterPaper({
         ) : null}
         {`\n${keepWords(letter.insight)}`}
       </Lined>
+      {/* 번호는 눌러서 바로 건다 — 위기 날 편지에서 번호를 다시 입력하게 하지 않는다 */}
       {letter.helplines.map((helpline) => (
         <Text key={helpline} variant="body2" color={labelColor.strong}>
-          {helpline}
+          {helplineParts(helpline).map((part, i) =>
+            part.tel ? (
+              <Text
+                key={i}
+                variant="body2"
+                color={labelColor.strong}
+                style={styles.tel}
+                accessibilityRole="link"
+                accessibilityLabel={`${part.text} 전화 걸기`}
+                testID="letter-helpline-tel"
+                onPress={() => void Linking.openURL(`tel:${part.text}`)}
+              >
+                {part.text}
+              </Text>
+            ) : (
+              part.text
+            ),
+          )}
         </Text>
       ))}
 
@@ -225,6 +248,7 @@ const styles = StyleSheet.create({
   rule: { position: "absolute", left: 0, right: 0, height: 1, backgroundColor: line.alternative },
   // 형광펜 — 어제 한 말은 사용자의 말 그대로라 표시해 둔다
   mark: { backgroundColor: letterPaper.highlight },
+  tel: { textDecorationLine: "underline" },
   sign: {
     flexDirection: "row",
     justifyContent: "flex-end",
