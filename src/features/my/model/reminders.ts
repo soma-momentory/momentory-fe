@@ -71,11 +71,15 @@ const CONTENT = {
   retroUnread: { title: "안 본 바바의 편지가 있어요", body: "읽고 오늘 이야기도 들려줘요." },
 } as const;
 
-/** 고른 작은 일 알림(PRD 4-4) — 고른 문장은 승인된 제목이라 그대로 싣는다 */
-export const letterActionContent = (title: string) => ({
+/**
+ * 고른 작은 일 알림(PRD 4-4) — 고른 제목은 싣지 않는다. 1번 칸은 AI 가 일기 사건을 넣어 다시 쓴
+ * 제목일 수 있어(「엄마와 언성이 높아진 일의 …」), 잠금 화면에 일기 이야기가 보이게 된다.
+ * 제목은 알림을 눌러 앱을 연 뒤 편지에서 본다.
+ */
+export const LETTER_ACTION_CONTENT = {
   title: "오늘 해 보기로 한 일",
-  body: title,
-});
+  body: "오늘 해 보기로 한 일이 있어요.",
+} as const;
 
 /** 공책 도착 알림 시각 — 일요일 오전 10시 */
 export const REPORT_ARRIVAL_HOUR = 10;

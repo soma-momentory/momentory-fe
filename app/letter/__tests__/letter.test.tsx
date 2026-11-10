@@ -1,5 +1,6 @@
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { Linking } from "react-native";
 
 import { useEffect as mockUseEffect } from "react";
 
@@ -245,8 +246,12 @@ describe("편지 전체 화면", () => {
     expect(native.scheduleNotificationAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         identifier: "momentory.once.letter-action.12",
-        content: expect.objectContaining({ body: "점심 뒤 한 바퀴 걷기" }),
+        // 잠금 화면에 고른 제목(일기 사건이 들어갈 수 있다)을 싣지 않는다 — 고정 문구다
+        content: expect.objectContaining({ body: "오늘 해 보기로 한 일이 있어요." }),
       }),
+    );
+    expect(JSON.stringify(jest.mocked(native.scheduleNotificationAsync).mock.calls)).not.toContain(
+      "점심 뒤 한 바퀴 걷기",
     );
     expect(track).toHaveBeenCalledWith(
       "letter_action_chosen",
@@ -288,6 +293,14 @@ describe("편지 전체 화면", () => {
 
     await waitFor(() => expect(r.getByText("자살예방 상담전화 109 (24시간)")).toBeTruthy());
     expect(r.queryByText(keepWords("오늘 해 볼 작은 일 하나 고를래요?"))).toBeNull();
+
+    // 번호만 눌러서 바로 건다 — 「24시간」은 번호가 아니다
+    const call = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    const numbers = r.getAllByTestId("letter-helpline-tel");
+    expect(numbers.map((n) => n.props.children)).toEqual(["109"]);
+    await fireEvent.press(numbers[0]!);
+    expect(call).toHaveBeenCalledWith("tel:109");
+    call.mockRestore();
   });
 
   it("못 불러오면 한 줄만", async () => {

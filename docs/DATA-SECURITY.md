@@ -64,18 +64,18 @@ AsyncStorage           쉼 추천의 기억(날짜 · 연달아 닫은 횟수)  
 > **2026-11-06 대조 — 위는 목표 구조이고, 지금 기기에 실제로 있는 것은 아래다.** MMKV 는 아직 없다
 > (`package.json`). B · C 는 **메모리에만** 산다.
 >
-> | 저장소            | 키                                          | 담는 것                                        | 로그아웃 · 탈퇴 때                    |
-> | ----------------- | ------------------------------------------- | ---------------------------------------------- | ------------------------------------- |
-> | SecureStore       | `momentory.session`                         | 모멘토리 access/refresh token · 내부 사용자 ID | 지운다                                |
-> | SecureStore       | `momentory.calendarSync.<userId>`           | 캘린더 화해 해시 · 범위 · 마지막 시각          | 지운다(`clearSyncState`)              |
-> | AsyncStorage      | `momentory.rest-recommendation`             | 쉼 추천 — 날짜 · 연달아 닫은 횟수              | 지운다                                |
-> | AsyncStorage      | `momentory.rest-guide`                      | 설명 카드를 본 쉼터 이름                       | 지운다                                |
-> | AsyncStorage      | `momentory.report.threeDayHintWeeks`        | 「3일 이상」 안내를 보여 준 주(날짜)           | 지운다(`clearThreeDayHint`)           |
-> | AsyncStorage      | `momentory.music`                           | 고른 배경음악 · 틀어 두었나                    | 비운다(`useMusic.reset`)              |
-> | AsyncStorage      | `home.weatherIntro.v1.<userId>`             | 홈 날씨 안내를 봤나(`"1"`)                     | ⚠ **지우지 않는다** — 아래 §4         |
-> | AsyncStorage      | `momentory.store-review`                    | 별점 창을 마지막으로 요청한 시각               | 일부러 남긴다 — 기기 단위 간격이다    |
-> | AsyncStorage(SDK) | Amplitude SDK 몫                            | 임의 기기 ID · 전송 대기 이벤트                | SDK 신원만 초기화(`resetAnalytics`)   |
-> | OS 알림 예약      | `momentory.reminder.*` · `momentory.once.*` | 알림 문안 · 시각 — 편지 작은 일 알림은 그 제목 | 인증 상태를 보고 취소(`reminders.ts`) |
+> | 저장소            | 키                                          | 담는 것                                                                           | 로그아웃 · 탈퇴 때                    |
+> | ----------------- | ------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------- |
+> | SecureStore       | `momentory.session`                         | 모멘토리 access/refresh token · 내부 사용자 ID                                    | 지운다                                |
+> | SecureStore       | `momentory.calendarSync.<userId>`           | 캘린더 화해 해시 · 범위 · 마지막 시각                                             | 지운다(`clearSyncState`)              |
+> | AsyncStorage      | `momentory.rest-recommendation`             | 쉼 추천 — 날짜 · 연달아 닫은 횟수                                                 | 지운다                                |
+> | AsyncStorage      | `momentory.rest-guide`                      | 설명 카드를 본 쉼터 이름                                                          | 지운다                                |
+> | AsyncStorage      | `momentory.report.threeDayHintWeeks`        | 「3일 이상」 안내를 보여 준 주(날짜)                                              | 지운다(`clearThreeDayHint`)           |
+> | AsyncStorage      | `momentory.music`                           | 고른 배경음악 · 틀어 두었나                                                       | 비운다(`useMusic.reset`)              |
+> | AsyncStorage      | `home.weatherIntro.v1.<userId>`             | 홈 날씨 안내를 봤나(`"1"`)                                                        | ⚠ **지우지 않는다** — 아래 §4         |
+> | AsyncStorage      | `momentory.store-review`                    | 별점 창을 마지막으로 요청한 시각                                                  | 일부러 남긴다 — 기기 단위 간격이다    |
+> | AsyncStorage(SDK) | Amplitude SDK 몫                            | 임의 기기 ID · 전송 대기 이벤트                                                   | SDK 신원만 초기화(`resetAnalytics`)   |
+> | OS 알림 예약      | `momentory.reminder.*` · `momentory.once.*` | 알림 문안 · 시각 — 편지 작은 일 알림도 고정 문구(제목은 싣지 않는다 · 2026-11-10) | 인증 상태를 보고 취소(`reminders.ts`) |
 >
 > 위치는 기기에 남기지 않는다 — 반올림 좌표를 요청 본문으로 보내고 버린다(`src/lib/location.ts`).
 > 주간 행복에 쓴 글은 기기에 남지 않는다(화면 상태뿐) — 2026-11-06 부터 **서버에 남는다**(`weekly_happiness_entries` · 위 B 등급).
@@ -323,6 +323,8 @@ FE 는 안을 내지 않는다 — 운영 정책과 스토어 신고가 걸린 �
 - **2026-11-06 · BE `dev` `50cd4c9` · `main` `ca3bc87` 대조.** 소원(§1-1 · §5-4) · 문의 · AI 글을 등급표에 더하고,
   기기 저장소의 실제 목록(§2)과 새 테이블의 탈퇴 cascade(§4)를 적었다. 홈 날씨 안내 기억이 로그아웃 · 탈퇴 때
   지워지지 않는 것을 찾았다.
+- **2026-11-10 · 작은 일 알림에서 제목을 뺐다.** 고른 작은 일 알림 본문은 고정 문구다. 1번 칸 제목은 AI 가
+  일기 사건을 넣어 다시 쓴 문장일 수 있어, 잠금 화면에 일기 이야기가 보였다. 이제 OS 예약에는 일기에서 나온 글이 없다.
 - **2026-10-27 · 바바의 편지.** 편지 인용 · 관점은 일기에서 나온 글이라 B 등급에 더했다. 서버 `letters` ·
   `letter_actions` 는 일기를 지우면 함께 지워진다. 기기에는 남기지 않고, 고른 작은 일 알림만 OS 예약에
   그 제목이 실린다(로그아웃하면 지운다).
