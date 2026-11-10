@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Button, Icon, IconButton, Text } from "@/components/ds";
 import { WishCardFields } from "@/components/diary/WishCardFields";
 import { RestPaperClip, RestPaperSheet } from "@/components/rest/RestPaperSheet";
-import { homeV2, layout, restCards, space, status } from "@/design/ds";
+import { homeV2, layout, radius, restCards, space, status } from "@/design/ds";
 import type { ActionCard } from "@/features/diary/model/types";
 import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { keepWords } from "@/features/letter/model/letter";
@@ -166,15 +166,17 @@ export function RestActionCard({
               ) : null}
             </View>
             {card.done ? (
-              // 되돌리기는 보조 행동이라 「했어요」(천 라벨)보다 가볍게 — 일기 저장 화면의 「직접 고치기」와 같은
-              // 작은 글자 버튼이다(2026-11-10 · 사용자 요청 — 옛 외곽선 버튼을 걷었다)
-              <Button
-                label="수행 취소"
-                labelVariant="label1"
-                variant="text"
-                size="small"
+              // 되돌리기는 보조 행동이라 「했어요」(초록 천 라벨)보다 가볍게 — 쪽지와 같은 크림 면에 갈색 테두리 알약이다.
+              // 작은 글자 버튼은 버튼처럼 안 보이고 글씨도 작았다(2026-11-10 · 사용자 요청)
+              <Pressable
+                accessibilityRole="button"
                 onPress={toggle}
-              />
+                style={({ pressed }) => [styles.undo, pressed ? styles.undoPressed : null]}
+              >
+                <Text style={styles.undoText} color={color.ink}>
+                  수행 취소
+                </Text>
+              </Pressable>
             ) : (
               <ReflectionButton
                 compact
@@ -344,4 +346,17 @@ const styles = StyleSheet.create({
     borderBottomColor: color.rule,
   },
   memoLinePressed: { opacity: 0.55 },
+  // 「했어요」(compact 천 라벨 44)와 같은 높이 · 크림 면 + 쪽지 윤곽색 테두리 — 초록이 없어 한 단 가볍다
+  undo: {
+    minHeight: layout.minTouch,
+    paddingHorizontal: space.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: color.edge,
+    backgroundColor: color.paper,
+  },
+  undoPressed: { backgroundColor: color.rule, transform: [{ translateY: 1 }] },
+  undoText: { fontFamily: font.bold, ...type.status },
 });
