@@ -80,11 +80,13 @@ beforeEach(() => {
 
 describe("M1 · 마이 기본", () => {
   it("프로필은 닉네임 · 기록 일수 한 줄이다 — 이니셜 동그라미가 없다", async () => {
-    // 「총 회고 12회」는 내부 용어였다 — 새 디자인은 「일기 12일 기록」이다
+    // 「총 회고 12회」는 내부 용어였다 — 지금은 「일기 쓴 날 12일」 한 줄이다
     const r = await render(<My />);
 
     expect(r.getByText("지현")).toBeTruthy();
-    expect(r.getByText("일기 12일 기록")).toBeTruthy();
+    expect(r.getByText("12일")).toBeTruthy();
+    // 같은 말을 되풀이하던 「일기 12일 기록」 줄은 뺐다(2026-11-10)
+    expect(r.queryByText("일기 12일 기록")).toBeNull();
     expect(r.queryByText(/회고 \d+회/)).toBeNull();
     // 이니셜 아바타 원(2026-08-23 제거) — 첫 글자만 따로 뜨던 동그라미가 없다
     expect(r.queryByText("지")).toBeNull();

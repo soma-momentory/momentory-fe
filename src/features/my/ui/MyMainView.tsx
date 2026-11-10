@@ -119,9 +119,7 @@ export function MyMainView({
             {recordedDays}일
           </Text>
         </View>
-        <Text variant="caption1" color={labelColor.alternative} style={styles.recordedCaption}>
-          {"일기 " + recordedDays + "일 기록"}
-        </Text>
+        {/* 그 아래 「일기 N일 기록」 한 줄은 위 줄과 같은 말이라 뺐다(2026-11-10 · 사용자 요청) */}
       </View>
 
       <PaperGroup label="앱 설정" tone="settings" note={settingsNote}>
@@ -248,6 +246,5 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: 10,
   },
-  recordedCaption: { textAlign: "center", marginTop: 2 },
   leave: { alignItems: "center", gap: space.xs, paddingTop: space.xs },
 });
