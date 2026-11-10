@@ -25,28 +25,34 @@ export const restCards = {
     pinShine: "#FFF3CF",
   },
   font: homeV2.font,
+  /**
+   * 2026-11-10 · 사용자 요청(「글씨가 작아 읽기 힘들다」) — 쪽지 글자를 한두 단씩 올렸다.
+   * 손글씨는 글자 몸이 작아 같은 크기의 고딕보다 작게 읽힌다. 값(20)이 이름(17)보다 크게 서는 위계는 그대로다
+   */
   type: {
     title: { fontSize: 22, lineHeight: 28 },
-    date: { fontSize: 22, lineHeight: 28 },
-    dateNote: { fontSize: 16, lineHeight: 22 },
-    fieldLabel: { fontSize: 16, lineHeight: 26 },
-    fieldValue: { fontSize: 18, lineHeight: 26 },
-    status: { fontSize: 16, lineHeight: 22 },
-    reflection: { fontSize: 17, lineHeight: 24 },
-    empty: { fontSize: 17, lineHeight: 26 },
+    date: { fontSize: 24, lineHeight: 30 },
+    dateNote: { fontSize: 17, lineHeight: 24 },
+    fieldLabel: { fontSize: 17, lineHeight: 30 },
+    fieldValue: { fontSize: 20, lineHeight: 30 },
+    status: { fontSize: 18, lineHeight: 24 },
+    reflection: { fontSize: 19, lineHeight: 28 },
+    empty: { fontSize: 18, lineHeight: 28 },
   },
   size: {
-    paddingX: 20,
+    /** 화면 좌우 — 20 은 쪽지 그림자 · 기울기까지 화면 끝에 붙어 보였다(2026-11-10 · 사용자 요청) */
+    paddingX: 28,
     /** 머리 줄과 달력 사이 */
     headerGap: 14,
     /** 달력과 쪽지 사이 — 클립이 위로 튀어나올 자리까지 */
     sheetGap: 24,
     /** 맨 아래 숨 쉴 자리 */
     bottom: 32,
-    sheetPaddingX: 14,
-    sheetPaddingTop: 16,
-    sheetPaddingBottom: 12,
-    fieldPaddingY: 5,
+    sheetPaddingX: 20,
+    sheetPaddingTop: 18,
+    /** 쪽지 아래 — 손으로 오린 윤곽과 버튼 밑 그림자(3)가 먹는 자리까지 둔다. 16 은 버튼이 종이 끝에 붙어 보였다 */
+    sheetPaddingBottom: 26,
+    fieldPaddingY: 6,
     /** 쪽지 머리 줄과 첫 공책 줄 사이 */
     headGap: 6,
     /** 상태 줄 위 — 공책 줄에서 떼어 놓는다 */
