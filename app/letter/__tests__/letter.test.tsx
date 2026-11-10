@@ -346,6 +346,27 @@ describe("편지 시각 고르기(4-8)", () => {
     expect(saveLetterTime).toHaveBeenCalledWith("07:30", false);
     expect(router.replace).toHaveBeenCalledWith("/(tabs)/rest?afterDiary=1");
   });
+
+  it("칩 밖의 시각은 「알림 시간」 줄이 같은 시간 시트로 고르고 — `완료` 에만 정해진다", async () => {
+    mockParams = { next: "rest" };
+    const r = await render(<LetterTime />);
+
+    // ✕ 로 닫으면 고르던 값은 버린다
+    await fireEvent.press(r.getByLabelText("알림 시간 아침 8:30, 바꾸기"));
+    await fireEvent.press(r.getByText("9시"));
+    await fireEvent.press(r.getAllByLabelText("닫기")[1]!);
+    expect(r.getByLabelText("알림 시간 아침 8:30, 바꾸기")).toBeTruthy();
+
+    await fireEvent.press(r.getByLabelText("알림 시간 아침 8:30, 바꾸기"));
+    await fireEvent.press(r.getByText("9시"));
+    await fireEvent.press(r.getByText("완료"));
+    await act(async () => {
+      await fireEvent.press(r.getByText("이 시각에 받을게요"));
+    });
+
+    expect(saveLetterTime).toHaveBeenCalledWith("09:30", true);
+    expect(track).toHaveBeenCalledWith("letter_time_chosen", { time: "custom", notify: true });
+  });
 });
 
 describe("편지함 목록(홈 편지 아이콘)", () => {
