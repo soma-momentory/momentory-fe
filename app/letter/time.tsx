@@ -2,22 +2,14 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { BottomSheet, Button, Chip, WheelPicker } from "@/components/ds";
+import { Chip, PaperGroup, PaperRow, TimeSheet } from "@/components/ds";
 import { Baba, OnboardingFrame } from "@/components/onboarding/OnboardingParts";
 import { space } from "@/design/ds";
 import { track } from "@/features/analytics";
 import { saveLetterPreference } from "@/features/letter/model/letter";
 import { useSettings } from "@/features/my/model/settings";
 import { requestNotificationPermission } from "@/lib/notifications";
-import {
-  formatKoreanTime,
-  fromWheelTime,
-  toWheelTime,
-  WHEEL_HOURS,
-  WHEEL_MINUTES,
-  WHEEL_PERIODS,
-  type WheelTime,
-} from "@/lib/time";
+import { formatKoreanTime } from "@/lib/time";
 
 /** 편지 시각 칩(PRD 4-8) — 기본은 아침 8:30 */
 const LETTER_TIMES = [
@@ -32,15 +24,15 @@ const LETTER_TIMES = [
  * 온보딩 알림 화면(`(onboarding)/notify`)과 같은 문법이다(그림 · 한 줄 · 시각 칩 · 큰 버튼).
  * 고른 값은 서버 프로필에 남긴다 — 기기를 바꿔도 남게. 저장하지 못해도 붙잡지 않고 다음으로 간다
  * (그러면 다음 일기 때 다시 묻는다). 어디로 갈지는 일기 확인(`/retro/draft`)이 `next` 로 넘긴다.
+ * 칩 셋 밖의 시각은 「알림 시간」 줄이 마이 · 온보딩 알림과 같은 시트(`TimeSheet`)로 연다(2026-11-10).
  */
 export default function LetterTime() {
   const { next } = useLocalSearchParams<{ next?: string }>();
   const [time, setTime] = useState(useSettings.getState().notify.letter.time ?? "08:30");
-  const [sheetOpen, setSheetOpen] = useState(false);
+  // 시트에서 고르는 중인 시각 — `완료` 에만 정해지고 ✕ · 딤은 버린다(마이 알림 시트와 같다)
+  const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const custom = !LETTER_TIMES.some((c) => c.time === time);
-  const wheel = toWheelTime(time);
-  const setWheel = (part: Partial<WheelTime>) => setTime(fromWheelTime({ ...wheel, ...part }));
 
   const finish = async (notify: boolean) => {
     if (busy) return;
@@ -72,12 +64,16 @@ export default function LetterTime() {
                   onPress={() => setTime(c.time)}
                 />
               ))}
-              <Chip
-                label={custom ? `✓ ${formatKoreanTime(time)}` : "직접 고를게요"}
-                selected={custom}
-                onPress={() => setSheetOpen(true)}
-              />
             </View>
+            <PaperGroup style={styles.row}>
+              <PaperRow
+                title="알림 시간"
+                icon="mail"
+                value={formatKoreanTime(time)}
+                accessibilityLabel={`알림 시간 ${formatKoreanTime(time)}, 바꾸기`}
+                onPress={() => setEditing(time)}
+              />
+            </PaperGroup>
           </View>
         }
         title={"내일 아침,\n바바가 편지를 보내요"}
@@ -86,40 +82,17 @@ export default function LetterTime() {
         secondary={{ label: "알림 없이 볼게요", onPress: () => void finish(false) }}
       />
 
-      {sheetOpen ? (
-        <BottomSheet title="시간 선택" onDismiss={() => setSheetOpen(false)}>
-          <WheelPicker
-            columns={[
-              {
-                key: "period",
-                label: "오전 오후",
-                items: WHEEL_PERIODS,
-                value: wheel.period,
-                onChange: (period) => setWheel({ period }),
-                width: 88,
-              },
-              {
-                key: "hour",
-                label: "시",
-                items: WHEEL_HOURS,
-                value: wheel.hour,
-                onChange: (hour) => setWheel({ hour }),
-                width: 72,
-                format: (h) => `${h}시`,
-              },
-              {
-                key: "minute",
-                label: "분",
-                items: WHEEL_MINUTES,
-                value: wheel.minute,
-                onChange: (minute) => setWheel({ minute }),
-                width: 72,
-                format: (m) => `${m}분`,
-              },
-            ]}
-          />
-          <Button label="완료" fill onPress={() => setSheetOpen(false)} />
-        </BottomSheet>
+      {editing != null ? (
+        <TimeSheet
+          title="시간 선택"
+          time={editing}
+          onChange={setEditing}
+          onDismiss={() => setEditing(null)}
+          onDone={() => {
+            setTime(editing);
+            setEditing(null);
+          }}
+        />
       ) : null}
     </>
   );
@@ -128,4 +101,5 @@ export default function LetterTime() {
 const styles = StyleSheet.create({
   art: { alignSelf: "stretch", alignItems: "center", gap: space.xl },
   chips: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6 },
+  row: { alignSelf: "stretch" },
 });

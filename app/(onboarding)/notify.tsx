@@ -21,7 +21,8 @@ export default function Notify() {
   const nickname = useDraft((s) => s.nickname);
   const dayEnd = useDraft((s) => s.answers.dayEnd);
   const time = useDraft((s) => s.retroTime) ?? defaultRetroTime(dayEnd);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  // 시트에서 고르는 중인 시각 — `완료` 에만 정해지고 ✕ · 딤은 버린다(마이 알림 시트와 같다)
+  const [editing, setEditing] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
 
   const pick = (t: string) => useDraft.getState().set("retroTime", t);
@@ -93,7 +94,7 @@ export default function Notify() {
                 icon="bell"
                 value={formatKoreanTime(time)}
                 accessibilityLabel={`알림 시간 ${formatKoreanTime(time)}, 바꾸기`}
-                onPress={() => setSheetOpen(true)}
+                onPress={() => setEditing(time)}
               />
             </PaperGroup>
           </View>
@@ -104,13 +105,16 @@ export default function Notify() {
         secondary={{ label: "나중에", onPress: later }}
       />
 
-      {sheetOpen ? (
+      {editing != null ? (
         <TimeSheet
           title="시간 선택"
-          time={time}
-          onChange={pick}
-          onDismiss={() => setSheetOpen(false)}
-          onDone={() => setSheetOpen(false)}
+          time={editing}
+          onChange={setEditing}
+          onDismiss={() => setEditing(null)}
+          onDone={() => {
+            pick(editing);
+            setEditing(null);
+          }}
         />
       ) : null}
     </>

@@ -146,7 +146,11 @@ describe("알림", () => {
   it("칩 밖의 시각은 「알림 시간」 줄이 마이와 같은 휠 시트로 연다", async () => {
     const { getByLabelText, getByText } = await render(<Notify />);
     await fireEvent.press(getByLabelText("알림 시간 밤 10:30, 바꾸기"));
-    expect(getByText("완료")).toBeTruthy();
+    await fireEvent.press(getByText("11시"));
+    // `완료` 에만 정해진다 — 그 전에는 초안이 그대로다
+    expect(useDraft.getState().retroTime).toBeNull();
+    await fireEvent.press(getByText("완료"));
+    expect(useDraft.getState().retroTime).toBe("23:30");
   });
 
   it("「나중에」는 알림만 끄고 시각은 남긴다", async () => {
