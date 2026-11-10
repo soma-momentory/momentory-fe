@@ -1,7 +1,12 @@
 import { create } from "zustand";
 
 import type { EmotionId } from "@/features/emotion/model/emotion";
-import type { Reply, ReplyDiary, ReplyWishCard } from "@/features/retro/data/retroApi";
+import type {
+  Reply,
+  ReplyDiary,
+  ReplyWishCard,
+  ResumeMessage,
+} from "@/features/retro/data/retroApi";
 
 /**
  * 회고 한 벌 (채팅흐름_v2) — 시작 감정 없이 일기 작성부터 열려 `Diary` 한 장으로 끝난다.
@@ -16,7 +21,8 @@ import type { Reply, ReplyDiary, ReplyWishCard } from "@/features/retro/data/ret
  * - **진행률·단계 번호를 두지 않는다** — 어디까지 왔는지는 서버의 `phase` 가 안다
  * - **지난 버블을 삭제하지 않는다** — `turns` 는 쌓기만 한다
  *
- * ⚠ **아직 기기에 남기지 않는다.** 세션 id·대화 로그는 앱이 떠 있는 동안만 산다(M3 · MMKV 에서 풀린다).
+ * 기기에는 남기지 않는다. 앱을 껐다 켜면 서버가 오늘 진행 중인 회고를 돌려주고(`fetchCurrentRetro`),
+ * `resumeSession` 이 그 대화를 다시 쌓는다.
  */
 export type { Reply } from "@/features/retro/data/retroApi";
 
@@ -41,6 +47,8 @@ type RetroStore = {
 
   /** 시작 응답을 받았다 — 세션을 열고 첫 응답을 반영한다 */
   beginSession: (sessionId: number, reply: Reply) => void;
+  /** 앱을 다시 켜 진행 중인 회고를 이어 간다 — 서버가 준 지난 대화를 쌓고 마지막 응답을 반영한다 */
+  resumeSession: (sessionId: number, messages: ResumeMessage[], reply: Reply) => void;
   /** 사용자가 한 줄 말했다(자유 텍스트·선택 요약) */
   addMyTurn: (text: string) => void;
   /** 선택을 남긴다 — 경계선 칩 */
@@ -59,24 +67,36 @@ const EMPTY = {
   wishCard: null,
 } as const;
 
+const DIARY_NOTICE = "\n오늘 이야기는 일기로 정리해뒀어요.";
+
+/** 마지막 공감·일기 정리 안내와 감정 탐색 안내·질문을 두 말로 나눈다. 안내가 없으면 그대로 둔다 */
+const splitDiaryNotice = (text: string): string[] => {
+  const boundary = text.indexOf(DIARY_NOTICE);
+  if (boundary <= 0) return [text];
+  const end = boundary + DIARY_NOTICE.length;
+  const guidance = text.slice(end).trimStart();
+  return guidance ? [text.slice(0, end), guidance] : [text];
+};
+
+const babaTurns = (texts: string[]): Turn[] =>
+  texts.map((text) => ({ id: `t${++seq}`, who: "baba" as const, text }));
+
 /** 응답 원문은 유지하고, 마지막 공감·일기 정리 안내와 감정 탐색 안내·질문을 두 버블로 표시한다. */
 const withBabaBubble = (turns: Turn[], reply: Reply, previousPhase?: string): Turn[] => {
   if (reply.text == null || reply.text.length === 0) return turns;
-  let messages = [reply.text];
-  if (
+  const intoExploration =
     previousPhase === "diary_chat" &&
-    (reply.phase === "emotion_exploration" || reply.phase === "await_branch")
-  ) {
-    const diaryNotice = "\n오늘 이야기는 일기로 정리해뒀어요.";
-    const boundary = reply.text.indexOf(diaryNotice);
-    if (boundary > 0) {
-      const end = boundary + diaryNotice.length;
-      const guidance = reply.text.slice(end).trimStart();
-      if (guidance) messages = [reply.text.slice(0, end), guidance];
-    }
-  }
-  return [...turns, ...messages.map((text) => ({ id: `t${++seq}`, who: "baba" as const, text }))];
+    (reply.phase === "emotion_exploration" || reply.phase === "await_branch");
+  return [...turns, ...babaTurns(intoExploration ? splitDiaryNotice(reply.text) : [reply.text])];
 };
+
+/** 서버가 준 지난 대화를 화면 버블로 옮긴다. 일기 정리 안내는 응답으로 받았을 때와 같이 나눈다 */
+const resumedTurns = (messages: ResumeMessage[]): Turn[] =>
+  messages.flatMap((m) =>
+    m.role === "user"
+      ? [{ id: `t${++seq}`, who: "me" as const, text: m.text }]
+      : babaTurns(splitDiaryNotice(m.text)),
+  );
 
 export const useRetro = create<RetroStore>((set) => ({
   ...EMPTY,
@@ -90,6 +110,9 @@ export const useRetro = create<RetroStore>((set) => ({
       diary: reply.diary,
       wishCard: reply.wishCard,
     })),
+
+  resumeSession: (sessionId, messages, reply) =>
+    set({ ...EMPTY, sessionId, lastReply: reply, turns: resumedTurns(messages) }),
 
   addMyTurn: (text) => set((s) => ({ turns: [...s.turns, { id: `t${++seq}`, who: "me", text }] })),
 

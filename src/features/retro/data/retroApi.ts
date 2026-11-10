@@ -104,6 +104,12 @@ export type StartInput = {
 
 export type StartResponse = { sessionId: number; reply: Reply };
 
+/** 이어서 할 회고의 지난 말 한 줄. 바바의 말에서 선택지 줄은 서버가 빼고 준다 */
+export type ResumeMessage = { role: "assistant" | "user"; text: string };
+
+/** 오늘 진행 중인 회고 — 지금까지의 대화와 마지막으로 받은 응답 */
+export type CurrentRetro = { sessionId: number; messages: ResumeMessage[]; reply: Reply };
+
 /** 자유 텍스트이거나 선택지 번호들(감정·바람 최대 2개). */
 export type TurnInput = {
   content?: string;
@@ -280,6 +286,18 @@ export const toReply = (v: unknown): Reply | null => {
   };
 };
 
+const toMessages = (v: unknown): ResumeMessage[] | null => {
+  if (!Array.isArray(v)) return null;
+  const out: ResumeMessage[] = [];
+  for (const item of v) {
+    if (!isObject(item)) return null;
+    const text = asString(item.text);
+    if ((item.role !== "assistant" && item.role !== "user") || text == null) return null;
+    out.push({ role: item.role, text });
+  }
+  return out;
+};
+
 // ── 호출 ────────────────────────────────────────────────────────────────
 
 /**
@@ -307,6 +325,33 @@ export async function startRetro(
   record("retrospect_started", { retrospect_id: String(sessionId) }, String(sessionId));
   recordCompletion(record, sessionId, reply);
   return { ok: true, data: { sessionId, reply } };
+}
+
+/**
+ * 오늘 진행 중인 회고를 찾는다 — 앱을 껐다 켜도 새 세션을 만들지 않고 이어서 하도록 시작 전에 묻는다.
+ * 이어서 할 회고가 없으면(204) `data: null` 이다.
+ */
+export async function fetchCurrentRetro(options?: {
+  signal?: AbortSignal;
+}): Promise<RetroResult<CurrentRetro | null>> {
+  const record = captureAnalytics();
+  const result = await authedRequest<unknown>(
+    "GET",
+    `${RETROSPECT_PATH}/current`,
+    undefined,
+    options,
+  );
+  if (!result.ok) return { ok: false, code: mapError(result.error, "server") };
+  if (result.data == null) return { ok: true, data: null };
+
+  if (!isObject(result.data)) return { ok: false, code: "malformed" };
+  const sessionId = result.data.sessionId;
+  const messages = toMessages(result.data.messages);
+  const reply = toReply(result.data.reply);
+  if (typeof sessionId !== "number" || messages == null || reply == null)
+    return { ok: false, code: "malformed" };
+  record("retrospect_resumed", { retrospect_id: String(sessionId) }, String(sessionId));
+  return { ok: true, data: { sessionId, messages, reply } };
 }
 
 /** 한 턴을 진행하고 다음 응답을 받는다 */

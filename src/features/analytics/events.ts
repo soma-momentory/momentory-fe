@@ -217,6 +217,7 @@ export const events = {
   schedule_visibility_changed: { schedule_id: id, hidden: bool },
   schedule_completion_changed: { schedule_id: id, completed: bool, source: scheduleSource },
   retrospect_started: { retrospect_id: id },
+  retrospect_resumed: { retrospect_id: id },
   retrospect_turn_succeeded: { retrospect_id: id, input_kind: inputKind },
   retrospect_turn_timed: {
     retrospect_id: id,

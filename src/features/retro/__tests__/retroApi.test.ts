@@ -1,4 +1,4 @@
-import { sendTurn, startRetro } from "../data/retroApi";
+import { fetchCurrentRetro, sendTurn, startRetro } from "../data/retroApi";
 
 import { getAccessToken } from "@/features/auth/model/auth";
 import { getApiBaseUrl } from "@/lib/config";
@@ -73,5 +73,58 @@ describe("나머지 상태 코드는 두 호출이 같다", () => {
 
     expect(await startRetro(START_INPUT)).toEqual({ ok: false, code });
     expect(await sendTurn(1, { content: "네" })).toEqual({ ok: false, code });
+  });
+});
+
+describe("이어서 하기 — 오늘 진행 중인 회고", () => {
+  it("204 면 이어서 할 회고가 없다", async () => {
+    const fetchFn = mockFetch(respond(204));
+
+    expect(await fetchCurrentRetro()).toEqual({ ok: true, data: null });
+    expect(fetchFn).toHaveBeenCalledWith(
+      "http://api.test/api/v1/retrospect/current",
+      expect.objectContaining({ method: "GET" }),
+    );
+  });
+
+  it("세션 · 지난 대화 · 마지막 응답을 받는다", async () => {
+    mockFetch(
+      respond(200, {
+        sessionId: 3,
+        messages: [
+          { role: "assistant", text: "오늘 어땠어요?" },
+          { role: "user", text: "좋았어요" },
+        ],
+        reply: { text: "오늘 어땠어요?", phase: "diary_chat", done: false, safetyLevel: "none" },
+      }),
+    );
+
+    const result = await fetchCurrentRetro();
+    expect(result.ok && result.data).toMatchObject({
+      sessionId: 3,
+      messages: [
+        { role: "assistant", text: "오늘 어땠어요?" },
+        { role: "user", text: "좋았어요" },
+      ],
+      reply: { phase: "diary_chat", options: null },
+    });
+  });
+
+  it("말의 주인이 계약 밖이면 malformed 다", async () => {
+    mockFetch(
+      respond(200, {
+        sessionId: 3,
+        messages: [{ role: "system", text: "?" }],
+        reply: { phase: "diary_chat", done: false },
+      }),
+    );
+
+    expect(await fetchCurrentRetro()).toEqual({ ok: false, code: "malformed" });
+  });
+
+  it("서버 배포 전의 404 는 server 다 — 화면은 새로 시작으로 넘어간다", async () => {
+    mockFetch(respond(404));
+
+    expect(await fetchCurrentRetro()).toEqual({ ok: false, code: "server" });
   });
 });
