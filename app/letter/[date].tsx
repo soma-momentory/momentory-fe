@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { Icon, Screen, Spinner, Text, TopNavigation } from "@/components/ds";
+import { Icon, Screen, Spinner, TabPaperBackground, Text, TopNavigation } from "@/components/ds";
 import { Baba } from "@/components/onboarding/OnboardingParts";
 import { label as labelColor, layout, space } from "@/design/ds";
 import { track } from "@/features/analytics";
@@ -127,7 +127,8 @@ export default function LetterScreen() {
   const close = () => (router.canGoBack() ? router.back() : router.replace("/home"));
 
   return (
-    <Screen>
+    <Screen grid={false} backdrop={<TabPaperBackground tab="홈" />}>
+      {/* 홈에서 여는 편지라 홈과 같은 종이 질감이다(2026-11-10 · 옛 모눈을 걷었다) */}
       <TopNavigation leading="close" onLeadingPress={close} />
       {!listAsked ? (
         <Writing />

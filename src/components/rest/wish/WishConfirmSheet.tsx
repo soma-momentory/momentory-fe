@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { BottomSheet, Button, Text } from "@/components/ds";
+import { BottomSheet, Text } from "@/components/ds";
+import { ScenePillButton } from "@/components/rest/scene/SceneChrome";
 import { label as labelColor, primary, radius, space, wishScene } from "@/design/ds";
 import { WISH_ANONYMOUS, WISH_CONFIRM } from "@/features/rest/model/wish";
 
@@ -36,11 +37,12 @@ export function WishConfirmSheet({
       <Text variant="body2" color={labelColor.neutral} style={styles.notice}>
         {WISH_CONFIRM.notice}
       </Text>
-      <Button
+      {/* 쉼 콘텐츠 안쪽 버튼은 빈티지 알약 결이다(`DESIGN.md` 쉼 콘텐츠 공통 규칙 5 · 2026-11-10) */}
+      <ScenePillButton
         label={posting ? WISH_CONFIRM.posting : WISH_CONFIRM.post}
+        tone="accent"
         disabled={posting}
         onPress={onPost}
-        fill
       />
       {posting ? null : (
         <Pressable accessibilityRole="button" onPress={onEdit} style={styles.edit}>

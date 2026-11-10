@@ -6,7 +6,7 @@ import { StyleSheet, View } from "react-native";
 import {
   BottomSheet,
   Button,
-  Card,
+  PaperGroup,
   Icon,
   TabScreen,
   Text,
@@ -22,6 +22,7 @@ import { saveRetroReminder } from "@/features/my/model/basicInfo";
 import { adoptGrantedCalendar, linkCalendar } from "@/features/my/model/calendarLink";
 import { useRecordedDays } from "@/features/my/model/recordedDays";
 import { useProfile, useSettings, type NotifySetting } from "@/features/my/model/settings";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { MyMainView } from "@/features/my/ui/MyMainView";
 import { onForeground } from "@/lib/appState";
 import { getCalendarAccess, openCalendarSettings, type CalendarAccess } from "@/lib/calendar";
@@ -343,11 +344,16 @@ export default function My() {
                   기기 설정에서 모멘토리의 캘린더 접근을 허용해 주세요. 허용하고 돌아오면 바로
                   연결돼요.
                 </Text>
-                <Button label="설정 열기" fill onPress={openCalendarSettingsFromSheet} />
+                <ReflectionButton
+                  testID="calendar-open-settings"
+                  label="설정 열기"
+                  onPress={openCalendarSettingsFromSheet}
+                  style={styles.sheetCta}
+                />
               </>
             ) : (
               <>
-                <Card style={styles.calendarNotice}>
+                <PaperGroup padded>
                   <View style={styles.calendarNoticeHead}>
                     <Icon name="calendar" size={20} color={primary.heavy} />
                     <Text variant="label1" color={labelColor.strong}>
@@ -357,8 +363,13 @@ export default function My() {
                   <Text variant="body2Reading" color={labelColor.neutral}>
                     {CALENDAR_NOTICE.body}
                   </Text>
-                </Card>
-                <Button label="캘린더 연결하기" fill onPress={() => void connectCalendar()} />
+                </PaperGroup>
+                <ReflectionButton
+                  testID="calendar-connect"
+                  label="캘린더 연결하기"
+                  onPress={() => void connectCalendar()}
+                  style={styles.sheetCta}
+                />
               </>
             )}
           </BottomSheet>
@@ -375,6 +386,7 @@ export default function My() {
             {/* 오류가 아니라 확인이라 시트에 둔다 — 실패(카카오 등)는 시트를 닫고
                 회원 탈퇴 자리 아래 한 줄로 흡수한다(`RULES.md` 4) */}
             <TextField
+              variant="paper"
               fieldLabel={`확인을 위해 아래에 ${WITHDRAW_CONFIRM_PHRASE} 를 입력해 주세요`}
               placeholder={WITHDRAW_CONFIRM_PHRASE}
               value={withdrawConfirmText}
@@ -434,6 +446,6 @@ export default function My() {
 }
 
 const styles = StyleSheet.create({
-  calendarNotice: { gap: space.sm },
+  sheetCta: { marginTop: 0, marginHorizontal: 0 },
   calendarNoticeHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
 });
