@@ -31,6 +31,7 @@ import {
   PHASE_EMOTION_EXPLORATION,
   PHASE_ENDED,
   PHASE_SAFETY_HOLD,
+  fetchCurrentRetro,
   sendTurn,
   startRetro,
   type Reply,
@@ -102,6 +103,7 @@ export default function RetroTalk() {
   const turns = useRetro((s) => s.turns);
   const lastReply = useRetro((s) => s.lastReply);
   const beginSession = useRetro((s) => s.beginSession);
+  const resumeSession = useRetro((s) => s.resumeSession);
   const applyReply = useRetro((s) => s.applyReply);
   const addMyTurn = useRetro((s) => s.addMyTurn);
   const schedules = useDay((s) => s.schedules);
@@ -174,6 +176,13 @@ export default function RetroTalk() {
     setPending(true);
     setError(null);
     setStartErrorCode(null);
+    // 앱을 껐다 켜도 오늘 하던 회고를 이어 간다. 묻지 못했으면(서버 배포 전 404 포함) 새로 시작한다.
+    const current = await fetchCurrentRetro();
+    if (current.ok && current.data != null) {
+      setPending(false);
+      resumeSession(current.data.sessionId, current.data.messages, current.data.reply);
+      return;
+    }
     // v2: 시작 시 감정을 붙이지 않는다 — 감정은 대화로 알아간다.
     // id 는 회고 토픽을 그 일정에 잇는 데, completed 는 서버가 1턴 소재를 고르는 데 쓴다
     // (끝난 일 우선 — 아직 안 한 일은 돌아볼 거리가 없다).

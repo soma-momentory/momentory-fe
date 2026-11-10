@@ -1,11 +1,14 @@
 import { RetroDiaryBackground } from "@/features/retro/ui/RetroDiaryBackground";
 import { label } from "@/design/ds";
 import { Redirect, router } from "expo-router";
+import { useEffect, useState } from "react";
 
 import { ChatBubble, ChatScaffold } from "@/components/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import { hasDiaryOn } from "@/features/diary/model/selectors";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
+import { fetchCurrentRetro } from "@/features/retro/data/retroApi";
+import { useRetro } from "@/features/retro/model/retro";
 import { RetroScheduleSticker } from "@/features/retro/ui/RetroScheduleSticker";
 import { RetroMethodChoices } from "@/features/retro/ui/RetroMethodChoices";
 
@@ -35,12 +38,36 @@ export default function RetroConfirm() {
   const schedules = useDay((s) => s.schedules);
   const { date: today } = useTodayContext();
   const wroteToday = useDiary((s) => hasDiaryOn(s.diaries, today));
+  const sessionId = useRetro((s) => s.sessionId);
+  const resumeSession = useRetro((s) => s.resumeSession);
+  /**
+   * 오늘 하던 회고가 서버에 있는지 묻는 동안은 작성 방식 버튼을 띄우지 않는다(2026-11-10 · 사용자 요청).
+   * 버튼을 먼저 띄우면 「직접 일기 쓰기」를 눌러 하던 대화를 버릴 수 있다. 묻지 못하면 버튼을 띄운다.
+   */
+  const [checking, setChecking] = useState(() => sessionId == null && !wroteToday);
+
+  useEffect(() => {
+    if (!checking) return;
+    let alive = true;
+    void fetchCurrentRetro().then((current) => {
+      if (!alive) return;
+      // 이어 받으면 세션이 생겨 아래 Redirect 가 대화로 넘긴다
+      if (current.ok && current.data != null)
+        resumeSession(current.data.sessionId, current.data.messages, current.data.reply);
+      else setChecking(false);
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const shown = visibleSchedules(schedules);
 
   // 오늘 일기를 이미 썼으면 일정을 보여 주지 않고 「이미 마쳤어요」로 바로 넘긴다(2026-10-07).
-  // 홈 버튼이 이미 건너뛰지만, 다른 길(알림·딥링크)로 들어와도 같게 한다
-  if (wroteToday) return <Redirect href="/retro/talk" />;
+  // 홈 버튼이 이미 건너뛰지만, 다른 길(알림·딥링크)로 들어와도 같게 한다.
+  // 하던 회고가 있어도(앱을 껐다 켠 경우 포함) 작성 방식을 다시 묻지 않고 그 대화로 돌아간다.
+  if (wroteToday || sessionId != null) return <Redirect href="/retro/talk" />;
 
   return (
     <ChatScaffold
@@ -50,10 +77,12 @@ export default function RetroConfirm() {
       backdrop={<RetroDiaryBackground />}
       onLeadingPress={() => router.replace("/home")}
       dock={
-        <RetroMethodChoices
-          onTalk={() => router.push("/retro/talk")}
-          onWrite={() => router.push("/retro/write")}
-        />
+        checking ? undefined : (
+          <RetroMethodChoices
+            onTalk={() => router.push("/retro/talk")}
+            onWrite={() => router.push("/retro/write")}
+          />
+        )
       }
     >
       <ChatBubble appearance="diary">오늘 있었던 일을 잠깐 떠올려봐요.</ChatBubble>

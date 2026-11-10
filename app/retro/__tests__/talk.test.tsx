@@ -6,7 +6,7 @@ import RetroTalk from "../talk";
 import { SILENCE_MS } from "@/components/ds/voiceInput";
 
 import type { Reply, ReplyOption } from "@/features/retro/data/retroApi";
-import { startRetro, sendTurn } from "@/features/retro/data/retroApi";
+import { fetchCurrentRetro, startRetro, sendTurn } from "@/features/retro/data/retroApi";
 import { useDiary } from "@/features/diary/model/diary";
 import { testDiaryData } from "@/testing/fixtures";
 import { useRetro } from "@/features/retro/model/retro";
@@ -21,6 +21,7 @@ jest.mock("expo-router", () => ({
 // 서버 왕복만 가짜로 — 화면은 응답 형태대로 그린다
 jest.mock("@/features/retro/data/retroApi", () => ({
   ...jest.requireActual("@/features/retro/data/retroApi"),
+  fetchCurrentRetro: jest.fn(),
   startRetro: jest.fn(),
   sendTurn: jest.fn(),
 }));
@@ -36,6 +37,7 @@ const sent = (name: string) =>
 
 const mockStart = jest.mocked(startRetro);
 const mockTurn = jest.mocked(sendTurn);
+const mockCurrent = jest.mocked(fetchCurrentRetro);
 
 /** 응답 하나 — 필요한 필드만 덮어쓴다 (v2: 슬라이더 없음, 바람카드→바람카드) */
 const reply = (over: Partial<Reply> = {}): Reply => ({
@@ -59,12 +61,62 @@ const option = (over: Partial<ReplyOption> & { id: string; label: string }): Rep
 beforeEach(() => {
   useRetro.getState().reset();
   jest.clearAllMocks();
+  mockCurrent.mockResolvedValue({ ok: true, data: null });
   mockStart.mockResolvedValue({
     ok: true,
     data: {
       sessionId: 7,
       reply: reply({ text: "오늘 하루 중에서 가장 기억에 남는 일은 뭐였어요?" }),
     },
+  });
+});
+
+describe("이어서 하기 — 앱을 다시 켜면 오늘 하던 회고를 이어 간다", () => {
+  it("진행 중인 회고가 있으면 새로 시작하지 않고 지난 대화와 선택지를 다시 그린다", async () => {
+    mockCurrent.mockResolvedValue({
+      ok: true,
+      data: {
+        sessionId: 42,
+        messages: [
+          { role: "assistant", text: "오늘 가장 기억에 남는 일은 뭐였어요?" },
+          { role: "user", text: "방탈출이 재밌었어" },
+          {
+            role: "assistant",
+            text: "즐거우셨군요.\n오늘 이야기는 일기로 정리해뒀어요. 지금 가장 가까운 감정은 무엇인가요?",
+          },
+        ],
+        reply: reply({
+          phase: "emotion_exploration",
+          text: "즐거우셨군요.\n오늘 이야기는 일기로 정리해뒀어요. 지금 가장 가까운 감정은 무엇인가요?",
+          options: [option({ id: "1", label: "기쁨" }), option({ id: "2", label: "뿌듯함" })],
+        }),
+      },
+    });
+    mockTurn.mockResolvedValue({ ok: true, data: reply({ phase: "emotion_exploration" }) });
+    const r = await render(<RetroTalk />);
+
+    await waitFor(() => expect(r.getByText("방탈출이 재밌었어")).toBeTruthy());
+    expect(mockStart).not.toHaveBeenCalled();
+    expect(r.getByLabelText("질문: 오늘 가장 기억에 남는 일은 뭐였어요?")).toBeTruthy();
+    expect(
+      r.getByLabelText("질문: 즐거우셨군요.\n오늘 이야기는 일기로 정리해뒀어요."),
+    ).toBeTruthy();
+    expect(r.getByLabelText("질문: 지금 가장 가까운 감정은 무엇인가요?")).toBeTruthy();
+    expect(useRetro.getState().turns).toHaveLength(4);
+
+    await fireEvent.press(r.getByText("기쁨"));
+    await act(async () => {
+      await fireEvent.press(r.getByText("보내기"));
+    });
+    expect(mockTurn).toHaveBeenCalledWith(42, { optionIds: ["1"] });
+  });
+
+  it("이어서 할 회고를 묻지 못하면 새로 시작한다", async () => {
+    mockCurrent.mockResolvedValue({ ok: false, code: "server" });
+    await render(<RetroTalk />);
+
+    await waitFor(() => expect(mockStart).toHaveBeenCalledTimes(1));
+    expect(useRetro.getState().sessionId).toBe(7);
   });
 });
 

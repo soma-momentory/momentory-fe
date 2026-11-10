@@ -73,6 +73,7 @@ SDK 공통 메타데이터는 발생 시각, 임의 기기 ID, 세션 ID, 앱 �
 | schedule_visibility_changed   | 캘린더 일정 숨김/표시 성공                                       | schedule_id, hidden                                                                                       |
 | schedule_completion_changed   | 일정 완료 상태 저장 성공                                         | schedule_id, completed, source                                                                            |
 | retrospect_started            | 회고 시작 API 성공                                               | retrospect_id                                                                                             |
+| retrospect_resumed            | 앱을 다시 켜 진행 중인 회고 이어 감                              | retrospect_id                                                                                             |
 | retrospect_turn_succeeded     | 대화 턴 API 성공                                                 | retrospect_id, input_kind: text/selection                                                                 |
 | retrospect_turn_timed         | 대화 턴 성공, 화면에서 잰 시간                                   | retrospect_id, phase, turn_no 외 (아래)                                                                   |
 | retrospect_exited             | 회고가 끝나기 전에 ✕ 또는 안드로이드 뒤로 가기로 나감            | retrospect_id, phase, turn_no                                                                             |

@@ -1,10 +1,11 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { Redirect, router } from "expo-router";
 
 import RetroConfirm from "../confirm";
 
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
+import { fetchCurrentRetro } from "@/features/retro/data/retroApi";
 import { useRetro } from "@/features/retro/model/retro";
 import { testDiaryData, testSchedules } from "@/testing/fixtures";
 
@@ -18,6 +19,11 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Redirect: jest.fn(() => null),
 }));
+jest.mock("@/features/retro/data/retroApi", () => ({
+  ...jest.requireActual("@/features/retro/data/retroApi"),
+  fetchCurrentRetro: jest.fn(),
+}));
+const mockCurrent = jest.mocked(fetchCurrentRetro);
 
 const flatten = (style: unknown) =>
   Object.assign({}, ...[style].flat(Infinity).filter(Boolean)) as Record<string, unknown>;
@@ -27,6 +33,60 @@ beforeEach(() => {
   useRetro.getState().reset();
   useDiary.setState({ diaries: [] });
   jest.clearAllMocks();
+  mockCurrent.mockResolvedValue({ ok: true, data: null });
+});
+
+describe("C2 · 오늘 하던 회고가 있으면", () => {
+  const lastRedirect = () => jest.mocked(Redirect).mock.calls.at(-1)?.[0];
+
+  it("작성 방식을 다시 묻지 않고 서버가 준 대화를 이어 대화로 넘긴다", async () => {
+    mockCurrent.mockResolvedValue({
+      ok: true,
+      data: {
+        sessionId: 42,
+        messages: [{ role: "assistant", text: "오늘 어땠어요?" }],
+        reply: {
+          text: "오늘 어땠어요?",
+          phase: "diary_chat",
+          options: null,
+          wishCard: null,
+          diary: null,
+          done: false,
+          safetyLevel: "none",
+        },
+      },
+    });
+    const { queryByRole } = await render(<RetroConfirm />);
+
+    expect(queryByRole("button", { name: "직접 일기 쓰기" })).toBeNull();
+    await waitFor(() => expect(lastRedirect()).toEqual({ href: "/retro/talk" }));
+    expect(useRetro.getState().sessionId).toBe(42);
+    expect(useRetro.getState().turns).toHaveLength(1);
+  });
+
+  it("앱이 세션을 이미 들고 있으면 서버에 묻지 않고 대화로 돌아간다", async () => {
+    useRetro.getState().beginSession(7, {
+      text: "첫 질문",
+      phase: "diary_chat",
+      options: null,
+      wishCard: null,
+      diary: null,
+      done: false,
+      safetyLevel: "none",
+    });
+    await render(<RetroConfirm />);
+
+    expect(lastRedirect()).toEqual({ href: "/retro/talk" });
+    expect(mockCurrent).not.toHaveBeenCalled();
+  });
+
+  it("하던 회고가 없거나 묻지 못하면 두 작성 방식을 띄운다", async () => {
+    mockCurrent.mockResolvedValue({ ok: false, code: "network" });
+    const { findByRole } = await render(<RetroConfirm />);
+
+    expect(await findByRole("button", { name: "직접 일기 쓰기" })).toBeTruthy();
+    expect(Redirect).not.toHaveBeenCalled();
+  });
 });
 
 describe("C2 · 오늘 일기를 이미 썼으면", () => {
