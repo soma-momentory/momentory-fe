@@ -1,4 +1,4 @@
-import { Redirect, Stack } from "expo-router";
+import { Redirect, Stack, useNavigation, type NativeStackNavigationProp } from "expo-router";
 import { useEffect } from "react";
 
 import { background, motion } from "@/design/ds";
@@ -20,6 +20,22 @@ import { useDiary } from "@/features/diary/model/diary";
  */
 export default function TabsLayout() {
   const status = useAuth((s) => s.status);
+  // 레이아웃의 navigation 은 이 그룹이 서 있는 **루트 스택**의 것이다
+  const navigation = useNavigation<NativeStackNavigationProp<Record<string, object | undefined>>>();
+
+  /**
+   * **탭은 루트 스택의 바닥이다.** 소개 → 로그인 → 온보딩을 지나 들어오면 그 화면들이 탭 아래에
+   * 쌓여 남는다 — `replace("/home")` 은 맨 위 한 장만 바꾼다. 그대로 두면 기기 뒤로가기 · 스와이프가
+   * 홈에서 다시 온보딩(소개)으로 갔다(2026-11-10 실기기 · 기본 정보를 고치고 뒤로 나가다 발견).
+   * 들어오는 길(온보딩 완료 · 다시 로그인 · 앞으로 생길 길)마다 막지 않고 여기 한 곳에서 탭 아래를 걷는다.
+   * 탭 위에 이미 올라온 것(온보딩 끝의 「지금 이야기하기」 → 회고)은 그대로 둔다.
+   */
+  useEffect(() => {
+    const state = navigation.getState();
+    const at = state?.routes.findIndex((r) => r.name === "(tabs)") ?? -1;
+    if (state == null || at <= 0) return;
+    navigation.reset({ ...state, index: state.index - at, routes: state.routes.slice(at) });
+  }, [navigation]);
 
   // S0 을 건너뛴 콜드 스타트(딥링크)면 스스로 판정한다. 이미 판정됐으면 아무 일도 없다
   useEffect(() => {
