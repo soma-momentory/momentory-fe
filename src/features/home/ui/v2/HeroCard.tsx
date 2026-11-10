@@ -351,6 +351,10 @@ export function ReflectionButton({
                 </Defs>
                 <Path d={LABEL_OUTLINE} fill={color} />
                 <Path d={LABEL_OUTLINE} fill={`url(#${gridId})`} />
+                {/* 누르는 동안 면이 한 톤 짙어진다 — 3 내려앉는 것만으로는 손끝에 잘 안 느껴졌다(2026-11-10) */}
+                {pressed && !disabled ? (
+                  <Path d={LABEL_OUTLINE} fill={raisedShadow.grass} fillOpacity={0.35} />
+                ) : null}
                 <Path
                   d={LABEL_STITCH}
                   fill="none"
