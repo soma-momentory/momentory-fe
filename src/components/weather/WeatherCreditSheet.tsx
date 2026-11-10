@@ -1,7 +1,8 @@
 import { Modal as NativeModal, Pressable, StyleSheet, View } from "react-native";
 
-import { BottomSheet, Button, Text } from "@/components/ds";
+import { BottomSheet, Text } from "@/components/ds";
 import { label as labelColor, primary, space } from "@/design/ds";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { formatWeatherUpdatedAt } from "@/features/home/model/weather";
 import { clock } from "@/lib/clock";
 import { openExternalLink } from "@/lib/links";
@@ -79,7 +80,12 @@ export function WeatherCreditSheet({
             </Text>
           </Pressable>
         </View>
-        <Button label="확인" onPress={onDismiss} fill />
+        <ReflectionButton
+          testID="weather-credit-ok"
+          label="확인"
+          onPress={onDismiss}
+          style={styles.ok}
+        />
       </BottomSheet>
     </NativeModal>
   );
@@ -87,4 +93,6 @@ export function WeatherCreditSheet({
 
 const styles = StyleSheet.create({
   content: { gap: space.md },
+  // 홈 「일기 작성하기」와 같은 천 라벨 — 시트가 이미 좌우 여백을 준다(2026-11-10)
+  ok: { marginTop: 0, marginHorizontal: 0 },
 });

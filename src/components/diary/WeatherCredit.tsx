@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Modal as NativeModal, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
 
-import { BottomSheet, Button, IconButton, Text } from "@/components/ds";
+import { BottomSheet, IconButton, Text } from "@/components/ds";
 import { label, primary, space } from "@/design/ds";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { openExternalLink } from "@/lib/links";
 
 /** MET Norway CC BY 4.0 출처를 날씨 옆 정보 아이콘 안에서 제공한다. */
@@ -53,7 +54,12 @@ export function WeatherCredit({ style }: { style?: ViewStyle }) {
               </Text>
             </Pressable>
           </View>
-          <Button label="확인" onPress={() => setOpen(false)} fill />
+          <ReflectionButton
+            testID="weather-credit-ok"
+            label="확인"
+            onPress={() => setOpen(false)}
+            style={styles.ok}
+          />
         </BottomSheet>
       </NativeModal>
     </>
@@ -63,4 +69,6 @@ export function WeatherCredit({ style }: { style?: ViewStyle }) {
 const styles = StyleSheet.create({
   trigger: { width: 20, height: 20, opacity: 0.72 },
   content: { gap: space.md },
+  // 홈 「일기 작성하기」와 같은 천 라벨 — 시트가 이미 좌우 여백을 준다(2026-11-10)
+  ok: { marginTop: 0, marginHorizontal: 0 },
 });

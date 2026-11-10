@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 
 import { Button, Text } from "@/components/ds";
+
+import { ScenePillButton } from "./SceneChrome";
 import {
   background,
   elevation,
@@ -217,10 +219,11 @@ function GuidePage({
             <View key={i} style={[styles.dot, i === page ? styles.dotOn : null]} />
           ))}
         </View>
-        <Button
+        {/* 쉼 콘텐츠 안쪽 버튼은 빈티지 알약 하나의 결이다 — 크림 카드 바로 아래 주 행동이라 꿀빛
+            (`DESIGN.md` 쉼 콘텐츠 공통 규칙 5 · 2026-11-10 사용자 요청으로 DS 단색에서 바꿨다) */}
+        <ScenePillButton
           label={label}
-          labelVariant="headline1"
-          fill
+          tone="accent"
           disabled={measuring}
           onPress={onPress ?? noop}
         />

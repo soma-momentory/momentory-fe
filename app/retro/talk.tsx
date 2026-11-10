@@ -13,7 +13,6 @@ import {
 } from "react-native";
 
 import {
-  Button,
   ChatBubble,
   ChatDock,
   ChatScaffold,
@@ -46,6 +45,7 @@ import { useRetro } from "@/features/retro/model/retro";
 import { RETRO_BABA_HEIGHT, RETRO_BABA_LEFT, RetroBaba } from "@/features/retro/ui/RetroBaba";
 import { RETRO_BABA_PEEK_LEFT, RetroBabaPeek } from "@/features/retro/ui/RetroBabaPeek";
 import { RetroStickerChoices } from "@/features/retro/ui/RetroStickerChoices";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 const RETRO_BABA_LIFT = retroDiary.characterLift;
 
 /**
@@ -451,7 +451,9 @@ function RetroDock(p: DockProps) {
   if (p.noSession) {
     // 하루 한 번에 막힌 날 — 말은 바바가 말풍선으로 했으니 독에는 버튼만 남긴다
     if (p.startTerminal) {
-      return <Button labelVariant="headline1" label="홈으로 돌아가기" fill onPress={p.onGoHome} />;
+      return (
+        <ReflectionButton label="홈으로 돌아가기" onPress={p.onGoHome} style={styles.dockCta} />
+      );
     }
     if (p.error != null) {
       return (
@@ -466,17 +468,23 @@ function RetroDock(p: DockProps) {
               {p.error}
             </Text>
           </View>
-          <Button
-            labelVariant="headline1"
+          <ReflectionButton
             label="다시 시도"
-            fill
             onPress={p.onRetry}
             disabled={p.pending}
+            style={styles.dockCta}
           />
         </>
       );
     }
-    return <Button labelVariant="headline1" label="시작하는 중" fill disabled />;
+    return (
+      <ReflectionButton
+        label="시작하는 중"
+        disabled
+        onPress={() => undefined}
+        style={styles.dockCta}
+      />
+    );
   }
 
   return (
@@ -501,22 +509,20 @@ function RetroDock(p: DockProps) {
 
       <View style={styles.actionSlot}>
         {p.ended ? (
-          <Button
-            labelVariant="headline1"
+          <ReflectionButton
             label="홈으로 돌아가기"
-            fill
             onPress={() => router.replace("/home")}
+            style={styles.dockCta}
           />
         ) : p.safetyHold && !p.resuming ? (
           /* 위기 안내의 두 갈래는 **일기 저장 화면(`draft`)과 같은 배치**다(2026-09-11 · 사용자 요청):
            주 행동은 채운 버튼, 보조는 그 아래 **작은 텍스트 버튼이 가운데**. 같은 모양의 갈림길이
            화면마다 다르게 서 있으면 어느 쪽이 주 행동인지 매번 다시 읽어야 한다 */
           <View style={styles.holdActions}>
-            <Button
-              labelVariant="headline1"
+            <ReflectionButton
               label="홈으로 돌아가기"
-              fill
               onPress={() => router.replace("/home")}
+              style={styles.dockCta}
             />
             <View style={styles.holdSecondary}>
               <Pressable
@@ -532,19 +538,17 @@ function RetroDock(p: DockProps) {
             </View>
           </View>
         ) : p.done ? (
-          <Button
-            labelVariant="headline1"
+          <ReflectionButton
             label="일기 확인하러 가기"
-            fill
             onPress={() => router.push("/retro/draft")}
+            style={styles.dockCta}
           />
         ) : p.showOptions ? (
-          <Button
-            labelVariant="headline1"
+          <ReflectionButton
             label="보내기"
-            fill
             disabled={!p.canSendPicked || p.pending}
             onPress={p.onSendPicked}
+            style={styles.dockCta}
           />
         ) : (
           <ChatDock
@@ -564,6 +568,8 @@ function RetroDock(p: DockProps) {
 }
 
 const styles = StyleSheet.create({
+  // 홈 「일기 작성하기」와 같은 천 라벨 — 독이 이미 좌우 여백을 준다(2026-11-10 · 사용자 요청)
+  dockCta: { marginTop: 0, marginHorizontal: 0 },
   actionSlot: { minHeight: retroDiary.inputMinHeight, justifyContent: "center" },
   /**
    * 위기 안내의 두 버튼 — 「이어서 얘기하기의 위아래 공간을 각각 반으로」(2026-09-11 · 사용자 요청).

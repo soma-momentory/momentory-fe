@@ -2,7 +2,7 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 
-import { Icon, Screen, Spinner, Text, TopNavigation } from "@/components/ds";
+import { Icon, Screen, Spinner, TabPaperBackground, Text, TopNavigation } from "@/components/ds";
 import { homeV2, label as labelColor, overlay, radius, space } from "@/design/ds";
 import { useDiary } from "@/features/diary/model/diary";
 import type { LetterSummary } from "@/features/letter/data/letterApi";
@@ -57,7 +57,8 @@ export default function LetterBox() {
   };
 
   return (
-    <Screen>
+    <Screen grid={false} backdrop={<TabPaperBackground tab="홈" />}>
+      {/* 홈에서 여는 편지라 홈과 같은 종이 질감이다(2026-11-10 · 옛 모눈을 걷었다) */}
       <TopNavigation leading="close" onLeadingPress={close} title="바바의 편지" titleHand />
       {summaries == null ? (
         asked ? (

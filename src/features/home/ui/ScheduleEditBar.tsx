@@ -5,9 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, IconButton, singleLineInput, Text } from "@/components/ds";
 import {
   background,
-  elevation,
   fontFamily,
-  hairline,
   interaction,
   label as labelColor,
   layout,
@@ -17,6 +15,9 @@ import {
   space,
   text,
 } from "@/design/ds";
+import { myPaper } from "@/design/ds/myPaper";
+
+import { ReflectionButton } from "./v2/HeroCard";
 
 /**
  * 일정 입력 바 — **추가(`12-e`)와 수정(`12-c`)이 같은 바를 쓴다**
@@ -28,6 +29,8 @@ import {
  * - **수정**: 같은 바에 **Primary 링 + `일정 수정` 캡션**만 더한다. 취소 / 저장
  * - **삭제는 여기 없다.** 줄의 ⋮ 메뉴로 옮겼다(시안 4-2) — 지우는 길과 고치는
  *   길이 한 자리에 있으면 고치러 왔다가 지우게 된다
+ * - 바는 마이 · 기본 정보와 같은 **흰 종이**이고, `저장` 은 홈 「일기 작성하기」와 같은 천 라벨 ·
+ *   `취소` 는 그 아래 작은 텍스트 버튼이다(2026-11-10 · 사용자 요청 — 일기 저장 화면과 같은 짝)
  *
  * ## 화면이지만 시트다
  *
@@ -153,8 +156,16 @@ export function ScheduleEditBar({
           {/* 수정에만 취소/저장이 붙는다 — 추가는 ＋ 하나로 끝난다 */}
           {editing ? (
             <View style={styles.actions}>
-              <Button label="취소" variant="outlined" onPress={close} style={styles.cancel} />
-              <Button label="저장" disabled={!ready} onPress={submit} style={styles.save} />
+              <ReflectionButton
+                testID="schedule-save"
+                label="저장"
+                disabled={!ready}
+                onPress={submit}
+                style={styles.save}
+              />
+              <View style={styles.cancel}>
+                <Button label="취소" variant="text" size="small" onPress={close} />
+              </View>
             </View>
           ) : null}
         </View>
@@ -182,13 +193,19 @@ const styles = StyleSheet.create({
     minHeight: 60,
     paddingLeft: 18,
     paddingRight: space.sm,
-    borderRadius: radius.full,
-    backgroundColor: background.elevated,
-    ...hairline.neutral,
-    ...elevation.floating,
+    // 종이 묶음(`PaperGroup`)과 같은 흰 종이 · 모서리 · 그림자
+    borderRadius: 9,
+    backgroundColor: myPaper.group,
+    borderWidth: 1,
+    borderColor: myPaper.rule,
+    shadowColor: myPaper.shadow,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
-  // 수정임을 링 하나로 말한다 — 캡션과 함께 두 신호다(색만으로 말하지 않는다)
-  barEditing: { borderWidth: 1, borderColor: primary.normal },
+  // 수정임을 링 하나로 말한다 — 캡션과 함께 두 신호다(색만으로 말하지 않는다 · 굵기도 바뀐다)
+  barEditing: { borderWidth: 2, borderColor: primary.normal },
   input: {
     flex: 1,
     // 입력값은 Regular 400 (`DESIGN.md` §2)
@@ -202,8 +219,8 @@ const styles = StyleSheet.create({
   },
   clear: { width: size.icon.lg, height: size.icon.lg },
   add: { width: layout.minTouch, height: layout.minTouch, borderRadius: radius.full },
-  actions: { flexDirection: "row", gap: space.sm },
-  // 시안의 1 : 2 — 머무는 쪽보다 나아가는 쪽이 넓다
-  cancel: { flex: 1 },
-  save: { flex: 2 },
+  // 일기 저장 화면과 같은 짝 — 주 행동 천 라벨, 그 아래 가운데 작은 텍스트 버튼
+  actions: { gap: layout.dockActionGap },
+  save: { marginTop: 0, marginHorizontal: 0 },
+  cancel: { alignItems: "center" },
 });
