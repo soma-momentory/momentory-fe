@@ -88,7 +88,7 @@ Expo SDK 57 · React Native 0.86 · React 19 · TypeScript 6 (strict) · expo-ro
 검증은 **155 스위트 / 2,050 테스트**가 통과한다(2026-11-09 · main `133644c`).
 같은 날 **주간 행복 저장**(이번 주만 쓰고 지난 주는 읽기만)과 **마이 전체 기간 집계**가 붙었다.
 마일스톤별 상세와 남은 일은 [`docs/TASKS.md`](docs/TASKS.md)가 정본이다.
-마지막 스토어 제출은 **1.4.0**(iOS `buildNumber 8` · Android `versionCode 11` · 운영 서버 · 2026-11-09 확인 · `app.config.ts`)이다.
+마지막 스토어 제출은 **1.4.0**(iOS `buildNumber 8` · Android `versionCode 11` · 운영 서버 · `app.config.ts`)이다 — **Android 는 출시됐고**(2026-11-09 확인) iOS 는 제출했다.
 그 전 제출은 1.3.0(iOS `buildNumber 7` · Android `versionCode 10` · 2026-10-14).
 
 **화면 완료가 곧 MVP 완료는 아니다.** 남은 것:

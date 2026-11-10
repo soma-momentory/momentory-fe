@@ -21,7 +21,7 @@ MVP 40화면(2026-08-06 상류 v2)을 **둘이 나눠 가기 위한** 목록이�
 
 ✅ **FE main 이 부르는 계약이 운영 서버에 다 있다**(2026-11-08 BE dev → main 릴리스 · 운영과 dev 의 경로가 같다).
 그 전에는 BE `#76`~`#91` 이 dev 에만 있어 스토어 제출이 막혀 있었다 — 그때 마지막 제출은 1.3.0 ·
-iOS `buildNumber 7` · Android `versionCode 10`(2026-10-14). 릴리스 뒤 **1.4.0**(iOS `buildNumber 8` · Android `versionCode 11`)을 제출했다(2026-11-09 확인).
+iOS `buildNumber 7` · Android `versionCode 10`(2026-10-14). 릴리스 뒤 **1.4.0**(iOS `buildNumber 8` · Android `versionCode 11`)을 제출했고 **Android 는 출시됐다**(2026-11-09 확인).
 
 닫힌 것 — 2026-09-12 이후 (FE PR 번호 · BE PR 번호):
 
