@@ -128,7 +128,7 @@ src/features/music/{model/{tracks,music,musicPlayer}.ts, data/musicMemory.ts, ui
 src/features/my/{model/{settings,reminders,basicInfo,calendarLink,recordedDays}.ts, data/inquiryApi.ts,
                  ui/{MyMainView,ReminderRoute}.tsx}
                   ← 알림 · 프로필 설정 · 설정 ↔ OS 예약 화해 · 기본 정보(한 항목만 고쳐도 통째로 보낸다 — 덮어쓰는 PUT) ·
-                    캘린더 잇기 · 문의 · 「일기 N일 기록」(전체 기간). ReminderRoute = 알림을 누르면 부른 화면으로 옮긴다
+                    캘린더 잇기 · 문의 · 「일기 쓴 날 N일」(전체 기간). ReminderRoute = 알림을 누르면 부른 화면으로 옮긴다
 src/features/analytics/{index,client,amplitude,events,observation,activeClock,restContent,sensePond,
                         useRestContentAnalytics,useSensePondAnalytics,AnalyticsObserver,AnalyticsResource}.tsx
                   ← **계측의 단일 통로**(Amplitude). 키가 비면 꺼진다 · 개발 빌드는 기본 차단.

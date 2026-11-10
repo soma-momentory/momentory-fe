@@ -32,7 +32,6 @@ describe("MyMainView", () => {
       "모멘토리와 함께한 기록",
       "일기 쓴 날",
       "12일",
-      "일기 12일 기록",
       "알림 설정",
       "캘린더 연동",
       "연결됨",
@@ -101,7 +100,6 @@ describe("MyMainView", () => {
 
     expect(screen.getByText(nickname)).toBeTruthy();
     expect(screen.getByText("0일")).toBeTruthy();
-    expect(screen.getByText("일기 0일 기록")).toBeTruthy();
     expect(screen.getByText("설정을 저장하지 못했어요.")).toBeTruthy();
     expect(screen.getByText("탈퇴하지 못했어요.")).toBeTruthy();
     await fireEvent.press(screen.getByText("캘린더 연동"));
