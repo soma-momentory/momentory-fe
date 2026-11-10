@@ -26,7 +26,7 @@
 
 스킬을 고칠 때는 **두 사본을 함께 고친다.**
 
-> (2026-11-09 대조: `.claude/skills/app-store-screenshots/` 가 작업 트리에 있지만 **git 에 들어가 있지 않고** `.agents/skills/` 사본도 없다 — `skills-lock.json`(역시 미추적)으로 외부에서 받은 것이다. 위 16개에 세지 않는다. 들일지는 사람이 정한다.)
+> (2026-11-10: 앱스토어 이미지용 외부 스킬 `app-store-screenshots`(`.claude` · `.agents` 두 사본 · `skills-lock.json` 으로 받음)는 **로컬에만 둔다** — 사람이 정했다. `.gitignore` · `.prettierignore` 가 뺀다. 위 16개에 세지 않는다.)
 
 ## 조사했지만 설치하지 않은 후보
 
