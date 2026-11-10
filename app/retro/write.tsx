@@ -17,6 +17,7 @@ import {
 } from "@/components/diary/DiaryPaper";
 import { BottomSheet, Button, ChoiceGrid, Screen, Text, TopNavigation } from "@/components/ds";
 import { label, layout, space, status } from "@/design/ds";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { diaryPaper } from "@/design/ds/diaryPaper";
 import { useDiary } from "@/features/diary/model/diary";
 import { hasDiaryOn } from "@/features/diary/model/selectors";
@@ -146,12 +147,12 @@ export default function RetroWrite() {
                 {error}
               </Text>
             ) : null}
-            <Button
+            <ReflectionButton
+              testID="diary-save"
               label={saving ? "저장 중…" : "일기 저장하기"}
-              fill
-              raised
               disabled={saving || !body.trim()}
               onPress={() => void save()}
+              style={styles.save}
             />
           </View>
         </KeyboardAvoidingView>
@@ -194,4 +195,5 @@ const styles = StyleSheet.create({
   input: { ...diaryPaper.body, color: label.normal, padding: 0 },
   counter: { textAlign: "right", fontVariant: ["tabular-nums"] },
   dock: { gap: space.md, paddingTop: space.md },
+  save: { marginTop: 0, marginHorizontal: 0 },
 });

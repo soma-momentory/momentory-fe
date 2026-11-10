@@ -119,15 +119,22 @@ describe("이름 · 나이 성별", () => {
 describe("알림", () => {
   it("질문 3 에서 「지쳐서 바로 자요」를 골랐으면 9시가 먼저 골라져 있다", async () => {
     useDraft.getState().answer("dayEnd", "TIRED_SLEEP");
-    const { getByText } = await render(<Notify />);
-    expect(getByText("밤 9:00")).toBeTruthy();
+    const { getAllByText } = await render(<Notify />);
+    // 잠금화면 시각과 「알림 시간」 줄 두 곳
+    expect(getAllByText("밤 9:00")).toHaveLength(2);
   });
 
   it("다시 온보딩하는 사람은 지금 시각이 먼저 골라져 있다", async () => {
     useDraft.getState().set("retroTime", "07:30");
     const { getAllByText } = await render(<Notify />);
-    // 잠금화면 시각과 「직접 고를게요」 칩 두 곳에 같은 시각이 보인다
+    // 잠금화면 시각과 「알림 시간」 줄 두 곳에 같은 시각이 보인다
     expect(getAllByText("아침 7:30")).toHaveLength(2);
+  });
+
+  it("칩 밖의 시각은 「알림 시간」 줄이 마이와 같은 휠 시트로 연다", async () => {
+    const { getByLabelText, getByText } = await render(<Notify />);
+    await fireEvent.press(getByLabelText("알림 시간 밤 10:30, 바꾸기"));
+    expect(getByText("완료")).toBeTruthy();
   });
 
   it("「나중에」는 알림만 끄고 시각은 남긴다", async () => {

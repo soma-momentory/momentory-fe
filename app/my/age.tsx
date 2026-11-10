@@ -25,7 +25,7 @@ export default function AgeEdit() {
   return (
     <BasicInfoEditor title="나이" changed={changed} patch={{ age: trimmed }}>
       <TextField
-        variant="pill"
+        variant="paper"
         value={age}
         // 숫자 아닌 것은 붙여넣어도 들어오지 않는다
         onChangeText={(v) => setAge(v.replace(/[^0-9]/g, ""))}

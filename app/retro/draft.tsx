@@ -18,6 +18,7 @@ import {
 import { WeatherCredit } from "@/components/diary/WeatherCredit";
 import { Button, Screen, Text, TopNavigation } from "@/components/ds";
 import { label as labelColor, layout, space } from "@/design/ds";
+import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { diaryPaper } from "@/design/ds/diaryPaper";
 import { track } from "@/features/analytics";
 import { useActiveClock } from "@/features/analytics/activeClock";
@@ -263,10 +264,20 @@ export default function RetroDraft() {
           고친 본문을 한 번 확인한 뒤 「일기 저장하기」로 넘어간다(수정 완료 → 저장).
         */}
           {editing ? (
-            <Button label="수정 완료" fill raised onPress={finishEdit} />
+            <ReflectionButton
+              testID="diary-edit-done"
+              label="수정 완료"
+              onPress={finishEdit}
+              style={styles.save}
+            />
           ) : (
             <>
-              <Button label="일기 저장하기" fill raised onPress={save} />
+              <ReflectionButton
+                testID="diary-save"
+                label="일기 저장하기"
+                onPress={save}
+                style={styles.save}
+              />
               <View style={styles.secondary}>
                 <Button label="직접 고치기" variant="text" size="small" onPress={startEdit} />
               </View>
@@ -289,5 +300,6 @@ const styles = StyleSheet.create({
 
   // 주 버튼과 보조 버튼 사이 — 같은 짝을 쓰는 화면이 전부 같은 값이다(`layout.dockActionGap`)
   dock: { gap: layout.dockActionGap },
+  save: { marginTop: 0, marginHorizontal: 0 },
   secondary: { alignItems: "center" },
 });

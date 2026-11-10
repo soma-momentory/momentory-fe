@@ -1,5 +1,12 @@
 import { useId, useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import Svg, { Defs, Path, Pattern } from "react-native-svg";
 
 import { MaskingTape } from "@/components/ds/MaskingTape";
@@ -271,20 +278,28 @@ export function HeroCard({
  * 화면의 유일한 주 버튼 — **오려 붙인 천 라벨**이다. 말풍선처럼 손으로 그린 윤곽에 옛 스티커의 격자와
  * 점선 바느질을 얹어 다꾸 페이지와 어울리게 했다. 초록 면 + 흰 글자는 대비 기준 그대로다.
  * 아래에 같은 윤곽을 짙은 초록으로 깔았고, 누르면 면이 내려앉는다. 바깥 상자는 그대로라 자리가 밀리지 않는다.
+ *
+ * 앱의 주 「저장」 버튼도 이것이다(2026-11-10 · 사용자 요청 — 일기 저장 · 기본 정보 · 온보딩).
+ * 꺼지면 바랜 면이 되고 밑 윤곽이 빠져 내려앉지 않는다 — 색만이 아니라 깊이로도 말한다.
  */
 export function ReflectionButton({
-  color,
+  color = homeV2.color.green,
   onPress,
   label = "일기 작성하기",
   testID = "studio-home-cta",
   compact = false,
+  disabled = false,
+  style,
 }: {
-  color: string;
+  color?: string;
   onPress: () => void;
   label?: string;
   testID?: string;
   /** 줄 안에 놓는 작은 라벨(쉼터 바람카드의 「했어요」) — 기본은 화면 폭 전체다 */
   compact?: boolean;
+  disabled?: boolean;
+  /** 바깥 여백 — 홈 밖에서는 화면이 이미 좌우 여백을 준다 */
+  style?: StyleProp<ViewStyle>;
 }) {
   const gridId = `label-grid-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
@@ -292,12 +307,17 @@ export function ReflectionButton({
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={[styles.cta, compact ? styles.ctaCompact : null]}
+      style={[styles.cta, compact ? styles.ctaCompact : null, style]}
     >
       {({ pressed }) => (
         <>
-          <View pointerEvents="none" style={styles.ctaDepth}>
+          <View
+            pointerEvents="none"
+            style={[styles.ctaDepth, disabled ? styles.ctaDepthOff : null]}
+          >
             <Svg width="100%" height="100%" viewBox="0 0 350 66" preserveAspectRatio="none">
               <Path d={LABEL_OUTLINE} fill={raisedShadow.grass} />
             </Svg>
@@ -308,6 +328,7 @@ export function ReflectionButton({
               styles.ctaFace,
               compact ? styles.ctaFaceCompact : null,
               pressed ? styles.ctaFacePressed : null,
+              disabled ? styles.ctaFaceOff : null,
             ]}
           >
             <View
@@ -419,6 +440,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ctaFacePressed: { transform: [{ translateY: CTA.depth }] },
+  ctaDepthOff: { opacity: 0 },
+  ctaFaceOff: { opacity: 0.4, transform: [{ translateY: CTA.depth }] },
   ctaCompact: { marginTop: 0, marginHorizontal: 0 },
   ctaFaceCompact: { minHeight: 44, paddingHorizontal: 22 },
   ctaTextCompact: { fontSize: 18, lineHeight: 24 },
