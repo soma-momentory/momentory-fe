@@ -6,13 +6,15 @@ import { Text } from "@/components/ds";
 import { background, label as labelColor, line, primary, space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import {
+  INTRO_CARDS,
+  introHref,
   nextQuestionHref,
   QUESTIONS,
   type Answers,
   type QuestionKey,
 } from "@/features/onboarding/model/flow";
 
-import { OnboardingFrame, Segments, TextLink } from "./OnboardingParts";
+import { backOr, OnboardingFrame, Segments, TextLink } from "./OnboardingParts";
 
 const LETTERS = ["A", "B", "C"] as const;
 
@@ -39,7 +41,10 @@ export function QuestionScreen({ questionKey }: { questionKey: QuestionKey }) {
 
   return (
     <OnboardingFrame
-      onBack={() => router.back()}
+      // 첫 질문 앞은 로그인 전 소개의 마지막 장이다
+      onBack={backOr(
+        QUESTIONS[index - 1]?.href ?? introHref(INTRO_CARDS[INTRO_CARDS.length - 1]!.id),
+      )}
       progress={<Segments count={QUESTIONS.length} index={index} />}
     >
       <Text variant="title3Hand" color={labelColor.strong} style={styles.question}>

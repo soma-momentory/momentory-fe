@@ -2,7 +2,13 @@ import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 import { Chip, PaperGroup, Text, TextField } from "@/components/ds";
-import { Baba, Bubble, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
+import {
+  Baba,
+  backOr,
+  Bubble,
+  OnboardingFrame,
+  SetupBar,
+} from "@/components/onboarding/OnboardingParts";
 import { label as labelColor, space } from "@/design/ds";
 import { UNSPECIFIED_GENDER, useDraft } from "@/features/onboarding/model/draft";
 import { isValidAge, SETUP_STEPS } from "@/features/onboarding/model/flow";
@@ -28,7 +34,7 @@ export default function About() {
 
   return (
     <OnboardingFrame
-      onBack={() => router.back()}
+      onBack={backOr("/name")}
       progress={<SetupBar index={SETUP_STEPS.indexOf("about")} count={SETUP_STEPS.length} />}
       onSkip={next}
       primary={{ label: "다음", disabled: !isValidAge(age), onPress: next }}

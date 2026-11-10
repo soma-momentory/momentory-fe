@@ -20,7 +20,7 @@ import { useDraft } from "@/features/onboarding/model/draft";
  * 순서 · 문구 규칙은 `flow.test` 가 본다. 여기서는 **누르면 어디로 가는가**만 본다.
  */
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
+  router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn(() => true) },
 }));
 jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
   ...jest.requireActual("@/features/onboarding/data/completeOnboardingApi"),
@@ -113,6 +113,18 @@ describe("이름 · 나이 성별", () => {
     const { getByLabelText } = await render(<Screen />);
     await fireEvent.press(getByLabelText("뒤로"));
     expect(jest.mocked(router.back)).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["나이 · 성별", About, "/name"],
+    ["캘린더", CalendarLink, "/about"],
+    ["알림", Notify, "/calendar"],
+  ])("%s — 돌아갈 기록이 없으면(새로고침 · 복원) 앞 단계로 간다", async (_, Screen, previous) => {
+    jest.mocked(router.canGoBack).mockReturnValueOnce(false);
+    const { getByLabelText } = await render(<Screen />);
+    await fireEvent.press(getByLabelText("뒤로"));
+    expect(jest.mocked(router.back)).not.toHaveBeenCalled();
+    expect(replace).toHaveBeenCalledWith(previous);
   });
 });
 

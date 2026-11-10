@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import { router, type Href } from "expo-router";
 import type { ReactNode } from "react";
 import {
   KeyboardAvoidingView,
@@ -114,6 +115,15 @@ export function SetupBar({ index, count }: { index: number; count: number }) {
     </View>
   );
 }
+
+/**
+ * 「‹」 — 돌아갈 기록이 없으면 **앞 단계로** 간다. 화면이 기록 없이 열리면(개발 중 새로고침 · 앱이 그 주소로
+ * 복원 · Lab 에서 바로 열기) `router.back()` 은 아무 일도 하지 않았다 — 눌리는데 아무 일도 없는 버튼이 된다.
+ */
+export const backOr = (previous: Href) => () => {
+  if (router.canGoBack()) router.back();
+  else router.replace(previous);
+};
 
 /** 밑줄 친 작은 글자 버튼 — 「건너뛰기」 · 「나중에」 */
 export function TextLink({ label, onPress }: { label: string; onPress: () => void }) {

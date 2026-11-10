@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ds";
-import { Baba, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
+import { Baba, backOr, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
 import { background, label as labelColor, line, primary, secondary, space } from "@/design/ds";
 import { syncDeviceCalendar } from "@/features/calendar/model/foregroundSync";
 import { useDraft } from "@/features/onboarding/model/draft";
@@ -38,7 +38,7 @@ export default function CalendarLink() {
 
   return (
     <OnboardingFrame
-      onBack={() => router.back()}
+      onBack={backOr("/about")}
       progress={<SetupBar index={SETUP_STEPS.indexOf("calendar")} count={SETUP_STEPS.length} />}
       art={
         <View style={styles.compare}>

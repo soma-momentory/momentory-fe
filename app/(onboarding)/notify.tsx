@@ -5,7 +5,7 @@ import { StyleSheet, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { Chip, PaperGroup, PaperRow, Text, TimeSheet } from "@/components/ds";
-import { Baba, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
+import { Baba, backOr, OnboardingFrame, SetupBar } from "@/components/onboarding/OnboardingParts";
 import { label as labelColor, onboardingArt, space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { defaultRetroTime, SETUP_STEPS, TIME_CHOICES } from "@/features/onboarding/model/flow";
@@ -48,7 +48,7 @@ export default function Notify() {
   return (
     <>
       <OnboardingFrame
-        onBack={() => router.back()}
+        onBack={backOr("/calendar")}
         progress={<SetupBar index={SETUP_STEPS.indexOf("notify")} count={SETUP_STEPS.length} />}
         art={
           <View style={styles.wrap}>
