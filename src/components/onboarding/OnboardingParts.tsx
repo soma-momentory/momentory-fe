@@ -128,7 +128,13 @@ export const backOr = (previous: Href) => () => {
 /** 밑줄 친 작은 글자 버튼 — 「건너뛰기」 · 「나중에」 */
 export function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={12} style={styles.link}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      hitSlop={12}
+      // 누르는 동안 옅어진다 — 글자 버튼에도 눌린 표시가 있어야 한다
+      style={({ pressed }) => [styles.link, pressed ? styles.linkPressed : null]}
+    >
       <Text variant="label1" color={labelColor.neutral} style={styles.linkText}>
         {label}
       </Text>
@@ -305,6 +311,7 @@ const styles = StyleSheet.create({
   primary: { marginTop: 0, marginHorizontal: 0 },
   link: { alignSelf: "center", paddingVertical: space.xs },
   linkText: { textDecorationLine: "underline" },
+  linkPressed: { opacity: 0.45 },
   error: { textAlign: "center" },
   bubble: {
     backgroundColor: background.elevated,

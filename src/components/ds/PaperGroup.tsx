@@ -15,6 +15,31 @@ import { Text } from "./Text";
  */
 export type PaperTone = "settings" | "support" | "account";
 
+/** 흰 종이 한 장의 면 — 묶음 카드와 낱장 쪽지(온보딩 선택지)가 같이 쓴다 */
+export const paperSheet = {
+  backgroundColor: paper.group,
+  borderRadius: 9,
+  borderWidth: 1,
+  borderColor: paper.rule,
+  shadowColor: paper.shadow,
+  shadowOpacity: 0.1,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 2,
+} as const;
+
+/**
+ * 낱장 쪽지를 늘어놓을 때 번갈아 주는 기울기 — 같은 각도로 서면 표처럼 읽힌다.
+ * 누르는 동안(`pressed`)은 쪽지가 바닥에 눌려 붙는다 — 조금 내려앉고 그림자가 빠지며 면이 한 톤 따뜻해진다
+ * (2026-11-10 · 사용자 요청 「누르는 느낌이 안 난다」)
+ */
+export const paperTilt = (i: number, pressed = false) => [
+  { transform: [{ rotate: i % 2 === 0 ? "-0.6deg" : "0.5deg" }, { translateY: pressed ? 2 : 0 }] },
+  pressed ? PRESSED : null,
+];
+
+const PRESSED = { backgroundColor: paper.profile, shadowOpacity: 0.02, elevation: 0 } as const;
+
 export function PaperGroup({
   label,
   tone = "settings",
@@ -153,16 +178,7 @@ const styles = StyleSheet.create({
   group: { gap: 8 },
   heading: { alignSelf: "flex-start", marginLeft: 4, paddingHorizontal: 2 },
   highlight: { position: "absolute", left: 0, right: 0, bottom: 4, height: 9 },
-  card: {
-    backgroundColor: paper.group,
-    borderRadius: 9,
-    paddingHorizontal: 12,
-    shadowColor: paper.shadow,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
+  card: { ...paperSheet, borderWidth: 0, paddingHorizontal: 12 },
   cardPadded: { paddingVertical: space.md, gap: space.md },
   tape: { position: "absolute", top: -7, right: 17, width: 46, height: 14, opacity: 0.8 },
   note: { marginLeft: 4 },

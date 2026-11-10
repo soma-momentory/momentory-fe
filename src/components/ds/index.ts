@@ -38,7 +38,7 @@ export { Button, type ButtonSize, type ButtonVariant } from "./Button";
 export { IconButton } from "./IconButton";
 export { SocialButton, SOCIAL_BUTTON_SIZE, type SocialProvider } from "./SocialButton";
 export { Card, InfoBlock } from "./Card";
-export { PaperGroup, PaperRow, type PaperTone } from "./PaperGroup";
+export { PaperGroup, PaperRow, paperSheet, paperTilt, type PaperTone } from "./PaperGroup";
 export { ListCell, ListDivider, type ListCellProps } from "./ListCell";
 export { SectionHeader } from "./SectionHeader";
 export { Menu, type MenuAction } from "./Menu";

@@ -1,9 +1,9 @@
 import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { EmotionPebble, Text } from "@/components/ds";
+import { EmotionPebble, paperSheet, paperTilt, Text } from "@/components/ds";
 import { OnboardingFrame } from "@/components/onboarding/OnboardingParts";
-import { background, label as labelColor, line, onboardingArt, primary, space } from "@/design/ds";
+import { label as labelColor, line, onboardingArt, primary, space } from "@/design/ds";
 import { useDraft } from "@/features/onboarding/model/draft";
 import { GOALS, type Goal } from "@/features/onboarding/model/flow";
 
@@ -25,7 +25,7 @@ export default function GoalScreen() {
         여러 개 골라도 돼요
       </Text>
       <View style={styles.list}>
-        {GOALS.map((g) => {
+        {GOALS.map((g, i) => {
           const on = goals.includes(g.code);
           return (
             <Pressable
@@ -33,7 +33,7 @@ export default function GoalScreen() {
               accessibilityRole="checkbox"
               accessibilityState={{ checked: on }}
               onPress={() => toggle(g.code)}
-              style={[styles.row, on && styles.rowOn]}
+              style={({ pressed }) => [styles.row, paperTilt(i, pressed), on && styles.rowOn]}
             >
               <EmotionPebble id={g.pebble} size={30} />
               <Text
@@ -56,14 +56,12 @@ const styles = StyleSheet.create({
   title: { marginTop: space.xl3, textAlign: "center" },
   sub: { marginTop: space.xs, textAlign: "center" },
   list: { marginTop: space.xl2, gap: 9 },
+  // 목표 하나가 흰 종이 쪽지 한 장이다 — 질문 선택지와 같은 종이(2026-11-10 · 사용자 요청)
   row: {
+    ...paperSheet,
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
-    backgroundColor: background.elevated,
-    borderWidth: 1.5,
-    borderColor: line.neutral,
-    borderRadius: 16,
     paddingVertical: space.sm,
     paddingHorizontal: 14,
   },

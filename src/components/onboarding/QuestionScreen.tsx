@@ -2,8 +2,9 @@ import { track } from "@/features/analytics";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Text } from "@/components/ds";
-import { background, label as labelColor, line, primary, space } from "@/design/ds";
+import { paperSheet, paperTilt, Text } from "@/components/ds";
+import { label as labelColor, primary, space } from "@/design/ds";
+import { myPaper } from "@/design/ds/myPaper";
 import { useDraft } from "@/features/onboarding/model/draft";
 import {
   INTRO_CARDS,
@@ -59,7 +60,7 @@ export function QuestionScreen({ questionKey }: { questionKey: QuestionKey }) {
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
               onPress={() => choose(o.code)}
-              style={[styles.option, on && styles.optionOn]}
+              style={({ pressed }) => [styles.option, paperTilt(i, pressed), on && styles.optionOn]}
             >
               <View style={styles.letter}>
                 <Text variant="caption1" color={labelColor.neutral}>
@@ -83,14 +84,12 @@ export function QuestionScreen({ questionKey }: { questionKey: QuestionKey }) {
 const styles = StyleSheet.create({
   question: { marginTop: space.xl5, textAlign: "center" },
   options: { marginTop: space.xl3, gap: space.md },
+  // 선택지 하나가 흰 종이 쪽지 한 장이다 — 마이 · 이름 · 나이 성별과 같은 종이(2026-11-10 · 사용자 요청)
   option: {
+    ...paperSheet,
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,
-    backgroundColor: background.elevated,
-    borderWidth: 1.5,
-    borderColor: line.neutral,
-    borderRadius: 18,
     paddingVertical: 15,
     paddingHorizontal: space.lg,
   },
@@ -102,7 +101,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: background.alternative,
+    // 마이 줄의 아이콘 점과 같은 노란 점
+    backgroundColor: myPaper.settingsDot,
   },
   skip: { flex: 1, justifyContent: "flex-end", paddingTop: space.xl3 },
 });
