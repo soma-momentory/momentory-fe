@@ -165,7 +165,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "모멘토리",
   slug: "momentory",
-  version: "1.4.0",
+  version: "1.4.1",
   orientation: "portrait",
   scheme: "momentory", // 회고 알림 → 딥링크
   icon: "./assets/icon.png",
@@ -202,8 +202,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * App Store Connect 에 **올릴 때마다**다.
      *
      * `8` = 1.4.0(2026-11-08).
+     * `9` = 1.4.1(2026-11-10 · 디자인 정리 · 뒤로가기 수정 — 아직 올리기 전).
      */
-    buildNumber: "8",
+    buildNumber: "9",
     infoPlist: {
       // ⚠ 사진은 **빼지 않는다**(2026-11-09) — Motion 과 같은 이유다(아래 `motionUsagePermission`).
       // 앱에는 사진을 고르거나 저장하는 기능이 없지만 `expo-image` 가 `ph://` 주소용
@@ -239,7 +240,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 이력은 `docs/SETUP.md` §8 「versionCode」 표에 둔다 — 여기 숫자와 그 표를 같이 올린다.
     // `10` = 1.3.0 · 운영 서버(`api.momentory.co.kr`) · 2026-10-14. 9 는 10-09 의 1.2.0 빌드가 썼다.
     // `11` = 1.4.0 · 운영 서버 · 2026-11-08.
-    versionCode: 11,
+    // `12` = 1.4.1 · 2026-11-10 올림(아직 업로드 전 — 올리면 SETUP 표의 「예정」을 고친다).
+    versionCode: 12,
   },
 
   // ⚠ 플러그인의 유일한 출처. `npx expo install` 이 app.json 을 만들어 여기 목록을

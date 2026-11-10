@@ -668,7 +668,8 @@ Play 는 같은 값을 두 번 받지 않고, 심사 반려 뒤 재업로드도 
 | 8           | 1.1.2   | 2026-10-06   | `momentory-android-1.1.2-vc8.aab`                                                                |
 | 9           | 1.2.0   | 2026-10-09   | `momentory-android-1.2.0-vc9.aab` — Play 에 올라가 번호가 소비됐다                               |
 | 10          | 1.3.0   | 2026-10-14   | `momentory-android-1.3.0-vc10.aab` — **운영 서버**(`api.momentory.co.kr`) 빌드                   |
-| **11**      | 1.4.0   | 2026-11-08   | `momentory-android-1.4.0-vc11.aab` — 운영 서버 · iOS `buildNumber 8` · **출시**(2026-11-09 확인) |
+| 11          | 1.4.0   | 2026-11-08   | `momentory-android-1.4.0-vc11.aab` — 운영 서버 · iOS `buildNumber 8` · **출시**(2026-11-09 확인) |
+| **12**      | 1.4.1   | (예정)       | `momentory-android-1.4.1-vc12.aab` — iOS `buildNumber 9` · 2026-11-10 번호만 올렸다(업로드 전)   |
 
 ### 지문 셋 — 하나라도 빠지면 그 빌드에서만 로그인이 실패한다
 
