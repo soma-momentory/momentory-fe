@@ -165,7 +165,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "모멘토리",
   slug: "momentory",
-  version: "1.4.1",
+  version: "1.4.2",
   orientation: "portrait",
   scheme: "momentory", // 회고 알림 → 딥링크
   icon: "./assets/icon.png",
@@ -204,7 +204,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      * `8` = 1.4.0(2026-11-08).
      * `9` = 1.4.1(2026-11-10 · 디자인 정리 · 뒤로가기 수정 — 아직 올리기 전).
      */
-    buildNumber: "9",
+    buildNumber: "10",
     infoPlist: {
       // ⚠ 사진은 **빼지 않는다**(2026-11-09) — Motion 과 같은 이유다(아래 `motionUsagePermission`).
       // 앱에는 사진을 고르거나 저장하는 기능이 없지만 `expo-image` 가 `ph://` 주소용
