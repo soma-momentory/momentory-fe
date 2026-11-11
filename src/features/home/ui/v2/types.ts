@@ -34,7 +34,7 @@ export type HomeV2ViewModel = {
   week: readonly WeekDay[];
   /** 알림을 켰고 시각이 있을 때만 값이 있다(`"21:30"`) */
   retroReminderTime: string | null;
-  /** 권한 거부·조회 실패·미매핑이면 `null` — 스티커 자리를 그리지 않는다 */
+  /** 권한 거부·조회 실패·미매핑·받는 중이면 `null` — 사진 틀은 그대로 두고 기본 사진을 넣는다 */
   weather: HomeWeatherView | null;
   /** 열 수 있는 새 편지를 아직 안 열었을 때만 `true` — 서버 편지 목록의 첫 칸(바바의 편지 PRD 4-1) */
   hasUnreadLetter: boolean;

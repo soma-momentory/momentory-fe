@@ -150,6 +150,7 @@ export function HomeV2View({
             <HeroCard
               design={design}
               weather={model.weather}
+              hasUnreadLetter={unread}
               onStartReflection={actions.onStartReflection}
               onOpenWeatherInfo={actions.onOpenWeatherInfo}
               board={(compact, headOnly) => (

@@ -10,7 +10,6 @@ import {
   View,
 } from "react-native";
 
-import { WeatherCredit } from "@/components/diary/WeatherCredit";
 import { Button, IconButton, Modal, Screen, Text, TopNavigation } from "@/components/ds";
 import { ActionCardSection } from "@/components/diary/ActionCardSection";
 import {
@@ -21,7 +20,6 @@ import {
 import { label as labelColor, layout, space, status } from "@/design/ds";
 import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { diaryPaper } from "@/design/ds/diaryPaper";
-import { useDiaryWeather } from "@/features/diary/model/useDiaryWeather";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { showToast } from "@/lib/toast";
@@ -50,8 +48,6 @@ function DiaryDetailEntry({ id }: { id: string }) {
    * 날짜별 조회가 붙으면 이 selector 안쪽만 바뀐다.
    */
   const schedules = useDay((s) => s.schedules);
-
-  const { weather } = useDiaryWeather(diary?.id, diary?.date, diary?.weather);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -123,7 +119,6 @@ function DiaryDetailEntry({ id }: { id: string }) {
         trailing={
           editing ? null : (
             <View style={styles.topActions}>
-              {weather ? <WeatherCredit style={styles.weatherInfoButton} /> : null}
               <IconButton
                 name="pencil"
                 accessibilityLabel="일기 수정"
@@ -274,7 +269,6 @@ function DiaryDetailEntry({ id }: { id: string }) {
 
 const styles = StyleSheet.create({
   topActions: { flexDirection: "row", alignItems: "center" },
-  weatherInfoButton: { width: 44, height: 44 },
   save: { marginTop: 0, marginHorizontal: 0 },
   keyboard: { flex: 1, minHeight: 0 },
   input: {

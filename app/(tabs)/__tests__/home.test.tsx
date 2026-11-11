@@ -26,6 +26,7 @@ jest.mock("@/features/analytics", () => ({
 jest.mock("@/features/home/model/useHomeWeather", () => ({ useHomeWeather: jest.fn() }));
 jest.mock("@/features/letter/data/letterApi", () => ({
   fetchLetters: jest.fn(async () => ({ ok: true, data: [] })),
+  markLetterOpened: jest.fn(async () => ({ ok: true, data: null })),
 }));
 
 const flatten = (style: unknown) =>
@@ -75,10 +76,11 @@ const openMenu = async (r: Awaited<ReturnType<typeof render>>, title: string) =>
 };
 
 describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", () => {
-  it("날씨 API 전에는 스티커와 오류 문구를 표시하지 않는다", async () => {
+  it("날씨 API 전에는 기본 사진만 두고 날씨 · 오류 문구를 표시하지 않는다", async () => {
     const { queryByText, queryByTestId } = await render(<Home />);
 
-    expect(queryByTestId("home-v2-weather")).toBeNull();
+    expect(queryByTestId("home-v2-weather-sticker")).toBeNull();
+    expect(queryByTestId("home-v2-weather-fallback", { includeHiddenElements: true })).toBeTruthy();
     expect(queryByText(/날씨를 확인/)).toBeNull();
   });
 
@@ -148,6 +150,30 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     expect(router.push).toHaveBeenCalledWith("/letter?open=2026-07-26");
   });
 
+  it("안 연 새 편지가 있는 동안 말풍선은 편지 소식이고, 읽어서 점이 사라지면 원래 질문으로 돌아온다", async () => {
+    useAuth.setState({ status: "authenticated" });
+    useLetters.getState().bindUser(7);
+    jest.mocked(fetchLetters).mockResolvedValue({
+      ok: true,
+      data: [{ id: "12", date: "2026-07-26", isNew: true, openedAt: null }],
+    });
+    const r = await render(<Home />);
+    await waitFor(() => expect(r.getByText("편지가\n도착했어요!")).toBeTruthy());
+    expect(r.queryByText("오늘 하루는\n어땠어요?")).toBeNull();
+
+    // 읽은 뒤에는 서버도 「열어 봄」을 준다 — 늦게 도착한 목록 새로 고침이 새 편지로 되돌리지 않게
+    jest.mocked(fetchLetters).mockResolvedValue({
+      ok: true,
+      data: [{ id: "12", date: "2026-07-26", isNew: true, openedAt: "2026-07-26T09:00:00Z" }],
+    });
+    await act(() =>
+      useLetters.getState().markOpened({ id: "12", date: "2026-07-26", openedAt: null }),
+    );
+    expect(r.queryByTestId("home-v2-unread-dot")).toBeNull();
+    expect(r.getByText("오늘 하루는\n어땠어요?")).toBeTruthy();
+    expect(r.queryByText("편지가\n도착했어요!")).toBeNull();
+  });
+
   it("열어 본 편지만 있으면 점은 없고, 누르면 편지함 목록만 연다", async () => {
     useAuth.setState({ status: "authenticated" });
     useLetters.getState().bindUser(7);
@@ -195,7 +221,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     expect(r.getByText(/MET Norway 예보 · .*밤 9:31 갱신/)).toBeTruthy();
 
     await act(() => useLetters.getState().bindUser(8));
-    expect(r.queryByTestId("home-v2-weather")).toBeNull();
+    expect(r.queryByTestId("home-v2-weather-sticker")).toBeNull();
     expect(r.queryByText("22℃")).toBeNull();
     expect(r.queryByTestId("home-v2-unread-dot")).toBeNull();
   });

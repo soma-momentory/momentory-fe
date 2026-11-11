@@ -282,9 +282,16 @@ describe("홈 v2 — 히어로 문안(계획 §2.2)", () => {
     expect(r.getByText("오늘 하루는\n어땠어요?")).toBeTruthy();
   });
 
-  it("weather == null 이면 스티커 자리를 그리지 않는다 — 날씨를 말하지 않는다", async () => {
+  it("읽지 않은 편지가 있으면 말풍선은 「편지가 / 도착했어요!」", async () => {
+    const r = await show(baseModel({ hasUnreadLetter: true }));
+    expect(r.getByText("편지가\n도착했어요!")).toBeTruthy();
+    expect(r.queryByText("오늘 하루는\n어땠어요?")).toBeNull();
+  });
+
+  it("weather == null 이어도 사진 틀은 기본 사진으로 남는다 — 날씨를 말하지 않는다", async () => {
     const r = await show(baseModel({ weather: null }));
-    expect(r.queryByTestId("home-v2-weather", { includeHiddenElements: true })).toBeNull();
+    expect(r.getByTestId("home-v2-weather", { includeHiddenElements: true })).toBeTruthy();
+    expect(r.getByTestId("home-v2-weather-fallback", { includeHiddenElements: true })).toBeTruthy();
     expect(r.queryByLabelText(/날씨/)).toBeNull();
     expect(r.queryByText(/날씨|맑음|℃/)).toBeNull();
   });

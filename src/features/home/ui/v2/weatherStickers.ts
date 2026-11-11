@@ -10,12 +10,13 @@ import type { HomeWeatherView } from "./types";
  * 새 코드가 생겨도 그림 검수 전에는 아래 허용 표를 늘리지 않는다.
  *
  * 그림은 **명시적인 표 두 장만** 보고 고른다 — 코드를 잘라 가며 상위 계열로 떨어지는 연쇄 규칙을 두지 않는다.
- * 그런 규칙이 있으면 「그림이 없는 조건은 숨긴다」가 강도 · 소나기 · 복합에서 조용히 깨진다.
+ * 그런 규칙이 있으면 「그림이 없는 조건은 날씨를 말하지 않는다」가 강도 · 소나기 · 복합에서 조용히 깨진다.
  *
  * 1. **전용 그림** — `condition.code` 와 똑같은 키의 그림이 `WEATHER_STICKERS` 에 있으면 그것
  * 2. **공통 그림 허용 표**(`SHARED_STICKER_CODES`) — 그 코드가 표의 한 줄에 글자 그대로 있으면 그 줄의 그림
  * 3. **바람** — `windy` 이고 코드가 하늘 일곱(`WINDY_SKY_CODES`) 중 하나면 `wind` (1 · 2 가 먼저 — 결정 D5)
- * 4. 그 밖은 **숨김**(`null`) — 낮/밤을 건너 대신 쓰지 않는다(`clear.night` 에 해 그림을 쓰면 틀린 날씨다)
+ * 4. 그 밖은 `null` — 낮/밤을 건너 대신 쓰지 않는다(`clear.night` 에 해 그림을 쓰면 틀린 날씨다).
+ *    홈의 사진 틀은 그때 날씨를 말하지 않는 기본 사진(`WEATHER_FALLBACK_PHOTO`)을 넣는다
  *
  * 표에 줄을 더하는 것은 그림 검수를 거친 결정이다 — 생성 규칙으로 늘리지 않는다.
  */
@@ -31,6 +32,12 @@ export const WEATHER_STICKERS = {
 } as const satisfies Record<string, ImageSourcePropType>;
 
 export type WeatherStickerKey = keyof typeof WEATHER_STICKERS;
+
+/**
+ * 날씨를 못 받았을 때 사진 틀 안에 넣는 사진(2026-11-11 사용자 요청) — 바바의 손이 든 꽃다발.
+ * 권한 없음 · 조회 실패 · 그림이 없는 조건 · 받는 중이 전부 이 사진이다. 바꾸려면 파일만 갈아 끼운다.
+ */
+export const WEATHER_FALLBACK_PHOTO: ImageSourcePropType = require("../../../../../assets/home/v2/weather/default.webp");
 
 /** §4.3 공통 그림 허용 표 — **글자 그대로 · 이것만.** 바람은 코드가 아니라 플래그라 따로 둔다 */
 export const SHARED_STICKER_CODES: Readonly<
@@ -114,7 +121,7 @@ export function pickStickerKey(
   return null;
 }
 
-/** 지금 있는 그림 가운데 하나 — 없으면 `null`(스티커 숨김) */
+/** 지금 있는 그림 가운데 하나 — 없으면 `null`(날씨 대신 기본 사진) */
 export function stickerKeyForCondition(
   condition: Pick<HomeWeatherCondition, "code" | "windy">,
 ): WeatherStickerKey | null {
@@ -127,7 +134,7 @@ export type WeatherStickerSelection = {
   source: ImageSourcePropType;
 };
 
-/** P4 의 stickerKey 문자열을 이미지로 바꾼다. 없는 그림은 그리지 않는다. */
+/** P4 의 stickerKey 문자열을 이미지로 바꾼다. 없는 그림이면 `null` — 틀은 기본 사진을 넣는다. */
 export function weatherStickerForKey(stickerKey: string): WeatherStickerSelection | null {
   if (!has(WEATHER_STICKERS, stickerKey)) return null;
 

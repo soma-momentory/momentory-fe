@@ -18,7 +18,6 @@ import { Baba } from "./Baba";
 import { Rug } from "./Rug";
 import type { HomeWeatherView } from "./types";
 import { WeatherSticker } from "./WeatherSticker";
-import { weatherStickerForKey } from "./weatherStickers";
 
 /**
  * 홈 v2 히어로 — **홈의 주인공**(2026-11-03 · 시안 4). 면을 그리지 않는다 — **홈 배경 자체가 카드 한 장**이고
@@ -27,11 +26,13 @@ import { weatherStickerForKey } from "./weatherStickers";
  * 위에서 아래로 칸반 보드(일정 · 감정) → 말풍선과 날씨 → 바바 → **전체 폭 「일기 작성하기」** 다 — 눈이
  * 말풍선 → 바바 → 버튼으로 내려와 엄지가 닿는 곳에서 끝난다. 바바를 가리는 것은 없다.
  * 말풍선 꼬리는 바바 얼굴로 이어지고, 바바는 가운데 칸의 높이만큼 커진다.
- * 날씨 사진은 테이프로 붙는다 — 못 얻으면 테이프째 숨긴다(HW-4).
+ * 날씨 사진은 테이프로 붙는다 — 못 얻어도 틀과 테이프는 그대로 두고 기본 사진을 넣는다(2026-11-11).
  */
 type Props = {
   design?: StudioDesign;
   weather: HomeWeatherView | null;
+  /** 읽지 않은 편지가 있으면 말풍선이 편지 소식을 전한다 — 읽어서 점이 사라지면 원래 질문으로 돌아온다 */
+  hasUnreadLetter?: boolean;
   onStartReflection: () => void;
   onOpenWeatherInfo: () => void;
   /** 맨 위의 칸반 보드. 화면이 낮으면 `compact` 로 낮게, 그래도 모자라면 `headOnly` 로 머리만 그린다 */
@@ -61,6 +62,11 @@ const COMPACT_BELOW = 540;
 /** 작은 화면 + 큰 글씨 — 주 버튼이 탭바에 잘리지 않게 보드는 머리만 남긴다. 창 높이라 판단이 되돌아가지 않는다 */
 const HEAD_ONLY = { below: 700, fontScale: 1.3 } as const;
 const CTA = { height: 62, fontSize: 24, lineHeight: 30, depth: 3 } as const;
+/** 말풍선 문안(DESIGN.md 「홈 v2」 문안 표) — 읽지 않은 편지가 있는 동안만 편지 소식으로 바뀐다(2026-11-11) */
+export const BUBBLE_TEXT = {
+  default: "오늘 하루는\n어땠어요?",
+  unreadLetter: "편지가\n도착했어요!",
+} as const;
 /** 날씨 사진 — 글씨가 커지면 말풍선에 자리를 내주려고 조금 줄인다 */
 const WEATHER = { width: 104, height: 118, shrink: 56 } as const;
 /** 손으로 오린 라벨의 윤곽과 그 안쪽 바느질 */
@@ -93,6 +99,7 @@ function bubbleOutline(tipX: number, tipY: number) {
 export function HeroCard({
   design = approvedDesign,
   weather,
+  hasUnreadLetter = false,
   onStartReflection,
   onOpenWeatherInfo,
   board,
@@ -139,7 +146,6 @@ export function HeroCard({
     RUG.width * RUG.grow * babaScale,
     Math.max(0, scene.width - RUG.edge * 2),
   );
-  const visibleWeather = weather != null && weatherStickerForKey(weather.stickerKey) != null;
   const bubbleSize = design["home.bubbleText.fontSize"] + 3;
   const weatherWidth = WEATHER.width - WEATHER.shrink * extra;
 
@@ -211,30 +217,28 @@ export function HeroCard({
             ]}
             color={design["home.bubbleText.color"]}
           >
-            {"오늘 하루는\n어땠어요?"}
+            {hasUnreadLetter ? BUBBLE_TEXT.unreadLetter : BUBBLE_TEXT.default}
           </Text>
         </View>
 
-        {visibleWeather ? (
-          <View testID="home-v2-weather" style={styles.weather}>
-            <WeatherSticker
-              weather={weather}
-              onPress={onOpenWeatherInfo}
-              style={{
-                width: weatherWidth,
-                height: (weatherWidth * WEATHER.height) / WEATHER.width,
-              }}
-            />
-            <View
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={styles.tape}
-            >
-              <MaskingTape color={homeV2.color.tapeBase} stripeColor={homeV2.color.tapeStripe} />
-            </View>
+        <View testID="home-v2-weather" style={styles.weather}>
+          <WeatherSticker
+            weather={weather}
+            onPress={onOpenWeatherInfo}
+            style={{
+              width: weatherWidth,
+              height: (weatherWidth * WEATHER.height) / WEATHER.width,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.tape}
+          >
+            <MaskingTape color={homeV2.color.tapeBase} stripeColor={homeV2.color.tapeStripe} />
           </View>
-        ) : null}
+        </View>
       </View>
 
       <View
