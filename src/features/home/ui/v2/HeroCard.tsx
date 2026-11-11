@@ -31,6 +31,8 @@ import { WeatherSticker } from "./WeatherSticker";
 type Props = {
   design?: StudioDesign;
   weather: HomeWeatherView | null;
+  /** 읽지 않은 편지가 있으면 말풍선이 편지 소식을 전한다 — 읽어서 점이 사라지면 원래 질문으로 돌아온다 */
+  hasUnreadLetter?: boolean;
   onStartReflection: () => void;
   onOpenWeatherInfo: () => void;
   /** 맨 위의 칸반 보드. 화면이 낮으면 `compact` 로 낮게, 그래도 모자라면 `headOnly` 로 머리만 그린다 */
@@ -60,6 +62,11 @@ const COMPACT_BELOW = 540;
 /** 작은 화면 + 큰 글씨 — 주 버튼이 탭바에 잘리지 않게 보드는 머리만 남긴다. 창 높이라 판단이 되돌아가지 않는다 */
 const HEAD_ONLY = { below: 700, fontScale: 1.3 } as const;
 const CTA = { height: 62, fontSize: 24, lineHeight: 30, depth: 3 } as const;
+/** 말풍선 문안(DESIGN.md 「홈 v2」 문안 표) — 읽지 않은 편지가 있는 동안만 편지 소식으로 바뀐다(2026-11-11) */
+export const BUBBLE_TEXT = {
+  default: "오늘 하루는\n어땠어요?",
+  unreadLetter: "편지가\n도착했어요!",
+} as const;
 /** 날씨 사진 — 글씨가 커지면 말풍선에 자리를 내주려고 조금 줄인다 */
 const WEATHER = { width: 104, height: 118, shrink: 56 } as const;
 /** 손으로 오린 라벨의 윤곽과 그 안쪽 바느질 */
@@ -92,6 +99,7 @@ function bubbleOutline(tipX: number, tipY: number) {
 export function HeroCard({
   design = approvedDesign,
   weather,
+  hasUnreadLetter = false,
   onStartReflection,
   onOpenWeatherInfo,
   board,
@@ -209,7 +217,7 @@ export function HeroCard({
             ]}
             color={design["home.bubbleText.color"]}
           >
-            {"오늘 하루는\n어땠어요?"}
+            {hasUnreadLetter ? BUBBLE_TEXT.unreadLetter : BUBBLE_TEXT.default}
           </Text>
         </View>
 
