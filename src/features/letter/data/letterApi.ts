@@ -135,16 +135,26 @@ export async function markLetterOpened(id: string): Promise<boolean> {
   return result.ok;
 }
 
+/** 고르기 실패 중 「해 본 일이라 잠김」(409 `LETTER_ACTION_LOCKED`)만 따로 알린다 — 화면이 고정 표시로 바꾼다 */
 export async function chooseLetterAction(
   id: string,
   input: ChooseActionInput,
-): Promise<Result<Letter>> {
+): Promise<{ ok: true; data: Letter } | { ok: false; locked: boolean }> {
   const result = await authedRequest<unknown>("PUT", `/api/v1/letters/${id}/action`, {
     ...input,
     scheduleId: input.scheduleId == null ? null : Number(input.scheduleId),
   });
-  const letter = result.ok ? toLetter(result.data) : null;
-  return letter == null ? { ok: false } : { ok: true, data: letter };
+  if (!result.ok) {
+    const { error } = result;
+    const locked =
+      error.code === "http" &&
+      error.status === 409 &&
+      isObject(error.body) &&
+      error.body.code === "LETTER_ACTION_LOCKED";
+    return { ok: false, locked };
+  }
+  const letter = toLetter(result.data);
+  return letter == null ? { ok: false, locked: false } : { ok: true, data: letter };
 }
 
 export async function saveLetterTime(

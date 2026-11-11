@@ -46,6 +46,8 @@ type Props = {
   choices: readonly WhenChoice[];
   /** 저장 중 — 두 번 누르지 않게 고르는 줄을 잠근다 */
   saving: boolean;
+  /** 해 본 일로 기록됨(바람카드 「했어요」) — 새 편지여도 고르는 부분을 닫고 고른 일만 남긴다 */
+  locked: boolean;
   /** 저장하지 못했을 때의 한 줄 */
   error: string | null;
   onPickAction: (position: number) => void;
@@ -57,6 +59,7 @@ export function LetterPaper({
   nickname,
   choices,
   saving,
+  locked,
   error,
   onPickAction,
   onPickWhen,
@@ -117,7 +120,7 @@ export function LetterPaper({
         </Text>
       ))}
 
-      {quiet ? null : letter.isNew ? (
+      {quiet ? null : letter.isNew && !locked ? (
         <>
           {letter.actions.length > 0 ? (
             <View style={styles.choose}>
@@ -179,7 +182,9 @@ export function LetterPaper({
           {tonight != null ? <Lined variant={hand}>{keepWords(tonight)}</Lined> : null}
         </>
       ) : chosen != null ? (
-        <Lined variant={hand}>{keepWords(`그날 고른 일: ${chosen.title}`)}</Lined>
+        <Lined variant={hand}>
+          {keepWords(locked ? `해 본 일: ${chosen.title}` : `그날 고른 일: ${chosen.title}`)}
+        </Lined>
       ) : null}
 
       <View style={styles.sign}>

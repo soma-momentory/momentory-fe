@@ -9,7 +9,7 @@ import LetterBox from "../index";
 import LetterTime from "../time";
 
 import { track } from "@/features/analytics";
-import type { Diary } from "@/features/diary/model/diary";
+import type { ActionCard, Diary } from "@/features/diary/model/diary";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import {
@@ -301,6 +301,72 @@ describe("편지 전체 화면", () => {
     await fireEvent.press(numbers[0]!);
     expect(call).toHaveBeenCalledWith("tel:109");
     call.mockRestore();
+  });
+
+  describe("바람카드와 이어진 작은 일", () => {
+    const card = (done: boolean): ActionCard => ({
+      id: "51",
+      diaryId: "d26",
+      situation: "발표",
+      emotions: [],
+      needs: [],
+      desiredState: null,
+      sentiment: "uncomfortable",
+      targetAction: null,
+      done,
+      doneAt: done ? "2026-10-27T02:00:00Z" : null,
+      reflection: null,
+      createdAt: "2026-10-26",
+    });
+    const seed = (done: boolean) =>
+      useDiary.setState({
+        diaries: [{ id: "d26", date: "2026-10-26" }] as Diary[],
+        actionCards: [card(done)],
+        loaded: true,
+      });
+    afterEach(() => act(() => useDiary.getState().reset()));
+
+    it("고르면 그 편지의 바람카드 「작은 행동」 줄이 바로 바뀐다", async () => {
+      seed(false);
+      jest
+        .mocked(chooseLetterAction)
+        .mockResolvedValueOnce({ ok: true, data: choose(1, null, null) });
+      const r = await render(<LetterScreen />);
+      await waitFor(() => expect(r.getByText(keepWords("점심 뒤 한 바퀴 걷기"))).toBeTruthy());
+
+      await act(async () => {
+        await fireEvent.press(r.getByText(keepWords("점심 뒤 한 바퀴 걷기")));
+      });
+
+      expect(useDiary.getState().actionCards[0]?.targetAction).toBe("점심 뒤 한 바퀴 걷기");
+    });
+
+    it("카드가 「했어요」면 고르는 부분 없이 해 본 일만 남는다", async () => {
+      seed(true);
+      jest.mocked(fetchLetter).mockResolvedValue({ ok: true, data: choose(0, "자기 전", null) });
+      const r = await render(<LetterScreen />);
+
+      await waitFor(() =>
+        expect(r.getByText(keepWords("해 본 일: 5분 동안 숨 고르기"))).toBeTruthy(),
+      );
+      expect(r.queryByText(keepWords("오늘 해 볼 작은 일 하나 고를래요?"))).toBeNull();
+    });
+
+    it("기기의 카드가 옛것이어도 서버가 해 본 일이라 막으면(409) 그때 고정한다", async () => {
+      seed(false);
+      jest.mocked(fetchLetter).mockResolvedValue({ ok: true, data: choose(0, "자기 전", null) });
+      jest.mocked(chooseLetterAction).mockResolvedValueOnce({ ok: false, locked: true });
+      const r = await render(<LetterScreen />);
+      await waitFor(() => expect(r.getByText(keepWords("점심 뒤 한 바퀴 걷기"))).toBeTruthy());
+
+      await act(async () => {
+        await fireEvent.press(r.getByText(keepWords("점심 뒤 한 바퀴 걷기")));
+      });
+
+      expect(r.getByText(keepWords("해 본 일: 5분 동안 숨 고르기"))).toBeTruthy();
+      expect(r.queryByText("저장하지 못했어요. 잠시 뒤 다시 골라 주세요.")).toBeNull();
+      expect(useDiary.getState().actionCards[0]?.targetAction).toBeNull();
+    });
   });
 
   it("못 불러오면 한 줄만", async () => {

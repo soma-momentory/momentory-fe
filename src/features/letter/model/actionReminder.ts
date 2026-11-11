@@ -1,4 +1,5 @@
 import { track } from "@/features/analytics";
+import { actionCardOnDate, useDiary } from "@/features/diary/model/diary";
 import { chooseLetterAction, type Letter } from "@/features/letter/data/letterApi";
 import { actionReminderKey, remindAtOf, type WhenChoice } from "@/features/letter/model/letter";
 import { LETTER_ACTION_CONTENT } from "@/features/my/model/reminders";
@@ -19,12 +20,15 @@ import {
  *
  * 시각 있는 칩을 고르면 그때 알림 권한을 묻는다. 받지 못하면 「언제」만 남기고 알림 시각은 보내지 않는다
  * — 서버에 시각이 있는데 알림이 안 오면 사용자는 확인할 길이 없다.
+ *
+ * 고르면 기기에 든 그 편지의 바람카드 「작은 행동」 줄도 바로 바꾼다(서버는 같은 요청에서 바꿨다).
+ * 해 본 일이라 서버가 막았으면(409) `"locked"` 를 돌려준다.
  */
 export async function pickLetterAction(
   letter: Letter,
   position: number | null,
   when: WhenChoice | null,
-): Promise<Letter | null> {
+): Promise<Letter | "locked" | null> {
   let remindAt: string | null = null;
   if (position != null && when?.time != null) {
     const { granted } = await requestNotificationPermission();
@@ -37,8 +41,13 @@ export async function pickLetterAction(
     scheduleId: position == null ? null : (when?.scheduleId ?? null),
     remindAt,
   });
-  if (!result.ok) return null;
+  if (!result.ok) return result.locked ? "locked" : null;
 
+  const diary = useDiary.getState();
+  const card = actionCardOnDate(diary.diaries, diary.actionCards, result.data.date);
+  if (card != null) {
+    diary.setSmallAction(card.id, result.data.actions.find((a) => a.chosen)?.title ?? null);
+  }
   await syncActionReminder(result.data);
   return result.data;
 }
