@@ -18,7 +18,6 @@ import { Baba } from "./Baba";
 import { Rug } from "./Rug";
 import type { HomeWeatherView } from "./types";
 import { WeatherSticker } from "./WeatherSticker";
-import { weatherStickerForKey } from "./weatherStickers";
 
 /**
  * 홈 v2 히어로 — **홈의 주인공**(2026-11-03 · 시안 4). 면을 그리지 않는다 — **홈 배경 자체가 카드 한 장**이고
@@ -27,7 +26,7 @@ import { weatherStickerForKey } from "./weatherStickers";
  * 위에서 아래로 칸반 보드(일정 · 감정) → 말풍선과 날씨 → 바바 → **전체 폭 「일기 작성하기」** 다 — 눈이
  * 말풍선 → 바바 → 버튼으로 내려와 엄지가 닿는 곳에서 끝난다. 바바를 가리는 것은 없다.
  * 말풍선 꼬리는 바바 얼굴로 이어지고, 바바는 가운데 칸의 높이만큼 커진다.
- * 날씨 사진은 테이프로 붙는다 — 못 얻으면 테이프째 숨긴다(HW-4).
+ * 날씨 사진은 테이프로 붙는다 — 못 얻어도 틀과 테이프는 그대로 두고 기본 사진을 넣는다(2026-11-11).
  */
 type Props = {
   design?: StudioDesign;
@@ -139,7 +138,6 @@ export function HeroCard({
     RUG.width * RUG.grow * babaScale,
     Math.max(0, scene.width - RUG.edge * 2),
   );
-  const visibleWeather = weather != null && weatherStickerForKey(weather.stickerKey) != null;
   const bubbleSize = design["home.bubbleText.fontSize"] + 3;
   const weatherWidth = WEATHER.width - WEATHER.shrink * extra;
 
@@ -215,26 +213,24 @@ export function HeroCard({
           </Text>
         </View>
 
-        {visibleWeather ? (
-          <View testID="home-v2-weather" style={styles.weather}>
-            <WeatherSticker
-              weather={weather}
-              onPress={onOpenWeatherInfo}
-              style={{
-                width: weatherWidth,
-                height: (weatherWidth * WEATHER.height) / WEATHER.width,
-              }}
-            />
-            <View
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={styles.tape}
-            >
-              <MaskingTape color={homeV2.color.tapeBase} stripeColor={homeV2.color.tapeStripe} />
-            </View>
+        <View testID="home-v2-weather" style={styles.weather}>
+          <WeatherSticker
+            weather={weather}
+            onPress={onOpenWeatherInfo}
+            style={{
+              width: weatherWidth,
+              height: (weatherWidth * WEATHER.height) / WEATHER.width,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.tape}
+          >
+            <MaskingTape color={homeV2.color.tapeBase} stripeColor={homeV2.color.tapeStripe} />
           </View>
-        ) : null}
+        </View>
       </View>
 
       <View

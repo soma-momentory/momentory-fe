@@ -75,10 +75,11 @@ const openMenu = async (r: Awaited<ReturnType<typeof render>>, title: string) =>
 };
 
 describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", () => {
-  it("날씨 API 전에는 스티커와 오류 문구를 표시하지 않는다", async () => {
+  it("날씨 API 전에는 기본 사진만 두고 날씨 · 오류 문구를 표시하지 않는다", async () => {
     const { queryByText, queryByTestId } = await render(<Home />);
 
-    expect(queryByTestId("home-v2-weather")).toBeNull();
+    expect(queryByTestId("home-v2-weather-sticker")).toBeNull();
+    expect(queryByTestId("home-v2-weather-fallback", { includeHiddenElements: true })).toBeTruthy();
     expect(queryByText(/날씨를 확인/)).toBeNull();
   });
 
@@ -195,7 +196,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     expect(r.getByText(/MET Norway 예보 · .*밤 9:31 갱신/)).toBeTruthy();
 
     await act(() => useLetters.getState().bindUser(8));
-    expect(r.queryByTestId("home-v2-weather")).toBeNull();
+    expect(r.queryByTestId("home-v2-weather-sticker")).toBeNull();
     expect(r.queryByText("22℃")).toBeNull();
     expect(r.queryByTestId("home-v2-unread-dot")).toBeNull();
   });

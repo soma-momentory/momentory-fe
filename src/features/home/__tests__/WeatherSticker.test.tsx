@@ -21,14 +21,21 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 describe("WeatherSticker", () => {
-  it("값이 없거나 그림이 없는 열쇠면 아무것도 그리지 않는다 — 빈 틀도 문구도 없다", async () => {
+  it("값이 없거나 그림이 없는 열쇠면 틀은 두고 기본 사진을 넣는다 — 문구 없이, 눌리지 않고, 낭독기에서 숨는다", async () => {
     for (const weather of [
       null,
       { ...SUNNY, stickerKey: "clear.night" },
       { ...SUNNY, stickerKey: "toString" },
     ]) {
       const view = await render(<WeatherSticker weather={weather} onPress={jest.fn()} />);
-      expect(view.toJSON()).toBeNull();
+      const frame = view.getByTestId("home-v2-weather-fallback", { includeHiddenElements: true });
+      expect(frame.props.accessibilityElementsHidden).toBe(true);
+      expect(view.queryByTestId("home-v2-weather-sticker")).toBeNull();
+      expect(view.queryByRole("button")).toBeNull();
+      expect(view.queryByText(/./)).toBeNull();
+      // fireEvent 는 부모 컴포넌트의 onPress prop 까지 올라가 부르므로 틀 자체에 손짓이 없는지 본다
+      expect(frame.props.onPress).toBeUndefined();
+      expect(frame.props.accessibilityRole).toBeUndefined();
       await view.unmount();
     }
   });
