@@ -17,7 +17,7 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
 import { clock } from "@/lib/clock";
 
 import { notifyDeleteResult } from "./deleteToast";
-import { actionCardOf } from "./selectors";
+import { actionCardOf, actionCardOnDate } from "./selectors";
 import type { ActionCard, Diary } from "./types";
 import { DIARY_BODY_MAX_LENGTH } from "./types";
 
@@ -64,7 +64,7 @@ export const ARCHIVE_MONTHS = 12;
  * 이 파일에는 **상태와 그것을 바꾸는 action 만** 남는다.
  */
 export type { ActionCard, Diary } from "./types";
-export { actionCardOf };
+export { actionCardOf, actionCardOnDate };
 
 type DiaryStore = {
   diaries: Diary[];
@@ -185,6 +185,11 @@ type DiaryStore = {
    * 카드에만 보낸다(로컬/미완료는 보낼 곳이 없다).
    */
   saveReflection: (cardId: string) => void;
+  /**
+   * 카드의 「작은 행동」 줄 — 편지에서 고른 일로 채운다(풀면 비운다). 서버는 고르기 요청에서 이미
+   * 바꿨으므로 **로컬만** 고친다. 안 고치면 앱을 다시 켤 때까지 옛 줄이 보인다(`load` 는 한 번만 돈다).
+   */
+  setSmallAction: (cardId: string, title: string | null) => void;
   reset: () => void;
 };
 
@@ -510,6 +515,12 @@ export const useDiary = create<DiaryStore>((set, get) => ({
         ),
       }));
     });
+  },
+
+  setSmallAction: (cardId, title) => {
+    set((s) => ({
+      actionCards: s.actionCards.map((c) => (c.id === cardId ? { ...c, targetAction: title } : c)),
+    }));
   },
 
   undoActionDone: (cardId) => {

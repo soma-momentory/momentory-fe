@@ -8,6 +8,16 @@ import type { ActionCard, Diary } from "./types";
 export const actionCardOf = (cards: readonly ActionCard[], diaryId: string) =>
   cards.find((c) => c.diaryId === diaryId) ?? null;
 
+/** 그 날짜 일기의 행동 카드 — 편지(`letter.date` = 출처 일기의 날짜)가 자기 바람카드를 찾는다 */
+export const actionCardOnDate = (
+  diaries: readonly Diary[],
+  cards: readonly ActionCard[],
+  date: string,
+) => {
+  const diary = diaries.find((d) => d.date === date);
+  return diary == null ? null : actionCardOf(cards, diary.id);
+};
+
 /** 그 날(04:00 경계의 하루) 쓴 일기가 있는가 — 쉼터 계측이 「일기를 쓴 날인가」를 본다 */
 export const hasDiaryOn = (diaries: readonly Diary[], date: string) =>
   diaries.some((d) => d.date === date);

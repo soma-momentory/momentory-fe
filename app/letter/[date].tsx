@@ -13,6 +13,7 @@ import { Icon, Screen, Spinner, TabPaperBackground, Text, TopNavigation } from "
 import { Baba } from "@/components/onboarding/OnboardingParts";
 import { label as labelColor, layout, space } from "@/design/ds";
 import { track } from "@/features/analytics";
+import { actionCardOnDate, useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import { fetchLetter, type Letter } from "@/features/letter/data/letterApi";
 import { pickLetterAction } from "@/features/letter/model/actionReminder";
@@ -217,6 +218,14 @@ function LetterPage({
 }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** 기기에 든 카드는 옛것일 수 있다(다른 기기에서 체크) — 서버가 409 로 막으면 그때부터 잠근다 */
+  const [refused, setRefused] = useState(false);
+  const letterDate = page.status === "ready" ? page.letter.date : null;
+  // 바람카드가 「했어요」면 고른 일이 고정된다(편지 PRD 14) — 서버도 같은 기준으로 막는다
+  const cardDone = useDiary(
+    (s) =>
+      letterDate != null && actionCardOnDate(s.diaries, s.actionCards, letterDate)?.done === true,
+  );
 
   if (page.status === "loading") return <Writing />;
   if (page.status === "failed") {
@@ -236,6 +245,10 @@ function LetterPage({
     setError(null);
     const next = await pickLetterAction(letter, position, when);
     setSaving(false);
+    if (next === "locked") {
+      setRefused(true);
+      return;
+    }
     if (next == null) {
       setError("저장하지 못했어요. 잠시 뒤 다시 골라 주세요.");
       return;
@@ -259,6 +272,7 @@ function LetterPage({
         nickname={nickname}
         choices={choices}
         saving={saving}
+        locked={cardDone || refused}
         error={error}
         // 골랐던 것을 다시 누르면 풀린다. 다른 것을 누르면 「언제」를 새로 고른다
         onPickAction={(position) =>
