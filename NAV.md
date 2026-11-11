@@ -101,7 +101,7 @@ src/features/retro/{model/retro.ts, data/retroApi.ts,
                   ← **대화는 서버가 주도한다** — store 는 세션 id · 버블 · 서버의 마지막 응답 · 완료 시 일기와 바람카드만
 src/features/diary/{model/{diary,types,selectors,deleteToast,useDiaryWeather}.ts, data/{diaryApi,diaryWeather}.ts}
                   ← 일기 + 바람카드(ActionCard) — 월별 목록 · 수정 · 삭제 · 카드 완료 · `GET /diaries/all`(전체 날짜).
-                    deleteToast = 일기 · 바람카드가 같은 삭제 문안을 쓴다. diaryWeather = 오늘 일기에 날씨를 남긴다
+                    deleteToast = 일기 · 바람카드가 같은 삭제 문안을 쓴다. diaryWeather = 오늘 일기에 날씨를 남긴다(C6 `retro/draft` 만 · 상세는 묻지 않는다)
 src/features/emotion/model/emotion.ts
                   ← **감정 10종의 도메인 정본** — id · 이름 · EmotionId. 색은 두지 않는다(디자인 몫).
                     번호는 서버 enum 두 벌과 맞물린다 — retro `EMOTION_KEYS`(소문자) · home `SCHEDULE_EMOTIONS`(대문자).

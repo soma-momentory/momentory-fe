@@ -7,6 +7,8 @@ import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 import { authedRequest } from "@/lib/http";
 import { fetchLetter } from "@/features/letter/data/letterApi";
 import { keepWords, useLetters } from "@/features/letter/model/letter";
+import { clock } from "@/lib/clock";
+import { getLocationPermission, locateRounded, requestLocationPermission } from "@/lib/location";
 import { seedDiaries } from "@/testing/fixtures";
 
 /** 7월 27일 일기 — 바바의 면·근거·행동 카드가 다 붙어 있는 한 장 */
@@ -23,6 +25,15 @@ jest.mock("@/features/letter/data/letterApi", () => ({
   fetchLetters: jest.fn(async () => ({ ok: true, data: [] })),
   fetchLetter: jest.fn(async () => ({ ok: false })),
 }));
+jest.mock("@/features/auth/model/auth", () => ({
+  ...jest.requireActual("@/features/auth/model/auth"),
+  currentUserId: jest.fn(async () => 7),
+}));
+jest.mock("@/lib/location", () => ({
+  getLocationPermission: jest.fn(async () => "granted"),
+  requestLocationPermission: jest.fn(async () => "granted"),
+  locateRounded: jest.fn(async () => ({ kind: "located", latitude: 37.5, longitude: 127 })),
+}));
 jest.mock("@/lib/http", () => ({
   authedRequest: jest.fn(async () => ({ ok: true, data: null })),
 }));
@@ -37,6 +48,29 @@ beforeEach(() => {
 });
 
 describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
+  it("오늘 날씨가 없는 서버 일기를 열어도 위치를 묻거나 날씨를 기록하지 않는다(2026-11-11)", async () => {
+    mockParams = { id: "123" };
+    useDiary.setState((st) => ({
+      diaries: st.diaries.map((d) =>
+        d.id === ID ? { ...d, id: "123", date: clock.today(), weather: null } : d,
+      ),
+    }));
+
+    const r = await render(<DiaryDetail />);
+    await act(async () => {});
+
+    expect(requestLocationPermission).not.toHaveBeenCalled();
+    expect(getLocationPermission).not.toHaveBeenCalled();
+    expect(locateRounded).not.toHaveBeenCalled();
+    expect(authedRequest).not.toHaveBeenCalledWith(
+      "PUT",
+      expect.stringContaining("/weather"),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(r.queryByLabelText(/날씨/)).toBeNull();
+  });
+
   it("「내가 남긴 오늘」 한 면만 둔다 — 바바 면은 상세에서 뺐다(2026-08-20)", async () => {
     const r = await render(<DiaryDetail />);
 
