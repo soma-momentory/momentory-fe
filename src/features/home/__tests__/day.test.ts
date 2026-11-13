@@ -120,7 +120,7 @@ describe("먼저 화면을 바꾸고 서버에 보낸다", () => {
   it("마침에 감정을 실어 보내지 않는다 — 화면이 묻지 않으므로(N7)", () => {
     // 서버에 남아 있던 감정도 함께 비운다. 보내는 값과 기기의 값이 어긋나면
     // 다음 `load()` 에 조용히 사라진다 (`PLAN.md` A-8)
-    useDay.setState({ schedules: [row({ emotions: [4] })] });
+    useDay.setState({ schedules: [row({ emotions: [12] })] });
 
     useDay.getState().toggleDone("7");
 
@@ -153,10 +153,10 @@ describe("감정 — 서버 계약이 좁힌 두 자리", () => {
   it("하나만 남는다 — 다른 것을 누르면 갈아치운다", () => {
     useDay.setState({ schedules: [row({ done: true, emotions: [1] })] });
 
-    useDay.getState().selectEmotion("7", 9);
+    useDay.getState().selectEmotion("7", 7);
 
-    expect(useDay.getState().schedules[0]?.emotions).toEqual([9]);
-    expect(putCompletion).toHaveBeenCalledWith("7", true, 9, "manual");
+    expect(useDay.getState().schedules[0]?.emotions).toEqual([7]);
+    expect(putCompletion).toHaveBeenCalledWith("7", true, 7, "manual");
   });
 
   it("같은 것을 다시 누르면 해제되고 마침은 그대로다", () => {
@@ -171,14 +171,14 @@ describe("감정 — 서버 계약이 좁힌 두 자리", () => {
   it("고르면 마침이 함께 켜진다 — 서버가 마침 없는 감정을 받지 않는다", () => {
     useDay.setState({ schedules: [row()] });
 
-    useDay.getState().selectEmotion("7", 4);
+    useDay.getState().selectEmotion("7", 12);
 
     expect(useDay.getState().schedules[0]?.done).toBe(true);
-    expect(putCompletion).toHaveBeenCalledWith("7", true, 4, "manual");
+    expect(putCompletion).toHaveBeenCalledWith("7", true, 12, "manual");
   });
 
   it("마침을 끄면 감정도 사라진다 — 서버가 그렇게 지운다", () => {
-    useDay.setState({ schedules: [row({ done: true, emotions: [4] })] });
+    useDay.setState({ schedules: [row({ done: true, emotions: [12] })] });
 
     useDay.getState().toggleDone("7");
 

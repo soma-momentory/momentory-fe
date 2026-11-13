@@ -1,4 +1,4 @@
-"""Downloads 의 **감정 조약돌 열 장**에서 구워진 체커보드 배경을 걷어 낸다.
+"""받은 **감정 조약돌 열두 장**에서 구워진 체커보드(또는 흰) 배경을 걷어 낸다.
 
 홈과 리포트의 「이번 주 감정」이 쓰는 그림이다. 감정 스티커(얼굴)와 같은 사정이라
 같은 방식으로 가른다 — **무채색이고 밝은 화소가 배경**이고, 테두리에서 번진 것만
@@ -11,7 +11,11 @@
 ⚠⚠ 가장 옅은 조약돌(「피곤함」의 베이지)조차 **중심부 채도가 11 이상**이라(체커는 3 이하)
 채도 문턱 하나로 갈린다 — 스티커에서 확인한 것과 같은 성질이다.
 
-    python3 scripts/keyout-week-emotion-pebbles.py assets/emotion-pebble
+2026-11-14 대표 감정 12종으로 바꾸면서 열두 장을 다시 받았다. 원본은 **서버 감정 키 이름**
+(`joy.png` … `exhausted.png` · `.webp` 도 받는다)으로 한 폴더에 둔다. 열 장은 체커가 구워진
+미리보기이고 부끄러움 · 미안함 두 장은 흰 배경이다 — 둘 다 「무채색이고 밝다」로 같이 갈린다.
+
+    python3 scripts/keyout-week-emotion-pebbles.py assets/emotion-pebble ~/Downloads/emotion-pebbles
 """
 
 from PIL import Image, ImageFilter
@@ -21,6 +25,7 @@ import os
 import sys
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "assets/emotion-pebble"
+SRC = os.path.expanduser(sys.argv[2] if len(sys.argv) > 2 else "~/Downloads/emotion-pebbles")
 
 # 화면에서 26dp 로 서는 자리다 — @3x 78 을 넘기고 여유를 둔 값
 SIZE = 96
@@ -28,22 +33,47 @@ SIZE = 96
 # 조약돌이 정사각 캔버스에서 숨 쉴 만큼 — 비율은 그대로 두고 여백만 준다
 PAD = 0.02
 
-NAMES = {
-    "anxiety_3": "anxious",
-    "depression_3": "depressed",
-    "anger_3": "angry",
-    "frustration_3": "frustrated",
-    "overwhelmed_3": "stuck",
-    "lethargy_3": "lethargic",
-    "tired_3": "tired",
-    "calm_3": "calm",
-    "proud_3": "proud",
-    "happy_3": "happy",
-}
+# 서버 감정 키(`features/retro/model/retro.ts` 의 `EMOTION_KEYS`) — 원본도 결과도 이 이름이다
+KEYS = [
+    "joy",
+    "calm",
+    "proud",
+    "affection",
+    "sad",
+    "anxious",
+    "angry",
+    "disappointed",
+    "ashamed",
+    "confused",
+    "sorry",
+    "exhausted",
+]
+
+
+def source(key):
+    for ext in ("png", "webp"):
+        path = os.path.join(SRC, f"{key}.{ext}")
+        if os.path.exists(path):
+            return path
+    raise FileNotFoundError(f"{key} 원본이 {SRC} 에 없다")
+
+
+def square(out):
+    """잘라낸 조약돌을 여백을 둔 정사각 캔버스에 앉히고 앱 규격으로 줄인다"""
+    side = int(max(out.size) * (1 + PAD * 2))
+    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    canvas.paste(out, ((side - out.width) // 2, (side - out.height) // 2), out)
+    return canvas.resize((SIZE, SIZE), Image.LANCZOS)
 
 
 def keyout(path):
-    im = Image.open(path).convert("RGB")
+    src = Image.open(path)
+    # **진짜 투명 그림**(부끄러움 · 미안함의 WebP)은 걷어 낼 배경이 없다 — 알파를 그대로 쓴다
+    if src.mode == "RGBA" and src.getchannel("A").getextrema()[0] == 0:
+        out = src.crop(src.getchannel("A").point(lambda v: 255 if v > 16 else 0).getbbox())
+        return square(out), out.size
+
+    im = src.convert("RGB")
     a = np.asarray(im).astype(np.int16)
     lum = a.mean(axis=2)
     chroma = a.max(axis=2) - a.min(axis=2)
@@ -84,20 +114,17 @@ def keyout(path):
     out.putalpha(alpha)
     out = out.crop(alpha.point(lambda v: 255 if v > 16 else 0).getbbox())
 
-    side = int(max(out.size) * (1 + PAD * 2))
-    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    canvas.paste(out, ((side - out.width) // 2, (side - out.height) // 2), out)
-    return canvas.resize((SIZE, SIZE), Image.LANCZOS), out.size
+    return square(out), out.size
 
 
 os.makedirs(OUT, exist_ok=True)
-for stem, key in NAMES.items():
-    img, cut = keyout(os.path.expanduser(f"~/Downloads/{stem}.png"))
+for key in KEYS:
+    img, cut = keyout(source(key))
     img.save(os.path.join(OUT, f"{key}.png"))
-    print(f"{key:11s} 잘라낸조약돌={cut}")
+    print(f"{key:13s} 잘라낸조약돌={cut}")
 
-sheet = Image.new("RGBA", (SIZE * 5, SIZE * 2), (247, 244, 237, 255))
-for i, key in enumerate(NAMES.values()):
+sheet = Image.new("RGBA", (SIZE * 6, SIZE * 2), (247, 244, 237, 255))
+for i, key in enumerate(KEYS):
     im = Image.open(os.path.join(OUT, f"{key}.png"))
-    sheet.paste(im, ((i % 5) * SIZE, (i // 5) * SIZE), im)
+    sheet.paste(im, ((i % 6) * SIZE, (i // 6) * SIZE), im)
 sheet.save(os.path.join(OUT, "_sheet.png"))

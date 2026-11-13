@@ -25,8 +25,8 @@ describe("DiaryResponse → Diary", () => {
   const raw = {
     id: 12,
     retrospectId: 34,
-    primaryEmotion: "depressed", // 8 — 주 감정
-    emotions: ["depressed", "anxious"], // 서버 감정 태그(일기에서 드러난 전체): 8, 7
+    primaryEmotion: "sad", // 5 — 주 감정
+    emotions: ["sad", "anxious"], // 서버 감정 태그(일기에서 드러난 전체): 5, 6
     original: "오늘은 면접 준비를 했다.",
     createdAt: "2026-08-14T02:23:47.850Z",
   };
@@ -66,20 +66,45 @@ describe("DiaryResponse → Diary", () => {
 
   it("감정 태그 전체를 편다 — 주 감정을 앞에 세우고 나머지 태그를 잇는다", () => {
     const d = toDiary(raw);
-    expect(d?.emotions).toEqual([8, 7]); // 주 감정(depressed=8) → 태그(anxious=7)
-    expect(d?.startEmotion).toBe(8); // 주 감정
+    expect(d?.emotions).toEqual([5, 6]); // 주 감정(sad=5) → 태그(anxious=6)
+    expect(d?.startEmotion).toBe(5); // 주 감정
     expect(d?.storyEmotion).toBeNull(); // 일정 감정은 폐기됨
   });
 
   it("태그가 없으면 주 감정 하나만 남는다(옛 일기)", () => {
     const d = toDiary({ ...raw, emotions: [] });
-    expect(d?.emotions).toEqual([8]);
-    expect(d?.startEmotion).toBe(8);
+    expect(d?.emotions).toEqual([5]);
+    expect(d?.startEmotion).toBe(5);
   });
 
   it("주 감정이 태그에도 있으면 하나로 접는다", () => {
-    const d = toDiary({ ...raw, emotions: ["depressed"] });
-    expect(d?.emotions).toEqual([8]);
+    const d = toDiary({ ...raw, emotions: ["sad"] });
+    expect(d?.emotions).toEqual([5]);
+  });
+
+  it("12종 키를 번호로 옮긴다 — 새로 생긴 넷도 버리지 않는다", () => {
+    const d = toDiary({
+      ...raw,
+      primaryEmotion: "joy",
+      emotions: ["affection", "disappointed", "ashamed", "sorry", "confused", "exhausted"],
+    });
+    expect(d?.emotions).toEqual([1, 4, 8, 9, 11, 10, 12]);
+  });
+
+  it("옛 10종 키도 12종으로 받아낸다 — 서버가 넘어가기 전 응답 · 옮겨지지 않은 옛 기록", () => {
+    // 우울함 → 슬픔(5) · 답답함 → 분노(7) · 막막함 → 혼란(10) · 행복함 → 기쁨(1)
+    const d = toDiary({
+      ...raw,
+      primaryEmotion: "depressed",
+      emotions: ["frustrated", "stuck", "happy"],
+    });
+    expect(d?.emotions).toEqual([5, 7, 10, 1]);
+    expect(d?.startEmotion).toBe(5);
+  });
+
+  it("옛 키 둘이 같은 감정으로 모이면 하나로 접는다 — 피곤함 · 무기력은 둘 다 지침이다", () => {
+    const d = toDiary({ ...raw, primaryEmotion: "tired", emotions: ["lethargic", "tired"] });
+    expect(d?.emotions).toEqual([12]);
   });
 
   it("모르는 감정 키는 버린다 — 이름을 지어내지 않는다", () => {

@@ -209,7 +209,7 @@ OpenAPI 생성물은 이 기능이 반영된 서버에서 `npm run sync:api`로 
 그때 운영 BE `main` 에는 없었고 `V33`·`V34` 도 `dev` 에만 있었다 — 2026-11-08 릴리스로 운영에 들어갔다.)
 
 직접 작성 요청은 `DiaryCreateRequest`(본문·선택 감정), id 기반 본문 수정은 `DiaryWriteRequest`(본문만)를 사용한다.
-선택 감정은 기존 10종 키만 허용하며, 잘못된 키는 400 `INVALID_REQUEST` / `감정을 확인해주세요.`로 거절한다.
+선택 감정은 대표 감정 12종 키(`joy` `calm` `proud` `affection` `sad` `anxious` `angry` `disappointed` `ashamed` `confused` `sorry` `exhausted` · 2026-11-14)를 보내며, 잘못된 키는 400 `INVALID_REQUEST` / `감정을 확인해주세요.`로 거절한다.
 선택한 감정은 `primaryEmotion`과 `emotions`에 함께 저장해 보관함 재조회 시 같은 사진을 표시한다.
 
 직접 작성·본문 수정 시 기존 채팅의 사건 추출기(G1)를 한 번 호출한다. DB 트랜잭션 밖에서 추출하고,

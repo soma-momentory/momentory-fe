@@ -132,30 +132,48 @@ export const useRetro = create<RetroStore>((set) => ({
 }));
 
 /**
- * 감정 id(1~10) → 서버 감정 키 (채팅흐름_v2, 긍정→부정 재번호). `features/emotion` 의 `EMOTIONS`
- * 순서를 그대로 옮긴다. 번호가 아니라 키로 명시해, 한쪽이 바뀔 때 조용히 어긋나지 않게 한다.
+ * 감정 id(1~12) → 서버 감정 키 (대표 감정 12종). `features/emotion` 의 `EMOTIONS` 순서를 그대로
+ * 옮긴다. 번호가 아니라 키로 명시해, 한쪽이 바뀔 때 조용히 어긋나지 않게 한다.
  */
 export const EMOTION_KEYS: Record<EmotionId, string> = {
-  1: "happy",
-  2: "proud",
-  3: "calm",
-  4: "tired",
-  5: "stuck",
-  6: "lethargic",
-  7: "anxious",
-  8: "depressed",
-  9: "angry",
-  10: "frustrated",
+  1: "joy",
+  2: "calm",
+  3: "proud",
+  4: "affection",
+  5: "sad",
+  6: "anxious",
+  7: "angry",
+  8: "disappointed",
+  9: "ashamed",
+  10: "confused",
+  11: "sorry",
+  12: "exhausted",
 };
 
 export const emotionKeyOf = (id: EmotionId): string => EMOTION_KEYS[id];
 
-const ID_BY_KEY: Record<string, EmotionId> = Object.fromEntries(
-  (Object.entries(EMOTION_KEYS) as [string, string][]).map(([id, key]) => [
-    key,
-    Number(id) as EmotionId,
-  ]),
-);
+/**
+ * 옛 10종 키 → 12종 id. 서버가 12종으로 넘어가기 전의 응답과, 옮겨지지 않은 옛 기록을 받아낸다 —
+ * 행복함→기쁨 · 우울함→슬픔 · 답답함→분노 · 막막함→혼란 · 피곤함·무기력→지침.
+ */
+const LEGACY_ID_BY_KEY: Record<string, EmotionId> = {
+  happy: 1,
+  depressed: 5,
+  frustrated: 7,
+  stuck: 10,
+  lethargic: 12,
+  tired: 12,
+};
+
+const ID_BY_KEY: Record<string, EmotionId> = {
+  ...LEGACY_ID_BY_KEY,
+  ...Object.fromEntries(
+    (Object.entries(EMOTION_KEYS) as [string, string][]).map(([id, key]) => [
+      key,
+      Number(id) as EmotionId,
+    ]),
+  ),
+};
 
 /** 서버 감정 키 → id. 모르는 키는 `null`(바람 카드·일기 태그의 키를 EmotionId 로 되돌린다) */
 export const emotionIdOfKey = (key: string): EmotionId | null => ID_BY_KEY[key] ?? null;

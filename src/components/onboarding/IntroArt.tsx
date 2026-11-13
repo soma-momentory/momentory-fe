@@ -42,12 +42,12 @@ const RING = 296;
 
 const P = {
   happy: 1,
-  proud: 2,
-  calm: 3,
-  tired: 4,
-  stuck: 5,
-  anxious: 7,
-  angry: 9,
+  calm: 2,
+  proud: 3,
+  anxious: 6,
+  angry: 7,
+  stuck: 10,
+  tired: 12,
 } as const satisfies Record<string, EmotionId>;
 
 /** 원 둘레에 조약돌을 고르게 놓는다 — 0° 가 위쪽이다 */

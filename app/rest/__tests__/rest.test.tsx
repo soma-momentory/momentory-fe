@@ -161,8 +161,8 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
 });
 
 /**
- * 일기를 쓴 날의 쉼 추천 (2026-10-12) — 시드의 오늘(7월 27일) 일기는 불안함 · 우울함이라
- * 첫 감정 불안함의 맨 앞 후보 「몸에 힘 빼기」를 권한다(쉬는 방법은 비어 있다).
+ * 일기를 쓴 날의 쉼 추천 (2026-10-12) — 시드의 오늘(7월 27일) 일기는 불안 · 슬픔이라
+ * 첫 감정 불안의 맨 앞 후보 「몸에 힘 빼기」를 권한다(쉬는 방법은 비어 있다).
  */
 describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
   beforeEach(() => {
@@ -213,10 +213,13 @@ describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
   );
 
   it.each([
-    [1, "happy", "treasure_box"],
-    [4, "tired", "body_release"],
-    [5, "stuck", "worry_box"],
-    [8, "depressed", "sense_pond"],
+    [1, "joy", "treasure_box"],
+    [12, "exhausted", "body_release"],
+    [10, "confused", "worry_box"],
+    [5, "sad", "sense_pond"],
+    // 12종에서 새로 생긴 감정도 저장 직후 추천으로 이어진다
+    [4, "affection", "treasure_box"],
+    [11, "sorry", "worry_box"],
   ] as const)(
     "직접 일기에 고른 감정 %i로 저장 직후 쉼을 추천한다",
     async (emotion, key, content) => {
@@ -263,7 +266,7 @@ describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
     await waitForSheet();
 
     expect(r.getByText("불안한 날엔, 이걸 해 봐요")).toBeTruthy();
-    expect(r.getByText("불안함")).toBeTruthy();
+    expect(r.getByText("불안")).toBeTruthy();
     // 시트의 칸은 폴라로이드(이름 · 설명) · 뒤 격자는 테마 카드(어절을 묶은 이름 · 설명 없음)다
     expect(r.getByText("몸에 힘 빼기")).toBeTruthy();
     expect(r.getByText(keepWords("몸에 힘 빼기"))).toBeTruthy();
@@ -329,7 +332,7 @@ describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
     await waitForSheet();
 
     expect(r.getByText("오늘은 이걸 해 봐요")).toBeTruthy();
-    expect(r.queryByText("불안함")).toBeNull();
+    expect(r.queryByText("불안")).toBeNull();
     expect(r.getByText("지금 해 볼게요")).toBeTruthy();
   });
 

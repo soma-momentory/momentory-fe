@@ -5,9 +5,9 @@ import { archiveType, size } from "@/design/ds";
 import { EMOTIONS_BY_SENTIMENT, type EmotionId } from "@/features/emotion/model/emotion";
 
 /**
- * 감정 필터 — `A2` · `Archive.dc.html` 「감정 필터는 9종 칩」.
+ * 감정 필터 — `A2` · `Archive.dc.html` 「감정 필터는 9종 칩」(지금은 대표 감정 12종이다).
  *
- * **감정 9종을 전부 둔다**(`A2.md`) — 자주 쓰는 셋만 남기면 나머지 여섯으로
+ * **감정 12종을 전부 둔다**(`A2.md`) — 자주 쓰는 셋만 남기면 나머지 아홉으로
  * 기록한 날은 찾을 길이 없다. 대신 **가로 스크롤**로 한 줄에 담는다.
  *
  * ## ⚠ 칩에 감정색을 쓰지 않는다 — 시안과 갈린 자리
@@ -18,7 +18,7 @@ import { EMOTIONS_BY_SENTIMENT, type EmotionId } from "@/features/emotion/model/
  * (`PLAN.md` A §0).
  *
  * 규칙으로도 그 편이 맞다 — 감정색으로 선택을 표시하면 「무슨 감정인가」와
- * 「골랐는가」가 같은 채널을 쓰게 되고, 원색 아홉 중 일곱이 대비 3:1 을 못 넘는다.
+ * 「골랐는가」가 같은 채널을 쓰게 되고, 원색 대부분이 대비 3:1 을 못 넘는다.
  * 그래서 여기는 이름만 두고, **색으로 감정을 가리키는 일은 도트가 맡는다**
  * (목록 카드·달력).
  *

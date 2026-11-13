@@ -17,16 +17,19 @@ import { addDays, dayOf, dayOfIso, kstHourOf, sundayOf } from "./time";
 // ── 주간 리포트 ─────────────────────────────────────────────────────────
 
 const MOOD_MESSAGES: Record<EmotionKey, string> = {
-  happy: "이번 주에는 행복한 마음을 가장 많이 느꼈어요. 그 순간들을 천천히 다시 떠올려 보세요.",
-  proud: "이번 주에는 뿌듯한 마음이 자주 찾아왔어요. 애쓴 나를 한 번 더 알아봐 주세요.",
+  joy: "이번 주에는 기쁜 마음을 가장 많이 느꼈어요. 그 순간들을 천천히 다시 떠올려 보세요.",
   calm: "이번 주에는 평온한 마음을 가장 많이 느꼈어요. 그 환경을 이어가 보세요.",
-  tired: "이번 주에는 피곤한 날이 많았어요. 몸이 보내는 신호에 조금 더 귀 기울여 보세요.",
-  stuck: "이번 주에는 막막한 마음이 자주 들었어요. 작은 한 칸부터 정해 봐도 괜찮아요.",
-  lethargic: "이번 주에는 힘이 잘 나지 않았어요. 쉬어 가는 것도 한 주를 건너는 방법이에요.",
+  proud: "이번 주에는 뿌듯한 마음이 자주 찾아왔어요. 애쓴 나를 한 번 더 알아봐 주세요.",
+  affection: "이번 주에는 누군가를 아끼는 마음이 자주 들었어요. 그 마음을 한 번 전해 봐도 좋아요.",
+  sad: "이번 주에는 마음이 자주 가라앉았어요. 기댈 수 있는 사람을 한 번 떠올려 보세요.",
   anxious: "이번 주에는 불안한 마음이 자주 찾아왔어요. 마음을 내려놓을 틈을 하나 만들어 보세요.",
-  depressed: "이번 주에는 마음이 자주 가라앉았어요. 기댈 수 있는 사람을 한 번 떠올려 보세요.",
   angry: "이번 주에는 화가 나는 일이 있었어요. 지키고 싶었던 기준을 다시 살펴보세요.",
-  frustrated: "이번 주에는 답답한 마음이 자주 들었어요. 마음속 말을 한 줄 적어 보는 것도 좋아요.",
+  disappointed:
+    "이번 주에는 기대와 다른 일이 있었어요. 무엇을 바랐는지 한 줄 적어 보는 것도 좋아요.",
+  ashamed: "이번 주에는 숨고 싶은 순간이 있었어요. 그 순간의 나에게도 조금 너그러워져 보세요.",
+  confused: "이번 주에는 갈피가 잘 잡히지 않았어요. 작은 한 칸부터 정해 봐도 괜찮아요.",
+  sorry: "이번 주에는 미안한 마음이 자주 들었어요. 전하고 싶은 말을 한 줄 적어 보는 것도 좋아요.",
+  exhausted: "이번 주에는 지친 날이 많았어요. 몸이 보내는 신호에 조금 더 귀 기울여 보세요.",
 };
 
 /** 그 날의 일기 — 하루 하나지만, 혹시 여럿이면 마지막 것 */
@@ -59,7 +62,11 @@ export function weeklyBook(db: FakeDb, date: string | null, today: string) {
   });
   const schedules = db.schedules.filter((s) => !s.hidden && inRange(s.date, startDate, endDate));
   const good = diaries.filter(
-    (d) => d.emotion === "calm" || d.emotion === "proud" || d.emotion === "happy",
+    (d) =>
+      d.emotion === "joy" ||
+      d.emotion === "calm" ||
+      d.emotion === "proud" ||
+      d.emotion === "affection",
   );
   const counts = new Map<EmotionKey, number>();
   for (const d of diaries)
@@ -236,18 +243,20 @@ export const SAFETY_WORDS = ["위험", "죽고 싶", "사라지고 싶", "#위�
 export const hasSafetyWord = (text: string) => SAFETY_WORDS.some((w) => text.includes(w));
 
 const INSIGHTS: Record<EmotionKey, string> = {
-  happy: "어제의 기쁨은 우연이 아니었어요. 그런 순간을 알아보는 눈이 당신에게 있어요.",
-  proud: "어제 해낸 일은 작지 않았어요. 애쓴 만큼 스스로를 알아봐 줘도 괜찮아요.",
+  joy: "어제의 기쁨은 우연이 아니었어요. 그런 순간을 알아보는 눈이 당신에게 있어요.",
   calm: "어제는 마음이 고요했던 하루였어요. 그 고요를 만든 것이 무엇이었는지 기억해 둬요.",
-  tired: "어제의 피곤함은 끝까지 버틴 흔적이에요. 오늘은 몸이 먼저 쉬어도 괜찮아요.",
-  stuck: "막막함은 길이 없어서가 아니라 길이 많아서 생기기도 해요. 오늘은 한 칸만 정해도 충분해요.",
-  lethargic: "아무것도 못 한 날도 하루를 건너온 날이에요. 오늘은 창문 하나 여는 것부터 해도 돼요.",
+  proud: "어제 해낸 일은 작지 않았어요. 애쓴 만큼 스스로를 알아봐 줘도 괜찮아요.",
+  affection: "누군가를 아끼는 마음은 나를 따뜻하게도 해요. 그 마음을 오래 간직해 둬요.",
+  sad: "가라앉은 마음도 쉬어 가는 중일 수 있어요. 기댈 수 있는 한 사람을 떠올려 봐요.",
   anxious:
     "불안은 소중한 것을 지키려는 마음이 보내는 신호예요. 오늘은 그 마음을 조금 내려놓아 봐요.",
-  depressed: "가라앉은 마음도 쉬어 가는 중일 수 있어요. 기댈 수 있는 한 사람을 떠올려 봐요.",
   angry: "화가 난 건 지켜져야 할 것이 있었기 때문이에요. 그 기준은 틀리지 않았어요.",
-  frustrated:
-    "답답했던 건 그만큼 잘 전하고 싶었기 때문일지도 몰라요. 그 마음은 충분히 전해지고 있어요.",
+  disappointed: "실망한 건 그만큼 바랐기 때문이에요. 그 바람은 이상한 게 아니에요.",
+  ashamed: "부끄러웠던 건 잘하고 싶었기 때문일지도 몰라요. 그 순간은 생각보다 금방 지나가요.",
+  confused:
+    "갈피가 안 잡히는 건 길이 없어서가 아니라 길이 많아서일 수 있어요. 오늘은 한 칸만 정해도 충분해요.",
+  sorry: "미안한 마음은 그 사람을 아낀다는 뜻이기도 해요. 그 마음은 충분히 전해질 수 있어요.",
+  exhausted: "어제 지친 건 끝까지 버틴 흔적이에요. 오늘은 몸이 먼저 쉬어도 괜찮아요.",
 };
 
 const firstSentence = (text: string): string | null => {

@@ -20,7 +20,7 @@ const book = (over: Partial<WeeklyBook> = {}): WeeklyBook => ({
   days: Array.from({ length: 7 }, (_, i) => ({
     date: `2026-10-${25 + i}`,
     written: i === 3,
-    emotion: i === 3 ? 7 : null,
+    emotion: i === 3 ? 6 : null,
   })),
   restCount: 0,
   coverLine: "표지",
@@ -28,8 +28,8 @@ const book = (over: Partial<WeeklyBook> = {}): WeeklyBook => ({
   goodWords: "좋은 말",
   okLine: null,
   words: [{ date: "2026-10-26", label: null, fromLetter: false, text: "내가 쓴 말" }],
-  emotions: [{ emotion: 7, count: 3, events: ["면접"] }],
-  okMoments: [{ date: "2026-10-25", emotion: 3, event: null, tasks: [], betterRest: null }],
+  emotions: [{ emotion: 6, count: 3, events: ["면접"] }],
+  okMoments: [{ date: "2026-10-25", emotion: 2, event: null, tasks: [], betterRest: null }],
   rest: { total: 1, better: 1, same: 0, unsure: 0, places: [], soFar: null },
   done: { completedCount: 2, perDay: [1, 1, 0, 0, 0, 0, 0], linked: [] },
   ...over,
@@ -171,11 +171,25 @@ describe("응답 읽기", () => {
   it("모르는 감정 · 쉼터 · 빈 말은 그 줄만 버린다", () => {
     const parsed = parseWeeklyBook(raw);
     expect(parsed?.tone).toBe("HARD");
-    expect(parsed?.days[0]?.emotion).toBe(3);
+    expect(parsed?.days[0]?.emotion).toBe(2);
     expect(parsed?.words).toHaveLength(1);
     expect(parsed?.emotions).toHaveLength(1);
     expect(parsed?.okMoments[0]?.betterRest).toBe("body_release");
     expect(parsed?.rest.places.map((p) => p.content)).toEqual(["wish"]);
+  });
+
+  it("12종 키를 번호로 옮기고, 옛 10종 키도 12종으로 받아낸다", () => {
+    const parsed = parseWeeklyBook({
+      ...raw,
+      emotions: [
+        { emotion: "sorry", count: 2, events: [] },
+        { emotion: "affection", count: 1, events: [] },
+        // 서버가 넘어가기 전의 응답 — 답답함 → 분노(7) · 무기력 → 지침(12)
+        { emotion: "frustrated", count: 1, events: [] },
+        { emotion: "lethargic", count: 1, events: [] },
+      ],
+    });
+    expect(parsed?.emotions.map((e) => e.emotion)).toEqual([11, 4, 7, 12]);
   });
 
   it("일곱 칸이 아니거나 표지 문장이 없으면 어긋남이다", () => {

@@ -21,33 +21,37 @@ import { REST_CONTENTS, type RestContentId } from "./contents";
 
 /** 감정별 후보 — 앞일수록 먼저다 */
 export const REST_BY_EMOTION: Record<EmotionId, readonly RestContentId[]> = {
-  1: ["treasureBox"], // 행복함
-  2: ["treasureBox", "bodyRelease"], // 뿌듯함
-  3: ["treasureBox", "bodyRelease"], // 평온함
-  4: ["bodyRelease"], // 피곤함
-  5: ["worryBox"], // 막막함
-  // 무기력 — 걱정상자는 걱정을 글로 적어야 해서 기운 없는 날엔 문턱이 높다. 보고 듣기만 하면 되는 쪽
-  6: ["sensePond"],
-  7: ["bodyRelease", "worryBox", "sensePond"], // 불안함
-  // 우울함 — 「좋았던 일 찾기」는 우울한 날 오히려 부담이 될 수 있어 앞에 두지 않는다
-  8: ["sensePond", "treasureBox"],
-  // 화남 — 주먹을 꼭 쥐었다 푸는 동작이 화난 몸과 그대로 맞는다
-  9: ["bodyRelease", "sensePond"],
-  10: ["bodyRelease", "worryBox"], // 답답함
+  1: ["treasureBox"], // 기쁨
+  2: ["treasureBox", "bodyRelease"], // 평온
+  3: ["treasureBox", "bodyRelease"], // 뿌듯함
+  4: ["treasureBox"], // 애정
+  // 슬픔 — 「좋았던 일 찾기」는 슬픈 날 오히려 부담이 될 수 있어 앞에 두지 않는다
+  5: ["sensePond", "treasureBox"],
+  6: ["bodyRelease", "worryBox", "sensePond"], // 불안
+  // 분노 — 주먹을 꼭 쥐었다 푸는 동작이 화난 몸과 그대로 맞는다
+  7: ["bodyRelease", "sensePond"],
+  8: ["sensePond", "worryBox"], // 실망
+  9: ["worryBox", "sensePond"], // 부끄러움
+  10: ["worryBox"], // 혼란
+  11: ["worryBox", "sensePond"], // 미안함
+  // 지침 — 몸을 푸는 쪽이 먼저다. 기운이 없어 그것도 버거운 날엔 보고 듣기만 하면 되는 연못
+  12: ["bodyRelease", "sensePond"],
 };
 
-/** 시트 제목에 들어가는 감정의 꾸밈말 — 「막막한 날엔」 */
+/** 시트 제목에 들어가는 감정의 꾸밈말 — 「혼란스러운 날엔」 */
 const DAY_OF: Record<EmotionId, string> = {
-  1: "행복한",
-  2: "뿌듯한",
-  3: "평온한",
-  4: "피곤한",
-  5: "막막한",
-  6: "기운 없는",
-  7: "불안한",
-  8: "우울한",
-  9: "화난",
-  10: "답답한",
+  1: "기쁜",
+  2: "평온한",
+  3: "뿌듯한",
+  4: "애틋한",
+  5: "슬픈",
+  6: "불안한",
+  7: "화난",
+  8: "실망한",
+  9: "부끄러운",
+  10: "혼란스러운",
+  11: "미안한",
+  12: "지친",
 };
 
 /**

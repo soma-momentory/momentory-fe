@@ -3,35 +3,39 @@
  * localStorage 에 JSON 그대로 남으므로 `Date` 객체가 아니라 ISO 문자열 · 날짜 문자열만 든다.
  */
 
-/** 회고·일기·리포트의 감정 키(소문자) — 앱 `EMOTION_BY_KEY` 와 같은 번호 순서 */
+/** 회고·일기·리포트의 감정 키(소문자) — 대표 감정 12종. 앱 `EMOTION_BY_KEY` 와 같은 번호 순서 */
 export const EMOTION_KEYS = [
-  "happy",
-  "proud",
+  "joy",
   "calm",
-  "tired",
-  "stuck",
-  "lethargic",
+  "proud",
+  "affection",
+  "sad",
   "anxious",
-  "depressed",
   "angry",
-  "frustrated",
+  "disappointed",
+  "ashamed",
+  "confused",
+  "sorry",
+  "exhausted",
 ] as const;
 export type EmotionKey = (typeof EMOTION_KEYS)[number];
 
 export const EMOTION_NAMES: Record<EmotionKey, string> = {
-  happy: "행복함",
+  joy: "기쁨",
+  calm: "평온",
   proud: "뿌듯함",
-  calm: "평온함",
-  tired: "피곤함",
-  stuck: "막막함",
-  lethargic: "무기력",
-  anxious: "불안함",
-  depressed: "우울함",
-  angry: "화남",
-  frustrated: "답답함",
+  affection: "애정",
+  sad: "슬픔",
+  anxious: "불안",
+  angry: "분노",
+  disappointed: "실망",
+  ashamed: "부끄러움",
+  confused: "혼란",
+  sorry: "미안함",
+  exhausted: "지침",
 };
 
-/** 일정 완료 감정(대문자) — 화남·답답함이 아직 한 코드다(`scheduleApi.ts`) */
+/** 일정 완료 감정(대문자) — 서버 일정 enum 은 옛 9종 그대로다(`scheduleApi.ts`) */
 export const SCHEDULE_EMOTIONS = [
   "HAPPY",
   "PROUD",
@@ -45,10 +49,20 @@ export const SCHEDULE_EMOTIONS = [
 ] as const;
 export type ScheduleEmotion = (typeof SCHEDULE_EMOTIONS)[number];
 
-export const scheduleEmotionOf = (key: EmotionKey): ScheduleEmotion =>
-  key === "angry" || key === "frustrated"
-    ? "ANGRY_FRUSTRATED"
-    : (key.toUpperCase() as ScheduleEmotion);
+/** 12종 가운데 일정 enum 에 짝이 있는 여덟 — 나머지 넷(애정 · 실망 · 부끄러움 · 미안함)은 짝이 없다 */
+const SCHEDULE_EMOTION_BY_KEY: Partial<Record<EmotionKey, ScheduleEmotion>> = {
+  joy: "HAPPY",
+  calm: "CALM",
+  proud: "PROUD",
+  sad: "DEPRESSED",
+  anxious: "ANXIOUS",
+  angry: "ANGRY_FRUSTRATED",
+  confused: "STUCK",
+  exhausted: "TIRED",
+};
+
+export const scheduleEmotionOf = (key: EmotionKey): ScheduleEmotion | null =>
+  SCHEDULE_EMOTION_BY_KEY[key] ?? null;
 
 export type Profile = {
   nickname: string;
@@ -226,7 +240,7 @@ export type FakeDb = {
   retroSessions: RetroSessionRow[];
 };
 
-export const DB_SCHEMA = 3;
+export const DB_SCHEMA = 4;
 
 export const nextId = (db: FakeDb): number => db.seq++;
 

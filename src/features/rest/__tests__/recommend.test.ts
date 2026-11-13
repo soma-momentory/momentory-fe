@@ -10,7 +10,7 @@ import { dayRandom, recommendRest, REST_BY_EMOTION } from "../model/recommend";
  * **고르는 규칙**과 **표가 지켜야 할 전제**만 본다.
  */
 describe("쉼 추천 고르기", () => {
-  it("감정 열 개 모두 후보가 있고, 후보는 화면이 있는 쉼뿐이다", () => {
+  it("감정 열두 개 모두 후보가 있고, 후보는 화면이 있는 쉼뿐이다", () => {
     const routed = REST_CONTENTS.filter((c) => c.route != null).map((c) => c.id);
     for (const { id } of EMOTIONS) {
       expect(REST_BY_EMOTION[id].length).toBeGreaterThan(0);
@@ -19,27 +19,27 @@ describe("쉼 추천 고르기", () => {
   });
 
   it("첫 감정의 맨 앞 후보를 고르고, 제목과 조약돌로 그 감정을 말한다", () => {
-    // 불안함(7) 다음 우울함(8) — 첫 감정만 본다
-    expect(recommendRest([7, 8], [])).toEqual({
+    // 불안(6) 다음 슬픔(5) — 첫 감정만 본다
+    expect(recommendRest([6, 5], [])).toEqual({
       content: "bodyRelease",
       basis: "emotion",
-      emotion: 7,
+      emotion: 6,
       title: "불안한 날엔, 이걸 해 봐요",
     });
   });
 
   it("쉬는 방법은 그 감정의 후보 안에서만 순서를 바꾼다", () => {
-    // 불안함의 후보에는 감각연못이 있다 — 명상하기를 즐기면 그쪽이다
-    expect(recommendRest([7], ["MEDITATION"])).toEqual({
+    // 불안의 후보에는 감각연못이 있다 — 명상하기를 즐기면 그쪽이다
+    expect(recommendRest([6], ["MEDITATION"])).toEqual({
       content: "sensePond",
       basis: "preference",
-      emotion: 7,
+      emotion: 6,
       title: "불안한 날엔, 이걸 해 봐요",
     });
-    // 피곤함의 후보는 몸에 힘 빼기 하나 — 명상하기를 즐겨도 감정이 이긴다
-    expect(recommendRest([4], ["MEDITATION"]).content).toBe("bodyRelease");
+    // 혼란의 후보는 걱정상자 하나 — 명상하기를 즐겨도 감정이 이긴다
+    expect(recommendRest([10], ["MEDITATION"]).content).toBe("worryBox");
     // 닮은 쉼이 없는 쉬는 방법(게임)은 아무것도 바꾸지 않는다
-    expect(recommendRest([7], ["GAMING"]).basis).toBe("emotion");
+    expect(recommendRest([6], ["GAMING"]).basis).toBe("emotion");
   });
 
   it("감정이 없으면 쉬는 방법과 닮은 쉼을, 그것도 없으면 무작위로 — 근거를 지어내지 않는다", () => {
@@ -66,7 +66,7 @@ describe("쉼 추천 고르기", () => {
     });
   });
 
-  it("감정 열 개 모두 제목이 있다 — 「~ 날엔, 이걸 해 봐요」", () => {
+  it("감정 열두 개 모두 제목이 있다 — 「~ 날엔, 이걸 해 봐요」", () => {
     for (const { id } of EMOTIONS) {
       expect(recommendRest([id], []).title).toMatch(/^\S+( \S+)? 날엔, 이걸 해 봐요$/);
     }

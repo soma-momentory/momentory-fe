@@ -19,16 +19,18 @@ const { color, font } = reportBook;
 const BABA_COMPOSITE = require("../../../../../assets/home/v2/baba-composite.png");
 const BABA_STICKER = require("../../../../../assets/report/stickers/baba.png");
 const PEBBLE_STICKERS: Record<EmotionId, number> = {
-  1: require("../../../../../assets/report/stickers/happy.png"),
-  2: require("../../../../../assets/report/stickers/proud.png"),
-  3: require("../../../../../assets/report/stickers/calm.png"),
-  4: require("../../../../../assets/report/stickers/tired.png"),
-  5: require("../../../../../assets/report/stickers/stuck.png"),
-  6: require("../../../../../assets/report/stickers/lethargic.png"),
-  7: require("../../../../../assets/report/stickers/anxious.png"),
-  8: require("../../../../../assets/report/stickers/depressed.png"),
-  9: require("../../../../../assets/report/stickers/angry.png"),
-  10: require("../../../../../assets/report/stickers/frustrated.png"),
+  1: require("../../../../../assets/report/stickers/joy.png"),
+  2: require("../../../../../assets/report/stickers/calm.png"),
+  3: require("../../../../../assets/report/stickers/proud.png"),
+  4: require("../../../../../assets/report/stickers/affection.png"),
+  5: require("../../../../../assets/report/stickers/sad.png"),
+  6: require("../../../../../assets/report/stickers/anxious.png"),
+  7: require("../../../../../assets/report/stickers/angry.png"),
+  8: require("../../../../../assets/report/stickers/disappointed.png"),
+  9: require("../../../../../assets/report/stickers/ashamed.png"),
+  10: require("../../../../../assets/report/stickers/confused.png"),
+  11: require("../../../../../assets/report/stickers/sorry.png"),
+  12: require("../../../../../assets/report/stickers/exhausted.png"),
 };
 const NO_EMOTION_STICKER = require("../../../../../assets/report/stickers/no-emotion.png");
 

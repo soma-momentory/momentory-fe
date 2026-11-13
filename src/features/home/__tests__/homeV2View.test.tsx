@@ -355,7 +355,7 @@ describe("홈 v2 — 이번 주 감정 시트(D2 · DN-1)", () => {
   it("감정이 있는 날은 감정 이름을 읽고 · 일기만 있는 날은 「기록 있음, 감정 없음」 — 두 빈 칸은 그림도 다르다", async () => {
     const week: WeekDay[] = emptyWeek().map((d) =>
       d.label === "월"
-        ? { ...d, emotions: [7, 8], written: true }
+        ? { ...d, emotions: [6, 5], written: true }
         : d.label === "화"
           ? { ...d, emotions: [], written: true }
           : d,
@@ -363,7 +363,7 @@ describe("홈 v2 — 이번 주 감정 시트(D2 · DN-1)", () => {
     const r = await show(baseModel({ week }));
     await openWeek(r);
 
-    expect(r.getByRole("button", { name: "월요일 · 불안함, 우울함" })).toBeTruthy();
+    expect(r.getByRole("button", { name: "월요일 · 불안, 슬픔" })).toBeTruthy();
     expect(r.getByRole("button", { name: "화요일 · 기록 있음, 감정 없음" })).toBeTruthy();
     expect(r.getByRole("button", { name: "수요일 · 기록 없음" })).toBeTruthy();
 
@@ -381,12 +381,12 @@ describe("홈 v2 — 이번 주 감정 시트(D2 · DN-1)", () => {
     await openWeek(r);
     expect(r.getByText("수요일 · 기록 없음")).toBeTruthy();
 
-    await fireEvent.press(r.getByRole("button", { name: "월요일 · 행복함" }));
-    expect(r.getByText("월요일 · 행복함")).toBeTruthy();
+    await fireEvent.press(r.getByRole("button", { name: "월요일 · 기쁨" }));
+    expect(r.getByText("월요일 · 기쁨")).toBeTruthy();
     expect(r.queryByText("수요일 · 기록 없음")).toBeNull();
-    expect(
-      r.getByRole("button", { name: "월요일 · 행복함" }).props.accessibilityState.selected,
-    ).toBe(true);
+    expect(r.getByRole("button", { name: "월요일 · 기쁨" }).props.accessibilityState.selected).toBe(
+      true,
+    );
   });
 
   it("오늘은 형광 바탕으로 구분하고 밑줄은 표시하지 않는다", async () => {
@@ -431,7 +431,7 @@ describe("홈 v2 — 일정(HD-4 · S1~S20 중 뷰의 몫)", () => {
     await openSchedule(r);
     expect(r.getAllByText("1개 남음")).toHaveLength(2); // 메모 머리 · 시트 머리
     expect(r.queryByText(/%|연속|배지/)).toBeNull();
-    expect(r.queryByText(/행복함|불안함/)).toBeNull();
+    expect(r.queryByText(/기쁨|불안/)).toBeNull();
 
     const all = await show(
       baseModel({ schedules: [schedule(0, { done: true }), schedule(1, { done: true })] }),

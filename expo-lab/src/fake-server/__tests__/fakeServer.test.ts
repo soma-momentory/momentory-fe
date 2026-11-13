@@ -148,7 +148,7 @@ describe("오늘 쓴 일기 — config.todayDiary (쉼 추천 시트)", () => {
     const on = createFakeServer({ ...base, todayDiary: true }, { storage: memoryStorage() });
     const today = on.db().diaries.filter((d) => d.letterPending);
     expect(today).toHaveLength(1);
-    expect(today[0]).toMatchObject({ retrospectId: null, emotions: ["frustrated"] });
+    expect(today[0]).toMatchObject({ retrospectId: null, emotions: ["angry"] });
     expect(today[0]!.original.length).toBeGreaterThan(0);
   });
 
@@ -286,14 +286,14 @@ describe("데이터 세트 내용", () => {
     expect(treasures.ok && treasures.data.length).toBeGreaterThan(0);
   });
 
-  it("many — 하루 일정 10개 이상 · 감정 10종 전부 · 3개월치", async () => {
+  it("many — 하루 일정 10개 이상 · 감정 12종 전부 · 3개월치", async () => {
     install({ datasetId: "many" });
     const today = await fetchSchedules(TODAY);
     expect(today.ok && today.data.length).toBeGreaterThanOrEqual(10);
     const archive = await loadArchive(monthsBackFrom(TODAY, 4));
     if (!archive.ok) throw new Error("archive");
     const emotions = new Set(archive.data.diaries.flatMap((d) => d.emotions));
-    expect(emotions.size).toBe(10);
+    expect(emotions.size).toBe(12);
     expect(archive.data.diaries.length).toBeGreaterThan(60);
     expect(archive.data.actionCards.length).toBeGreaterThan(30);
     const letters = await fetchLetters(7);
@@ -464,6 +464,11 @@ describe("쓰기 → 읽기", () => {
     expect(after.ok && after.data.find((s) => s.id === made.data.id)).toMatchObject({
       done: true,
       emotions: [2],
+    });
+    // 일정 enum 에 짝이 없는 감정(애정 4)은 없는 코드를 지어 보내지 않는다 — 마침만 남고 감정은 빈다
+    expect(await putCompletion(made.data.id, true, 4, "manual")).toEqual({
+      ok: true,
+      data: { completed: true, emotions: [] },
     });
     if (!after.ok) return;
     const ids = after.data.map((s) => Number(s.id)).reverse();

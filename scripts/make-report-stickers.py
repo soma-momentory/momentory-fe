@@ -15,9 +15,10 @@ from scipy import ndimage
 import os
 
 OUT = "assets/report/stickers"
+# 서버 감정 키 12종 + 감정 없음 — `assets/emotion-pebble/` 의 그림을 그대로 받아 테두리만 두른다
 PEBBLES = [
-    "happy", "proud", "calm", "tired", "stuck",
-    "lethargic", "anxious", "depressed", "angry", "frustrated", "no-emotion",
+    "joy", "calm", "proud", "affection", "sad", "anxious",
+    "angry", "disappointed", "ashamed", "confused", "sorry", "exhausted", "no-emotion",
 ]
 
 

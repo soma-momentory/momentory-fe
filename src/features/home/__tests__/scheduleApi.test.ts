@@ -5,18 +5,18 @@ import { SCHEDULE_EMOTIONS, toSchedule } from "@/features/home/data/scheduleApi"
  * 일정 계약의 **경계**를 고정한다 — 서버 모양이 스키마와 다른 자리들이라
  * 계약이 바뀌면 여기가 먼저 깨져야 한다(`docs/api/openapi.json`).
  */
-describe("ScheduleResponse → 스키마 Schedule", () => {
-  const raw = {
-    id: 12,
-    date: "2026-07-27",
-    title: "면접 스터디",
-    completed: true,
-    emotion: "ANXIOUS",
-    displayOrder: 3,
-    source: "MANUAL",
-    hidden: false,
-  };
+const raw = {
+  id: 12,
+  date: "2026-07-27",
+  title: "면접 스터디",
+  completed: true,
+  emotion: "ANXIOUS",
+  displayOrder: 3,
+  source: "MANUAL",
+  hidden: false,
+};
 
+describe("ScheduleResponse → 스키마 Schedule", () => {
   it("id 를 문자열로 바꾼다 — 스키마가 그렇고 아웃박스의 ULID 가 이 자리에 온다", () => {
     expect(toSchedule(raw)?.id).toBe("12");
   });
@@ -44,8 +44,8 @@ describe("ScheduleResponse → 스키마 Schedule", () => {
   });
 
   it("감정 하나를 배열로 담는다 — 타입은 스키마대로 배열이다", () => {
-    // ANXIOUS 는 v2 재번호에서 7번(불안함)이다
-    expect(toSchedule(raw)?.emotions).toEqual([7]);
+    // ANXIOUS 는 12종 번호에서 6번(불안)이다
+    expect(toSchedule(raw)?.emotions).toEqual([6]);
     expect(toSchedule({ ...raw, emotion: null })?.emotions).toEqual([]);
   });
 
@@ -62,20 +62,37 @@ describe("ScheduleResponse → 스키마 Schedule", () => {
 });
 
 describe("감정 표 — 회고와 다른 어휘다", () => {
-  it("10종을 빠짐없이 덮는다 — 스케줄 enum 은 화남·답답함을 합쳐 9개 코드다", () => {
-    for (const e of EMOTIONS) expect(SCHEDULE_EMOTIONS[e.id]).toBeTruthy();
-    // 화남(9)·답답함(10)이 같은 ANGRY_FRUSTRATED 라 코드는 9종
-    expect(new Set(Object.values(SCHEDULE_EMOTIONS)).size).toBe(9);
+  it("12종 가운데 일정 enum 에 짝이 있는 여덟만 덮는다 — 서버 일정 enum 은 옛 9종 그대로다", () => {
+    const covered = EMOTIONS.filter((e) => SCHEDULE_EMOTIONS[e.id] != null).map((e) => e.name);
+    expect(covered).toEqual(["기쁨", "평온", "뿌듯함", "슬픔", "불안", "분노", "혼란", "지침"]);
+    // 여덟이 서로 다른 코드다 — 한 코드가 두 감정에 묶이면 되돌릴 때 하나가 사라진다
+    expect(new Set(Object.values(SCHEDULE_EMOTIONS)).size).toBe(8);
   });
 
-  it("화남(9)·답답함(10)은 회고와 달리 합쳐진 ANGRY_FRUSTRATED 다", () => {
-    // 스케줄 enum 은 아직 미분리 — 회고의 angry/frustrated 를 재사용하면 조용히 400 이 된다
-    expect(SCHEDULE_EMOTIONS[9]).toBe("ANGRY_FRUSTRATED");
-    expect(SCHEDULE_EMOTIONS[10]).toBe("ANGRY_FRUSTRATED");
+  it("애정 · 실망 · 부끄러움 · 미안함은 일정 enum 에 짝이 없다 — 없는 코드를 지어 보내지 않는다", () => {
+    for (const id of [4, 8, 9, 11] as const) expect(SCHEDULE_EMOTIONS[id]).toBeUndefined();
   });
 
-  it("순서가 EMOTIONS 와 같다 — 1 행복함 … 3 평온함", () => {
+  it("분노(7)는 회고와 달리 합쳐진 ANGRY_FRUSTRATED 다", () => {
+    // 스케줄 enum 은 옛 어휘다 — 회고의 angry 를 재사용하면 조용히 400 이 된다
+    expect(SCHEDULE_EMOTIONS[7]).toBe("ANGRY_FRUSTRATED");
+    expect(toSchedule({ ...raw, emotion: "ANGRY_FRUSTRATED" })?.emotions).toEqual([7]);
+  });
+
+  it("번호가 EMOTIONS 와 같다 — 1 기쁨 · 2 평온 · 3 뿌듯함 · 12 지침", () => {
     expect(SCHEDULE_EMOTIONS[1]).toBe("HAPPY");
-    expect(SCHEDULE_EMOTIONS[3]).toBe("CALM");
+    expect(SCHEDULE_EMOTIONS[2]).toBe("CALM");
+    expect(SCHEDULE_EMOTIONS[3]).toBe("PROUD");
+    expect(SCHEDULE_EMOTIONS[5]).toBe("DEPRESSED");
+    expect(SCHEDULE_EMOTIONS[10]).toBe("STUCK");
+    expect(SCHEDULE_EMOTIONS[12]).toBe("TIRED");
+  });
+
+  it("서버 일정 enum 에만 남은 옛 값도 12종으로 읽는다 — 무기력 · 피곤함은 지침이다", () => {
+    expect(toSchedule({ ...raw, emotion: "LETHARGIC" })?.emotions).toEqual([12]);
+    expect(toSchedule({ ...raw, emotion: "TIRED" })?.emotions).toEqual([12]);
+    expect(toSchedule({ ...raw, emotion: "STUCK" })?.emotions).toEqual([10]);
+    expect(toSchedule({ ...raw, emotion: "DEPRESSED" })?.emotions).toEqual([5]);
+    expect(toSchedule({ ...raw, emotion: "HAPPY" })?.emotions).toEqual([1]);
   });
 });
