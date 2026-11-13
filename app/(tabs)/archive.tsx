@@ -155,7 +155,7 @@ export default function Archive() {
    * 두 번 하면서 「일정 있음」의 초록과 뒤섞인다.
    *
    * 그림도 색도 낭독기에는 없다. 그래서 **감정 이름과 「일정 있음」을 `label` 로
-   * 함께 준다** — 칸이 「27일, 불안함, 일정 있음」으로 읽힌다(`ds/Calendar.tsx` ·
+   * 함께 준다** — 칸이 「27일, 불안, 일정 있음」으로 읽힌다(`ds/Calendar.tsx` ·
    * `RULES.md` 「보관함」).
    */
   const markOf = (date: string): CalendarMark => {

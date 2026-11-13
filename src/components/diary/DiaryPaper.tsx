@@ -95,7 +95,7 @@ function DiaryPhoto({
   const left = width * paper.stickerLeftRatio + paper.stickerLeftInset;
   const columns = Math.max(1, Math.floor((width - left) / paper.stickerStep));
   const rows = Math.max(1, Math.ceil(uniqueEmotions.length / columns));
-  // 글씨 확대나 감정 10개에서도 이름·스티커가 서로 겹치지 않게 행을 나눈다.
+  // 글씨 확대나 감정 12개에서도 이름·스티커가 서로 겹치지 않게 행을 나눈다.
   const many = uniqueEmotions.length > 3;
   const extra = (rows - 1) * paper.stickerTouchHeight;
   const onLayout = ({ nativeEvent: { layout } }: LayoutChangeEvent) => setWidth(layout.width);

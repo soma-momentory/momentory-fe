@@ -56,71 +56,83 @@ export const DIARY_NOTICE = "\n오늘 이야기는 일기로 정리해뒀어요.
 const ENDED_WORD = "#종료";
 
 const EMOTION_DESCRIPTIONS: Record<EmotionKey, string> = {
-  happy: "마음이 환하게 들뜬 느낌",
-  proud: "애쓴 만큼 해냈다는 느낌",
+  joy: "마음이 환하게 들뜬 느낌",
   calm: "잔잔하고 편안한 느낌",
-  tired: "몸과 마음이 지친 느낌",
-  stuck: "어디로 가야 할지 모르겠는 느낌",
-  lethargic: "아무것도 하기 싫은 느낌",
+  proud: "애쓴 만큼 해냈다는 느낌",
+  affection: "누군가가 따뜻하게 떠오르는 느낌",
+  sad: "마음이 가라앉는 느낌",
   anxious: "걱정이 자꾸 떠오르는 느낌",
-  depressed: "마음이 가라앉는 느낌",
   angry: "속에서 열이 오르는 느낌",
-  frustrated: "막힌 듯 답답한 느낌",
+  disappointed: "기대가 꺾여 허탈한 느낌",
+  ashamed: "어디론가 숨고 싶은 느낌",
+  confused: "어디로 가야 할지 모르겠는 느낌",
+  sorry: "내가 잘못한 것 같아 마음이 무거운 느낌",
+  exhausted: "몸과 마음이 지친 느낌",
 };
 
 const EMOTION_HINTS: [EmotionKey, RegExp][] = [
-  ["happy", /행복|기뻤|기쁘|좋았|신났|웃/],
-  ["proud", /뿌듯|해냈|칭찬|잘했|성공/],
+  ["joy", /행복|기뻤|기쁘|좋았|신났|웃/],
   ["calm", /편안|평온|여유|느긋|차분/],
-  ["tired", /피곤|지쳤|지친|힘들|졸려|야근/],
-  ["stuck", /막막|모르겠|제자리|길을/],
-  ["lethargic", /무기력|귀찮|누워|미뤘|하기 싫/],
+  ["proud", /뿌듯|해냈|칭찬|잘했|성공/],
+  ["affection", /보고 싶|그리웠|애틋|정겨|반했/],
+  ["sad", /우울|가라앉|외로|슬펐|속상/],
   ["anxious", /불안|걱정|긴장|떨렸|초조/],
-  ["depressed", /우울|가라앉|서운|외로|슬펐/],
-  ["angry", /화가|화났|짜증|열받/],
-  ["frustrated", /답답|억울|말을 못|묻혔/],
+  ["angry", /화가|화났|짜증|열받|답답|억울/],
+  ["disappointed", /실망|서운|아쉬|허탈|묻혔/],
+  ["ashamed", /부끄|창피|민망|무안/],
+  ["confused", /막막|모르겠|제자리|길을|당황/],
+  ["sorry", /미안|죄송|후회|자책/],
+  ["exhausted", /피곤|지쳤|지친|힘들|졸려|야근|무기력|귀찮|누워|미뤘|하기 싫/],
 ];
 
 const NEEDS_BY_EMOTION: Record<EmotionKey, Need[]> = {
-  happy: [
+  joy: [
     { word: "기쁨 나누기", meaning: "좋은 순간을 함께 누리는 것" },
     { word: "감사", meaning: "고마운 마음을 표현하는 것" },
-  ],
-  proud: [
-    { word: "인정", meaning: "애쓴 만큼 알아봐 주길 바라는 마음" },
-    { word: "성장", meaning: "조금씩 나아지고 있다는 느낌" },
   ],
   calm: [
     { word: "여유", meaning: "서두르지 않아도 괜찮은 시간" },
     { word: "안정", meaning: "흔들리지 않고 기댈 곳" },
   ],
-  tired: [
-    { word: "휴식", meaning: "몸과 마음이 쉬어 갈 틈" },
-    { word: "돌봄", meaning: "나를 챙겨 주는 손길" },
+  proud: [
+    { word: "인정", meaning: "애쓴 만큼 알아봐 주길 바라는 마음" },
+    { word: "성장", meaning: "조금씩 나아지고 있다는 느낌" },
   ],
-  stuck: [
-    { word: "방향", meaning: "어디로 가면 될지 알고 싶은 마음" },
-    { word: "도움", meaning: "함께 길을 찾아 줄 누군가" },
+  affection: [
+    { word: "연결", meaning: "누군가와 이어져 있다는 느낌" },
+    { word: "감사", meaning: "고마운 마음을 표현하는 것" },
   ],
-  lethargic: [
-    { word: "회복", meaning: "다시 움직일 힘이 차오르는 것" },
-    { word: "의미", meaning: "하는 일이 나에게 닿는 느낌" },
+  sad: [
+    { word: "연결", meaning: "누군가와 이어져 있다는 느낌" },
+    { word: "위로", meaning: "괜찮다고 말해 주는 마음" },
   ],
   anxious: [
     { word: "안정", meaning: "흔들리지 않고 기댈 곳" },
     { word: "확신", meaning: "괜찮을 거라는 믿음" },
   ],
-  depressed: [
-    { word: "연결", meaning: "누군가와 이어져 있다는 느낌" },
-    { word: "위로", meaning: "괜찮다고 말해 주는 마음" },
-  ],
   angry: [
     { word: "공정함", meaning: "서로 지켜야 할 것을 함께 지키는 것" },
     { word: "존중", meaning: "내 의견이 가볍게 다뤄지지 않길 바라는 마음" },
   ],
-  frustrated: [
+  disappointed: [
     { word: "존중", meaning: "내 의견이 가볍게 다뤄지지 않길 바라는 마음" },
     { word: "이해", meaning: "내 마음을 있는 그대로 알아주는 것" },
+  ],
+  ashamed: [
+    { word: "이해", meaning: "내 마음을 있는 그대로 알아주는 것" },
+    { word: "안정", meaning: "흔들리지 않고 기댈 곳" },
+  ],
+  confused: [
+    { word: "방향", meaning: "어디로 가면 될지 알고 싶은 마음" },
+    { word: "도움", meaning: "함께 길을 찾아 줄 누군가" },
+  ],
+  sorry: [
+    { word: "연결", meaning: "누군가와 이어져 있다는 느낌" },
+    { word: "이해", meaning: "내 마음을 있는 그대로 알아주는 것" },
+  ],
+  exhausted: [
+    { word: "휴식", meaning: "몸과 마음이 쉬어 갈 틈" },
+    { word: "회복", meaning: "다시 움직일 힘이 차오르는 것" },
   ],
 };
 
@@ -135,7 +147,7 @@ const DESIRED: Record<string, string> = {
   회복: "아주 작은 것 하나라도 해냈다고 느끼고 싶다",
 };
 
-const POSITIVE: readonly EmotionKey[] = ["happy", "proud", "calm"];
+const POSITIVE: readonly EmotionKey[] = ["joy", "calm", "proud", "affection"];
 
 const detectEmotions = (text: string): EmotionKey[] =>
   EMOTION_HINTS.filter(([, re]) => re.test(text)).map(([key]) => key);
@@ -337,7 +349,7 @@ const pickIds = (ids: string[] | null, size: number): number[] | null => {
 function emotionStep(s: RetroSessionRow, lead: string): RetroReply {
   s.step = "emotion";
   const found = detectEmotions([...s.texts, s.event ?? ""].join(" "));
-  const fill: EmotionKey[] = ["tired", "anxious", "calm", "frustrated", "happy", "proud"];
+  const fill: EmotionKey[] = ["exhausted", "anxious", "calm", "angry", "joy", "proud"];
   s.emotionCandidates = [...new Set([...found, ...fill])].slice(0, 4);
   return {
     phase: "emotion_exploration",

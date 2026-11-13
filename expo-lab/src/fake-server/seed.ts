@@ -74,7 +74,7 @@ type Spec = {
   worries: number;
   todaySchedules: readonly string[];
   long: boolean;
-  /** 테마를 날짜 순서대로 돌린다(감정 10종이 빠짐없이 나오게) */
+  /** 테마를 날짜 순서대로 돌린다(감정 12종이 빠짐없이 나오게) */
   cycleThemes: boolean;
 };
 

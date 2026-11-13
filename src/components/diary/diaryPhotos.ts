@@ -4,16 +4,18 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
 
 /** 사진을 추가할 때 이 표에 해당 감정 id와 정적 require만 더한다. 다른 감정 사진을 대체로 쓰지 않는다. */
 export const DIARY_PHOTOS: Partial<Record<EmotionId, ImageSourcePropType>> = {
-  1: require("../../../assets/diary/photos/happy.jpg"),
-  2: require("../../../assets/diary/photos/proud.jpg"),
-  3: require("../../../assets/diary/photos/calm.jpg"),
-  4: require("../../../assets/diary/photos/tired.jpg"),
-  5: require("../../../assets/diary/photos/stuck.jpg"),
-  6: require("../../../assets/diary/photos/lethargic.jpg"),
-  7: require("../../../assets/diary/photos/anxious.jpg"),
-  8: require("../../../assets/diary/photos/depressed.jpg"),
-  9: require("../../../assets/diary/photos/angry.jpg"),
-  10: require("../../../assets/diary/photos/frustrated.jpg"),
+  1: require("../../../assets/diary/photos/joy.jpg"),
+  2: require("../../../assets/diary/photos/calm.jpg"),
+  3: require("../../../assets/diary/photos/proud.jpg"),
+  4: require("../../../assets/diary/photos/affection.jpg"),
+  5: require("../../../assets/diary/photos/sad.jpg"),
+  6: require("../../../assets/diary/photos/anxious.jpg"),
+  7: require("../../../assets/diary/photos/angry.jpg"),
+  8: require("../../../assets/diary/photos/disappointed.jpg"),
+  9: require("../../../assets/diary/photos/ashamed.jpg"),
+  10: require("../../../assets/diary/photos/confused.jpg"),
+  11: require("../../../assets/diary/photos/sorry.jpg"),
+  12: require("../../../assets/diary/photos/exhausted.jpg"),
 };
 
 /** 감정 태그가 없는 일기 전용 그림. 새로운 감정 id나 스티커를 만들지 않는다. */

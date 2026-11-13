@@ -1,7 +1,14 @@
 import { render } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 
-import { BabaOnRug, babaOnRugGap, BabaSticker, babaStickerFit, babaStickerGap } from "../parts";
+import {
+  BabaOnRug,
+  babaOnRugGap,
+  BabaSticker,
+  babaStickerFit,
+  babaStickerGap,
+  PebbleSticker,
+} from "../parts";
 
 import { reportBook } from "@/design/ds";
 
@@ -65,5 +72,26 @@ describe("말풍선과 바바 사이", () => {
     const { getByTestId } = await render(<BabaSticker width={width} />);
     const holder = boxOf(getByTestId("book-baba-sticker", hidden).props.style);
     expect(babaStickerGap(width) + holder.height).toBeCloseTo(room, 5);
+  });
+});
+
+/**
+ * 표지의 감정 스티커 — 조약돌 그림 열두 장에서 흰 테두리를 둘러 구운 것이다
+ * (`scripts/make-report-stickers.py`). 감정마다 자기 스티커가 있다.
+ */
+describe("감정 스티커", () => {
+  const uri = (json: unknown) => JSON.stringify(json).match(/"testUri":"[^"]+"/)?.[0];
+
+  it("12종 모두 자기 스티커가 있다 — 빈 스티커도, 같은 그림도 없다", async () => {
+    const empty = uri((await render(<PebbleSticker id={null} size={48} />)).toJSON());
+    expect(empty).toContain("no-emotion");
+    const seen = new Set<string | undefined>();
+    for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const) {
+      const got = uri((await render(<PebbleSticker id={id} size={48} />)).toJSON());
+      expect(got).toBeDefined();
+      expect(got).not.toBe(empty);
+      seen.add(got);
+    }
+    expect(seen.size).toBe(12);
   });
 });

@@ -11,7 +11,7 @@ import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
 import { useTodayContext } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
 
-/** 감정 키 목록 → 이름 문자열("화남, 답답함"). 모르는 키는 건너뛴다 */
+/** 감정 키 목록 → 이름 문자열("분노, 실망"). 모르는 키는 건너뛴다 */
 const emotionNames = (keys: string[]): string =>
   keys
     .map(emotionIdOfKey)

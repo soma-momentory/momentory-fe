@@ -2,7 +2,7 @@
  * 데이터 세트에 심는 문안. **하루 하나의 이야기(테마)** 로 묶는다 — 그날의 일정 · 일기 · 바람카드 ·
  * 편지가 서로 맞물려야 화면을 오가며 볼 때 어색하지 않다.
  *
- * 테마 16개가 감정 10종을 모두 대표 감정으로 한 번 이상 갖는다(`many` 가 감정 10종 전부를 보여 준다).
+ * 테마 16개가 감정 12종을 모두 대표 감정으로 한 번 이상 갖는다(`many` 가 감정 12종 전부를 보여 준다).
  */
 import type { EmotionKey, Need } from "./db";
 
@@ -28,7 +28,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["팀 주간 회의", "기획서 초안 보내기", "헬스장 가기"],
     diary:
       "회의에서 내가 낸 의견이 금방 다른 얘기에 묻혔다. 준비를 꽤 했는데 아무도 다시 묻지 않아서 하루 종일 마음 한쪽이 답답했다. 퇴근길에 좋아하는 노래를 들으면서 조금 풀렸다.",
-    emotions: ["frustrated", "anxious"],
+    emotions: ["angry", "anxious"],
     card: {
       situation: "회의에서 의견을 말하던 중 말이 끊겼다",
       needs: [{ word: "존중", meaning: "내 의견이 가볍게 다뤄지지 않길 바라는 마음" }],
@@ -45,7 +45,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["아침 산책", "카페에서 책 읽기", "엄마랑 통화"],
     diary:
       "오랜만에 아무 약속 없이 천천히 걸었다. 카페 창가에 앉아 읽다 만 소설을 끝까지 읽었다. 저녁에 엄마랑 통화하면서 별것 아닌 얘기에 한참 웃었다.",
-    emotions: ["calm", "happy"],
+    emotions: ["affection", "calm"],
     card: {
       situation: "약속 없이 혼자 보낸 오후가 편안했다",
       needs: [{ word: "여유", meaning: "서두르지 않아도 괜찮은 시간" }],
@@ -61,7 +61,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["중간 발표", "발표 자료 최종 점검", "동기들과 저녁"],
     diary:
       "드디어 발표를 끝냈다. 시작 전에는 손이 떨렸는데 막상 시작하니 준비한 대로 말이 나왔다. 교수님이 질문을 두 개나 해 주셔서 오히려 신났다.",
-    emotions: ["proud", "happy"],
+    emotions: ["proud", "joy"],
     card: {
       situation: "떨렸지만 발표를 끝까지 해냈다",
       needs: [{ word: "인정", meaning: "애쓴 만큼 알아봐 주길 바라는 마음" }],
@@ -79,7 +79,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["야근", "보고서 수정", "택배 받기"],
     diary:
       "보고서를 세 번째 고쳤다. 눈이 뻑뻑하고 어깨가 돌처럼 굳었다. 집에 오자마자 씻지도 못하고 소파에 누워 버렸다.",
-    emotions: ["tired"],
+    emotions: ["exhausted"],
     card: {
       situation: "늦게까지 보고서를 고치느라 몸이 지쳤다",
       needs: [{ word: "휴식", meaning: "몸과 마음이 쉬어 갈 틈" }],
@@ -94,7 +94,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["이력서 쓰기", "채용 공고 보기", "스터디"],
     diary:
       "이력서 자기소개란을 한 줄도 못 채웠다. 남들은 다 뭔가를 해 온 것 같은데 나만 제자리인 기분. 어디서부터 손대야 할지 모르겠다.",
-    emotions: ["stuck", "anxious"],
+    emotions: ["confused", "anxious"],
     card: {
       situation: "자기소개를 한 줄도 쓰지 못했다",
       needs: [{ word: "방향", meaning: "어디로 가면 될지 알고 싶은 마음" }],
@@ -111,7 +111,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["빨래하기", "장보기"],
     diary:
       "하루 종일 누워서 휴대폰만 봤다. 빨래도 장보기도 내일로 미뤘다. 뭘 해야 하는지는 아는데 몸이 따라오지 않는다.",
-    emotions: ["lethargic"],
+    emotions: ["exhausted"],
     card: {
       situation: "해야 할 일을 알면서도 몸이 움직이지 않았다",
       needs: [{ word: "회복", meaning: "다시 움직일 힘이 차오르는 것" }],
@@ -143,7 +143,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["혼자 저녁", "영화 보기"],
     diary:
       "비가 와서 그런지 하루 종일 기분이 가라앉았다. 친구들 단톡방이 조용한 것도 괜히 서운했다. 혼자 영화를 보다가 중간에 껐다.",
-    emotions: ["depressed", "lethargic"],
+    emotions: ["disappointed", "sad"],
     card: {
       situation: "비 오는 날 혼자 있으니 마음이 가라앉았다",
       needs: [{ word: "연결", meaning: "누군가와 이어져 있다는 느낌" }],
@@ -158,7 +158,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["고객 미팅", "견적서 다시 보내기", "운동하기"],
     diary:
       "고객이 약속 시간에 삼십 분이나 늦어 놓고 사과도 없이 요구 사항을 바꿨다. 웃으면서 대답했지만 속으로는 화가 끓었다. 운동하면서 땀을 쏟고 나니 조금 가라앉았다.",
-    emotions: ["angry", "tired"],
+    emotions: ["angry", "exhausted"],
     card: {
       situation: "약속을 어기고 사과 없이 요구를 바꾼 고객을 만났다",
       needs: [{ word: "공정함", meaning: "서로 지켜야 할 것을 함께 지키는 것" }],
@@ -174,7 +174,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["동아리 모임", "회비 정산", "과제 제출"],
     diary:
       "동아리 회비 정산을 또 내가 떠맡았다. 아무도 하겠다는 사람이 없어서 결국 손을 들었다. 과제도 밀려 있는데 거절을 못 한 내가 답답하다.",
-    emotions: ["frustrated", "tired"],
+    emotions: ["sorry", "exhausted"],
     card: {
       situation: "아무도 나서지 않아 정산을 또 떠맡았다",
       needs: [{ word: "균형", meaning: "나만 짊어지지 않는 것" }],
@@ -205,7 +205,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["친구 생일 파티", "선물 포장", "케이크 찾기"],
     diary:
       "친구 생일을 깜짝 파티로 축하했다. 문을 열고 들어오는 표정을 보는 순간 준비하면서 고생한 게 다 잊혔다. 다 같이 사진을 백 장은 찍은 것 같다.",
-    emotions: ["happy", "proud"],
+    emotions: ["joy", "proud"],
     card: {
       situation: "친구 생일을 깜짝 파티로 축하했다",
       needs: [{ word: "기쁨 나누기", meaning: "좋은 순간을 함께 누리는 것" }],
@@ -221,7 +221,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["이사 업체 알아보기", "집 계약서 확인", "은행 들르기"],
     diary:
       "이사 날짜는 다가오는데 정해진 게 하나도 없다. 업체 견적은 제각각이고 계약서 조항은 읽어도 무슨 말인지 모르겠다. 할 일 목록만 길어진다.",
-    emotions: ["stuck", "tired"],
+    emotions: ["confused", "exhausted"],
     quote: "할 일 목록만 길어져요",
     insight: "정해진 게 없어 보여도 오늘 알아본 것들이 내일의 선택지가 돼요.",
     tonightQuestion: "오늘 밤엔 하나라도 정해진 것이 있었는지 물어볼게요.",
@@ -230,7 +230,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["주말 등산", "사진 정리"],
     diary:
       "새벽에 일어나 친구와 산에 올랐다. 정상에서 먹은 김밥이 세상에서 제일 맛있었다. 내려오는 길에 다리가 후들거렸지만 기분은 가벼웠다.",
-    emotions: ["happy", "calm"],
+    emotions: ["joy", "calm"],
     quote: "정상에서 먹은 김밥이 세상에서 제일 맛있었어요",
     insight: "몸은 지쳐도 마음이 가벼운 날이 있어요. 오늘이 그런 날이었네요.",
     tonightQuestion: "오늘 밤엔 몸이 기억하는 좋은 순간을 물어볼게요.",
@@ -239,7 +239,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["팀 프로젝트 회의", "코드 리뷰 반영", "저녁 약속 취소"],
     diary:
       "팀원이 맡은 부분을 또 안 해 와서 결국 내가 밤까지 붙잡았다. 말을 꺼내면 분위기가 나빠질까 봐 아무 말도 못 했다. 저녁 약속까지 취소하고 나니 더 화가 났다.",
-    emotions: ["angry", "frustrated"],
+    emotions: ["ashamed", "angry"],
     card: {
       situation: "팀원이 맡은 일을 해 오지 않아 대신 밤까지 붙잡았다",
       needs: [{ word: "협력", meaning: "함께 맡은 일을 함께 해내는 것" }],
@@ -255,7 +255,7 @@ export const THEMES: readonly Theme[] = [
     schedules: ["늦잠", "동네 한 바퀴", "라면 끓여 먹기"],
     diary:
       "알람을 다 끄고 열한 시까지 잤다. 아무것도 하지 않은 하루였는데 이상하게 마음이 비어 있었다. 저녁에 동네를 한 바퀴 돌고 나니 조금 나아졌다.",
-    emotions: ["depressed", "calm"],
+    emotions: ["sad", "calm"],
     quote: "아무것도 하지 않은 하루였어요",
     insight: "비어 있는 마음도 쉬어 가는 중일 수 있어요. 동네 한 바퀴가 오늘의 작은 시작이었어요.",
     tonightQuestion: "오늘 밤엔 마음이 조금 채워진 순간을 물어볼게요.",

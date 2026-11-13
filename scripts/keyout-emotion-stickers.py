@@ -1,4 +1,12 @@
-"""Downloads 의 스티커 열 장에서 **구워진 체커보드 배경**을 걷어 낸다.
+"""받은 얼굴 스티커 열두 장에서 **구워진 체커보드 배경**을 걷어 낸다.
+
+2026-11-14 대표 감정 12종으로 바꾸면서 열두 장을 다시 받았다(색을 조약돌 12색에 맞춘 판).
+원본은 **서버 감정 키 이름**(`joy.webp` … `exhausted.webp` · `.png` 도 받는다)으로 한 폴더에 둔다.
+아홉 장은 체커가 구워진 미리보기이고, 애정 · 부끄러움 · 미안함 세 장은 진짜 투명 그림이라
+알파를 그대로 쓴다.
+
+    python3 scripts/keyout-emotion-stickers.py assets/emotion ~/Downloads/emotion-faces
+
 
 받은 파일은 투명 미리보기를 그대로 찍은 것이라 알파가 전부 불투명하고, 배경 자리에
 체커 무늬와 스톡 워터마크 획이 RGB 로 들어 있다.
@@ -29,28 +37,53 @@ from scipy import ndimage
 import os, sys
 
 OUT = sys.argv[1]
+SRC = os.path.expanduser(sys.argv[2] if len(sys.argv) > 2 else "~/Downloads/emotion-faces")
 SIZE = 132       # 앱 규격 (44pt @3x)
 PAD = 0.03       # 정사각 캔버스에 남기는 여백 비율
 
 # ⚠ **열 장을 통째로 갈아 끼웠다**(2026-09-10). 앞선 그림은 사람 얼굴 결이었고,
 # 새 그림은 **카피바라 얼굴**이라 홈·감각연못의 캐릭터와 한 식구가 된다. 파일 이름이
 # 감정 뜻으로 바뀌어서(`momentory-07-tired(2)` → `tired`) 이 표도 짧아졌다.
-NAMES = {
-    "anxiety": "anxious",
-    "depression": "depressed",
-    "anger": "angry",
-    "frustration": "frustrated",
-    "overwhelmed": "stuck",
-    # ⚠ 「무기력」만 두 번째 판이다(2026-09-10 19:07 · 사용자 교체) — 파일명을 그대로 둔다
-    "lethargy_2": "lethargic",
-    "tired": "tired",
-    "calm": "calm",
-    "proud": "proud",
-    "happy": "happy",
-}
+# 서버 감정 키(`features/retro/model/retro.ts` 의 `EMOTION_KEYS`) — 원본도 결과도 이 이름이다
+KEYS = [
+    "joy",
+    "calm",
+    "proud",
+    "affection",
+    "sad",
+    "anxious",
+    "angry",
+    "disappointed",
+    "ashamed",
+    "confused",
+    "sorry",
+    "exhausted",
+]
+
+
+def source(key):
+    for ext in ("webp", "png"):
+        path = os.path.join(SRC, f"{key}.{ext}")
+        if os.path.exists(path):
+            return path
+    raise FileNotFoundError(f"{key} 원본이 {SRC} 에 없다")
+
+
+def square(out):
+    """잘라낸 얼굴을 여백을 둔 정사각 캔버스에 앉히고 앱 규격으로 줄인다"""
+    side = int(max(out.size) * (1 + PAD * 2))
+    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    canvas.paste(out, ((side - out.width) // 2, (side - out.height) // 2), out)
+    return canvas.resize((SIZE, SIZE), Image.LANCZOS)
 
 def keyout(path):
-    im = Image.open(path).convert("RGB")
+    src = Image.open(path)
+    # **진짜 투명 그림**은 걷어 낼 배경이 없다 — 알파를 그대로 쓴다
+    if src.mode == "RGBA" and src.getchannel("A").getextrema()[0] == 0:
+        out = src.crop(src.getchannel("A").point(lambda v: 255 if v > 16 else 0).getbbox())
+        return square(out), (src.size, out.size)
+
+    im = src.convert("RGB")
     a = np.asarray(im).astype(np.int16)
     lum = a.mean(axis=2)
     chroma = a.max(axis=2) - a.min(axis=2)
@@ -86,19 +119,16 @@ def keyout(path):
     bbox = alpha.point(lambda v: 255 if v > 16 else 0).getbbox()
     out = out.crop(bbox)
 
-    side = int(max(out.size) * (1 + PAD * 2))
-    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    canvas.paste(out, ((side - out.width) // 2, (side - out.height) // 2), out)
-    return canvas.resize((SIZE, SIZE), Image.LANCZOS), (im.size, out.size)
+    return square(out), (im.size, out.size)
 
 os.makedirs(OUT, exist_ok=True)
-for stem, key in NAMES.items():
-    img, info = keyout(os.path.expanduser(f"~/Downloads/{stem}.png"))
+for key in KEYS:
+    img, info = keyout(source(key))
     img.save(os.path.join(OUT, f"{key}.png"))
-    print(f"{key:11s} src={info[0]} 잘라낸얼굴={info[1]}")
+    print(f"{key:13s} src={info[0]} 잘라낸얼굴={info[1]}")
 
-sheet = Image.new("RGBA", (SIZE * 5, SIZE * 2), (247, 244, 237, 255))
-for i, key in enumerate(NAMES.values()):
+sheet = Image.new("RGBA", (SIZE * 6, SIZE * 2), (247, 244, 237, 255))
+for i, key in enumerate(KEYS):
     im = Image.open(os.path.join(OUT, f"{key}.png"))
-    sheet.paste(im, ((i % 5) * SIZE, (i // 5) * SIZE), im)
+    sheet.paste(im, ((i % 6) * SIZE, (i // 6) * SIZE), im)
 sheet.save(os.path.join(OUT, "_sheet.png"))

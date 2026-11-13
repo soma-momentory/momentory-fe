@@ -33,13 +33,13 @@ const SEED_DIARY: ReplyDiary = {
   diaryId: "77",
   diary: "오늘 모의 면접에서 답이 막혔지만 끝까지 답했다.",
   reframedDiary: "그 한 번이 면접을 못한다는 뜻은 아니다.",
-  emotions: ["depressed"], // 일기에서 드러난 감정 태그(= id 8, 우울함)
+  emotions: ["sad"], // 일기에서 드러난 감정 태그(= id 5, 슬픔)
 };
-/** 감정 탐색을 거친 바람 카드(v2) — depressed 감정(=id 8, 우울함) */
+/** 감정 탐색을 거친 바람 카드(v2) — sad 감정(=id 5, 슬픔) */
 const SEED_WISH: ReplyWishCard = {
   wishCardId: "88",
   situation: "면접 연습을 시작할 때",
-  emotions: ["depressed"],
+  emotions: ["sad"],
   needs: [{ word: "존중", meaning: "내 의견이 가볍게 다뤄지지 않길 바라는 마음" }],
   desiredState: null,
   smallAction: "예상 질문 하나를 골라 핵심 세 문장으로 답해보기",
@@ -63,7 +63,7 @@ describe("일기 확인 — 기본은 읽기다", () => {
     const { getByText, getByRole } = await render(<RetroDraft />);
 
     expect(getByText("2026. 07. 27 (월)")).toBeTruthy();
-    expect(getByRole("button", { name: "우울함 감정 스티커" })).toBeTruthy();
+    expect(getByRole("button", { name: "슬픔 감정 스티커" })).toBeTruthy();
     expect(getByText(SEED_DIARY.diary)).toBeTruthy();
   });
 
@@ -157,18 +157,18 @@ describe("일기 확인 — 기본은 읽기다", () => {
 
   it("감정이 여럿이면 전부 보여준다 — 하나만 세우면 마음이 바뀐 흐름이 사라진다", async () => {
     // 「우울했는데 라면 먹고 기분 좋아졌어」 — 앞의 감정만 보이면 뒤가 없던 일이 된다.
-    seedCompleted({ ...SEED_DIARY, emotions: ["depressed", "happy"] }, SEED_WISH);
+    seedCompleted({ ...SEED_DIARY, emotions: ["sad", "joy"] }, SEED_WISH);
 
     const { getByRole } = await render(<RetroDraft />);
 
-    expect(getByRole("button", { name: "우울함 감정 스티커" })).toBeTruthy();
-    expect(getByRole("button", { name: "행복함 감정 스티커" })).toBeTruthy();
+    expect(getByRole("button", { name: "슬픔 감정 스티커" })).toBeTruthy();
+    expect(getByRole("button", { name: "기쁨 감정 스티커" })).toBeTruthy();
   });
 
   it("감정을 보이고 [+] 더하기를 두지 않는다", async () => {
     const { getByRole, queryByText } = await render(<RetroDraft />);
 
-    expect(getByRole("button", { name: "우울함 감정 스티커" })).toBeTruthy();
+    expect(getByRole("button", { name: "슬픔 감정 스티커" })).toBeTruthy();
     expect(queryByText("+")).toBeNull();
   });
 });
@@ -194,9 +194,9 @@ describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
     expect(d?.id).toBe(SEED_DIARY.diaryId);
     expect(d?.body).toBe(SEED_DIARY.diary);
     expect(d?.babaView).toBe(SEED_DIARY.reframedDiary);
-    // v2: 시작 감정이 없다 — 감정은 바람 카드에서 온다(depressed = id 8)
+    // v2: 시작 감정이 없다 — 감정은 바람 카드에서 온다(sad = id 5)
     expect(d?.startEmotion).toBeNull();
-    expect(d?.emotions).toEqual([8]);
+    expect(d?.emotions).toEqual([5]);
 
     const card = useDiary.getState().actionCards[0];
     expect(card?.id).toBe(SEED_WISH.wishCardId);

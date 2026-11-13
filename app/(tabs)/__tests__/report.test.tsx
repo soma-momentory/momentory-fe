@@ -226,7 +226,7 @@ describe("W1 · 공책", () => {
       ok: true,
       data: book({
         tone: "HARD",
-        emotions: [{ emotion: 4, count: 2, events: ["야근"] }],
+        emotions: [{ emotion: 12, count: 2, events: ["야근"] }],
         done: { completedCount: 6, perDay: [0, 2, 1, 1, 0, 2, 0], linked: [] },
       }),
     });

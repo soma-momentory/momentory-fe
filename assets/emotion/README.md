@@ -1,8 +1,14 @@
-# 감정 스티커 — 보관함 달력 칸의 얼굴 10종
+# 감정 스티커 — 보관함 달력 칸의 얼굴 12종
 
-`src/components/ds/EmotionSticker.tsx` 가 이 열 장을 감정 id 로 고른다.
+`src/components/ds/EmotionSticker.tsx` 가 이 그림을 감정 id 로 고른다.
 파일 이름은 **서버 감정 키**(`features/retro/model/retro.ts` 의 `EMOTION_KEYS`)와 같다 —
-`happy` `proud` `calm` `tired` `stuck` `lethargic` `anxious` `depressed` `angry` `frustrated`.
+`joy` `calm` `proud` `affection` `sad` `anxious` `angry` `disappointed` `ashamed` `confused` `sorry` `exhausted`.
+
+⚠ **2026-11-14 대표 감정 12종으로 바꾸면서 열두 장을 통째로 다시 받았다**(사용자 반입 · 색을 조약돌
+12색에 맞춘 판). 파일 이름은 새 서버 키다. 아홉 장은 체커가 구워진 미리보기(WebP)였고, 애정 · 부끄러움 ·
+미안함 세 장은 진짜 투명 WebP 였다 — 스크립트가 앞의 것은 배경을 걷어 내고 뒤의 것은 알파를 그대로 쓴다.
+`lethargic.png` · `frustrated.png` 는 옛 10종 그림이고 12종에 자리가 없어 쓰이지 않는다(받은 그림이라
+지우지 않고 둔다).
 
 - 132×132 (44pt @3x) · 투명 배경 · 정사각. 여백을 잘라 낸 앱용이다.
 - ⚠ **2026-09-10 에 열 장을 통째로 갈아 끼웠다.** 앞선 그림(2026-09-07 반입)은 사람 얼굴

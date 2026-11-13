@@ -105,7 +105,7 @@ afterEach(() => {
 describe("누름 스크림을 얹는 것들 — 둥근 클립을 쓰지 않는다", () => {
   const cases: [string, React.ReactElement][] = [
     ["Button", <Button key="b" label="저장" onPress={() => {}} />],
-    ["Chip", <Chip key="c" label="행복함" onPress={() => {}} />],
+    ["Chip", <Chip key="c" label="기쁨" onPress={() => {}} />],
     [
       "IconButton",
       <IconButton key="i" name="close" accessibilityLabel="닫기" onPress={() => {}} />,
@@ -196,14 +196,14 @@ describe("Button", () => {
 describe("Chip — 선택을 색만으로 표시하지 않는다", () => {
   it("선택되면 테두리 두께와 글자색이 함께 바뀐다", async () => {
     const { getByRole, getByText, rerender } = await render(
-      <Chip label="행복함" onPress={() => {}} />,
+      <Chip label="기쁨" onPress={() => {}} />,
     );
     const off = flatten(getByRole("button").props.style);
-    const offLabel = flatten(getByText("행복함").props.style).color;
+    const offLabel = flatten(getByText("기쁨").props.style).color;
 
-    await rerender(<Chip label="행복함" selected onPress={() => {}} />);
+    await rerender(<Chip label="기쁨" selected onPress={() => {}} />);
     const on = flatten(getByRole("button").props.style);
-    const onLabel = flatten(getByText("행복함").props.style).color;
+    const onLabel = flatten(getByText("기쁨").props.style).color;
 
     // 면 색만이 아니라 두께도 바뀐다 (1 → 2)
     expect(off.borderWidth).toBe(1);
@@ -213,7 +213,7 @@ describe("Chip — 선택을 색만으로 표시하지 않는다", () => {
   });
 
   it("낭독기에도 선택 상태가 간다", async () => {
-    const { getByRole } = await render(<Chip label="평온함" selected onPress={() => {}} />);
+    const { getByRole } = await render(<Chip label="평온" selected onPress={() => {}} />);
     expect(getByRole("button").props.accessibilityState.selected).toBe(true);
   });
 });
@@ -488,7 +488,7 @@ describe("작은 원 — 반지름을 크기의 절반으로 **직접** 준다",
    */
   it("EmotionPebble 는 감정마다 다른 그림을 건다", async () => {
     const a = await render(<EmotionPebble id={1} />);
-    const b = await render(<EmotionPebble id={9} />);
+    const b = await render(<EmotionPebble id={7} />);
 
     const uri = (json: unknown) => JSON.stringify(json).match(/"testUri":"[^"]+"/)?.[0];
 
@@ -551,6 +551,55 @@ describe("작은 원 — 반지름을 크기의 절반으로 **직접** 준다",
     const pebble = await render(<EmotionPebble id={null} />);
     expect(uri(pebble.toJSON())).toContain("no-emotion");
     expect(uri(pebble.toJSON())).not.toBe(uri(sticker.toJSON()));
+  });
+
+  /**
+   * 12종으로 넘어오며 조약돌과 얼굴을 열두 장씩 다시 받았다(2026-11-14). 감정마다 자기 그림이 있다 —
+   * 빈 그림으로 대체되는 칸도, 두 감정이 같이 쓰는 그림도 없다.
+   */
+  it("EmotionPebble 는 12종 모두 자기 조약돌이 있다 — 빈 조약돌도, 같은 그림도 없다", async () => {
+    const uri = (json: unknown) => JSON.stringify(json).match(/"testUri":"[^"]+"/)?.[0];
+    const empty = uri((await render(<EmotionPebble id={null} />)).toJSON());
+    const seen = new Set<string | undefined>();
+    for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const) {
+      const got = uri((await render(<EmotionPebble id={id} />)).toJSON());
+      expect(got).toBeDefined();
+      expect(got).not.toBe(empty);
+      seen.add(got);
+    }
+    expect(seen.size).toBe(12);
+  });
+
+  it("EmotionSticker 도 12종 모두 자기 얼굴이 있다 — 빈 얼굴도, 같은 그림도 없다", async () => {
+    const uri = (json: unknown) => JSON.stringify(json).match(/"testUri":"[^"]+"/)?.[0];
+    const empty = uri((await render(<EmotionSticker id={null} size={30} />)).toJSON());
+    const seen = new Set<string | undefined>();
+    for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const) {
+      const got = uri((await render(<EmotionSticker id={id} size={30} />)).toJSON());
+      expect(got).toBeDefined();
+      expect(got).not.toBe(empty);
+      seen.add(got);
+    }
+    expect(seen.size).toBe(12);
+  });
+
+  it("그림 파일 이름은 서버 감정 키와 같다 — 옛 10종 이름의 그림을 걸지 않는다", async () => {
+    const uri = (json: unknown) => JSON.stringify(json).match(/"testUri":"[^"]+"/)?.[0];
+
+    expect(uri((await render(<EmotionPebble id={1} />)).toJSON())).toContain("joy");
+    expect(uri((await render(<EmotionPebble id={4} />)).toJSON())).toContain("affection");
+    expect(uri((await render(<EmotionPebble id={8} />)).toJSON())).toContain("disappointed");
+    expect(uri((await render(<EmotionPebble id={12} />)).toJSON())).toContain("exhausted");
+    expect(uri((await render(<EmotionPebble id={9} />)).toJSON())).toContain("ashamed");
+    expect(uri((await render(<EmotionPebble id={11} />)).toJSON())).toContain("sorry");
+    expect(uri((await render(<EmotionSticker id={5} size={30} />)).toJSON())).toContain("sad");
+    expect(uri((await render(<EmotionSticker id={10} size={30} />)).toJSON())).toContain(
+      "confused",
+    );
+    expect(uri((await render(<EmotionSticker id={4} size={30} />)).toJSON())).toContain(
+      "affection",
+    );
+    expect(uri((await render(<EmotionSticker id={11} size={30} />)).toJSON())).toContain("sorry");
   });
 
   it("EmotionPebble 도 지름의 절반을 쓴다 — 999 가 아니다", async () => {

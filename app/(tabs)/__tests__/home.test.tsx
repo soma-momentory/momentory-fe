@@ -251,20 +251,20 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     const { getAllByText, getByLabelText } = await renderWeek();
 
     expect(getAllByText("이번 주 감정")).toHaveLength(2); // 메모 머리 · 시트 제목
-    // 샘플 하루(7/27 월)의 일기 감정은 불안함·우울함 둘이다 — 색만으로 말하지 않고,
+    // 샘플 하루(7/27 월)의 일기 감정은 불안·슬픔 둘이다 — 색만으로 말하지 않고,
     // 도트가 하나뿐이라 낭독기에는 **둘 다** 읽힌다
-    expect(getByLabelText("월요일 · 불안함, 우울함")).toBeTruthy();
+    expect(getByLabelText("월요일 · 불안, 슬픔")).toBeTruthy();
     expect(getByLabelText("금요일 · 기록 없음")).toBeTruthy();
   });
 
   it("요일을 누르면 그날 감정이 전부 글자로 선다", async () => {
     const { getByLabelText, getByText, queryByText } = await renderWeek();
 
-    expect(queryByText("불안함")).toBeNull();
-    await fireEvent.press(getByLabelText("월요일 · 불안함, 우울함"));
+    expect(queryByText("불안")).toBeNull();
+    await fireEvent.press(getByLabelText("월요일 · 불안, 슬픔"));
 
     // 도트 하나는 첫 감정 색만 맡는다 — 나머지가 보이는 곳은 여기뿐이다
-    expect(getByText("월요일 · 불안함, 우울함")).toBeTruthy();
+    expect(getByText("월요일 · 불안, 슬픔")).toBeTruthy();
   });
 
   it("일기는 썼는데 감정이 없는 날은 「기록 없음」이 아니라 「기록 있음」이다", async () => {
@@ -303,9 +303,9 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
   it("일정 줄에 감정 알약이 없다 — 감정은 회고에서만 받는다 (N7)", async () => {
     const { queryByText } = await render(<Home />);
 
-    // 샘플의 「팀 회의 · 화남·답답함」·「발표 준비 · 행복함」이 줄에 붙지 않는다
-    expect(queryByText("화남·답답함")).toBeNull();
-    expect(queryByText("행복함")).toBeNull();
+    // 샘플의 「팀 회의 · 분노」·「발표 준비 · 기쁨」이 줄에 붙지 않는다
+    expect(queryByText("분노")).toBeNull();
+    expect(queryByText("기쁨")).toBeNull();
   });
 
   it("다 마치면 그 사실만 말한다 — 점수를 매기지 않는다", async () => {

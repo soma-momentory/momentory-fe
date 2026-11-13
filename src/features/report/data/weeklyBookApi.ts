@@ -13,16 +13,25 @@ export const WEEKLY_BOOK_PATH = "/api/v2/reports/weekly";
 export const WEEKLY_BOOK_TIMEOUT_MS = 20_000;
 
 const EMOTION_IDS: Record<string, EmotionId> = {
+  joy: 1,
+  calm: 2,
+  proud: 3,
+  affection: 4,
+  sad: 5,
+  anxious: 6,
+  angry: 7,
+  disappointed: 8,
+  ashamed: 9,
+  confused: 10,
+  sorry: 11,
+  exhausted: 12,
+  // 옛 10종 키 — 12종으로 옮겨 받는다(서버 전환 전 응답 · 옛 기록)
   happy: 1,
-  proud: 2,
-  calm: 3,
-  tired: 4,
-  stuck: 5,
-  lethargic: 6,
-  anxious: 7,
-  depressed: 8,
-  angry: 9,
-  frustrated: 10,
+  depressed: 5,
+  frustrated: 7,
+  stuck: 10,
+  lethargic: 12,
+  tired: 12,
 };
 
 const REST_CONTENTS: Record<string, RestRecordContent> = {

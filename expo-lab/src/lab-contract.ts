@@ -61,7 +61,7 @@ export type LabPlatform = "ios" | "android";
  * - new-user  : 서버상 온보딩 전(`onboardingRequired: true`) · 기록 없음. 로그인 전 화면·온보딩에 쓴다
  * - empty     : 온보딩 끝 · 기록 0
  * - normal    : 2주치 일기·일정·바람카드·편지·쉼 기록
- * - many      : 3개월치 · 하루 일정 10개 이상 · 감정 10종 전부
+ * - many      : 3개월치 · 하루 일정 10개 이상 · 감정 12종 전부
  * - long-copy : 긴 닉네임·제목·본문·요약
  */
 export const DATASET_IDS = ["new-user", "empty", "normal", "many", "long-copy"] as const;

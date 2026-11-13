@@ -109,7 +109,7 @@ describe("A1 · 보관함 달력", () => {
     const day = await r.findByLabelText("23일, 일정 있음");
     expect(within(day).queryByTestId("schedule-dot")).not.toBeNull();
     // 일정이 없는 날에는 점이 없다 — 자리만 비어 있다
-    expect(within(r.getByLabelText("22일, 화남")).queryByTestId("schedule-dot")).toBeNull();
+    expect(within(r.getByLabelText("22일, 분노")).queryByTestId("schedule-dot")).toBeNull();
   });
 
   it("하단 요약 제목은 낱말 사이에 줄바꿈을 박아 두지 않는다 — 평소에 한 줄로 읽힌다", async () => {
@@ -120,9 +120,9 @@ describe("A1 · 보관함 달력", () => {
 
   it("기록 카드의 글자는 보관함 전용 크기에 읽히는 색이다", async () => {
     const r = await render(<Archive />);
-    await fireEvent.press(r.getByLabelText("22일, 화남"));
+    await fireEvent.press(r.getByLabelText("22일, 분노"));
 
-    const name = flatten(r.getByText("화남").props.style);
+    const name = flatten(r.getByText("분노").props.style);
     expect(name.color).toBe(labelColor.normal);
     expect(name.fontSize).toBe(archiveType.emotionName.fontSize);
     const link = flatten(r.getByText("일기 열어보기 ›").props.style);
@@ -162,9 +162,7 @@ describe("A1 · 보관함 달력", () => {
     // 기간은 달력과 같은 월 라벨이다
     expect(within(r.getByTestId("archive-list-month-tape")).getByText("2026년 7월")).toBeTruthy();
     const filter = within(r.getByTestId("emotion-filter"));
-    expect(flatten(filter.getByText("행복함").props.style).fontSize).toBe(
-      archiveType.chip.fontSize,
-    );
+    expect(flatten(filter.getByText("기쁨").props.style).fontSize).toBe(archiveType.chip.fontSize);
   });
 
   it("연속 일수를 세지 않고 화살표로 압박하지 않는다", async () => {
@@ -190,7 +188,7 @@ describe("A1 · 보관함 달력", () => {
     const { getByLabelText } = await render(<Archive />);
 
     // 7월 22일은 일기가 있다 — 칸 이름에 그날 감정이 붙는다(아래 테스트)
-    expect(getByLabelText("22일, 화남")).toBeTruthy();
+    expect(getByLabelText("22일, 분노")).toBeTruthy();
     // 없는 날도 칸은 있다 — 달력이 성기면 날짜를 못 찾는다
     expect(getByLabelText("23일")).toBeTruthy();
   });
@@ -200,7 +198,7 @@ describe("A1 · 보관함 달력", () => {
     // 격자 안에는 이름을 적을 자리가 없어서, 낭독기 이름이 그 몫을 진다
     const r = await render(<Archive />);
 
-    expect(r.getByLabelText("22일, 화남")).toBeTruthy(); // 주 감정 = emotions[0]
+    expect(r.getByLabelText("22일, 분노")).toBeTruthy(); // 주 감정 = emotions[0]
     expect(r.queryByLabelText("22일")).toBeNull();
     // 일기가 없는 날은 날짜만 — 없는 감정을 지어내지 않는다
     expect(r.getByLabelText("23일")).toBeTruthy();
@@ -209,17 +207,17 @@ describe("A1 · 보관함 달력", () => {
   it("날짜를 누르면 그날 일기가 이름과 함께 열린다 — 색만으로 판단하지 않게", async () => {
     const r = await render(<Archive />);
 
-    await fireEvent.press(r.getByLabelText("22일, 화남"));
+    await fireEvent.press(r.getByLabelText("22일, 분노"));
 
     expect(r.getByText("7월 22일의 일기")).toBeTruthy();
-    expect(r.getByText("화남")).toBeTruthy(); // 얼굴이 아니라 이름으로 (v2: 화남·답답함 분리)
+    expect(r.getByText("분노")).toBeTruthy(); // 얼굴이 아니라 이름으로
     expect(r.getByText("뿌듯함")).toBeTruthy();
     expect(r.getByText("일기 열어보기 ›")).toBeTruthy();
   });
 
   it("링크는 「일기 열어보기」다 — 여는 것은 그날의 한 장이다", async () => {
     const r = await render(<Archive />);
-    await fireEvent.press(r.getByLabelText("22일, 화남"));
+    await fireEvent.press(r.getByLabelText("22일, 분노"));
 
     expect(r.queryByText(/전체 일기 보기/)).toBeNull();
     await fireEvent.press(r.getByText("일기 열어보기 ›"));
@@ -245,9 +243,9 @@ describe("A1 · 보관함 달력", () => {
     const r = await render(<Archive />);
     const fillIn = (label: string) => within(r.getByLabelText(label)).queryByTestId("date-pill");
 
-    expect(fillIn("22일, 화남")).toBeNull();
-    await fireEvent.press(r.getByLabelText("22일, 화남"));
-    expect(fillIn("22일, 화남")).not.toBeNull();
+    expect(fillIn("22일, 분노")).toBeNull();
+    await fireEvent.press(r.getByLabelText("22일, 분노"));
+    expect(fillIn("22일, 분노")).not.toBeNull();
     // 다른 날에는 면이 없다 — 「고른 날 하나」다
     expect(fillIn("23일")).toBeNull();
   });
@@ -259,7 +257,7 @@ describe("A1 · 보관함 달력", () => {
     const dayColor = (label: string, day: string) =>
       flatten(within(r.getByLabelText(label)).getByText(day).props.style).color;
 
-    expect(dayColor("22일, 화남", "22")).toBe(dayColor("23일", "23")); // 일기 있는 날 = 없는 날
+    expect(dayColor("22일, 분노", "22")).toBe(dayColor("23일", "23")); // 일기 있는 날 = 없는 날
   });
 });
 
@@ -272,20 +270,22 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     return { r, filter, chip: (name: string) => filter.getByText(name).parent };
   };
 
-  it("감정 10종을 전부 둔다 — 셋만 남기지 않는다", async () => {
+  it("감정 12종을 전부 둔다 — 셋만 남기지 않는다", async () => {
     const { filter } = await openList();
 
     for (const name of [
-      "행복함",
+      "기쁨",
+      "평온",
       "뿌듯함",
-      "평온함",
-      "피곤함",
-      "막막함",
-      "무기력",
-      "불안함",
-      "우울함",
-      "화남",
-      "답답함",
+      "애정",
+      "슬픔",
+      "불안",
+      "분노",
+      "실망",
+      "부끄러움",
+      "혼란",
+      "미안함",
+      "지침",
     ]) {
       expect(filter.getByText(name)).toBeTruthy();
     }
@@ -297,12 +297,12 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
 
     expect(filter.queryByText(/전체/)).toBeNull();
 
-    await fireEvent.press(filter.getByText("우울함"));
-    expect(chip("우울함")?.props.accessibilityState.selected).toBe(true);
+    await fireEvent.press(filter.getByText("슬픔"));
+    expect(chip("슬픔")?.props.accessibilityState.selected).toBe(true);
     expect(r.queryByText("7월 22일의 일기")).toBeNull();
 
-    await fireEvent.press(filter.getByText("우울함"));
-    expect(chip("우울함")?.props.accessibilityState.selected).toBe(false);
+    await fireEvent.press(filter.getByText("슬픔"));
+    expect(chip("슬픔")?.props.accessibilityState.selected).toBe(false);
     expect(r.getByText("7월 22일의 일기")).toBeTruthy();
   });
 
@@ -310,24 +310,24 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     // 2026-08-24 「한 번에 하나만」 → 다중 선택(교집합) → 2026-08-28 합집합
     // (PRODUCT.md 상류와 차이). 칩을 더 누를수록 결과가 사라지는 것이
     // 필터를 「끄는」 것처럼 읽혔다 — 칩 하나는 이제 「이 감정도 보여줘」다.
-    // 7/22[9,2] = 화남 + 뿌듯함 · 7/8[1,2] = 행복함 + 뿌듯함
+    // 7/22[7,3] = 분노 + 뿌듯함 · 7/8[1,3] = 기쁨 + 뿌듯함
     const { r, filter, chip } = await openList();
 
-    // 화남만 — 그게 붙은 7/22 는 남고 7/8 은 빠진다
-    await fireEvent.press(filter.getByText("화남"));
+    // 분노만 — 그게 붙은 7/22 는 남고 7/8 은 빠진다
+    await fireEvent.press(filter.getByText("분노"));
     expect(r.getByText("7월 22일의 일기")).toBeTruthy();
     expect(r.queryByText("7월 8일의 일기")).toBeNull();
 
     // 뿌듯함을 더 고르면 앞 선택이 유지되고, **둘 중 하나라도** 가진 일기가 남는다
     await fireEvent.press(filter.getByText("뿌듯함"));
-    expect(chip("화남")?.props.accessibilityState.selected).toBe(true);
+    expect(chip("분노")?.props.accessibilityState.selected).toBe(true);
     expect(chip("뿌듯함")?.props.accessibilityState.selected).toBe(true);
     expect(r.getByText("7월 22일의 일기")).toBeTruthy();
     expect(r.getByText("7월 8일의 일기")).toBeTruthy(); // 뿌듯함만 있어도 들어온다
 
-    // 뿌듯함을 다시 누르면 그 하나만 풀린다 — 화남은 남고 7/8 이 다시 빠진다
+    // 뿌듯함을 다시 누르면 그 하나만 풀린다 — 분노은 남고 7/8 이 다시 빠진다
     await fireEvent.press(filter.getByText("뿌듯함"));
-    expect(chip("화남")?.props.accessibilityState.selected).toBe(true);
+    expect(chip("분노")?.props.accessibilityState.selected).toBe(true);
     expect(chip("뿌듯함")?.props.accessibilityState.selected).toBe(false);
     expect(r.queryByText("7월 8일의 일기")).toBeNull();
   });
@@ -336,13 +336,13 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     // 새 DS 의 칩은 면 + 테두리 1→2px + 글자색 셋을 함께 바꾼다 (design.md §9)
     const { filter, chip } = await openList();
 
-    expect(flatten(chip("평온함")?.props.style).borderWidth).toBe(1);
-    expect(flatten(filter.getByText("평온함").props.style).color).toBe(labelColor.neutral);
+    expect(flatten(chip("평온")?.props.style).borderWidth).toBe(1);
+    expect(flatten(filter.getByText("평온").props.style).color).toBe(labelColor.neutral);
 
-    await fireEvent.press(filter.getByText("평온함"));
+    await fireEvent.press(filter.getByText("평온"));
 
-    expect(flatten(chip("평온함")?.props.style).borderWidth).toBe(2);
-    expect(flatten(filter.getByText("평온함").props.style).color).toBe(labelColor.strong);
+    expect(flatten(chip("평온")?.props.style).borderWidth).toBe(2);
+    expect(flatten(filter.getByText("평온").props.style).color).toBe(labelColor.strong);
   });
 
   it("감정 칩에 감정색을 쓰지 않는다 — 브랜드 초록으로 통일한다", async () => {
@@ -350,9 +350,9 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
     // 「무슨 감정인가」와 「골랐는가」가 같은 채널을 쓰면 둘 다 흐려진다
     const { filter, chip } = await openList();
 
-    await fireEvent.press(filter.getByText("평온함"));
+    await fireEvent.press(filter.getByText("평온"));
 
-    expect(flatten(chip("평온함")?.props.style).borderColor).toBe(primary.normal);
+    expect(flatten(chip("평온")?.props.style).borderColor).toBe(primary.normal);
   });
 
   it("기본 정렬은 최신순이고 정렬 옵션을 두지 않는다", async () => {
@@ -366,9 +366,9 @@ describe("A2 · 보관함 목록 + 감정 필터", () => {
   it("감정을 고르면 그 감정이 붙은 일기만 남는다", async () => {
     const { r, filter } = await openList();
 
-    await fireEvent.press(filter.getByText("우울함"));
+    await fireEvent.press(filter.getByText("슬픔"));
 
-    // 우울함(2)은 7/17 · 7/27 두 편이다
+    // 슬픔(2)은 7/17 · 7/27 두 편이다
     expect(r.getByText("7월 27일의 일기")).toBeTruthy();
     expect(r.getByText("7월 17일의 일기")).toBeTruthy();
     expect(r.queryByText("7월 22일의 일기")).toBeNull();
@@ -543,7 +543,7 @@ describe("A1 · 리포트에서 건너오기", () => {
     expect(r.getByText("2026년 7월")).toBeTruthy();
     expect(r.getByLabelText("19일").props.accessibilityState.selected).toBe(true);
     // 오늘(27일)이 아니라 건너온 날이 고른 칸이다
-    expect(r.getByLabelText("27일, 불안함").props.accessibilityState.selected).toBe(false);
+    expect(r.getByLabelText("27일, 불안").props.accessibilityState.selected).toBe(false);
   });
 
   it("지난 달의 주로 건너오면 그 달이 열린다", async () => {
@@ -559,7 +559,7 @@ describe("A1 · 리포트에서 건너오기", () => {
     const r = await render(<Archive />);
 
     expect(r.getByText("2026년 7월")).toBeTruthy();
-    expect(r.getByLabelText("27일, 불안함").props.accessibilityState.selected).toBe(true);
+    expect(r.getByLabelText("27일, 불안").props.accessibilityState.selected).toBe(true);
   });
 
   it("모양이 어긋난 날짜는 없는 것으로 친다 — 깨진 달을 그리지 않는다", async () => {
@@ -568,6 +568,6 @@ describe("A1 · 리포트에서 건너오기", () => {
     const r = await render(<Archive />);
 
     expect(r.getByText("2026년 7월")).toBeTruthy();
-    expect(r.getByLabelText("27일, 불안함").props.accessibilityState.selected).toBe(true);
+    expect(r.getByLabelText("27일, 불안").props.accessibilityState.selected).toBe(true);
   });
 });

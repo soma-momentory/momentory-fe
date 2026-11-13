@@ -93,13 +93,13 @@ describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
   it("감정이 여럿이면 전부 보여준다 — 회고 직후 화면과 같은 줄이다", async () => {
     // 「우울했는데 라면 먹고 기분 좋아졌어」 — 앞의 감정만 세우면 뒤가 없던 일이 된다.
     useDiary.setState((st) => ({
-      diaries: st.diaries.map((d) => (d.id === ID ? { ...d, emotions: [8, 1] } : d)),
+      diaries: st.diaries.map((d) => (d.id === ID ? { ...d, emotions: [5, 1] } : d)),
     }));
 
     const r = await render(<DiaryDetail />);
 
-    expect(r.getByRole("button", { name: "우울함 감정 스티커" })).toBeTruthy();
-    expect(r.getByRole("button", { name: "행복함 감정 스티커" })).toBeTruthy();
+    expect(r.getByRole("button", { name: "슬픔 감정 스티커" })).toBeTruthy();
+    expect(r.getByRole("button", { name: "기쁨 감정 스티커" })).toBeTruthy();
   });
 
   it("행동 카드가 일기 아래에 붙는다 — 따로 목록을 만들지 않는다", async () => {

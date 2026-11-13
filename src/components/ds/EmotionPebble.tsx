@@ -9,7 +9,7 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
  * ## 색 한 점에서 그림 한 장으로
  *
  * 전에는 `EmotionDot`(55% 틴트 면 + 원색 1.5px 링 · `DESIGN.md` §1)이 이 자리에
- * 섰다. 지금은 **수채로 칠한 조약돌 열 장**이 그 자리를 대신한다 — 감정마다 한 장이고,
+ * 섰다. 지금은 **수채로 칠한 조약돌**(감정 12종)이 그 자리를 대신한다 — 감정마다 한 장이고,
  * 모양이 조금씩 다른 조약돌이라 일곱 개가 나란히 서도 도장 찍은 것처럼 보이지 않는다.
  *
  * ⚠ **`EmotionDot` 을 고치지 않았다.** 그 도트는 일기 미리보기·감정 줄에서 **이름 옆의
@@ -41,19 +41,24 @@ type Props = {
   size?: number;
 };
 
-/** 감정 id → 조약돌. 파일 이름은 **서버 감정 키**와 같다(`assets/emotion-pebble/README.md`) */
-const MARKS = {
-  1: require("../../../assets/emotion-pebble/happy.png"),
-  2: require("../../../assets/emotion-pebble/proud.png"),
-  3: require("../../../assets/emotion-pebble/calm.png"),
-  4: require("../../../assets/emotion-pebble/tired.png"),
-  5: require("../../../assets/emotion-pebble/stuck.png"),
-  6: require("../../../assets/emotion-pebble/lethargic.png"),
-  7: require("../../../assets/emotion-pebble/anxious.png"),
-  8: require("../../../assets/emotion-pebble/depressed.png"),
-  9: require("../../../assets/emotion-pebble/angry.png"),
-  10: require("../../../assets/emotion-pebble/frustrated.png"),
-} as const;
+/**
+ * 감정 id → 조약돌. 파일 이름은 **서버 감정 키**와 같다(`assets/emotion-pebble/README.md`).
+ * `Record<EmotionId, …>` 라서 감정이 늘면 컴파일러가 빠진 칸을 잡는다.
+ */
+const MARKS: Record<EmotionId, number> = {
+  1: require("../../../assets/emotion-pebble/joy.png"),
+  2: require("../../../assets/emotion-pebble/calm.png"),
+  3: require("../../../assets/emotion-pebble/proud.png"),
+  4: require("../../../assets/emotion-pebble/affection.png"),
+  5: require("../../../assets/emotion-pebble/sad.png"),
+  6: require("../../../assets/emotion-pebble/anxious.png"),
+  7: require("../../../assets/emotion-pebble/angry.png"),
+  8: require("../../../assets/emotion-pebble/disappointed.png"),
+  9: require("../../../assets/emotion-pebble/ashamed.png"),
+  10: require("../../../assets/emotion-pebble/confused.png"),
+  11: require("../../../assets/emotion-pebble/sorry.png"),
+  12: require("../../../assets/emotion-pebble/exhausted.png"),
+};
 
 /** 감정 없이 끝난 일기 — 테두리만 있는 빈 조약돌(`scripts/make-no-emotion-marks.py`) */
 const NO_EMOTION = require("../../../assets/emotion-pebble/no-emotion.png");
