@@ -199,7 +199,8 @@ export function ensureTodayDiary(db: FakeDb, nowMs: number): boolean {
     original: SPECS[db.datasetId]?.long ? LONG.diary : theme.diary,
     createdAt: new Date(nowMs).toISOString(),
     weather: null,
-    letterPending: true,
+    // 직접 쓴 일기에는 편지가 없다 — BE 는 회고 완료에서만 편지를 만든다
+    letterPending: false,
   });
   return true;
 }

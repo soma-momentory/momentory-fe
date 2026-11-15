@@ -53,7 +53,7 @@ import {
   storageKey,
   uninstallFakeServer,
 } from "..";
-import { addDays, sundayOf } from "../time";
+import { addDays, dayOfIso, sundayOf } from "../time";
 
 jest.mock("@/lib/config", () => ({
   ...jest.requireActual<object>("@/lib/config"),
@@ -146,9 +146,14 @@ describe("오늘 쓴 일기 — config.todayDiary (쉼 추천 시트)", () => {
   it.each(["empty", "normal", "many", "long-copy"])("%s 에 오늘 일기를 심는다", (datasetId) => {
     const base = config({ datasetId, now: TODAY_NOW });
     const on = createFakeServer({ ...base, todayDiary: true }, { storage: memoryStorage() });
-    const today = on.db().diaries.filter((d) => d.letterPending);
+    const today = on.db().diaries.filter((d) => dayOfIso(d.createdAt) === "2026-11-03");
     expect(today).toHaveLength(1);
-    expect(today[0]).toMatchObject({ retrospectId: null, emotions: ["angry"] });
+    // 직접 쓴 일기라 편지가 생기지 않는다(BE 와 같다)
+    expect(today[0]).toMatchObject({
+      retrospectId: null,
+      emotions: ["angry"],
+      letterPending: false,
+    });
     expect(today[0]!.original.length).toBeGreaterThan(0);
   });
 
@@ -416,18 +421,16 @@ describe("직접 쓴 일기 · 하루 넘기기", () => {
     expect(archive.data.diaries.map((d) => d.body)).toEqual(["다시 쓴 오늘"]);
   });
 
-  it("시계를 하루씩 옮기면 일기 → 다음 날 일기 → 회고 → 다음 날 회고가 되고 전날 편지가 온다", async () => {
+  it("시계를 하루씩 옮기면 일기 → 다음 날 일기 → 회고 → 다음 날 회고가 되고 회고한 전날 편지만 온다", async () => {
     const at = (day: string) => `${day}T21:30:00+09:00`;
     install({ datasetId: "empty", repeatToday: false, now: at("2026-11-02") });
     expect((await writeDiary("월요일 일기")).ok).toBe(true);
 
     install({ datasetId: "empty", repeatToday: false, now: at("2026-11-03") });
     expect((await writeDiary("화요일 일기")).ok).toBe(true);
+    // 직접 쓴 일기에는 편지가 없다 — BE 는 회고 완료에서만 편지를 만든다
     const letters = await fetchLetters(7);
-    if (!letters.ok) throw new Error("letters");
-    expect(letters.data[0]).toMatchObject({ date: "2026-11-02", isNew: true });
-    const letter = await fetchLetter("2026-11-02");
-    expect(letter.ok && letter.data.quote).toBe("월요일 일기");
+    expect(letters.ok && letters.data).toEqual([]);
 
     install({ datasetId: "empty", repeatToday: false, now: at("2026-11-04") });
     expect((await runRetro()).ok).toBe(true);
@@ -435,6 +438,9 @@ describe("직접 쓴 일기 · 하루 넘기기", () => {
 
     install({ datasetId: "empty", repeatToday: false, now: at("2026-11-05") });
     expect((await runRetro()).ok).toBe(true);
+    const retroLetters = await fetchLetters(7);
+    expect(retroLetters.ok && retroLetters.data.map((l) => l.date)).toEqual(["2026-11-04"]);
+    expect((await fetchLetter("2026-11-04")).ok).toBe(true);
 
     const archive = await loadArchive([{ year: 2026, month: 11 }]);
     if (!archive.ok) throw new Error("archive");
