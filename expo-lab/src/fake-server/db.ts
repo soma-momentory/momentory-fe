@@ -109,7 +109,7 @@ export type DiaryRow = {
   original: string;
   createdAt: string;
   weather: string | null;
-  /** 이 일기의 편지를 아직 만들지 않았다 — 다음 날이 되면 만든다 */
+  /** 이 일기의 편지를 아직 만들지 않았다 — 다음 날이 되면 만든다. 회고로 남긴 일기만 `true` 가 된다 */
   letterPending: boolean;
 };
 

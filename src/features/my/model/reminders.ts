@@ -93,7 +93,10 @@ export function plannedReminders(): Reminder[] {
 
   const { notify, letterChosen } = useSettings.getState();
   const today = clock.today();
-  const written = new Set(useDiary.getState().diaries.map((d) => d.date));
+  const { diaries } = useDiary.getState();
+  const written = new Set(diaries.map((d) => d.date));
+  /** 편지는 회고로 남긴 일기에만 생긴다 — 직접 쓴 일기(`retrospectId == null`)에는 편지 알림을 걸지 않는다 */
+  const lettered = new Set(diaries.filter((d) => d.retrospectId != null).map((d) => d.date));
   const summaries = useLetters.getState().summaries;
 
   /**
@@ -102,7 +105,7 @@ export function plannedReminders(): Reminder[] {
    * 밤 문구는 평소대로(열었는데 「안 봤다」고 부르는 쪽이 더 나쁘다), 아침 편지는 보낸다(못 받으면 그날 아침이 비어 버린다).
    */
   const unopenedLetterOf = (day: string, ifUnknown: boolean) => {
-    if (letterChosen == null || !written.has(day)) return false;
+    if (letterChosen == null || !lettered.has(day)) return false;
     if (day >= today) return true;
     if (summaries == null) return ifUnknown;
     return summaries.some((l) => l.date === day && l.openedAt == null);
@@ -132,7 +135,7 @@ export function plannedReminders(): Reminder[] {
 
   // 편지를 모르는 서버(`letterChosen == null`)면 편지가 없다
   const letter = parsed(notify.letter);
-  const latest = [...written].sort().at(-1);
+  const latest = [...lettered].sort().at(-1);
   if (letter != null && letterChosen != null && latest != null && latest >= addDays(today, -1)) {
     if (unopenedLetterOf(latest, true)) {
       planned.push({
