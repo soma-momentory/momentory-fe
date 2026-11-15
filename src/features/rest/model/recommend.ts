@@ -19,7 +19,15 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
 
 import { REST_CONTENTS, type RestContentId } from "./contents";
 
-/** 감정별 후보 — 앞일수록 먼저다 */
+/**
+ * 감정별 후보 — 앞일수록 먼저다.
+ *
+ * 3분 명상(2026-11-15 · 사용자와 정함)은 풍경마다 속말이 있어 감정과 이어 말하기 쉽다 — 파도 「마음이 급할
+ * 때」 · 숲 「생각이 많을 때」 · 모닥불 「나에게 엄격해질 때」. 다만 한 감정에 권하는 쉼은 하나라서
+ * 앞자리를 나눠 쓴다: 몸에 힘 빼기가 맡던 불안 · 분노 · 지침의 맨 앞은 그대로 두고, 3분 명상은 걱정상자가
+ * 앞이던 부끄러움 · 미안함에서만 맨 앞이다. 슬픔 · 지침은 기운이 없어 3분이 길어 붙이지 않는다.
+ * 주간 행복과 소원 연꽃은 붙이지 않는다(소원 연꽃은 남의 글이 올라오는 쉼이라 권하지 않는다).
+ */
 export const REST_BY_EMOTION: Record<EmotionId, readonly RestContentId[]> = {
   1: ["treasureBox"], // 기쁨
   2: ["treasureBox", "bodyRelease"], // 평온
@@ -27,13 +35,14 @@ export const REST_BY_EMOTION: Record<EmotionId, readonly RestContentId[]> = {
   4: ["treasureBox"], // 애정
   // 슬픔 — 「좋았던 일 찾기」는 슬픈 날 오히려 부담이 될 수 있어 앞에 두지 않는다
   5: ["sensePond", "treasureBox"],
-  6: ["bodyRelease", "worryBox", "sensePond"], // 불안
+  6: ["bodyRelease", "worryBox", "meditation", "sensePond"], // 불안
   // 분노 — 주먹을 꼭 쥐었다 푸는 동작이 화난 몸과 그대로 맞는다
-  7: ["bodyRelease", "sensePond"],
+  7: ["bodyRelease", "meditation", "sensePond"],
   8: ["sensePond", "worryBox"], // 실망
-  9: ["worryBox", "sensePond"], // 부끄러움
-  10: ["worryBox"], // 혼란
-  11: ["worryBox", "sensePond"], // 미안함
+  // 부끄러움 · 미안함 — 나에게 엄격해지는 날이라 모닥불 풍경이 맞는다
+  9: ["meditation", "worryBox", "sensePond"],
+  10: ["worryBox", "meditation"], // 혼란 — 생각이 많은 날의 숲
+  11: ["meditation", "worryBox", "sensePond"], // 미안함
   // 지침 — 몸을 푸는 쪽이 먼저다. 기운이 없어 그것도 버거운 날엔 보고 듣기만 하면 되는 연못
   12: ["bodyRelease", "sensePond"],
 };
@@ -57,9 +66,10 @@ const DAY_OF: Record<EmotionId, string> = {
 /**
  * 온보딩 「쉬는 방법」(서버 `restMethods[].code`) → 닮은 쉼.
  * 음식 · 영화 · 독서 · 카페 · 게임 · 「그때마다 달라요」 · 기타는 닮은 쉼이 없어 빠진다.
+ * 명상하기는 3분 명상과 감각연못을 함께 잇는다 — 감정의 후보 줄에서 앞선 쪽이 이긴다.
  */
 export const REST_BY_METHOD: Readonly<Record<string, readonly RestContentId[]>> = {
-  MEDITATION: ["sensePond"],
+  MEDITATION: ["meditation", "sensePond"],
   IDLE_REST: ["sensePond"],
   LISTENING_TO_MUSIC: ["sensePond"],
   WALKING: ["sensePond"],
