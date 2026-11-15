@@ -33,7 +33,9 @@ const scheduledKeys = () =>
     ([request]: [{ identifier: string }]) => request.identifier,
   );
 
-const diaryOn = (date: string) => ({ id: `d-${date}`, date }) as Diary;
+/** 회고로 남긴 일기 — 편지가 생긴다. 직접 쓴 일기는 `retrospectId: null` */
+const diaryOn = (date: string, retrospectId: string | null = `r-${date}`) =>
+  ({ id: `d-${date}`, date, retrospectId }) as Diary;
 const keys = () => plannedReminders().map((r) => r.key);
 const retroOn = (day: string) => plannedReminders().find((r) => r.key === `retro.${day}`);
 
@@ -184,6 +186,15 @@ describe("무엇이 예약돼야 하는가 — 나머지", () => {
       data: { date: "2026-07-27" },
     });
     expect(morning != null && "at" in morning && morning.at).toEqual(new Date(2026, 6, 28, 8, 30));
+  });
+
+  it("직접 쓴 일기에는 편지가 없어 아침 편지 알림도 없다 — 밤 회고 알림은 평소 문구", () => {
+    setClock(fixedClock("2026-07-27T06:00:00"));
+    useSettings.setState({ letterChosen: true });
+    useDiary.setState({ diaries: [diaryOn("2026-07-27", null)] });
+
+    expect(keys()).not.toContain("letter.morning");
+    expect(retroOn("2026-07-28")?.title).not.toContain("안 본");
   });
 
   it("편지 목록을 아직 모르면 아침 편지는 보낸다 — 못 받으면 그날 아침이 비어 버린다", () => {

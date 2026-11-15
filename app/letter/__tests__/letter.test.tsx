@@ -468,12 +468,82 @@ describe("편지함 목록(홈 편지 아이콘)", () => {
     expect(router.setParams).toHaveBeenCalledWith({ open: "" });
   });
 
-  it("편지가 한 통도 없으면 한 줄만", async () => {
-    jest.mocked(fetchLetters).mockResolvedValue({ ok: true, data: [] });
-    const r = await render(<LetterBox />);
+  describe("오늘 받을 편지가 없으면 바바가 왜 없는지와 언제 오는지 말한다", () => {
+    const RETRO_LINE =
+      "편지는 회고를 마친 다음 날 아침에 와요.\n오늘 밤 이야기를 들려주면 내일 아침에 보낼게요.";
+    /** 어제(10-26) 편지가 없다 — 그제 편지만 있다 */
+    const olderOnly = () =>
+      jest.mocked(fetchLetters).mockResolvedValue({
+        ok: true,
+        data: [{ id: "11", date: "2026-10-25", isNew: true, openedAt: null }],
+      });
+    const today = (retrospectId: string | null) =>
+      useDiary.setState({
+        diaries: [{ id: "d27", date: "2026-10-27", body: "오늘.", retrospectId }] as Diary[],
+      });
 
-    await waitFor(() =>
-      expect(r.getByText("일기를 쓰면 다음 날 아침 바바가 편지를 보내요")).toBeTruthy(),
-    );
+    it("오늘 받을 편지가 있으면 말하지 않는다", async () => {
+      const r = await render(<LetterBox />);
+      await waitFor(() => expect(r.getByText("10월 27일 아침에 온 편지")).toBeTruthy());
+      expect(r.queryByText(RETRO_LINE)).toBeNull();
+    });
+
+    it("편지가 한 통도 없고 오늘 일기도 없으면 회고로 보낸다", async () => {
+      jest.mocked(fetchLetters).mockResolvedValue({ ok: true, data: [] });
+      useDiary.setState({ diaries: [] });
+      const r = await render(<LetterBox />);
+
+      await waitFor(() => expect(r.getByText(RETRO_LINE)).toBeTruthy());
+      await fireEvent.press(r.getByRole("button", { name: "회고하러 가기" }));
+      expect(router.push).toHaveBeenCalledWith("/retro/confirm");
+      expect(track).toHaveBeenCalledWith("retro_cta_clicked", { source: "letter_box" });
+    });
+
+    it("지난 편지만 있으면 목록 위에 말만 하고 버튼은 없다", async () => {
+      olderOnly();
+      const r = await render(<LetterBox />);
+
+      await waitFor(() => expect(r.getByText(RETRO_LINE)).toBeTruthy());
+      expect(r.getByText("10월 26일 아침에 온 편지")).toBeTruthy();
+      // 이미 편지를 받아 본 사람에게는 「회고하러 가기」를 보이지 않는다(2026-11-15 팀 피드백)
+      expect(r.queryByRole("button", { name: "회고하러 가기" })).toBeNull();
+    });
+
+    it("오늘 회고를 마쳤으면 알림 시각에 열어 보라고 한다 — 알림을 껐으면 시각 없이", async () => {
+      olderOnly();
+      today("r27");
+      useSettings.setState((s) => ({
+        notify: { ...s.notify, letter: { enabled: true, time: "07:30" } },
+      }));
+      const r = await render(<LetterBox />);
+      await waitFor(() =>
+        expect(
+          r.getByText("오늘 이야기로 편지를 쓰고 있어요.\n내일 아침 7:30에 열어 봐요."),
+        ).toBeTruthy(),
+      );
+      expect(r.queryByRole("button", { name: "회고하러 가기" })).toBeNull();
+
+      await act(() =>
+        useSettings.setState((s) => ({
+          notify: { ...s.notify, letter: { enabled: false, time: "07:30" } },
+        })),
+      );
+      expect(r.getByText("오늘 이야기로 편지를 쓰고 있어요.\n내일 아침에 열어 봐요.")).toBeTruthy();
+    });
+
+    it("오늘 직접 쓴 일기면 내일 편지가 없다고 한다", async () => {
+      olderOnly();
+      today(null);
+      const r = await render(<LetterBox />);
+
+      await waitFor(() =>
+        expect(
+          r.getByText(
+            "편지는 회고를 마친 다음 날 아침에 와요.\n오늘은 직접 쓴 일기라서 내일은 편지가 없어요.",
+          ),
+        ).toBeTruthy(),
+      );
+      expect(r.queryByRole("button", { name: "회고하러 가기" })).toBeNull();
+    });
   });
 });

@@ -231,7 +231,7 @@ export const events = {
     voice_used: bool,
   },
   retrospect_exited: { retrospect_id: id, phase: retroPhase, turn_no: count },
-  retro_cta_clicked: { source: choice("home", "report") },
+  retro_cta_clicked: { source: choice("home", "report", "letter_box") },
   voice_input_started: { retrospect_id: id },
   voice_permission_result: { granted: bool },
   voice_input_failed: { code: choice("no_speech", "network", "unavailable", "other") },
