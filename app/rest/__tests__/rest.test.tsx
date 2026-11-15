@@ -106,12 +106,12 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     const labels = getAllByRole("button").map((b) => b.props.accessibilityLabel);
     expect(labels).toEqual([
       "바람카드 보기",
+      "3분 명상 열기",
+      "주간 행복 열기",
       "감각연못 열기",
       "걱정상자 열기",
       "오늘의 보물함 열기",
       "몸에 힘 빼기 열기",
-      "3분 명상 열기",
-      "주간 행복 열기",
       "소원 연꽃 열기",
     ]);
   });
