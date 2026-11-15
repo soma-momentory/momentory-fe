@@ -29,17 +29,42 @@ describe("쉼 추천 고르기", () => {
   });
 
   it("쉬는 방법은 그 감정의 후보 안에서만 순서를 바꾼다", () => {
-    // 불안의 후보에는 감각연못이 있다 — 명상하기를 즐기면 그쪽이다
-    expect(recommendRest([6], ["MEDITATION"])).toEqual({
+    // 불안의 후보에는 감각연못이 있다 — 산책하기를 즐기면 그쪽이다
+    expect(recommendRest([6], ["WALKING"])).toEqual({
       content: "sensePond",
       basis: "preference",
       emotion: 6,
       title: "불안한 날엔, 이걸 해 봐요",
     });
-    // 혼란의 후보는 걱정상자 하나 — 명상하기를 즐겨도 감정이 이긴다
-    expect(recommendRest([10], ["MEDITATION"]).content).toBe("worryBox");
+    // 기쁨의 후보는 보물함 하나 — 명상하기를 즐겨도 감정이 이긴다
+    expect(recommendRest([1], ["MEDITATION"]).content).toBe("treasureBox");
     // 닮은 쉼이 없는 쉬는 방법(게임)은 아무것도 바꾸지 않는다
     expect(recommendRest([6], ["GAMING"]).basis).toBe("emotion");
+  });
+
+  it("3분 명상은 부끄러움 · 미안함에서 맨 앞이고, 불안 · 분노 · 지침의 몸에 힘 빼기는 그대로 맨 앞이다", () => {
+    expect(recommendRest([9], []).content).toBe("meditation");
+    expect(recommendRest([11], []).content).toBe("meditation");
+    for (const emotion of [6, 7, 12] as const) {
+      expect(recommendRest([emotion], []).content).toBe("bodyRelease");
+    }
+  });
+
+  it("명상하기를 즐기면 불안 · 분노에서 3분 명상이, 슬픔 · 지침에서는 감각연못이 뜬다", () => {
+    expect(recommendRest([6], ["MEDITATION"]).content).toBe("meditation");
+    expect(recommendRest([7], ["MEDITATION"]).content).toBe("meditation");
+    // 3분은 기운 없는 날엔 길다 — 슬픔 · 지침의 후보에는 3분 명상이 없다
+    expect(recommendRest([5], ["MEDITATION"]).content).toBe("sensePond");
+    expect(recommendRest([12], ["MEDITATION"]).content).toBe("sensePond");
+    // 닮은 쉼이 감각연못뿐인 쉬는 방법(산책)은 3분 명상으로 가지 않는다
+    expect(recommendRest([6], ["WALKING"]).content).toBe("sensePond");
+  });
+
+  it("주간 행복과 소원 연꽃은 어떤 감정에도 붙이지 않는다", () => {
+    for (const { id } of EMOTIONS) {
+      expect(REST_BY_EMOTION[id]).not.toContain("wish");
+      expect(REST_BY_EMOTION[id]).not.toContain("weeklyHappiness");
+    }
   });
 
   it("감정이 없으면 쉬는 방법과 닮은 쉼을, 그것도 없으면 무작위로 — 근거를 지어내지 않는다", () => {

@@ -219,7 +219,7 @@ describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
     [5, "sad", "sense_pond"],
     // 12종에서 새로 생긴 감정도 저장 직후 추천으로 이어진다
     [4, "affection", "treasure_box"],
-    [11, "sorry", "worry_box"],
+    [11, "sorry", "meditation"],
   ] as const)(
     "직접 일기에 고른 감정 %i로 저장 직후 쉼을 추천한다",
     async (emotion, key, content) => {
