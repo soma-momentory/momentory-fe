@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import type { Diary } from "@/features/diary/model/types";
 import type { Schedule } from "@/features/home/model/types";
 import type { Letter, LetterSummary } from "@/features/letter/data/letterApi";
 import { adoptLetterPreference } from "@/features/my/model/settings";
@@ -103,6 +104,29 @@ export function forgetLetterOf(date: string): void {
     return { summaries: s.summaries?.filter((l) => l.id !== letter.id) ?? null, letters };
   });
 }
+
+/**
+ * 오늘 받을 편지가 없을 때 편지함 위에서 바바가 하는 말의 갈래(2026-11-15 사용자 결정).
+ *
+ * 편지는 **회고로 남긴 일기**에만 생기고 다음 날 04:00 부터 열린다(BE `LetterFromRetrospectListener` ·
+ * `Letter.isOpenableOn`). 직접 쓴 일기에는 편지가 없고, 일기가 하루 하나라 그날은 회고도 더 못 한다.
+ * - `retro` — 오늘 아직 일기가 없다(한 번도 안 쓴 사람도 여기다)
+ * - `tomorrow` — 오늘 회고를 마쳤다. 내일 아침에 온다
+ * - `written` — 오늘은 직접 쓴 일기라 내일 편지가 없다
+ * - `null` — 오늘 받을 편지(어제 일기의 편지)가 이미 있다
+ */
+export type LetterWait = "retro" | "tomorrow" | "written" | null;
+
+export const letterWait = (
+  summaries: readonly LetterSummary[],
+  diaries: readonly Pick<Diary, "date" | "retrospectId">[],
+  today: string,
+): LetterWait => {
+  if (summaries[0]?.date === addDays(today, -1)) return null;
+  const diary = diaries.find((d) => d.date === today);
+  if (diary == null) return "retro";
+  return diary.retrospectId != null ? "tomorrow" : "written";
+};
 
 /** 홈 아이콘의 점 — 가장 최근 편지가 새것이고 아직 안 열었을 때만. 숫자는 세지 않는다 */
 export const hasUnreadLetter = (summaries: readonly LetterSummary[] | null): boolean => {
