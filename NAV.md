@@ -129,6 +129,9 @@ src/features/my/{model/{settings,reminders,basicInfo,calendarLink,recordedDays}.
                  ui/{MyMainView,ReminderRoute}.tsx}
                   ← 알림 · 프로필 설정 · 설정 ↔ OS 예약 화해 · 기본 정보(한 항목만 고쳐도 통째로 보낸다 — 덮어쓰는 PUT) ·
                     캘린더 잇기 · 문의 · 「일기 쓴 날 N일」(전체 기간). ReminderRoute = 알림을 누르면 부른 화면으로 옮긴다
+src/features/update/{model/forceUpdate.ts, ui/ForceUpdateGate.tsx}
+                  ← 강제 업데이트 — 랜딩의 `app-version.json`(플랫폼별 최소 버전)보다 낮으면 앱 전체를 막고 스토어로 보낸다.
+                    시작할 때 한 번 · 못 받으면 통과. 주소는 `lib/links.ts`
 src/features/analytics/{index,client,amplitude,events,observation,activeClock,restContent,sensePond,
                         useRestContentAnalytics,useSensePondAnalytics,AnalyticsObserver,AnalyticsResource}.tsx
                   ← **계측의 단일 통로**(Amplitude). 키가 비면 꺼진다 · 개발 빌드는 기본 차단.

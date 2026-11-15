@@ -13,6 +13,7 @@ import { startDayRollover } from "@/features/home/model/dayRollover";
 import { startBackgroundMusic } from "@/features/music/model/musicPlayer";
 import { startReminderSync } from "@/features/my/model/reminders";
 import { ReminderRoute } from "@/features/my/ui/ReminderRoute";
+import { ForceUpdateGate } from "@/features/update/ui/ForceUpdateGate";
 
 // 폰트가 준비되기 전에 화면을 보이지 않는다 — 서체가 바뀌며 깜빡이지 않게.
 void SplashScreen.preventAutoHideAsync();
@@ -89,7 +90,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <View style={styles.root}>
         <AnalyticsObserver />
         <ReminderRoute />
-        {children}
+        {/* 필수 업데이트보다 낮은 버전이면 라우트 대신 차단 화면을 그린다(`features/update/`) */}
+        <ForceUpdateGate>{children}</ForceUpdateGate>
         <ToastHost />
       </View>
     </SafeAreaProvider>

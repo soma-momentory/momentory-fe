@@ -1,5 +1,5 @@
 import { openBrowserAsync } from "expo-web-browser";
-import { Linking } from "react-native";
+import { Linking, Platform } from "react-native";
 
 /**
  * 앱 밖 문서로 나가는 단일 통로 — **웹 주소를 아는 곳은 여기 하나다.**
@@ -56,6 +56,38 @@ export const EXTERNAL_LINKS = {
 } as const;
 
 export type ExternalLink = keyof typeof EXTERNAL_LINKS;
+
+/**
+ * 강제 업데이트 기준 파일 — `{ "ios": "1.4.2", "android": "1.4.2" }`.
+ * 랜딩 저장소의 `public/app-version.json` 이다. 읽는 곳은 `features/update/model/forceUpdate.ts`.
+ */
+export const APP_VERSION_POLICY_URL = "https://momentory.co.kr/app-version.json";
+
+/** 스토어의 모멘토리 페이지. 앞은 스토어 앱으로, 뒤는 스토어 앱이 없을 때의 웹 주소다 */
+const STORE_URLS = {
+  ios: ["itms-apps://apps.apple.com/app/id6804971733", "https://apps.apple.com/app/id6804971733"],
+  android: [
+    "market://details?id=kr.momentory.app",
+    "https://play.google.com/store/apps/details?id=kr.momentory.app",
+  ],
+} as const;
+
+/**
+ * 스토어의 모멘토리 페이지를 연다. **던지지 않는다.** 업데이트는 스토어 앱에서 하므로
+ * 앱 안 브라우저가 아니라 `Linking` 으로 앱을 떠난다.
+ */
+export async function openAppStore(): Promise<boolean> {
+  const urls = Platform.OS === "ios" ? STORE_URLS.ios : STORE_URLS.android;
+  for (const url of urls) {
+    try {
+      await Linking.openURL(url);
+      return true;
+    } catch {
+      // 다음 주소로
+    }
+  }
+  return false;
+}
 
 /**
  * 문서 하나를 앱 안 브라우저로 연다. **던지지 않는다.**
