@@ -5,6 +5,12 @@
  * 문안이라 디자인이 아니라 **도메인**에 둔다(`CLAUDE.md` 「디자인 파일에 제품 규칙을
  * 넣지 않는다」). 순서는 화면에 놓이는 순서 그대로다 — 왼쪽 위부터 읽는 순서.
  *
+ * **새 쉼터가 앞이다**(2026-11-15 · 사용자와 정함). 3분 명상 · 주간 행복의 이용이 적었는데, 첫 화면에
+ * 감각연못 · 걱정상자만 온전히 보이고 이 둘은 한 화면 가까이 내려야 나와서 위치 탓인지 보려고 첫 줄로
+ * 올렸다. 소원 연꽃은 일부러 맨 뒤 그대로 둔다 — 위치가 안 바뀐 **비교군**이다. 보물함 · 몸에 힘 빼기는
+ * 쉼 추천 시트가 가장 많이 권해서(`recommend.ts`) 아래로 가도 시트로 들어오는 길이 있다.
+ * 일주일 뒤 쉼터 탭에서 직접 연 횟수(`rest_content_opened` 의 `entry`)를 이 순서를 바꾸기 전과 견준다.
+ *
  * 화면이 생긴 콘텐츠만 `route` 를 든다 — 지금은 일곱 모두 화면이 있다. `route` 가 없는
  * 칸은 격자에서 눌리지 않는다(`RestContentGrid`). 주간 행복은 적은 글이 저장되기
  * 전까지(2026-11-06) 개발 빌드에만 보였다.
@@ -67,6 +73,24 @@ export type RestContent = {
 
 export const REST_CONTENTS: readonly RestContent[] = [
   {
+    id: "meditation",
+    title: "3분 명상",
+    whenGood: "잠깐 쉬고 싶어",
+    duration: "3분",
+    description: "마음에 맞는 풍경에서\n잠시 머물러봐요",
+    icon: "wave",
+    route: "/rest/meditation",
+  },
+  {
+    id: "weeklyHappiness",
+    title: "주간 행복",
+    whenGood: "이번 주 어땠지",
+    duration: "2분",
+    description: "한 주의 좋았던 일을\n칸마다 적어봐요",
+    icon: "wave",
+    route: "/rest/weekly-happiness",
+  },
+  {
     id: "sensePond",
     title: "감각연못",
     whenGood: "머리가 복잡해",
@@ -101,24 +125,6 @@ export const REST_CONTENTS: readonly RestContent[] = [
     description: "몸에 힘을 줬다가\n천천히 풀어봐요",
     icon: "capybara-rest",
     route: "/rest/body-release",
-  },
-  {
-    id: "meditation",
-    title: "3분 명상",
-    whenGood: "잠깐 쉬고 싶어",
-    duration: "3분",
-    description: "마음에 맞는 풍경에서\n잠시 머물러봐요",
-    icon: "wave",
-    route: "/rest/meditation",
-  },
-  {
-    id: "weeklyHappiness",
-    title: "주간 행복",
-    whenGood: "이번 주 어땠지",
-    duration: "2분",
-    description: "한 주의 좋았던 일을\n칸마다 적어봐요",
-    icon: "wave",
-    route: "/rest/weekly-happiness",
   },
   {
     id: "wish",

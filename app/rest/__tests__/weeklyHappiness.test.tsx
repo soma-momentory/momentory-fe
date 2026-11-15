@@ -489,9 +489,10 @@ describe("주간 행복 — 설명 카드", () => {
 });
 
 describe("주간 행복 — 쉼터", () => {
-  it("쉼터 칸은 소원 연꽃 바로 앞이고 테마가 있다", () => {
+  it("쉼터 칸은 3분 명상 바로 뒤 첫 줄이고(소원 연꽃은 맨 뒤 비교군) 테마가 있다", () => {
     const ids = REST_CONTENTS.map((c) => c.id);
-    expect(ids.indexOf("weeklyHappiness")).toBe(ids.indexOf("wish") - 1);
+    expect(ids.slice(0, 2)).toEqual(["meditation", "weeklyHappiness"]);
+    expect(ids[ids.length - 1]).toBe("wish");
     expect(REST_THEMES.weeklyHappiness.Art).toBeDefined();
   });
 
