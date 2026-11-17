@@ -36,6 +36,7 @@ export const generatedRoutes: readonly GeneratedRoute[] = [
   { path: "/my", file: "app/(tabs)/my.tsx", group: "(tabs)", params: [] },
   { path: "/report", file: "app/(tabs)/report.tsx", group: "(tabs)", params: [] },
   { path: "/rest", file: "app/(tabs)/rest.tsx", group: "(tabs)", params: [] },
+  { path: "/wardrobe", file: "app/(tabs)/wardrobe.tsx", group: "(tabs)", params: [] },
   { path: "/diary/[id]", file: "app/diary/[id]/index.tsx", group: null, params: ["id"] },
   { path: "/home/schedule/[id]", file: "app/home/schedule/[id].tsx", group: null, params: ["id"] },
   { path: "/home/schedule/new", file: "app/home/schedule/new.tsx", group: null, params: [] },
