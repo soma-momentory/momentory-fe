@@ -4,7 +4,40 @@ import { keepWords } from "@/features/letter/model/letter";
 import { REST_CONTENTS } from "@/features/rest/model/contents";
 import { RestHubView } from "@/features/rest/ui/RestHubView";
 
+/**
+ * 바람카드는 2026-11-17 팀 결정으로 숨겼다(`WISH_CARDS_SHOWN`). 화면 코드는 그대로라 기존 테스트는 켠 상태로 돌리고,
+ * 숨긴 상태는 따로 확인한다.
+ */
+jest.mock("@/features/rest/model/cards", () => ({
+  __esModule: true,
+  ...jest.requireActual("@/features/rest/model/cards"),
+  WISH_CARDS_SHOWN: true,
+}));
+const mockCards = jest.requireMock<{ WISH_CARDS_SHOWN: boolean }>("@/features/rest/model/cards");
+afterEach(() => {
+  mockCards.WISH_CARDS_SHOWN = true;
+});
+
 describe("RestHubView", () => {
+  it("바람카드를 숨기는 동안은 첫 칸 없이 쉼 콘텐츠부터 보인다(2026-11-17)", async () => {
+    mockCards.WISH_CARDS_SHOWN = false;
+    const screen = await render(
+      <RestHubView
+        summary="오늘의 바람카드가 있어요"
+        wishPreview="천천히 숨 고르기"
+        contents={REST_CONTENTS}
+        onOpenCards={() => {}}
+        onOpenContent={() => {}}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "바람카드 보기" })).toBeNull();
+    expect(screen.queryByText("바람카드")).toBeNull();
+    for (const item of REST_CONTENTS) {
+      expect(screen.getByRole("button", { name: `${item.title} 열기` })).toBeTruthy();
+    }
+  });
+
   it("운영 쉼터의 제목·요약·콘텐츠와 접근성 이름을 표시한다", async () => {
     const screen = await render(
       <RestHubView

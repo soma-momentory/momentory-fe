@@ -52,6 +52,20 @@ const seedCompleted = (diary: ReplyDiary | null, wishCard: ReplyWishCard | null)
   useRetro.setState({ diary, wishCard });
 };
 
+/**
+ * 바람카드는 2026-11-17 팀 결정으로 숨겼다(`WISH_CARDS_SHOWN`). 화면 코드는 그대로라 기존 테스트는 켠 상태로 돌리고,
+ * 숨긴 상태는 따로 확인한다.
+ */
+jest.mock("@/features/rest/model/cards", () => ({
+  __esModule: true,
+  ...jest.requireActual("@/features/rest/model/cards"),
+  WISH_CARDS_SHOWN: true,
+}));
+const mockCards = jest.requireMock<{ WISH_CARDS_SHOWN: boolean }>("@/features/rest/model/cards");
+afterEach(() => {
+  mockCards.WISH_CARDS_SHOWN = true;
+});
+
 beforeEach(() => {
   useDiary.setState({ diaries: [], actionCards: [] });
   seedCompleted(SEED_DIARY, SEED_WISH);
@@ -345,6 +359,17 @@ describe("감정 탐색 없이 — 바람 카드도 없다", () => {
 });
 
 describe("완료 — 허브로 만들지 않는다", () => {
+  it("바람카드를 숨기는 동안은 카드가 있어도 없는 날처럼 안내 한 줄 · 쉼터로 가기뿐이다(2026-11-17)", async () => {
+    mockCards.WISH_CARDS_SHOWN = false;
+    const { getByText, queryByText } = await render(<RetroDone />);
+
+    expect(getByText("오늘의 일기를 저장했어요.")).toBeTruthy();
+    expect(queryByText("오늘 이야기에서 마음을 하나 챙겨봤어요.")).toBeNull();
+    expect(queryByText(SEED_WISH.situation)).toBeNull();
+    expect(getByText("쉼터로 가기")).toBeTruthy();
+    expect(queryByText("바람카드 보기")).toBeNull();
+  });
+
   it("바람 카드가 있으면 그림 없이 두 줄 · 카드 · 버튼 둘이다", async () => {
     const { getByText, queryByTestId } = await render(<RetroDone />);
 

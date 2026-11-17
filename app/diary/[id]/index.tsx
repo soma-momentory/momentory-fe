@@ -21,6 +21,7 @@ import { label as labelColor, layout, space, status } from "@/design/ds";
 import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { diaryPaper } from "@/design/ds/diaryPaper";
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
+import { WISH_CARDS_SHOWN } from "@/features/rest/model/cards";
 import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { showToast } from "@/lib/toast";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
@@ -37,7 +38,8 @@ export default function DiaryDetail() {
 
 function DiaryDetailEntry({ id }: { id: string }) {
   const diary = useDiary((s) => s.diaries.find((d) => d.id === id));
-  const card = useDiary((s) => actionCardOf(s.actionCards, id ?? ""));
+  // 바람카드를 숨기는 동안(2026-11-17)은 카드 칸도, 삭제 확인의 「행동 카드도 같이 삭제돼요」도 말하지 않는다
+  const card = useDiary((s) => (WISH_CARDS_SHOWN ? actionCardOf(s.actionCards, id ?? "") : null));
   const remove = useDiary((s) => s.remove);
   const saveBody = useDiary((s) => s.saveBody);
   const { date: today } = useTodayContext();

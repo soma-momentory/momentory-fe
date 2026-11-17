@@ -10,6 +10,7 @@ import { RestThemeGrid } from "@/components/rest/RestThemeGrid";
 import { homeV2, layout, radius, restThemeCard } from "@/design/ds";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
 import { keepWords } from "@/features/letter/model/letter";
+import { WISH_CARDS_SHOWN } from "@/features/rest/model/cards";
 import { REST_CONTENTS_PROMPT, type RestContent } from "@/features/rest/model/contents";
 
 type Props = {
@@ -82,64 +83,67 @@ export function RestHubView({
           </Text>
         </View>
 
-        <RestCardPressable
-          accessibilityLabel="바람카드 보기"
-          onPress={onOpenCards}
-          style={styles.wishPressable}
-        >
-          <View
-            testID="studio-rest-wish-paper"
-            style={[
-              styles.wishPaper,
-              { backgroundColor: design["rest.wishPaper.backgroundColor"] },
-            ]}
+        {/* 바람카드는 2026-11-17 팀 결정으로 숨긴다 — 쉼 콘텐츠 목록부터 보인다 */}
+        {WISH_CARDS_SHOWN ? (
+          <RestCardPressable
+            accessibilityLabel="바람카드 보기"
+            onPress={onOpenCards}
+            style={styles.wishPressable}
           >
             <View
-              testID="studio-rest-wish-copy"
-              style={[styles.wishCopy, { paddingLeft: design["rest.wishPaper.paddingLeft"] }]}
+              testID="studio-rest-wish-paper"
+              style={[
+                styles.wishPaper,
+                { backgroundColor: design["rest.wishPaper.backgroundColor"] },
+              ]}
             >
-              <Text style={styles.wishTitle} color={colors.ink}>
-                바람카드
-              </Text>
-              <Text
-                testID="studio-rest-wish-summary"
-                style={{
-                  color: design["rest.wishSummary.color"],
-                  fontSize: design["rest.wishSummary.fontSize"],
-                  lineHeight: design["rest.wishSummary.fontSize"] + 6,
-                  fontFamily: design["rest.wishSummary.fontFamily"],
-                  textAlign: design["rest.wishSummary.textAlign"] as "left" | "center" | "right",
-                  letterSpacing: design["rest.wishSummary.letterSpacing"],
-                }}
+              <View
+                testID="studio-rest-wish-copy"
+                style={[styles.wishCopy, { paddingLeft: design["rest.wishPaper.paddingLeft"] }]}
               >
-                {keepWords(summary)}
-              </Text>
-              <View style={styles.wishLink}>
-                <Text style={styles.wishLinkText} color={colors.ink}>
-                  모아보기 ›
+                <Text style={styles.wishTitle} color={colors.ink}>
+                  바람카드
                 </Text>
-                <View
-                  pointerEvents="none"
-                  accessibilityElementsHidden
-                  importantForAccessibility="no-hide-descendants"
-                  style={styles.wishLinkLine}
+                <Text
+                  testID="studio-rest-wish-summary"
+                  style={{
+                    color: design["rest.wishSummary.color"],
+                    fontSize: design["rest.wishSummary.fontSize"],
+                    lineHeight: design["rest.wishSummary.fontSize"] + 6,
+                    fontFamily: design["rest.wishSummary.fontFamily"],
+                    textAlign: design["rest.wishSummary.textAlign"] as "left" | "center" | "right",
+                    letterSpacing: design["rest.wishSummary.letterSpacing"],
+                  }}
                 >
-                  <Svg width="100%" height="100%" viewBox="0 0 100 6" preserveAspectRatio="none">
-                    <Path
-                      d="M1 3.5 C20 1.5 45 5 70 2.5 C82 1.5 92 3.5 99 2.5"
-                      fill="none"
-                      stroke={restThemeCard.wish.underline}
-                      strokeWidth={2.4}
-                      strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </Svg>
+                  {keepWords(summary)}
+                </Text>
+                <View style={styles.wishLink}>
+                  <Text style={styles.wishLinkText} color={colors.ink}>
+                    모아보기 ›
+                  </Text>
+                  <View
+                    pointerEvents="none"
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    style={styles.wishLinkLine}
+                  >
+                    <Svg width="100%" height="100%" viewBox="0 0 100 6" preserveAspectRatio="none">
+                      <Path
+                        d="M1 3.5 C20 1.5 45 5 70 2.5 C82 1.5 92 3.5 99 2.5"
+                        fill="none"
+                        stroke={restThemeCard.wish.underline}
+                        strokeWidth={2.4}
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    </Svg>
+                  </View>
                 </View>
               </View>
+              <RestWishPreview text={wishPreview} />
             </View>
-            <RestWishPreview text={wishPreview} />
-          </View>
-        </RestCardPressable>
+          </RestCardPressable>
+        ) : null}
 
         <View testID="studio-rest-content-section" style={styles.section}>
           <Text variant="headline1" style={styles.sectionTitle}>

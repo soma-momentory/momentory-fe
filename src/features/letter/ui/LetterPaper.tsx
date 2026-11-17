@@ -20,6 +20,7 @@ import type { Letter } from "@/features/letter/data/letterApi";
 import {
   helplineParts,
   keepWords,
+  LETTER_ACTIONS_SHOWN,
   receivedLabel,
   type WhenChoice,
 } from "@/features/letter/model/letter";
@@ -65,7 +66,9 @@ export function LetterPaper({
   onPickWhen,
 }: Props) {
   const quiet = letter.status === "QUIET";
-  const chosen = letter.actions.find((a) => a.chosen) ?? null;
+  // 작은 일을 숨기는 동안(2026-11-17)은 서버가 보내도 없는 편지처럼 그린다 — 고르기 칸도, 「해 봤는지부터 물어볼게요」도 없다
+  const actions = LETTER_ACTIONS_SHOWN ? letter.actions : [];
+  const chosen = actions.find((a) => a.chosen) ?? null;
   const hand = iosVariant("body1ReadingHand", "body1ReadingHandLg");
 
   const tonight =
@@ -122,10 +125,10 @@ export function LetterPaper({
 
       {quiet ? null : letter.isNew && !locked ? (
         <>
-          {letter.actions.length > 0 ? (
+          {actions.length > 0 ? (
             <View style={styles.choose}>
               <Lined variant={hand}>{keepWords("오늘 해 볼 작은 일 하나 고를래요?")}</Lined>
-              {letter.actions.map((action) => {
+              {actions.map((action) => {
                 const on = action.chosen;
                 return (
                   <Pressable

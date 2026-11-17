@@ -138,6 +138,13 @@ export const hasUnreadLetter = (summaries: readonly LetterSummary[] | null): boo
 /** 어절 줄바꿈 — 정본은 `@/lib/keepWords`(공용 `Text` 가 모든 글자에 건다). 옛 import 자리를 위해 다시 내보낸다 */
 export { keepWords } from "@/lib/keepWords";
 
+/**
+ * 편지의 「오늘 해 볼 작은 일」을 보여 주고 고르게 하는가 — 2026-11-17 팀 결정으로 끈다.
+ * 서버가 작은 일을 보내도(서버 스위치 `LETTER_ACTIONS_ENABLED` 는 켜 둔다) 이 판은 그리지 않는다. 고를 수 없으니
+ * 밤 회고의 「해 봤어요?」도 생기지 않는다(`PRODUCT.md` 「상류와 차이」).
+ */
+export const LETTER_ACTIONS_SHOWN = false;
+
 /** 편지는 일기 다음 날 아침에 받는다 — 「10월 15일 아침」 */
 /**
  * 조용한 편지의 도움받을 곳 한 줄을 글과 전화번호 조각으로 나눈다 — 번호만 눌러서 바로 건다.

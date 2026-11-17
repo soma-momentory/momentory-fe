@@ -38,6 +38,20 @@ jest.mock("@/lib/http", () => ({
   authedRequest: jest.fn(async () => ({ ok: true, data: null })),
 }));
 
+/**
+ * 바람카드는 2026-11-17 팀 결정으로 숨겼다(`WISH_CARDS_SHOWN`). 화면 코드는 그대로라 기존 테스트는 켠 상태로 돌리고,
+ * 숨긴 상태는 따로 확인한다.
+ */
+jest.mock("@/features/rest/model/cards", () => ({
+  __esModule: true,
+  ...jest.requireActual("@/features/rest/model/cards"),
+  WISH_CARDS_SHOWN: true,
+}));
+const mockCards = jest.requireMock<{ WISH_CARDS_SHOWN: boolean }>("@/features/rest/model/cards");
+afterEach(() => {
+  mockCards.WISH_CARDS_SHOWN = true;
+});
+
 beforeEach(() => {
   mockParams = { id: ID };
   useLetters.setState({ userId: 7, summaries: [], letters: {} });
@@ -48,6 +62,15 @@ beforeEach(() => {
 });
 
 describe("A3 · 내가 남긴 오늘 + 행동 카드", () => {
+  it("바람카드를 숨기는 동안은 카드 칸도, 삭제 확인의 카드 문장도 없다(2026-11-17)", async () => {
+    mockCards.WISH_CARDS_SHOWN = false;
+    const r = await render(<DiaryDetail />);
+
+    expect(r.queryByText("이 일기의 바람 카드")).toBeNull();
+    await fireEvent.press(r.getByLabelText("일기 삭제"));
+    expect(r.getByText("이 일기가 삭제돼요.")).toBeTruthy();
+  });
+
   it("오늘 날씨가 없는 서버 일기를 열어도 위치를 묻거나 날씨를 기록하지 않는다(2026-11-11)", async () => {
     mockParams = { id: "123" };
     useDiary.setState((st) => ({

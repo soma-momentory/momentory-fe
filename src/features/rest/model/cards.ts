@@ -17,6 +17,13 @@ import type { ActionCard } from "@/features/diary/model/diary";
  */
 export type DatedCard = { card: ActionCard; date: string };
 
+/**
+ * 바람카드를 화면에 보여 주는가 — 2026-11-17 팀 결정으로 끈다(서비스에서 효용이 없다고 봤다).
+ * 쉼터 첫 칸 · 회고 완료(C7)의 카드와 「바람카드 보기」 · 일기 상세의 카드 칸이 모두 이 값을 본다.
+ * 서버는 카드를 계속 만들고, 화면 코드도 지우지 않았다 — 다시 켜려면 이 값만 바꾼다(`PRODUCT.md` 「상류와 차이」).
+ */
+export const WISH_CARDS_SHOWN = false;
+
 /** 카드의 만든 날(`YYYY-MM-DD`) — `createdAt` 앞 열 글자다(로컬 저장분은 ISO 라 잘라 쓴다) */
 const dateOf = (card: ActionCard) => card.createdAt.slice(0, 10);
 
