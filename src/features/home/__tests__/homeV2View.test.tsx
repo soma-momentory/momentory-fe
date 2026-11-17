@@ -206,7 +206,7 @@ describe("홈 v2 — 큰 글씨 날짜", () => {
 
   it("1.5배 모의에서 날짜 종이 폭도 글자와 함께 늘어난다", async () => {
     const screen = await render(<DatePaper today={TODAY} fontScale={1.5} />);
-    expect(flatten(screen.getByText("10월 14일").parent?.parent?.props.style).width).toBe(270);
+    expect(flatten(screen.getByText("10월 14일").parent?.parent?.props.style).width).toBe(250);
   });
 });
 
@@ -313,6 +313,21 @@ describe("홈 v2 — 히어로 문안(계획 §2.2)", () => {
     expect(baba.props.accessibilityElementsHidden).toBe(true);
     expect(baba.props.importantForAccessibility).toBe("no-hide-descendants");
     expect(baba.props.pointerEvents).toBe("none");
+    // 옷장으로 가는 길을 주지 않으면 바바를 감싼 자리도 눌리지 않는다
+    expect(r.queryByRole("button", { name: "바바 꾸미기" })).toBeNull();
+  });
+
+  it("머리 줄 귤은 귤 모으기를 열고, 숫자 · 점은 붙지 않는다", async () => {
+    const onOpenMissions = jest.fn();
+    const r = await show(baseModel(), { ...actions(), onOpenMissions });
+    await fireEvent.press(r.getByRole("button", { name: "귤 모으기" }));
+    expect(onOpenMissions).toHaveBeenCalledTimes(1);
+  });
+
+  it("바바는 눌리지 않고 머리 줄에 옷걸이도 없다 — 옷장은 탭바의 꾸미기다", async () => {
+    const r = await show(baseModel(), actions());
+    expect(r.queryByRole("button", { name: "바바 꾸미기" })).toBeNull();
+    expect(r.queryByTestId("home-v2-baba-wardrobe", { includeHiddenElements: true })).toBeNull();
   });
 });
 

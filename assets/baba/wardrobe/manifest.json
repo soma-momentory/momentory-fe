@@ -1,0 +1,558 @@
+{
+  "version": "2026-10-15",
+  "source": "개인 피그마 hBgjMBLx4I2ArK5CiHS4qv · 페이지 「바바 캐릭터」(56:2) · 메인 컴포넌트 Baba(57:20). 사용자가 직접 다듬은 피그마 컴포넌트가 정본이고, 이 폴더는 그 시점의 사본이다",
+  "canvas": {
+    "width": 1200,
+    "height": 1600,
+    "note": "모든 레이어 파일이 같은 캔버스 · (0,0)에 그대로 겹친다. 아이템마다 위치 · 크기를 따로 두지 않는다"
+  },
+  "files": {
+    "master": "master/<layer>.png — 1200x1600 PNG(원본 크기)",
+    "app": "app/<layer>.webp — 600x800 무손실 WebP(앱에 넣는 것)",
+    "shopMaster": "master/shop/<shop>.png — 512(모자 · 얼굴) / 1024(옷) 정사각",
+    "shopApp": "app/shop/<shop>.webp — 256x256 무손실 WebP"
+  },
+  "layerOrder": [
+    {
+      "layer": "parts/base-tail",
+      "when": "lowerBody"
+    },
+    {
+      "layer": "parts/base-body-head",
+      "when": "always"
+    },
+    {
+      "layer": "parts/base-body-lower",
+      "when": "lowerBody"
+    },
+    {
+      "layer": "parts/base-head-top",
+      "when": "headTop"
+    },
+    {
+      "slot": "clothes"
+    },
+    {
+      "layer": "parts/base-feet",
+      "when": "lowerBody"
+    },
+    {
+      "layer": "parts/base-arms",
+      "when": "lowerBody"
+    },
+    {
+      "layer": "parts/base-muzzle",
+      "when": "always"
+    },
+    {
+      "layer": "parts/base-mouth",
+      "when": "always"
+    },
+    {
+      "layer": "parts/base-cheeks",
+      "when": "always"
+    },
+    {
+      "layer": "parts/base-eyes",
+      "when": "baseEyes"
+    },
+    {
+      "layer": "parts/base-ears",
+      "when": "ears"
+    },
+    {
+      "slot": "hat"
+    },
+    {
+      "slot": "eyes"
+    },
+    {
+      "layer": "parts/base-ears-front",
+      "when": "earsFront"
+    }
+  ],
+  "flags": {
+    "lowerBody": "입은 옷의 lowerBody 값. 옷이 없으면 true. false 면 꼬리 · 목 아래 몸 · 발 · 팔을 그리지 않는다(옷 그림이 목 아래 전체를 대신한다)",
+    "baseEyes": "낀 얼굴 아이템의 baseEyes 값. 얼굴 아이템이 없으면 true. 표정 아이템은 false(기본 눈 대신 아이템이 눈을 그린다)",
+    "ears": "쓴 모자의 ears 값. 모자가 없으면 true",
+    "headTop": "쓴 모자의 headTop 값. 모자가 없으면 false. 귀를 끄는 모자에서 정수리 윤곽선이 끊긴 자리를 메운다",
+    "earsFront": "쓴 모자의 earsFront 값. 모자가 없으면 false. 지금은 모든 모자가 false"
+  },
+  "neckLine": {
+    "y": 770,
+    "note": "base-body 를 피그마 Baba 와 같게 나눈 선. body-head 는 0~772, body-lower 는 770~(2px 겹침). 옷 그림은 y 770 아래(목 위로 올라온 옷깃만 예외)를 담는다"
+  },
+  "slots": {
+    "hat": "모자 한 개(머리 위 병아리도 모자 칸)",
+    "eyes": "얼굴 아이템 한 개(안경 · 표정 · 코 · 수염 · 반창고 · 무당벌레)",
+    "clothes": "옷 한 벌(상하의 구분 없음 · 신발 · 장갑 없음)"
+  },
+  "items": {
+    "hats": [
+      {
+        "id": "purple-beanie",
+        "nameKo": "보라 털모자",
+        "figma": "hat/beanie-2",
+        "layer": "hats/hat-purple-beanie",
+        "shop": "shop/shop-hat-purple-beanie",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "bucket",
+        "nameKo": "버킷햇",
+        "figma": "hat/bucket",
+        "layer": "hats/hat-bucket",
+        "shop": "shop/shop-hat-bucket",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "cap",
+        "nameKo": "볼캡",
+        "figma": "hat/cap",
+        "layer": "hats/hat-cap",
+        "shop": "shop/shop-hat-cap",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "washed-cap",
+        "nameKo": "워싱캡",
+        "figma": "hat/washed-cap",
+        "layer": "hats/hat-washed-cap",
+        "shop": "shop/shop-hat-washed-cap",
+        "ears": false,
+        "earsFront": false,
+        "headTop": true
+      },
+      {
+        "id": "snapback",
+        "nameKo": "스냅백",
+        "figma": "hat/snapback",
+        "layer": "hats/hat-snapback",
+        "shop": "shop/shop-hat-snapback",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "fisherman-beanie",
+        "nameKo": "피셔맨 비니",
+        "figma": "hat/fisherman-beanie",
+        "layer": "hats/hat-fisherman-beanie",
+        "shop": "shop/shop-hat-fisherman-beanie",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "beret",
+        "nameKo": "베레모",
+        "figma": "hat/beret",
+        "layer": "hats/hat-beret",
+        "shop": "shop/shop-hat-beret",
+        "ears": false,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "fedora",
+        "nameKo": "페도라",
+        "figma": "hat/fedora",
+        "layer": "hats/hat-fedora",
+        "shop": "shop/shop-hat-fedora",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "panama",
+        "nameKo": "파나마햇",
+        "figma": "hat/panama",
+        "layer": "hats/hat-panama",
+        "shop": "shop/shop-hat-panama",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "hunting-cap",
+        "nameKo": "헌팅캡",
+        "figma": "hat/hunting-cap",
+        "layer": "hats/hat-hunting-cap",
+        "shop": "shop/shop-hat-hunting-cap",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "sun-visor",
+        "nameKo": "선바이저",
+        "figma": "hat/sun-visor",
+        "layer": "hats/hat-sun-visor",
+        "shop": "shop/shop-hat-sun-visor",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "trapper",
+        "nameKo": "트루퍼햇",
+        "figma": "hat/trapper",
+        "layer": "hats/hat-trapper",
+        "shop": "shop/shop-hat-trapper",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "cowboy",
+        "nameKo": "카우보이햇",
+        "figma": "hat/cowboy",
+        "layer": "hats/hat-cowboy",
+        "shop": "shop/shop-hat-cowboy",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "chef-hat",
+        "nameKo": "요리사 모자",
+        "figma": "hat/chef-hat",
+        "layer": "hats/hat-chef-hat",
+        "shop": "shop/shop-hat-chef-hat",
+        "ears": false,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "headset",
+        "nameKo": "헤드셋",
+        "figma": "hat/headset",
+        "layer": "hats/hat-headset",
+        "shop": "shop/shop-hat-headset",
+        "ears": true,
+        "earsFront": false,
+        "headTop": true
+      },
+      {
+        "id": "sheep-towel",
+        "nameKo": "양머리 수건",
+        "figma": "hat/sheep-towel",
+        "layer": "hats/hat-sheep-towel",
+        "shop": "shop/shop-hat-sheep-towel",
+        "ears": false,
+        "earsFront": false,
+        "headTop": true
+      },
+      {
+        "id": "chick",
+        "nameKo": "머리 위 병아리",
+        "figma": "hat/chick",
+        "layer": "hats/hat-chick",
+        "shop": "shop/shop-hat-chick",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      },
+      {
+        "id": "straw-hat",
+        "nameKo": "밀짚모자",
+        "figma": "hat/straw-hat",
+        "layer": "hats/hat-straw-hat",
+        "shop": "shop/shop-hat-straw-hat",
+        "ears": true,
+        "earsFront": false,
+        "headTop": false
+      }
+    ],
+    "eyes": [
+      {
+        "id": "sunglasses",
+        "nameKo": "선글라스",
+        "figma": "eyes/sunglasses",
+        "layer": "eyes/eyes-sunglasses",
+        "shop": "shop/shop-eyes-sunglasses",
+        "baseEyes": true
+      },
+      {
+        "id": "glasses",
+        "nameKo": "안경",
+        "figma": "eyes/glasses",
+        "layer": "eyes/eyes-glasses",
+        "shop": "shop/shop-eyes-glasses",
+        "baseEyes": true
+      },
+      {
+        "id": "color-sunglasses",
+        "nameKo": "색 선글라스",
+        "figma": "eyes/color-sunglasses",
+        "layer": "eyes/eyes-color-sunglasses",
+        "shop": "shop/shop-eyes-color-sunglasses",
+        "baseEyes": true
+      },
+      {
+        "id": "pixel-sunglasses",
+        "nameKo": "픽셀 선글라스",
+        "figma": "eyes/pixel-sunglasses",
+        "layer": "eyes/eyes-pixel-sunglasses",
+        "shop": "shop/shop-eyes-pixel-sunglasses",
+        "baseEyes": true
+      },
+      {
+        "id": "pinocchio-nose",
+        "nameKo": "피노키오 코",
+        "figma": "eyes/pinocchio-nose",
+        "layer": "eyes/eyes-pinocchio-nose",
+        "shop": "shop/shop-eyes-pinocchio-nose",
+        "baseEyes": true
+      },
+      {
+        "id": "face-frown",
+        "nameKo": "찡그린 표정",
+        "figma": "eyes/face-frown",
+        "layer": "eyes/eyes-face-frown",
+        "shop": "shop/shop-eyes-face-frown",
+        "baseEyes": false
+      },
+      {
+        "id": "face-sad",
+        "nameKo": "슬픈 표정",
+        "figma": "eyes/face-sad",
+        "layer": "eyes/eyes-face-sad",
+        "shop": "shop/shop-eyes-face-sad",
+        "baseEyes": false
+      },
+      {
+        "id": "face-smile",
+        "nameKo": "웃는 표정",
+        "figma": "eyes/face-smile",
+        "layer": "eyes/eyes-face-smile",
+        "shop": "shop/shop-eyes-face-smile",
+        "baseEyes": false
+      },
+      {
+        "id": "face-surprised",
+        "nameKo": "놀란 표정",
+        "figma": "eyes/face-surprised",
+        "layer": "eyes/eyes-face-surprised",
+        "shop": "shop/shop-eyes-face-surprised",
+        "baseEyes": false
+      },
+      {
+        "id": "3d-glasses",
+        "nameKo": "3D 영화 안경",
+        "figma": "eyes/3d-glasses",
+        "layer": "eyes/eyes-3d-glasses",
+        "shop": "shop/shop-eyes-3d-glasses",
+        "baseEyes": true
+      },
+      {
+        "id": "alien-glasses",
+        "nameKo": "외계인 안경",
+        "figma": "eyes/alien-glasses",
+        "layer": "eyes/eyes-alien-glasses",
+        "shop": "shop/shop-eyes-alien-glasses",
+        "baseEyes": true
+      },
+      {
+        "id": "face-sleepy",
+        "nameKo": "졸린 눈",
+        "figma": "eyes/face-sleepy",
+        "layer": "eyes/eyes-face-sleepy",
+        "shop": "shop/shop-eyes-face-sleepy",
+        "baseEyes": false
+      },
+      {
+        "id": "face-calm",
+        "nameKo": "평온하게 감은 눈",
+        "figma": "eyes/face-calm",
+        "layer": "eyes/eyes-face-calm",
+        "shop": "shop/shop-eyes-face-calm",
+        "baseEyes": false
+      },
+      {
+        "id": "face-heart",
+        "nameKo": "하트 눈",
+        "figma": "eyes/face-heart",
+        "layer": "eyes/eyes-face-heart",
+        "shop": "shop/shop-eyes-face-heart",
+        "baseEyes": false
+      },
+      {
+        "id": "face-star",
+        "nameKo": "별 눈",
+        "figma": "eyes/face-star",
+        "layer": "eyes/eyes-face-star",
+        "shop": "shop/shop-eyes-face-star",
+        "baseEyes": false
+      },
+      {
+        "id": "face-dizzy",
+        "nameKo": "소용돌이 눈",
+        "figma": "eyes/face-dizzy",
+        "layer": "eyes/eyes-face-dizzy",
+        "shop": "shop/shop-eyes-face-dizzy",
+        "baseEyes": false
+      },
+      {
+        "id": "face-dot",
+        "nameKo": "점 눈",
+        "figma": "eyes/face-dot",
+        "layer": "eyes/eyes-face-dot",
+        "shop": "shop/shop-eyes-face-dot",
+        "baseEyes": false
+      },
+      {
+        "id": "mustache",
+        "nameKo": "콧수염",
+        "figma": "eyes/mustache",
+        "layer": "eyes/eyes-mustache",
+        "shop": "shop/shop-eyes-mustache",
+        "baseEyes": true
+      },
+      {
+        "id": "bandage",
+        "nameKo": "반창고",
+        "figma": "eyes/bandage",
+        "layer": "eyes/eyes-bandage",
+        "shop": "shop/shop-eyes-bandage",
+        "baseEyes": true
+      },
+      {
+        "id": "ladybug",
+        "nameKo": "무당벌레",
+        "figma": "eyes/ladybug",
+        "layer": "eyes/eyes-ladybug",
+        "shop": "shop/shop-eyes-ladybug",
+        "baseEyes": true
+      }
+    ],
+    "clothes": [
+      {
+        "id": "knit-vest",
+        "nameKo": "니트 조끼",
+        "figma": "clothes/knit-vest",
+        "layer": "clothes/clothes-knit-vest",
+        "shop": "shop/shop-clothes-knit-vest",
+        "lowerBody": false
+      },
+      {
+        "id": "overalls",
+        "nameKo": "흰 티 멜빵바지",
+        "figma": "clothes/overalls",
+        "layer": "clothes/clothes-overalls",
+        "shop": "shop/shop-clothes-overalls",
+        "lowerBody": false
+      },
+      {
+        "id": "pajamas",
+        "nameKo": "줄무늬 잠옷",
+        "figma": "clothes/pajamas",
+        "layer": "clothes/clothes-pajamas",
+        "shop": "shop/shop-clothes-pajamas",
+        "lowerBody": false
+      },
+      {
+        "id": "gray-sweater",
+        "nameKo": "회색 스웨터",
+        "figma": "clothes/gray-sweater",
+        "layer": "clothes/clothes-gray-sweater",
+        "shop": "shop/shop-clothes-gray-sweater",
+        "lowerBody": false
+      },
+      {
+        "id": "marine-tee",
+        "nameKo": "마린 줄무늬 티",
+        "figma": "clothes/marine-tee",
+        "layer": "clothes/clothes-marine-tee",
+        "shop": "shop/shop-clothes-marine-tee",
+        "lowerBody": false
+      },
+      {
+        "id": "cable-sweater",
+        "nameKo": "꽈배기 스웨터",
+        "figma": "clothes/cable-sweater",
+        "layer": "clothes/clothes-cable-sweater",
+        "shop": "shop/shop-clothes-cable-sweater",
+        "lowerBody": false
+      },
+      {
+        "id": "tracksuit",
+        "nameKo": "트랙 자켓 (빨강)",
+        "figma": "clothes/tracksuit",
+        "layer": "clothes/clothes-tracksuit",
+        "shop": "shop/shop-clothes-tracksuit",
+        "lowerBody": false
+      },
+      {
+        "id": "tracksuit-black",
+        "nameKo": "트랙 자켓 (검정)",
+        "figma": "clothes/tracksuit-black",
+        "layer": "clothes/clothes-tracksuit-black",
+        "shop": "shop/shop-clothes-tracksuit-black",
+        "lowerBody": false
+      },
+      {
+        "id": "light-padding",
+        "nameKo": "경량 패딩",
+        "figma": "clothes/light-padding",
+        "layer": "clothes/clothes-light-padding",
+        "shop": "shop/shop-clothes-light-padding",
+        "lowerBody": false
+      },
+      {
+        "id": "fleece-pajamas",
+        "nameKo": "양털 수면 잠옷",
+        "figma": "clothes/fleece-pajamas",
+        "layer": "clothes/clothes-fleece-pajamas",
+        "shop": "shop/shop-clothes-fleece-pajamas",
+        "lowerBody": false
+      },
+      {
+        "id": "chef-coat",
+        "nameKo": "요리사 복",
+        "figma": "clothes/chef-coat",
+        "layer": "clothes/clothes-chef-coat",
+        "shop": "shop/shop-clothes-chef-coat",
+        "lowerBody": false
+      },
+      {
+        "id": "soccer-kit",
+        "nameKo": "축구 유니폼",
+        "figma": "clothes/soccer-kit",
+        "layer": "clothes/clothes-soccer-kit",
+        "shop": "shop/shop-clothes-soccer-kit",
+        "lowerBody": false
+      },
+      {
+        "id": "cowboy",
+        "nameKo": "카우보이 조끼 셔츠",
+        "figma": "clothes/cowboy",
+        "layer": "clothes/clothes-cowboy",
+        "shop": "shop/shop-clothes-cowboy",
+        "lowerBody": false
+      },
+      {
+        "id": "painter-smock",
+        "nameKo": "화가 작업복",
+        "figma": "clothes/painter-smock",
+        "layer": "clothes/clothes-painter-smock",
+        "shop": "shop/shop-clothes-painter-smock",
+        "lowerBody": false
+      },
+      {
+        "id": "yukata",
+        "nameKo": "온천 유카타",
+        "figma": "clothes/yukata",
+        "layer": "clothes/clothes-yukata",
+        "shop": "shop/shop-clothes-yukata",
+        "lowerBody": false
+      }
+    ]
+  }
+}

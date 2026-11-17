@@ -57,7 +57,9 @@ export default function Report() {
 
   return (
     <TabScreen
-      active="리포트"
+      // 탭바에서 빠졌다(2026-11-17) — 보관함 아래 버튼으로 들어오는 보관함 안쪽 화면이다
+      active="보관함"
+      nested
       overlay={
         <>
           <AnalyticsResource
@@ -87,6 +89,7 @@ export default function Report() {
               router.push("/retro/confirm");
             }}
             onTurn={onTurn}
+            onBack={() => (router.canGoBack() ? router.back() : router.replace("/archive"))}
           />
           {picking ? (
             <NotebookPickerSheet

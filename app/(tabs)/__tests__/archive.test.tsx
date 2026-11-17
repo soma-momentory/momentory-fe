@@ -112,10 +112,12 @@ describe("A1 · 보관함 달력", () => {
     expect(within(r.getByLabelText("22일, 분노")).queryByTestId("schedule-dot")).toBeNull();
   });
 
-  it("하단 요약 제목은 낱말 사이에 줄바꿈을 박아 두지 않는다 — 평소에 한 줄로 읽힌다", async () => {
+  it("아래 막대는 주간 리포트로 가는 버튼이다 — 리포트가 탭바에서 빠지며 이 자리로 왔다", async () => {
     const r = await render(<Archive />);
 
-    expect(r.getByText("이번 달 기록")).toBeTruthy();
+    expect(r.queryByText("이번 달 기록")).toBeNull();
+    await fireEvent.press(r.getByRole("button", { name: "주간 리포트 확인하러 가기" }));
+    expect(jest.mocked(router.push)).toHaveBeenCalledWith("/report");
   });
 
   it("기록 카드의 글자는 보관함 전용 크기에 읽히는 색이다", async () => {
@@ -148,11 +150,8 @@ describe("A1 · 보관함 달력", () => {
     );
   });
 
-  it("하단 요약과 목록의 머리 글자, 감정 칩도 보관함 전용 크기다", async () => {
+  it("목록의 머리 글자, 감정 칩도 보관함 전용 크기다", async () => {
     const r = await render(<Archive />);
-    expect(flatten(r.getByText("이번 달 기록").props.style).fontSize).toBe(
-      archiveType.dock.fontSize,
-    );
 
     await fireEvent.press(r.getByLabelText("목록으로 보기"));
 
@@ -509,11 +508,11 @@ describe("하단 탭 — 다섯 칸이 전부 이어진다", () => {
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/home");
   });
 
-  it("리포트·마이도 간다", async () => {
+  it("꾸미기·마이도 간다", async () => {
     const r = await render(<Archive />);
 
-    await fireEvent.press(tabNamed(r, "리포트")!);
-    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/report");
+    await fireEvent.press(tabNamed(r, "꾸미기")!);
+    expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/wardrobe");
 
     await fireEvent.press(tabNamed(r, "마이")!);
     expect(jest.mocked(router.replace)).toHaveBeenCalledWith("/my");

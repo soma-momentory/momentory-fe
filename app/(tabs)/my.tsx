@@ -24,6 +24,7 @@ import { useRecordedDays } from "@/features/my/model/recordedDays";
 import { useProfile, useSettings, type NotifySetting } from "@/features/my/model/settings";
 import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { MyMainView } from "@/features/my/ui/MyMainView";
+import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
 import { onForeground } from "@/lib/appState";
 import { getCalendarAccess, openCalendarSettings, type CalendarAccess } from "@/lib/calendar";
 import { openExternalLink } from "@/lib/links";
@@ -80,6 +81,7 @@ export default function My() {
     openNotificationSettings?: string;
   }>();
   const nickname = useProfile((s) => s.nickname);
+  const babaOutfit = useWardrobe((s) => s.outfit);
   const retro = useSettings((s) => s.notify.retro);
   const signOut = useAuth((s) => s.signOut);
   const withdraw = useAuth((s) => s.withdraw);
@@ -410,6 +412,7 @@ export default function My() {
       }
     >
       <MyMainView
+        babaOutfit={babaOutfit}
         nickname={nickname}
         recordedDays={recordedDays}
         notifyValue={notifyValue}

@@ -58,7 +58,8 @@ test("라우트 목록은 앱 순서의 접힌 묶음이고, ＋ 로 펼치며 �
   // 처음엔 지금 화면(홈)의 묶음 「탭」만 펼쳐져 있다
   await expect(page.getByTestId("route-section-tabs")).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByTestId("route-section-entry")).toHaveAttribute("aria-expanded", "false");
-  await expect(tree.locator("[data-route]")).toHaveCount(5);
+  // 탭 다섯 + 탭바에서 빠져 보관함 아래 버튼으로 여는 주간 리포트(2026-11-17)
+  await expect(tree.locator("[data-route]")).toHaveCount(6);
   await expect(tree.locator('[data-route="/home"]')).toHaveAttribute("aria-current", "page");
   // 머리 줄을 누르면 펼치고, 펼친 묶음은 새로고침해도 남는다
   await page.getByTestId("route-section-letter").click();

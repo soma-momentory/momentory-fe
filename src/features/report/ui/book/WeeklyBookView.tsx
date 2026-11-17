@@ -68,6 +68,8 @@ type Props = {
   writeLabel: string;
   onWriteDiary: () => void;
   onTurn: (page: BookPage | "cover") => void;
+  /** 덮인 공책 왼쪽 위의 뒤로가기 — 리포트가 보관함 안쪽 화면이 되며 생겼다(2026-11-17). 없으면 그리지 않는다 */
+  onBack?: () => void;
 };
 
 const OPEN_MS = 550;
@@ -105,6 +107,7 @@ export function WeeklyBookView({
   writeLabel,
   onWriteDiary,
   onTurn,
+  onBack,
 }: Props) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -261,6 +264,18 @@ export function WeeklyBookView({
         <TabPaperBackground tab="리포트" />
       </Animated.View>
 
+      {!isOpen && onBack != null ? (
+        <Pressable
+          testID="book-back"
+          accessibilityRole="button"
+          accessibilityLabel="보관함으로 돌아가기"
+          onPress={onBack}
+          hitSlop={8}
+          style={[styles.back, { top: insets.top + 2 }]}
+        >
+          <Icon name="chevron-left" size={24} color={homeV2.color.ink} />
+        </Pressable>
+      ) : null}
       {!isOpen ? (
         <Pressable
           testID="book-past"
@@ -601,6 +616,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 2,
     zIndex: 5,
+  },
+  back: {
+    position: "absolute",
+    left: 12,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   exit: {
     position: "absolute",

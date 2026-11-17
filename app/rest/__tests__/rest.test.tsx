@@ -17,6 +17,7 @@ import {
 } from "@/features/rest/data/recommendMemory";
 import { datedCards } from "@/features/rest/model/cards";
 import { recommendRest } from "@/features/rest/model/recommend";
+import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
 import { useToast } from "@/lib/toast";
 import * as http from "@/lib/http";
 import { seedDiaries } from "@/testing/fixtures";
@@ -44,6 +45,16 @@ jest.mock("expo-router", () => ({
   Redirect: jest.fn(() => null),
 }));
 
+// 일기 뒤 귤 정산 — 기본은 받을 게 없다. 받은 귤 카드가 추천 시트보다 먼저 뜨는지는 아래 테스트가 바꿔 본다
+let mockRewards: { reason: string; amount: number }[] = [];
+jest.mock("@/features/wardrobe/data/wardrobeApi", () => ({
+  checkIn: jest.fn(async () => ({
+    ok: true,
+    data: { tangerines: 0, rewards: mockRewards, quiet: false },
+  })),
+  fetchWardrobe: jest.fn(async () => ({ ok: false, code: "network" })),
+}));
+
 jest.mock("@/features/analytics", () => ({
   ...jest.requireActual("@/features/analytics"),
   track: jest.fn(),
@@ -51,6 +62,8 @@ jest.mock("@/features/analytics", () => ({
 
 beforeEach(async () => {
   mockParams = { date: "2026-07-27" };
+  mockRewards = [];
+  useWardrobe.getState().reset();
   await AsyncStorage.clear();
   seedDiaries();
   useToast.setState({ current: null });
@@ -211,6 +224,19 @@ describe("R1 · 일기를 쓴 날의 쉼 추천", () => {
       expect(afterNextDiary.getByText("불안한 날엔, 이걸 해 봐요")).toBeTruthy();
     },
   );
+
+  it("일기 뒤 귤을 받았으면 귤 카드가 먼저 뜨고, 확인으로 닫아야 추천 시트가 올라온다", async () => {
+    mockRewards = [{ reason: "DIARY", amount: 30 }];
+    mockParams.afterDiary = "1";
+    const r = await render(<Rest />);
+    await waitForSheet();
+    expect(useWardrobe.getState().celebration?.title).toBe("오늘 일기를 다 썼어요");
+    expect(r.queryByText("불안한 날엔, 이걸 해 봐요")).toBeNull();
+
+    await act(async () => useWardrobe.getState().endCelebration());
+    await waitForSheet();
+    expect(r.getByText("불안한 날엔, 이걸 해 봐요")).toBeTruthy();
+  });
 
   it.each([
     [1, "joy", "treasure_box"],

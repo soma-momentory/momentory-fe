@@ -39,7 +39,8 @@ type LetterStore = {
   refresh: () => Promise<void>;
   keep: (letter: Letter) => void;
   /** 열었다 — 목록의 점을 바로 끄고 서버에 처음 연 시각을 남긴다 */
-  markOpened: (letter: Pick<Letter, "id" | "date" | "openedAt">) => void;
+  /** 처음 연 것을 서버에 남긴다 — 서버에 닿았는지 돌려준다(이미 연 편지면 거짓). 귤 정산은 화면을 나갈 때 한다 */
+  markOpened: (letter: Pick<Letter, "id" | "date" | "openedAt">) => Promise<boolean>;
 };
 
 export const useLetters = create<LetterStore>((set, get) => ({
@@ -71,7 +72,7 @@ export const useLetters = create<LetterStore>((set, get) => ({
   },
 
   markOpened: (letter) => {
-    if (letter.openedAt != null) return;
+    if (letter.openedAt != null) return Promise.resolve(false);
     const now = clock.now().toISOString();
     set((s) => {
       const kept = s.letters[letter.date];
@@ -83,7 +84,7 @@ export const useLetters = create<LetterStore>((set, get) => ({
           kept != null ? { ...s.letters, [letter.date]: { ...kept, openedAt: now } } : s.letters,
       };
     });
-    void letterApi().markLetterOpened(letter.id);
+    return letterApi().markLetterOpened(letter.id);
   },
 }));
 

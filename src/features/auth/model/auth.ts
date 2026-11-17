@@ -29,6 +29,7 @@ import { useCalendarSync } from "@/features/calendar/model/calendarSync";
 import { useDiary } from "@/features/diary/model/diary";
 import { useDay } from "@/features/home/model/day";
 import { useLetters } from "@/features/letter/model/letter";
+import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
 import { clearThreeDayHint } from "@/features/report/data/hintMemory";
 import { useWeeklyBook } from "@/features/report/model/weeklyBook";
 import { adoptProfile, useProfile, useSettings } from "@/features/my/model/settings";
@@ -375,6 +376,8 @@ const clearUserScopedStores = (userId?: number) => {
   useCalendarSync.getState().reset();
   // 편지 목록(홈 아이콘의 점)도 그 사람의 것이다 — 진행 중 응답은 주인이 바뀌어 버려진다 (2026-10-27)
   useLetters.getState().reset();
+  // 바바가 입은 것 · 귤도 그 사람의 것이다 (2026-11-17)
+  useWardrobe.getState().reset();
   // 공책에는 AI 가 쓴 그 사람의 한 주가 들어 있다 — 다음 사람에게 잠깐이라도 보이면 안 된다
   useWeeklyBook.getState().reset();
   void clearThreeDayHint();

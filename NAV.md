@@ -16,7 +16,7 @@
 | 2    | `src/lib/providers.tsx`                          | 앱 전체를 감싸는 것 — 폰트 · 안전 영역 · 토스트 · 계측 관찰 · 캘린더 화해 · 04:00 하루 넘김 · 알림 화해 · 배경음악                                                                                                           |
 | 3    | `app/index.tsx`                                  | 진입 분기 — 세션 없음 → 소개(`intro/start`) · 최신 판 온보딩 전 → 소개(로그인 건너뜀) · 완료 → 홈. **완료 여부의 정본은 서버**(`GET /api/v1/users/me`). 서버에 못 물으면 「모른다」(`null`) — 스플래시가 3초마다 다시 묻는다 |
 | 4    | `src/features/auth/model/auth.ts`                | 부트스트랩(hydrate · 가드 · fail-closed) · `syncMe`                                                                                                                                                                          |
-| 5    | `app/(tabs)/_layout.tsx` → `app/(tabs)/home.tsx` | 탭 다섯. 홈은 `src/features/home/ui/v2/HomeV2View` 를 그린다                                                                                                                                                                 |
+| 5    | `app/(tabs)/_layout.tsx` → `app/(tabs)/home.tsx` | 탭 다섯(홈 · 쉼터 · 보관함 · 꾸미기 · 마이 — 리포트는 보관함 아래 버튼). 홈은 `src/features/home/ui/v2/HomeV2View` 를 그린다                                                                                                 |
 | 6    | 아무 도메인 하나 — 예: `src/features/diary/`     | 아래 「1. 한 바퀴」의 모양이 모든 도메인에서 같다                                                                                                                                                                            |
 
 ## 1. 한 바퀴 — 데이터가 흐르는 길
@@ -37,7 +37,7 @@ app/<라우트>.tsx                 화면 — 라우트 파라미터를 읽고 
 
 ## 2. 라우트 — `app/`
 
-**라우트 57개** — 진입 2 · 소개 10 · 온보딩 12 · 탭 5 · 홈 시트 2 · 회고 5 · 편지 3 · 일기 1 · 쉼터 12 · 마이 5
+**라우트 58개** — 진입 2 · 소개 10 · 온보딩 12 · 탭 5 · 홈 시트 3 · 회고 5 · 편지 3 · 일기 1 · 쉼터 12 · 마이 5
 (`_layout` · `+native-intent` · `__tests__` 제외 · Lab 의 `expo-lab/src/shell/routes.generated.ts` 와 같다).
 화면 ID ↔ 라우트 매핑의 정본은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표다.
 
@@ -48,8 +48,8 @@ app/intro/{start, feelings, blur, ruminate, blank, help, talk, diary, rest, repo
 app/(onboarding)/{_layout, mood, why, day-end, diary-history, goal, reading, name, about, calendar, notify, research, now}.tsx
                   = 온보딩 v2 로그인 뒤 — 순서 · 문구 · 기능 스위치는 `src/features/onboarding/model/flow.ts` 하나다.
                     다시 온보딩 판정은 서버 `onboardingVersion < latestOnboardingVersion`(`meApi.ts` `needsOnboarding`)
-app/(tabs)/{_layout, home, rest, archive, report, my}.tsx
-                  = 홈 · 쉼터(R1) · 보관함(A1 · A2) · 리포트(W1) · 마이(M1 + 알림 설정 시트)
+app/(tabs)/{_layout, home, rest, archive, report, wardrobe, my}.tsx
+                  = 홈 · 쉼터(R1) · 보관함(A1 · A2) · 리포트(W1 · 탭바 밖 · 보관함 아래 버튼) · 꾸미기(옷장) · 마이(M1 + 알림 설정 시트)
                     탭바는 레이아웃이 아니라 화면이 그린다(`components/ds/TabScreen`) — 배경이 탭바 뒤까지 이어져서다.
                     탭은 루트 스택의 바닥이다 — `(tabs)/_layout` 이 들어올 때 그 아래(소개 · 로그인 · 온보딩)를 걷는다
 app/home/{_layout, schedule/[id], schedule/new}.tsx
@@ -129,6 +129,12 @@ src/features/my/{model/{settings,reminders,basicInfo,calendarLink,recordedDays}.
                  ui/{MyMainView,ReminderRoute}.tsx}
                   ← 알림 · 프로필 설정 · 설정 ↔ OS 예약 화해 · 기본 정보(한 항목만 고쳐도 통째로 보낸다 — 덮어쓰는 PUT) ·
                     캘린더 잇기 · 문의 · 「일기 쓴 날 N일」(전체 기간). ReminderRoute = 알림을 누르면 부른 화면으로 옮긴다
+src/features/wardrobe/{model/{types,figure,wardrobe,catalog.generated}.ts, data/wardrobeApi.ts, ui/BabaFigure.tsx}
+                  ui/{Tangerine, WardrobePopup, PurchasePopup, WelcomePopup, AttendanceGrid, AttendanceSheet, TangerineMissionSheet,
+                     TangerineBurst, TangerineCelebrationHost}.tsx  ← 귤 축하는 앱 맨 위 덮개 하나(`app/_layout.tsx`)
+                  ← 바바 꾸미기 · 귤(2026-11-17). 그림은 앱 안(`assets/baba/wardrobe/` · manifest.json), 값 · 가진 것 · 입은 것 ·
+                    귤은 서버. `catalog.generated.ts` 는 `npm run gen:wardrobe` 생성물. `figure.ts` = 입은 것 → 겹칠 그림 순서.
+                    홈 · 회고 · 옷장의 바바가 `BabaFigure` 하나를 쓴다. 귤 정산은 홈이 뜰 때마다(`check-in`)
 src/features/update/{model/forceUpdate.ts, ui/ForceUpdateGate.tsx}
                   ← 강제 업데이트 — 랜딩의 `app-version.json`(플랫폼별 최소 버전)보다 낮으면 앱 전체를 막고 스토어로 보낸다.
                     시작할 때 한 번 · 못 받으면 통과. 주소는 `lib/links.ts`

@@ -1,6 +1,6 @@
 import { track } from "@/features/analytics";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { TabScreen } from "@/components/ds";
 import { RestRecommendSheet } from "@/components/rest/RestRecommendSheet";
@@ -11,6 +11,7 @@ import { cardOn, datedCards, latestCardDay } from "@/features/rest/model/cards";
 import { REST_CONTENTS } from "@/features/rest/model/contents";
 import { useRestRecommendation } from "@/features/rest/model/useRestRecommendation";
 import { RestHubView } from "@/features/rest/ui/RestHubView";
+import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
 import { formatKoreanDateShort } from "@/lib/day";
 
 /**
@@ -56,6 +57,27 @@ export default function Rest() {
   const latestCard = latest == null ? null : cardOn(all, latest);
   const wishPreview = latestCard?.desiredState ?? latestCard?.targetAction ?? null;
   const recommend = useRestRecommendation(today, restRecommendMotion.delay, afterDiary === "1");
+  /**
+   * 일기를 저장하고 넘어왔으면 먼저 귤을 정산해 귤 카드를 띄우고, 그 카드를 닫은 뒤에 쉼 추천 시트를 올린다(2026-11-17).
+   * 일기 쓰기 두 길(대화 · 직접 쓰기)과 편지 시각 고르기가 모두 이 주소로 모인다 — 정산은 여기 한 곳에서 한다
+   */
+  const [settling, setSettling] = useState(afterDiary === "1");
+  const celebrating = useWardrobe((s) => s.celebration != null);
+  useEffect(() => {
+    if (afterDiary !== "1") return;
+    let alive = true;
+    void useWardrobe
+      .getState()
+      .settle()
+      .finally(() => {
+        if (alive) setSettling(false);
+      });
+    return () => {
+      alive = false;
+    };
+    // 들어온 그 한 번만 — 추천 시트가 뜨면 주소의 afterDiary 를 지운다(아래)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     // 이번 완료 진입에만 적용한다. 이후 일반 탭 진입까지 반복 표시하지 않는다.
     if (afterDiary === "1" && recommend.sheet != null) router.setParams({ afterDiary: "" });
@@ -85,7 +107,7 @@ export default function Rest() {
     <TabScreen
       active="쉼터"
       overlay={
-        recommended != null && recommend.sheet != null ? (
+        recommended != null && recommend.sheet != null && !settling && !celebrating ? (
           <RestRecommendSheet
             content={recommended}
             emotion={recommend.sheet.emotion}

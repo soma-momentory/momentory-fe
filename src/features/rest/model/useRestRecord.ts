@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
+
 import { addRestRecord } from "../data/restRecordApi";
 import { maybeRequestStoreReview } from "../data/storeReview";
 import type { RestMood, RestRecordContent } from "./restRecord";
@@ -32,8 +34,11 @@ export function useRestRecord(content: RestRecordContent, started: boolean) {
       s.left = true;
       void Promise.resolve().then(() => {
         if (!s.left) return;
-        if (s.picked != null) void addRestRecord(content, { completed: true, mood: s.picked });
-        else if (s.started) void addRestRecord(content, { completed: false });
+        // 기록이 서버에 닿으면 귤을 정산한다 — 장면을 나와 쉼터로 돌아온 순간 같은 귤 카드가 뜬다(장면 안에서는 끼어들지 않는다)
+        const settle = () => void useWardrobe.getState().settle();
+        if (s.picked != null)
+          void addRestRecord(content, { completed: true, mood: s.picked }).then(settle);
+        else if (s.started) void addRestRecord(content, { completed: false }).then(settle);
         // 「나아졌어요」로 마치고 나온 때가 별점을 물을 자리다(`storeReview.ts`)
         if (s.picked === "better") void maybeRequestStoreReview();
       });

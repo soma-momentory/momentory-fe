@@ -19,7 +19,6 @@ import {
 import {
   archiveType,
   background,
-  emotion,
   label as labelColor,
   layout,
   line,
@@ -46,7 +45,6 @@ type Props = {
   selectedDate: string;
   selectedDiary: Diary | null;
   daySchedules: readonly Schedule[];
-  monthly: readonly Diary[];
   listed: readonly Diary[];
   markOf: (date: string) => CalendarMark;
   view: ArchiveMode;
@@ -60,6 +58,8 @@ type Props = {
   onQueryChange: (query: string) => void;
   onOpenPeriod: () => void;
   onOpenDiary: (id: string) => void;
+  /** 아래 막대 「주간 리포트 확인하러 가기」 — 리포트가 탭바에서 빠지며 들어온 자리다(2026-11-17) */
+  onOpenReport: () => void;
 };
 
 /** The app and Expo Lab render this same RN body; all data and side effects arrive as props. */
@@ -69,7 +69,6 @@ export function ArchiveView({
   selectedDate,
   selectedDiary,
   daySchedules,
-  monthly,
   listed,
   markOf,
   view,
@@ -83,15 +82,12 @@ export function ArchiveView({
   onQueryChange,
   onOpenPeriod,
   onOpenDiary,
+  onOpenReport,
 }: Props) {
-  const emotionMarks = monthly
-    .flatMap((diary) => (diary.emotions[0] == null ? [] : [diary.emotions[0]]))
-    .slice(0, 3);
-
   return (
     <View testID="studio-archive-root" style={styles.root}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.titleRow}>
           <View
             testID="studio-archive-title"
             style={[
@@ -118,6 +114,8 @@ export function ArchiveView({
               보관함
             </Text>
           </View>
+          {/* 달력 · 목록 전환 — 아래 막대가 주간 리포트 버튼이 되며 제목 옆으로 올라왔다(2026-11-17) */}
+          <ViewSwitcher options={VIEWS} active={view} onChange={onViewChange} />
         </View>
         {view === "calendar" ? (
           <View style={styles.monthActions}>
@@ -273,23 +271,27 @@ export function ArchiveView({
             />
           </View>
         ) : null}
-        <Text variant="label1" color={labelColor.normal} style={styles.summaryTitle}>
-          이번 달 기록
-        </Text>
-        <View style={styles.summaryCount}>
-          {emotionMarks.map((emotionId, index) => (
-            <View
-              key={`${emotionId}-${index}`}
-              style={[styles.emotionDot, { backgroundColor: emotion[emotionId] }]}
-            />
-          ))}
-          <Text
-            variant="label1"
-            color={labelColor.normal}
-            style={archiveType.dock}
-          >{`${monthly.length}일`}</Text>
-        </View>
-        <ViewSwitcher options={VIEWS} active={view} onChange={onViewChange} />
+        {/*
+          「이번 달 기록 N일」 · 달력/목록 전환이 있던 자리(2026-11-17) — 리포트가 탭바에서 빠지며 여기로 왔다.
+          기록 수는 달력 칸의 얼굴이 이미 말한다
+        */}
+        {/*
+          흰 막대 한 줄 버튼 — 초록 천 라벨(홈 「일기 작성하기」)로도 해 봤지만 이 화면의 주인공인 일기보다 세서
+          되돌렸다. 대신 글자를 키웠다(2026-11-17 사용자)
+        */}
+        <Pressable
+          testID="archive-open-report"
+          onPress={onOpenReport}
+          accessibilityRole="button"
+          accessibilityLabel="주간 리포트 확인하러 가기"
+          style={({ pressed }) => [styles.reportButton, pressed ? styles.reportPressed : null]}
+        >
+          <Icon name="document" size={24} color={labelColor.normal} />
+          <Text variant="headline1" color={labelColor.normal} style={styles.reportLabel}>
+            주간 리포트 확인하러 가기
+          </Text>
+          <Icon name="chevron-right" size={24} color={labelColor.normal} />
+        </Pressable>
       </View>
     </View>
   );
@@ -302,6 +304,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -layout.screenPadding,
     paddingHorizontal: layout.screenPadding,
   },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: space.md },
   header: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -391,19 +394,21 @@ const styles = StyleSheet.create({
     backgroundColor: background.elevated,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    // 글자로 시작하는 왼쪽은 넉넉히, 둥근 스위처가 서는 오른쪽은 모서리를 따라 좁게
     paddingLeft: 20,
-    paddingRight: 10,
+    paddingRight: 16,
     marginBottom: 8,
     shadowColor: labelColor.normal,
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 3,
   },
-  // 평소에는 한 줄이다. 자리가 모자랄 때만 이 제목이 줄어 낱말 사이에서 접힌다 —
-  // 그래서 옆의 셈은 줄지 않고(`flexShrink` 0) 남는 자리만 차지한다(`flexGrow`)
-  summaryTitle: { ...archiveType.dock, flexShrink: 1, textAlign: "center" },
-  summaryCount: { flexGrow: 1, flexDirection: "row", alignItems: "center", gap: 4 },
-  emotionDot: { width: 13, height: 13, borderRadius: 7 },
+  reportButton: {
+    flex: 1,
+    minHeight: layout.minTouch,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
+  },
+  reportPressed: { opacity: 0.6 },
+  reportLabel: { flex: 1 },
 });

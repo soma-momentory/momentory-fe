@@ -319,6 +319,92 @@ const finishOnboarding = (ctx: Ctx, profile: Profile, answers: Record<string, un
 
 const findSchedule = (ctx: Ctx, id: string) => ctx.db.schedules.find((s) => String(s.id) === id);
 
+// ── 바바 꾸미기 ─────────────────────────────────────────────────────────
+// ponytail: 데이터 세트와 따로 창마다 한 벌만 둔다 — 옷장 화면 확인용이라 세트별 차이가 필요 없다
+
+/** [id, 칸, 귤 값(무료 0)] — 서버 `V49__create_wardrobe.sql` 과 같다 */
+const WARDROBE_ITEMS: readonly [string, string, number][] = [
+  ["hat-purple-beanie", "HAT", 0],
+  ["hat-bucket", "HAT", 120],
+  ["hat-cap", "HAT", 120],
+  ["hat-washed-cap", "HAT", 120],
+  ["hat-snapback", "HAT", 120],
+  ["hat-fisherman-beanie", "HAT", 120],
+  ["hat-beret", "HAT", 200],
+  ["hat-fedora", "HAT", 200],
+  ["hat-panama", "HAT", 200],
+  ["hat-hunting-cap", "HAT", 200],
+  ["hat-sun-visor", "HAT", 120],
+  ["hat-trapper", "HAT", 200],
+  ["hat-cowboy", "HAT", 200],
+  ["hat-chef-hat", "HAT", 200],
+  ["hat-headset", "HAT", 200],
+  ["hat-sheep-towel", "HAT", 0],
+  ["hat-chick", "HAT", 200],
+  ["hat-straw-hat", "HAT", 200],
+  ["eyes-sunglasses", "EYES", 80],
+  ["eyes-glasses", "EYES", 0],
+  ["eyes-color-sunglasses", "EYES", 80],
+  ["eyes-pixel-sunglasses", "EYES", 120],
+  ["eyes-pinocchio-nose", "EYES", 120],
+  ["eyes-face-frown", "EYES", 0],
+  ["eyes-face-sad", "EYES", 0],
+  ["eyes-face-smile", "EYES", 0],
+  ["eyes-face-surprised", "EYES", 0],
+  ["eyes-3d-glasses", "EYES", 120],
+  ["eyes-alien-glasses", "EYES", 120],
+  ["eyes-face-sleepy", "EYES", 0],
+  ["eyes-face-calm", "EYES", 0],
+  ["eyes-face-heart", "EYES", 0],
+  ["eyes-face-star", "EYES", 0],
+  ["eyes-face-dizzy", "EYES", 0],
+  ["eyes-face-dot", "EYES", 0],
+  ["eyes-mustache", "EYES", 80],
+  ["eyes-bandage", "EYES", 80],
+  ["eyes-ladybug", "EYES", 120],
+  ["clothes-knit-vest", "CLOTHES", 0],
+  ["clothes-overalls", "CLOTHES", 300],
+  ["clothes-pajamas", "CLOTHES", 300],
+  ["clothes-gray-sweater", "CLOTHES", 0],
+  ["clothes-marine-tee", "CLOTHES", 200],
+  ["clothes-cable-sweater", "CLOTHES", 200],
+  ["clothes-tracksuit", "CLOTHES", 200],
+  ["clothes-tracksuit-black", "CLOTHES", 200],
+  ["clothes-light-padding", "CLOTHES", 200],
+  ["clothes-fleece-pajamas", "CLOTHES", 300],
+  ["clothes-chef-coat", "CLOTHES", 300],
+  ["clothes-soccer-kit", "CLOTHES", 300],
+  ["clothes-cowboy", "CLOTHES", 300],
+  ["clothes-painter-smock", "CLOTHES", 300],
+  ["clothes-yukata", "CLOTHES", 300],
+];
+
+const WARDROBE = {
+  tangerines: 100,
+  welcomed: false,
+  owned: new Set<string>(),
+  outfit: { hat: null, eyes: null, clothes: null } as Record<
+    "hat" | "eyes" | "clothes",
+    string | null
+  >,
+};
+
+const wardrobeDto = () => ({
+  tangerines: WARDROBE.tangerines,
+  outfit: WARDROBE.outfit,
+  items: WARDROBE_ITEMS.map(([id, slot, price]) => ({
+    id,
+    slot,
+    tier: price === 0 ? "FREE" : "TANGERINE",
+    price,
+    owned: price === 0 || WARDROBE.owned.has(id),
+  })),
+  todayRewards: ["CHECK_IN"],
+  attendanceDay: 3,
+  attendanceRewards: [10, 10, 20, 20, 30, 40, 50],
+  welcomed: WARDROBE.welcomed,
+});
+
 // ── 표 ─────────────────────────────────────────────────────────────────
 
 type Handler = (ctx: Ctx, req: FakeRequest, params: string[]) => FakeResponse;
@@ -1088,6 +1174,39 @@ const ROUTES: Route[] = [
     ctx.db.inquiries.push(row);
     ctx.wrote = true;
     return json({ id: row.id }, 201);
+  }),
+  // ── 바바 꾸미기 · 귤(2026-11-17) ── 서버 V49 와 같은 아이템 · 값. 귤은 100개로 시작해 얼굴(80)은 사고 모자(120)는 못 산다
+  route("GET", "/api/v1/wardrobe", () => json(wardrobeDto())),
+  route("POST", "/api/v1/wardrobe/check-in", () =>
+    json({ tangerines: WARDROBE.tangerines, rewards: [], quiet: false }),
+  ),
+  route("POST", "/api/v1/wardrobe/welcome", () => {
+    const rewards = WARDROBE.welcomed ? [] : [{ reason: "WELCOME", amount: 100 }];
+    if (!WARDROBE.welcomed) WARDROBE.tangerines += 100;
+    WARDROBE.welcomed = true;
+    return json({ tangerines: WARDROBE.tangerines, rewards, quiet: false });
+  }),
+  route("PUT", "/api/v1/wardrobe/outfit", (_ctx, req) => {
+    if (!isObject(req.body)) return invalid();
+    const pick = (v: unknown) => (typeof v === "string" ? v : null);
+    WARDROBE.outfit = {
+      hat: pick(req.body.hat),
+      eyes: pick(req.body.eyes),
+      clothes: pick(req.body.clothes),
+    };
+    return json(WARDROBE.outfit);
+  }),
+  route("POST", "/api/v1/wardrobe/items/:id/purchase", (_ctx, _req, [id]) => {
+    const item = WARDROBE_ITEMS.find(([itemId]) => itemId === id);
+    if (item == null || item[2] === 0)
+      return error(404, "WARDROBE_ITEM_NOT_FOUND", "아이템을 찾을 수 없습니다.");
+    if (!WARDROBE.owned.has(item[0])) {
+      if (WARDROBE.tangerines < item[2])
+        return error(409, "TANGERINE_NOT_ENOUGH", "귤이 모자랍니다.");
+      WARDROBE.tangerines -= item[2];
+      WARDROBE.owned.add(item[0]);
+    }
+    return json({ tangerines: WARDROBE.tangerines });
   }),
   // 앱 코드에는 없고 http 테스트에만 나오는 옛 경로 — 받기만 한다
   route("POST", "/api/v1/notifications/read", () => noContent()),

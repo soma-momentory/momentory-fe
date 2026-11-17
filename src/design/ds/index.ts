@@ -87,6 +87,7 @@ export { reportBook } from "./reportBook";
 export { restCards } from "./restCards";
 export { restThemeCard } from "./restThemeCard";
 export { weeklyHappiness } from "./weeklyHappiness";
+export { wardrobe } from "./wardrobe";
 
 // 보관함 한 화면만의 글자 크기 — 공용 12단은 그대로 둔다
 export { archiveType } from "./archive";

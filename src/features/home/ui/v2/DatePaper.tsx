@@ -27,11 +27,14 @@ export function DatePaper({ today, fontScale = 1 }: { today: string; fontScale?:
   const weekdayExtra = Math.max(0, homeV2.type.weekday.lineHeight * (fontScale - 1));
   return (
     <View
-      style={[styles.wrap, { width: 220 + extraWidth, minHeight: 78 + dateExtra + weekdayExtra }]}
+      style={[
+        styles.wrap,
+        { width: PAPER.wrap + extraWidth, minHeight: 78 + dateExtra + weekdayExtra },
+      ]}
     >
       <View
         testID="home-date-tape"
-        style={[styles.date, { width: 200 + extraWidth, minHeight: 50 + dateExtra }]}
+        style={[styles.date, { width: PAPER.date + extraWidth, minHeight: 50 + dateExtra }]}
       >
         <View pointerEvents="none" style={styles.dateTape}>
           <MaskingTape color={homeV2.color.date} />
@@ -51,13 +54,20 @@ export function DatePaper({ today, fontScale = 1 }: { today: string; fontScale?:
   );
 }
 
+/**
+ * 날짜 종이 폭 — 220 · 200 이던 것을 조금 줄였다(2026-11-17). 그대로면 SE(375pt)에서 머리 줄 아이콘 셋(귤 · 음악 · 편지,
+ * 44씩)과 약 11pt 겹쳤다(220 + 132 > 341). 아이콘을 오른쪽 끝에서 20 들이며(좌우 여백 22 · 20) 200 으로 맞췄다
+ * (200 + 132 ≤ 333). 글씨 크기는 그대로고 종이 여백만 줄였다
+ */
+const PAPER = { wrap: 200, date: 180, padding: 14 } as const;
+
 const styles = StyleSheet.create({
-  wrap: { width: 220, minHeight: 78 },
+  wrap: { width: PAPER.wrap, minHeight: 78 },
   date: {
-    minWidth: 200,
+    minWidth: PAPER.date,
     minHeight: 50,
     maxWidth: "100%",
-    paddingHorizontal: 18,
+    paddingHorizontal: PAPER.padding,
     alignSelf: "flex-start",
     transform: [{ rotate: homeV2.tilt.date }],
     alignItems: "center",

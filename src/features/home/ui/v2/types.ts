@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { Schedule } from "@/features/home/model/types";
+import type { Outfit } from "@/features/wardrobe/model/types";
 import type { WeekDay } from "@/features/report/model/report";
 
 /**
@@ -42,6 +43,8 @@ export type HomeV2ViewModel = {
   musicTrackId: string | null;
   /** 지금 틀고 있는가 */
   musicPlaying: boolean;
+  /** 바바가 입은 것(서버 옷장) — 받기 전이거나 Lab 이면 비워 둔다 */
+  babaOutfit?: Outfit;
 };
 
 /** 모든 부작용은 호출자가 처리한다. 이 뷰는 store · API · 라우터 · 계측을 모른다 */
@@ -54,6 +57,8 @@ export type HomeV2ViewActions = {
   onEditManualSchedule: (id: string) => void;
   onAddSchedule: () => void;
   onStartReflection: () => void;
+  /** 머리 줄 귤 — 귤 모으기(출석 · 오늘의 미션) 시트를 연다. 없으면 귤을 그리지 않는다 */
+  onOpenMissions?: () => void;
   /** 편지 아이콘 — 알림함 종이 있던 자리다(2026-10-27). 어느 편지를 열지는 호출자가 정한다 */
   onOpenLetter: () => void;
   /** 알림 설정 이동 */

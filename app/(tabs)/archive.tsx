@@ -236,7 +236,6 @@ export default function Archive() {
         selectedDate={selectedDate}
         selectedDiary={selectedDiary}
         daySchedules={daySchedules}
-        monthly={monthly}
         listed={listed}
         markOf={markOf}
         view={view}
@@ -259,6 +258,10 @@ export default function Archive() {
         onQueryChange={setQuery}
         onOpenPeriod={() => setMonthPickerOpen(true)}
         onOpenDiary={open}
+        onOpenReport={() => {
+          track("report_opened", { source: "archive" });
+          router.push("/report");
+        }}
       />
     </TabScreen>
   );
