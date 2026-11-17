@@ -49,6 +49,19 @@ jest.mock("@/features/analytics", () => ({
   track: jest.fn(),
 }));
 
+/**
+ * 편지의 작은 일은 2026-11-17 팀 결정으로 숨겼다(`LETTER_ACTIONS_SHOWN`). 화면 코드는 그대로라 기존 테스트는 켠 상태로
+ * 돌리고, 숨긴 상태는 따로 확인한다.
+ */
+jest.mock("@/features/letter/model/letter", () => ({
+  __esModule: true,
+  ...jest.requireActual("@/features/letter/model/letter"),
+  LETTER_ACTIONS_SHOWN: true,
+}));
+const mockLetterModel = jest.requireMock<{ LETTER_ACTIONS_SHOWN: boolean }>(
+  "@/features/letter/model/letter",
+);
+
 const native = jest.requireMock("expo-notifications") as {
   getPermissionsAsync: jest.Mock;
   scheduleNotificationAsync: jest.Mock;
@@ -113,9 +126,26 @@ beforeEach(() => {
   jest.mocked(fetchLetter).mockResolvedValue({ ok: true, data: LETTER });
 });
 
-afterEach(() => setClock(SampleClock));
+afterEach(() => {
+  setClock(SampleClock);
+  mockLetterModel.LETTER_ACTIONS_SHOWN = true;
+});
 
 describe("편지 전체 화면", () => {
+  it("작은 일을 숨기는 동안은 서버가 보내도 고르기 칸이 없고, 첫 질문은 편지의 것이다(2026-11-17)", async () => {
+    mockLetterModel.LETTER_ACTIONS_SHOWN = false;
+    // 끄기 전에 골라 둔 일이 있는 편지 — 「해 봤는지부터 물어볼게요」로 바뀌지 않아야 한다
+    jest.mocked(fetchLetter).mockResolvedValue({ ok: true, data: choose(1, "점심 뒤", null) });
+    const r = await render(<LetterScreen />);
+    await waitFor(() =>
+      expect(r.getByText(keepWords(LETTER.tonightQuestion as string))).toBeTruthy(),
+    );
+
+    expect(r.queryByText(keepWords("오늘 해 볼 작은 일 하나 고를래요?"))).toBeNull();
+    expect(r.queryByText(keepWords("점심 뒤 한 바퀴 걷기"))).toBeNull();
+    expect(r.queryByText(/해 봤는지부터/)).toBeNull();
+  });
+
   it("읽는 부분을 그리고 · 열람을 남기고 · 연 경로를 센다", async () => {
     const r = await render(<LetterScreen />);
 

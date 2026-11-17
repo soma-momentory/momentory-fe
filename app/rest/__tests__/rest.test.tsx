@@ -60,6 +60,20 @@ jest.mock("@/features/analytics", () => ({
   track: jest.fn(),
 }));
 
+/**
+ * 바람카드는 2026-11-17 팀 결정으로 숨겼다(`WISH_CARDS_SHOWN`). 화면 코드는 그대로라 기존 테스트는 켠 상태로 돌리고,
+ * 숨긴 상태는 따로 확인한다.
+ */
+jest.mock("@/features/rest/model/cards", () => ({
+  __esModule: true,
+  ...jest.requireActual("@/features/rest/model/cards"),
+  WISH_CARDS_SHOWN: true,
+}));
+const mockCards = jest.requireMock<{ WISH_CARDS_SHOWN: boolean }>("@/features/rest/model/cards");
+afterEach(() => {
+  mockCards.WISH_CARDS_SHOWN = true;
+});
+
 beforeEach(async () => {
   mockParams = { date: "2026-07-27" };
   mockRewards = [];
@@ -135,6 +149,15 @@ describe("R1 · 쉼터 진입 — 있다는 사실만 말한다", () => {
     await fireEvent.press(getByLabelText("감각연못 열기"));
     // 누른 자리의 물결이 카드를 다 덮은 뒤에 간다(`RestCardPressable`)
     await waitFor(() => expect(jest.mocked(router.push)).toHaveBeenCalledWith("/rest/sense-pond"));
+  });
+
+  it("바람카드를 숨기는 동안은 바람카드 칸이 없고 쉼 콘텐츠만 눌린다(2026-11-17)", async () => {
+    mockCards.WISH_CARDS_SHOWN = false;
+    const { queryByText, queryByLabelText, getByLabelText } = await render(<Rest />);
+
+    expect(queryByText("바람카드")).toBeNull();
+    expect(queryByLabelText("바람카드 보기")).toBeNull();
+    expect(getByLabelText("감각연못 열기")).toBeTruthy();
   });
 
   it("바람카드가 첫 항목이고 카드 전체가 진입점이다", async () => {

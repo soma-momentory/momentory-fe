@@ -8,6 +8,7 @@ import { label as labelColor, layout, space } from "@/design/ds";
 import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
 import { emotionName } from "@/features/emotion/model/emotion";
 import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
+import { WISH_CARDS_SHOWN } from "@/features/rest/model/cards";
 import { useTodayContext } from "@/features/home/model/day";
 import { formatKoreanDateShort } from "@/lib/day";
 
@@ -44,7 +45,8 @@ const emotionNames = (keys: string[]): string =>
  * 나가는 두 길 모두 비우고 나간다.
  */
 export default function RetroDone() {
-  const wishCard = useRetro((s) => s.wishCard);
+  // 바람카드를 숨기는 동안(2026-11-17)은 카드가 없는 날과 같다 — 안내 한 줄 · 카드 · 「바람카드 보기」가 모두 빠진다
+  const wishCard = useRetro((s) => (WISH_CARDS_SHOWN ? s.wishCard : null));
   const resetRetro = useRetro((s) => s.reset);
   const { date: today } = useTodayContext();
 
