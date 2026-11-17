@@ -10,6 +10,9 @@ const count: Field<number> = (v) =>
 const integer: Field<number> = (v) =>
   typeof v === "number" && Number.isSafeInteger(v) ? v : undefined;
 const bool: Field<boolean> = (v) => (typeof v === "boolean" ? v : undefined);
+/** 꾸미기 아이템 id(「칸-아이디」) 또는 벗음(none) — 앱 안 카탈로그의 이름이라 사용자 글이 아니다 */
+const wardrobeItem: Field<string> = (v) =>
+  typeof v === "string" && /^((hat|eyes|clothes)-[a-z0-9-]{1,40}|none)$/.test(v) ? v : undefined;
 const week: Field<string> = (v) =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined;
 /** 밀리초 길이 — 음수·무한은 버리고 정수로 반올림한다 */
@@ -144,6 +147,7 @@ const screen = choice(
   "archive",
   "rest",
   "report",
+  "wardrobe",
   "my",
   "onboarding",
   "schedule_new",
@@ -333,6 +337,8 @@ export const events = {
   },
   letter_time_chosen: { time: choice("7:30", "8:30", "10:00", "custom"), notify: bool },
   letter_notification_scheduled: { kind: choice("morning", "action", "unread_night") },
+  /** 주간 리포트를 열었다 — 탭바에서 빠진 뒤(2026-11-17) 보관함 아래 버튼이 입구다 */
+  report_opened: { source: choice("archive") },
   report_week_selected: { week_start: week },
   weekly_report_viewed: { week_start: week },
   report_page_viewed: {
@@ -355,6 +361,24 @@ export const events = {
   withdrawal_submitted: {},
   withdrawal_completed: {},
   withdrawal_failed: {},
+  /** 바바 꾸미기(2026-11-17) — 꾸미기 탭(옷장)이 보였다 */
+  wardrobe_opened: { tangerines: count },
+  wardrobe_item_purchased: { item_id: wardrobeItem, price: count },
+  wardrobe_outfit_changed: { hat: wardrobeItem, eyes: wardrobeItem, clothes: wardrobeItem },
+  /** 귤 모으기(출석 · 오늘의 미션) 시트를 열었다 — 지금은 홈 머리 줄의 귤에서만 센다 */
+  tangerine_missions_opened: { source: choice("home") },
+  /** 옷장 첫 선물(귤 100)을 받았다 — 평생 한 번 */
+  wardrobe_welcome_claimed: {},
+  /** 귤 정산에서 새로 받았다 — quiet 는 위기 안내가 있던 날이라 알리지 않은 것 */
+  tangerine_rewarded: {
+    amount: count,
+    check_in: bool,
+    diary: bool,
+    schedules: bool,
+    rest: bool,
+    letter: bool,
+    quiet: bool,
+  },
 } as const;
 
 export type EventName = keyof typeof events;

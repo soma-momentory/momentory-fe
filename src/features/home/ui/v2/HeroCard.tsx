@@ -13,6 +13,7 @@ import { MaskingTape } from "@/components/ds/MaskingTape";
 import { Text, useEffectiveFontScale } from "@/components/ds/Text";
 import { homeV2, raisedShadow } from "@/design/ds";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
+import type { Outfit } from "@/features/wardrobe/model/types";
 
 import { Baba } from "./Baba";
 import { Rug } from "./Rug";
@@ -35,6 +36,8 @@ type Props = {
   hasUnreadLetter?: boolean;
   onStartReflection: () => void;
   onOpenWeatherInfo: () => void;
+  /** 바바가 입은 것 — 없으면 기본 바바 */
+  babaOutfit?: Outfit;
   /** 맨 위의 칸반 보드. 화면이 낮으면 `compact` 로 낮게, 그래도 모자라면 `headOnly` 로 머리만 그린다 */
   board?: (compact: boolean, headOnly: boolean) => ReactNode;
 };
@@ -52,6 +55,13 @@ const BABA_CANVAS_BOTTOM = 35;
 const BUBBLE_OVERLAP = 28;
 /** 말풍선을 바바 쪽으로 조금 더 내린다 — 머리 위에 말이 얹힌 느낌 */
 const BUBBLE_NUDGE = 8;
+/** 바바를 러그에서 이만큼 띄운다 — 붙어 있으면 러그에 묻혀 보인다(2026-11-17 사용자) */
+const BABA_LIFT = 14;
+/**
+ * 모자를 쓰면 머리 위로 이만큼(배율 1 기준) 더 올라온다 — 말풍선을 그만큼 올려 모자를 덮지 않게 한다.
+ * 가장 큰 모자(요리사 모자) 전체가 아니라 대부분의 모자가 들어가는 높이다.
+ */
+const HAT_ROOM = 34;
 /** 바닥 — 바바보다 넉넉히 넓어야 안정적으로 앉아 보인다 */
 const RUG = { width: 184, height: 62, edge: 6, grow: 1.14 } as const;
 /**
@@ -62,6 +72,12 @@ const COMPACT_BELOW = 540;
 /** 작은 화면 + 큰 글씨 — 주 버튼이 탭바에 잘리지 않게 보드는 머리만 남긴다. 창 높이라 판단이 되돌아가지 않는다 */
 const HEAD_ONLY = { below: 700, fontScale: 1.3 } as const;
 const CTA = { height: 62, fontSize: 24, lineHeight: 30, depth: 3 } as const;
+/** 천 라벨 글자 — `trailing` 에 글자를 붙일 때 같은 크기로 맞춘다 */
+export const REFLECTION_LABEL = {
+  fontFamily: homeV2.font.bold,
+  fontSize: CTA.fontSize,
+  lineHeight: CTA.lineHeight,
+} as const;
 /** 말풍선 문안(DESIGN.md 「홈 v2」 문안 표) — 읽지 않은 편지가 있는 동안만 편지 소식으로 바뀐다(2026-11-11) */
 export const BUBBLE_TEXT = {
   default: "오늘 하루는\n어땠어요?",
@@ -102,6 +118,7 @@ export function HeroCard({
   hasUnreadLetter = false,
   onStartReflection,
   onOpenWeatherInfo,
+  babaOutfit,
   board,
 }: Props) {
   const fontScale = useEffectiveFontScale();
@@ -120,16 +137,22 @@ export function HeroCard({
           BABA_SCALE.max,
           Math.max(BABA_SCALE.min, (babaFill * (sceneHeight + BUBBLE_OVERLAP)) / BABA_VISIBLE),
         );
-  // 바바가 최대 크기에 걸려 남는 높이만큼 말풍선을 내린다 — 꼬리가 늘 얼굴에 닿게. 자리는 그대로라 배치가 다시 돌지 않는다
+  // 머리 위로 올라오는 높이 — 바바를 러그에서 띄운 만큼과 모자 높이
+  const hatRoom = babaOutfit?.hat != null ? HAT_ROOM * babaScale : 0;
+  const rise = BABA_LIFT + hatRoom;
+  // 바바가 최대 크기에 걸려 남는 높이만큼 말풍선을 내린다 — 꼬리가 늘 얼굴에 닿게. 자리는 그대로라 배치가 다시 돌지 않는다.
+  // 바바가 올라온 만큼은 덜 내린다 — 말풍선이 모자를 덮지 않게
   const bubbleDrop =
-    sceneHeight === 0 ? 0 : Math.max(0, sceneHeight + BUBBLE_OVERLAP - BABA_VISIBLE * babaScale);
-  const bubbleOffset = bubbleDrop + (extra > 0 ? 0 : BUBBLE_NUDGE);
+    sceneHeight === 0
+      ? 0
+      : Math.max(0, sceneHeight + BUBBLE_OVERLAP - BABA_VISIBLE * babaScale - rise);
+  const bubbleOffset = bubbleDrop + (extra > 0 || hatRoom > 0 ? 0 : BUBBLE_NUDGE);
   // 바바는 장면 가운데에 앉는다 — 그 자리를 말풍선 그림의 좌표로 옮겨 꼬리 끝을 귀 사이 머리 위에 둔다
   const measured = bubbleBox.width > 0 && scene.width > 0;
   const tailX = measured
     ? BUBBLE_VIEW.left + ((scene.width / 2 - bubbleBox.x) / bubbleBox.width) * BUBBLE_VIEW.width
     : TAIL_TIP.fallbackX;
-  const headTop = talkHeight + sceneHeight - BABA_HEAD_TOP * babaScale;
+  const headTop = talkHeight + sceneHeight - BABA_HEAD_TOP * babaScale - rise;
   const tailY = measured
     ? BUBBLE_VIEW.top +
       ((headTop - TAIL_HEAD_GAP - bubbleOffset) / (bubbleBox.height + BUBBLE_PAPER_DROP)) *
@@ -266,10 +289,11 @@ export function HeroCard({
         </View>
         <View
           testID="studio-home-baba"
-          pointerEvents="none"
-          style={[styles.baba, { bottom: 8 - BABA_CANVAS_BOTTOM * babaScale }]}
+          pointerEvents="box-none"
+          style={[styles.baba, { bottom: 8 + BABA_LIFT - BABA_CANVAS_BOTTOM * babaScale }]}
         >
-          <Baba scale={babaScale} />
+          {/* 바바는 눌리지 않는 장식이다 — 옷장 입구는 머리 줄의 옷걸이 하나(2026-11-17 사용자) */}
+          <Baba scale={babaScale} outfit={babaOutfit} />
         </View>
       </View>
 
@@ -294,11 +318,17 @@ export function ReflectionButton({
   compact = false,
   disabled = false,
   style,
+  trailing,
+  accessibilityLabel,
 }: {
   color?: string;
   onPress: () => void;
   label?: string;
   testID?: string;
+  /** 글자 뒤에 붙는 것 — 옷장 「잠금 해제」의 귤 그림 · 값(2026-11-17) */
+  trailing?: ReactNode;
+  /** 낭독 이름 — 없으면 `label` */
+  accessibilityLabel?: string;
   /** 줄 안에 놓는 작은 라벨(쉼터 바람카드의 「했어요」) — 기본은 화면 폭 전체다 */
   compact?: boolean;
   disabled?: boolean;
@@ -310,7 +340,7 @@ export function ReflectionButton({
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
@@ -371,12 +401,15 @@ export function ReflectionButton({
                 />
               </Svg>
             </View>
-            <Text
-              style={[styles.ctaText, compact ? styles.ctaTextCompact : null]}
-              color={homeV2.color.white}
-            >
-              {label}
-            </Text>
+            <View style={styles.ctaRow}>
+              <Text
+                style={[styles.ctaText, compact ? styles.ctaTextCompact : null]}
+                color={homeV2.color.white}
+              >
+                {label}
+              </Text>
+              {trailing}
+            </View>
           </View>
         </>
       )}
@@ -451,6 +484,7 @@ const styles = StyleSheet.create({
   ctaDepthOff: { opacity: 0 },
   ctaFaceOff: { opacity: 0.4, transform: [{ translateY: CTA.depth }] },
   ctaCompact: { marginTop: 0, marginHorizontal: 0 },
+  ctaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   ctaFaceCompact: { minHeight: 44, paddingHorizontal: 22 },
   ctaTextCompact: { fontSize: 18, lineHeight: 24 },
   ctaText: {

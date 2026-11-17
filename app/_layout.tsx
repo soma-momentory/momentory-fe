@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import { RouteStatusBar } from "@/components/RouteStatusBar";
 
 import { background, motion } from "@/design/ds";
+import { TangerineCelebrationHost } from "@/features/wardrobe/ui/TangerineCelebrationHost";
 import { AppProviders } from "@/lib/providers";
 
 /**
@@ -52,6 +53,8 @@ export default function RootLayout() {
         */}
         <Stack.Screen name="retro" options={{ gestureEnabled: false }} />
       </Stack>
+      {/* 귤 축하 — 어느 화면 위에서든 터진다(라우트가 아니라 덮개) */}
+      <TangerineCelebrationHost />
     </AppProviders>
   );
 }

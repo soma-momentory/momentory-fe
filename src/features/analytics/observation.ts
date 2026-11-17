@@ -7,6 +7,7 @@ const routes: Record<string, ScreenName> = {
   "(tabs)/archive": "archive",
   "(tabs)/rest": "rest",
   "(tabs)/report": "report",
+  "(tabs)/wardrobe": "wardrobe",
   "(tabs)/my": "my",
   "home/schedule/new": "schedule_new",
   "home/schedule/[id]": "schedule_detail",

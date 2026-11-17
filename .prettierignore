@@ -40,3 +40,6 @@ docs/api/openapi.json
 .claude/skills/diagnose-activation/
 .claude/skills/diagnose-retention/
 .claude/skills/craft-experiment-design/
+
+# 바바 꾸미기 카탈로그 — scripts/gen-wardrobe.mjs 가 만든다(--check 로 대조).
+src/features/wardrobe/model/catalog.generated.ts

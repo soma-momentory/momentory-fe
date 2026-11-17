@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { layout, zIndex } from "@/design/ds";
+import { layout, space, zIndex } from "@/design/ds";
 import { useToast } from "@/lib/toast";
 
 import { Toast } from "./Toast";
@@ -36,7 +36,10 @@ export function ToastHost() {
         message={current.message}
         variant={current.variant}
         onDismiss={dismiss}
-        offsetBottom={layout.scrollClearance + Math.max(insets.bottom, layout.minBottomInset)}
+        // 탭바 바로 위에 붙으면 눈에 잘 안 띈다(2026-11-17 사용자) — 한 뼘(40) 더 올린다
+        offsetBottom={
+          layout.scrollClearance + space.xl4 + Math.max(insets.bottom, layout.minBottomInset)
+        }
       />
     </View>
   );

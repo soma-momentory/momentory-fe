@@ -15,6 +15,7 @@ export const tabBackgroundByTab = {
   쉼터: "warm-ivory",
   보관함: "warm-ivory",
   리포트: "warm-ivory",
+  꾸미기: "warm-ivory",
   마이: "warm-ivory",
 } as const satisfies Record<string, keyof typeof tabBackgroundAssets>;
 

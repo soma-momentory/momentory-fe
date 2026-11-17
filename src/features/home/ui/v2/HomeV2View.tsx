@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { BottomSheet } from "@/components/ds/BottomSheet";
 import { IconButton } from "@/components/ds/IconButton";
@@ -16,6 +16,7 @@ import {
 } from "@/features/home/model/presentation";
 import { musicTrack } from "@/features/music/model/tracks";
 import { MusicDialog } from "@/features/music/ui/MusicDialog";
+import { TangerineIcon } from "@/features/wardrobe/ui/Tangerine";
 
 import { DatePaper, datePaperExtraFor } from "./DatePaper";
 import { HeroCard } from "./HeroCard";
@@ -123,6 +124,18 @@ export function HomeV2View({
           <View style={[styles.header, { height: layout.minTouch + datePaperExtraFor(fontScale) }]}>
             <DatePaper today={model.today} fontScale={fontScale} />
             <View style={styles.headerActions}>
+              {actions.onOpenMissions != null ? (
+                // 귤 그림은 글리프가 아니라 그림이라 IconButton 대신 같은 크기의 누름 자리를 만든다. 숫자 · 점은 붙이지 않는다
+                <Pressable
+                  testID="home-v2-missions"
+                  onPress={actions.onOpenMissions}
+                  accessibilityRole="button"
+                  accessibilityLabel="귤 모으기"
+                  style={({ pressed }) => [styles.headerIcon, pressed ? styles.pressed : null]}
+                >
+                  <TangerineIcon size={homeV2.size.music.icon} />
+                </Pressable>
+              ) : null}
               <IconButton
                 name={playing != null ? "music" : "music-off"}
                 size={homeV2.size.music.icon}
@@ -153,6 +166,7 @@ export function HomeV2View({
               hasUnreadLetter={unread}
               onStartReflection={actions.onStartReflection}
               onOpenWeatherInfo={actions.onOpenWeatherInfo}
+              babaOutfit={model.babaOutfit}
               board={(compact, headOnly) => (
                 <>
                   <ScheduleColumn
@@ -286,12 +300,21 @@ const styles = StyleSheet.create({
     zIndex: 1,
     height: layout.minTouch,
     paddingLeft: 22,
-    paddingRight: space.md,
+    // 오른쪽 아이콘 셋을 화면 끝에서 조금 들인다(2026-11-17 사용자) — 날짜 종이(200)와 SE 에서도 한 줄에 든다
+    paddingRight: space.xl,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
   headerActions: { flexDirection: "row" },
+  // 귤 칸 — 옆의 IconButton 과 같은 44 칸
+  headerIcon: {
+    width: layout.minTouch,
+    height: layout.minTouch,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pressed: { opacity: 0.6 },
   dot: {
     position: "absolute",
     top: 9,

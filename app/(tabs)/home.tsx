@@ -19,6 +19,9 @@ import { toHomeWeatherView } from "@/features/home/ui/v2/weatherStickers";
 import { useMusic } from "@/features/music/model/music";
 import { useSettings } from "@/features/my/model/settings";
 import { weekDays, weekEnd } from "@/features/report/model/report";
+import { rewardTotal, useWardrobe } from "@/features/wardrobe/model/wardrobe";
+import { AttendanceSheet } from "@/features/wardrobe/ui/AttendanceSheet";
+import { TangerineMissionSheet } from "@/features/wardrobe/ui/TangerineMissionSheet";
 
 /** 홈의 서비스 어댑터. 조회·계측·라우팅은 Lab에 공유하지 않는다. */
 export default function Home() {
@@ -39,6 +42,13 @@ export default function Home() {
   const selectMusic = useMusic((state) => state.select);
   const toggleMusic = useMusic((state) => state.toggle);
   const skipMusic = useMusic((state) => state.skip);
+  const babaOutfit = useWardrobe((state) => state.outfit);
+  const attendanceDay = useWardrobe((state) => state.attendanceDay);
+  const attendanceRewards = useWardrobe((state) => state.attendanceRewards);
+  /** 출석 시트에 보일 귤 합 — 그날 처음 출석 귤을 받은 정산에서만 연다 */
+  const [attendanceTotal, setAttendanceTotal] = useState<number | null>(null);
+  const [missions, setMissions] = useState(false);
+  const todayRewards = useWardrobe((state) => state.todayRewards);
   const weather = useHomeWeather();
   const [weatherInfoFor, setWeatherInfoFor] = useState<HomeWeather | null>(null);
   const [weatherIntroReadyFor, setWeatherIntroReadyFor] = useState<number | null>(null);
@@ -54,6 +64,21 @@ export default function Home() {
   useFocusEffect(
     useCallback(() => {
       setHomeFocused(true);
+      if (authStatus === "authenticated") {
+        // 귤 정산 — 일기 · 일정 · 쉼터 · 편지는 서버가 확인해 준다. 그날 첫 출석이면 출석 시트를,
+        // 아니면 받은 게 있을 때만 귤 축하를 띄운다(위기 안내가 있던 날은 둘 다 없다).
+        // 미션을 끝낸 자리에서 이미 정산했으면 여기서는 받을 것이 없다(`settle`)
+        void useWardrobe
+          .getState()
+          .refresh()
+          .then((rewards) => {
+            if (rewards.some((r) => r.reason === "CHECK_IN")) {
+              setAttendanceTotal(rewardTotal(rewards));
+              return;
+            }
+            useWardrobe.getState().celebrate(rewards);
+          });
+      }
       if (authStatus === "authenticated" && letterUserId != null) {
         // 편지는 아침에 열린다 — 홈에 올 때마다 목록 첫 칸으로 점을 다시 정한다(PRD 4-1)
         void useLetters
@@ -109,15 +134,28 @@ export default function Home() {
           hasUnreadLetter: unreadLetter,
           musicTrackId,
           musicPlaying,
+          babaOutfit,
         }}
         actions={{
-          onToggleDone: toggleDone,
+          onToggleDone: (id) => {
+            const finishing = useDay.getState().schedules.find((x) => x.id === id)?.done === false;
+            void toggleDone(id).then(async (saved) => {
+              const visible = useDay.getState().schedules.filter((x) => !x.hidden);
+              if (!saved || !finishing || !visible.every((x) => x.done)) return;
+              // 오늘 일정을 다 끝냈다 — 서버가 확인하고 주면 그 자리에서 귤이 터진다
+              await useWardrobe.getState().settle();
+            });
+          },
           onMove: moveSchedule,
           onReorder: reorderSchedule,
           onHideCalendarSchedule: hide,
           onDeleteManualSchedule: remove,
           onEditManualSchedule: (id) => router.push(`/home/schedule/${id}`),
           onAddSchedule: () => router.push("/home/schedule/new"),
+          onOpenMissions: () => {
+            track("tangerine_missions_opened", { source: "home" });
+            setMissions(true);
+          },
           onStartReflection: () => {
             track("retro_cta_clicked", { source: "home" });
             router.push(hasDiaryOn(diaries, today) ? "/retro/talk" : "/retro/confirm");
@@ -156,6 +194,27 @@ export default function Home() {
         menuTopFromPageY={(pageY) => pageY}
         menuBottomInset={layout.tabBar + Math.max(insets.bottom, layout.minBottomInset)}
       />
+      {missions ? (
+        <TangerineMissionSheet
+          todayRewards={todayRewards}
+          attendanceDay={attendanceDay}
+          attendanceRewards={attendanceRewards}
+          onDismiss={() => setMissions(false)}
+          onGoWardrobe={() => {
+            setMissions(false);
+            // 꾸미기는 탭이다 — 쌓지 않고 바꾼다(`TabScreen`)
+            router.replace("/wardrobe");
+          }}
+        />
+      ) : null}
+      {attendanceTotal != null && attendanceRewards.length > 0 ? (
+        <AttendanceSheet
+          total={attendanceTotal}
+          day={attendanceDay}
+          rewards={attendanceRewards}
+          onDismiss={() => setAttendanceTotal(null)}
+        />
+      ) : null}
       {currentWeather != null && weatherView != null ? (
         <WeatherCreditSheet
           visible={weatherInfoFor === currentWeather}

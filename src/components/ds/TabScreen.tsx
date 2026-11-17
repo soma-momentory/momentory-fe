@@ -11,7 +11,7 @@ import { Screen } from "./Screen";
 import { TabPaperBackground } from "./TabPaperBackground";
 
 /**
- * 탭 다섯 칸이 공유하는 껍데기 — 배경·격자 + 본문 + 하단 탭.
+ * 탭 다섯 칸(홈 · 쉼터 · 보관함 · 꾸미기 · 마이)이 공유하는 껍데기 — 배경·격자 + 본문 + 하단 탭.
  *
  * 화면마다 `Screen` 과 `BottomNavigation` 을 각각 얹으면 탭바 아래 여백과
  * 좌우 20 이 화면 수만큼 갈린다. 껍데기를 하나로 두면 **화면은 자기 내용만** 그린다.
@@ -44,11 +44,12 @@ import { TabPaperBackground } from "./TabPaperBackground";
  */
 export type TabName = TabBackgroundTab;
 
-const ROUTES: Record<TabName, "/home" | "/rest" | "/archive" | "/report" | "/my"> = {
+const ROUTES: Record<TabName, "/home" | "/rest" | "/archive" | "/report" | "/wardrobe" | "/my"> = {
   홈: "/home",
   쉼터: "/rest",
   보관함: "/archive",
   리포트: "/report",
+  꾸미기: "/wardrobe",
   마이: "/my",
 };
 
@@ -57,21 +58,27 @@ const TABS: readonly TabItem<TabName>[] = [
   { name: "홈", icon: "home", label: "홈" },
   { name: "쉼터", icon: "heart", label: "쉼터" },
   { name: "보관함", icon: "folder-job", label: "보관함" },
-  { name: "리포트", icon: "document", label: "리포트" },
+  // 2026-11-17 리포트 자리를 꾸미기(옷장)에 줬다 — 주간 리포트는 보관함 아래 버튼으로 연다(`DESIGN.md` 「바바 꾸미기」)
+  { name: "꾸미기", icon: "hanger", label: "꾸미기" },
   { name: "마이", icon: "nav-my-page", label: "마이" },
 ];
 
 type Props = {
+  /** 밝힐 탭. 탭바에 없는 화면(주간 리포트)은 자기가 속한 탭(보관함)을 준다 */
   active: TabName;
+  /**
+   * 탭 안쪽 한 단계 아래 화면인가(보관함 → 주간 리포트). 참이면 밝힌 탭을 눌러도 그 탭 첫 화면으로 돌아간다
+   */
+  nested?: boolean;
   children: ReactNode;
   /** 시트·모달·메뉴·토스트 — 화면 전체를 덮어야 하는 것 */
   overlay?: ReactNode;
 };
 
-export function TabScreen({ active, children, overlay }: Props) {
+export function TabScreen({ active, nested = false, children, overlay }: Props) {
   const go = (tab: TabName) => {
-    // 자기 탭을 누르면 아무 일도 없다 — 같은 화면을 다시 열지 않는다
-    if (tab === active) return;
+    // 자기 탭을 누르면 아무 일도 없다 — 같은 화면을 다시 열지 않는다(안쪽 화면이면 그 탭 첫 화면으로)
+    if (tab === active && !nested) return;
     router.replace(ROUTES[tab]);
   };
 

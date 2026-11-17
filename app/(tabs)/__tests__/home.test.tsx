@@ -555,7 +555,8 @@ describe("하단 탭", () => {
     const { getByText, getAllByRole } = await render(<Home />);
 
     expect(getAllByRole("tab")).toHaveLength(5);
-    for (const tab of ["홈", "쉼터", "보관함", "리포트", "마이"]) {
+    // 2026-11-17 리포트 자리를 꾸미기에 줬다 — 주간 리포트는 보관함 아래 버튼으로 연다
+    for (const tab of ["홈", "쉼터", "보관함", "꾸미기", "마이"]) {
       expect(getByText(tab)).toBeTruthy();
     }
   });

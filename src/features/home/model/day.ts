@@ -74,7 +74,8 @@ type DayStore = {
    * 서버가 `emotion:null` 을 받으면 그 일정의 감정을 지우므로 **기기에서도 함께
    * 비운다** — 화면만 감정을 든 채로 두면 다음 `load()` 에 조용히 사라진다.
    */
-  toggleDone: (id: string) => void;
+  /** 서버가 답하면 끝난다 — 마친 뒤 귤 정산을 부르는 쪽(홈)이 기다린다. 서버가 거절하면 `false` */
+  toggleDone: (id: string) => Promise<boolean>;
   /**
    * `12-c` 감정 — **하나만 남는다.** 같은 것을 다시 누르면 해제.
    *
@@ -151,9 +152,9 @@ export const useDay = create<DayStore>((set, get) => ({
     await get().load();
   },
 
-  toggleDone: (id) => {
+  toggleDone: async (id) => {
     const before = get().schedules.find((x) => x.id === id);
-    if (before == null) return;
+    if (before == null) return false;
     const done = !before.done;
     // 켜든 끄든 감정은 남지 않는다 — 이 화면이 감정을 더 이상 묻지 않으므로(N7)
     // 서버에도 `null` 을 보낸다. 서버가 지우는 것을 기기가 그대로 비춘다
@@ -163,16 +164,16 @@ export const useDay = create<DayStore>((set, get) => ({
 
     set((s) => ({ schedules: replace(s.schedules, id, { done, emotions, doneAt }) }));
 
-    void putCompletion(id, done, null, before.source).then((result) => {
-      if (result.ok || !serverRefused(result.code)) return;
-      set((s) => ({
-        schedules: replace(s.schedules, id, {
-          done: before.done,
-          emotions: before.emotions,
-          doneAt: before.doneAt,
-        }),
-      }));
-    });
+    const result = await putCompletion(id, done, null, before.source);
+    if (result.ok || !serverRefused(result.code)) return result.ok;
+    set((s) => ({
+      schedules: replace(s.schedules, id, {
+        done: before.done,
+        emotions: before.emotions,
+        doneAt: before.doneAt,
+      }),
+    }));
+    return false;
   },
 
   selectEmotion: (id, emotion) => {

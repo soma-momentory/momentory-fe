@@ -17,6 +17,7 @@
     "typecheck:expo-lab": "npm run typecheck --workspace momentory-expo-lab",
     "lab:web": "npm run web --workspace momentory-expo-lab --",
     "lab:routes": "node expo-lab/scripts/gen-routes.mjs",
+    "gen:wardrobe": "node scripts/gen-wardrobe.mjs",
     "lab:skins": "node expo-lab/scripts/link-device-skins.mjs",
     "lab:verify": "node expo-lab/scripts/lab-verify.mjs",
     "test:lab-agent": "node --test \"expo-lab/server/__tests__/*.test.mjs\"",

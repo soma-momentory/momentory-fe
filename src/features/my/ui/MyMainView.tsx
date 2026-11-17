@@ -1,12 +1,16 @@
-import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { MaskingTape } from "@/components/ds/MaskingTape";
 import { PaperGroup, PaperRow, Text } from "@/components/ds";
 import { label as labelColor, space, status } from "@/design/ds";
 import { myPaper as paper } from "@/design/ds/myPaper";
 import { approvedDesign, type StudioDesign } from "@/design/studioDesign";
+import type { Outfit } from "@/features/wardrobe/model/types";
+import { BabaFigure } from "@/features/wardrobe/ui/BabaFigure";
 
 type Props = {
+  /** 바바가 입은 것(서버 옷장) — 없으면 기본 바바 */
+  babaOutfit?: Outfit;
   design?: StudioDesign;
   nickname: string;
   recordedDays: number;
@@ -29,7 +33,18 @@ type Props = {
 };
 
 /** 운영과 Lab이 같은 종이 카드·설정 행을 그린다. 값과 동작은 각 어댑터가 전달한다. */
+/**
+ * 동그라미 안에 얼굴이 오게 꾸민 바바(1200 × 1600 캔버스)를 키워 옮긴다. 예전 잘라 둔 그림(80 × 110 · 왼쪽 −7 · 위 6)과
+ * 같은 자리 · 크기다 — 캔버스에서 바바 몸은 x 205 · y 240 부터 폭 785 이다. 모자를 쓰면 동그라미 위로 조금 잘린다.
+ */
+const BABA_FACE = {
+  width: (1200 * 80) / 785,
+  left: -7 - (205 * 80) / 785,
+  top: 6 - (240 * 80) / 785,
+};
+
 export function MyMainView({
+  babaOutfit,
   design = approvedDesign,
   nickname,
   recordedDays,
@@ -103,11 +118,9 @@ export function MyMainView({
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            <Image
-              source={require("../../../../assets/home/v2/baba-composite.png")}
-              resizeMode="contain"
-              style={styles.babaFace}
-            />
+            <View style={styles.babaFace}>
+              <BabaFigure outfit={babaOutfit} width={BABA_FACE.width} />
+            </View>
           </View>
         </View>
         <View style={styles.profileRule} />
@@ -236,7 +249,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: paper.rule,
   },
-  babaFace: { position: "absolute", width: 80, height: 110, left: -7, top: 6 },
+  babaFace: { position: "absolute", left: BABA_FACE.left, top: BABA_FACE.top },
   profileRule: { marginTop: 12, borderTopWidth: 1, borderColor: paper.rule, borderStyle: "dashed" },
   profileStat: {
     flexDirection: "row",

@@ -25,6 +25,7 @@ import {
 } from "@/features/letter/model/letter";
 import { LetterPaper } from "@/features/letter/ui/LetterPaper";
 import { useProfile } from "@/features/my/model/settings";
+import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
 import { clock } from "@/lib/clock";
 
 /**
@@ -96,10 +97,24 @@ export default function LetterScreen() {
 
   // 열람은 **보고 있는 칸**만 — 미리 불러온 옆 칸은 연 것이 아니다
   const shown = kept[current];
+  /**
+   * 이번에 처음 연 편지가 서버에 남았는지 — 편지를 **다 읽고 이 화면을 나갈 때** 귤을 정산해 같은 귤 카드를 띄운다
+   * (2026-11-17). 읽는 동안에는 아무것도 끼어들지 않게 열 때 정산하지 않는다
+   */
+  const openings = useRef<Promise<boolean>[]>([]);
+  useEffect(() => {
+    const pending = openings.current;
+    return () => {
+      if (pending.length === 0) return;
+      void Promise.all(pending).then((saved) => {
+        if (saved.some(Boolean)) void useWardrobe.getState().settle();
+      });
+    };
+  }, []);
   useEffect(() => {
     if (shown == null || marked.current.has(shown.date)) return;
     marked.current.add(shown.date);
-    useLetters.getState().markOpened(shown);
+    openings.current.push(useLetters.getState().markOpened(shown));
     if (shown.date !== date) return;
     track("letter_opened", {
       source,
