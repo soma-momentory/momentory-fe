@@ -9,9 +9,11 @@ import { useDiary } from "@/features/diary/model/diary";
 import { useAuth } from "@/features/auth/model/auth";
 import { useDay } from "@/features/home/model/day";
 import { useHomeWeather } from "@/features/home/model/useHomeWeather";
+import { useWhatsNew } from "@/features/home/model/useWhatsNew";
 import type { Schedule } from "@/features/home/model/types";
 import { fetchLetters } from "@/features/letter/data/letterApi";
 import { useLetters } from "@/features/letter/model/letter";
+import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
 import { seedDiaries, testSchedules } from "@/testing/fixtures";
 
 jest.mock("expo-router", () => ({
@@ -24,6 +26,7 @@ jest.mock("@/features/analytics", () => ({
   track: jest.fn(),
 }));
 jest.mock("@/features/home/model/useHomeWeather", () => ({ useHomeWeather: jest.fn() }));
+jest.mock("@/features/home/model/useWhatsNew", () => ({ useWhatsNew: jest.fn() }));
 jest.mock("@/features/letter/data/letterApi", () => ({
   fetchLetters: jest.fn(async () => ({ ok: true, data: [] })),
   markLetterOpened: jest.fn(async () => ({ ok: true, data: null })),
@@ -45,6 +48,7 @@ beforeEach(() => {
     acceptIntro: jest.fn(async () => {}),
     dismissIntro: jest.fn(async () => {}),
   });
+  jest.mocked(useWhatsNew).mockReturnValue({ status: "none", dismiss: jest.fn() });
   // 이번 주 감정 줄은 일기에서 나온다 — store 기본값이 비어 있으니 샘플로 seed 한다
   // (운영은 `load()` 가 채운다 · 다른 diary 테스트와 같은 결)
   seedDiaries();
@@ -245,6 +249,48 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     ).toBeTruthy();
     await fireEvent.press(r.getByText("위치 허용하기"));
     expect(acceptIntro).toHaveBeenCalledTimes(1);
+  });
+
+  it("업데이트 소식을 닫은 뒤에야 출석 시트와 날씨 첫 안내가 차례로 뜬다", async () => {
+    useAuth.setState({ status: "authenticated" });
+    useLetters.getState().bindUser(7);
+    const refresh = jest.fn(async () => [{ reason: "CHECK_IN" as const, amount: 10 }]);
+    useWardrobe.setState({
+      refresh,
+      attendanceDay: 1,
+      attendanceRewards: [10, 10, 20, 20, 30, 40, 50],
+    });
+    jest.mocked(useHomeWeather).mockReturnValue({
+      status: "intro",
+      weather: null,
+      ownerUserId: 7,
+      acceptIntro: jest.fn(async () => {}),
+      dismissIntro: jest.fn(async () => {}),
+    });
+    const dismiss = jest.fn();
+    jest.mocked(useWhatsNew).mockReturnValue({ status: "open", dismiss });
+
+    const r = await render(<Home />);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+    });
+
+    expect(r.getByTestId("whats-new-sheet")).toBeTruthy();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(r.queryByText("오늘 날씨도 함께 볼까요?")).toBeNull();
+    await fireEvent.press(r.getByText("확인"));
+    expect(dismiss).toHaveBeenCalledTimes(1);
+
+    jest.mocked(useWhatsNew).mockReturnValue({ status: "none", dismiss });
+    await r.rerender(<Home />);
+
+    await waitFor(() => expect(r.getByTestId("attendance-sheet")).toBeTruthy());
+    expect(r.queryByTestId("whats-new-sheet")).toBeNull();
+    expect(r.queryByText("오늘 날씨도 함께 볼까요?")).toBeNull();
+
+    await fireEvent.press(r.getByText("확인"));
+    await waitFor(() => expect(r.getByText("오늘 날씨도 함께 볼까요?")).toBeTruthy());
+    expect(r.queryByTestId("attendance-sheet")).toBeNull();
   });
 
   it("이번 주 감정은 요일마다 한 칸이고, 이름을 낭독기에 준다", async () => {
