@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   // 프레임(TabScreen)의 좌우 패딩을 되돌린다 — 모눈 종이가 화면 끝까지 깔리고, 안쪽 여백은 v2 값을 쓴다
   root: { flex: 1, minHeight: 0, marginHorizontal: -layout.screenPadding },
   scroll: { flex: 1, minHeight: 0 },
-  scrollContent: { flexGrow: 1, paddingTop: space.xs, paddingBottom: space.md },
+  scrollContent: { flexGrow: 1, paddingTop: space.xs, paddingBottom: layout.tabCtaGap },
   // 면을 그리지 않는다 — 홈 배경이 곧 카드이고 안쪽 것들은 그 위에 놓인다
   page: { flex: 1 },
   header: {

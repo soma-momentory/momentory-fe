@@ -25,6 +25,7 @@ export function DesignViewport({ children }: { children: ReactNode }) {
   return (
     <View
       testID="design-viewport"
+      pointerEvents="box-none"
       style={styles.viewport}
       onLayout={({ nativeEvent: { layout } }) => {
         if (layout.width <= 0 || layout.height <= 0) return;
@@ -39,6 +40,7 @@ export function DesignViewport({ children }: { children: ReactNode }) {
         <SafeAreaInsetsContext.Provider value={safe}>
           <View
             testID="design-canvas"
+            pointerEvents="box-none"
             style={[
               styles.canvas,
               { width: DESIGN_WIDTH, height: size.height / scale, transform: [{ scale }] },

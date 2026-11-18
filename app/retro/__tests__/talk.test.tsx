@@ -231,6 +231,9 @@ describe("시작 — 감정 없이 마운트하면 서버가 첫 질문을 준�
       expect(r.getByText(/이미 회고를 마쳤어요/)).toBeTruthy();
       expect(r.getByText("홈으로 돌아가기")).toBeTruthy();
       expect(mockStart).not.toHaveBeenCalled();
+      // 버튼은 독이 아니라 탭바 자리 위에 선다 — 홈 「일기 작성하기」와 같은 자리다
+      expect(r.queryByTestId("ds-chat-dock")).toBeNull();
+      expect(r.getByTestId("tab-floor-spacer", { includeHiddenElements: true })).toBeTruthy();
     } finally {
       useDiary.setState({ diaries: [] });
     }

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -7,6 +7,7 @@ import { background, layout } from "@/design/ds";
 import type { TabBackgroundTab } from "@/design/tabBackgrounds";
 
 import { BottomNavigation, type TabItem } from "./BottomNavigation";
+import { DesignViewport, useDesignScale } from "./DesignViewport";
 import { Screen } from "./Screen";
 import { TabPaperBackground } from "./TabPaperBackground";
 
@@ -108,7 +109,66 @@ function UnderTab() {
   );
 }
 
+/**
+ * 탭이 없는 화면의 주 버튼을 **탭 화면의 주 버튼과 같은 자리 · 같은 크기**로 세운다(2026-11-18 · 사용자 요청).
+ *
+ * 탭 화면은 기기 폭에 맞춰 통째로 확대 · 축소되고, 탭바 높이는 글자 배율을 따라 자란다. 그래서 값을 계산하지
+ * 않고 **같은 틀에 보이지 않는 탭바를 실제로 깔아** 그 위에 버튼을 얹는다. 탭바가 바뀌어도 함께 따라간다.
+ *
+ * `onTopChange` 는 화면 바닥에서 버튼 윗변까지의 거리다 — 버튼 위에 다른 것을 앉힐 때 쓴다.
+ */
+export function TabFloor({
+  children,
+  onTopChange,
+}: {
+  children: ReactNode;
+  onTopChange: (fromBottom: number) => void;
+}) {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <DesignViewport>
+        <TabFloorColumn onTopChange={onTopChange}>{children}</TabFloorColumn>
+      </DesignViewport>
+    </View>
+  );
+}
+
+function TabFloorColumn({
+  children,
+  onTopChange,
+}: {
+  children: ReactNode;
+  onTopChange: (fromBottom: number) => void;
+}) {
+  const scale = useDesignScale();
+  const [height, setHeight] = useState(0);
+  // 배율은 틀의 폭을 잰 뒤에 정해진다 — 칸 높이가 그대로여도 다시 알린다
+  useEffect(() => {
+    if (height > 0) onTopChange(height * scale);
+  }, [height, scale, onTopChange]);
+
+  return (
+    <View style={styles.floor} pointerEvents="box-none">
+      <View pointerEvents="box-none" onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
+        {children}
+        <View
+          testID="tab-floor-spacer"
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.floorSpacer}
+        >
+          <BottomNavigation items={TABS} active="홈" onPress={() => undefined} />
+          <UnderTab />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  floor: { flex: 1, justifyContent: "flex-end" },
+  floorSpacer: { marginTop: layout.tabCtaGap, opacity: 0 },
   // 본문이 남은 높이를 다 쓰고, 탭바는 아래에 고정된다
   body: { flex: 1, minHeight: 0, paddingHorizontal: layout.screenPadding },
   underTab: { backgroundColor: background.tabBar },
