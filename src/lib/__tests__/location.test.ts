@@ -1,10 +1,13 @@
 import * as Location from "expo-location";
+import { Linking } from "react-native";
 
 import {
   LOCATE_TIMEOUT_MS,
+  canAskLocationAgain,
   getLocationPermission,
   isLocationServiceEnabled,
   locateRounded,
+  openLocationSettings,
   requestLocationPermission,
   roundCoordinate,
 } from "../location";
@@ -30,6 +33,27 @@ beforeEach(() => {
 });
 
 describe("권한", () => {
+  it("다시 물을 수 있는지 묻지 않고 읽고, 못 읽으면 false 다", async () => {
+    const permissions = jest.mocked(Location.getForegroundPermissionsAsync);
+    permissions.mockResolvedValueOnce({ status: "denied", canAskAgain: true } as never);
+    await expect(canAskLocationAgain()).resolves.toBe(true);
+
+    permissions.mockResolvedValueOnce({ status: "denied", canAskAgain: false } as never);
+    await expect(canAskLocationAgain()).resolves.toBe(false);
+
+    permissions.mockRejectedValueOnce(new Error("no module"));
+    await expect(canAskLocationAgain()).resolves.toBe(false);
+    expect(Location.requestForegroundPermissionsAsync).not.toHaveBeenCalled();
+  });
+
+  it("기기 설정을 열면 true, 열지 못하면 던지지 않고 false 다", async () => {
+    const open = jest.spyOn(Linking, "openSettings").mockResolvedValueOnce(undefined);
+    await expect(openLocationSettings()).resolves.toBe(true);
+
+    open.mockRejectedValueOnce(new Error("no settings"));
+    await expect(openLocationSettings()).resolves.toBe(false);
+  });
+
   it("권한 읽기는 묻지 않는다 — 상태를 그대로 옮긴다", async () => {
     for (const status of ["granted", "denied", "undetermined"] as const) {
       jest

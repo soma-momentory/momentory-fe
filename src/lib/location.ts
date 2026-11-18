@@ -21,6 +21,7 @@
  * 0.01° ≈ 1.1km 격자 — 날씨를 찾는 데는 이것으로 충분하다. 정밀도는 `Accuracy.Balanced` 그대로다
  * (`Low` 로 낮추는 것은 실기기 검증 뒤 — 계획 §4.7). 좌표를 로그에 남기지 않는다.
  */
+import { Linking } from "react-native";
 
 /** 권한 읽기의 결과 — 「다시 물을 수 있나」는 보지 않는다(거부면 다시 묻든 말든 숨긴다 · 계획 §4.6) */
 export type LocationPermission = "granted" | "denied" | "undetermined";
@@ -76,6 +77,31 @@ export async function requestLocationPermission(): Promise<"granted" | "denied" 
     return permission.granted ? "granted" : "denied";
   } catch {
     return "unavailable";
+  }
+}
+
+/**
+ * 거절한 권한을 OS 권한 창으로 다시 물을 수 있나 — **묻지 않고** 읽는다. iOS 는 한 번 거절하면
+ * 다시 물을 수 없고, Android 는 처음 거절한 뒤 한 번 더 물을 수 있다. 못 읽으면 `false` 다.
+ */
+export async function canAskLocationAgain(): Promise<boolean> {
+  try {
+    return (await load().getForegroundPermissionsAsync()).canAskAgain === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 기기 설정의 이 앱 화면을 연다. 다시 물을 수 없는 거절을 풀거나 허용을 끄는 길은 여기뿐이다.
+ * 열지 못하면 `false` 를 돌려주고 던지지 않는다.
+ */
+export async function openLocationSettings(): Promise<boolean> {
+  try {
+    await Linking.openSettings();
+    return true;
+  } catch {
+    return false;
   }
 }
 
