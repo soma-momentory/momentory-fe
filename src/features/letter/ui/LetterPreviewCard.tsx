@@ -125,3 +125,12 @@ const styles = StyleSheet.create({
   dogEar: { position: "absolute", top: 0, right: 0 },
   pressed: { backgroundColor: overlay.pressLight, borderRadius: radius.large },
 });
+
+/** 쪽지 모양 — 일기 상세의 「바바의 4컷」 쪽지(`LetterPictureNote`)가 같은 종이 · 테이프를 쓴다 */
+export const letterNoteStyle = {
+  slot: styles.slot,
+  note: styles.note,
+  tapeSlot: styles.tapeSlot,
+  tape: styles.tape,
+  pressed: styles.pressed,
+};

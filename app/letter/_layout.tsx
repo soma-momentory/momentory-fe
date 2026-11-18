@@ -5,7 +5,7 @@ import { background, motion } from "@/design/ds";
 import { useAuth } from "@/features/auth/model/auth";
 
 /**
- * 바바의 편지 — 전체 화면(`[date]`)과 편지 시각 고르기(`time`) · PRD 4-2 · 4-8.
+ * 바바의 편지 — 전체 화면(`[date]`) · 그림일기 크게 보기(`picture`) · 편지 시각 고르기(`time`) · PRD 4-2 · 4-8.
  *
  * 일기 상세(`app/diary/_layout.tsx`)처럼 **탭 위에 얹히는 스택**이다 — 닫으면 연 자리로 돌아간다.
  *

@@ -41,6 +41,7 @@ test("고른 작은 일 알림 본문에 고른 제목이 들어가지 않는다
     helplines: [],
     isNew: true,
     openedAt: null,
+    hasPicture: false,
   };
   jest.mocked(chooseLetterAction).mockResolvedValue({ ok: true, data: letter });
 

@@ -28,5 +28,23 @@ export const letterPaper = {
     portraitTilt: "2.5deg",
     dogEar: 22,
     dogEarFill: "#E6D2AC",
+    /** 일기 상세의 「바바의 4컷」 쪽지 — 편지 쪽지와 반대로 기울여 따로 붙인 두 장으로 보이게 한다 */
+    pictureTilt: "1.2deg",
+    /** 그 쪽지 안 그림의 너비(3:4) */
+    pictureWidth: 208,
+  },
+  /**
+   * 그림일기 공유 · 저장 카드(2026-11-18) — 인스타그램 스토리 크기(9:16)의 종이에 4컷 그림을 얹고, 아래에 **지금 꾸민
+   * 바바**와 한 줄을 단다. 화면 밖에 이 크기(pt)로 그려 두고 `export` 픽셀로 찍는다
+   */
+  card: {
+    width: 360,
+    height: 640,
+    /** 4컷 그림의 너비 — 3:4 라 높이는 4/3 배 */
+    pictureWidth: 300,
+    /** 꾸민 바바의 너비 — `BabaFigure` 는 3:4 캔버스다 */
+    babaWidth: 78,
+    exportWidth: 1080,
+    exportHeight: 1920,
   },
 } as const;

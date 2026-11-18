@@ -18,6 +18,12 @@ MVP 40화면(2026-08-06 상류 v2)을 **둘이 나눠 가기 위한** 목록이�
 - 소식은 앱 버전이 1.5.0 이상일 때만 뜬다. `app.config.ts` 를 1.5.0 으로 올리는 출시에 그림일기(FE #288)가 함께 나가는지 확인하고, 빠지면 `whatsNew.ts` 의 버전도 옮긴다
 - 1.5.0 빌드의 실기기에서 기존 계정(뜬다 · 닫으면 다시 안 뜬다)과 새 가입 계정(안 뜬다)을 확인한다
 
+## 2026-11-18 · 바바의 그림일기 — 남은 일
+
+- 새 네이티브 모듈 셋(`react-native-view-shot` · `expo-sharing` · `expo-media-library`) — 앱 새 빌드가 있어야 저장 · 공유가 돈다
+- 실기기에서 확인: 화면 밖 카드가 iOS · Android 모두 빈 이미지 없이 찍히는지 · Android 12 이하 쓰기 권한 창 · 공유 시트의 인스타그램 스토리
+- 출시 prebuild 뒤 `npm run check:ios-release`(새 문구 `NSPhotoLibraryAddUsageDescription`) · Android 매니페스트에 사진 읽기 권한이 없는지
+
 ## 2026-11-17 · 바람카드 · 편지의 작은 일 숨김 — 남은 일
 
 - 운영 서버의 `LETTER_ACTIONS_ENABLED` 는 켜 둔다(2026-11-18 결정 · 옛 앱은 지금처럼 보인다). 작은 일의 AI 비용을 없애려 할 때만

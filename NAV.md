@@ -37,7 +37,7 @@ app/<라우트>.tsx                 화면 — 라우트 파라미터를 읽고 
 
 ## 2. 라우트 — `app/`
 
-**라우트 58개** — 진입 2 · 소개 10 · 온보딩 12 · 탭 5 · 홈 시트 3 · 회고 5 · 편지 3 · 일기 1 · 쉼터 12 · 마이 5
+**라우트 59개** — 진입 2 · 소개 10 · 온보딩 12 · 탭 5 · 홈 시트 3 · 회고 5 · 편지 4 · 일기 1 · 쉼터 12 · 마이 5
 (`_layout` · `+native-intent` · `__tests__` 제외 · Lab 의 `expo-lab/src/shell/routes.generated.ts` 와 같다).
 화면 ID ↔ 라우트 매핑의 정본은 [`docs/PRODUCT.md`](docs/PRODUCT.md) 표다.
 
@@ -107,7 +107,7 @@ src/features/emotion/model/emotion.ts
                   ← **감정 12종의 도메인 정본** — id · 이름 · EmotionId. 색은 두지 않는다(디자인 몫).
                     번호는 서버 enum 두 벌과 맞물린다 — retro `EMOTION_KEYS`(소문자) · home `SCHEDULE_EMOTIONS`(대문자).
                     ⚠ 일정 enum 은 아직 `ANGRY_FRUSTRATED` 하나라 9 · 10 이 같은 코드다
-src/features/letter/{model/{letter,actionReminder}.ts, data/letterApi.ts, ui/{LetterPaper,LetterPreviewCard}.tsx}
+src/features/letter/{model/{letter,actionReminder}.ts, data/letterApi.ts, ui/{LetterPaper,LetterPreviewCard,LetterPictureNote,PictureShareCard,usePictureCard}.tsx}
                   ← 바바의 편지(`/api/v1/letters`) · 작은 일 고르기와 그 알림 한 번(고른 순간 예약)
 src/features/archive/{model/{archive,monthSchedules}.ts, ui/ArchiveView.tsx}
                   ← 보관함 — 세는 것만. 연속 일수를 세지 않는다
@@ -195,24 +195,25 @@ src/design/{studioDesign.ts, studioApproved.json}
 
 그 일을 하는 곳은 **여기 하나다.** 새로 같은 일을 하는 코드를 만들지 않는다. 대부분 던지지 않는다.
 
-| 파일                       | 무엇                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `src/lib/providers.tsx`    | Provider 스택 — 앱 전체를 감싸는 것은 여기만 고친다                                                    |
-| `src/lib/http.ts`          | 인증이 필요한 서버 호출 — Bearer 주입 · 타임아웃 · 안전 파싱 · `{ ok, error }`. 형태 검증은 `data/` 몫 |
-| `src/lib/config.ts`        | 서버 주소 · 앱 키(`.env` → `app.config.ts` extra). 화면 · 어댑터에 주소를 적지 않는다                  |
-| `src/lib/clock.ts`         | 시각 — SystemClock(04:00 하루 경계) · fixedClock(테스트)                                               |
-| `src/lib/day.ts`           | 날짜 표기(계산은 clock.ts)                                                                             |
-| `src/lib/time.ts`          | `"21:30"` ↔ `"밤 9:30"`                                                                                |
-| `src/lib/dayChange.ts`     | 하루가 넘어간 순간(04:00) — `onDayChange`. 타이머 + 복귀 둘 다로 잡는다. 날짜는 들고 있지 않다         |
-| `src/lib/appState.ts`      | 앱이 앞으로 돌아온 순간 — `onForeground`                                                               |
-| `src/lib/notifications.ts` | OS 알림 — 권한 · 예약 화해. 문안을 모른다 · 배지 숫자 없음 · 전부 로컬 알림                            |
-| `src/lib/calendar.ts`      | 기기 캘린더 — 권한 · 범위 조회 · externalId 정규화. 읽기만 한다. 플랫폼 차이는 여기서만                |
-| `src/lib/location.ts`      | 기기 위치(`expo-location` · 사용 중에만) — 좌표는 소수 둘째 자리까지 · 로그에 남기지 않는다            |
-| `src/lib/audio.ts`         | 소리(`expo-audio`) — 명상 음성 · 배경음악                                                              |
-| `src/lib/audioClaim.ts`    | 「지금은 내가 소리를 쓴다」 표시 — 명상 · 마이크가 쓰면 배경음악이 비켜 선다                           |
-| `src/lib/toast.ts`         | 토스트 — 끝난 일을 알리는 한 줄. `components/ds/ToastHost` 가 그린다. 문안을 모른다 · 큐 없음          |
-| `src/lib/links.ts`         | 앱 밖 웹 문서(약관 · 개인정보 처리방침) — 주소는 여기 하나 · 앱 안 브라우저로 연다                     |
-| `src/lib/keepWords.ts`     | 한글을 어절 단위로만 줄바꿈(단어 결합 문자) — 공용 `Text` 가 모든 글자에 건다 · 두 번 걸어도 같다      |
+| 파일                       | 무엇                                                                                                                                    |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/providers.tsx`    | Provider 스택 — 앱 전체를 감싸는 것은 여기만 고친다                                                                                     |
+| `src/lib/http.ts`          | 인증이 필요한 서버 호출 — Bearer 주입 · 타임아웃 · 안전 파싱 · `{ ok, error }`. 형태 검증은 `data/` 몫                                  |
+| `src/lib/config.ts`        | 서버 주소 · 앱 키(`.env` → `app.config.ts` extra). 화면 · 어댑터에 주소를 적지 않는다                                                   |
+| `src/lib/clock.ts`         | 시각 — SystemClock(04:00 하루 경계) · fixedClock(테스트)                                                                                |
+| `src/lib/day.ts`           | 날짜 표기(계산은 clock.ts)                                                                                                              |
+| `src/lib/time.ts`          | `"21:30"` ↔ `"밤 9:30"`                                                                                                                 |
+| `src/lib/dayChange.ts`     | 하루가 넘어간 순간(04:00) — `onDayChange`. 타이머 + 복귀 둘 다로 잡는다. 날짜는 들고 있지 않다                                          |
+| `src/lib/appState.ts`      | 앱이 앞으로 돌아온 순간 — `onForeground`                                                                                                |
+| `src/lib/notifications.ts` | OS 알림 — 권한 · 예약 화해. 문안을 모른다 · 배지 숫자 없음 · 전부 로컬 알림                                                             |
+| `src/lib/calendar.ts`      | 기기 캘린더 — 권한 · 범위 조회 · externalId 정규화. 읽기만 한다. 플랫폼 차이는 여기서만                                                 |
+| `src/lib/location.ts`      | 기기 위치(`expo-location` · 사용 중에만) — 좌표는 소수 둘째 자리까지 · 로그에 남기지 않는다                                             |
+| `src/lib/audio.ts`         | 소리(`expo-audio`) — 명상 음성 · 배경음악                                                                                               |
+| `src/lib/audioClaim.ts`    | 「지금은 내가 소리를 쓴다」 표시 — 명상 · 마이크가 쓰면 배경음악이 비켜 선다                                                            |
+| `src/lib/toast.ts`         | 토스트 — 끝난 일을 알리는 한 줄. `components/ds/ToastHost` 가 그린다. 문안을 모른다 · 큐 없음                                           |
+| `src/lib/links.ts`         | 앱 밖 웹 문서(약관 · 개인정보 처리방침) — 주소는 여기 하나 · 앱 안 브라우저로 연다                                                      |
+| `src/lib/keepWords.ts`     | 한글을 어절 단위로만 줄바꿈(단어 결합 문자) — 공용 `Text` 가 모든 글자에 건다 · 두 번 걸어도 같다                                       |
+| `src/lib/pictureCard.ts`   | 화면에 그린 카드를 이미지로 찍어 사진첩에 저장(쓰기 전용 권한) · 기본 공유 시트로 보내기 — 그림일기 카드. 문안을 모른다 · 던지지 않는다 |
 
 ## 7. 그 밖의 폴더
 

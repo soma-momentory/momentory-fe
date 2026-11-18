@@ -26,7 +26,8 @@ import { DIARY_BODY_MAX_LENGTH } from "@/features/diary/model/types";
 import { showToast } from "@/lib/toast";
 import { useDay, useTodayContext, visibleSchedules } from "@/features/home/model/day";
 import { fetchLetter } from "@/features/letter/data/letterApi";
-import { forgetLetterOf, useLetters } from "@/features/letter/model/letter";
+import { forgetLetterOf, useLetterPicture, useLetters } from "@/features/letter/model/letter";
+import { LetterPictureNote } from "@/features/letter/ui/LetterPictureNote";
 import { LetterPreviewCard } from "@/features/letter/ui/LetterPreviewCard";
 
 /** 사진과 조약돌 스티커로 남긴 일기. 바람 카드와 일정은 읽기 전용으로 이어진다. */
@@ -98,6 +99,10 @@ function DiaryDetailEntry({ id }: { id: string }) {
   useEffect(() => {
     if (useLetters.getState().summaries == null) void useLetters.getState().refresh();
   }, []);
+  // 그림일기 — **편지를 연 뒤에만** 보인다. 먼저 보이면 다음 날 아침 편지를 여는 재미가 사라진다(2026-11-18)
+  const pictureOf =
+    letter?.openedAt != null && letterBody?.hasPicture === true ? letterBody.id : null;
+  const { picture } = useLetterPicture(pictureOf);
   // 미리보기 글 — 남겨 둔 편지가 없을 때만 부른다. 못 받으면 날짜와 서명만 남는다
   const letterDate = letter?.date;
   useEffect(() => {
@@ -194,6 +199,12 @@ function DiaryDetailEntry({ id }: { id: string }) {
                 summary={letter}
                 letter={letterBody ?? null}
                 onPress={() => router.push(`/letter/${letter.date}?source=diary_detail`)}
+              />
+            ) : null}
+            {letter != null && picture != null ? (
+              <LetterPictureNote
+                picture={picture}
+                onPress={() => router.push(`/letter/picture?date=${letter.date}`)}
               />
             ) : null}
 

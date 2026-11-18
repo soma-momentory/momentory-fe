@@ -53,6 +53,7 @@ export const generatedRoutes: readonly GeneratedRoute[] = [
   { path: "/intro/talk", file: "app/intro/talk.tsx", group: null, params: [] },
   { path: "/letter/[date]", file: "app/letter/[date].tsx", group: null, params: ["date"] },
   { path: "/letter", file: "app/letter/index.tsx", group: null, params: [] },
+  { path: "/letter/picture", file: "app/letter/picture.tsx", group: null, params: [] },
   { path: "/letter/time", file: "app/letter/time.tsx", group: null, params: [] },
   { path: "/my/age", file: "app/my/age.tsx", group: null, params: [] },
   { path: "/my/gender", file: "app/my/gender.tsx", group: null, params: [] },

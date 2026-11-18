@@ -522,6 +522,11 @@ npm run check:ios-release   # 운영 introspect + 생성된 ios/app/Info.plist �
 > 없지만 `expo-image` 가 `ph://` 주소용 `PhotoLibraryAssetLoader`(`ios/Loaders/PhotoLibraryAssetLoader.swift` ·
 > `import Photos`)를 늘 등록해 바이너리가 사진 보관함 API 를 참조한다. 옛 문구(「사진을 첨부하거나 저장」)는
 > **없는 기능을 말해서** 바꿨다 — 지금은 Motion 처럼 「접근하지 않는다 · 구성 요소에 포함돼 표시될 뿐」이다.
+>
+> **그림일기 저장(2026-11-18)으로 `NSPhotoLibraryAddUsageDescription` 이 생겼다.** 편지의 그림일기 카드를 사진첩에
+> **저장만** 하므로 쓰기 전용 문구 하나를 더하고, 위 읽기 문구는 「사진을 읽지 않는다」로 고쳤다. `expo-media-library`
+> 플러그인은 붙이지 않는다 — Android 읽기 권한(사진 · 동영상 · 음악)까지 넣기 때문이다. 대신 `app.config.ts` 의
+> `android.blockedPermissions` 가 라이브러리 매니페스트의 읽기 권한을 지운다(Play 「사진 및 동영상 권한」 정책).
 
 > ✅ **두 서버의 API 가 다시 같다** (2026-11-08 BE dev → main 릴리스). 운영 `api.momentory.co.kr` = BE `main`,
 > 개발 `dev.momentory.co.kr` = BE `dev` 이고 둘의 경로가 같다(55개 · `/v3/api-docs` 대조). 팀 `.env` 는 개발 주소다.
