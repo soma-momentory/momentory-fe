@@ -3,10 +3,43 @@ import { StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/ds";
 import { homeV2, radius, restThemeCard } from "@/design/ds";
-import type { RestContent } from "@/features/rest/model/contents";
+import type { RestContent, RestContentId } from "@/features/rest/model/contents";
 import { keepWords } from "@/features/letter/model/letter";
 
 import { REST_THEMES } from "./restThemes";
+
+/**
+ * 콘텐츠의 세계가 보이는 창 — 장면 · 땅 · 주인공을 겹친다. 부모가 크기를 정하고 잘라 준다.
+ * 쉼터 탭의 테마 카드와 쉼 추천 시트(`RestPolaroid`)가 같은 그림을 쓴다.
+ */
+export function RestThemeArt({ id }: { id: RestContentId }) {
+  const theme = REST_THEMES[id];
+  return (
+    <>
+      {theme.Art != null ? <theme.Art /> : null}
+      {theme.scene != null ? (
+        <Image
+          source={theme.scene}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          contentPosition={theme.position == null ? "center" : { top: theme.position }}
+        />
+      ) : null}
+      {theme.ground != null ? (
+        <Image source={theme.ground} style={styles.ground} contentFit="cover" />
+      ) : null}
+      {theme.subject != null ? (
+        <View style={[styles.subjectSeat, { bottom: theme.subject.bottom }]}>
+          <Image
+            source={theme.subject.source}
+            style={{ width: theme.subject.width, height: theme.subject.height }}
+            contentFit="contain"
+          />
+        </View>
+      ) : null}
+    </>
+  );
+}
 
 /**
  * 쉼터 테마 카드 하나 — 위는 그 콘텐츠의 세계가 보이는 창, 아래는 이름 · 시간을 가운데 맞춘 종이.
@@ -14,34 +47,13 @@ import { REST_THEMES } from "./restThemes";
  * 글자는 그림이 아니라 종이 위에 있어 대비가 그림에 따라 흔들리지 않는다.
  */
 export function RestThemeCard({ item }: { item: RestContent }) {
-  const theme = REST_THEMES[item.id];
   return (
     <View
       testID={`rest-theme-card-${item.id}`}
       style={[styles.card, { backgroundColor: restThemeCard.paper[item.id] }]}
     >
       <View style={styles.window}>
-        {theme.Art != null ? <theme.Art /> : null}
-        {theme.scene != null ? (
-          <Image
-            source={theme.scene}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            contentPosition={theme.position == null ? "center" : { top: theme.position }}
-          />
-        ) : null}
-        {theme.ground != null ? (
-          <Image source={theme.ground} style={styles.ground} contentFit="cover" />
-        ) : null}
-        {theme.subject != null ? (
-          <View style={[styles.subjectSeat, { bottom: theme.subject.bottom }]}>
-            <Image
-              source={theme.subject.source}
-              style={{ width: theme.subject.width, height: theme.subject.height }}
-              contentFit="contain"
-            />
-          </View>
-        ) : null}
+        <RestThemeArt id={item.id} />
       </View>
       <View style={styles.caption}>
         {/* 이름이 길어지면 어절로 줄을 바꾼다 — 한글이 글자 가운데서 접히거나 잘리지 않게 */}
