@@ -16,6 +16,19 @@ import type { EmotionId } from "@/features/emotion/model/emotion";
  */
 export const DIARY_BODY_MAX_LENGTH = 500;
 
+/** 사건 연결을 포함한 현재 감정. 사건 번호는 서버가 부여한 순서를 유지한다. */
+export type DiaryEmotionEvent = {
+  eventId: number;
+  label: string;
+  summary: string;
+  emotions: EmotionId[];
+};
+
+export type DiaryEmotionSelection = {
+  events: DiaryEmotionEvent[];
+  unlinkedEmotions: EmotionId[];
+};
+
 export type Diary = {
   id: string;
   date: string;
@@ -30,6 +43,10 @@ export type Diary = {
    * 초기값은 그날 남은 감정이고, **고쳐도 원본 감정 기록은 그대로다**.
    */
   emotions: EmotionId[];
+  /** 서버가 준 현재 사건별 선택. 옛 서버·로컬 임시 일기는 없을 수 있다. */
+  emotionSelection?: DiaryEmotionSelection;
+  /** 현재 감정에서 최초 채팅 분류 감정이 빠졌는지. 모두 복원하면 false. */
+  emotionClassificationChanged?: boolean;
   /** 초안은 `baba`, 사용자가 고치면 `user` */
   authoredBy: "baba" | "user";
   editedAt: string | null;

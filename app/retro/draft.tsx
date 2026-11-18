@@ -1,3 +1,5 @@
+import { DiaryEmotionEditor } from "@/components/diary/DiaryEmotionEditor";
+import { useDiaryEmotions } from "@/features/diary/model/useDiaryEmotions";
 import { Redirect, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -62,6 +64,7 @@ import { emotionIdOfKey, useRetro } from "@/features/retro/model/retro";
  */
 export default function RetroDraft() {
   const diary = useRetro((s) => s.diary);
+  const emotionState = useDiaryEmotions(diary?.diaryId);
   const wishCard = useRetro((s) => s.wishCard);
   // 서버 회고 세션 id — 저장하는 일기에 실어 두면 나중에 서버 저장분을 되불러온다
   const sessionId = useRetro((s) => s.sessionId);
@@ -133,9 +136,9 @@ export default function RetroDraft() {
 
   // 일기 감정 태그 — 완료 응답이 준 '일기에서 드러난 감정 전체'(감정 탐색을 안 거쳐도 추출 감정이 온다).
   // 키를 id 로 되돌린다. 낙관적 일기가 저장 직후에도 이 감정을 바로 보여준다.
-  const emotions = (diary.emotions ?? [])
-    .map(emotionIdOfKey)
-    .filter((x): x is EmotionId => x != null);
+  const emotions =
+    emotionState.diary?.emotions ??
+    (diary.emotions ?? []).map(emotionIdOfKey).filter((x): x is EmotionId => x != null);
 
   const save = () => {
     if (saving.current) return;
@@ -149,6 +152,8 @@ export default function RetroDraft() {
       babaView: diary.reframedDiary,
       babaViewBasis: null,
       emotions,
+      emotionSelection: emotionState.diary?.emotionSelection,
+      emotionClassificationChanged: emotionState.diary?.emotionClassificationChanged,
       storyEmotion: null,
       startEmotion: null,
       weather,
@@ -219,7 +224,31 @@ export default function RetroDraft() {
               syncEnd();
             }}
           >
-            <DiaryPaperEntry date={today} emotions={emotions}>
+            <DiaryPaperEntry
+              date={today}
+              emotions={emotions}
+              emotionSelection={emotionState.diary?.emotionSelection}
+              emotionActions={
+                editing && emotionState.available ? (
+                  <>
+                    <Button
+                      label={emotionState.loading ? "감정 불러오는 중…" : "감정 수정하기"}
+                      variant="text"
+                      disabled={emotionState.loading}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        void emotionState.open();
+                      }}
+                    />
+                    {emotionState.failed ? (
+                      <Text variant="caption1" color={labelColor.neutral} accessibilityRole="alert">
+                        감정을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.
+                      </Text>
+                    ) : null}
+                  </>
+                ) : null
+              }
+            >
               {editing ? (
                 <>
                   <TextInput
@@ -285,6 +314,14 @@ export default function RetroDraft() {
           )}
         </View>
       </KeyboardAvoidingView>
+
+      {emotionState.editing && emotionState.diary?.emotionSelection != null ? (
+        <DiaryEmotionEditor
+          selection={emotionState.diary.emotionSelection}
+          onSave={emotionState.save}
+          onDismiss={emotionState.close}
+        />
+      ) : null}
     </Screen>
   );
 }

@@ -346,3 +346,9 @@ calendar_permission_result 가 남지 않는다. 다시 열린 마이가 기기 
 7. 실제 전송 속성에 민감 원문·감정·알림 설정 시각(편지 시각의 고정 칸 · custom 외)이 없는지 확인하고, 테스트 계정을 발표 차트에서 제외한 뒤 릴리스 빌드를 배포한다.
 
 SDK 설정 근거: [공식 React Native SDK 문서](https://amplitude.com/docs/sdks/analytics/react-native/react-native-sdk).
+
+## 2026-11-18 · 최초 감정 분류 수정 이력
+
+감정 수정 지표는 서버 `diaries.emotion_classification_changed = true`로 일기별 집계한다. 채팅으로 만든 일기만 대상이며 현재 저장된 감정 집합에 최초 분류 감정 중 하나라도 없으면 true, 모두 남아 있으면 false다. 최초 감정을 복원하면 false로 돌아간다. 사건 연결이 바뀌어도 감정 자체가 남아 있으면 false이며 추가만 하거나 사용자 추가분만 제거해도 false다. 변경 시각과 누적 수정 이력은 수집하지 않는다. 취소·저장 실패는 저장 상태를 바꾸지 않는다.
+
+원본은 `original_emotion_selection_json`, 현재 선택은 `emotion_selection_json`에 저장한다. 회고의 추출 결과는 바꾸지 않는다. 감정 수정용 Amplitude/Firebase 이벤트를 추가하지 않았으며 사건명·감정 값·본문은 분석 도구로 전송하지 않는다. 서버 집계는 이 기능 배포 뒤의 저장 이력을 반영한다.

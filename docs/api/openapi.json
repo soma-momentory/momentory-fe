@@ -1449,6 +1449,117 @@
         ]
       }
     },
+    "/api/v1/diaries/{id}/emotions": {
+      "put": {
+        "tags": [
+          "Diaries"
+        ],
+        "summary": "사건별 감정 수정 — 최초 분류는 보존",
+        "operationId": "updateEmotions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryEmotionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "저장 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 사건·감정",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  },
+                  "invalidEmotions": {
+                    "description": "invalidEmotions",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "감정과 사건을 확인해주세요."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "일기 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "DIARY_NOT_FOUND": {
+                    "description": "DIARY_NOT_FOUND",
+                    "value": {
+                      "code": "DIARY_NOT_FOUND",
+                      "message": "일기를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/diaries/by-retrospect/{retrospectId}": {
       "put": {
         "tags": [
@@ -2883,25 +2994,6 @@
               }
             }
           },
-          "404": {
-            "description": "세션을 찾을 수 없음",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "RETROSPECT_SESSION_NOT_FOUND": {
-                    "description": "RETROSPECT_SESSION_NOT_FOUND",
-                    "value": {
-                      "code": "RETROSPECT_SESSION_NOT_FOUND",
-                      "message": "회고 세션을 찾을 수 없습니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
           "409": {
             "description": "다른 작성 경로에서 오늘 일기를 이미 저장함",
             "content": {
@@ -2915,6 +3007,25 @@
                     "value": {
                       "code": "ALREADY_RETROSPECTED_TODAY",
                       "message": "오늘은 이미 회고를 완료했어요. 회고는 하루에 한 번만 할 수 있어요."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "세션을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "RETROSPECT_SESSION_NOT_FOUND": {
+                    "description": "RETROSPECT_SESSION_NOT_FOUND",
+                    "value": {
+                      "code": "RETROSPECT_SESSION_NOT_FOUND",
+                      "message": "회고 세션을 찾을 수 없습니다."
                     }
                   }
                 }
@@ -5649,25 +5760,6 @@
           "204": {
             "description": "편지가 한 통도 없음"
           },
-          "401": {
-            "description": "인증 필요",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "AUTHENTICATION_REQUIRED": {
-                    "description": "AUTHENTICATION_REQUIRED",
-                    "value": {
-                      "code": "AUTHENTICATION_REQUIRED",
-                      "message": "인증이 필요합니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
           "404": {
             "description": "편지를 만드는 사이 일기가 지워짐",
             "content": {
@@ -5681,6 +5773,25 @@
                     "value": {
                       "code": "LETTER_NOT_FOUND",
                       "message": "편지를 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
                     }
                   }
                 }
@@ -6857,8 +6968,98 @@
             "type": "string",
             "description": "기록 당시 위치의 날씨 예보 · 기온. 없는 기록은 생략",
             "example": "맑음 · 22℃"
+          },
+          "events": {
+            "type": "array",
+            "description": "사건별 현재 감정",
+            "items": {
+              "$ref": "#/components/schemas/EventResponse"
+            }
+          },
+          "unlinkedEmotions": {
+            "type": "array",
+            "description": "사건에 연결되지 않은 현재 감정 키",
+            "items": {
+              "type": "string"
+            }
+          },
+          "emotionClassificationChanged": {
+            "type": "boolean",
+            "description": "현재 감정에서 최초 채팅 분류 감정이 하나라도 빠졌는지. 원래 감정을 모두 복원하면 false"
           }
         }
+      },
+      "EventResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "label": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "emotions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "DiaryEmotionsRequest": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "description": "일기에 있는 모든 사건 번호와 선택 감정. 사건을 추가하거나 생략할 수 없음",
+            "items": {
+              "$ref": "#/components/schemas/EventSelection"
+            },
+            "maxItems": 20,
+            "minItems": 0
+          },
+          "unlinkedEmotions": {
+            "type": "array",
+            "description": "사건 없이 느낀 감정. 모두 해제하려면 빈 배열",
+            "items": {
+              "type": "string",
+              "pattern": "joy|calm|proud|affection|sad|anxious|angry|disappointed|ashamed|confused|sorry|exhausted"
+            },
+            "maxItems": 12,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "events",
+          "unlinkedEmotions"
+        ]
+      },
+      "EventSelection": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "emotions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "joy|calm|proud|affection|sad|anxious|angry|disappointed|ashamed|confused|sorry|exhausted"
+            },
+            "maxItems": 12,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "emotions",
+          "eventId"
+        ]
       },
       "DiaryUpdateRequest": {
         "type": "object",
