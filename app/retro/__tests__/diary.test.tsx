@@ -227,7 +227,10 @@ describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
     await save();
 
     expect(useDiary.getState().diaries[0]?.body).toBe(body);
-    expect(mockedRequest).not.toHaveBeenCalled();
+    expect(mockedRequest).toHaveBeenCalledTimes(1);
+    expect(mockedRequest).toHaveBeenCalledWith("GET", "/api/v1/diaries/77", undefined, {
+      timeoutMs: 8000,
+    });
   });
 
   it("서버 회고 세션 id 를 일기에 남긴다", async () => {
@@ -259,7 +262,10 @@ describe("저장 — 일기 한 장과 (있으면) 바람 카드", () => {
     useRetro.setState({ sessionId: 42 });
     await save();
 
-    expect(mockedRequest).not.toHaveBeenCalled();
+    expect(mockedRequest).toHaveBeenCalledTimes(1);
+    expect(mockedRequest).toHaveBeenCalledWith("GET", "/api/v1/diaries/77", undefined, {
+      timeoutMs: 8000,
+    });
   });
 
   it("고치면 사용자의 것이 된다", async () => {

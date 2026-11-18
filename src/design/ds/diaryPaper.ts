@@ -1,8 +1,10 @@
 import { fontFamily } from "./typography";
 
+const PAPER = "#FAF6EE";
+
 /** 2026-10-31 · 사용자와 조정한 사진·조약돌 일기. 두 일기 화면이 같은 값을 쓴다. */
 export const diaryPaper = {
-  paper: "#FAF6EE",
+  paper: PAPER,
   grainOpacity: 0.28,
   grainTile: 160,
   inset: 10,
@@ -11,6 +13,9 @@ export const diaryPaper = {
   photoWidth: "66%" as const,
   photoAspect: 2,
   photoGap: 27,
+  emotionChoicesMaxHeight: 360,
+  emotionCard: { surface: PAPER },
+  stickersPerEdge: 6,
   stickerSize: 28,
   stickerStep: 32,
   stickerTouchHeight: 44,

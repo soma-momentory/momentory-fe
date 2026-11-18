@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent, render, within } from "@testing-library/react-native";
 
 import { Text } from "@/components/ds";
 import { DiaryPaperEntry } from "../DiaryPaper";
@@ -110,4 +110,43 @@ it("감정 없는 날은 무감정 사진을 표시하고 감정 스티커를 �
   expect(r.queryByTestId("diary-emotion-caption")).toBeNull();
   expect(r.queryAllByRole("button")).toHaveLength(0);
   expect(r.getByText("오늘 남긴 문장.")).toBeTruthy();
+});
+
+it("조약돌을 누르면 같은 감정에 연결된 사건을 모두 표시한다", async () => {
+  const r = await render(
+    <DiaryPaperEntry
+      date="2026-11-18"
+      emotions={[1]}
+      emotionSelection={{
+        events: [
+          { eventId: 1, label: "친구와 만남", summary: "친구를 만났다", emotions: [1] },
+          { eventId: 2, label: "산책", summary: "공원을 걸었다", emotions: [1] },
+        ],
+        unlinkedEmotions: [1],
+      }}
+    >
+      <Text>오늘 남긴 문장.</Text>
+    </DiaryPaperEntry>,
+  );
+  await fireEvent.press(r.getByLabelText("기쁨 감정 스티커"));
+  expect(r.getByTestId("diary-emotion-caption")).toHaveTextContent(
+    "친구와 만남 - 기쁨\n산책 - 기쁨\n사건 없이 느낀 감정 - 기쁨",
+  );
+});
+
+it.each([6, 7, 12])("감정 %i개는 처음 6개를 사진 위, 나머지를 아래에 붙인다", async (count) => {
+  const emotions = Array.from({ length: count }, (_, i) => (i + 1) as EmotionId);
+  const r = await render(entry(emotions));
+  const top = within(r.getByTestId("diary-emotion-stickers-top"));
+  expect(top.getAllByRole("button")).toHaveLength(6);
+  expect(top.getByLabelText("기쁨 감정 스티커")).toBeTruthy();
+  expect(top.getByLabelText("불안 감정 스티커")).toBeTruthy();
+  if (count === 6) {
+    expect(r.queryByTestId("diary-emotion-stickers-bottom")).toBeNull();
+  } else {
+    const bottom = within(r.getByTestId("diary-emotion-stickers-bottom"));
+    expect(bottom.getAllByRole("button")).toHaveLength(count - 6);
+    await fireEvent.press(bottom.getByLabelText("분노 감정 스티커"));
+    expect(r.getByTestId("diary-emotion-caption")).toHaveTextContent("분노");
+  }
 });

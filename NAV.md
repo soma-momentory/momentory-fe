@@ -99,12 +99,14 @@ src/features/calendar/{model/*, data/{calendarSyncApi,syncStateStore}.ts}
 src/features/retro/{model/retro.ts, data/retroApi.ts,
                     ui/{RetroBaba,RetroBabaPeek,RetroDiaryBackground,RetroMethodChoices,
                         RetroStickerChoices,RetroScheduleSticker}.tsx}
-                  ← **대화는 서버가 주도한다** — store 는 세션 id · 버블 · 서버의 마지막 응답 · 완료 시 일기와 바람카드만
-src/features/diary/{model/{diary,types,selectors,deleteToast,useDiaryWeather}.ts, data/{diaryApi,diaryWeather}.ts}
+                  ← RetroStickerChoices는 회고 대화·일기 감정 수정·Lab이 함께 쓰는 둥근 선택지다.
+                    **대화는 서버가 주도한다** — store 는 세션 id · 버블 · 서버의 마지막 응답 · 완료 시 일기와 바람카드만
+src/features/diary/{model/{diary,types,selectors,deleteToast,useDiaryWeather,useDiaryEmotions,diaryEmotions}.ts, data/{diaryApi,diaryWeather}.ts}
                   ← 일기 + 바람카드(ActionCard) — 월별 목록 · 수정 · 삭제 · 카드 완료 · `GET /diaries/all`(전체 날짜).
+                    useDiaryEmotions = 두 상세 화면의 감정 조회·저장과 세션 경계. diaryEmotions = 사건-감정 캡션.
                     deleteToast = 일기 · 바람카드가 같은 삭제 문안을 쓴다. diaryWeather = 오늘 일기에 날씨를 남긴다(C6 `retro/draft` 만 · 상세는 묻지 않는다)
 src/features/emotion/model/emotion.ts
-                  ← **감정 12종의 도메인 정본** — id · 이름 · EmotionId. 색은 두지 않는다(디자인 몫).
+                  ← **감정 12종의 도메인 정본** — id · 이름 · EmotionId · 선택 안내용 세부 감정 60개(EMOTION_DETAILS). 색은 두지 않는다(디자인 몫).
                     번호는 서버 enum 두 벌과 맞물린다 — retro `EMOTION_KEYS`(소문자) · home `SCHEDULE_EMOTIONS`(대문자).
                     ⚠ 일정 enum 은 아직 `ANGRY_FRUSTRATED` 하나라 9 · 10 이 같은 코드다
 src/features/letter/{model/{letter,actionReminder}.ts, data/letterApi.ts, ui/{LetterPaper,LetterPreviewCard,LetterPictureNote,PictureShareCard,usePictureCard}.tsx}
@@ -167,10 +169,11 @@ src/components/onboarding/{OnboardingParts, IntroScreen, IntroArt, QuestionScree
                                     주 버튼은 홈의 천 라벨(`features/home/ui/v2/HeroCard` 의 `ReflectionButton`)을 빌려 쓴다
 src/components/my/BasicInfoEditor.tsx  ← 기본 정보 수정 화면들이 공유하는 껍데기(상단바 · 저장 · 실패 한 줄)
 src/components/archive/{DayScheduleList, DiaryPreviewCard, EmotionFilter}.tsx
-src/components/diary/{ActionCardSection, WishCardFields, DiaryPaper,
+src/components/diary/{ActionCardSection, WishCardFields, DiaryPaper, DiaryEmotionEditor,
                       WeatherCredit}.tsx + diaryPhotos.ts
                                   ← WishCardFields = 쉼터(R2)와 일기 상세가 같은 항목 · 같은 말로 바람카드를 그린다.
                                     DiaryPaper = 회고 · 직접 쓰기 · 일기 상세의 줄 공책
+                                    DiaryEmotionEditor = 채팅 직후·보관함에서 함께 쓰는 사건별·사건 없는 감정의 편집 시트
 src/components/weather/{WeatherIntroSheet, WeatherCreditSheet}.tsx   ← 날씨 첫 안내 · 출처 시트
 src/components/entry/{SplashLoader, SplashLogo}.tsx  src/components/RouteStatusBar.tsx
 src/components/rest/{RestActionCard, RestPaperSheet, RestCardPressable, RestPolaroid,

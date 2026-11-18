@@ -8,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -84,6 +85,8 @@ type Props = {
   /** 제목 줄 오른쪽에 ✕ 를 둔다 — 누르면 딤과 같은 `onDismiss` 다 */
   closable?: boolean;
   onDismiss: () => void;
+  /** 긴 편집 시트는 화면 안에 두고 내부 ScrollView가 남은 높이만 쓰게 한다. */
+  fitToScreen?: boolean;
 };
 
 /**
@@ -130,12 +133,19 @@ const useKeyboardInset = (): number => {
   return inset;
 };
 
-export function BottomSheet({ children, title, closable = false, onDismiss }: Props) {
+export function BottomSheet({
+  children,
+  title,
+  closable = false,
+  onDismiss,
+  fitToScreen = false,
+}: Props) {
   // 시트는 화면 아래에 붙으므로 **실제 하단 inset** 을 자기가 맡는다
   // (`Screen` 안에 들어가지 않는다). `layout.safeArea`(34)는 iOS 시안 값이라
   // 그대로 쓰면 Android·제스처 내비에서 여백이 뜨거나 시스템 UI 와 겹친다
   // (`metrics.ts` `layout` 주석 · `EXPORT_MANIFEST` §7).
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const keyboard = useKeyboardInset();
 
   // 키보드가 올라와 있으면 **그 자리가 바닥 여백을 대신한다** — 이미 화면 바닥까지의
@@ -182,7 +192,11 @@ export function BottomSheet({ children, title, closable = false, onDismiss }: Pr
           최소 여백을 둔다 — 시안의 34 는 iOS 홈 인디케이터 높이 그 자체다 */}
       <Animated.View
         testID="ds-bottom-sheet"
-        style={[styles.sheet, { paddingBottom: bottomPad, transform: [{ translateY: lift }] }]}
+        style={[
+          styles.sheet,
+          fitToScreen ? { maxHeight: height - insets.top - space.md } : null,
+          { paddingBottom: bottomPad, transform: [{ translateY: lift }] },
+        ]}
       >
         {/* 끌 수 있는 자리 — 손잡이와 제목 줄. 시트 위 여백까지 잡히게 위로 넓힌다 */}
         <View

@@ -2,9 +2,10 @@ import { useId, useState, type ReactNode } from "react";
 import { Image, Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
 import { EmotionPebble, Text } from "@/components/ds";
-import { useEffectiveFontScale } from "@/components/ds/Text";
 import { label, radius, space } from "@/design/ds";
 import { diaryPaper as paper } from "@/design/ds/diaryPaper";
+import { diaryEmotionCaption } from "@/features/diary/model/diaryEmotions";
+import type { DiaryEmotionSelection } from "@/features/diary/model/types";
 import { emotionName, type EmotionId } from "@/features/emotion/model/emotion";
 import type { Schedule } from "@/features/home/model/types";
 import { formatDiaryDate } from "@/lib/day";
@@ -52,12 +53,17 @@ export function DiaryPaperEntry({
   emotions,
   onEmotionPress,
   emotionChosen = false,
+  emotionSelection,
+  emotionActions,
   children,
 }: {
   date: string;
   emotions: readonly EmotionId[];
   onEmotionPress?: () => void;
   emotionChosen?: boolean;
+  emotionSelection?: DiaryEmotionSelection;
+  /** 사진 바로 아래에 두는 편집 버튼과 저장 상태 안내. */
+  emotionActions?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -70,7 +76,10 @@ export function DiaryPaperEntry({
         emotions={emotions}
         onEmotionPress={onEmotionPress}
         emotionChosen={emotionChosen}
+        emotionSelection={emotionSelection}
+        hasActions={emotionActions != null}
       />
+      {emotionActions != null ? <View style={styles.emotionActions}>{emotionActions}</View> : null}
       {children}
     </View>
   );
@@ -80,24 +89,27 @@ function DiaryPhoto({
   emotions,
   onEmotionPress,
   emotionChosen,
+  emotionSelection,
+  hasActions,
 }: {
   emotions: readonly EmotionId[];
   onEmotionPress?: () => void;
   emotionChosen: boolean;
+  emotionSelection?: DiaryEmotionSelection;
+  hasActions: boolean;
 }) {
   const uniqueEmotions = [...new Set(emotions)];
   const photo = diaryPhotoOf(uniqueEmotions);
   const [selected, setSelected] = useState<EmotionId | null>(null);
   const [width, setWidth] = useState(0);
-  const fontScale = useEffectiveFontScale();
-  const captionHeight = paper.caption.lineHeight * fontScale;
   const id = useId();
   const left = width * paper.stickerLeftRatio + paper.stickerLeftInset;
-  const columns = Math.max(1, Math.floor((width - left) / paper.stickerStep));
-  const rows = Math.max(1, Math.ceil(uniqueEmotions.length / columns));
-  // 글씨 확대나 감정 12개에서도 이름·스티커가 서로 겹치지 않게 행을 나눈다.
-  const many = uniqueEmotions.length > 3;
-  const extra = (rows - 1) * paper.stickerTouchHeight;
+  const topEmotions = uniqueEmotions.slice(0, paper.stickersPerEdge);
+  const bottomEmotions = uniqueEmotions.slice(paper.stickersPerEdge);
+  const stickerStep =
+    width > 0
+      ? Math.min(paper.stickerStep, (width - left) / paper.stickersPerEdge)
+      : paper.stickerStep;
   const onLayout = ({ nativeEvent: { layout } }: LayoutChangeEvent) => setWidth(layout.width);
   const image =
     photo != null ? (
@@ -118,89 +130,108 @@ function DiaryPhoto({
     <View
       style={[
         styles.photoArea,
-        { paddingTop: extra, marginTop: many ? captionHeight + space.sm : 0 },
-        photo == null
-          ? { minHeight: paper.stickerTouchHeight + extra + (many ? captionHeight : 0) }
-          : null,
+        hasActions ? { marginBottom: space.xs } : null,
+        photo == null ? { minHeight: paper.stickerTouchHeight } : null,
       ]}
       onLayout={onLayout}
       testID="diary-photo-area"
     >
-      {onEmotionPress != null && uniqueEmotions.length === 0 && !emotionChosen ? (
-        <Pressable
-          style={[styles.photo, styles.photoPlaceholder]}
-          onPress={onEmotionPress}
-          accessibilityRole="button"
-          accessibilityLabel="감정 선택"
-          accessibilityHint="감정을 고르면 이 자리에 사진이 나타나요"
-        >
-          <Text variant="title3Hand" color={label.alternative} accessible={false}>
-            ＋
-          </Text>
-          <Text variant="label1Hand" color={label.neutral} style={styles.placeholderText}>
-            오늘의 감정을 골라주세요
-          </Text>
-        </Pressable>
-      ) : photo != null ? (
-        onEmotionPress != null ? (
+      <View testID="diary-photo-frame">
+        {onEmotionPress != null && uniqueEmotions.length === 0 && !emotionChosen ? (
           <Pressable
-            style={styles.photo}
+            style={[styles.photo, styles.photoPlaceholder]}
             onPress={onEmotionPress}
             accessibilityRole="button"
-            accessibilityLabel={`감정 바꾸기, ${photo.emotion == null ? "무감정" : emotionName(photo.emotion)}`}
+            accessibilityLabel="감정 선택"
+            accessibilityHint="감정을 고르면 이 자리에 사진이 나타나요"
           >
-            {image}
-          </Pressable>
-        ) : (
-          <View style={styles.photo}>{image}</View>
-        )
-      ) : null}
-      {uniqueEmotions.length > 0 ? (
-        <>
-          <View
-            style={[
-              styles.stickers,
-              {
-                left,
-                top: photo == null ? space.sm + (many ? captionHeight : 0) : paper.stickerTop,
-                right: 0,
-              },
-            ]}
-          >
-            {uniqueEmotions.map((emotion) => (
-              <Pressable
-                key={emotion}
-                style={styles.sticker}
-                accessibilityRole="button"
-                accessibilityLabel={`${emotionName(emotion)} 감정 스티커`}
-                accessibilityHint="누르면 사진 위에 감정 이름이 표시돼요"
-                accessibilityState={{ selected: selected === emotion }}
-                onPress={() => setSelected((prev) => (prev === emotion ? null : emotion))}
-              >
-                <EmotionPebble id={emotion} size={paper.stickerSize} />
-              </Pressable>
-            ))}
-          </View>
-          <View
-            style={[
-              styles.caption,
-              { bottom: photo == null ? undefined : "100%", top: photo == null ? 0 : undefined },
-              many && photo != null ? { marginBottom: paper.stickerTouchHeight - space.sm } : null,
-            ]}
-            pointerEvents="none"
-          >
-            <Text
-              nativeID={id}
-              variant="label1Hand"
-              color={label.neutral}
-              style={styles.captionText}
-              accessibilityLiveRegion="polite"
-              testID="diary-emotion-caption"
-            >
-              {selected == null ? "" : emotionName(selected)}
+            <Text variant="title3Hand" color={label.alternative} accessible={false}>
+              ＋
             </Text>
-          </View>
-        </>
+            <Text variant="label1Hand" color={label.neutral} style={styles.placeholderText}>
+              오늘의 감정을 골라주세요
+            </Text>
+          </Pressable>
+        ) : photo != null ? (
+          onEmotionPress != null ? (
+            <Pressable
+              style={styles.photo}
+              onPress={onEmotionPress}
+              accessibilityRole="button"
+              accessibilityLabel={`감정 바꾸기, ${photo.emotion == null ? "무감정" : emotionName(photo.emotion)}`}
+            >
+              {image}
+            </Pressable>
+          ) : (
+            <View style={styles.photo}>{image}</View>
+          )
+        ) : null}
+        {[
+          { edge: "top", emotions: topEmotions },
+          { edge: "bottom", emotions: bottomEmotions },
+        ].map(({ edge, emotions: edgeEmotions }) =>
+          edgeEmotions.length > 0 ? (
+            <View
+              key={edge}
+              testID={`diary-emotion-stickers-${edge}`}
+              style={[
+                styles.stickers,
+                { left, right: 0 },
+                edge === "top"
+                  ? { top: photo == null ? space.sm : paper.stickerTop }
+                  : { bottom: -paper.stickerTouchHeight / 2 },
+              ]}
+            >
+              {edgeEmotions.map((emotion) => (
+                <Pressable
+                  key={emotion}
+                  style={[styles.sticker, { width: stickerStep }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${emotionName(emotion)} 감정 스티커`}
+                  accessibilityHint="누르면 사건과 연결된 감정이 표시돼요"
+                  accessibilityState={{ selected: selected === emotion }}
+                  onPress={() => setSelected((prev) => (prev === emotion ? null : emotion))}
+                >
+                  <EmotionPebble id={emotion} size={paper.stickerSize} />
+                </Pressable>
+              ))}
+            </View>
+          ) : null,
+        )}
+      </View>
+      {uniqueEmotions.length > 0 ? (
+        <View
+          style={
+            emotionSelection == null && bottomEmotions.length === 0
+              ? [
+                  styles.caption,
+                  {
+                    bottom: photo == null ? undefined : "100%",
+                    top: photo == null ? 0 : undefined,
+                  },
+                ]
+              : [
+                  styles.eventCaption,
+                  bottomEmotions.length > 0 ? { marginTop: paper.stickerTouchHeight / 2 } : null,
+                ]
+          }
+          pointerEvents="none"
+        >
+          <Text
+            nativeID={id}
+            variant="label1Hand"
+            color={label.neutral}
+            style={styles.captionText}
+            accessibilityLiveRegion="polite"
+            testID="diary-emotion-caption"
+          >
+            {selected == null
+              ? ""
+              : emotionSelection == null
+                ? emotionName(selected)
+                : diaryEmotionCaption(emotionSelection, selected)}
+          </Text>
+        </View>
       ) : null}
     </View>
   );
@@ -247,6 +278,7 @@ const styles = StyleSheet.create({
   entry: { paddingHorizontal: paper.inset },
   date: { ...paper.date, marginBottom: paper.dateGap },
   photoArea: { width: paper.photoWidth, alignSelf: "flex-end", marginBottom: paper.photoGap },
+  emotionActions: { alignItems: "flex-end", gap: space.xs, marginBottom: paper.photoGap },
   photo: { width: "100%", aspectRatio: paper.photoAspect },
   photoPlaceholder: {
     borderWidth: 1.5,
@@ -260,7 +292,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: { textAlign: "center" },
   photoImage: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
-  stickers: { position: "absolute", flexDirection: "row", flexWrap: "wrap", zIndex: 1 },
+  stickers: { position: "absolute", flexDirection: "row", zIndex: 1 },
   // 가로 32 간격은 승인 시안. 세로 터치 영역은 44, 조약돌 그림은 28이다.
   sticker: {
     width: paper.stickerStep,
@@ -274,6 +306,7 @@ const styles = StyleSheet.create({
     marginBottom: paper.captionGap,
   },
   captionText: paper.caption,
+  eventCaption: { marginTop: space.sm },
   memo: {
     alignSelf: "flex-start",
     width: paper.memo.width,

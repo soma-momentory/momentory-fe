@@ -221,3 +221,12 @@ OpenAPI 생성물은 이 기능이 반영된 서버에서 `npm run sync:api`로 
 V34의 `diaries.events_json`에는 사건 이름·요약과 실제 본문에 근거가 있는 감정만 보관한다. 별도 채팅 세션은 만들지 않는다.
 편지의 욕구·행동 추천 입력에서 저장된 사건을 사용하며, 사진 감정이나 무감정 선택을 모델 추론으로 덮지 않는다.
 본문 수정은 사건도 교체해 이전 본문의 사건을 추천에 재사용하지 않는다. 직접 작성·수정의 앱 대기 제한은 40초다.
+
+## 2026-11-18 · 사건별 감정 수정
+
+- `fetchDiaryEmotions`: `GET /api/v1/diaries/{id}`. 기존 일기 필드에 `events[{eventId,label,summary,emotions}]`, `unlinkedEmotions`, `emotionClassificationChanged`를 받는다. 목록에도 같은 필드가 있다.
+- `updateDiaryEmotions`: `PUT /api/v1/diaries/{id}/emotions`. 모든 사건 번호와 현재 감정 키 배열, 사건 없는 감정 배열을 함께 보낸다. 사건명·요약은 요청에 보내지 않는다. 빈 감정 배열 허용. 성공 응답은 현재 일기다.
+- 오류: 잘못된 사건 집합/감정 키/입력은 400 `INVALID_REQUEST`(`감정과 사건을 확인해주세요.`), 해석 불가능한 JSON/경로는 기존 400(`잘못된 요청입니다.`), 인증 없음 401 `AUTHENTICATION_REQUIRED`, 소유권 없음/일기 없음 404 `DIARY_NOT_FOUND`.
+- 본문 수정 응답의 새 사건/감정을 store에 반영하며, 감정 조회·저장 응답은 편집 중인 본문을 덮지 않는다. 사용자 세션이 바뀐 응답은 폐기한다.
+- 서버 V51·V52·V53과 API 배포가 먼저다. 변경 시각 없이 현재 변경 여부만 반환하며, 최초 감정을 모두 복원하면 false다. 현재 감정에 최초 감정이 하나라도 빠졌는지는 서버가 판별하며 클라이언트가 계산하지 않는다.
+- 스냅샷은 이 브랜치 BE의 `/v3/api-docs` 계약 테스트 산출물을 로컬 HTTP로 제공하고 `MOMENTORY_API=http://127.0.0.1:8097 npm run sync:api`로 반입했다. 테스트 전용 `/test-auth/**`는 제외했다. 이번 기능의 추가는 `PUT /api/v1/diaries/{id}/emotions`; 함께 반영된 기존 BE 드리프트는 회고 재개·옷장 API 추가와 삭제된 일기 날씨 기록 API다.

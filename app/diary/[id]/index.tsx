@@ -1,3 +1,5 @@
+import { DiaryEmotionEditor } from "@/components/diary/DiaryEmotionEditor";
+import { useDiaryEmotions } from "@/features/diary/model/useDiaryEmotions";
 import { AnalyticsResource } from "@/features/analytics/AnalyticsResource";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -39,6 +41,7 @@ export default function DiaryDetail() {
 
 function DiaryDetailEntry({ id }: { id: string }) {
   const diary = useDiary((s) => s.diaries.find((d) => d.id === id));
+  const emotionState = useDiaryEmotions(id);
   // 바람카드를 숨기는 동안(2026-11-17)은 카드 칸도, 삭제 확인의 「행동 카드도 같이 삭제돼요」도 말하지 않는다
   const card = useDiary((s) => (WISH_CARDS_SHOWN ? actionCardOf(s.actionCards, id ?? "") : null));
   const remove = useDiary((s) => s.remove);
@@ -159,7 +162,31 @@ function DiaryDetailEntry({ id }: { id: string }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <DiaryPaperEntry date={diary.date} emotions={diary.emotions}>
+          <DiaryPaperEntry
+            date={diary.date}
+            emotions={emotionState.diary?.emotions ?? diary.emotions}
+            emotionSelection={emotionState.diary?.emotionSelection ?? diary.emotionSelection}
+            emotionActions={
+              emotionState.available && editing ? (
+                <>
+                  <Button
+                    label={emotionState.loading ? "감정 불러오는 중…" : "감정 수정하기"}
+                    variant="text"
+                    disabled={saving || emotionState.loading}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      void emotionState.open();
+                    }}
+                  />
+                  {emotionState.failed ? (
+                    <Text variant="caption1" color={labelColor.neutral} accessibilityRole="alert">
+                      감정을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.
+                    </Text>
+                  ) : null}
+                </>
+              ) : null
+            }
+          >
             {editing ? (
               <>
                 <TextInput
@@ -274,6 +301,14 @@ function DiaryDetailEntry({ id }: { id: string }) {
             // 확인을 지났으므로 그 자리에서 지운다 — 되돌리기 줄은 없앴다(2026-08-21)
             router.replace("/archive");
           }}
+        />
+      ) : null}
+
+      {emotionState.editing && emotionState.diary?.emotionSelection != null ? (
+        <DiaryEmotionEditor
+          selection={emotionState.diary.emotionSelection}
+          onSave={emotionState.save}
+          onDismiss={emotionState.close}
         />
       ) : null}
     </Screen>

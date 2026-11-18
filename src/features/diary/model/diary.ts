@@ -4,6 +4,8 @@ import { create } from "zustand";
 import {
   deleteActionCard,
   deleteDiary,
+  fetchDiaryEmotions,
+  updateDiaryEmotions,
   isServerId,
   loadArchive,
   monthsBackFrom,
@@ -18,7 +20,7 @@ import { clock } from "@/lib/clock";
 
 import { notifyDeleteResult } from "./deleteToast";
 import { actionCardOf, actionCardOnDate } from "./selectors";
-import type { ActionCard, Diary } from "./types";
+import type { ActionCard, Diary, DiaryEmotionSelection } from "./types";
 import { DIARY_BODY_MAX_LENGTH } from "./types";
 
 /**
@@ -102,6 +104,8 @@ type DiaryStore = {
     babaView: string | null;
     babaViewBasis?: string | null;
     emotions: EmotionId[];
+    emotionSelection?: DiaryEmotionSelection;
+    emotionClassificationChanged?: boolean;
     storyEmotion?: EmotionId | null;
     startEmotion?: EmotionId | null;
     weather?: string | null;
@@ -190,8 +194,17 @@ type DiaryStore = {
    * 바꿨으므로 **로컬만** 고친다. 안 고치면 앱을 다시 켤 때까지 옛 줄이 보인다(`load` 는 한 번만 돈다).
    */
   setSmallAction: (cardId: string, title: string | null) => void;
+  loadEmotions: (id: string) => Promise<Diary | null>;
+  saveEmotions: (id: string, selection: DiaryEmotionSelection) => Promise<Diary | null>;
   reset: () => void;
 };
+
+/** 감정 저장/조회는 편집 중인 본문·날씨·바람 카드를 덮지 않는다. */
+const emotionFields = (diary: Diary) => ({
+  emotions: diary.emotions,
+  emotionSelection: diary.emotionSelection,
+  emotionClassificationChanged: diary.emotionClassificationChanged,
+});
 
 let seq = 0;
 const nextId = (prefix: string) => `${prefix}-local-${++seq}`;
@@ -308,6 +321,8 @@ export const useDiary = create<DiaryStore>((set, get) => ({
     babaView,
     babaViewBasis = null,
     emotions,
+    emotionSelection,
+    emotionClassificationChanged,
     storyEmotion = null,
     startEmotion = null,
     weather = null,
@@ -338,6 +353,8 @@ export const useDiary = create<DiaryStore>((set, get) => ({
             babaView,
             babaViewBasis,
             emotions,
+            emotionSelection,
+            emotionClassificationChanged,
             // 초안은 바바가 썼고, 고쳤으면 사용자의 것이 된다
             authoredBy: edited ? "user" : "baba",
             editedAt: edited ? now : null,
@@ -388,6 +405,43 @@ export const useDiary = create<DiaryStore>((set, get) => ({
       ),
     })),
 
+  loadEmotions: async (id) => {
+    if (!isServerId(id)) return null;
+    const still = sameSession();
+    const before = get().diaries.find((diary) => diary.id === id)?.emotionSelection;
+    try {
+      const result = await fetchDiaryEmotions(id);
+      if (!still() || result == null) return null;
+      set((state) => ({
+        diaries: state.diaries.map((diary) =>
+          diary.id === id && diary.emotionSelection === before
+            ? { ...diary, ...emotionFields(result) }
+            : diary,
+        ),
+      }));
+      return result;
+    } catch {
+      return null;
+    }
+  },
+
+  saveEmotions: async (id, selection) => {
+    if (!isServerId(id)) return null;
+    const still = sameSession();
+    try {
+      const result = await updateDiaryEmotions(id, selection);
+      if (!still() || result == null) return null;
+      set((state) => ({
+        diaries: state.diaries.map((diary) =>
+          diary.id === id ? { ...diary, ...emotionFields(result) } : diary,
+        ),
+      }));
+      return result;
+    } catch {
+      return null;
+    }
+  },
+
   saveBody: async (id, body) => {
     const diary = get().diaries.find((d) => d.id === id);
     if (diary == null || !body.trim() || body.length > DIARY_BODY_MAX_LENGTH) return "failed";
@@ -400,6 +454,14 @@ export const useDiary = create<DiaryStore>((set, get) => ({
             : await updateWrittenDiaryBody(id, body);
         if (!still()) return "stale";
         if (!result.ok) return "failed";
+        if ("diary" in result && result.diary != null) {
+          const saved = result.diary as Diary;
+          set((state) => ({
+            diaries: state.diaries.map((current) =>
+              current.id === id ? { ...current, ...emotionFields(saved) } : current,
+            ),
+          }));
+        }
       } catch {
         return still() ? "failed" : "stale";
       }

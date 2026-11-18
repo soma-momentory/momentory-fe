@@ -35,7 +35,7 @@ import { captureAnalytics } from "@/features/analytics";
  *   로만 묶인다. 그래서 일기를 먼저 세우고 `retrospectId → diary.id` 로 조인해
  *   프론트의 `diaryId` 를 채운다. 짝을 못 찾은 카드는 버린다.
  */
-import type { ActionCard, Diary } from "@/features/diary/model/types";
+import type { ActionCard, Diary, DiaryEmotionSelection } from "@/features/diary/model/types";
 import { isEmotionId, type EmotionId } from "@/features/emotion/model/emotion";
 import { DAY_BOUNDARY_HOUR } from "@/lib/clock";
 import { authedRequest, type HttpError } from "@/lib/http";
@@ -122,6 +122,37 @@ const asId = (v: unknown): string | null => {
   return null;
 };
 
+/** 사건 번호·라벨·감정이 온전할 때만 편집 가능한 데이터로 받는다. */
+const selectionOf = (v: Record<string, unknown>): DiaryEmotionSelection | undefined => {
+  if (!Array.isArray(v.events) || !Array.isArray(v.unlinkedEmotions)) return undefined;
+  const parse = (raw: unknown[]): EmotionId[] | null => {
+    const parsed = raw.map(emotionOf);
+    return parsed.some((emotion) => emotion == null) ? null : [...new Set(parsed as EmotionId[])];
+  };
+  const unlinkedEmotions = parse(v.unlinkedEmotions);
+  if (unlinkedEmotions == null) return undefined;
+  const events: DiaryEmotionSelection["events"] = [];
+  for (const raw of v.events) {
+    if (
+      !isObject(raw) ||
+      typeof raw.eventId !== "number" ||
+      !Number.isInteger(raw.eventId) ||
+      raw.eventId < 1 ||
+      typeof raw.label !== "string" ||
+      !raw.label.trim() ||
+      typeof raw.summary !== "string" ||
+      !raw.summary.trim() ||
+      !Array.isArray(raw.emotions) ||
+      events.some((event) => event.eventId === raw.eventId)
+    )
+      return undefined;
+    const emotions = parse(raw.emotions);
+    if (emotions == null) return undefined;
+    events.push({ eventId: raw.eventId, label: raw.label, summary: raw.summary, emotions });
+  }
+  return { events, unlinkedEmotions };
+};
+
 /**
  * `DiaryResponse` → `Diary`. 필수(id·original·createdAt)가
  * 어긋나면 `null`. `ordinal` 은 여기서 0 이고 창 전체를 모은 뒤 날짜순으로 매긴다.
@@ -152,6 +183,7 @@ export const toDiary = (v: unknown): Diary | null => {
     }
   }
 
+  const selection = selectionOf(v);
   return {
     id,
     date,
@@ -160,6 +192,12 @@ export const toDiary = (v: unknown): Diary | null => {
     babaView: null,
     babaViewBasis: null,
     emotions,
+    ...(selection != null
+      ? {
+          emotionSelection: selection,
+          emotionClassificationChanged: v.emotionClassificationChanged === true,
+        }
+      : {}),
     authoredBy: retrospectId == null ? "user" : "baba",
     editedAt: null,
     ordinal: 0,
@@ -513,7 +551,7 @@ export const writeDiary = async (
 export const updateWrittenDiaryBody = async (
   id: string,
   original: string,
-): Promise<DiaryWriteResult> => {
+): Promise<DiaryWriteResult & { diary?: Diary }> => {
   const result = await authedRequest<unknown>(
     "PUT",
     `${DIARIES_PATH}/${id}`,
@@ -522,5 +560,40 @@ export const updateWrittenDiaryBody = async (
       timeoutMs: WRITTEN_DIARY_TIMEOUT_MS,
     },
   );
-  return result.ok ? { ok: true } : { ok: false, code: mapWriteError(result.error) };
+  if (!result.ok) return { ok: false, code: mapWriteError(result.error) };
+  const diary = toDiary(result.data);
+  return { ok: true, ...(diary?.id === id ? { diary } : {}) };
+};
+
+/** 두 상세 화면이 쓰는 현재 사건별 감정. 이 조회로 편집 중인 본문을 덮지 않는다. */
+export const fetchDiaryEmotions = async (id: string): Promise<Diary | null> => {
+  const result = await authedRequest<unknown>("GET", `${DIARIES_PATH}/${id}`, undefined, {
+    timeoutMs: ARCHIVE_TIMEOUT_MS,
+  });
+  if (!result.ok) return null;
+  const diary = toDiary(result.data);
+  return diary?.id === id && diary.emotionSelection != null ? diary : null;
+};
+
+export const updateDiaryEmotions = async (
+  id: string,
+  selection: DiaryEmotionSelection,
+): Promise<Diary | null> => {
+  const keyOf = (emotion: EmotionId) =>
+    Object.entries(EMOTION_BY_KEY).find(([, value]) => value === emotion)![0];
+  const result = await authedRequest<unknown>(
+    "PUT",
+    `${DIARIES_PATH}/${id}/emotions`,
+    {
+      events: selection.events.map((event) => ({
+        eventId: event.eventId,
+        emotions: event.emotions.map(keyOf),
+      })),
+      unlinkedEmotions: selection.unlinkedEmotions.map(keyOf),
+    },
+    { timeoutMs: WRITE_TIMEOUT_MS },
+  );
+  if (!result.ok) return null;
+  const diary = toDiary(result.data);
+  return diary?.id === id && diary.emotionSelection != null ? diary : null;
 };

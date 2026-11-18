@@ -2,6 +2,8 @@ import { authedRequest } from "@/lib/http";
 
 import {
   deleteDiary,
+  fetchDiaryEmotions,
+  updateDiaryEmotions,
   isServerId,
   loadArchive,
   monthsBackFrom,
@@ -376,5 +378,49 @@ describe("쓰기 — 삭제·완료", () => {
     expect(isServerId("12")).toBe(true);
     expect(isServerId("d-local-3")).toBe(false);
     expect(isServerId("ac-sample-21")).toBe(false);
+  });
+});
+
+describe("사건별 감정 API 경계", () => {
+  const raw = {
+    id: 81,
+    original: "오늘 일기",
+    createdAt: "2026-07-27T12:00:00Z",
+    primaryEmotion: "joy",
+    emotions: ["joy"],
+    events: [{ eventId: 1, label: "산책", summary: "공원을 걸었다", emotions: ["joy"] }],
+    unlinkedEmotions: ["sad"],
+    emotionClassificationChanged: false,
+  };
+  it("사건·사건 없는 감정·변경 표시를 읽고 12종 키로 저장한다", async () => {
+    mockedRequest.mockResolvedValue({ ok: true, data: raw });
+    const diary = await fetchDiaryEmotions("81");
+    expect(diary?.emotionSelection).toEqual({
+      events: [{ eventId: 1, label: "산책", summary: "공원을 걸었다", emotions: [1] }],
+      unlinkedEmotions: [5],
+    });
+    await updateDiaryEmotions("81", {
+      events: [
+        { eventId: 1, label: "전송하지 않는 사건명", summary: "전송하지 않는 요약", emotions: [9] },
+      ],
+      unlinkedEmotions: [12],
+    });
+    expect(mockedRequest).toHaveBeenLastCalledWith(
+      "PUT",
+      "/api/v1/diaries/81/emotions",
+      { events: [{ eventId: 1, emotions: ["ashamed"] }], unlinkedEmotions: ["exhausted"] },
+      expect.anything(),
+    );
+  });
+  it("다른 일기나 잘못된 감정 응답을 저장 성공으로 취급하지 않는다", async () => {
+    for (const response of [
+      { ...raw, id: 82 },
+      { ...raw, events: [{ ...raw.events[0], emotions: ["unknown"] }] },
+      { ...raw, events: [raw.events[0], raw.events[0]] },
+    ]) {
+      mockedRequest.mockResolvedValue({ ok: true, data: response });
+      expect(await fetchDiaryEmotions("81")).toBeNull();
+      expect(await updateDiaryEmotions("81", { events: [], unlinkedEmotions: [] })).toBeNull();
+    }
   });
 });
