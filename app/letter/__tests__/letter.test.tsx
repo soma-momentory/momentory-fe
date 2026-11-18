@@ -6,6 +6,7 @@ import { useEffect as mockUseEffect } from "react";
 
 import LetterScreen from "../[date]";
 import LetterBox from "../index";
+import LetterPictureScreen from "../picture";
 import LetterTime from "../time";
 
 import { track } from "@/features/analytics";
@@ -15,6 +16,7 @@ import { useDay } from "@/features/home/model/day";
 import {
   chooseLetterAction,
   fetchLetter,
+  fetchLetterPicture,
   fetchLetters,
   markLetterOpened,
   saveLetterTime,
@@ -23,6 +25,8 @@ import {
 import { keepWords, useLetters } from "@/features/letter/model/letter";
 import { useProfile, useSettings } from "@/features/my/model/settings";
 import { fixedClock, SampleClock, setClock } from "@/lib/clock";
+import { savePictureCard, sharePictureCard } from "@/lib/pictureCard";
+import { useToast } from "@/lib/toast";
 
 let mockParams: Record<string, string> = {};
 
@@ -43,6 +47,11 @@ jest.mock("@/features/letter/data/letterApi", () => ({
   markLetterOpened: jest.fn(async () => true),
   chooseLetterAction: jest.fn(),
   saveLetterTime: jest.fn(async () => true),
+  fetchLetterPicture: jest.fn(async () => ({ ok: true, data: "data:image/jpeg;base64,AAAA" })),
+}));
+jest.mock("@/lib/pictureCard", () => ({
+  savePictureCard: jest.fn(async () => "ok"),
+  sharePictureCard: jest.fn(async () => "ok"),
 }));
 jest.mock("@/features/analytics", () => ({
   ...jest.requireActual("@/features/analytics"),
@@ -97,6 +106,7 @@ const LETTER: Letter = {
   helplines: [],
   isNew: true,
   openedAt: null,
+  hasPicture: false,
 };
 
 /** 서버가 고른 결과를 그대로 돌려준다 */
@@ -115,7 +125,7 @@ beforeEach(() => {
   native.getPermissionsAsync.mockResolvedValue({ granted: true, canAskAgain: true });
   useProfile.setState({ nickname: "하늘" });
   useDay.setState({ schedules: [] });
-  useLetters.setState({ userId: 7, summaries: null, letters: {} });
+  useLetters.setState({ userId: 7, summaries: null, letters: {}, pictures: {} });
   jest.mocked(fetchLetters).mockResolvedValue({
     ok: true,
     data: [
@@ -131,7 +141,73 @@ afterEach(() => {
   mockLetterModel.LETTER_ACTIONS_SHOWN = true;
 });
 
+/** 화면 밖 공유 카드의 그림과 바바 부품이 모두 읽힌 상태로 만든다 */
+async function loadCardImages(r: Awaited<ReturnType<typeof render>>) {
+  const images = await r.findAllByTestId("picture-card-image", { includeHiddenElements: true });
+  for (const image of images) await act(async () => fireEvent(image, "load"));
+}
+
 describe("편지 전체 화면", () => {
+  it("그림일기가 있으면 편지 글 아래에 그리고, 저장 · 공유는 꾸민 바바를 단 카드를 찍어 보낸다(2026-11-18)", async () => {
+    jest.mocked(fetchLetter).mockResolvedValue({ ok: true, data: { ...LETTER, hasPicture: true } });
+    const r = await render(<LetterScreen />);
+    await waitFor(() => expect(r.getByRole("button", { name: "사진첩에 저장" })).toBeTruthy());
+    expect(fetchLetterPicture).toHaveBeenCalledWith("12");
+    // 그림을 누르면 화면 가득 크게 본다
+    await fireEvent.press(r.getByRole("button", { name: "바바가 그린 어제 하루 크게 보기" }));
+    expect(router.push).toHaveBeenCalledWith("/letter/picture?date=2026-10-26");
+    // 공유 카드는 화면 밖에 그려 둔다 — 날짜와 한 줄이 있다
+    expect(
+      r.getByText("10월 26일 하루를\n그림으로 기억해요", { includeHiddenElements: true }),
+    ).toBeTruthy();
+
+    // 카드 그림이 다 읽히기 전에는 찍지 않는다 — 빈 카드가 저장되면 안 된다
+    await act(async () => fireEvent.press(r.getByRole("button", { name: "사진첩에 저장" })));
+    expect(savePictureCard).not.toHaveBeenCalled();
+
+    // 바바 부품은 원본 크기가 아니라 카드의 바바 자리(78 × 104)에 그린다
+    const [, babaLayer] = r.getAllByTestId("picture-card-image", { includeHiddenElements: true });
+    expect(babaLayer).toHaveStyle({ width: 78, height: 104 });
+
+    await loadCardImages(r);
+    await act(async () => fireEvent.press(r.getByRole("button", { name: "사진첩에 저장" })));
+    expect(savePictureCard).toHaveBeenCalledWith(expect.anything(), { width: 1080, height: 1920 });
+    expect(useToast.getState().current?.message).toBe("바바가 사진첩에 넣어 뒀어요");
+
+    await act(async () => fireEvent.press(r.getByRole("button", { name: "공유하기" })));
+    expect(sharePictureCard).toHaveBeenCalledTimes(1);
+  });
+
+  it("크게 보기 — 그림을 화면에 그리고 저장 · 공유를 바로 할 수 있다", async () => {
+    mockParams = { date: "2026-10-26" };
+    useLetters.getState().keep({ ...LETTER, hasPicture: true });
+    const r = await render(<LetterPictureScreen />);
+
+    expect(await r.findByLabelText("바바가 그린 그날 하루")).toBeTruthy();
+    await loadCardImages(r);
+    await act(async () => fireEvent.press(r.getByText("저장하기")));
+    expect(savePictureCard).toHaveBeenCalledWith(expect.anything(), { width: 1080, height: 1920 });
+    await act(async () => fireEvent.press(r.getByText("공유하기")));
+    expect(sharePictureCard).toHaveBeenCalledTimes(1);
+  });
+
+  it("크게 보기 — 그림을 못 받으면 한 줄로 말하고 버튼을 두지 않는다", async () => {
+    mockParams = { date: "2026-10-26" };
+    jest.mocked(fetchLetterPicture).mockResolvedValueOnce({ ok: false });
+    useLetters.getState().keep({ ...LETTER, hasPicture: true });
+    const r = await render(<LetterPictureScreen />);
+
+    expect(await r.findByText("그림을 불러오지 못했어요")).toBeTruthy();
+    expect(r.queryByText("저장하기")).toBeNull();
+  });
+
+  it("그림이 없는 편지에는 그림 자리도 버튼도 없다", async () => {
+    const r = await render(<LetterScreen />);
+    await waitFor(() => expect(r.getByText("10월 27일 아침")).toBeTruthy());
+    expect(fetchLetterPicture).not.toHaveBeenCalled();
+    expect(r.queryByRole("button", { name: "사진첩에 저장" })).toBeNull();
+  });
+
   it("작은 일을 숨기는 동안은 서버가 보내도 고르기 칸이 없고, 첫 질문은 편지의 것이다(2026-11-17)", async () => {
     mockLetterModel.LETTER_ACTIONS_SHOWN = false;
     // 끄기 전에 골라 둔 일이 있는 편지 — 「해 봤는지부터 물어볼게요」로 바뀌지 않아야 한다

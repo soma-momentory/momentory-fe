@@ -144,3 +144,16 @@ jest.mock("@/lib/keepWords", () => ({
   ...jest.requireActual("@/lib/keepWords"),
   keepWordsIn: (children: unknown) => children,
 }));
+
+// 그림일기 카드 저장 · 공유(`src/lib/pictureCard.ts`) — 네이티브 모듈이라 테스트에서는 대역으로 바꾼다
+jest.mock("react-native-view-shot", () => ({
+  captureRef: jest.fn(async () => "file:///tmp/picture-card.jpg"),
+}));
+jest.mock("expo-media-library/legacy", () => ({
+  requestPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  saveToLibraryAsync: jest.fn(async () => undefined),
+}));
+jest.mock("expo-sharing", () => ({
+  isAvailableAsync: jest.fn(async () => true),
+  shareAsync: jest.fn(async () => undefined),
+}));

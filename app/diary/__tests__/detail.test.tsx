@@ -5,7 +5,7 @@ import DiaryDetail from "../[id]/index";
 
 import { actionCardOf, useDiary } from "@/features/diary/model/diary";
 import { authedRequest } from "@/lib/http";
-import { fetchLetter } from "@/features/letter/data/letterApi";
+import { fetchLetter, fetchLetterPicture } from "@/features/letter/data/letterApi";
 import { keepWords, useLetters } from "@/features/letter/model/letter";
 import { clock } from "@/lib/clock";
 import { getLocationPermission, locateRounded, requestLocationPermission } from "@/lib/location";
@@ -24,6 +24,7 @@ jest.mock("expo-router", () => ({
 jest.mock("@/features/letter/data/letterApi", () => ({
   fetchLetters: jest.fn(async () => ({ ok: true, data: [] })),
   fetchLetter: jest.fn(async () => ({ ok: false })),
+  fetchLetterPicture: jest.fn(async () => ({ ok: true, data: "data:image/jpeg;base64,AAAA" })),
 }));
 jest.mock("@/features/auth/model/auth", () => ({
   ...jest.requireActual("@/features/auth/model/auth"),
@@ -409,6 +410,7 @@ describe("A3 · 바바의 편지 칸(2026-10-27)", () => {
         helplines: [],
         isNew: true,
         openedAt: null,
+        hasPicture: false,
       },
     });
     const r = await render(<DiaryDetail />);
@@ -418,6 +420,47 @@ describe("A3 · 바바의 편지 칸(2026-10-27)", () => {
     expect(r.getByTestId("letter-entry-dogear")).toBeTruthy();
     await fireEvent.press(r.getByRole("button", { name: /^바바의 편지 열기/ }));
     expect(router.push).toHaveBeenCalledWith(`/letter/${date()}?source=diary_detail`);
+  });
+
+  const pictureLetter = (openedAt: string | null) => ({
+    id: "12",
+    date: date(),
+    status: "READY" as const,
+    quote: "생각보다 괜찮았어",
+    insight: "준비한 만큼 말이 나온 날이었을지도 몰라요.",
+    tonightQuestion: null,
+    actions: [],
+    helplines: [],
+    isNew: false,
+    openedAt,
+    hasPicture: true,
+  });
+
+  it("편지를 연 뒤에는 「바바의 4컷」 쪽지가 따로 붙고, 누르면 크게 본다", async () => {
+    const openedAt = "2026-10-27T00:00:00Z";
+    useLetters.setState({
+      summaries: [{ id: "12", date: date(), isNew: false, openedAt }],
+      letters: { [date()]: pictureLetter(openedAt) },
+      pictures: {},
+    });
+    const r = await render(<DiaryDetail />);
+
+    await fireEvent.press(await r.findByRole("button", { name: "바바의 4컷 크게 보기" }));
+    expect(r.getByText("바바의 4컷")).toBeTruthy();
+    expect(router.push).toHaveBeenCalledWith(`/letter/picture?date=${date()}`);
+  });
+
+  it("아직 안 연 편지의 그림은 일기 상세에서 먼저 보이지 않는다", async () => {
+    useLetters.setState({
+      summaries: [{ id: "12", date: date(), isNew: true, openedAt: null }],
+      letters: { [date()]: pictureLetter(null) },
+      pictures: {},
+    });
+    const r = await render(<DiaryDetail />);
+
+    expect(await r.findByText("바바의 편지")).toBeTruthy();
+    expect(r.queryByText("바바의 4컷")).toBeNull();
+    expect(fetchLetterPicture).not.toHaveBeenCalled();
   });
 
   it("편지 내용을 못 받아도 칸은 남는다 — 날짜와 서명만", async () => {
