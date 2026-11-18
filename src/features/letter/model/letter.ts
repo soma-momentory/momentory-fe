@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 
 import type { Diary } from "@/features/diary/model/types";
@@ -34,10 +35,14 @@ type LetterStore = {
    * 화면은 이걸 먼저 그리고 뒤에서 한 번 더 불러 바꿔 끼운다.
    */
   letters: Record<string, Letter>;
+  /** 받아 온 그림일기(편지 id → `data:` 주소) — 편지 · 일기 상세 · 크게 보기가 한 번 받은 것을 함께 쓴다 */
+  pictures: Record<string, string>;
   bindUser: (userId: number) => void;
   reset: () => void;
   refresh: () => Promise<void>;
   keep: (letter: Letter) => void;
+  /** 그림일기를 받아 남긴다 — 받았는지 돌려준다. 이미 있으면 다시 부르지 않는다 */
+  loadPicture: (letterId: string) => Promise<boolean>;
   /** 열었다 — 목록의 점을 바로 끄고 서버에 처음 연 시각을 남긴다 */
   /** 처음 연 것을 서버에 남긴다 — 서버에 닿았는지 돌려준다(이미 연 편지면 거짓). 귤 정산은 화면을 나갈 때 한다 */
   markOpened: (letter: Pick<Letter, "id" | "date" | "openedAt">) => Promise<boolean>;
@@ -47,12 +52,25 @@ export const useLetters = create<LetterStore>((set, get) => ({
   userId: null,
   summaries: null,
   letters: {},
+  pictures: {},
 
   bindUser: (userId) => {
-    if (get().userId !== userId) set({ userId, summaries: null, letters: {} });
+    if (get().userId !== userId) set({ userId, summaries: null, letters: {}, pictures: {} });
   },
 
-  reset: () => set({ userId: null, summaries: null, letters: {} }),
+  reset: () => set({ userId: null, summaries: null, letters: {}, pictures: {} }),
+
+  loadPicture: async (letterId) => {
+    if (get().pictures[letterId] != null) return true;
+    const userId = get().userId;
+    const result = await letterApi().fetchLetterPicture(letterId);
+    if (!result.ok) return false;
+    // 받는 사이 계정이 바뀌었으면 남기지 않는다
+    if (get().userId === userId) {
+      set((s) => ({ pictures: { ...s.pictures, [letterId]: result.data } }));
+    }
+    return true;
+  },
 
   keep: (letter) => set((s) => ({ letters: { ...s.letters, [letter.date]: letter } })),
 
@@ -88,6 +106,29 @@ export const useLetters = create<LetterStore>((set, get) => ({
   },
 }));
 
+/** 이 편지의 그림일기 — `letterId` 가 `null` 이면 부르지 않는다. 못 받으면 `failed` 가 참이다 */
+export function useLetterPicture(letterId: string | null): {
+  picture: string | null;
+  failed: boolean;
+} {
+  const picture = useLetters((s) => (letterId == null ? null : (s.pictures[letterId] ?? null)));
+  const [failedId, setFailedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (letterId == null) return;
+    let alive = true;
+    void useLetters
+      .getState()
+      .loadPicture(letterId)
+      .then((ok) => {
+        if (alive && !ok) setFailedId(letterId);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [letterId]);
+  return { picture, failed: letterId != null && failedId === letterId };
+}
+
 /** 고른 작은 일 알림의 이름 — 편지마다 하나다(`actionReminder.ts`) */
 export const actionReminderKey = (letterId: string) => `letter-action.${letterId}`;
 
@@ -102,7 +143,9 @@ export function forgetLetterOf(date: string): void {
   useLetters.setState((s) => {
     const letters = { ...s.letters };
     delete letters[date];
-    return { summaries: s.summaries?.filter((l) => l.id !== letter.id) ?? null, letters };
+    const pictures = { ...s.pictures };
+    delete pictures[letter.id];
+    return { summaries: s.summaries?.filter((l) => l.id !== letter.id) ?? null, letters, pictures };
   });
 }
 
@@ -233,3 +276,6 @@ export async function saveLetterPreference(time: string, enabled: boolean): Prom
   if (ok) adoptLetterPreference(time, enabled);
   return ok;
 }
+
+/** 그림일기의 가로 : 세로 — 서버가 3:4 로 그린다. 그림을 받기 전에도 같은 자리를 잡는다 */
+export const LETTER_PICTURE_ASPECT = 3 / 4;

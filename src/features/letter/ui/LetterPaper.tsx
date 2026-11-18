@@ -1,16 +1,18 @@
 import { useState, type ReactNode } from "react";
-import { Linking, Pressable, StyleSheet, View, type TextLayoutLine } from "react-native";
+import { Image, Linking, Pressable, StyleSheet, View, type TextLayoutLine } from "react-native";
 
-import { Chip, Spinner, Text } from "@/components/ds";
+import { Chip, IconButton, Spinner, Text } from "@/components/ds";
 import { Baba } from "@/components/onboarding/OnboardingParts";
 import {
   cardPadding,
   chatChoiceSelected,
   iosVariant,
   label as labelColor,
+  layout,
   line,
   primary,
   radius,
+  size,
   space,
   type TextToken,
 } from "@/design/ds";
@@ -21,6 +23,7 @@ import {
   helplineParts,
   keepWords,
   LETTER_ACTIONS_SHOWN,
+  LETTER_PICTURE_ASPECT,
   receivedLabel,
   type WhenChoice,
 } from "@/features/letter/model/letter";
@@ -53,6 +56,14 @@ type Props = {
   error: string | null;
   onPickAction: (position: number) => void;
   onPickWhen: (choice: WhenChoice) => void;
+  /** 받아 온 그림일기(`data:` 주소). 그림이 있는 편지인데 아직 못 받았으면 `null` — 자리만 잡아 둔다 */
+  picture?: string | null;
+  /** 카드를 찍어 저장 · 공유하는 중 — 두 번 누르지 않게 버튼을 잠근다 */
+  pictureBusy?: boolean;
+  /** 그림을 눌렀다 — 화면 가득 크게 본다 */
+  onOpenPicture?: () => void;
+  onSavePicture?: () => void;
+  onSharePicture?: () => void;
 };
 
 export function LetterPaper({
@@ -64,6 +75,11 @@ export function LetterPaper({
   error,
   onPickAction,
   onPickWhen,
+  picture = null,
+  pictureBusy = false,
+  onOpenPicture,
+  onSavePicture,
+  onSharePicture,
 }: Props) {
   const quiet = letter.status === "QUIET";
   // 작은 일을 숨기는 동안(2026-11-17)은 서버가 보내도 없는 편지처럼 그린다 — 고르기 칸도, 「해 봤는지부터 물어볼게요」도 없다
@@ -190,6 +206,38 @@ export function LetterPaper({
         </Lined>
       ) : null}
 
+      {/* 그림일기(2026-11-18) — 편지 글을 다 읽은 뒤 서명 바로 위에 어제 하루를 그린 4컷이 온다(사용자 결정:
+          글이 위, 그림이 아래). 그림을 받기 전에도 같은 크기의 자리를 잡아 두어 서명이 튀지 않게 한다 */}
+      {letter.hasPicture ? (
+        <View style={styles.pictureBlock}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="바바가 그린 어제 하루 크게 보기"
+            disabled={picture == null || onOpenPicture == null}
+            onPress={onOpenPicture}
+            style={styles.pictureFrame}
+          >
+            {picture != null ? <Image source={{ uri: picture }} style={styles.picture} /> : null}
+          </Pressable>
+          {picture != null && onSavePicture != null && onSharePicture != null ? (
+            <View style={styles.pictureActions}>
+              <IconButton
+                name="download"
+                accessibilityLabel="사진첩에 저장"
+                disabled={pictureBusy}
+                onPress={onSavePicture}
+              />
+              <IconButton
+                name="share"
+                accessibilityLabel="공유하기"
+                disabled={pictureBusy}
+                onPress={onSharePicture}
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
       <View style={styles.sign}>
         <Baba size={36} />
         <Text variant={hand} color={labelColor.strong}>
@@ -304,6 +352,22 @@ const styles = StyleSheet.create({
   actionText: { flex: 1 },
   // 칩 사이 간격은 `DESIGN.md` §9 의 8
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
+  pictureBlock: { gap: space.xs },
+  pictureFrame: {
+    aspectRatio: LETTER_PICTURE_ASPECT,
+    borderRadius: radius.medium,
+    borderWidth: 1,
+    borderColor: line.neutral,
+    backgroundColor: line.alternative,
+    overflow: "hidden",
+  },
+  picture: { width: "100%", height: "100%" },
+  // 누르는 면은 44 라 아이콘 둘레가 비어 있다 — 그 빈 만큼 밀어 아이콘 끝을 그림 오른쪽 끝에 맞춘다
+  pictureActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginRight: -(layout.minTouch - size.icon.lg) / 2,
+  },
 });
 
 /** 편지 종이 · 형광펜 — 일기 상세의 미리보기(`LetterPreviewCard`)가 같은 종이를 쓴다 */

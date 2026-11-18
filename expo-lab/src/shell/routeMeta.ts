@@ -220,6 +220,11 @@ export const routeSections: readonly RouteSection[] = [
       },
       { path: "/letter/[date]", title: "바바의 편지" },
       {
+        path: "/letter/picture",
+        title: "바바의 4컷 크게 보기",
+        hint: "편지 속 그림이나 일기 상세의 「바바의 4컷」 쪽지를 누르면 온다 — 바로 열면 날짜가 없어 안내만 나온다",
+      },
+      {
         path: "/letter/time",
         title: "편지 받을 시각",
         query: { next: "done" },

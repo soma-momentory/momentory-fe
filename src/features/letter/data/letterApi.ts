@@ -43,6 +43,8 @@ export type Letter = {
   helplines: string[];
   isNew: boolean;
   openedAt: string | null;
+  /** 그림일기가 있는가 — 그림은 무거워 따로 받는다({@link fetchLetterPicture}) */
+  hasPicture: boolean;
 };
 
 export type LetterSummary = Pick<Letter, "id" | "date" | "isNew" | "openedAt">;
@@ -106,8 +108,26 @@ export const toLetter = (v: unknown): Letter | null => {
     helplines: Array.isArray(v.helplines)
       ? v.helplines.filter((h): h is string => typeof h === "string")
       : [],
+    hasPicture: v.hasPicture === true,
   };
 };
+
+const PICTURE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+/**
+ * 그림일기 한 장 — 서버가 base64 로 싣는다(`http.ts` 는 JSON 만 다룬다). 화면에 바로 그리고,
+ * 저장 · 공유 때 같은 값을 파일로 쓴다. 돌려주는 값은 `data:` 주소다
+ */
+export async function fetchLetterPicture(id: string): Promise<Result<string>> {
+  const result = await authedRequest<unknown>("GET", `/api/v1/letters/${id}/picture`, undefined, {
+    timeoutMs: LETTER_TIMEOUT_MS,
+  });
+  if (!result.ok || !isObject(result.data)) return { ok: false };
+  const { mimeType, image } = result.data;
+  if (typeof mimeType !== "string" || !PICTURE_TYPES.includes(mimeType)) return { ok: false };
+  if (typeof image !== "string" || image.length === 0) return { ok: false };
+  return { ok: true, data: `data:${mimeType};base64,${image}` };
+}
 
 export async function fetchLetters(expectedUserId?: number): Promise<Result<LetterSummary[]>> {
   const result = await authedRequest<unknown>("GET", "/api/v1/letters", undefined, {

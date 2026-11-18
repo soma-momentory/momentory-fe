@@ -28,6 +28,7 @@ import {
   weeklyReport,
 } from "./derive";
 import { isEmotionKey, startSession, takeTurn, type RetroCtx } from "./retro";
+import { SAMPLE_PICTURE_JPEG_BASE64 } from "./samplePicture";
 import { LAB_USER_ID, LATEST_ONBOARDING_VERSION, profileFor } from "./seed";
 import { addDays, dayOfIso, isDay, isHhmm } from "./time";
 
@@ -127,6 +128,8 @@ const letterDto = (l: LetterRow, ctx: Ctx) => ({
   tonightQuestion: l.tonightQuestion,
   actions: l.actions.map((a) => omitNull({ ...a })),
   helplines: l.helplines,
+  // 그림일기 시안(2026-11-18) — 조용한 편지(위기 날)에는 그림을 만들지 않는다
+  hasPicture: l.status !== "QUIET",
 });
 
 const noteDto = (n: NoteRow) => ({ ...n });
@@ -916,6 +919,11 @@ const ROUTES: Route[] = [
     );
     ctx.wrote = true;
     return json(letterDto(l, ctx));
+  }),
+  route("GET", "/api/v1/letters/:id/picture", (ctx, _req, [id]) => {
+    const l = ctx.db.letters.find((x) => String(x.id) === id);
+    if (l == null || l.status === "QUIET") return notFound("LETTER_PICTURE_NOT_FOUND");
+    return json({ mimeType: "image/jpeg", image: SAMPLE_PICTURE_JPEG_BASE64 });
   }),
   route("GET", "/api/v1/letters/:date", (ctx, _req, [date]) => {
     if (!isDay(date)) return invalid();

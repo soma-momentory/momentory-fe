@@ -212,7 +212,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       // 빼면 업로드가 ITMS-90683 으로 막힐 수 있다. 그래서 없는 기능을 적지 않고 **사실**을 적는다.
       // 부르는 코드가 없어 이 창은 뜨지 않는다(`docs/SETUP.md` 「NSMotionUsageDescription」 옆).
       NSPhotoLibraryUsageDescription:
-        "모멘토리는 사진 보관함에 접근하지 않습니다. 이미지 표시에 쓰는 구성 요소에 포함된 항목이라 표시될 뿐, 실제로 요청하지 않습니다.",
+        "모멘토리는 사진 보관함의 사진을 읽지 않습니다. 이미지 표시에 쓰는 구성 요소에 포함된 항목이라 표시될 뿐, 실제로 요청하지 않습니다.",
+      // 그림일기 카드를 사진첩에 **저장만** 한다(2026-11-18 · `src/lib/pictureCard.ts` · 쓰기 전용 권한).
+      // `expo-media-library` 플러그인은 붙이지 않는다 — Android 사진 · 동영상 · 음악 **읽기** 권한까지 넣어서다.
+      NSPhotoLibraryAddUsageDescription:
+        "바바가 그린 그림일기를 사진첩에 저장하기 위해 사용합니다.",
     },
   },
   android: {
@@ -242,6 +246,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // `11` = 1.4.0 · 운영 서버 · 2026-11-08.
     // `12` = 1.4.1 · 2026-11-10 올림(아직 업로드 전 — 올리면 SETUP 표의 「예정」을 고친다).
     versionCode: 12,
+    // ⚠ 사진 **읽기** 권한은 막는다(2026-11-18). `expo-media-library` 가 매니페스트에 읽기 권한을 넣지만 앱은 그림일기
+    // 카드를 **저장만** 한다 — Android 13 이상은 권한 없이 저장되고, 12 이하는 라이브러리가 넣는 쓰기 권한
+    // (`WRITE_EXTERNAL_STORAGE` · maxSdk 32) 하나로 저장한다. 읽기 권한이 남으면 Play 「사진 및 동영상 권한」 정책 신고 대상이다.
+    blockedPermissions: [
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.READ_MEDIA_IMAGES",
+      "android.permission.READ_MEDIA_VIDEO",
+      "android.permission.READ_MEDIA_AUDIO",
+      "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+      "android.permission.ACCESS_MEDIA_LOCATION",
+    ],
   },
 
   // ⚠ 플러그인의 유일한 출처. `npx expo install` 이 app.json 을 만들어 여기 목록을

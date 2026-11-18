@@ -19,11 +19,13 @@ import { fetchLetter, type Letter } from "@/features/letter/data/letterApi";
 import { pickLetterAction } from "@/features/letter/model/actionReminder";
 import {
   daysAfterBucket,
+  useLetterPicture,
   useLetters,
   whenChoices,
   type WhenChoice,
 } from "@/features/letter/model/letter";
 import { LetterPaper } from "@/features/letter/ui/LetterPaper";
+import { usePictureCard } from "@/features/letter/ui/usePictureCard";
 import { useProfile } from "@/features/my/model/settings";
 import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
 import { clock } from "@/lib/clock";
@@ -236,6 +238,15 @@ function LetterPage({
   /** 기기에 든 카드는 옛것일 수 있다(다른 기기에서 체크) — 서버가 409 로 막으면 그때부터 잠근다 */
   const [refused, setRefused] = useState(false);
   const letterDate = page.status === "ready" ? page.letter.date : null;
+  const pictureOf = page.status === "ready" && page.letter.hasPicture ? page.letter.id : null;
+  /** 그림일기 — 편지 글을 먼저 그리고, 그림은 따로 받아 끼운다. 못 받으면 자리만 남는다 */
+  const { picture } = useLetterPicture(pictureOf);
+  const {
+    cardElement,
+    busy: pictureBusy,
+    save: savePicture,
+    share: sharePicture,
+  } = usePictureCard(picture, letterDate ?? undefined);
   // 바람카드가 「했어요」면 고른 일이 고정된다(편지 PRD 14) — 서버도 같은 기준으로 막는다
   const cardDone = useDiary(
     (s) =>
@@ -282,6 +293,7 @@ function LetterPage({
 
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {cardElement}
       <LetterPaper
         letter={letter}
         nickname={nickname}
@@ -294,6 +306,11 @@ function LetterPage({
           void save(chosen?.position === position ? null : position, null)
         }
         onPickWhen={(when) => chosen != null && void save(chosen.position, when)}
+        picture={picture}
+        pictureBusy={pictureBusy}
+        onOpenPicture={() => router.push(`/letter/picture?date=${letter.date}`)}
+        onSavePicture={savePicture}
+        onSharePicture={sharePicture}
       />
     </ScrollView>
   );
