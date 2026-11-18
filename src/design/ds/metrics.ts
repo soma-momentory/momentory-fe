@@ -155,6 +155,8 @@ export const layout = {
    * 이 짝에만 쓴다.
    */
   dockActionGap: space.xs + space.xs2,
+  /** 탭 화면의 주 버튼과 탭바 사이 — 홈 「일기 작성하기」와 그 자리를 빌려 쓰는 `TabFloor` 가 함께 쓴다 */
+  tabCtaGap: space.md,
   /** 스크롤 리스트 하단 클리어런스 — 탭바 56 + 20 */
   scrollClearance: 76,
   /** 모든 탭 대상 최소 (아이콘이 작으면 hitSlop 으로 채운다) */

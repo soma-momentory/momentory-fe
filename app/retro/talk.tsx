@@ -16,8 +16,10 @@ import {
   ChatBubble,
   ChatDock,
   ChatScaffold,
+  TabFloor,
   Text,
   TypingBubble,
+  useScreenBottomInset,
   type VoiceEvent,
 } from "@/components/ds";
 import { label as labelColor, layout, retroDiary, size, space } from "@/design/ds";
@@ -131,6 +133,9 @@ export default function RetroTalk() {
   /** 위기 안내에서 「이어서 얘기하기」를 골랐나 */
   const [resuming, setResuming] = useState(false);
   const starting = useRef(false);
+  /** 하루 한 번에 막힌 날의 홈 버튼 윗변 — 화면 바닥에서 잰 거리다. 바바를 그 위에 앉힌다 */
+  const [blockedCtaTop, setBlockedCtaTop] = useState<number | null>(null);
+  const screenBottomInset = useScreenBottomInset();
 
   /**
    * 턴 시간 계측(2026-09-28) — 「어느 질문에서 오래 걸렸는가」를 셋으로 가른다.
@@ -332,6 +337,7 @@ export default function RetroTalk() {
   const options = lastReply?.options ?? null;
   const noSession = sessionId == null;
   const startTerminal = startErrorCode === "already_today";
+  const blocked = noSession && startTerminal;
   // 선택지 목록은 옵션이 있으면 늘 보인다.
   const hasOptions = !done && options != null && options.length > 0;
   // 후보 추천 스텝(감정 탐색) — 입력창을 늘 띄우고, 후보를 하나 고르면 「보내기」로 바뀐다(취소하면 다시 입력창).
@@ -352,71 +358,84 @@ export default function RetroTalk() {
     ) : null;
 
   return (
-    <ChatScaffold
-      leading="close"
-      leadingColor={labelColor.onFill}
-      grid={false}
-      backdrop={<RetroDiaryBackground />}
-      onConversationPress={Keyboard.dismiss}
-      onLeadingPress={() => {
-        recordExit();
-        router.replace("/home");
-      }}
-      companion={<RetroBaba />}
-      companionHeight={RETRO_BABA_HEIGHT}
-      companionLift={RETRO_BABA_LIFT}
-      companionLeft={RETRO_BABA_LEFT}
-      companionRaised={<RetroBabaPeek />}
-      companionRaisedLeft={RETRO_BABA_PEEK_LEFT}
-      dock={
-        <RetroDock
-          optionList={optionList}
-          optionsMaxHeight={windowHeight * OPTIONS_MAX_HEIGHT_RATIO}
-          noSession={noSession}
-          startTerminal={startTerminal}
-          error={error}
-          ended={ended}
-          done={done}
-          safetyHold={safetyHold}
-          resuming={resuming}
-          onContinue={() => setResuming(true)}
-          pending={pending}
-          onRetry={retryStart}
-          onGoHome={goHome}
-          showOptions={showOptions}
-          canSendPicked={pickedIds.length > 0}
-          onSendPicked={sendPicked}
-          draftText={draftText}
-          onChangeDraft={(text) => {
-            if (text.length > 0) markInput();
-            setDraftText(text);
-          }}
-          onSendText={sendText}
-          onVoice={onVoice}
-          customOpen={customOpen}
-        />
-      }
-    >
-      {turns.map((t) => (
-        <ChatBubble
-          appearance="diary"
-          key={t.id}
-          variant={t.who === "baba" ? "question" : "answer"}
-        >
-          {t.text}
-        </ChatBubble>
-      ))}
+    <>
+      <ChatScaffold
+        leading="close"
+        leadingColor={labelColor.onFill}
+        grid={false}
+        backdrop={<RetroDiaryBackground />}
+        onConversationPress={Keyboard.dismiss}
+        onLeadingPress={() => {
+          recordExit();
+          router.replace("/home");
+        }}
+        companion={<RetroBaba />}
+        companionHeight={RETRO_BABA_HEIGHT}
+        companionLift={
+          blocked && blockedCtaTop != null
+            ? blockedCtaTop - screenBottomInset + space.md
+            : RETRO_BABA_LIFT
+        }
+        companionLeft={RETRO_BABA_LEFT}
+        companionRaised={<RetroBabaPeek />}
+        companionRaisedLeft={RETRO_BABA_PEEK_LEFT}
+        dock={
+          blocked ? undefined : (
+            <RetroDock
+              optionList={optionList}
+              optionsMaxHeight={windowHeight * OPTIONS_MAX_HEIGHT_RATIO}
+              noSession={noSession}
+              error={error}
+              ended={ended}
+              done={done}
+              safetyHold={safetyHold}
+              resuming={resuming}
+              onContinue={() => setResuming(true)}
+              pending={pending}
+              onRetry={retryStart}
+              showOptions={showOptions}
+              canSendPicked={pickedIds.length > 0}
+              onSendPicked={sendPicked}
+              draftText={draftText}
+              onChangeDraft={(text) => {
+                if (text.length > 0) markInput();
+                setDraftText(text);
+              }}
+              onSendText={sendText}
+              onVoice={onVoice}
+              customOpen={customOpen}
+            />
+          )
+        }
+      >
+        {turns.map((t) => (
+          <ChatBubble
+            appearance="diary"
+            key={t.id}
+            variant={t.who === "baba" ? "question" : "answer"}
+          >
+            {t.text}
+          </ChatBubble>
+        ))}
 
-      {/* 「오늘은 이미 회고를 마쳤어요」는 안내 한 줄이 아니라 **바바가 말풍선으로** 건넨다
-          (2026-10-07 · 사용자 요청). 대화가 시작조차 안 된 화면이라, 바바의 머리 위가 비어 있었다 */}
-      {startTerminal && error != null ? (
-        <ChatBubble appearance="diary" variant="question">
-          {error}
-        </ChatBubble>
+        {/* 「오늘은 이미 회고를 마쳤어요」는 안내 한 줄이 아니라 **바바가 말풍선으로** 건넨다
+            (2026-10-07 · 사용자 요청). 대화가 시작조차 안 된 화면이라, 바바의 머리 위가 비어 있었다 */}
+        {startTerminal && error != null ? (
+          <ChatBubble appearance="diary" variant="question">
+            {error}
+          </ChatBubble>
+        ) : null}
+
+        {pending ? <TypingBubble appearance="diary" /> : null}
+      </ChatScaffold>
+      {/* 하루 한 번에 막힌 날 — 말은 바바가 말풍선으로 했으니 버튼만 남긴다. 방금 누른 홈 「일기 작성하기」와
+          같은 자리에 세운다(2026-11-18 · 사용자 요청) */}
+      {blocked ? (
+        <TabFloor onTopChange={setBlockedCtaTop}>
+          <ReflectionButton label="홈으로 돌아가기" onPress={goHome} style={styles.floorCta} />
+        </TabFloor>
       ) : null}
-
-      {pending ? <TypingBubble appearance="diary" /> : null}
-    </ChatScaffold>
+    </>
   );
 }
 
@@ -426,7 +445,6 @@ type DockProps = {
   optionList: ReactNode;
   optionsMaxHeight: number;
   noSession: boolean;
-  startTerminal: boolean;
   error: string | null;
   ended: boolean;
   done: boolean;
@@ -435,7 +453,6 @@ type DockProps = {
   onContinue: () => void;
   pending: boolean;
   onRetry: () => void;
-  onGoHome: () => void;
   showOptions: boolean;
   canSendPicked: boolean;
   onSendPicked: () => void;
@@ -449,12 +466,6 @@ type DockProps = {
 
 function RetroDock(p: DockProps) {
   if (p.noSession) {
-    // 하루 한 번에 막힌 날 — 말은 바바가 말풍선으로 했으니 독에는 버튼만 남긴다
-    if (p.startTerminal) {
-      return (
-        <ReflectionButton label="홈으로 돌아가기" onPress={p.onGoHome} style={styles.dockCta} />
-      );
-    }
     if (p.error != null) {
       return (
         <>
@@ -570,6 +581,8 @@ function RetroDock(p: DockProps) {
 const styles = StyleSheet.create({
   // 홈 「일기 작성하기」와 같은 천 라벨 — 독이 이미 좌우 여백을 준다(2026-11-10 · 사용자 요청)
   dockCta: { marginTop: 0, marginHorizontal: 0 },
+  // 좌우 여백은 홈과 같은 값을 그대로 둔다 — 윗 여백만 빼서 잰 윗변이 곧 버튼의 윗변이 되게 한다
+  floorCta: { marginTop: 0 },
   actionSlot: { minHeight: retroDiary.inputMinHeight, justifyContent: "center" },
   /**
    * 위기 안내의 두 버튼 — 「이어서 얘기하기의 위아래 공간을 각각 반으로」(2026-09-11 · 사용자 요청).

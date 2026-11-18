@@ -66,7 +66,7 @@ export { WheelPicker, type WheelColumn } from "./WheelPicker";
 export { TimeSheet } from "./TimeSheet";
 export { TopNavigation } from "./TopNavigation";
 export { BottomNavigation, type TabItem } from "./BottomNavigation";
-export { TabScreen, type TabName } from "./TabScreen";
+export { TabFloor, TabScreen, type TabName } from "./TabScreen";
 export { BottomSheet } from "./BottomSheet";
 export { Modal } from "./Modal";
 export { Icon, type IconName } from "./icons/Icon";
