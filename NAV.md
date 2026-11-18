@@ -126,10 +126,10 @@ src/features/rest/{model/{cards,contents,recommend,restRecord,restGuide,sensePon
                     deviceStorage = AsyncStorage 를 부르는 **기기 기억의 단일 통로**(앱 전체가 이걸 지난다)
 src/features/music/{model/{tracks,music,musicPlayer}.ts, data/musicMemory.ts, ui/MusicDialog.tsx}
                   ← 홈 배경음악 — store 는 고른 곡과 재생 중인가 둘. 소리는 `providers.tsx` 에 건 musicPlayer 가 낸다
-src/features/my/{model/{settings,reminders,basicInfo,calendarLink,recordedDays}.ts, data/inquiryApi.ts,
+src/features/my/{model/{settings,reminders,basicInfo,calendarLink,locationSetting,recordedDays}.ts, data/inquiryApi.ts,
                  ui/{MyMainView,ReminderRoute}.tsx}
                   ← 알림 · 프로필 설정 · 설정 ↔ OS 예약 화해 · 기본 정보(한 항목만 고쳐도 통째로 보낸다 — 덮어쓰는 PUT) ·
-                    캘린더 잇기 · 문의 · 「일기 쓴 날 N일」(전체 기간). ReminderRoute = 알림을 누르면 부른 화면으로 옮긴다
+                    캘린더 잇기 · 위치 권한 줄 · 문의 · 「일기 쓴 날 N일」(전체 기간). ReminderRoute = 알림을 누르면 부른 화면으로 옮긴다
 src/features/wardrobe/{model/{types,figure,wardrobe,catalog.generated}.ts, data/wardrobeApi.ts, ui/BabaFigure.tsx}
                   ui/{Tangerine, WardrobePopup, PurchasePopup, WelcomePopup, AttendanceGrid, AttendanceSheet, TangerineMissionSheet,
                      TangerineBurst, TangerineCelebrationHost}.tsx  ← 귤 축하는 앱 맨 위 덮개 하나(`app/_layout.tsx`)

@@ -82,6 +82,40 @@ describe("MyMainView", () => {
     expect(actions.onOpenCalendarLink).not.toHaveBeenCalled();
   });
 
+  it("위치 줄은 권한을 읽은 뒤에만 눌린다", async () => {
+    const onOpenLocationSetting = jest.fn();
+    const props = {
+      nickname: "모멘토리",
+      recordedDays: 0,
+      notifyValue: "꺼짐",
+      calendarOn: true,
+      withdrawing: false,
+      withdrawError: null,
+      onOpenLocationSetting,
+      ...callbacks(),
+    };
+    const screen = await render(<MyMainView {...props} />);
+
+    await fireEvent.press(screen.getByText("위치 사용"));
+    expect(onOpenLocationSetting).not.toHaveBeenCalled();
+
+    await screen.rerender(
+      <MyMainView
+        {...props}
+        locationValue="허용 안 함"
+        locationAccessibilityLabel="위치 사용, 허용 안 함. 누르면 기기 설정으로 이동해요"
+      />,
+    );
+    expect(screen.getByText("허용 안 함")).toBeTruthy();
+
+    await fireEvent.press(
+      screen.getByRole("button", {
+        name: "위치 사용, 허용 안 함. 누르면 기기 설정으로 이동해요",
+      }),
+    );
+    expect(onOpenLocationSetting).toHaveBeenCalledTimes(1);
+  });
+
   it("미연결·오류·긴 닉네임·탈퇴 중 상태를 표시한다", async () => {
     const actions = callbacks();
     const nickname = "아주길고긴닉네임으로줄임표를확인해요";

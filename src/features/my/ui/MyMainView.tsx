@@ -19,11 +19,15 @@ type Props = {
   letterValue?: string;
   settingsNote?: string;
   calendarOn: boolean;
+  /** 위치 권한 줄의 값. 권한을 읽기 전에는 없고, 그동안 줄은 눌리지 않는다 */
+  locationValue?: string;
+  locationAccessibilityLabel?: string;
   withdrawing: boolean;
   withdrawError: string | null;
   onOpenNotificationSettings: () => void;
   onOpenLetterSettings?: () => void;
   onOpenCalendarLink: () => void;
+  onOpenLocationSetting?: () => void;
   onOpenProfile: () => void;
   onOpenInquiry: () => void;
   onOpenTerms: () => void;
@@ -52,11 +56,14 @@ export function MyMainView({
   letterValue,
   settingsNote,
   calendarOn,
+  locationValue,
+  locationAccessibilityLabel,
   withdrawing,
   withdrawError,
   onOpenNotificationSettings,
   onOpenLetterSettings,
   onOpenCalendarLink,
+  onOpenLocationSetting,
   onOpenProfile,
   onOpenInquiry,
   onOpenTerms,
@@ -159,6 +166,15 @@ export function MyMainView({
           value={calendarOn ? "연결됨" : "연결 안 함"}
           tone="settings"
           onPress={calendarOn ? undefined : onOpenCalendarLink}
+          divided
+        />
+        <PaperRow
+          title="위치 사용"
+          icon="settings"
+          value={locationValue}
+          tone="settings"
+          onPress={locationValue != null ? onOpenLocationSetting : undefined}
+          accessibilityLabel={locationAccessibilityLabel}
           divided
         />
         <PaperRow

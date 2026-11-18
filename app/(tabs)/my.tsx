@@ -20,6 +20,7 @@ import { CALENDAR_NOTICE } from "@/features/calendar/model/notice";
 import { saveLetterPreference } from "@/features/letter/model/letter";
 import { saveRetroReminder } from "@/features/my/model/basicInfo";
 import { adoptGrantedCalendar, linkCalendar } from "@/features/my/model/calendarLink";
+import { useLocationSetting } from "@/features/my/model/locationSetting";
 import { useRecordedDays } from "@/features/my/model/recordedDays";
 import { useProfile, useSettings, type NotifySetting } from "@/features/my/model/settings";
 import { ReflectionButton } from "@/features/home/ui/v2/HeroCard";
@@ -55,6 +56,8 @@ import { formatKoreanTime } from "@/lib/time";
  * - **「캘린더 연동」 줄이 돌아왔다**(2026-09-28). 온보딩에서 「나중에 할게요」를 고르면
  *   앱 안에서 다시 이을 길이 없었다 — 연동 비율이 온보딩 화면 하나에서 정해지는 자리다.
  *   연결되지 않았을 때만 눌리고, **해제는 두지 않는다**(연결됨이면 갈 곳이 없는 줄이다)
+ * - **「위치 사용」 줄이 생겼다**(2026-11-18). 위치를 한 번 거절하면 앱 안에서 다시 켤 길이
+ *   없었다. OS 가 물어 줄 수 있으면 권한 창을, 그렇지 않으면 기기 설정을 연다(`locationSetting.ts`)
  *
  * ## 그대로인 규칙
  *
@@ -120,6 +123,7 @@ export default function My() {
   const [calendarError, setCalendarError] = useState<string | null>(null);
   /** 알림 시각 · 끄기를 서버에 남기지 못했을 때의 한 줄 — 그때는 설정도 그대로다 */
   const [notifyError, setNotifyError] = useState<string | null>(null);
+  const location = useLocationSetting();
 
   useEffect(() => {
     let alive = true;
@@ -427,9 +431,13 @@ export default function My() {
         settingsNote={
           notifyError ??
           calendarError ??
+          location.note ??
           (blocked ? "기기 설정에서 알림을 켜면 이 시간에 찾아갈게요." : undefined)
         }
         calendarOn={calendarOn}
+        locationValue={location.row?.value}
+        locationAccessibilityLabel={location.row?.accessibilityLabel}
+        onOpenLocationSetting={() => void location.open()}
         withdrawing={withdrawing}
         withdrawError={withdrawError}
         onOpenNotificationSettings={() => setEditingTime(retro.time ?? "21:30")}
