@@ -15,7 +15,6 @@ MVP 40화면(2026-08-06 상류 v2)을 **둘이 나눠 가기 위한** 목록이�
 
 ## 2026-11-18 · 바바의 그림일기 — 남은 일
 
-- BE `feat/letter-picture`(그림 생성 · `GET /letters/{id}/picture` · 스위치 `LETTER_PICTURE_ENABLED` 기본 꺼짐) dev 머지 뒤 `npm run sync:api`
 - 새 네이티브 모듈 셋(`react-native-view-shot` · `expo-sharing` · `expo-media-library`) — 앱 새 빌드가 있어야 저장 · 공유가 돈다
 - 실기기에서 확인: 화면 밖 카드가 iOS · Android 모두 빈 이미지 없이 찍히는지 · Android 12 이하 쓰기 권한 창 · 공유 시트의 인스타그램 스토리
 - 출시 prebuild 뒤 `npm run check:ios-release`(새 문구 `NSPhotoLibraryAddUsageDescription`) · Android 매니페스트에 사진 읽기 권한이 없는지

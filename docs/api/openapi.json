@@ -12,6 +12,10 @@
   ],
   "tags": [
     {
+      "name": "Wardrobe",
+      "description": "바바 꾸미기 — 옷장 · 귤 API"
+    },
+    {
       "name": "ActionCards",
       "description": "행동 카드 보관함 API"
     },
@@ -338,6 +342,119 @@
                     "value": {
                       "code": "AUTHENTICATION_REQUIRED",
                       "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wardrobe/outfit": {
+      "put": {
+        "tags": [
+          "Wardrobe"
+        ],
+        "summary": "입히기",
+        "description": "칸마다 아이템 id 하나, 벗으려면 null. 보낸 그대로 바뀐다. 무료이거나 산 아이템만 입는다.",
+        "operationId": "wear",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutfitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "입히기 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobeOutfit"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "itemIdTooLong": {
+                    "description": "itemIdTooLong",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "아이템 id 가 너무 깁니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "가지지 않은 아이템",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "WARDROBE_ITEM_NOT_OWNED": {
+                    "description": "WARDROBE_ITEM_NOT_OWNED",
+                    "value": {
+                      "code": "WARDROBE_ITEM_NOT_OWNED",
+                      "message": "가지지 않은 아이템입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "없는 아이템이거나 칸이 다름",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "WARDROBE_ITEM_NOT_FOUND": {
+                    "description": "WARDROBE_ITEM_NOT_FOUND",
+                    "value": {
+                      "code": "WARDROBE_ITEM_NOT_FOUND",
+                      "message": "아이템을 찾을 수 없습니다."
                     }
                   }
                 }
@@ -1332,177 +1449,6 @@
         ]
       }
     },
-    "/api/v1/diaries/{id}/weather": {
-      "put": {
-        "tags": [
-          "Diaries"
-        ],
-        "summary": "오늘 일기에 현재 위치의 날씨 기록",
-        "description": "날씨가 없는 오늘 일기에만 위치 기반 예보를 기록한다. 이미 기록한 날씨는 유지하며 좌표는 저장하지 않는다.",
-        "operationId": "recordWeather",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DiaryWeatherRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "기록된 일기",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiaryResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "잘못된 요청입니다.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "INVALID_REQUEST": {
-                    "description": "INVALID_REQUEST",
-                    "value": {
-                      "code": "INVALID_REQUEST",
-                      "message": "잘못된 요청입니다."
-                    }
-                  },
-                  "latitudeRequired": {
-                    "description": "latitudeRequired",
-                    "value": {
-                      "code": "INVALID_REQUEST",
-                      "message": "위도를 입력해주세요."
-                    }
-                  },
-                  "latitudeRange": {
-                    "description": "latitudeRange",
-                    "value": {
-                      "code": "INVALID_REQUEST",
-                      "message": "위도는 -90부터 90까지입니다."
-                    }
-                  },
-                  "longitudeRequired": {
-                    "description": "longitudeRequired",
-                    "value": {
-                      "code": "INVALID_REQUEST",
-                      "message": "경도를 입력해주세요."
-                    }
-                  },
-                  "longitudeRange": {
-                    "description": "longitudeRange",
-                    "value": {
-                      "code": "INVALID_REQUEST",
-                      "message": "경도는 -180부터 180까지입니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증이 필요합니다.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "AUTHENTICATION_REQUIRED": {
-                    "description": "AUTHENTICATION_REQUIRED",
-                    "value": {
-                      "code": "AUTHENTICATION_REQUIRED",
-                      "message": "인증이 필요합니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "일기를 찾을 수 없습니다.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "DIARY_NOT_FOUND": {
-                    "description": "DIARY_NOT_FOUND",
-                    "value": {
-                      "code": "DIARY_NOT_FOUND",
-                      "message": "일기를 찾을 수 없습니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "지난 일기에는 현재 날씨를 기록할 수 없습니다.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "DIARY_WEATHER_DATE_MISMATCH": {
-                    "description": "DIARY_WEATHER_DATE_MISMATCH",
-                    "value": {
-                      "code": "DIARY_WEATHER_DATE_MISMATCH",
-                      "message": "지난 일기에는 현재 날씨를 기록할 수 없습니다."
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "날씨를 가져오지 못했어요. 일기는 그대로 저장돼요.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "examples": {
-                  "WEATHER_UNAVAILABLE": {
-                    "description": "WEATHER_UNAVAILABLE",
-                    "value": {
-                      "code": "WEATHER_UNAVAILABLE",
-                      "message": "날씨를 가져오지 못했어요. 일기는 그대로 저장돼요."
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
     "/api/v1/diaries/by-retrospect/{retrospectId}": {
       "put": {
         "tags": [
@@ -2170,6 +2116,192 @@
                     "value": {
                       "code": "WEATHER_UPSTREAM_TIMEOUT",
                       "message": "날씨를 가져오지 못했어요."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wardrobe/welcome": {
+      "post": {
+        "tags": [
+          "Wardrobe"
+        ],
+        "summary": "옷장 첫 선물 받기",
+        "description": "옷장에 처음 온 사람에게 귤 100개를 준다. 평생 한 번이고, 이미 받았으면 rewards 가 빈 목록이다.",
+        "operationId": "welcome",
+        "responses": {
+          "200": {
+            "description": "받기 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TangerineCheckIn"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wardrobe/items/{itemId}/purchase": {
+      "post": {
+        "tags": [
+          "Wardrobe"
+        ],
+        "summary": "귤로 사기",
+        "description": "잔액 확인과 차감을 한 번에 한다. 이미 가진 아이템이면 귤을 쓰지 않고 지금 잔액을 돌려준다.",
+        "operationId": "purchase",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "사기 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "없거나 팔지 않는 아이템",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "WARDROBE_ITEM_NOT_FOUND": {
+                    "description": "WARDROBE_ITEM_NOT_FOUND",
+                    "value": {
+                      "code": "WARDROBE_ITEM_NOT_FOUND",
+                      "message": "아이템을 찾을 수 없습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "귤이 모자람",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "TANGERINE_NOT_ENOUGH": {
+                    "description": "TANGERINE_NOT_ENOUGH",
+                    "value": {
+                      "code": "TANGERINE_NOT_ENOUGH",
+                      "message": "귤이 모자랍니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wardrobe/check-in": {
+      "post": {
+        "tags": [
+          "Wardrobe"
+        ],
+        "summary": "귤 정산",
+        "description": "앱을 열 때마다 부른다. 오늘 출석(이레 칸에 따라 10 · 10 · 20 · 20 · 30 · 40 · 50), 어제 · 오늘의 일기(30) · 일정 모두 완료(10) · 쉼터 한 곳 끝까지 다녀오기(10) · 편지 열어 보기(10)를 확인해 아직 받지 않은 것만 준다. 여러 번 불러도 한 번씩만 준다. quiet 가 참이면 오늘 위기 안내가 있었던 날이라 앱이 알리지 않는다.",
+        "operationId": "checkIn",
+        "responses": {
+          "200": {
+            "description": "정산 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TangerineCheckIn"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
                     }
                   }
                 }
@@ -4672,6 +4804,52 @@
         ]
       }
     },
+    "/api/v1/wardrobe": {
+      "get": {
+        "tags": [
+          "Wardrobe"
+        ],
+        "summary": "옷장 조회",
+        "description": "가진 귤 · 지금 입은 것 · 상점 아이템(무료 · 판매 중 · 이미 가진 것). 귤을 정산하지 않는다.",
+        "operationId": "wardrobe",
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WardrobeView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "tags": [
@@ -4865,6 +5043,55 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/retrospect/current": {
+      "get": {
+        "tags": [
+          "Retrospect"
+        ],
+        "summary": "오늘 진행 중인 회고",
+        "description": "앱을 다시 켰을 때 이어서 할 회고를 찾는다. 오늘(04:00 경계) 시작해 아직 끝나지 않은 가장 최근 세션의 대화와 마지막 응답을 준다. 없거나 오늘 일기가 이미 있으면 204.",
+        "operationId": "current_1",
+        "responses": {
+          "200": {
+            "description": "이어서 할 회고 있음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentRetrospectDto"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "이어서 할 회고 없음"
           },
           "401": {
             "description": "인증 필요",
@@ -5186,6 +5413,109 @@
                     "value": {
                       "code": "AUTHENTICATION_REQUIRED",
                       "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/letters/{id}/picture": {
+      "get": {
+        "tags": [
+          "Letters"
+        ],
+        "summary": "그림일기",
+        "description": "편지에 실린 바바의 4컷 그림(3:4 JPEG)을 base64 로 준다. 편지 응답의 hasPicture 가 true 일 때만 있다. 편지와 같이 일기 다음 날 04:00 부터 받을 수 있다.",
+        "operationId": "getPicture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": 12
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LetterPictureResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 경로 값",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "INVALID_REQUEST": {
+                    "description": "INVALID_REQUEST",
+                    "value": {
+                      "code": "INVALID_REQUEST",
+                      "message": "잘못된 요청입니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "AUTHENTICATION_REQUIRED": {
+                    "description": "AUTHENTICATION_REQUIRED",
+                    "value": {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "편지 또는 그림 없음(아직 열리지 않은 날짜 · 남의 편지 · 기능이 꺼짐 · 그리지 않았거나 실패 · 그리는 중)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "examples": {
+                  "LETTER_NOT_FOUND": {
+                    "description": "LETTER_NOT_FOUND",
+                    "value": {
+                      "code": "LETTER_NOT_FOUND",
+                      "message": "편지를 찾을 수 없습니다."
+                    }
+                  },
+                  "LETTER_PICTURE_NOT_FOUND": {
+                    "description": "LETTER_PICTURE_NOT_FOUND",
+                    "value": {
+                      "code": "LETTER_PICTURE_NOT_FOUND",
+                      "message": "그림일기를 찾을 수 없습니다."
                     }
                   }
                 }
@@ -5957,6 +6287,61 @@
           }
         }
       },
+      "OutfitRequest": {
+        "type": "object",
+        "properties": {
+          "hat": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "모자 아이템 id",
+            "example": "hat-bucket",
+            "maxLength": 40,
+            "minLength": 0
+          },
+          "eyes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "얼굴 아이템 id",
+            "example": "eyes-glasses",
+            "maxLength": 40,
+            "minLength": 0
+          },
+          "clothes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "옷 아이템 id",
+            "example": "clothes-knit-vest",
+            "maxLength": 40,
+            "minLength": 0
+          }
+        }
+      },
+      "WardrobeOutfit": {
+        "type": "object",
+        "properties": {
+          "hat": {
+            "type": "string",
+            "description": "모자 아이템 id, 없으면 null",
+            "example": "hat-bucket"
+          },
+          "eyes": {
+            "type": "string",
+            "description": "얼굴 아이템 id, 없으면 null",
+            "example": "eyes-glasses"
+          },
+          "clothes": {
+            "type": "string",
+            "description": "옷 아이템 id, 없으면 null",
+            "example": "clothes-knit-vest"
+          }
+        }
+      },
       "CompleteOnboardingRequest": {
         "type": "object",
         "properties": {
@@ -6381,7 +6766,7 @@
           },
           "actions": {
             "type": "array",
-            "description": "오늘 해 볼 작은 일(최대 3개). 조용한 편지면 빈 목록",
+            "description": "오늘 해 볼 작은 일(최대 3개). 조용한 편지이거나 서버가 작은 일을 끈 동안(LETTER_ACTIONS_ENABLED=false)은 빈 목록",
             "items": {
               "$ref": "#/components/schemas/Action"
             }
@@ -6405,6 +6790,11 @@
             ],
             "format": "date-time",
             "description": "처음 연 시각. 아직 안 열었으면 null"
+          },
+          "hasPicture": {
+            "type": "boolean",
+            "description": "바바의 그림일기가 있는가. 그림은 GET /api/v1/letters/{id}/picture 로 따로 받는다. 기능이 꺼졌거나 그리지 않은 편지(조용한 편지 · 기본 편지 · 실패 · 그리는 중)면 false",
+            "example": true
           }
         }
       },
@@ -6440,14 +6830,14 @@
           "primaryEmotion": {
             "type": "string",
             "description": "대표 감정 키 — 없을 수 있음",
-            "example": "depressed"
+            "example": "sad"
           },
           "emotions": {
             "type": "array",
             "description": "감정 태그 키 목록(일기에서 드러난 감정 전체)",
             "example": [
               "angry",
-              "frustrated"
+              "disappointed"
             ],
             "items": {
               "type": "string"
@@ -6469,27 +6859,6 @@
             "example": "맑음 · 22℃"
           }
         }
-      },
-      "DiaryWeatherRequest": {
-        "type": "object",
-        "properties": {
-          "latitude": {
-            "type": "number",
-            "example": 37.57,
-            "maximum": 90,
-            "minimum": -90
-          },
-          "longitude": {
-            "type": "number",
-            "example": 126.98,
-            "maximum": 180,
-            "minimum": -180
-          }
-        },
-        "required": [
-          "latitude",
-          "longitude"
-        ]
       },
       "DiaryUpdateRequest": {
         "type": "object",
@@ -6751,6 +7120,61 @@
           },
           "windy": {
             "type": "boolean"
+          }
+        }
+      },
+      "TangerineCheckIn": {
+        "type": "object",
+        "properties": {
+          "tangerines": {
+            "type": "integer",
+            "format": "int32",
+            "description": "정산 뒤 가진 귤",
+            "example": 160
+          },
+          "rewards": {
+            "type": "array",
+            "description": "이번에 새로 받은 귤. 받을 게 없으면 빈 목록",
+            "items": {
+              "$ref": "#/components/schemas/TangerineReward"
+            }
+          },
+          "quiet": {
+            "type": "boolean",
+            "description": "오늘 위기 안내가 있었는가 — 참이면 앱은 받은 귤을 알리지 않는다"
+          }
+        }
+      },
+      "TangerineReward": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "CHECK_IN",
+              "DIARY",
+              "SCHEDULES_DONE",
+              "REST",
+              "LETTER",
+              "WELCOME",
+              "PURCHASE"
+            ]
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int32",
+            "example": 30
+          }
+        }
+      },
+      "PurchaseResult": {
+        "type": "object",
+        "properties": {
+          "tangerines": {
+            "type": "integer",
+            "format": "int32",
+            "description": "산 뒤 남은 귤",
+            "example": 50
           }
         }
       },
@@ -7357,20 +7781,22 @@
           },
           "emotion": {
             "type": "string",
-            "description": "사용자가 선택한 감정 키. 선택하지 않으면 생략",
+            "description": "사용자가 선택한 감정 키(대표 감정 12종). 선택하지 않으면 생략. 옛 앱이 보내는 10종 키(happy·depressed·frustrated·stuck·lethargic·tired)도 받아 새 키로 옮겨 저장한다",
             "enum": [
-              "happy",
-              "proud",
+              "joy",
               "calm",
-              "tired",
-              "stuck",
-              "lethargic",
+              "proud",
+              "affection",
+              "sad",
               "anxious",
-              "depressed",
               "angry",
-              "frustrated"
+              "disappointed",
+              "ashamed",
+              "confused",
+              "sorry",
+              "exhausted"
             ],
-            "pattern": "happy|proud|calm|tired|stuck|lethargic|anxious|depressed|angry|frustrated"
+            "pattern": "joy|calm|proud|affection|sad|anxious|angry|disappointed|ashamed|confused|sorry|exhausted|happy|depressed|frustrated|stuck|lethargic|tired"
           }
         },
         "required": [
@@ -8021,6 +8447,105 @@
           }
         }
       },
+      "WardrobeItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "「칸-아이디」 — 앱 레이어 파일 이름과 같다",
+            "example": "hat-bucket"
+          },
+          "slot": {
+            "type": "string",
+            "enum": [
+              "HAT",
+              "EYES",
+              "CLOTHES"
+            ]
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "TANGERINE"
+            ]
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "description": "귤 값. 무료는 0",
+            "example": 250
+          },
+          "owned": {
+            "type": "boolean",
+            "description": "입을 수 있는가(무료이거나 샀다)"
+          }
+        }
+      },
+      "WardrobeView": {
+        "type": "object",
+        "properties": {
+          "tangerines": {
+            "type": "integer",
+            "format": "int32",
+            "description": "가진 귤",
+            "example": 120
+          },
+          "outfit": {
+            "$ref": "#/components/schemas/WardrobeOutfit"
+          },
+          "items": {
+            "type": "array",
+            "description": "상점에 보일 아이템 — 무료 · 귤로 사는 것 · 이미 가진 것. 그림과 이름은 앱이 가진다",
+            "items": {
+              "$ref": "#/components/schemas/WardrobeItem"
+            }
+          },
+          "todayRewards": {
+            "type": "array",
+            "description": "오늘(04:00 경계) 날짜로 이미 받은 보상 사유 — 오늘의 미션에 받은 줄을 표시한다",
+            "items": {
+              "type": "string",
+              "enum": [
+                "CHECK_IN",
+                "DIARY",
+                "SCHEDULES_DONE",
+                "REST",
+                "LETTER",
+                "WELCOME",
+                "PURCHASE"
+              ]
+            }
+          },
+          "attendanceDay": {
+            "type": "integer",
+            "format": "int32",
+            "description": "출석 이레 중 오늘 칸(1~7). 날마다 이어 오면 하나씩 넘어가고, 이레째 다음이나 하루를 거르면 1",
+            "example": 3
+          },
+          "attendanceRewards": {
+            "type": "array",
+            "description": "출석 칸마다 받는 귤(일곱 개)",
+            "example": [
+              10,
+              10,
+              20,
+              20,
+              30,
+              40,
+              50
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "welcomed": {
+            "type": "boolean",
+            "description": "옷장 첫 선물을 이미 받았는가"
+          }
+        }
+      },
       "Profile": {
         "type": "object",
         "properties": {
@@ -8207,6 +8732,45 @@
           }
         }
       },
+      "CurrentRetrospectDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "세션 식별자",
+            "example": 1
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            }
+          },
+          "reply": {
+            "$ref": "#/components/schemas/ReplyDto"
+          }
+        }
+      },
+      "MessageDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "누가 한 말인지",
+            "enum": [
+              "assistant",
+              "user"
+            ],
+            "example": "assistant"
+          },
+          "text": {
+            "type": "string",
+            "description": "말 내용",
+            "example": "오늘 하루 중 가장 기억에 남는 일은 뭐였어요?"
+          }
+        }
+      },
       "RestRecordListResponse": {
         "type": "object",
         "properties": {
@@ -8237,8 +8801,8 @@
             "type": "array",
             "description": "그날 감정 키 전체(대표 감정이 맨 앞)",
             "example": [
-              "depressed",
-              "happy"
+              "sad",
+              "joy"
             ],
             "items": {
               "type": "string"
@@ -8524,6 +9088,21 @@
           }
         }
       },
+      "LetterPictureResponse": {
+        "type": "object",
+        "properties": {
+          "mimeType": {
+            "type": "string",
+            "description": "그림 형식",
+            "example": "image/jpeg"
+          },
+          "image": {
+            "type": "string",
+            "description": "그림 바이트의 base64",
+            "example": "/9j/4AAQSkZJRgABAQAAAQABAAD..."
+          }
+        }
+      },
       "DiaryListResponse": {
         "type": "object",
         "properties": {
@@ -8573,7 +9152,7 @@
             "description": "확인된 감정 키 목록",
             "example": [
               "angry",
-              "frustrated"
+              "disappointed"
             ],
             "items": {
               "type": "string"
