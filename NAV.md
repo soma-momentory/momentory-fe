@@ -92,7 +92,7 @@ src/features/home/{model/{day,dayRollover,presentation,types,weather,useHomeWeat
                     (`ScheduleList` · `ScheduleItem` · `ScheduleEditBar` · `CheckBurst`)이다(옛 `HomeView` 계열은 2026-11-09 삭제).
                     day.ts 의 MAX_VISIBLE_SCHEDULES(5) 는 제품 규칙. dayRollover = 04:00 에 하루가 넘어갈 때 하는 일.
                     날씨 = `POST /api/v1/weather/current`(좌표는 본문에만) — 실패는 전부 「스티커 없음」.
-                    업데이트 소식 = `model/whatsNew.ts` 의 버전과 글만 출시마다 고친다(`ui/WhatsNewSheet` · 본 기록은 기기에 사용자별로)
+                    업데이트 소식 = `model/whatsNew.ts` 의 버전과 글만 출시마다 고친다(`ui/WhatsNewPopup` · 본 기록은 기기에 사용자별로)
 src/features/calendar/{model/*, data/{calendarSyncApi,syncStateStore}.ts}
                   ← 기기 캘린더 ↔ 서버 화해(`POST /schedules/sync`). 읽어 펴고(expand) 좁히고(normalize)
                     해시로 「보낼 것이 있나」를 판정한다. 언제 도는지는 `model/foregroundSync.ts` 하나가 안다

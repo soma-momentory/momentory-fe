@@ -275,7 +275,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
       await new Promise((resolve) => setTimeout(resolve, 700));
     });
 
-    expect(r.getByTestId("whats-new-sheet")).toBeTruthy();
+    expect(r.getByTestId("whats-new-popup")).toBeTruthy();
     expect(refresh).not.toHaveBeenCalled();
     expect(r.queryByText("오늘 날씨도 함께 볼까요?")).toBeNull();
     await fireEvent.press(r.getByText("확인"));
@@ -285,7 +285,7 @@ describe("12 · 홈 — 날짜 · CTA · 이번 주 감정 · 오늘 일정", ()
     await r.rerender(<Home />);
 
     await waitFor(() => expect(r.getByTestId("attendance-sheet")).toBeTruthy());
-    expect(r.queryByTestId("whats-new-sheet")).toBeNull();
+    expect(r.queryByTestId("whats-new-popup")).toBeNull();
     expect(r.queryByText("오늘 날씨도 함께 볼까요?")).toBeNull();
 
     await fireEvent.press(r.getByText("확인"));
