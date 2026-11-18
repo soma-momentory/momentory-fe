@@ -10,6 +10,7 @@ import Now from "../now";
 import { IntroScreen } from "@/components/onboarding/IntroScreen";
 import { QuestionScreen } from "@/components/onboarding/QuestionScreen";
 import { useAuth } from "@/features/auth/model/auth";
+import { markWhatsNewSeenAtSignup } from "@/features/home/model/useWhatsNew";
 import { useProfile, useSettings } from "@/features/my/model/settings";
 import { completeOnboardingV2 } from "@/features/onboarding/data/completeOnboardingApi";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
@@ -26,10 +27,14 @@ jest.mock("@/features/onboarding/data/completeOnboardingApi", () => ({
   ...jest.requireActual("@/features/onboarding/data/completeOnboardingApi"),
   completeOnboardingV2: jest.fn(),
 }));
+jest.mock("@/features/home/model/useWhatsNew", () => ({
+  markWhatsNewSeenAtSignup: jest.fn(async () => {}),
+}));
 
 const push = jest.mocked(router.push);
 const replace = jest.mocked(router.replace);
 const submit = jest.mocked(completeOnboardingV2);
+const markSeen = jest.mocked(markWhatsNewSeenAtSignup);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -195,6 +200,30 @@ describe("지금 첫 회고", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it("새 가입자는 홈에 가기 전에 업데이트 소식을 본 것으로 남긴다", async () => {
+    fill();
+    submit.mockResolvedValue({ ok: true, data: { onboardingRequired: false } });
+    const { getByText } = await render(<Now />);
+
+    await fireEvent.press(getByText("다음에 할게요"));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
+    expect(markSeen).toHaveBeenCalledTimes(1);
+    expect(markSeen.mock.invocationCallOrder[0]).toBeLessThan(replace.mock.invocationCallOrder[0]!);
+  });
+
+  it("다시 온보딩한 기존 사용자는 업데이트 소식을 그대로 받는다", async () => {
+    fill();
+    useDraft.setState({ reonboarding: true });
+    submit.mockResolvedValue({ ok: true, data: { onboardingRequired: false } });
+    const { getByText } = await render(<Now />);
+
+    await fireEvent.press(getByText("다음에 할게요"));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/home"));
+    expect(markSeen).not.toHaveBeenCalled();
+  });
+
   it("저장에 실패하면 한 줄만 띄우고 머문다", async () => {
     fill();
     submit.mockResolvedValue({ ok: false, code: "network" });
@@ -203,6 +232,7 @@ describe("지금 첫 회고", () => {
     await fireEvent.press(getByText("지금 이야기하기"));
 
     expect(await findByText("지금 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.")).toBeTruthy();
+    expect(markSeen).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
     expect(useOnboardingCompletion.getState().completed).toBeNull();
   });

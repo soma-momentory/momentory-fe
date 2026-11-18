@@ -6,6 +6,7 @@ import { StyleSheet, View } from "react-native";
 import { Icon, Text } from "@/components/ds";
 import { Baba, Bubble, OnboardingFrame } from "@/components/onboarding/OnboardingParts";
 import { label as labelColor, onboardingArt, primary, space } from "@/design/ds";
+import { markWhatsNewSeenAtSignup } from "@/features/home/model/useWhatsNew";
 import { adoptProfile, useProfile } from "@/features/my/model/settings";
 import { completeOnboardingV2 } from "@/features/onboarding/data/completeOnboardingApi";
 import { useOnboardingCompletion } from "@/features/onboarding/model/completion";
@@ -41,6 +42,10 @@ export default function Now() {
       answers: draft.answers,
       goals: draft.goals,
     });
+    // 새 가입자에게는 업데이트 소식을 띄우지 않는다 — 홈이 읽기 전에 남긴다
+    if (result.ok && !result.data.onboardingRequired && !draft.reonboarding) {
+      await markWhatsNewSeenAtSignup();
+    }
     setSubmitting(false);
 
     // 서버가 아직 「온보딩 필요」라면 받은 것이 아니다 — 홈으로 보내면 다음 실행에 다시 뜬다
