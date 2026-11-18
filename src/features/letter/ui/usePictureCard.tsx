@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { letterPaper } from "@/design/ds/letterPaper";
@@ -19,9 +19,14 @@ const EXPORT_SIZE = {
 export function usePictureCard(picture: string | null, date: string | undefined) {
   const card = useRef<View>(null);
   const outfit = useWardrobe((s) => s.outfit);
+  // 알림으로 편지부터 열면 홈을 거치지 않아 옷장을 아직 모른다 — 받은 뒤에 찍는다. 못 받으면 기본 바바로 찍는다
+  const wardrobeKnown = useWardrobe((s) => s.loaded || s.failed);
+  useEffect(() => {
+    if (!useWardrobe.getState().loaded) void useWardrobe.getState().load();
+  }, []);
   const [sending, setSending] = useState(false);
   const [ready, setReady] = useState(false);
-  const busy = sending || !ready;
+  const busy = sending || !ready || !wardrobeKnown;
 
   const send = async (kind: "save" | "share") => {
     if (busy) return;

@@ -24,6 +24,7 @@ import {
 } from "@/features/letter/data/letterApi";
 import { keepWords, useLetters } from "@/features/letter/model/letter";
 import { useProfile, useSettings } from "@/features/my/model/settings";
+import { useWardrobe } from "@/features/wardrobe/model/wardrobe";
 import { fixedClock, SampleClock, setClock } from "@/lib/clock";
 import { savePictureCard, sharePictureCard } from "@/lib/pictureCard";
 import { useToast } from "@/lib/toast";
@@ -126,6 +127,7 @@ beforeEach(() => {
   useProfile.setState({ nickname: "하늘" });
   useDay.setState({ schedules: [] });
   useLetters.setState({ userId: 7, summaries: null, letters: {}, pictures: {} });
+  useWardrobe.setState({ loaded: true, failed: false });
   jest.mocked(fetchLetters).mockResolvedValue({
     ok: true,
     data: [
@@ -189,6 +191,25 @@ describe("편지 전체 화면", () => {
     expect(savePictureCard).toHaveBeenCalledWith(expect.anything(), { width: 1080, height: 1920 });
     await act(async () => fireEvent.press(r.getByText("공유하기")));
     expect(sharePictureCard).toHaveBeenCalledTimes(1);
+  });
+
+  it("알림으로 바로 열어 옷장을 모르면 받은 뒤에 카드를 찍는다", async () => {
+    mockParams = { date: "2026-10-26" };
+    const original = useWardrobe.getState().load;
+    const load = jest.fn(async () => undefined);
+    useWardrobe.setState({ loaded: false, failed: false, load });
+    useLetters.getState().keep({ ...LETTER, hasPicture: true });
+    const r = await render(<LetterPictureScreen />);
+
+    await loadCardImages(r);
+    expect(load).toHaveBeenCalledTimes(1);
+    await act(async () => fireEvent.press(r.getByText("저장하기")));
+    expect(savePictureCard).not.toHaveBeenCalled();
+
+    await act(async () => useWardrobe.setState({ loaded: true }));
+    await act(async () => fireEvent.press(r.getByText("저장하기")));
+    expect(savePictureCard).toHaveBeenCalledTimes(1);
+    useWardrobe.setState({ load: original });
   });
 
   it("크게 보기 — 그림을 못 받으면 한 줄로 말하고 버튼을 두지 않는다", async () => {
