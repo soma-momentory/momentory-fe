@@ -17,7 +17,7 @@ import { hasUnreadLetter, useLetters } from "@/features/letter/model/letter";
 import type { HomeWeather } from "@/features/home/model/weather";
 import { HomeV2View } from "@/features/home/ui/v2/HomeV2View";
 import { toHomeWeatherView } from "@/features/home/ui/v2/weatherStickers";
-import { WhatsNewSheet } from "@/features/home/ui/WhatsNewSheet";
+import { WhatsNewPopup } from "@/features/home/ui/WhatsNewPopup";
 import { useMusic } from "@/features/music/model/music";
 import { useSettings } from "@/features/my/model/settings";
 import { weekDays, weekEnd } from "@/features/report/model/report";
@@ -212,7 +212,7 @@ export default function Home() {
         menuBottomInset={layout.tabBar + Math.max(insets.bottom, layout.minBottomInset)}
       />
       {homeFocused && whatsNew.status === "open" && !missions && weatherInfoFor == null ? (
-        <WhatsNewSheet onDismiss={whatsNew.dismiss} />
+        <WhatsNewPopup onDismiss={whatsNew.dismiss} />
       ) : null}
       {missions ? (
         <TangerineMissionSheet
