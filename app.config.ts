@@ -244,8 +244,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 이력은 `docs/SETUP.md` §8 「versionCode」 표에 둔다 — 여기 숫자와 그 표를 같이 올린다.
     // `10` = 1.3.0 · 운영 서버(`api.momentory.co.kr`) · 2026-10-14. 9 는 10-09 의 1.2.0 빌드가 썼다.
     // `11` = 1.4.0 · 운영 서버 · 2026-11-08.
-    // `12` = 1.4.1 · 2026-11-10 올림(아직 업로드 전 — 올리면 SETUP 표의 「예정」을 고친다).
-    versionCode: 12,
+    // `12` = 1.5.0 · 운영 서버 · 2026-11-10 업로드(main 에는 1.4.1 로 잡혀 있었지만 실제로는 1.5.0 으로 나갔다).
+    // `13` = 1.4.2 · 운영 서버 · 2026-11-12 · iOS 와 이름을 맞췄다(1.5.0 다음이지만 이름은 1.4.2).
+    // `14` = 1.4.3 · 운영 서버 · 2026-11-16.
+    // `15` = 1.5.0 · 운영 서버 · 2026-11-19 · Play 가 「세로 화면 필수」로 검토 전송을 막아 쓰지 못했다.
+    // `16` = 1.5.0 · 운영 서버 · 2026-11-19 · 세로 화면을 필수 아님으로 선언(`withOptionalPortraitScreen`).
+    versionCode: 16,
     // ⚠ 사진 **읽기** 권한은 막는다(2026-11-18). `expo-media-library` 가 매니페스트에 읽기 권한을 넣지만 앱은 그림일기
     // 카드를 **저장만** 한다 — Android 13 이상은 권한 없이 저장되고, 12 이하는 라이브러리가 넣는 쓰기 권한
     // (`WRITE_EXTERNAL_STORAGE` · maxSdk 32) 하나로 저장한다. 읽기 권한이 남으면 Play 「사진 및 동영상 권한」 정책 신고 대상이다.
@@ -419,6 +423,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // 3버튼 내비게이션 바 뒤의 흰 대비 막을 걷어 앱 바탕이 바 밑까지 이어지게 한다
     // (`plugins/withTransparentNavBar.ts` 머리말)
     "./plugins/withTransparentNavBar",
+    // 세로 고정 앱을 Play 가 「세로 화면 필수」로 짐작해 검토 전송을 막지 않게 한다
+    // (`plugins/withOptionalPortraitScreen.ts` 머리말 · 2026-11-19 vc15 에서 처음 막혔다)
+    "./plugins/withOptionalPortraitScreen",
     // 스플래시는 **런처 아이콘(카피바라 얼굴)만**이다 — `assets/icon.png` 를 캔버스 가운데에
     // 앉혔다(2026-10-06). **아이콘을 바꾸면 이 파일도 같이 바꾼다**(옛 로고로 남아 앱을 켤 때마다
     // 옛 그림이 먼저 떴다).
