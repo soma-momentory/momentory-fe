@@ -674,7 +674,11 @@ Play 는 같은 값을 두 번 받지 않고, 심사 반려 뒤 재업로드도 
 | 9           | 1.2.0   | 2026-10-09   | `momentory-android-1.2.0-vc9.aab` — Play 에 올라가 번호가 소비됐다                               |
 | 10          | 1.3.0   | 2026-10-14   | `momentory-android-1.3.0-vc10.aab` — **운영 서버**(`api.momentory.co.kr`) 빌드                   |
 | 11          | 1.4.0   | 2026-11-08   | `momentory-android-1.4.0-vc11.aab` — 운영 서버 · iOS `buildNumber 8` · **출시**(2026-11-09 확인) |
-| **12**      | 1.4.1   | (예정)       | `momentory-android-1.4.1-vc12.aab` — iOS `buildNumber 9` · 2026-11-10 번호만 올렸다(업로드 전)   |
+| 12          | 1.5.0   | 2026-11-10   | `momentory-android-1.5.0-vc12.aab` — 운영 서버 · Play 업로드됨(main 에는 1.4.1 로 잡혀 있었다)   |
+| 13          | 1.4.2   | 2026-11-12   | `momentory-android-1.4.2-vc13.aab` — 운영 서버 · iOS `buildNumber 10` 과 이름을 맞췄다           |
+| 14          | 1.4.3   | 2026-11-16   | `momentory-android-1.4.3-vc14.aab` — 운영 서버 · 강제 업데이트 기능 포함                         |
+| 15          | 1.5.0   | 2026-11-19   | **소비됨** — Play 가 「세로 화면 필수」로 검토 전송을 막았다(`withOptionalPortraitScreen`)       |
+| **16**      | 1.5.0   | 2026-11-19   | `momentory-android-1.5.0-vc16.aab` — 운영 서버 · 세로 화면을 필수 아님으로 선언                  |
 
 ### 지문 셋 — 하나라도 빠지면 그 빌드에서만 로그인이 실패한다
 
